@@ -5,7 +5,24 @@ VERSION = 2.0.0
 INCLUDEPATH += ./pdf_viewer \
                mupdf/include
 
-!android{
+ios {
+
+
+#    LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lmupdf -lmupdf-third
+    # LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lcombined
+#    LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lcombined
+#    LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lmupdf
+
+#    LIBS += -L$$PWD/libs/ -lmupdf -lmupdf-third
+#    LIBS += -L$$PWD/libs/ -lmupdf
+#    LIBS += -L$$PWD/libs/ -lcombined
+#    LIBS += -L/Users/mymsv/Ali/sioyek-private/libs/ -lmupdf -lmupdf-third
+
+#    LIBS += -F/Users/mymsv/Ali/sioyek-private/libs/
+#    LIBS += -framework mupdfdk
+}
+
+!android:!ios{
     INCLUDEPATH += zlib
 }
           
@@ -192,7 +209,7 @@ unix:!mac:!android {
         resources/sioyek-icon-linux.png
 }
 
-mac {
+mac:!ios {
     QMAKE_CXXFLAGS += -std=c++17
     LIBS += -ldl -Lmupdf/build/release -lmupdf -lmupdf-third -lmupdf-threads -lz
     CONFIG+=sdk_no_version_check

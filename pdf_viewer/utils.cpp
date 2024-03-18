@@ -1106,6 +1106,8 @@ void split_key_string(std::wstring haystack, const std::wstring& needle, std::ve
 
 
 void run_command(std::wstring command, QStringList parameters, bool wait) {
+// ios does not have QProcess
+#ifndef SIOYEK_IOS
 
 
 #ifdef Q_OS_WIN
@@ -1162,6 +1164,8 @@ void run_command(std::wstring command, QStringList parameters, bool wait) {
         process->startDetached(qcommand, qparameters);
     }
 #endif
+#endif
+
 
 }
 

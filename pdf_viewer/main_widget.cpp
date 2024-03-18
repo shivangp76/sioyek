@@ -4724,7 +4724,7 @@ void MainWidget::reload(bool flush) {
 
 std::wstring MainWidget::synctex_under_pos(WindowPos position) {
     std::wstring res = L"";
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
     auto [page, doc_x, doc_y] = main_document_view->window_to_document_pos(position);
     std::wstring docpath = main_document_view->get_document()->get_path();
     std::string docpath_utf8 = utf8_encode(docpath);
@@ -8997,6 +8997,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async){
 }
 
 void MainWidget::export_python_api() {
+#ifndef SIOYEK_MOBILE
     QString res;
     QString INDENT = "    ";
 
@@ -9044,6 +9045,7 @@ void MainWidget::export_python_api() {
 
     std::string command = "python -m pip install " + std::string(sioyek_python_path);
     std::system(command.c_str());
+#endif
 }
 
 bool MainWidget::execute_macro_from_origin(std::wstring macro_command_string, QLocalSocket* origin) {

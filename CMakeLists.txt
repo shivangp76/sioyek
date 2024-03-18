@@ -2,14 +2,19 @@ cmake_minimum_required(VERSION 3.16)
 project(sioyek VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS 3DInput Gui Network OpenGL QuickWidgets Svg TextToSpeech Widgets OpenGLWidgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS 3DInput Gui Network OpenGL QuickWidgets Svg TextToSpeech Widgets)
+find_package(Qt${QT_VERSION_MAJOR} OPTIONAL_COMPONENTS OpenGLWidgets)
+find_package(WrapFreetype 2.2.0 REQUIRED)
+find_package(WrapHarfbuzz 2.6.0)
+find_package(JPEG)
+find_package(WrapZLIB 1.0.8)
 
 qt_standard_project_setup()
 
 qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
+    fzf/fzf.c fzf/fzf.h
     pdf_viewer/OpenWithApplication.cpp pdf_viewer/OpenWithApplication.h
     pdf_viewer/RunGuard.cpp pdf_viewer/RunGuard.h
     pdf_viewer/book.cpp pdf_viewer/book.h
@@ -85,19 +90,27 @@ target_link_libraries(sioyek PRIVATE
 # Resources:
 set(resources_resource_files
     "begin.png"
+    "data/command_docs.json"
+    "data/config_docs.json"
     "data/embedding.npy"
     "data/linear.npy"
     "end.png"
     "icons/B.svg"
+    "icons/B_white.svg"
     "icons/P.svg"
+    "icons/P_white.svg"
+    "icons/adjust.svg"
     "icons/arrow-begin.svg"
     "icons/arrow-end.svg"
     "icons/bookmark-add.svg"
     "icons/bookmark-g.svg"
     "icons/bookmark.svg"
+    "icons/close.svg"
     "icons/copy.svg"
     "icons/document-page-number.svg"
     "icons/draw.svg"
+    "icons/erase.svg"
+    "icons/finger-index.svg"
     "icons/fit-horizontal-enabled.svg"
     "icons/fit-horizontal.svg"
     "icons/fullscreen-enabled.svg"
@@ -113,12 +126,15 @@ set(resources_resource_files
     "icons/left.svg"
     "icons/link-enabled.svg"
     "icons/link.svg"
+    "icons/load.svg"
     "icons/lock-enabled.svg"
     "icons/lock.svg"
+    "icons/move.svg"
     "icons/next.svg"
     "icons/page.svg"
     "icons/paper-download.svg"
     "icons/pause.svg"
+    "icons/pen.svg"
     "icons/play.svg"
     "icons/portal-enabled.svg"
     "icons/portal.svg"
@@ -127,9 +143,14 @@ set(resources_resource_files
     "icons/right.svg"
     "icons/ruler-enabled.svg"
     "icons/ruler.svg"
+    "icons/save.svg"
+    "icons/screenshot.svg"
     "icons/search.svg"
     "icons/select_text.svg"
+    "icons/selection-begin.svg"
+    "icons/selection-end.svg"
     "icons/stop.svg"
+    "icons/swap.svg"
     "icons/table-of-contents.svg"
     "icons/text-selection.svg"
     "icons/tts-enabled.svg"
@@ -137,9 +158,13 @@ set(resources_resource_files
     "icons/unlink.svg"
     "pdf_viewer/keys.config"
     "pdf_viewer/prefs.config"
+    "pdf_viewer/shaders/compiled_drawing.vertex"
+    "pdf_viewer/shaders/compiled_line.fragment"
     "pdf_viewer/shaders/custom_colors.fragment"
     "pdf_viewer/shaders/dark_mode.fragment"
     "pdf_viewer/shaders/debug.fragment"
+    "pdf_viewer/shaders/dot.fragment"
+    "pdf_viewer/shaders/dot.vertex"
     "pdf_viewer/shaders/highlight.fragment"
     "pdf_viewer/shaders/line.fragment"
     "pdf_viewer/shaders/line.vertex"
@@ -170,8 +195,10 @@ set(resources_resource_files
     "pdf_viewer/touchui/TouchSearchButtons.qml"
     "pdf_viewer/touchui/TouchSettings.qml"
     "pdf_viewer/touchui/TouchSlider.qml"
+    "pdf_viewer/touchui/TouchSymbolColorSelector.qml"
     "pdf_viewer/touchui/TouchTextEdit.qml"
     "pdf_viewer/touchui/TouchTreeView.qml"
+    "resources/fonts/JetBrainsMono.ttf"
     "tutorial.pdf"
 )
 
@@ -203,30 +230,61 @@ if((QT_VERSION_MAJOR GREATER 5))
     )
 endif()
 
+if(NOT ((QT_VERSION_MAJOR GREATER 5)))
+    target_link_libraries(sioyek PRIVATE
+        openglextensions
+    )
+endif()
+
+if(ANDROID)
+    target_compile_definitions(sioyek PRIVATE
+        SIOYEK_ANDROID
+    )
+
+    target_link_libraries(sioyek PRIVATE
+        # Remove: L${CMAKE_CURRENT_SOURCE_DIR}/libs/
+        Qt::CorePrivate
+        crypto_3
+        mupdf_java
+        ssl_3
+    )
+endif()
+
+target_compile_definitions(sioyek PRIVATE
+    NON_PORTABLE
+)
+
+if(WIN32)
+    target_compile_definitions(sioyek PRIVATE
+        _CRT_NONSTDC_NO_DEPRECATE
+        _CRT_SECURE_NO_WARNINGS
+    )
+
+    target_link_libraries(sioyek PRIVATE
+        opengl32.lib
+    )
+endif()
 
 
-target_link_libraries(sioyek PRIVATE -ldl)
-target_link_libraries(sioyek PRIVATE -L/home/hex/sioyek-private/mupdf/build/release)
+target_link_libraries(sioyek PRIVATE -Lmupdf/build/release)
 target_link_libraries(sioyek PRIVATE -lmupdf)
 target_link_libraries(sioyek PRIVATE -lmupdf-third)
 target_link_libraries(sioyek PRIVATE -lmupdf-threads)
-target_link_libraries(sioyek PRIVATE -lharfbuzz)
-target_link_libraries(sioyek PRIVATE -lz)
 
-# if((( ( UNIX ) AND NOT APPLE ) AND NOT ANDROID))
-#     target_link_libraries(sioyek PRIVATE
-#         # Remove: Lmupdf/build/release
-#         WrapHarfbuzz::WrapHarfbuzz
-#         dl
-#         mupdf
-#         mupdf-third
-#         mupdf-threads
-#         z
-#     )
-# endif()
+# target_link_libraries(sioyek PRIVATE
+#     # Remove: Lmupdf\platform\win32\x64\Release
+#     # Remove: Lzlib
+#     WrapZLIB::WrapZLIB
+#     libmupdf
+# )
 
 if(APPLE)
+    target_sources(sioyek PUBLIC
+        pdf_viewer/macos_specific.mm
+    )
+
     target_link_libraries(sioyek PRIVATE
+        "-framework AppKit"
         # Remove: Lmupdf/build/release
         dl
         mupdf
@@ -235,9 +293,6 @@ if(APPLE)
         z
     )
 
-    target_compile_options(sioyek
-        -std=c++17
-    )
 endif()
 
 install(TARGETS sioyek
