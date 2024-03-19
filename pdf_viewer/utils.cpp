@@ -1,7 +1,7 @@
 //#include <Windows.h>
 #include <cwctype>
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 #include <unistd.h>
 #endif
 
@@ -1954,7 +1954,7 @@ std::wstring concatenate_path(const std::wstring& prefix, const std::wstring& su
 }
 
 std::wstring get_canonical_path(const std::wstring& path) {
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
     if (path.size() > 0) {
         if (path[0] == ':') { // it is a resouce file
             return path;
@@ -2711,7 +2711,7 @@ void android_tts_set_rest_of_document(QString rest){
 
 fz_document* open_document_with_file_name(fz_context* context, std::wstring file_name) {
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 
     QFile pdf_qfile(QString::fromStdWString(file_name));
 

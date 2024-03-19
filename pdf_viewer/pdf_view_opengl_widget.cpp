@@ -229,7 +229,7 @@ bool num_slices_for_page_rect(PagelessDocumentRect page_rect, int* h_slices, int
 }
 
 std::string read_file_contents(const Path& path) {
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
     std::wstring actual_path = path.get_path();
     QFile qfile(QString::fromStdWString(path.get_path()));
     qfile.open(QIODeviceBase::Text | QIODeviceBase::ReadOnly);
@@ -263,6 +263,8 @@ GLuint PdfViewOpenGLWidget::LoadShaders(Path vertex_file_path, Path fragment_fil
 
 #ifdef SIOYEK_ANDROID
     std::string header = "#version 310 es\n";
+#elif defined(SIOYEK_IOS)
+    std::string header = "#version 300 core\n";
 #else
     std::string header = "#version 330 core\n";
 #endif
@@ -351,7 +353,7 @@ void PdfViewOpenGLWidget::initializeGL() {
         //shared_gl_objects.vertical_line_program = LoadShaders(concatenate_path(shader_path , L"simple.vertex"),  concatenate_path(shader_path , L"vertical_bar.fragment"));
         //shared_gl_objects.vertical_line_dark_program = LoadShaders(concatenate_path(shader_path , L"simple.vertex"),  concatenate_path(shader_path , L"vertical_bar_dark.fragment"));
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
         shared_gl_objects.rendered_program = LoadShaders(Path(L":/pdf_viewer/shaders/simple.vertex"), Path(L":/pdf_viewer/shaders/simple.fragment"));
         shared_gl_objects.rendered_dark_program = LoadShaders(Path(L":/pdf_viewer/shaders/simple.vertex"), Path(L":/pdf_viewer/shaders/dark_mode.fragment"));
         shared_gl_objects.unrendered_program = LoadShaders(Path(L":/pdf_viewer/shaders/simple.vertex"), Path(L":/pdf_viewer/shaders/unrendered_page.fragment"));
@@ -756,6 +758,8 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view, PdfRendere
     QSurfaceFormat format;
 #ifdef SIOYEK_ANDROID
     format.setVersion(3, 1);
+#elif defined(SIOYEK_IOS)
+    format.setVersion(3, 0);
 #else
     format.setVersion(3, 3);
 #endif

@@ -120,7 +120,7 @@ enum class PaperDownloadFinishedAction {
 
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 class MainWidget : public QQuickWidget {
 #else
 class MainWidget : public QMainWindow {

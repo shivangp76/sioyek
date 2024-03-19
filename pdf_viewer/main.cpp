@@ -115,13 +115,13 @@ float GAMMA = 1.0f;
 bool DEBUG = false;
 bool DEBUG_DISPLAY_FREEHAND_POINTS = false;
 bool DEBUG_SMOOTH_FREEHAND_DRAWINGS = true;
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
 #else
 bool TOUCH_MODE = false;
 #endif
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 bool SLICED_RENDERING = true;
 #else
 bool SLICED_RENDERING = false;
@@ -146,7 +146,7 @@ std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 std::wstring MIDDLE_CLICK_SEARCH_ENGINE = L"s";
 std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
 std::wstring PAPERS_FOLDER_PATH = L"";
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
 std::wstring STATUS_BAR_FORMAT = L"[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}%{closest_bookmark}%{close_portal}%{rect_select}%{custom_message}%{download}";
 #else
 std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_results}%{search_progress}%{link_status}%{indexing}";
@@ -232,7 +232,7 @@ bool AUTO_RENAME_DOWNLOADED_PAPERS = false;
 bool SHOW_MOST_RECENT_COMMANDS_FIRST = true;
 bool ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL = false;
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 std::wstring STARTUP_COMMANDS = L"toggle_mouse_drag_mode;toggle_fullscreen";
 #else
 std::wstring STARTUP_COMMANDS = L"";
@@ -257,7 +257,7 @@ bool FORCE_CUSTOM_LINE_ALGORITHM = false;
 float OVERVIEW_SIZE[2] = { 0.8f, 0.4f };
 float OVERVIEW_OFFSET[2] = { 0.0f, 0.0f };
 bool IGNORE_WHITESPACE_IN_PRESENTATION_MODE = false;
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 bool EXACT_HIGHLIGHT_SELECT = true;
 #else
 bool EXACT_HIGHLIGHT_SELECT = false;
@@ -291,7 +291,7 @@ std::wstring CONTEXT_MENU_ITEMS_FOR_BOOKMARKS = L"delete_visible_bookmark|edit_s
 std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW = L"";
 
 bool RIGHT_CLICK_CONTEXT_MENU = false;
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 int NUM_CACHED_PAGES = 3;
 #else
 int NUM_CACHED_PAGES = 5;
@@ -327,7 +327,7 @@ bool ALPHABETIC_LINK_TAGS = false;
 bool VIMTEX_WSL_FIX = false;
 float RULER_AUTO_MOVE_SENSITIVITY = 40.0f;
 float TTS_RATE = 0.0f;
-bool VERBOSE = false;
+bool VERBOSE = true;
 bool FILL_TEXTBAR_WITH_SELECTED_TEXT = true;
 int NUM_PRERENDERED_NEXT_SLIDES = 1;
 int NUM_PRERENDERED_PREV_SLIDES = 0;
@@ -397,7 +397,7 @@ std::vector<Path> user_keys_paths = {};
 Path database_file_path(L"");
 Path local_database_file_path(L"");
 Path global_database_file_path(L"");
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 Path tutorial_path(L":/tutorial.pdf");
 Path android_config_path(L"");
 #else
@@ -438,7 +438,7 @@ std::wstring VISUAL_MARK_PREV_TAP_COMMAND = L"";
 std::wstring VISUAL_MARK_PREV_HOLD_COMMAND = L"";
 std::wstring MIDDLE_LEFT_RECT_TAP_COMMAND = L"";
 std::wstring MIDDLE_LEFT_RECT_HOLD_COMMAND = L"";
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 std::wstring MIDDLE_RIGHT_RECT_TAP_COMMAND = L"overview_definition";
 #else
 std::wstring MIDDLE_RIGHT_RECT_TAP_COMMAND = L"";
@@ -521,9 +521,35 @@ void configure_paths_android() {
 }
 #endif
 
+#ifdef SIOYEK_IOS
+void configure_paths_ios() {
+
+    char* APPDIR = std::getenv("XDG_CONFIG_HOME");
+    Path linux_home_path(QDir::homePath().toStdWString());
+
+    if (!APPDIR) {
+        APPDIR = std::getenv("HOME");
+    }
+
+    standard_data_path = Path(utf8_decode(APPDIR));
+    standard_data_path = standard_data_path.slash(L".local").slash(L"share").slash(L"Sioyek");
+    standard_data_path.create_directories();
+
+    database_file_path = standard_data_path.slash(L"test.db");
+    last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
+    local_database_file_path = standard_data_path.slash(L"local.db");
+    global_database_file_path = standard_data_path.slash(L"shared.db");
+    android_config_path = standard_data_path.slash(L"saved.config");
+    tutorial_path = Path(L":/tutorial.pdf");
+    downloaded_papers_path = standard_data_path.slash(L"downloads");
+}
+#endif
+
 void configure_paths() {
 #ifdef SIOYEK_ANDROID
     configure_paths_android();
+#elif defined(SIOYEK_IOS)
+    configure_paths_ios();
 #else
 
 
@@ -980,6 +1006,8 @@ int main(int argc, char* args[]) {
     QSurfaceFormat format;
 #ifdef SIOYEK_ANDROID
     format.setVersion(3, 1);
+#elif defined(SIOYEK_IOS)
+    format.setVersion(3, 0);
 #else
     format.setVersion(3, 3);
 #endif
@@ -1014,7 +1042,7 @@ int main(int argc, char* args[]) {
     verify_config_paths();
 
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
     ConfigManager config_manager(android_config_path, auto_config_path, user_config_paths);
 #else
     ConfigManager config_manager(default_config_path, auto_config_path, user_config_paths);
@@ -1045,7 +1073,7 @@ int main(int argc, char* args[]) {
         use_single_instance = false;
     }
 
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
     RunGuard guard("sioyek");
     if (!guard.isPrimary()) {
         QStringList sent_args = convert_arguments(app.arguments());
@@ -1125,13 +1153,13 @@ int main(int argc, char* args[]) {
 
     QFileSystemWatcher key_file_watcher;
     add_paths_to_file_system_watcher(key_file_watcher, default_keys_path, user_keys_paths);
-    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
 
 
     MainWidget* main_widget = new MainWidget(mupdf_context, &db_manager, &document_manager, &config_manager, command_manager, &input_handler, &checksummer, &quit);
     windows.push_back(main_widget);
 
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
     guard.on_delete = std::move([&](QLocalSocket* deleted_socket) {
         main_widget->on_socket_deleted(deleted_socket);
         });
@@ -1146,7 +1174,7 @@ int main(int argc, char* args[]) {
     NewFileChecker new_file_checker(PAPERS_FOLDER_PATH, main_widget);
 
 
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
     if (guard.isPrimary()) {
         QObject::connect(&guard, &RunGuard::messageReceived, [&main_widget](const QByteArray& message, QLocalSocket* socket) {
             QStringList args = deserialize_string_array(message);
@@ -1189,7 +1217,7 @@ int main(int argc, char* args[]) {
         });
 
     // live reload the config files, no need to live reload on android because we are not changing config files anyway
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
     QObject::connect(&pref_file_watcher, &QFileSystemWatcher::fileChanged, [&]() {
 
         std::vector<std::string> changed_config_file_names;

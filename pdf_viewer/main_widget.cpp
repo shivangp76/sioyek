@@ -793,7 +793,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     CachedChecksummer* checksummer,
     bool* should_quit_ptr,
     QWidget* parent) :
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
     QQuickWidget(parent),
 #else
     QMainWindow(parent),
@@ -977,7 +977,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
                 }
                 else {
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
                     // todo: maybe show a dialog asking the user if they want to open the downloaded document
                     push_state();
                     open_document(path.toStdWString());
@@ -1150,7 +1150,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addLayout(hlayout);
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
      setLayout(layout);
 #else
     central_widget->setLayout(layout);
@@ -1181,7 +1181,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     grabGesture(Qt::PinchGesture, Qt::DontStartGestureOnChildren | Qt::ReceivePartialGestures);
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QGuiApplication::applicationStateChanged, [&](Qt::ApplicationState state) {
         if ((state == Qt::ApplicationState::ApplicationSuspended) || (state == Qt::ApplicationState::ApplicationInactive)) {
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
             persist(true);
 #endif
         }
@@ -1208,6 +1208,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #endif
 
     setFocus();
+    // auto selector = new AndroidSelector(this);
+    // selector->show();
+    //set_current_widget(selector);
 }
 
 MainWidget::~MainWidget() {
@@ -1728,7 +1731,7 @@ void MainWidget::toggle_mouse_drag_mode() {
 }
 
 void MainWidget::do_synctex_forward_search(const Path& pdf_file_path, const Path& latex_file_path, int line, int column) {
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
 
     std::wstring latex_file_path_with_redundant_dot = add_redundant_dot_to_path(latex_file_path.get_path());
 
@@ -4301,7 +4304,7 @@ void MainWidget::handle_link_click(const PdfLink& link) {
 void MainWidget::save_auto_config() {
     std::wofstream outfile(auto_config_path.get_path_utf8());
     outfile << get_serialized_configuration_string();
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
     outfile << L"\n";
     config_manager->serialize_auto_configs(outfile);
 #endif
