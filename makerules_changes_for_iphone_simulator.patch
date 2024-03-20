@@ -1,0 +1,41 @@
+diff --git a/Makerules b/Makerules
+index 21216bf88..c98d3dd97 100644
+--- a/Makerules
++++ b/Makerules
+@@ -1,10 +1,10 @@
+ # Configuration for the Makefile
+ 
+-OS := $(shell uname)
+-OS := $(OS:MINGW%=MINGW)
+-OS := $(OS:MSYS%=MINGW)
+-OS := $(OS:Windows_NT=MINGW)
+-OS := $(OS:Darwin=MACOS)
++# OS := $(shell uname)
++# OS := $(OS:MINGW%=MINGW)
++# OS := $(OS:MSYS%=MINGW)
++# OS := $(OS:Windows_NT=MINGW)
++# OS := $(OS:Darwin=MACOS)
+ 
+ WARNING_CFLAGS := -Wall -Wsign-compare
+ 
+@@ -304,9 +304,15 @@ endif
+ # which is called from the Xcode project as a "Run Script" build step.
+ # The following section works for both device and simulator builds.
+ ifeq "$(OS)" "ios"
+-  CC = xcrun cc
+-  CXX = xcrun c++
+-  AR = xcrun ar
+-  LD = xcrun ld
+-  RANLIB = xcrun ranlib
++  # CC = xcrun cc
++  # CXX = xcrun c++
++  # AR = xcrun ar
++  # LD = xcrun ld
++  # RANLIB = xcrun ranlib
++
++  CC = xcrun --sdk iphonesimulator cc
++  CXX = xcrun --sdk iphonesimulator c++
++  AR = xcrun --sdk iphonesimulator ar
++  LD = xcrun --sdk iphonesimulator ld
++  RANLIB = xcrun --sdk iphonesimulator ranlib
+ endif

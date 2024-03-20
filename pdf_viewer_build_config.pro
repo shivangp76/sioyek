@@ -7,11 +7,15 @@ INCLUDEPATH += ./pdf_viewer \
 
 ios {
 
+    # QMAKE_IOS_DEVICE_ARCHS=x86_64
+    # LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lcombined
+
+    QMAKE_IOS_DEVICE_ARCHS=arm64
+    LIBS += -L$$PWD/mupdf/build/-ios-arm64 -lcombined
+
     # LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lmupdf -lmupdf-third
-    LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lcombined
 
     # QMAKE_IOS_DEVICE_ARCHS=arm64
-    QMAKE_IOS_DEVICE_ARCHS=x86_64
     # QMAKE_LFLAGS += -Bsymbolic
 
     # LIBS += -L$$PWD/mupdf/build/-ios-arm64 -lmupdf -lmupdf-third

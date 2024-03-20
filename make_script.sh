@@ -9,8 +9,8 @@ sys_harfbuzz_libs=`pkg-config --libs harfbuzz`
 export OS=ios
 export build=$(echo $CONFIGURATION | tr A-Z a-z)
 # export ARCHS=x86_64
-# export ARCHS=arm64 x86_64
-export ARCHS=x86_64
+export ARCHS=arm64
+# export ARCHS=x86_64
 
 FLAGS="-Wno-unused-function -Wno-empty-body -Wno-implicit-function-declaration -DFZ_ENABLE_ICC=0"
 #  FLAGS="-Wno-unused-function -Wno-empty-body -Wno-implicit-function-declaration"
