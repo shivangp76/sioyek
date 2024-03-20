@@ -10,7 +10,7 @@ mkdir ios_temp_files
 cd ios_temp_files
 
 # Create a whitelist of symbols exported from mupdf. We only export these symbols from the final library 
-nm ../mupdf/build/-ios-x86_64/libmupdf.a -U | grep ' T ' | awk '{print $3}' > whitelist.txt
+nm ../mupdf/build/-ios-x86_64/libmupdf.a -U | grep -e ' T ' -e ' S ' | awk '{print $3}' > whitelist.txt
 mkdir libmupdf_unarchived
 mkdir libmupdf_third_unarchived
 cd libmupdf_unarchived
