@@ -38,12 +38,14 @@ extern std::vector<Path> user_config_paths;
 extern std::vector<Path> user_keys_paths;
 extern bool TOUCH_MODE;
 extern bool VERBOSE;
+extern float FREETEXT_BOOKMARK_COLOR[3];
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern bool FUZZY_SEARCHING;
 extern bool TOC_JUMP_ALIGN_TOP;
 extern bool FILL_TEXTBAR_WITH_SELECTED_TEXT;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 extern bool INCREMENTAL_SEARCH;
+
 
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 bool is_command_string_modal(const std::wstring& command_name) {
@@ -699,6 +701,7 @@ public:
         }
     }
 
+
     int get_current_mode_index() {
         if (is_modal) {
             std::string mode_str = widget->get_current_mode_string();
@@ -711,6 +714,18 @@ public:
 
         }
 
+        return -1;
+    }
+
+    int get_current_executing_command_index() {
+        if (is_modal) {
+            return get_current_mode_index();
+        }
+        else {
+            for (int i = 0; i < performed.size(); i++) {
+                if (!performed[i]) return i;
+            }
+        }
         return -1;
     }
 
@@ -727,6 +742,14 @@ public:
                 commands[0]->on_text_change(new_text);
             }
         }
+    }
+
+    std::vector<char> special_symbols() {
+        int command_index = get_current_executing_command_index();
+        if (command_index != -1) {
+            return commands[command_index]->special_symbols();
+        }
+        return {};
     }
 
     bool mode_matches(std::string current_mode, std::string command_mode) {
@@ -1896,6 +1919,7 @@ public:
 
     std::optional<std::wstring> text_;
     std::optional<AbsoluteDocumentPos> point_;
+    int pending_index = -1;
 
     AddBookmarkMarkedCommand(MainWidget* w) : Command(cname, w) {};
 
@@ -1919,13 +1943,33 @@ public:
 
     void set_point_requirement(AbsoluteDocumentPos value) {
         point_ = value;
+
+        BookMark incomplete_bookmark;
+
+        incomplete_bookmark.begin_x = value.x;
+        incomplete_bookmark.begin_y = value.y;
+
+        pending_index = widget->doc()->add_incomplete_bookmark(incomplete_bookmark);
+        widget->set_selected_bookmark_index(pending_index);
+        widget->invalidate_render();
     }
 
+    void on_cancel() override {
+        if (pending_index != -1) {
+            widget->doc()->undo_pending_bookmark(pending_index);
+        }
+    }
 
     void perform() {
-        std::string uuid = widget->doc()->add_marked_bookmark(text_.value(), point_.value());
-        widget->invalidate_render();
-        result = utf8_decode(uuid);
+        if (text_->size() > 0) {
+            std::string uuid = widget->doc()->add_pending_bookmark(pending_index, text_.value());
+            widget->invalidate_render();
+            result = utf8_decode(uuid);
+            widget->set_selected_bookmark_index(-1);
+        }
+        else {
+            widget->doc()->undo_pending_bookmark(pending_index);
+        }
     }
 };
 
@@ -2136,7 +2180,17 @@ public:
 
     void set_rect_requirement(AbsoluteRect value) {
         rect_ = value;
-        pending_index = widget->doc()->add_incomplete_freetext_bookmark(value);
+        BookMark incomplete_bookmark;
+
+        incomplete_bookmark.begin_x = value.x0;
+        incomplete_bookmark.begin_y = value.y0;
+        incomplete_bookmark.end_x = value.x1;
+        incomplete_bookmark.end_y = value.y1;
+        incomplete_bookmark.color[0] = FREETEXT_BOOKMARK_COLOR[0];
+        incomplete_bookmark.color[1] = FREETEXT_BOOKMARK_COLOR[1];
+        incomplete_bookmark.color[2] = FREETEXT_BOOKMARK_COLOR[2];
+
+        pending_index = widget->doc()->add_incomplete_bookmark(incomplete_bookmark);
         widget->set_selected_bookmark_index(pending_index);
 
         widget->clear_selected_rect();
@@ -2154,8 +2208,9 @@ public:
     void perform() {
         //widget->doc()->add_freetext_bookmark(text_.value(), rect_.value());
         if (text_.value().size() > 0) {
-            std::string uuid = widget->doc()->add_pending_freetext_bookmark(pending_index, text_.value());
+            std::string uuid = widget->doc()->add_pending_bookmark(pending_index, text_.value());
             result = utf8_decode(uuid);
+            widget->set_selected_bookmark_index(-1);
         }
         else {
             widget->doc()->undo_pending_bookmark(pending_index);

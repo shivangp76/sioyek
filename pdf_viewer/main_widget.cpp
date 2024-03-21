@@ -179,6 +179,7 @@ extern bool SHOW_DOCUMENT_NAME_IN_STATUSBAR;
 extern bool SHOULD_HIGHLIGHT_LINKS;
 extern float SCROLL_VIEW_SENSITIVITY;
 extern std::wstring STATUS_BAR_FORMAT;
+extern std::wstring RIGHT_STATUS_BAR_FORMAT;
 extern bool INVERTED_HORIZONTAL_SCROLLING;
 extern bool TOC_JUMP_ALIGN_TOP;
 extern bool AUTOCENTER_VISUAL_SCROLL;
@@ -195,6 +196,7 @@ extern std::wstring VOLUME_UP_COMMAND;
 extern int DOCUMENTATION_FONT_SIZE;
 extern ScratchPad global_scratchpad;
 extern int NUM_CACHED_PAGES;
+extern bool IGNORE_SCROLL_EVENTS;
 
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
 extern std::wstring CONTEXT_MENU_ITEMS;
@@ -820,6 +822,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
 
     central_widget = new QWidget(this);
+    central_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
 
     inverse_search_command = INVERSE_SEARCH_COMMAND;
     pdf_renderer = new PdfRenderer(4, should_quit_ptr, mupdf_context);
@@ -833,11 +836,29 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     main_document_view = new DocumentView(db_manager, document_manager, checksummer);
     opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, config_manager, false, this);
 
-    status_label = new QLabel(this);
-    status_label->setStyleSheet(get_status_stylesheet());
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
+
+    status_label = new QWidget(this);
     status_label->setFont(label_font);
+    status_label->setStyleSheet(get_status_stylesheet());
+
+    status_label_left = new QLabel();
+    status_label_left->setStyleSheet(get_status_stylesheet());
+    status_label_left->setFont(label_font);
+
+    status_label_right = new QLabel();
+    status_label_right->setStyleSheet(get_status_stylesheet());
+    status_label_right->setFont(label_font);
+
+    QHBoxLayout* status_label_layout = new QHBoxLayout();
+    status_label_layout->setContentsMargins(0, 0, 0, 0);
+
+    status_label_layout->addWidget(status_label_left, 1);
+    status_label_layout->addWidget(status_label_right);
+
+    status_label->setLayout(status_label_layout);
+
     opengl_widget->stackUnder(status_label);
 
     // automatically open the helper window in second monitor
@@ -1263,14 +1284,19 @@ MainWidget::~MainWidget() {
 }
 
 bool MainWidget::is_pending_link_source_filled() {
-    return (pending_portal && pending_portal->first);
+    return (current_pending_portal && current_pending_portal->first);
 }
 
-std::wstring MainWidget::get_status_string() {
+std::wstring MainWidget::get_status_string(bool is_right) {
 
     QString status_string = QString::fromStdWString(STATUS_BAR_FORMAT);
+    if (is_right) {
+        status_string = QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT);
+    }
 
+    if (status_string.size() == 0) return L"";
     if (main_document_view->get_document() == nullptr) return L"";
+
     std::wstring chapter_name = main_document_view->get_current_chapter_name();
 
     status_string.replace("%{current_page}", QString::number(get_current_page_number() + 1));
@@ -1355,6 +1381,9 @@ std::wstring MainWidget::get_status_string() {
         status_string.replace("%{presentation}", " [ presentation ]");
     }
 
+    if (status_string.indexOf("%{auto_name}") != -1) {
+        status_string.replace("%{auto_name}", QString::fromStdWString(doc()->get_detected_paper_name_if_exists()));
+    }
     if (visual_scroll_mode) {
         status_string.replace("%{visual_scroll}", " [ visual scroll ]");
     }
@@ -1491,7 +1520,7 @@ void MainWidget::handle_escape() {
     }
     hide_command_line_edit();
     text_suggestion_index = 0;
-    pending_portal = {};
+    set_pending_portal({});
     synchronize_pending_link();
 
 
@@ -1690,7 +1719,8 @@ void MainWidget::validate_render() {
 }
 
 void MainWidget::validate_ui() {
-    status_label->setText(QString::fromStdWString(get_status_string()));
+    status_label_left->setText(QString::fromStdWString(get_status_string(false)));
+    status_label_right->setText(QString::fromStdWString(get_status_string(true)));
     is_ui_invalidated = false;
 }
 
@@ -2974,6 +3004,8 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
 
 void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
+    if (IGNORE_SCROLL_EVENTS) return;
+
     float vertical_move_amount = VERTICAL_MOVE_AMOUNT * TOUCHPAD_SENSITIVITY;
     float horizontal_move_amount = HORIZONTAL_MOVE_AMOUNT * TOUCHPAD_SENSITIVITY;
 
@@ -3490,8 +3522,7 @@ void MainWidget::start_creating_rect_portal(AbsoluteDocumentPos location) {
     //new_portal.src_rect_end_y = rect.y1;
 
 
-    pending_portal = std::make_pair<std::wstring, Portal>(main_document_view->get_document()->get_path(),
-        std::move(new_portal));
+    set_pending_portal(main_document_view->get_document()->get_path(), new_portal);
 
     synchronize_pending_link();
     refresh_all_windows();
@@ -3502,17 +3533,17 @@ void MainWidget::handle_portal() {
     if (!main_document_view_has_document()) return;
 
     if (is_pending_link_source_filled()) {
-        auto [source_path, pl] = pending_portal.value();
+        auto [source_path, pl] = current_pending_portal.value();
         pl.dst = main_document_view->get_checksum_state();
 
         if (source_path.has_value()) {
             add_portal(source_path.value(), pl);
         }
 
-        pending_portal = {};
+        set_pending_portal({});
     }
     else {
-        pending_portal = std::make_pair<std::wstring, Portal>(main_document_view->get_document()->get_path(),
+        set_pending_portal(main_document_view->get_document()->get_path(),
             Portal::with_src_offset(main_document_view->get_offset_y()));
     }
 
@@ -3562,10 +3593,10 @@ void MainWidget::set_presentation_mode(bool mode) {
 }
 
 void MainWidget::complete_pending_link(const PortalViewState& destination_view_state) {
-    Portal& pl = pending_portal.value().second;
+    Portal& pl = current_pending_portal.value().second;
     pl.dst = destination_view_state;
     main_document_view->get_document()->add_portal(pl);
-    pending_portal = {};
+    set_pending_portal({});
 }
 
 void MainWidget::long_jump_to_destination(int page, float offset_y) {
@@ -6135,7 +6166,7 @@ void MainWidget::handle_delete_selected_bookmark() {
 void MainWidget::synchronize_pending_link() {
     for (auto window : windows) {
         if (window != this) {
-            window->pending_portal = pending_portal;
+            window->set_pending_portal(current_pending_portal);
         }
     }
     refresh_all_windows();
@@ -6890,10 +6921,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    //opengl_widget->stackUnder(status_label);
-    //central_widget->hide();
-    opengl_widget->hide();
-    qDebug() << status_label->size() << " " << status_label->pos();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -10936,4 +10963,19 @@ void MainWidget::delete_menu_nodes(MenuNode* items) {
         delete_menu_nodes(child);
     }
     delete items;
+}
+
+void MainWidget::set_pending_portal(std::optional<std::wstring> doc_path, Portal portal) {
+    set_pending_portal(std::make_pair(doc_path, portal));
+}
+
+void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal) {
+    current_pending_portal = pending_portal;
+
+    if (pending_portal) {
+        opengl_widget->set_pending_portal_position(pending_portal->second.get_rectangle());
+    }
+    else {
+        opengl_widget->set_pending_portal_position({});
+    }
 }

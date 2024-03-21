@@ -148,8 +148,10 @@ std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
 std::wstring PAPERS_FOLDER_PATH = L"";
 #ifndef SIOYEK_MOBILE
 std::wstring STATUS_BAR_FORMAT = L"[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}%{closest_bookmark}%{close_portal}%{rect_select}%{custom_message}%{download}";
+std::wstring RIGHT_STATUS_BAR_FORMAT = L"";
 #else
 std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_results}%{search_progress}%{link_status}%{indexing}";
+std::wstring RIGHT_STATUS_BAR_FORMAT = L"%{auto_name}";
 #endif
 
 int next_window_id = 0;
@@ -210,6 +212,7 @@ bool SHOULD_LAUNCH_NEW_INSTANCE = false;
 bool SHOULD_LAUNCH_NEW_WINDOW = false;
 bool SHOULD_DRAW_UNRENDERED_PAGES = false;
 bool PRESERVE_IMAGE_COLORS = false;
+bool INVERTED_PRESERVED_IMAGE_COLORS = false;
 bool HOVER_OVERVIEW = false;
 bool RERENDER_OVERVIEW = true;
 bool LINEAR_TEXTURE_FILTERING = false;
@@ -231,6 +234,8 @@ int RULER_UNDERLINE_PIXEL_WIDTH = 2;
 bool AUTO_RENAME_DOWNLOADED_PAPERS = false;
 bool SHOW_MOST_RECENT_COMMANDS_FIRST = true;
 bool ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL = false;
+bool INVERT_SELECTED_TEXT = false;
+bool IGNORE_SCROLL_EVENTS = false;
 
 #ifdef SIOYEK_MOBILE
 std::wstring STARTUP_COMMANDS = L"toggle_mouse_drag_mode;toggle_fullscreen";
@@ -468,31 +473,28 @@ std::wstring strip_uri(std::wstring pdf_file_name) {
 QStringList convert_arguments(QStringList input_args) {
     // convert the relative path of filename (if it exists) to absolute path
 
+    QCommandLineParser* parser = get_command_line_parser();
+    parser->parse(input_args);
+
     QStringList output_args;
+    QString path_arg = "";
+    if (parser->positionalArguments().size() > 0) {
+        // the first positional argument is the path
+        path_arg = parser->positionalArguments()[0];
+    }
 
-    //the first argument is always path of the executable
-    output_args.push_back(input_args.at(0));
-    input_args.pop_front();
-
-    if (input_args.size() > 0) {
-        QString path = input_args.at(0);
-
-        bool is_path_argument = true;
-
-        if (path.size() > 2 && path.startsWith("--")) {
-            is_path_argument = false;
-        }
-
-        if (is_path_argument) {
-            std::wstring path_wstring = strip_uri(path.toStdWString());
+    for (auto arg : input_args) {
+        if (arg == path_arg) {
+            std::wstring path_wstring = strip_uri(arg.toStdWString());
             Path path_object(path_wstring);
             output_args.push_back(QString::fromStdWString(path_object.get_path()));
-            input_args.pop_front();
+        }
+        else {
+            output_args.push_back(arg);
         }
     }
-    for (int i = 0; i < input_args.size(); i++) {
-        output_args.push_back(input_args.at(i));
-    }
+
+    delete parser;
 
     return output_args;
 }
@@ -1162,7 +1164,10 @@ int main(int argc, char* args[]) {
 
 #ifndef SIOYEK_MOBILE
     guard.on_delete = std::move([&](QLocalSocket* deleted_socket) {
-        main_widget->on_socket_deleted(deleted_socket);
+        if (windows.size() > 0) {
+            windows[0]->on_socket_deleted(deleted_socket);
+        }
+        //main_widget->on_socket_deleted(deleted_socket);
         });
 #endif
 
