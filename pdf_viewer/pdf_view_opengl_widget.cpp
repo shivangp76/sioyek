@@ -453,7 +453,6 @@ void PdfViewOpenGLWidget::render_line_window(float gl_vertical_pos, std::optiona
     glDisable(GL_CULL_FACE);
     glUseProgram(shared_gl_objects.vertical_line_program);
 
-    //const float* vertical_line_color = config_manager->get_config<float>(L"vertical_line_color");
     std::array<float, 4> vertical_line_color = cc4(DEFAULT_VERTICAL_LINE_COLOR);
 
     glUniform4fv(shared_gl_objects.line_color_uniform_location,
@@ -658,25 +657,6 @@ void PdfViewOpenGLWidget::render_scratchpad(QPainter* painter) {
     }
 
 
-     //std::vector<FreehandDrawing> debug_darwings;
-     //std::vector<FreehandDrawingPoint> debug_points;
-
-     //debug_points.push_back(FreehandDrawingPoint{ AbsoluteDocumentPos{-100, 0}, 1 });
-     //debug_points.push_back(FreehandDrawingPoint{ AbsoluteDocumentPos{0, 100}, 1 });
-     //debug_points.push_back(FreehandDrawingPoint{ AbsoluteDocumentPos{100, 0}, 1 });
-     //debug_points.push_back(FreehandDrawingPoint{ AbsoluteDocumentPos{200, -100}, 1 });
-     //debug_points.push_back(FreehandDrawingPoint{ AbsoluteDocumentPos{300, -100}, 1 });
-     //debug_points.push_back(FreehandDrawingPoint{ AbsoluteDocumentPos{300, -200}, 1 });
-
-     //FreehandDrawing debug_drawing;
-     //debug_drawing.type = 'r';
-     //debug_drawing.points = debug_points;
-     //debug_darwings.push_back(debug_drawing);
-     //debug_darwings.push_back(generate_debug_drawing());
-     //render_drawings(scratchpad, debug_darwings);
-
-
-
      if (scratchpad->get_non_compiled_drawings().size() > 50 || scratchpad->is_compile_invalid()) {
          compile_drawings(scratchpad, scratchpad->get_all_drawings());
      }
@@ -725,11 +705,10 @@ void PdfViewOpenGLWidget::paintGL() {
     //painter.drawText(-100, -100, "1234567890");
 }
 
-PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, ConfigManager* config_manager, bool is_helper, QWidget* parent) :
+PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, bool is_helper, QWidget* parent) :
     QOpenGLWidget(parent),
     document_view(document_view),
     pdf_renderer(pdf_renderer),
-    config_manager(config_manager),
     is_helper(is_helper)
 {
     creation_time = QDateTime::currentDateTime();
@@ -913,7 +892,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
     if (highlighted_result) {
         glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
         glUseProgram(shared_gl_objects.highlight_program);
-        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, config_manager->get_config<float>(L"search_highlight_color"));
+        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &DEFAULT_SEARCH_HIGHLIGHT_COLOR[0]);
         glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
 
         for (auto rect : highlighted_result->rects) {
@@ -924,7 +903,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
     if (overview_highlights.size() > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
         glUseProgram(shared_gl_objects.highlight_program);
-        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, config_manager->get_config<float>(L"search_highlight_color"));
+        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &DEFAULT_SEARCH_HIGHLIGHT_COLOR[0]);
         //glUniform3fv(g_shared_resources.highlight_color_uniform_location, 1, highlight_color_temp);
         for (auto rect : overview_highlights) {
             NormalizedWindowRect target = document_to_overview_rect(rect);
@@ -1413,7 +1392,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         glUseProgram(shared_gl_objects.highlight_program);
         glUniform3fv(shared_gl_objects.highlight_color_uniform_location,
             1,
-            config_manager->get_config<float>(L"link_highlight_color"));
+            &DEFAULT_LINK_HIGHLIGHT_COLOR[0]);
         glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
 
         int page = last_selected_block_page.value();
@@ -3631,6 +3610,16 @@ ScratchPad* PdfViewOpenGLWidget::get_scratchpad() {
     return scratchpad;
 }
 
+void PdfViewOpenGLWidget::set_render_highlight_opacity(float opacity){
+    // precondition: highlight program should be bound
+    glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, opacity);
+}
+
+void PdfViewOpenGLWidget::set_render_highlight_color(float* color){
+    // precondition: highlight program should be bound
+    glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &color[0]);
+}
+
 void PdfViewOpenGLWidget::render_selected_rectangle() {
 
     if (selected_rectangle) {
@@ -3639,8 +3628,8 @@ void PdfViewOpenGLWidget::render_selected_rectangle() {
         write_to_stencil();
         float rectangle_color_[] = { 0.0f, 0.0f, 0.0f };
         auto rectangle_color = cc3(rectangle_color_);
-        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &rectangle_color[0]);
-        glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
+        set_render_highlight_color(&rectangle_color[0]);
+        set_render_highlight_opacity(0.3f);
         if (!(selected_rectangle.value() == fz_empty_rect)) {
             render_highlight_absolute(selected_rectangle.value(), HRF_FILL | HRF_BORDER);
         }

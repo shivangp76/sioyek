@@ -835,7 +835,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     scratchpad = &global_scratchpad;
 
     main_document_view = new DocumentView(db_manager, document_manager, checksummer);
-    opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, config_manager, false, this);
+    opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, false, this);
 
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
@@ -9750,7 +9750,7 @@ bool MainWidget::is_moving_annotations(){
 
 void MainWidget::initialize_helper(){
     helper_document_view_ = new DocumentView(db_manager, document_manager, checksummer);
-    helper_opengl_widget_ = new PdfViewOpenGLWidget(helper_document_view_, pdf_renderer, config_manager, true);
+    helper_opengl_widget_ = new PdfViewOpenGLWidget(helper_document_view_, pdf_renderer, true);
 #ifdef Q_OS_WIN
     // seems to be required only on windows though. TODO: test this on macos.
     // weird hack, should not be necessary but application crashes without it when toggling window configuration
