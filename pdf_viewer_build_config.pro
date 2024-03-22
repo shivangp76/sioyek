@@ -38,7 +38,7 @@ ios {
 }
           
 
-QT += core opengl gui widgets network 3dinput quickwidgets svg texttospeech
+QT += core opengl gui gui-private widgets network 3dinput quickwidgets svg texttospeech
 
 greaterThan(QT_MAJOR_VERSION, 5){
 	QT += openglwidgets

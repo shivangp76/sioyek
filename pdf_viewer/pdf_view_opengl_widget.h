@@ -18,6 +18,8 @@
 #include <qopenglextrafunctions.h>
 #include <qopenglfunctions.h>
 #include <qopengl.h>
+#include <qrhiwidget.h>>
+#include <rhi/qrhi.h>
 
 
 #ifndef SIOYEK_QT6
@@ -113,8 +115,8 @@ public:
 
     ColorPalette get_current_color_mode();
 private:
-    static OpenGLSharedResources shared_gl_objects;
 
+    OpenGLSharedResources shared_gl_objects;
     bool is_opengl_initialized = false;
     GLuint vertex_array_object;
     DocumentView* document_view = nullptr;
@@ -183,10 +185,10 @@ private:
 protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
-    void render_highlight_window(GLuint program, NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
-    void render_highlight_absolute(GLuint program, AbsoluteRect absolute_document_rect, int flags);
-    void render_line_window(GLuint program, float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {});
-    void render_highlight_document(GLuint program, DocumentRect doc_rect, int flags=HRF_FILL | HRF_BORDER);
+    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
+    void render_highlight_absolute(AbsoluteRect absolute_document_rect, int flags);
+    void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {});
+    void render_highlight_document(DocumentRect doc_rect, int flags=HRF_FILL | HRF_BORDER);
     void paintGL() override;
     void my_render(QPainter* painter);
     void render_scratchpad(QPainter* painter);
@@ -205,13 +207,17 @@ protected:
 
     void render_transparent_background();
 
-public:
-    std::optional<QImage> cached_framebuffer;
     int last_cache_num_drawings = -1;
     float last_cache_offset_x = -1;
     float last_cache_offset_y = -1;
     float last_cache_zoom_level = -1;
     QDateTime last_scratchpad_update_datetime;
+
+    void bind_program(ColorPalette forced_palette=ColorPalette::None);
+    void bind_points(const std::vector<float>& points);
+    void bind_default();
+
+public:
 
     bool visible_drawing_mask[26];
     FreehandDrawing current_drawing;
@@ -290,7 +296,6 @@ public:
     void set_overview_offsets(float offset_x, float offset_y);
     void set_overview_offsets(fvec2 offsets);
 
-    void bind_program(ColorPalette forced_palette=ColorPalette::None);
     void cancel_search();
     //void window_pos_to_overview_pos(float window_x, float window_y, float* doc_offset_x, float* doc_offset_y, int* doc_page);
     DocumentPos window_pos_to_overview_pos(NormalizedWindowPos window_pos);
@@ -323,8 +328,6 @@ public:
     void get_background_color(float out_background[3]);
     void set_underline(AbsoluteDocumentPos abspos);
     void clear_underline();
-    void bind_points(const std::vector<float>& points);
-    void bind_default();
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
     void render_portal_rect(QPainter* painter, AbsoluteRect portal_absolute_rect, bool is_pending);

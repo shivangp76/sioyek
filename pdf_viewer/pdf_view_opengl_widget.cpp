@@ -170,7 +170,8 @@ GLfloat rotation_uvs[4][8] = {
     },
 };
 
-OpenGLSharedResources PdfViewOpenGLWidget::shared_gl_objects;
+// OpenGLSharedResources PdfViewOpenGLWidget::shared_gl_objects;
+
 
 void generate_bezier_with_endpoints_and_velocity(
     Vec<float, 2> p0, 
@@ -405,35 +406,6 @@ void PdfViewOpenGLWidget::initializeGL() {
         shared_gl_objects.compiled_dot_offset_uniform_location = glGetUniformLocation(shared_gl_objects.compiled_dots_program, "offset");
         shared_gl_objects.compiled_dot_scale_uniform_location = glGetUniformLocation(shared_gl_objects.compiled_dots_program, "scale");
 
-        //{ // test
-        //    float vertex_data[] = {
-        //        -0.5f, -0.1f,
-        //        -0.5f, 0.1f,
-        //        0.5f, -0.1f,
-        //        0.5f, 0.1f, // end of strip 1
-        //        -0.5f, -0.4f,
-        //        -0.5f, -0.2f,
-        //        0.5f, -0.4f,
-        //        0.5f, -0.2f
-        //    };
-
-        //    unsigned int index_data[] = {0, 1, 2, 3, 0xFFFFFFFF, 4, 5, 6, 7};
-
-        //    glGenVertexArrays(1, &shared_gl_objects.test_vao);
-        //    glGenBuffers(1, &shared_gl_objects.test_vbo);
-        //    glGenBuffers(1, &shared_gl_objects.test_ibo);
-
-        //    glBindVertexArray(shared_gl_objects.test_vao);
-        //    glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.test_vbo);
-        //    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
-        //    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        //    glEnableVertexAttribArray(0);
-
-        //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shared_gl_objects.test_ibo);
-        //    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
-        //    glBindVertexArray(0);
-        //}
-
         glGenBuffers(1, &shared_gl_objects.vertex_buffer_object);
         glGenBuffers(1, &shared_gl_objects.uv_buffer_object);
         glGenBuffers(1, &shared_gl_objects.line_points_buffer_object);
@@ -465,7 +437,7 @@ void PdfViewOpenGLWidget::resizeGL(int w, int h) {
     }
 }
 
-void PdfViewOpenGLWidget::render_line_window(GLuint program, float gl_vertical_pos, std::optional<NormalizedWindowRect> ruler_rect) {
+void PdfViewOpenGLWidget::render_line_window(float gl_vertical_pos, std::optional<NormalizedWindowRect> ruler_rect) {
 
 
     float bar_height = 4.0f;
@@ -479,7 +451,7 @@ void PdfViewOpenGLWidget::render_line_window(GLuint program, float gl_vertical_p
 
 
     glDisable(GL_CULL_FACE);
-    glUseProgram(program);
+    glUseProgram(shared_gl_objects.vertical_line_program);
 
     //const float* vertical_line_color = config_manager->get_config<float>(L"vertical_line_color");
     std::array<float, 4> vertical_line_color = cc4(DEFAULT_VERTICAL_LINE_COLOR);
@@ -541,7 +513,7 @@ void PdfViewOpenGLWidget::render_line_window(GLuint program, float gl_vertical_p
     glDisable(GL_BLEND);
 
 }
-void PdfViewOpenGLWidget::render_highlight_window(GLuint program, NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
+void PdfViewOpenGLWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
 
     if (is_rotated()) {
         return;
@@ -564,7 +536,7 @@ void PdfViewOpenGLWidget::render_highlight_window(GLuint program, NormalizedWind
     }
     glDisable(GL_CULL_FACE);
 
-    glUseProgram(program);
+    glUseProgram(shared_gl_objects.highlight_program);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
@@ -625,7 +597,7 @@ void PdfViewOpenGLWidget::render_highlight_window(GLuint program, NormalizedWind
     }
 }
 
-void PdfViewOpenGLWidget::render_highlight_absolute(GLuint program, AbsoluteRect absolute_document_rect, int flags) {
+void PdfViewOpenGLWidget::render_highlight_absolute(AbsoluteRect absolute_document_rect, int flags) {
     NormalizedWindowRect window_rect;
     if (scratchpad) {
         window_rect = scratchpad->absolute_to_window_rect(absolute_document_rect);
@@ -633,12 +605,12 @@ void PdfViewOpenGLWidget::render_highlight_absolute(GLuint program, AbsoluteRect
     else {
         window_rect = absolute_document_rect.to_window_normalized(document_view);
     }
-    render_highlight_window(program, window_rect, flags);
+    render_highlight_window(window_rect, flags);
 }
 
-void PdfViewOpenGLWidget::render_highlight_document(GLuint program, DocumentRect doc_rect, int flags) {
+void PdfViewOpenGLWidget::render_highlight_document(DocumentRect doc_rect, int flags) {
     NormalizedWindowRect window_rect = doc_rect.to_window_normalized(document_view);
-    render_highlight_window(program, window_rect, flags);
+    render_highlight_window(window_rect, flags);
 }
 
 void PdfViewOpenGLWidget::render_scratchpad(QPainter* painter) {
@@ -946,7 +918,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
 
         for (auto rect : highlighted_result->rects) {
             NormalizedWindowRect target = document_to_overview_rect(DocumentRect{ rect, highlighted_result->page });
-            render_highlight_window(shared_gl_objects.highlight_program, target, HRF_FILL | HRF_BORDER);
+            render_highlight_window(target, HRF_FILL | HRF_BORDER);
         }
     }
     if (overview_highlights.size() > 0) {
@@ -956,7 +928,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
         //glUniform3fv(g_shared_resources.highlight_color_uniform_location, 1, highlight_color_temp);
         for (auto rect : overview_highlights) {
             NormalizedWindowRect target = document_to_overview_rect(rect);
-            render_highlight_window(shared_gl_objects.highlight_program, target, HRF_FILL | HRF_BORDER);
+            render_highlight_window(target, HRF_FILL | HRF_BORDER);
         }
     }
 
@@ -987,7 +959,7 @@ void PdfViewOpenGLWidget::draw_overview_border(){
     float border_color[3] = {0.5f, 0.5f, 0.5f};
     glUseProgram(shared_gl_objects.highlight_program);
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, border_color);
-    render_highlight_window(shared_gl_objects.highlight_program, get_overview_rect(), HRF_BORDER);
+    render_highlight_window(get_overview_rect(), HRF_BORDER);
 }
 
 Document* PdfViewOpenGLWidget::doc(bool overview){
@@ -1381,7 +1353,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
                 const std::vector<PdfLink>& links = document_view->get_document()->get_page_merged_pdf_links(page);
                 for (auto link : links) {
                     for (auto link_rect : link.rects) {
-                        render_highlight_document(shared_gl_objects.highlight_program, { link_rect, page });
+                        render_highlight_document({ link_rect, page });
                         //all_visible_links.push_back(link);
                     }
                 }
@@ -1446,7 +1418,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
 
         int page = last_selected_block_page.value();
         PagelessDocumentRect rect = last_selected_block.value();
-        render_highlight_document(shared_gl_objects.highlight_program, DocumentRect { rect, page });
+        render_highlight_document(DocumentRect { rect, page });
     }
 #endif
 
@@ -1477,7 +1449,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
                     SearchResult& res = search_results[visible_search_index];
                     res.fill(doc());
                     for (auto rect : res.rects) {
-                        render_highlight_document(shared_gl_objects.highlight_program, DocumentRect { rect, res.page });
+                        render_highlight_document(DocumentRect { rect, res.page });
                     }
                 }
             }
@@ -1487,7 +1459,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &search_highlight_color[0]);
         glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
         for (auto rect : current_search_result.rects) {
-            render_highlight_document(shared_gl_objects.highlight_program, DocumentRect { rect, current_search_result.page });
+            render_highlight_document(DocumentRect { rect, current_search_result.page });
         }
     }
     search_results_mutex.unlock();
@@ -1500,7 +1472,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &synctex_highlight_color[0]);
         glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
         for (auto synctex_hl_rect : synctex_highlights) {
-            render_highlight_document(shared_gl_objects.highlight_program, synctex_hl_rect, HRF_FILL);
+            render_highlight_document(synctex_hl_rect, HRF_FILL);
         }
     }
 
@@ -1512,7 +1484,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
             float rectangle_color[] = { 0.0f, 1.0f, 1.0f };
             glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, rectangle_color);
             glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
-            render_highlight_absolute(shared_gl_objects.highlight_program, control_character_rect.value(), HRF_FILL | HRF_BORDER);
+            render_highlight_absolute(control_character_rect.value(), HRF_FILL | HRF_BORDER);
         }
     }
 
@@ -1520,20 +1492,19 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         float rectangle_color[] = { 0.0f, 1.0f, 1.0f };
         glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, rectangle_color);
         glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
-        render_highlight_absolute(shared_gl_objects.highlight_program, character_highlight_rect.value(), HRF_FILL | HRF_BORDER);
+        render_highlight_absolute(character_highlight_rect.value(), HRF_FILL | HRF_BORDER);
 
         if (wrong_character_rect) {
             float wrong_color[] = { 1.0f, 0.0f, 0.0f };
             glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, wrong_color);
             glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
-            render_highlight_absolute(shared_gl_objects.highlight_program, wrong_character_rect.value(), HRF_FILL | HRF_BORDER);
+            render_highlight_absolute(wrong_character_rect.value(), HRF_FILL | HRF_BORDER);
         }
     }
     
     render_selected_rectangle();
 
     if (document_view->is_ruler_mode()) {
-        //render_line_window(shared_gl_objects.vertical_line_program ,vertical_line_location);
 
         float vertical_line_end = document_view->get_ruler_window_y();
         /* std::optional<NormalizedWindowRect> ruler_rect = document_view->get_ruler_window_rect(); */
@@ -1548,7 +1519,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         }
 
         if ((!ruler_rect.has_value()) || (RULER_DISPLAY_MODE == L"slit")) {
-            render_line_window(shared_gl_objects.vertical_line_program, vertical_line_end, ruler_rect);
+            render_line_window(vertical_line_end, ruler_rect);
         }
         else {
             int flags = 0;
@@ -1564,7 +1535,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
 
             glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, RULER_COLOR);
             glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
-            render_highlight_window(shared_gl_objects.highlight_program, ruler_rect.value(), flags, RULER_UNDERLINE_PIXEL_WIDTH);
+            render_highlight_window(ruler_rect.value(), flags, RULER_UNDERLINE_PIXEL_WIDTH);
         }
         if (underline) {
             glUseProgram(shared_gl_objects.highlight_program);
@@ -1586,7 +1557,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
             underline_window_rect.y1 = mid_y + underline_height / 2;
 
 
-            render_highlight_window(shared_gl_objects.highlight_program, underline_window_rect, HRF_FILL);
+            render_highlight_window(underline_window_rect, HRF_FILL);
         }
     }
     for (auto [type, marked_data_of_type] : get_marked_data_rect_map()) {
@@ -1594,7 +1565,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &HIGHLIGHT_COLORS[type * 3]);
         glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
         for (auto marked_data : marked_data_of_type) {
-            render_highlight_document(shared_gl_objects.highlight_program, marked_data.rect);
+            render_highlight_document(marked_data.rect);
         }
     }
 
@@ -3565,10 +3536,10 @@ void PdfViewOpenGLWidget::render_text_highlights(){
 
     for (auto rect : bounding_rects) {
         if (INVERT_SELECTED_TEXT) {
-            render_highlight_absolute(shared_gl_objects.highlight_program, rect, HRF_FILL | HRF_INVERTED);
+            render_highlight_absolute(rect, HRF_FILL | HRF_INVERTED);
         }
         else {
-            render_highlight_absolute(shared_gl_objects.highlight_program, rect, HRF_FILL | HRF_BORDER);
+            render_highlight_absolute(rect, HRF_FILL | HRF_BORDER);
         }
     }
 }
@@ -3602,8 +3573,7 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                             flags |= HRF_BORDER;
                         }
                     }
-                    render_highlight_absolute(shared_gl_objects.highlight_program,
-                            highlights[i].highlight_rects[j],
+                    render_highlight_absolute(highlights[i].highlight_rects[j],
                             flags);
                 }
         }
@@ -3672,13 +3642,13 @@ void PdfViewOpenGLWidget::render_selected_rectangle() {
         glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &rectangle_color[0]);
         glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
         if (!(selected_rectangle.value() == fz_empty_rect)) {
-            render_highlight_absolute(shared_gl_objects.highlight_program, selected_rectangle.value(), HRF_FILL | HRF_BORDER);
+            render_highlight_absolute(selected_rectangle.value(), HRF_FILL | HRF_BORDER);
         }
 
         use_stencil_to_write(false);
 
         NormalizedWindowRect window_rect({ -1, -1, 1, 1 });
-        render_highlight_window(shared_gl_objects.highlight_program, window_rect, true);
+        render_highlight_window(window_rect, true);
 
         disable_stencil();
     }
