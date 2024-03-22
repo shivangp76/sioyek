@@ -683,11 +683,6 @@ void PdfViewOpenGLWidget::render_scratchpad(QPainter* painter) {
 
 }
 
-//void PdfViewOpenGLWidget::update_framebuffer_cache(){
-//    last_cache_num_drawings = scratchpad->drawings.size();
-//    cached_framebuffer = grabFramebuffer();
-//}
-
 void PdfViewOpenGLWidget::paintGL() {
 
     QPainter painter(this);
@@ -1386,20 +1381,6 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
 
         }
     }
-
-#ifndef NDEBUG
-    if (last_selected_block) {
-        glUseProgram(shared_gl_objects.highlight_program);
-        glUniform3fv(shared_gl_objects.highlight_color_uniform_location,
-            1,
-            &DEFAULT_LINK_HIGHLIGHT_COLOR[0]);
-        glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
-
-        int page = last_selected_block_page.value();
-        PagelessDocumentRect rect = last_selected_block.value();
-        render_highlight_document(DocumentRect { rect, page });
-    }
-#endif
 
 
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
@@ -3650,11 +3631,6 @@ bool PdfViewOpenGLWidget::can_use_cached_scratchpad_framebuffer() {
     if ((current_offset_x == last_cache_offset_x) && (current_offset_y == last_cache_offset_y) && (current_zoom_level == last_cache_zoom_level)){
         return true;
     }
-    /* if (current_drawing.points.size() > 0 && cached_framebuffer.has_value()) { */
-    /*     if (last_cache_num_drawings == scratchpad->drawings.size()) { */
-    /*         return true; */
-    /*     } */
-    /* } */
     return false;
 }
 
