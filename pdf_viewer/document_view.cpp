@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "config.h"
 #include "ui.h"
+#include "pdf_renderer.h"
 
 extern float MOVE_SCREEN_PERCENTAGE;
 extern float FIT_TO_PAGE_WIDTH_RATIO;
@@ -18,6 +19,8 @@ extern bool VERBOSE;
 extern float PAGE_SPACE_X;
 extern float PAGE_SPACE_Y;
 extern bool REAL_PAGE_SEPARATION;
+extern float OVERVIEW_SIZE[2];
+extern float OVERVIEW_OFFSET[2];
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -28,6 +31,12 @@ DocumentView::DocumentView(DatabaseManager* db_manager,
 {
     page_space_x = PAGE_SPACE_X;
     page_space_y = PAGE_SPACE_Y;
+
+    overview_half_width = OVERVIEW_SIZE[0];
+    overview_half_height = OVERVIEW_SIZE[1];
+
+    overview_offset_x = OVERVIEW_OFFSET[0];
+    overview_offset_y = OVERVIEW_OFFSET[1];
 }
 DocumentView::~DocumentView() {
 }
@@ -717,6 +726,10 @@ void DocumentView::reset_doc_state() {
     is_ruler_mode_ = false;
     presentation_page_number = {};
     cached_virtual_rects.clear();
+
+    search_results_mutex.lock();
+    cancel_search();
+    search_results_mutex.unlock();
 }
 
 void DocumentView::open_document(const std::wstring& doc_path,
@@ -2115,4 +2128,563 @@ float DocumentView::get_page_space_y() {
 
 bool DocumentView::fast_coordinates() {
     return (!two_page_mode) && (!REAL_PAGE_SEPARATION);
+}
+
+
+std::vector<int> DocumentView::get_visible_search_results(std::vector<int>& visible_pages) {
+    std::vector<int> res;
+
+    int index = find_search_index_for_visible_pages(visible_pages);
+    if (index == -1) return res;
+
+    auto next_index = [&](int ind) {
+        return (ind + 1) % search_results.size();
+    };
+
+    auto prev_index = [&](int ind) {
+        int res = ind - 1;
+        if (res == -1) {
+            return static_cast<int>(search_results.size() - 1);
+        }
+        return res;
+    };
+
+    auto is_page_visible = [&](int page) {
+        return std::find(visible_pages.begin(), visible_pages.end(), search_results[page].page) != visible_pages.end();
+    };
+
+    res.push_back(index);
+    if (search_results.size() > 0) {
+        int next = next_index(index);
+        while ((next != index) && is_page_visible(next)) {
+            res.push_back(next);
+            next = next_index(next);
+        }
+        if (next != index) {
+            int prev = prev_index(index);
+            while (is_page_visible(prev)) {
+                res.push_back(prev);
+                prev = prev_index(prev);
+            }
+
+        }
+    }
+
+    return res;
+}
+
+int DocumentView::find_search_index_for_visible_pages(std::vector<int>& visible_pages) {
+    // finds some search index located in the visible pages
+
+    int breakpoint = find_search_results_breakpoint();
+    for (int page : visible_pages) {
+        int index = find_search_index_for_visible_page(page, breakpoint);
+        if (index != -1) {
+            return index;
+        }
+    }
+    return -1;
+}
+
+int DocumentView::find_search_index_for_visible_page(int page, int breakpoint) {
+    // array is sorted, only one binary search
+    if ((breakpoint == search_results.size() - 1) || (search_results.size() == 1)) {
+        return find_search_result_for_page_range(page, 0, breakpoint);
+    }
+    else {
+        int index = find_search_result_for_page_range(page, 0, breakpoint);
+        if (index != -1) return index;
+        return find_search_result_for_page_range(page, breakpoint + 1, search_results.size() - 1);
+    }
+}
+
+int DocumentView::find_search_results_breakpoint() {
+    if (search_results.size() > 0) {
+        int begin_index = 0;
+        int end_index = search_results.size() - 1;
+        return find_search_results_breakpoint_helper(begin_index, end_index);
+    }
+    else {
+        return -1;
+    }
+}
+
+int DocumentView::find_search_result_for_page_range(int page, int range_begin, int range_end) {
+    if (range_begin > range_end) {
+        return find_search_result_for_page_range(page, range_end, range_begin);
+    }
+
+    int midpoint = (range_begin + range_end) / 2;
+    if (midpoint == range_begin) {
+        if (search_results[range_begin].page == page) {
+            return range_begin;
+        }
+        if (search_results[range_end].page == page) {
+            return range_end;
+        }
+        return -1;
+    }
+    else {
+        if (search_results[midpoint].page >= page) {
+            return find_search_result_for_page_range(page, range_begin, midpoint);
+        }
+        else {
+            return find_search_result_for_page_range(page, midpoint, range_end);
+        }
+    }
+
+}
+
+int DocumentView::find_search_results_breakpoint_helper(int begin_index, int end_index) {
+    int midpoint = (begin_index + end_index) / 2;
+    if (midpoint == begin_index) {
+        if (search_results[end_index].page > search_results[begin_index].page) {
+            return end_index;
+        }
+        else {
+            return begin_index;
+        }
+    }
+    else {
+        if (search_results[midpoint].page >= search_results[begin_index].page) {
+            return find_search_results_breakpoint_helper(midpoint, end_index);
+        }
+        else {
+            return find_search_results_breakpoint_helper(begin_index, midpoint);
+        }
+    }
+}
+
+void DocumentView::cancel_search() {
+    search_results.clear();
+    current_search_result_index = -1;
+    is_searching = false;
+    is_search_cancelled = true;
+}
+
+int DocumentView::get_num_search_results() {
+    search_results_mutex.lock();
+    int num = search_results.size();
+    search_results_mutex.unlock();
+    return num;
+}
+
+int DocumentView::get_current_search_result_index() {
+    return current_search_result_index;
+}
+
+std::optional<SearchResult> DocumentView::get_current_search_result() {
+    if (!current_document) return {};
+    if (current_search_result_index == -1) return {};
+    search_results_mutex.lock();
+    if (search_results.size() == 0) {
+        search_results_mutex.unlock();
+        return {};
+    }
+    SearchResult res = search_results[current_search_result_index];
+    search_results_mutex.unlock();
+    return res;
+}
+
+std::optional<SearchResult> DocumentView::set_search_result_offset(int offset) {
+    if (!current_document) return {};
+    search_results_mutex.lock();
+    if (search_results.size() == 0) {
+        search_results_mutex.unlock();
+        return {};
+    }
+    int target_index = mod(current_search_result_index + offset, search_results.size());
+    current_search_result_index = target_index;
+
+    SearchResult res = search_results[target_index];
+    search_results_mutex.unlock();
+    return res;
+
+}
+
+void DocumentView::goto_search_result(int offset, bool overview) {
+    if (!current_document) return;
+
+    std::optional<SearchResult> result_ = set_search_result_offset(offset);
+    if (result_) {
+        SearchResult result = result_.value();
+
+        if (result.rects.size() == 0) {
+            result.fill(current_document);
+        }
+        if (result.rects.size() == 0){
+            return;
+        }
+        float result_center_y = (result.rects.front().y0 + result.rects.front().y1) / 2;
+        float new_offset_y = result_center_y + get_document()->get_accum_page_height(result.page);
+        DocumentRect result_rect(result.rects.front(), result.page);
+        NormalizedWindowRect result_normalized_rect = result_rect.to_window_normalized(this);
+
+        if (overview) {
+            OverviewState state = { new_offset_y, 0, -1, nullptr };
+            set_overview_page(state);
+        }
+        else {
+            set_offset_y(new_offset_y);
+            float normalized_center_x = (result_normalized_rect.x0 + result_normalized_rect.x1) / 2;
+            if (normalized_center_x < -1 || normalized_center_x > 1) {
+                move(-normalized_center_x / 2 * get_view_width(), 0);
+            }
+        }
+    }
+}
+
+bool DocumentView::get_is_searching(float* prog) {
+    if (is_search_cancelled) {
+        return false;
+    }
+
+    search_results_mutex.lock();
+    if (is_searching) {
+        if (prog) {
+            *prog = percent_done;
+        }
+    }
+    search_results_mutex.unlock();
+    return true;
+}
+
+void DocumentView::search_text(PdfRenderer* background_searcher, const std::wstring& text, SearchCaseSensitivity case_sensitive, bool regex, std::optional<std::pair<int, int>> range) {
+    search_results_mutex.lock();
+    search_results.clear();
+    current_search_result_index = -1;
+    search_results_mutex.unlock();
+
+    int min_page = -1;
+    int max_page = 2147483647;
+    if (range.has_value()) {
+        min_page = range.value().first;
+        max_page = range.value().second;
+    }
+
+    if (get_document()->is_super_fast_index_ready()) {
+        if (!text.empty()) {
+            int current_page = get_center_page_number();
+            std::vector<SearchResult> results;
+            if (regex) {
+                results = get_document()->search_regex(text, case_sensitive, current_page, min_page, max_page);
+            }
+            else {
+                results = get_document()->search_text(text, case_sensitive, current_page, min_page, max_page);
+            }
+            search_results = std::move(results);
+            is_searching = false;
+            is_search_cancelled = false;
+            percent_done = 1.0f;
+        }
+    }
+    else {
+
+        is_searching = true;
+        is_search_cancelled = false;
+
+        int current_page = get_center_page_number();
+        if (current_page >= 0) {
+            background_searcher->add_request(
+                get_document()->get_path(),
+                current_page,
+                text,
+                regex,
+                &search_results,
+                &percent_done,
+                &is_searching,
+                &search_results_mutex,
+                range);
+
+        }
+    }
+}
+
+void DocumentView::set_overview_page(std::optional<OverviewState> overview) {
+    if (overview.has_value()) {
+        Document* target = get_document();
+        if (overview.value().doc != nullptr) {
+            target = overview.value().doc;
+        }
+
+        float offset = overview.value().absolute_offset_y;
+        if (offset < 0) {
+            overview.value().absolute_offset_y = 0;
+        }
+        if (offset > target->max_y_offset()) {
+            overview.value().absolute_offset_y = target->max_y_offset();
+        }
+    }
+
+    this->overview_page = overview;
+}
+
+std::optional<OverviewState> DocumentView::get_overview_page() {
+    return overview_page;
+}
+
+Document* DocumentView::get_current_overview_document() {
+    if (overview_page) {
+        if (overview_page.value().doc) {
+            return overview_page->doc;
+        }
+        else {
+            return get_document();
+        }
+    }
+    else {
+        return get_document();
+    }
+
+}
+
+float DocumentView::get_overview_zoom_level(){
+
+    if (overview_page->zoom_level > 0){
+        return overview_page->zoom_level;
+    }
+    auto overview_doc = get_current_overview_document();
+    DocumentPos docpos = overview_doc->absolute_to_page_pos_uncentered({ 0, overview_page->absolute_offset_y });
+    overview_page->zoom_level = (get_view_width() * overview_half_width) / overview_doc->get_page_width(docpos.page);
+    return overview_page->zoom_level;
+
+}
+
+NormalizedWindowPos DocumentView::document_to_overview_pos(DocumentPos pos) {
+    NormalizedWindowPos res;
+
+    if (overview_page) {
+        OverviewState overview = overview_page.value();
+        Document* target_doc = get_current_overview_document();
+        /* DocumentPos docpos = target_doc->absolute_to_page_pos_uncentered({ 0, overview.absolute_offset_y }); */
+
+        AbsoluteDocumentPos abspos = target_doc->document_to_absolute_pos(pos);
+
+        float overview_zoom_level = get_overview_zoom_level() / get_view_width() * 2;
+
+        float relative_x = abspos.x * overview_zoom_level + overview.absolute_offset_x * overview_zoom_level;
+        float aspect = static_cast<float>(view_width) / static_cast<float>(view_height);
+        float relative_y = (abspos.y - overview.absolute_offset_y) * overview_zoom_level * aspect;
+        //float left = overview_offset_x - overview_half_width;
+        float top = overview_offset_y;
+        return { overview_offset_x + relative_x, top - relative_y };
+
+        return res;
+    }
+    else {
+        return res;
+    }
+}
+
+NormalizedWindowRect DocumentView::document_to_overview_rect(DocumentRect doc_rect) {
+    DocumentPos top_left = doc_rect.top_left();
+    DocumentPos bottom_right = doc_rect.bottom_right();
+    NormalizedWindowPos top_left_pos = document_to_overview_pos(top_left);
+    NormalizedWindowPos bottom_right_pos = document_to_overview_pos(bottom_right);
+    return NormalizedWindowRect(top_left_pos, bottom_right_pos);
+}
+
+void DocumentView::zoom_overview(float scale){
+    if (overview_page){
+        float new_zoom_level = overview_page->zoom_level * scale;
+        float min_zoom_level = 1.0f;
+        if (new_zoom_level < min_zoom_level) new_zoom_level = min_zoom_level;
+        if (new_zoom_level > 6.0) new_zoom_level = 6.0;
+        overview_page->zoom_level = new_zoom_level;
+    }
+}
+
+void DocumentView::zoom_in_overview(){
+    zoom_overview(ZOOM_INC_FACTOR);
+}
+
+void DocumentView::zoom_out_overview(){
+    zoom_overview(1.0f / ZOOM_INC_FACTOR);
+}
+
+NormalizedWindowRect DocumentView::get_overview_rect() {
+    NormalizedWindowRect res;
+    res.x0 = overview_offset_x - overview_half_width;
+    res.y0 = overview_offset_y - overview_half_height;
+    res.x1 = overview_offset_x + overview_half_width;
+    res.y1 = overview_offset_y + overview_half_height;
+    return res;
+}
+
+NormalizedWindowRect DocumentView::get_overview_rect_pixel_perfect(int widget_width, int widget_height, int view_width, int view_height) {
+    NormalizedWindowRect res;
+    int x0_pixel = static_cast<int>((((overview_offset_x - overview_half_width) + 1.0f) / 2.0f) * widget_width);
+    int x1_pixel = x0_pixel + view_width;
+    int y0_pixel = static_cast<int>((((-overview_offset_y - overview_half_height) + 1.0f) / 2.0f) * widget_height);
+    int y1_pixel = y0_pixel + view_height;
+
+    res.x0 = (static_cast<float>(x0_pixel) / static_cast<float>(widget_width)) * 2.0f - 1.0f;
+    res.x1 = (static_cast<float>(x1_pixel) / static_cast<float>(widget_width)) * 2.0f - 1.0f;
+    res.y0 = (static_cast<float>(y0_pixel) / static_cast<float>(widget_height)) * 2.0f - 1.0f;
+    res.y1 = (static_cast<float>(y1_pixel) / static_cast<float>(widget_height)) * 2.0f - 1.0f;
+
+    return res;
+}
+
+std::vector<NormalizedWindowRect> DocumentView::get_overview_border_rects() {
+    std::vector<NormalizedWindowRect> res;
+
+    NormalizedWindowRect bottom_rect;
+    NormalizedWindowRect top_rect;
+    NormalizedWindowRect left_rect;
+    NormalizedWindowRect right_rect;
+
+    bottom_rect.x0 = overview_offset_x - overview_half_width;
+    bottom_rect.y0 = overview_offset_y - overview_half_height - 0.05f;
+    bottom_rect.x1 = overview_offset_x + overview_half_width;
+    bottom_rect.y1 = overview_offset_y - overview_half_height + 0.05f;
+
+    top_rect.x0 = overview_offset_x - overview_half_width;
+    top_rect.y0 = overview_offset_y + overview_half_height - 0.05f;
+    top_rect.x1 = overview_offset_x + overview_half_width;
+    top_rect.y1 = overview_offset_y + overview_half_height + 0.05f;
+
+    left_rect.x0 = overview_offset_x - overview_half_width - 0.05f;
+    left_rect.y0 = overview_offset_y - overview_half_height;
+    left_rect.x1 = overview_offset_x - overview_half_width + 0.05f;
+    left_rect.y1 = overview_offset_y + overview_half_height;
+
+    right_rect.x0 = overview_offset_x + overview_half_width - 0.05f;
+    right_rect.y0 = overview_offset_y - overview_half_height;
+    right_rect.x1 = overview_offset_x + overview_half_width + 0.05f;
+    right_rect.y1 = overview_offset_y + overview_half_height;
+
+    res.push_back(bottom_rect);
+    res.push_back(top_rect);
+    res.push_back(left_rect);
+    res.push_back(right_rect);
+
+    return res;
+}
+
+bool DocumentView::is_window_point_in_overview(NormalizedWindowPos window_point) {
+    if (get_overview_page()) {
+        NormalizedWindowRect rect = get_overview_rect();
+        return rect.contains(window_point);
+    }
+    return false;
+}
+
+bool DocumentView::is_window_point_in_overview_border(NormalizedWindowPos window_point, OverviewSide* which_border) {
+
+    if (!get_overview_page().has_value()) {
+        return false;
+    }
+
+    std::vector<NormalizedWindowRect> rects = get_overview_border_rects();
+    for (size_t i = 0; i < rects.size(); i++) {
+        if (rects[i].contains(window_point)) {
+            *which_border = static_cast<OverviewSide>(i);
+            return true;
+        }
+    }
+    return false;
+}
+
+void DocumentView::get_overview_offsets(float* offset_x, float* offset_y) {
+    *offset_x = overview_offset_x;
+    *offset_y = overview_offset_y;
+}
+
+void DocumentView::set_overview_offsets(float offset_x, float offset_y) {
+    overview_offset_x = offset_x;
+    overview_offset_y = offset_y;
+}
+
+void DocumentView::set_overview_offsets(fvec2 offsets) {
+    set_overview_offsets(offsets.x(), offsets.y());
+}
+
+float DocumentView::get_overview_side_pos(int index) {
+    if (index == OverviewSide::bottom) {
+        return overview_offset_y - overview_half_height;
+    }
+    if (index == OverviewSide::top) {
+        return overview_offset_y + overview_half_height;
+    }
+    if (index == OverviewSide::left) {
+        return overview_offset_x - overview_half_width;
+    }
+    if (index == OverviewSide::right) {
+        return overview_offset_x + overview_half_width;
+    }
+}
+
+void DocumentView::set_overview_side_pos(OverviewSide index, NormalizedWindowRect original_rect, fvec2 diff) {
+
+    NormalizedWindowRect new_rect = original_rect;
+
+    if (index == OverviewSide::bottom) {
+        float new_bottom_pos = original_rect.y0 + diff.y();
+        if (new_bottom_pos < original_rect.y1) {
+            new_rect.y0 = new_bottom_pos;
+        }
+    }
+    if (index == OverviewSide::top) {
+        float new_top_pos = original_rect.y1 + diff.y();
+        if (new_top_pos > original_rect.y0) {
+            new_rect.y1 = new_top_pos;
+        }
+    }
+    if (index == OverviewSide::left) {
+        float new_left_pos = original_rect.x0 + diff.x();
+        if (new_left_pos < original_rect.x1) {
+            new_rect.x0 = new_left_pos;
+        }
+    }
+    if (index == OverviewSide::right) {
+        float new_right_pos = original_rect.x1 + diff.x();
+        if (new_right_pos > original_rect.x0) {
+            new_rect.x1 = new_right_pos;
+        }
+    }
+    set_overview_rect(new_rect);
+
+}
+
+void DocumentView::set_overview_rect(NormalizedWindowRect rect) {
+    float halfwidth = rect.width() / 2;
+    float halfheight = rect.height() / 2;
+    float offset_x = rect.x0 + halfwidth;
+    float offset_y = rect.y0 + halfheight;
+
+    overview_offset_x = offset_x;
+    overview_offset_y = offset_y;
+    overview_half_width = halfwidth;
+    overview_half_height = halfheight;
+}
+
+void DocumentView::get_overview_size(float* width, float* height) {
+    *width = overview_half_width;
+    *height = overview_half_height;
+}
+
+DocumentPos DocumentView::window_pos_to_overview_pos(NormalizedWindowPos window_pos) {
+    Document* target = get_current_overview_document();
+
+    float window_width = static_cast<float>(view_width);
+    float window_height = static_cast<float>(view_height);
+    int window_x = static_cast<int>((1.0f + window_pos.x) / 2 * window_width);
+    int window_y = static_cast<int>((1.0f - window_pos.y) / 2 * window_height);
+    DocumentPos docpos = target->absolute_to_page_pos_uncentered(
+        { get_overview_page()->absolute_offset_x, get_overview_page()->absolute_offset_y});
+
+    float zoom_level = get_overview_zoom_level();
+
+    int overview_h_mid = overview_offset_x * window_width / 2 + window_width / 2;
+    int overview_mid = (-overview_offset_y) * window_height / 2 + window_height / 2;
+
+    float relative_window_x = static_cast<float>(window_x - overview_h_mid) / zoom_level;
+    float relative_window_y = static_cast<float>(window_y - overview_mid) / zoom_level;
+
+    int page_half_width = target->get_page_width(docpos.page);
+    float doc_offset_x = -docpos.x + relative_window_x + page_half_width;
+    float doc_offset_y = docpos.y + relative_window_y;
+    int doc_page = docpos.page;
+    return { doc_page, doc_offset_x, doc_offset_y };
 }

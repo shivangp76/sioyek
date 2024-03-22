@@ -23,6 +23,7 @@ class Document;
 class DatabaseManager;
 class DocumentManager;
 class ConfigManager;
+class PdfRenderer;
 
 
 class DocumentView {
@@ -64,6 +65,19 @@ protected:
     float page_space_y = 0;
 
 public:
+    std::vector<SearchResult> search_results;
+    int current_search_result_index = -1;
+    std::mutex search_results_mutex;
+    bool is_search_cancelled = true;
+    bool is_searching = false;
+    float percent_done = 0.0f;
+
+    std::optional<OverviewState> overview_page = {};
+    float overview_half_width = 0.8f;
+    float overview_half_height = 0.4f;
+    float overview_offset_x = 0.0f;
+    float overview_offset_y = 0.0f;
+
     // list of selected characters (e.g. using mouse select) to be highlighted
     std::deque<AbsoluteRect> selected_character_rects;
     // whether we should show a keyboard text selection marker at the end/begin of current
@@ -156,6 +170,45 @@ public:
     int get_center_page_number();
     void get_visible_pages(int window_height, std::vector<int>& visible_pages);
     void move_pages(int num_pages);
+
+    std::vector<int> get_visible_search_results(std::vector<int>& visible_pages);
+    int find_search_index_for_visible_page(int page, int breakpoint);
+    int find_search_results_breakpoint();
+    int find_search_result_for_page_range(int page, int range_begin, int range_end);
+    int find_search_results_breakpoint_helper(int begin_index, int end_index);
+    void cancel_search();
+    int get_num_search_results();
+    int get_current_search_result_index();
+    std::optional<SearchResult> get_current_search_result();
+    std::optional<SearchResult> set_search_result_offset(int offset);
+    void goto_search_result(int offset, bool overview);
+    bool get_is_searching(float* prog);
+    void search_text(PdfRenderer* background_searcher, const std::wstring& text, SearchCaseSensitivity case_sensitive, bool regex, std::optional<std::pair<int, int>> range);
+
+    void set_overview_page(std::optional<OverviewState> overview);
+    std::optional<OverviewState> get_overview_page();
+    Document* get_current_overview_document();
+    float get_overview_zoom_level();
+    DocumentPos window_pos_to_overview_pos(NormalizedWindowPos window_pos);
+    NormalizedWindowPos document_to_overview_pos(DocumentPos pos);
+    NormalizedWindowRect document_to_overview_rect(DocumentRect doc_rect);
+    void zoom_overview(float scale);
+    void zoom_in_overview();
+    void zoom_out_overview();
+    NormalizedWindowRect get_overview_rect();
+    NormalizedWindowRect get_overview_rect_pixel_perfect(int widget_width, int widget_height, int view_width, int view_height);
+    std::vector<NormalizedWindowRect> get_overview_border_rects();
+    bool is_window_point_in_overview(NormalizedWindowPos window_point);
+    bool is_window_point_in_overview_border(NormalizedWindowPos window_point, OverviewSide* which_border);
+    void get_overview_offsets(float* offset_x, float* offset_y);
+    void set_overview_offsets(float offset_x, float offset_y);
+    void set_overview_offsets(fvec2 offsets);
+    float get_overview_side_pos(int index);
+    void set_overview_side_pos(OverviewSide index, NormalizedWindowRect original_rect, fvec2 diff);
+    void set_overview_rect(NormalizedWindowRect rect);
+    void get_overview_size(float* width, float* height);
+
+    int find_search_index_for_visible_pages(std::vector<int>& visible_pages);
     void move_screens(int num_screens);
     void reset_doc_state();
     void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
@@ -269,4 +322,18 @@ public:
     void clear();
     bool is_compile_invalid();
 
+};
+
+struct MarkedDataRect {
+    DocumentRect rect;
+    int type;
+};
+
+enum HighlightRenderFlags
+{
+    HRF_FILL = 1 << 0,
+    HRF_BORDER = 1 << 1,
+    HRF_UNDERLINE = 1 << 2,
+    HRF_STRIKE = 1 << 3,
+    HRF_INVERTED = 1 << 4
 };
