@@ -65,6 +65,13 @@ protected:
     float page_space_y = 0;
 
 public:
+    enum ColorPalette {
+        Normal,
+        Dark,
+        Custom,
+        None
+    };
+
     std::vector<SearchResult> search_results;
     int current_search_result_index = -1;
     std::mutex search_results_mutex;
@@ -77,6 +84,14 @@ public:
     float overview_half_height = 0.4f;
     float overview_offset_x = 0.0f;
     float overview_offset_y = 0.0f;
+
+    bool should_highlight_links = false;
+    bool should_highlight_words = false;
+    bool should_show_numbers = false;
+    bool should_show_rect_hints = false;
+    ColorPalette color_mode = ColorPalette::Normal;
+
+    std::vector<DocumentRect> word_rects;
 
     // list of selected characters (e.g. using mouse select) to be highlighted
     std::deque<AbsoluteRect> selected_character_rects;
@@ -99,6 +114,21 @@ public:
     Document* get_document();
     bool is_ruler_mode();
     void exit_ruler_mode();
+
+    void toggle_highlight_links();
+    void set_highlight_links(bool should_highlight, bool should_show_numbers);
+    void set_dark_mode(bool mode);
+    void toggle_dark_mode();
+    void set_custom_color_mode(bool mode);
+    void toggle_custom_color_mode();
+    void toggle_highlight_words();
+    void set_highlight_words(std::vector<DocumentRect>& rects);
+    void set_should_highlight_words(bool should_highlight);
+    std::vector<DocumentRect> get_highlight_word_rects();
+    void show_rect_hints();
+    void hide_rect_hints();
+    bool is_showing_rect_hints();
+    bool on_vertical_scroll();
 
     // find the closest portal to the current position
     // if limit is true, we only search for portals near the current location and not all portals
@@ -130,6 +160,8 @@ public:
     void on_view_size_change(int new_width, int new_height);
     //void absolute_to_window_pos(float absolute_x, float absolute_y, float* window_x, float* window_y);
     NormalizedWindowPos absolute_to_window_pos(AbsoluteDocumentPos absolute_pos);
+
+    ColorPalette get_current_color_mode();
 
     void fill_cached_virtual_rects(bool force=false);
     NormalizedWindowRect absolute_to_window_rect(AbsoluteRect doc_rect);
@@ -329,11 +361,3 @@ struct MarkedDataRect {
     int type;
 };
 
-enum HighlightRenderFlags
-{
-    HRF_FILL = 1 << 0,
-    HRF_BORDER = 1 << 1,
-    HRF_UNDERLINE = 1 << 2,
-    HRF_STRIKE = 1 << 3,
-    HRF_INVERTED = 1 << 4
-};

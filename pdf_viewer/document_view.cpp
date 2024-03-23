@@ -21,6 +21,7 @@ extern float PAGE_SPACE_Y;
 extern bool REAL_PAGE_SEPARATION;
 extern float OVERVIEW_SIZE[2];
 extern float OVERVIEW_OFFSET[2];
+extern bool SHOULD_HIGHLIGHT_LINKS;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -85,6 +86,11 @@ PortalViewState DocumentView::get_checksum_state() {
 
 
 void DocumentView::handle_escape() {
+    if (!SHOULD_HIGHLIGHT_LINKS) {
+        should_highlight_links = false;
+    }
+    should_highlight_words = false;
+    should_show_numbers = false;
 }
 
 void DocumentView::exit_ruler_mode() {
@@ -730,6 +736,9 @@ void DocumentView::reset_doc_state() {
     search_results_mutex.lock();
     cancel_search();
     search_results_mutex.unlock();
+
+    overview_page = {};
+    handle_escape();
 }
 
 void DocumentView::open_document(const std::wstring& doc_path,
@@ -2687,4 +2696,88 @@ DocumentPos DocumentView::window_pos_to_overview_pos(NormalizedWindowPos window_
     float doc_offset_y = docpos.y + relative_window_y;
     int doc_page = docpos.page;
     return { doc_page, doc_offset_x, doc_offset_y };
+}
+
+DocumentView::ColorPalette DocumentView::get_current_color_mode() {
+    return color_mode;
+}
+
+void DocumentView::toggle_highlight_links() {
+    this->should_highlight_links = !this->should_highlight_links;
+}
+
+void DocumentView::set_highlight_links(bool should_highlight, bool should_show_numbers) {
+    this->should_highlight_links = should_highlight;
+    this->should_show_numbers = should_show_numbers;
+}
+
+void DocumentView::set_dark_mode(bool mode) {
+    if (mode == true) {
+        this->color_mode = ColorPalette::Dark;
+    }
+    else {
+        this->color_mode = ColorPalette::Normal;
+    }
+}
+
+void DocumentView::toggle_dark_mode() {
+    set_dark_mode(!(this->color_mode == ColorPalette::Dark));
+}
+
+void DocumentView::set_custom_color_mode(bool mode) {
+    if (mode) {
+        this->color_mode = ColorPalette::Custom;
+    }
+    else {
+        this->color_mode = ColorPalette::Normal;
+    }
+}
+
+void DocumentView::toggle_custom_color_mode() {
+    set_custom_color_mode(!(this->color_mode == ColorPalette::Custom));
+}
+
+void DocumentView::toggle_highlight_words() {
+    this->should_highlight_words = !this->should_highlight_words;
+}
+
+void DocumentView::set_highlight_words(std::vector<DocumentRect>& rects) {
+    word_rects = std::move(rects);
+}
+
+void DocumentView::set_should_highlight_words(bool should_highlight) {
+    this->should_highlight_words = should_highlight;
+}
+
+std::vector<DocumentRect> DocumentView::get_highlight_word_rects() {
+    return word_rects;
+}
+
+void DocumentView::show_rect_hints() {
+    should_show_rect_hints = true;
+}
+
+void DocumentView::hide_rect_hints() {
+    should_show_rect_hints = false;
+}
+
+bool DocumentView::is_showing_rect_hints() {
+    return should_show_rect_hints;
+}
+
+bool DocumentView::on_vertical_scroll(){
+
+    // returns true if the scroll even caused some change
+    // in this widget
+    bool res = false;
+
+    if (should_highlight_words){
+        should_highlight_words = false;
+        res = true;
+    }
+    if (should_highlight_links && !SHOULD_HIGHLIGHT_LINKS){
+        should_highlight_links = false;
+        res = true;
+    }
+    return res;
 }

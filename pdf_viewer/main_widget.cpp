@@ -1200,7 +1200,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     scroll_bar->hide();
 
     if (SHOULD_HIGHLIGHT_LINKS) {
-        opengl_widget->set_highlight_links(true, false);
+        main_document_view->set_highlight_links(true, false);
     }
 
     grabGesture(Qt::TapAndHoldGesture, Qt::DontStartGestureOnChildren);
@@ -3754,18 +3754,18 @@ CommandManager* MainWidget::get_command_manager() {
 }
 
 void MainWidget::toggle_dark_mode() {
-    this->opengl_widget->toggle_dark_mode();
+    main_document_view->toggle_dark_mode();
 
     if (helper_opengl_widget_) {
-        helper_opengl_widget_->toggle_dark_mode();
+        helper_document_view_->toggle_dark_mode();
     }
 }
 
 void MainWidget::toggle_custom_color_mode() {
-    this->opengl_widget->toggle_custom_color_mode();
+    main_document_view->toggle_custom_color_mode();
 
     if (helper_opengl_widget_) {
-        helper_opengl_widget_->toggle_custom_color_mode();
+        helper_document_view_->toggle_custom_color_mode();
     }
 }
 
@@ -3910,7 +3910,7 @@ void MainWidget::handle_search_paper_name(std::wstring paper_name, bool is_shift
 
 }
 void MainWidget::move_vertical(float amount) {
-    if (opengl_widget->on_vertical_scroll()){
+    if (main_document_view->on_vertical_scroll()){
         // hide the link/text labels when we move
         hide_command_line_edit();
     }
@@ -4196,8 +4196,8 @@ void MainWidget::highlight_ruler_portals() {
         portal_rect_pages.push_back(doc_rect);
     }
 
-    opengl_widget->set_highlight_words(portal_rect_pages);
-    opengl_widget->set_should_highlight_words(true);
+    main_document_view->set_highlight_words(portal_rect_pages);
+    main_document_view->set_should_highlight_words(true);
 
 }
 void MainWidget::highlight_words() {
@@ -4221,8 +4221,8 @@ void MainWidget::highlight_words() {
         }
     }
 
-    opengl_widget->set_highlight_words(visible_word_rects);
-    opengl_widget->set_should_highlight_words(true);
+    main_document_view->set_highlight_words(visible_word_rects);
+    main_document_view->set_should_highlight_words(true);
     invalidate_render();
 }
 
@@ -4938,7 +4938,7 @@ void MainWidget::handle_keyboard_select(const std::wstring& text) {
             }
         }
 
-        opengl_widget->set_should_highlight_words(false);
+        main_document_view->set_should_highlight_words(false);
     }
     else {
         // here we select with "user-friendly" tags
@@ -4955,7 +4955,7 @@ void MainWidget::handle_keyboard_select(const std::wstring& text) {
 
                 handle_left_click({ (srect.x0 + srect.x1) / 2 - 1, (srect.y0 + srect.y1) / 2 }, true, false, false, false, false);
                 handle_left_click({ erect.x0 , (erect.y0 + erect.y1) / 2 }, false, false, false, false, false);
-                opengl_widget->set_should_highlight_words(false);
+                main_document_view->set_should_highlight_words(false);
             }
         }
         if (parts.size() == 2) {
@@ -4973,7 +4973,7 @@ void MainWidget::handle_keyboard_select(const std::wstring& text) {
 
                 handle_left_click({ (srect.x0 + srect.x1) / 2 - 1, (srect.y0 + srect.y1) / 2 }, true, false, false, false, false);
                 handle_left_click({ erect.x0 - w / 2 , (erect.y0 + erect.y1) / 2 }, false, false, false, false, false);
-                opengl_widget->set_should_highlight_words(false);
+                main_document_view->set_should_highlight_words(false);
             }
             else if (srect_.has_value() && erect_.has_value()) {
                 WindowRect srect = srect_.value();
@@ -4981,7 +4981,7 @@ void MainWidget::handle_keyboard_select(const std::wstring& text) {
 
                 handle_left_click({ srect.x0 + 5, (srect.y0 + srect.y1) / 2 }, true, false, false, false, false);
                 handle_left_click({ erect.x0 - 5 , (erect.y0 + erect.y1) / 2 }, false, false, false, false, false);
-                opengl_widget->set_should_highlight_words(false);
+                main_document_view->set_should_highlight_words(false);
             }
 
         }
@@ -5056,10 +5056,10 @@ void MainWidget::goto_overview() {
 
 void MainWidget::reset_highlight_links() {
     if (SHOULD_HIGHLIGHT_LINKS) {
-        opengl_widget->set_highlight_links(true, false);
+        main_document_view->set_highlight_links(true, false);
     }
     else {
-        opengl_widget->set_highlight_links(false, false);
+        main_document_view->set_highlight_links(false, false);
     }
 }
 
@@ -6515,8 +6515,8 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
         }
     }
 
-    if (opengl_widget->is_showing_rect_hints()) {
-        opengl_widget->hide_rect_hints();
+    if (main_document_view->is_showing_rect_hints()) {
+        main_document_view->hide_rect_hints();
     }
 
     if (current_widget_stack.size() > 0) {
@@ -6757,29 +6757,29 @@ void MainWidget::persist_config() {
 }
 
 int MainWidget::get_current_colorscheme_index() {
-    auto colormode = opengl_widget->get_current_color_mode();
-    if (colormode == PdfViewOpenGLWidget::ColorPalette::Normal) {
+    auto colormode = main_document_view->get_current_color_mode();
+    if (colormode == DocumentView::ColorPalette::Normal) {
         return 0;
     }
-    if (colormode == PdfViewOpenGLWidget::ColorPalette::Dark) {
+    if (colormode == DocumentView::ColorPalette::Dark) {
         return 1;
     }
-    if (colormode == PdfViewOpenGLWidget::ColorPalette::Custom) {
+    if (colormode == DocumentView::ColorPalette::Custom) {
         return 2;
     }
     return -1;
 }
 
 void MainWidget::set_dark_mode() {
-    opengl_widget->set_dark_mode(true);
+    main_document_view->set_dark_mode(true);
 }
 
 void MainWidget::set_light_mode() {
-    opengl_widget->set_dark_mode(false);
+    main_document_view->set_dark_mode(false);
 }
 
 void MainWidget::set_custom_color_mode() {
-    opengl_widget->set_custom_color_mode(true);
+    main_document_view->set_custom_color_mode(true);
 }
 
 void MainWidget::update_highlight_buttons_position() {
@@ -7407,7 +7407,7 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             should_invalidate_render = true;
         }
         if (confname == "highlight_links") {
-            opengl_widget->set_highlight_links(SHOULD_HIGHLIGHT_LINKS, false);
+            main_document_view->set_highlight_links(SHOULD_HIGHLIGHT_LINKS, false);
         }
         if (confname.startsWith("page_space")) {
             if (confname == "page_space_x") main_document_view->set_page_space_x(PAGE_SPACE_X);
@@ -9664,11 +9664,11 @@ void MainWidget::maximize_window() {
 
 
 void MainWidget::toggle_rect_hints() {
-    if (opengl_widget->is_showing_rect_hints()) {
-        opengl_widget->hide_rect_hints();
+    if (main_document_view->is_showing_rect_hints()) {
+        main_document_view->hide_rect_hints();
     }
     else {
-        opengl_widget->show_rect_hints();
+        main_document_view->show_rect_hints();
     }
 }
 
@@ -9720,15 +9720,15 @@ void MainWidget::goto_search_result(int nth_next_result, bool overview) {
 }
 
 void MainWidget::set_should_highlight_words(bool should_highlight_words) {
-    opengl_widget->set_should_highlight_words(should_highlight_words);
+    main_document_view->set_should_highlight_words(should_highlight_words);
 }
 
 void MainWidget::toggle_highlight_links() {
-    opengl_widget->toggle_highlight_links();
+    main_document_view->toggle_highlight_links();
 }
 
 void MainWidget::set_highlight_links(bool should_highlight, bool should_show_numbers) {
-    opengl_widget->set_highlight_links(should_highlight, should_show_numbers);
+    main_document_view->set_highlight_links(should_highlight, should_show_numbers);
 }
 
 void MainWidget::rotate_clockwise() {
@@ -10364,8 +10364,8 @@ void MainWidget::handle_highlight_tags_pre_perform(const std::vector<int>& visib
         }
     }
 
-    opengl_widget->set_highlight_words(highlight_rects);
-    opengl_widget->set_should_highlight_words(true);
+    main_document_view->set_highlight_words(highlight_rects);
+    main_document_view->set_should_highlight_words(true);
 
 }
 
@@ -10379,12 +10379,12 @@ void MainWidget::handle_visible_bookmark_tags_pre_perform(const std::vector<int>
         bookmark_rects.push_back(bookmark_rect.to_document(doc()));
     }
 
-    opengl_widget->set_highlight_words(bookmark_rects);
-    opengl_widget->set_should_highlight_words(true);
+    main_document_view->set_highlight_words(bookmark_rects);
+    main_document_view->set_should_highlight_words(true);
 }
 
 void MainWidget::clear_keyboard_select_highlights() {
-    opengl_widget->set_should_highlight_words(false);
+    main_document_view->set_should_highlight_words(false);
 }
 
 void MainWidget::handle_goto_link_with_page_and_offset(int page, float y_offset) {
@@ -10609,8 +10609,8 @@ void MainWidget::highlight_window_points() {
         DocumentPos docpos = get_index_document_pos(index);
         document_rects.push_back(DocumentRect(docpos, docpos, docpos.page));
     }
-    opengl_widget->set_highlight_words(document_rects);
-    opengl_widget->set_should_highlight_words(true);
+    main_document_view->set_highlight_words(document_rects);
+    main_document_view->set_should_highlight_words(true);
 }
 
 void MainWidget::set_highlighted_tags(std::vector<std::string> tags) {

@@ -38,8 +38,14 @@ class PdfRenderer;
 class ConfigManager;
 class ScratchPad;
 
-
-
+enum HighlightRenderFlags
+{
+    HRF_FILL = 1 << 0,
+    HRF_BORDER = 1 << 1,
+    HRF_UNDERLINE = 1 << 2,
+    HRF_STRIKE = 1 << 3,
+    HRF_INVERTED = 1 << 4
+};
 
 struct OpenGLSharedResources {
     GLuint vertex_buffer_object = 0;
@@ -94,14 +100,7 @@ class PdfViewOpenGLWidget : public QOpenGLWidget, protected QOpenGLExtraFunction
 //class PdfViewOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_1 {
 public:
 
-    enum ColorPalette {
-        Normal,
-        Dark,
-        Custom,
-        None
-    };
 
-    ColorPalette get_current_color_mode();
 private:
 
     OpenGLSharedResources shared_gl_objects;
@@ -111,11 +110,6 @@ private:
     ScratchPad* scratchpad = nullptr;
     PdfRenderer* pdf_renderer = nullptr;
 
-    bool should_highlight_links = false;
-    bool should_highlight_words = false;
-    bool should_show_numbers = false;
-    bool should_show_rect_hints = false;
-    ColorPalette color_mode = ColorPalette::Normal;
     bool is_helper = false;
     std::string tag_prefix = "";
     std::vector<std::string> highlighted_tags;
@@ -188,7 +182,7 @@ protected:
     float last_cache_zoom_level = -1;
     QDateTime last_scratchpad_update_datetime;
 
-    void bind_program(ColorPalette forced_palette=ColorPalette::None);
+    void bind_program(DocumentView::ColorPalette forced_palette=DocumentView::ColorPalette::None);
     void bind_points(const std::vector<float>& points);
     void bind_default();
 
@@ -199,7 +193,6 @@ public:
     std::vector<FreehandDrawing> moving_drawings;
     std::vector<PixmapDrawing> moving_pixmaps;
 
-    std::vector<DocumentRect> word_rects;
     std::vector<DocumentRect> synctex_highlights;
     QTime synctex_highlight_time;
     std::vector<MarkedDataRect> marked_data_rects;
@@ -210,21 +203,10 @@ public:
     void handle_escape();
 
     std::map<int, std::vector<MarkedDataRect>> get_marked_data_rect_map();
-    void toggle_highlight_links();
-    void set_highlight_links(bool should_highlight_links, bool should_show_numbers);
-    void toggle_highlight_words();
-    void set_highlight_words(std::vector<DocumentRect>& rects);
-    void set_should_highlight_words(bool should_highlight);
-    std::vector<DocumentRect> get_highlight_word_rects();
 
-    bool on_vertical_scroll();
     bool valid_document();
     void render_overview(OverviewState overview);
-    void render_page(int page_number, bool in_overview=false, ColorPalette forced_palette=ColorPalette::None, bool stencils_allowed=true);
-    void set_dark_mode(bool mode);
-    void toggle_dark_mode();
-    void set_custom_color_mode(bool mode);
-    void toggle_custom_color_mode();
+    void render_page(int page_number, bool in_overview=false, DocumentView::ColorPalette forced_palette=DocumentView::ColorPalette::None, bool stencils_allowed=true);
     void set_synctex_highlights(std::vector<DocumentRect> highlights);
     bool should_show_synxtex_highlights();
     bool has_synctex_timed_out();
@@ -265,9 +247,6 @@ public:
     bool is_normalized_y_range_in_window(float y0, float y1);
     void render_portal_rect(QPainter* painter, AbsoluteRect portal_absolute_rect, bool is_pending);
     void set_pending_download_portals(std::vector<AbsoluteRect>&& portal_rects);
-    void show_rect_hints();
-    void hide_rect_hints();
-    bool is_showing_rect_hints();
     void get_color_for_current_mode(const float* input_color, float* output_color);
     void render_ui_icon_for_current_color_mode(QPainter* painter, const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
     void render_text_highlights();

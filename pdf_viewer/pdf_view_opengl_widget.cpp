@@ -736,25 +736,10 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
 void PdfViewOpenGLWidget::handle_escape() {
     // cancel_search();
     synctex_highlights.clear();
-    if (!SHOULD_HIGHLIGHT_LINKS) {
-        should_highlight_links = false;
-    }
-    should_highlight_words = false;
-    should_show_numbers = false;
     character_highlight_rect = {};
     wrong_character_rect = {};
     highlighted_tags = {};
 }
-
-void PdfViewOpenGLWidget::toggle_highlight_links() {
-    this->should_highlight_links = !this->should_highlight_links;
-}
-
-void PdfViewOpenGLWidget::set_highlight_links(bool should_highlight, bool should_show_numbers) {
-    this->should_highlight_links = should_highlight;
-    this->should_show_numbers = should_show_numbers;
-}
-
 
 bool PdfViewOpenGLWidget::valid_document() {
     if (dv()) {
@@ -790,9 +775,9 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
     draw_overview_background();
 
 
-    render_page(page, true, ColorPalette::None, false);
-    render_page(page-1, true, ColorPalette::None, false);
-    render_page(page+1, true, ColorPalette::None, false);
+    render_page(page, true, DocumentView::ColorPalette::None, false);
+    render_page(page-1, true, DocumentView::ColorPalette::None, false);
+    render_page(page+1, true, DocumentView::ColorPalette::None, false);
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
     // highlight the overview search result
@@ -860,7 +845,7 @@ Document* PdfViewOpenGLWidget::doc(bool overview){
     return dv()->get_document();
 }
 
-void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPalette forced_color_palette, bool stencils_allowed) {
+void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, DocumentView::ColorPalette forced_color_palette, bool stencils_allowed) {
 
     if (!valid_document()) return;
 
@@ -1064,7 +1049,10 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
             disable_stencil();
         }
 
-        if ((get_current_color_mode() != Normal) && (PRESERVE_IMAGE_COLORS) && (!in_overview) && (forced_color_palette == ColorPalette::None) && (stencils_allowed)) {
+        if ((document_view->get_current_color_mode() != DocumentView::ColorPalette::Normal) &&
+            (PRESERVE_IMAGE_COLORS) && (!in_overview) &&
+            (forced_color_palette == DocumentView::ColorPalette::None) &&
+            (stencils_allowed)) {
             // render images in forced palette mode
             fz_stext_page * stext_page = dv()->get_document()->get_stext_with_page_number(page_number);
             std::vector<PagelessDocumentRect> image_rects;
@@ -1088,9 +1076,9 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
             write_to_stencil();
             draw_stencil_rects(page_number, image_rects);
             use_stencil_to_write(true);
-            ColorPalette target_palette = ColorPalette::Normal;
-            if (color_mode == ColorPalette::Custom && INVERTED_PRESERVED_IMAGE_COLORS) {
-                target_palette = ColorPalette::Dark;
+            DocumentView::ColorPalette target_palette = DocumentView::ColorPalette::Normal;
+            if (document_view->color_mode == DocumentView::ColorPalette::Custom && INVERTED_PRESERVED_IMAGE_COLORS) {
+                target_palette = DocumentView::ColorPalette::Dark;
             }
 
             render_page(page_number, in_overview, target_palette, false);
@@ -1200,7 +1188,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         for (int page : visible_pages) {
             render_page(page);
 
-            if (should_highlight_links) {
+            if (document_view->should_highlight_links) {
                 glUseProgram(shared_gl_objects.highlight_program);
                 glUniform3fv(shared_gl_objects.highlight_color_uniform_location,
                     1,
@@ -1532,14 +1520,14 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         }
     }
 
-    if (should_highlight_words && (!document_view->overview_page)) {
+    if (document_view->should_highlight_words && (!document_view->overview_page)) {
         setup_text_painter(painter);
 
-        std::vector<std::string> tags = get_tags(word_rects.size());
+        std::vector<std::string> tags = get_tags(document_view->word_rects.size());
 
-        for (size_t i = 0; i < word_rects.size(); i++) {
+        for (size_t i = 0; i < document_view->word_rects.size(); i++) {
             //auto [rect, page] = word_rects[i];
-            DocumentRect current_word_rect = word_rects[i];
+            DocumentRect current_word_rect = document_view->word_rects[i];
 
 
             NormalizedWindowRect window_rect = current_word_rect.to_window_normalized(dv());
@@ -1551,7 +1539,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
             int window_y0 = static_cast<int>(-window_rect.y0 * view_height / 2 + view_height / 2);
 
             if (i > 0) {
-                if (std::abs(word_rects[i - 1].rect.x0 - current_word_rect.rect.x0) < 5) {
+                if (std::abs(document_view->word_rects[i - 1].rect.x0 - current_word_rect.rect.x0) < 5) {
                     window_y0 = static_cast<int>(-window_rect.y1 * view_height / 2 + view_height / 2);
                 }
             }
@@ -1586,7 +1574,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         }
     }
 
-    if (should_highlight_links && should_show_numbers && (!document_view->overview_page)) {
+    if (document_view->should_highlight_links && document_view->should_show_numbers && (!document_view->overview_page)) {
 
         dv()->get_visible_links(all_visible_links);
         setup_text_painter(painter);
@@ -1640,7 +1628,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         }
     }
 
-    if (should_show_rect_hints) {
+    if (document_view->should_show_rect_hints) {
         std::vector<std::pair<QRect, QString>> hints = get_hint_rect_and_texts();
         int flags = Qt::TextWordWrap | Qt::AlignCenter;
 
@@ -1677,18 +1665,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
 
 }
 
-void PdfViewOpenGLWidget::set_dark_mode(bool mode) {
-    if (mode == true) {
-        this->color_mode = ColorPalette::Dark;
-    }
-    else {
-        this->color_mode = ColorPalette::Normal;
-    }
-}
 
-void PdfViewOpenGLWidget::toggle_dark_mode() {
-    set_dark_mode(!(this->color_mode == ColorPalette::Dark));
-}
 
 void PdfViewOpenGLWidget::set_synctex_highlights(std::vector<DocumentRect> highlights) {
     synctex_highlight_time = QTime::currentTime();
@@ -1823,26 +1800,14 @@ void PdfViewOpenGLWidget::draw_empty_helper_message(QPainter* painter, QString m
     painter->drawText(view_width / 2 - message_width / 2, view_height / 2 - message_height / 2, message);
 }
 
-void PdfViewOpenGLWidget::set_custom_color_mode(bool mode) {
-    if (mode) {
-        this->color_mode = ColorPalette::Custom;
-    }
-    else {
-        this->color_mode = ColorPalette::Normal;
-    }
-}
 
-void PdfViewOpenGLWidget::toggle_custom_color_mode() {
-    set_custom_color_mode(!(this->color_mode == ColorPalette::Custom));
-}
-
-void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
-    ColorPalette mode = forced_palette == None ? color_mode : forced_palette;
-    if (mode == ColorPalette::Dark) {
+void PdfViewOpenGLWidget::bind_program(DocumentView::ColorPalette forced_palette) {
+    DocumentView::ColorPalette mode = forced_palette == DocumentView::ColorPalette::None ? document_view->color_mode : forced_palette;
+    if (mode == DocumentView::ColorPalette::Dark) {
         glUseProgram(shared_gl_objects.rendered_dark_program);
         glUniform1f(shared_gl_objects.dark_mode_contrast_uniform_location, DARK_MODE_CONTRAST);
     }
-    else if (mode == ColorPalette::Custom) {
+    else if (mode == DocumentView::ColorPalette::Custom) {
         glUseProgram(shared_gl_objects.custom_color_program);
         float transform_matrix[16];
         get_custom_color_transform_matrix(transform_matrix);
@@ -1855,17 +1820,6 @@ void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
     }
 }
 
-void PdfViewOpenGLWidget::toggle_highlight_words() {
-    this->should_highlight_words = !this->should_highlight_words;
-}
-
-void PdfViewOpenGLWidget::set_highlight_words(std::vector<DocumentRect>& rects) {
-    word_rects = std::move(rects);
-}
-
-void PdfViewOpenGLWidget::set_should_highlight_words(bool should_highlight) {
-    this->should_highlight_words = should_highlight;
-}
 
 void PdfViewOpenGLWidget::rotate_clockwise() {
     rotation_index = (rotation_index + 1) % 4;
@@ -1921,9 +1875,9 @@ void PdfViewOpenGLWidget::render_transparent_background() {
 
     float background_color[4] = { 1.0f, 1.0f, 1.0f, 1 - FASTREAD_OPACITY };
 
-    if (this->color_mode == ColorPalette::Normal) {
+    if (document_view->color_mode == DocumentView::ColorPalette::Normal) {
     }
-    else if (this->color_mode == ColorPalette::Dark) {
+    else if (document_view->color_mode == DocumentView::ColorPalette::Dark) {
         background_color[0] = background_color[1] = background_color[2] = 0;
     }
     else {
@@ -2056,10 +2010,6 @@ void PdfViewOpenGLWidget::set_typing_rect(DocumentRect highlight_rect, std::opti
 
 }
 
-std::vector<DocumentRect> PdfViewOpenGLWidget::get_highlight_word_rects() {
-    return word_rects;
-}
-
 void PdfViewOpenGLWidget::get_custom_color_transform_matrix(float matrix_data[16]) {
     float inputs_inverse[16] = { 0, 1, 0, 0, -1, 1, -1, 1, 1, -1, 0, 0, 0, -1, 1, 0 };
     float outputs[16] = {
@@ -2074,10 +2024,10 @@ void PdfViewOpenGLWidget::get_custom_color_transform_matrix(float matrix_data[16
 
 void PdfViewOpenGLWidget::get_background_color(float out_background[3]) {
 
-    if (this->color_mode == ColorPalette::Normal) {
+    if (document_view->color_mode == DocumentView::ColorPalette::Normal) {
         out_background[0] = out_background[1] = out_background[2] = 1;
     }
-    else if (this->color_mode == ColorPalette::Dark) {
+    else if (document_view->color_mode == DocumentView::Dark) {
         out_background[0] = out_background[1] = out_background[2] = 0;
     }
     else {
@@ -2101,9 +2051,6 @@ void PdfViewOpenGLWidget::clear_underline() {
     underline = {};
 }
 
-PdfViewOpenGLWidget::ColorPalette PdfViewOpenGLWidget::get_current_color_mode() {
-    return color_mode;
-}
 
 std::map<int, std::vector<MarkedDataRect>> PdfViewOpenGLWidget::get_marked_data_rect_map() {
     std::map<int, std::vector<MarkedDataRect>> res;
@@ -2813,18 +2760,6 @@ std::vector<std::pair<QRect, QString>> PdfViewOpenGLWidget::get_hint_rect_and_te
     return res;
 } 
 
-void PdfViewOpenGLWidget::show_rect_hints() {
-    should_show_rect_hints = true;
-}
-
-void PdfViewOpenGLWidget::hide_rect_hints() {
-    should_show_rect_hints = false;
-}
-
-bool PdfViewOpenGLWidget::is_showing_rect_hints() {
-    return should_show_rect_hints;
-}
-
 void PdfViewOpenGLWidget::get_color_for_current_mode(const float* input_color, float* output_color) {
     if (!ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE) {
         output_color[0] = input_color[0];
@@ -2833,7 +2768,7 @@ void PdfViewOpenGLWidget::get_color_for_current_mode(const float* input_color, f
         return;
     }
 
-    if (color_mode == ColorPalette::Dark) {
+    if (document_view->color_mode == DocumentView::ColorPalette::Dark) {
         float inverted_color[3];
         inverted_color[0] = (0.5f - input_color[0]) * DARK_MODE_CONTRAST + 0.5f;
         inverted_color[1] = (0.5f - input_color[1]) * DARK_MODE_CONTRAST + 0.5f;
@@ -2844,7 +2779,7 @@ void PdfViewOpenGLWidget::get_color_for_current_mode(const float* input_color, f
         hsv_color[0] = new_hue;
         hsv2rgb(hsv_color, output_color);
     }
-    else if (color_mode == ColorPalette::Custom) {
+    else if (document_view->color_mode == DocumentView::ColorPalette::Custom) {
         float transform_matrix[16];
         float input_vector[4];
         float output_vector[4];
@@ -2969,23 +2904,6 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
     }
 }
 
-bool PdfViewOpenGLWidget::on_vertical_scroll(){
-
-    // returns true if the scroll even caused some change
-    // in this widget
-    bool res = false;
-
-    if (should_highlight_words){
-        should_highlight_words = false;
-        res = true;
-    }
-    if (should_highlight_links && !SHOULD_HIGHLIGHT_LINKS){
-        should_highlight_links = false;
-        res = true;
-    }
-    return res;
-}
-
 void PdfViewOpenGLWidget::set_overview_highlights(const std::vector<DocumentRect>& rects){
     overview_highlights = rects;
 }
@@ -3046,10 +2964,10 @@ bool PdfViewOpenGLWidget::can_use_cached_scratchpad_framebuffer() {
 }
 
 void PdfViewOpenGLWidget::clear_background_color() {
-    if (color_mode == ColorPalette::Dark) {
+    if (document_view->color_mode == DocumentView::ColorPalette::Dark) {
         glClearColor(DARK_MODE_BACKGROUND_COLOR[0], DARK_MODE_BACKGROUND_COLOR[1], DARK_MODE_BACKGROUND_COLOR[2], 1.0f);
     }
-    else if (color_mode == ColorPalette::Custom) {
+    else if (document_view->color_mode == DocumentView::ColorPalette::Custom) {
         glClearColor(CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR[0], CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR[1], CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR[2], 1.0f);
     }
     else {
