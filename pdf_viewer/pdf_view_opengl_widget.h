@@ -150,6 +150,12 @@ protected:
     void render_highlight_window_opengl_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
     void compile_drawings_opengl_backend(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
     void render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview);
+    CompiledDrawingData compile_drawings_into_vertex_and_index_buffers(const std::vector<float>& line_coordinates,
+        const std::vector<unsigned int>& indices,
+        const std::vector<GLint>& line_type_indices,
+        const std::vector<float>& dot_coordinates,
+        const std::vector<unsigned int>& dot_indices,
+        const std::vector<GLint>& dot_type_indices);
 #endif
 
 
@@ -165,7 +171,7 @@ protected:
     void render_highlight_absolute(AbsoluteRect absolute_document_rect, int flags);
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {});
     void render_highlight_document(DocumentRect doc_rect, int flags=HRF_FILL | HRF_BORDER);
-    void my_render(QPainter* painter);
+    void my_render();
     void render_scratchpad();
     void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
     void render_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false);
@@ -221,12 +227,12 @@ public:
     void mouseReleaseEvent(QMouseEvent* mevent) override;
     void wheelEvent(QWheelEvent* wevent) override;
     void register_on_link_edit_listener(std::function<void(const OpenedBookState&)> listener);
-    void draw_empty_helper_message(QPainter* painter, QString message);
+    void draw_empty_helper_message(QString message);
     std::vector<NormalizedWindowRect> get_overview_border_rects();
     Document* doc(bool overview=false);
     DocumentView* dv();
 
-    void setup_text_painter(QPainter* painter);
+    void setup_text_painter();
     void get_overview_window_vertices(float out_vertices[2 * 4]);
 
     void clear_all_selections();
@@ -236,9 +242,9 @@ public:
     void get_background_color(float out_background[3]);
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
-    void render_portal_rect(QPainter* painter, AbsoluteRect portal_absolute_rect, bool is_pending);
+    void render_portal_rect(AbsoluteRect portal_absolute_rect, bool is_pending);
     void get_color_for_current_mode(const float* input_color, float* output_color);
-    void render_ui_icon_for_current_color_mode(QPainter* painter, const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
+    void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
     void render_text_highlights();
     void render_highlight_annotations();
     std::array<float, 3> cc3(const float* input_color);
@@ -255,10 +261,4 @@ public:
     bool can_use_cached_scratchpad_framebuffer();
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
     void clear_background_color();
-    CompiledDrawingData compile_drawings_into_vertex_and_index_buffers(const std::vector<float>& line_coordinates,
-        const std::vector<unsigned int>& indices,
-        const std::vector<GLint>& line_type_indices,
-        const std::vector<float>& dot_coordinates,
-        const std::vector<unsigned int>& dot_indices,
-        const std::vector<GLint>& dot_type_indices);
 };

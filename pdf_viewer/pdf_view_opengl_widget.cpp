@@ -727,7 +727,7 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, Documen
 
 }
 
-void PdfViewOpenGLWidget::my_render(QPainter* painter) {
+void PdfViewOpenGLWidget::my_render() {
 
     begin_native_painting();
     prepare_initial_render_pipeline();
@@ -738,10 +738,10 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
 
         if (is_helper) {
             //painter->endNativePainting();
-            draw_empty_helper_message(painter, "No portals yet");
+            draw_empty_helper_message("No portals yet");
         }
         else {
-            draw_empty_helper_message(painter, "No document");
+            draw_empty_helper_message("No document");
         }
         return;
     }
@@ -981,21 +981,22 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
     end_native_painting();
 
 
+#ifdef SIOYEK_OPENGL_BACKEND
     if (doc()->can_use_highlights()) {
         const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
         const std::vector<Portal>& portals = doc()->get_portals();
 
         for (int i = 0; i < document_view->pending_download_portals.size(); i++) {
-            render_portal_rect(painter, document_view->pending_download_portals[i], true);
+            render_portal_rect(document_view->pending_download_portals[i], true);
         }
         for (int i = 0; i < portals.size(); i++) {
             if (portals[i].is_visible()) {
-                render_portal_rect(painter, portals[i].get_rectangle(), false);
+                render_portal_rect(portals[i].get_rectangle(), false);
             }
         }
 
         if (document_view->pending_portal_rect) {
-            render_portal_rect(painter, document_view->pending_portal_rect.value(), true);
+            render_portal_rect(document_view->pending_portal_rect.value(), true);
         }
 
         for (int i = 0; i < bookmarks.size(); i++) {
@@ -1015,7 +1016,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
                         QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         bool is_highlighted = i == document_view->selected_bookmark_index;
 
-                        render_ui_icon_for_current_color_mode(painter, bookmark_icon, bookmark_icon_white, window_qrect, is_highlighted);
+                        render_ui_icon_for_current_color_mode(bookmark_icon, bookmark_icon_white, window_qrect, is_highlighted);
 
                     }
                 }
@@ -1023,15 +1024,15 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
                     WindowRect window_rect = bookmarks[i].get_rectangle().to_window(dv());
                     QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
 
-                    QFont font = painter->font();
+                    QFont font = painter.font();
                     float font_size = bookmarks[i].font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmarks[i].font_size;
                     font.setPointSizeF(font_size * dv()->get_zoom_level() * 0.75);
-                    painter->setFont(font);
+                    painter.setFont(font);
 
                     std::array<float, 3> bookmark_color = cc3(bookmarks[i].color);
-                    painter->setPen(convert_float3_to_qcolor(&bookmark_color[0]));
+                    painter.setPen(convert_float3_to_qcolor(&bookmark_color[0]));
                     if (RENDER_FREETEXT_BORDERS) {
-                        painter->drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                     }
 
                     int flags = Qt::TextWordWrap;
@@ -1047,27 +1048,27 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
                         QString box_text = QString::fromStdWString(bookmarks[i].description).split(' ')[0];
                         std::optional<char> bm_type = bookmarks[i].get_type();
                         if (!bm_type.has_value()){
-                            painter->drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                            painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         }
                         else{
                             char mode = bm_type.value();
                             if (mode >= 'a' && mode <= 'z') {
                                 std::array<float, 3> box_color = cc3( & HIGHLIGHT_COLORS[3 * (mode - 'a')]);
-                                painter->setPen(convert_float3_to_qcolor(&box_color[0]));
-                                painter->drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                                painter.setPen(convert_float3_to_qcolor(&box_color[0]));
+                                painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                             }
                         }
                     }
                     else {
                         if (i == document_view->selected_bookmark_index) {
                             float temp_color[3] = {0.5f, 0.5f, 0.5f};
-                            painter->setPen(convert_float3_to_qcolor(&temp_color[0]));
-                            painter->setPen(Qt::DashLine);
+                            painter.setPen(convert_float3_to_qcolor(&temp_color[0]));
+                            painter.setPen(Qt::DashLine);
                             QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                            painter->fillRect(fill_rect, QColor(255, 255, 0, 128));
-                            painter->drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                            painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
+                            painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         }
-                        painter->drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
+                        painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
                     }
 
                 }
@@ -1077,7 +1078,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
     }
 
     if (document_view->should_highlight_words && (!document_view->overview_page)) {
-        setup_text_painter(painter);
+        setup_text_painter();
 
         std::vector<std::string> tags = get_tags(document_view->word_rects.size());
 
@@ -1115,16 +1116,16 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
             
             if (remaining_tag.size() > 0) {
                 if (highlighted) {
-                    auto original_pen = painter->pen();
-                    auto original_background = painter->background();
-                    painter->setPen(qcc4(KEYBOARD_SELECTED_TAG_TEXT_COLOR));
-                    painter->setBackground(qcc4(KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO));
-                    painter->drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
-                    painter->setPen(original_pen);
-                    painter->setBackground(original_background);
+                    auto original_pen = painter.pen();
+                    auto original_background = painter.background();
+                    painter.setPen(qcc4(KEYBOARD_SELECTED_TAG_TEXT_COLOR));
+                    painter.setBackground(qcc4(KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO));
+                    painter.drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
+                    painter.setPen(original_pen);
+                    painter.setBackground(original_background);
                 }
                 else {
-                    painter->drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
+                    painter.drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
                 }
             }
         }
@@ -1133,7 +1134,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
     if (document_view->should_highlight_links && document_view->should_show_numbers && (!document_view->overview_page)) {
 
         dv()->get_visible_links(all_visible_links);
-        setup_text_painter(painter);
+        setup_text_painter();
         for (size_t i = 0; i < all_visible_links.size(); i++) {
             std::stringstream ss;
             ss << i;
@@ -1179,7 +1180,7 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
                 }
             }
             if (should_draw) {
-                painter->drawText(window_x, window_y, index_string.c_str());
+                painter.drawText(window_x, window_y, index_string.c_str());
             }
         }
     }
@@ -1189,31 +1190,34 @@ void PdfViewOpenGLWidget::my_render(QPainter* painter) {
         int flags = Qt::TextWordWrap | Qt::AlignCenter;
 
         for (auto [hint_rect, hint_text] : hints) {
-            painter->fillRect(hint_rect, QColor(0, 0, 0, 200));
+            painter.fillRect(hint_rect, QColor(0, 0, 0, 200));
         }
 
-        painter->setPen(QColor(255, 255, 255, 255));
+        painter.setPen(QColor(255, 255, 255, 255));
 
         for (auto [hint_rect, hint_text] : hints) {
-            painter->drawText(hint_rect, flags, hint_text);
+            painter.drawText(hint_rect, flags, hint_text);
         }
     }
 
+#endif // SIOYEK_OPENGL_BACKEND
 
-    painter->beginNativePainting();
+    // painter->beginNativePainting();
+    begin_native_painting();
+
+#ifdef SIOYEK_OPENGL_BACKEND
     glBindVertexArray(vertex_array_object);
-    bind_default();
-    glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
-    glUseProgram(shared_gl_objects.highlight_program);
+#endif
 
+    bind_default();
+    prepare_highlight_pipeline();
     render_text_highlights();
     render_highlight_annotations();
 
     if (document_view->overview_page) {
         render_overview(document_view->overview_page.value());
     }
-    painter->endNativePainting();
-
+    end_native_painting();
 }
 
 PdfViewOpenGLWidget::~PdfViewOpenGLWidget() {
@@ -1319,7 +1323,8 @@ void PdfViewOpenGLWidget::register_on_link_edit_listener(std::function<void(cons
     this->on_link_edit = listener;
 }
 
-void PdfViewOpenGLWidget::draw_empty_helper_message(QPainter* painter, QString message) {
+void PdfViewOpenGLWidget::draw_empty_helper_message(QString message) {
+#ifdef SIOYEK_OPENGL_BACKEND
     // should be called with native painting disabled
 
     QFontMetrics fm(QApplication::font());
@@ -1333,12 +1338,15 @@ void PdfViewOpenGLWidget::draw_empty_helper_message(QPainter* painter, QString m
     int view_width = dv()->get_view_width();
     int view_height = dv()->get_view_height();
 
-    painter->drawText(view_width / 2 - message_width / 2, view_height / 2 - message_height / 2, message);
+    painter.drawText(view_width / 2 - message_width / 2, view_height / 2 - message_height / 2, message);
+#endif
 }
 
 
 void PdfViewOpenGLWidget::bind_program(DocumentView::ColorPalette forced_palette) {
     DocumentView::ColorPalette mode = forced_palette == DocumentView::ColorPalette::None ? document_view->color_mode : forced_palette;
+
+#ifdef SIOYEK_OPENGL_BACKEND
     if (mode == DocumentView::ColorPalette::Dark) {
         glUseProgram(shared_gl_objects.rendered_dark_program);
         glUniform1f(shared_gl_objects.dark_mode_contrast_uniform_location, DARK_MODE_CONTRAST);
@@ -1354,21 +1362,33 @@ void PdfViewOpenGLWidget::bind_program(DocumentView::ColorPalette forced_palette
         glUseProgram(shared_gl_objects.rendered_program);
         //glUniform1f(shared_gl_objects.gamma_uniform_location, GAMMA);
     }
+#else
+    qDebug() << "bind_program not implemented";
+#endif
+
 }
 
 
 void PdfViewOpenGLWidget::enable_stencil() {
+#ifdef SIOYEK_OPENGL_BACKEND
     glEnable(GL_STENCIL_TEST);
     glStencilMask(0xFF);
+#else
+    qDebug() << "enable_stencil not implemented.";
+#endif
 }
 
 void PdfViewOpenGLWidget::write_to_stencil() {
+#ifdef SIOYEK_OPENGL_BACKEND
     glStencilFunc(GL_NEVER, 1, 0xFF);
     glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+#else
+    qDebug() << "write_to_stencil not implemneted";
+#endif
 }
 
 void PdfViewOpenGLWidget::use_stencil_to_write(bool eq) {
-    //glStencilFunc(GL_EQUAL, 1, 0xFF);
+#ifdef SIOYEK_OPENGL_BACKEND
     if (eq) {
         glStencilFunc(GL_EQUAL, 1, 0xFF);
     }
@@ -1376,13 +1396,21 @@ void PdfViewOpenGLWidget::use_stencil_to_write(bool eq) {
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     }
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+#else
+    qDebug() << "use_stencil_to_write not implemented";
+#endif
 }
 
 void PdfViewOpenGLWidget::disable_stencil() {
+#ifdef SIOYEK_OPENGL_BACKEND
     glDisable(GL_STENCIL_TEST);
+#else
+    qDebug() << "disable_stencil not implemeneted";
+#endif
 }
 
 void PdfViewOpenGLWidget::render_transparent_background() {
+#ifdef SIOYEK_OPENGL_BACKEND
 
     float bar_data[] = {
         -1, -1,
@@ -1426,6 +1454,7 @@ void PdfViewOpenGLWidget::render_transparent_background() {
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     glDisable(GL_BLEND);
+#endif
 }
 
 void PdfViewOpenGLWidget::draw_stencil_rects(const std::vector<NormalizedWindowRect>& rects) {
@@ -1448,12 +1477,16 @@ void PdfViewOpenGLWidget::draw_stencil_rects(const std::vector<NormalizedWindowR
         for (int i = 0; i < 6; i++) window_rects.push_back(triangle2[i]);
     }
 
+#ifdef SIOYEK_OPENGL_BACKEND
     glUseProgram(shared_gl_objects.stencil_program);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
     glBufferData(GL_ARRAY_BUFFER, window_rects.size() * sizeof(float), window_rects.data(), GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, rects.size() * 6);
     glDisableVertexAttribArray(0);
+#else
+    qDebug() << "draw_stencil_rects not implemented";
+#endif
 
 }
 
@@ -1465,8 +1498,9 @@ void PdfViewOpenGLWidget::draw_stencil_rects(int page, const std::vector<Pageles
     draw_stencil_rects(normalized_rects);
 }
 
-void PdfViewOpenGLWidget::setup_text_painter(QPainter* painter) {
+void PdfViewOpenGLWidget::setup_text_painter() {
 
+#ifdef SIOYEK_OPENGL_BACKEND
     int bgcolor[4];
     int textcolor[4];
 
@@ -1477,10 +1511,13 @@ void PdfViewOpenGLWidget::setup_text_painter(QPainter* painter) {
     QFont font(QString::fromStdWString(TAG_FONT_FACE));
     font.setStyleHint(QFont::Monospace);
     font.setPixelSize(KEYBOARD_SELECT_FONT_SIZE);
-    painter->setBackgroundMode(Qt::BGMode::OpaqueMode);
-    painter->setBackground(background_brush);
-    painter->setPen(QColor(textcolor[0], textcolor[1], textcolor[2], textcolor[3]));
-    painter->setFont(font);
+    painter.setBackgroundMode(Qt::BGMode::OpaqueMode);
+    painter.setBackground(background_brush);
+    painter.setPen(QColor(textcolor[0], textcolor[1], textcolor[2], textcolor[3]));
+    painter.setFont(font);
+#else
+    qDebug() << "setup_text_painter not imlpemented";
+#endif
 
 }
 
@@ -1536,17 +1573,25 @@ void PdfViewOpenGLWidget::clear_all_selections() {
 }
 
 void PdfViewOpenGLWidget::bind_points(const std::vector<float>& points) {
+#ifdef SIOYEK_OPENGL_BACKEND
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.line_points_buffer_object);
     glBufferData(GL_ARRAY_BUFFER, sizeof(points[0]) * points.size(), &points[0], GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+#else
+    qDebug() << "bind_points not implemented";
+#endif
 }
 
 void PdfViewOpenGLWidget::bind_default() {
+#ifdef SIOYEK_OPENGL_BACKEND
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.uv_buffer_object);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+#else
+    qDebug() << "bind_default not implemented";
+#endif
 }
 
 void PdfViewOpenGLWidget::add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates){
@@ -1635,89 +1680,6 @@ void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const std::vector<F
 
 //void PdfViewOpenGLWidget::compile_drawings_into_vertex_and_index_buffers(std::vector<float>& line_coordinates) {
 
-CompiledDrawingData PdfViewOpenGLWidget::compile_drawings_into_vertex_and_index_buffers(const std::vector<float>& line_coordinates,
-    const std::vector<unsigned int>& indices,
-    const std::vector<GLint>& line_type_indices,
-    const std::vector<float>& dot_coordinates,
-    const std::vector<unsigned int>& dot_indices,
-    const std::vector<GLint>& dot_type_indices){
-    //std::vector<unsigned int> indices;
-    //int num_rectangles = line_coordinates.size() / 
-
-    std::vector<float> dot_uv_coordinates;
-    dot_uv_coordinates.reserve(dot_coordinates.size());
-    float uv_map[4 * 2] = { 0.0f, 0.0f,
-                            1.0f, 0.0f,
-                            0.0f, 1.0f,
-                            1.0f, 1.0f
-    };
-
-    for (int i = 0; i < dot_coordinates.size(); i++) {
-        dot_uv_coordinates.push_back(uv_map[i % 8]);
-    }
-
-    GLuint compiled_drawing_vao;
-    glGenVertexArrays(1, &compiled_drawing_vao);
-    GLuint compiled_vertex_array,
-        compiled_index_array,
-        dots_vertex_buffer,
-        dots_index_buffer,
-        dots_uv_buffer,
-        lines_type_index_buffer,
-        dots_type_index_buffer;
-
-    glGenBuffers(1, &compiled_vertex_array);
-    glGenBuffers(1, &compiled_index_array);
-    glGenBuffers(1, &dots_vertex_buffer);
-    glGenBuffers(1, &dots_index_buffer);
-    glGenBuffers(1, &dots_uv_buffer);
-    glGenBuffers(1, &lines_type_index_buffer);
-    glGenBuffers(1, &dots_type_index_buffer);
-
-    glBindVertexArray(compiled_drawing_vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, compiled_vertex_array);
-    glBufferData(GL_ARRAY_BUFFER, line_coordinates.size() * sizeof(float), line_coordinates.data(), GL_STATIC_DRAW);
-
-
-    //glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, lines_type_index_buffer);
-    glBufferData(GL_ARRAY_BUFFER, line_type_indices.size() * sizeof(GLint), line_type_indices.data(), GL_STATIC_DRAW);
-
-    //glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ARRAY_BUFFER, dots_vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, dot_coordinates.size() * sizeof(float), dot_coordinates.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, dots_uv_buffer);
-    glBufferData(GL_ARRAY_BUFFER, dot_uv_coordinates.size() * sizeof(float), dot_uv_coordinates.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, dots_type_index_buffer);
-    glBufferData(GL_ARRAY_BUFFER, dot_type_indices.size() * sizeof(GLint), dot_type_indices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, compiled_index_array);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dots_index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, dot_indices.size() * sizeof(unsigned int), dot_indices.data(), GL_STATIC_DRAW);
-
-    CompiledDrawingData res;
-    res.vao = compiled_drawing_vao;
-    res.vertex_buffer = compiled_vertex_array;
-    res.index_buffer = compiled_index_array;
-    res.dots_vertex_buffer = dots_vertex_buffer;
-    res.dots_index_buffer = dots_index_buffer;
-    res.dots_uv_buffer = dots_uv_buffer;
-    res.lines_type_index_buffer = lines_type_index_buffer;
-    res.dots_type_index_buffer = dots_type_index_buffer;
-    res.n_elements = indices.size();
-    res.n_dot_elements = dot_indices.size();
-    return res;
-
-}
 
 void PdfViewOpenGLWidget::render_compiled_drawings() {
     //NormalizedWindowPos res;
@@ -1979,7 +1941,7 @@ bool PdfViewOpenGLWidget::is_normalized_y_range_in_window(float y0, float y1) {
     return is_normalized_y_in_window(y0) || is_normalized_y_in_window(y1);
 }
 
-void PdfViewOpenGLWidget::render_portal_rect(QPainter* painter, AbsoluteRect portal_rect, bool is_pending) {
+void PdfViewOpenGLWidget::render_portal_rect(AbsoluteRect portal_rect, bool is_pending) {
     NormalizedWindowRect window_rect = portal_rect.to_window_normalized(dv());
 
     if (is_normalized_y_range_in_window(window_rect.y0, window_rect.y1)) {
@@ -1991,10 +1953,10 @@ void PdfViewOpenGLWidget::render_portal_rect(QPainter* painter, AbsoluteRect por
         }
 
         if (is_pending) {
-            hourglass_icon.paint(painter, window_qrect);
+            hourglass_icon.paint(&painter, window_qrect);
         }
         else{
-            render_ui_icon_for_current_color_mode(painter, portal_icon, portal_icon_white, window_qrect);
+            render_ui_icon_for_current_color_mode(portal_icon, portal_icon_white, window_qrect);
         }
         //painter->fillRect(portal_window_rect.x0, portal_window_rect.y0, fz_irect_width(portal_window_rect), fz_irect_height(portal_window_rect), fill_color);
 
@@ -2132,7 +2094,7 @@ QColor PdfViewOpenGLWidget::qcc4(const float* input_color) {
     return convert_float4_to_qcolor(&result[0]);
 }
 
-void PdfViewOpenGLWidget::render_ui_icon_for_current_color_mode(QPainter* painter, const QIcon& icon_black, const QIcon& icon_white, QRect window_qrect, bool is_highlighted){
+void PdfViewOpenGLWidget::render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect window_qrect, bool is_highlighted){
 
     float visible_annotation_icon_color[3] = {1, 1, 1};
     float mode_color[3] = {0};
@@ -2145,13 +2107,13 @@ void PdfViewOpenGLWidget::render_ui_icon_for_current_color_mode(QPainter* painte
     }
     int num_adjust_pixels = static_cast<int>(window_qrect.width() * 0.065f);
 
-    painter->fillRect(window_qrect.adjusted(num_adjust_pixels, num_adjust_pixels, -num_adjust_pixels, -num_adjust_pixels), convert_float3_to_qcolor(mode_color));
+    painter.fillRect(window_qrect.adjusted(num_adjust_pixels, num_adjust_pixels, -num_adjust_pixels, -num_adjust_pixels), convert_float3_to_qcolor(mode_color));
 
     if (is_bright(mode_color)){
-        icon_black.paint(painter, window_qrect);
+        icon_black.paint(&painter, window_qrect);
     }
     else{
-        icon_white.paint(painter, window_qrect);
+        icon_white.paint(&painter, window_qrect);
     }
 }
 
@@ -2794,6 +2756,90 @@ void PdfViewOpenGLWidget::compile_drawings_opengl_backend(DocumentView* dv, cons
     scratchpad->on_compile();
 }
 
+CompiledDrawingData PdfViewOpenGLWidget::compile_drawings_into_vertex_and_index_buffers(const std::vector<float>& line_coordinates,
+    const std::vector<unsigned int>& indices,
+    const std::vector<GLint>& line_type_indices,
+    const std::vector<float>& dot_coordinates,
+    const std::vector<unsigned int>& dot_indices,
+    const std::vector<GLint>& dot_type_indices){
+    //std::vector<unsigned int> indices;
+    //int num_rectangles = line_coordinates.size() /
+
+    std::vector<float> dot_uv_coordinates;
+    dot_uv_coordinates.reserve(dot_coordinates.size());
+    float uv_map[4 * 2] = { 0.0f, 0.0f,
+                            1.0f, 0.0f,
+                            0.0f, 1.0f,
+                            1.0f, 1.0f
+    };
+
+    for (int i = 0; i < dot_coordinates.size(); i++) {
+        dot_uv_coordinates.push_back(uv_map[i % 8]);
+    }
+
+    GLuint compiled_drawing_vao;
+    glGenVertexArrays(1, &compiled_drawing_vao);
+    GLuint compiled_vertex_array,
+        compiled_index_array,
+        dots_vertex_buffer,
+        dots_index_buffer,
+        dots_uv_buffer,
+        lines_type_index_buffer,
+        dots_type_index_buffer;
+
+    glGenBuffers(1, &compiled_vertex_array);
+    glGenBuffers(1, &compiled_index_array);
+    glGenBuffers(1, &dots_vertex_buffer);
+    glGenBuffers(1, &dots_index_buffer);
+    glGenBuffers(1, &dots_uv_buffer);
+    glGenBuffers(1, &lines_type_index_buffer);
+    glGenBuffers(1, &dots_type_index_buffer);
+
+    glBindVertexArray(compiled_drawing_vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, compiled_vertex_array);
+    glBufferData(GL_ARRAY_BUFFER, line_coordinates.size() * sizeof(float), line_coordinates.data(), GL_STATIC_DRAW);
+
+
+    //glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, lines_type_index_buffer);
+    glBufferData(GL_ARRAY_BUFFER, line_type_indices.size() * sizeof(GLint), line_type_indices.data(), GL_STATIC_DRAW);
+
+    //glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    //glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, dots_vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, dot_coordinates.size() * sizeof(float), dot_coordinates.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, dots_uv_buffer);
+    glBufferData(GL_ARRAY_BUFFER, dot_uv_coordinates.size() * sizeof(float), dot_uv_coordinates.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, dots_type_index_buffer);
+    glBufferData(GL_ARRAY_BUFFER, dot_type_indices.size() * sizeof(GLint), dot_type_indices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, compiled_index_array);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, dots_index_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, dot_indices.size() * sizeof(unsigned int), dot_indices.data(), GL_STATIC_DRAW);
+
+    CompiledDrawingData res;
+    res.vao = compiled_drawing_vao;
+    res.vertex_buffer = compiled_vertex_array;
+    res.index_buffer = compiled_index_array;
+    res.dots_vertex_buffer = dots_vertex_buffer;
+    res.dots_index_buffer = dots_index_buffer;
+    res.dots_uv_buffer = dots_uv_buffer;
+    res.lines_type_index_buffer = lines_type_index_buffer;
+    res.dots_type_index_buffer = dots_type_index_buffer;
+    res.n_elements = indices.size();
+    res.n_dot_elements = dot_indices.size();
+    return res;
+
+}
+
 void PdfViewOpenGLWidget::paintGL() {
 
     painter.begin(this);
@@ -2802,7 +2848,7 @@ void PdfViewOpenGLWidget::paintGL() {
     painter.setPen(red_color);
 
     if (scratchpad == nullptr) {
-        my_render(&painter);
+        my_render();
     }
     else {
         render_scratchpad();
