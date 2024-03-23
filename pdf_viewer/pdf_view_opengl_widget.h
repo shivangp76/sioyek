@@ -159,7 +159,7 @@ protected:
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags);
     void begin_native_painting();
     void end_native_painting();
-    void render_texture(SioyekTextureType texture, float vertices[8], DocumentView::ColorPalette palette);
+    void render_texture(SioyekTextureType texture, NormalizedWindowRect rect, DocumentView::ColorPalette palette);
     void render_page_separator();
 
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
@@ -203,8 +203,8 @@ protected:
     void set_highlight_color(float* color, float alpha);
     void draw_pending_freehand_drawings(const std::vector<int>& visible_pages);
     void render_highlights_and_bookmarks();
+    void do_paint();
 
-    void render_texture();
     void prepare_initial_render_pipeline();
     void prepare_link_highlight_state();
 public:

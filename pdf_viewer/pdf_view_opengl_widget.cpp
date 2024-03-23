@@ -485,6 +485,7 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, Documen
     float page_width = doc(in_overview)->get_page_width(page_number);
     float page_height = doc(in_overview)->get_page_height(page_number);
     PagelessDocumentRect page_rect({ 0, 0, page_width, page_height });
+
     if ((page_width < 0) || (page_height < 0)) return;
 
     float zoom_level = in_overview ? document_view->get_overview_zoom_level() : dv()->get_zoom_level();
@@ -652,9 +653,8 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, Documen
             static_cast<int>(rendered_width / device_pixel_ratio),
             static_cast<int>(rendered_height / device_pixel_ratio), is_sliced);
 
-        rect_to_quad(window_rect, page_vertices);
 
-        render_texture(texture, page_vertices, forced_color_palette);
+        render_texture(texture, window_rect, forced_color_palette);
 
         
         if (dv()->is_two_page_mode() && (stencils_allowed)) {
@@ -2828,18 +2828,7 @@ CompiledDrawingData PdfViewOpenGLWidget::compile_drawings_into_vertex_and_index_
 
 void PdfViewOpenGLWidget::paintGL() {
 
-    painter.begin(this);
-
-    QColor red_color = QColor::fromRgb(255, 0, 0);
-    painter.setPen(red_color);
-
-    if (scratchpad == nullptr) {
-        my_render();
-    }
-    else {
-        render_scratchpad();
-    }
-    painter.end();
+    do_paint();
 }
 
 void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview) {
@@ -2916,7 +2905,14 @@ void PdfViewOpenGLWidget::clear_background_buffers(float r, float g, float b, GL
     glClearColor(r, g, b, 1.0f);
     glClear(buffer_flags);
 #else
-    qDebug() << "clear_background_buffers not implemented";
+    if (buffer_flags & GL_COLOR_BUFFER_BIT){
+        int r_ = static_cast<int>(r * 255.0f);
+        int g_ = static_cast<int>(g * 255.0f);
+        int b_ = static_cast<int>(b * 255.0f);
+        QBrush background_brush(QColor(r_, g_, b_));
+        painter.fillRect(rect(), background_brush);
+    }
+    // qDebug() << "clear_background_buffers not implemented";
 #endif
 }
 
@@ -2986,9 +2982,11 @@ void PdfViewOpenGLWidget::prepare_highlight_pipeline(){
 #endif
 }
 
-void PdfViewOpenGLWidget::render_texture(SioyekTextureType texture, float vertices[8], DocumentView::ColorPalette forced_color_palette){
+void PdfViewOpenGLWidget::render_texture(SioyekTextureType texture, NormalizedWindowRect window_rect, DocumentView::ColorPalette forced_color_palette){
 
 #ifdef SIOYEK_OPENGL_BACKEND
+    float vertices[8];
+    rect_to_quad(window_rect, vertices);
     if (texture != 0) {
         bind_program(forced_color_palette);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -3013,7 +3011,15 @@ void PdfViewOpenGLWidget::render_texture(SioyekTextureType texture, float vertic
     glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float), vertices, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 #else
-    qDebug() << "render_texture not implemented";
+    if (!texture) return;
+    auto top_left = window_rect.top_left().to_window(document_view);
+    auto bottom_right = window_rect.bottom_right().to_window(document_view);
+    int width = bottom_right.x - top_left.x;
+    int height = bottom_right.y - top_left.y;
+    QRect window_qrect(top_left.x, top_left.y, width, height);
+    painter.drawPixmap(window_qrect, *texture);
+    //todo: handle other color palettes
+
 #endif
 }
 
@@ -3087,10 +3093,21 @@ void PdfViewOpenGLWidget::draw_icon(const QIcon& icon, QRect rect){
 
 #ifndef SIOYEK_OPENGL_BACKEND
 void PdfViewOpenGLWidget::paintEvent(QPaintEvent* event){
-    painter.begin(this);
-    QBrush background(Qt::blue);
-    painter.fillRect(0, 0, width(), height(), background);
-    painter.drawText(rect(), Qt::AlignCenter, "We are so back");
-    painter.end();
+    do_paint();
 }
 #endif
+
+void PdfViewOpenGLWidget::do_paint(){
+
+    painter.begin(this);
+    QColor red_color = QColor::fromRgb(255, 0, 0);
+    painter.setPen(red_color);
+
+    if (scratchpad == nullptr) {
+        my_render();
+    }
+    else {
+        render_scratchpad();
+    }
+    painter.end();
+}

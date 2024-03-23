@@ -13,6 +13,7 @@
 #include <thread>
 #include <unordered_map>
 #include <map>
+#include <QPixmap>
 
 #include <qobject.h>
 #include <qtimer.h>
@@ -26,7 +27,7 @@ extern const unsigned int CACHE_INVALID_MILIES;
 #ifdef SIOYEK_OPENGL_BACKEND
 using SioyekTextureType = GLuint;
 #else
-using SioyekTextureType = GLuint;
+using SioyekTextureType = QPixmap*;
 #endif
 
 struct RenderRequest {

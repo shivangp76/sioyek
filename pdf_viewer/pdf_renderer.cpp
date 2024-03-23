@@ -734,7 +734,10 @@ SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap) {
 
     return result;
 #else
-    return 0;
+    QImage image(pixmap->samples, pixmap->w, pixmap->h, pixmap->stride, QImage::Format::Format_RGB888);
+    QPixmap* result = new QPixmap(QPixmap::fromImage(image));
+
+    return result;
 #endif
 }
 
@@ -742,5 +745,6 @@ void PdfRenderer::release_texture(SioyekTextureType texture){
 #ifdef SIOYEK_OPENGL_BACKEND
     glDeleteTextures(1, &texture);
 #else
+    delete texture;
 #endif
 }
