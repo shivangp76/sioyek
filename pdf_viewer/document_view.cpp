@@ -22,6 +22,7 @@ extern bool REAL_PAGE_SEPARATION;
 extern float OVERVIEW_SIZE[2];
 extern float OVERVIEW_OFFSET[2];
 extern bool SHOULD_HIGHLIGHT_LINKS;
+extern float HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -91,6 +92,9 @@ void DocumentView::handle_escape() {
     }
     should_highlight_words = false;
     should_show_numbers = false;
+    highlighted_tags = {};
+    character_highlight_rect = {};
+    wrong_character_rect = {};
 }
 
 void DocumentView::exit_ruler_mode() {
@@ -738,6 +742,7 @@ void DocumentView::reset_doc_state() {
     search_results_mutex.unlock();
 
     overview_page = {};
+    synctex_highlights.clear();
     handle_escape();
 }
 
@@ -2780,4 +2785,117 @@ bool DocumentView::on_vertical_scroll(){
         res = true;
     }
     return res;
+}
+
+void DocumentView::set_tag_prefix(std::wstring prefix) {
+    tag_prefix = utf8_encode(prefix);
+}
+
+void DocumentView::clear_tag_prefix() {
+    tag_prefix = "";
+}
+
+void DocumentView::set_highlighted_tags(std::vector<std::string> tags) {
+    highlighted_tags = tags;
+}
+bool DocumentView::is_tag_highlighted(const std::string& tag) {
+    for (auto& htag : highlighted_tags) {
+        if (tag == htag) return true;
+    }
+    return false;
+}
+
+void DocumentView::set_pending_portal_position(std::optional<AbsoluteRect> rect) {
+    pending_portal_rect = rect;
+}
+
+void DocumentView::rotate_clockwise() {
+    rotation_index = (rotation_index + 1) % 4;
+}
+
+void DocumentView::rotate_counterclockwise() {
+    rotation_index = (rotation_index - 1) % 4;
+    if (rotation_index < 0) {
+        rotation_index += 4;
+    }
+}
+
+bool DocumentView::is_rotated() {
+    return rotation_index != 0;
+}
+
+void DocumentView::toggle_fastread_mode() {
+    fastread_mode = !fastread_mode;
+}
+
+void DocumentView::set_typing_rect(DocumentRect highlight_rect, std::optional<DocumentRect> wrong_rect) {
+    AbsoluteRect absrect = current_document->document_to_absolute_rect(highlight_rect);
+    character_highlight_rect = absrect;
+
+    if (wrong_rect) {
+        AbsoluteRect abswrong = current_document->document_to_absolute_rect(wrong_rect.value());
+        wrong_character_rect = abswrong;
+    }
+    else {
+        wrong_character_rect = {};
+    }
+
+}
+
+void DocumentView::set_underline(AbsoluteDocumentPos abspos) {
+    underline = abspos;
+}
+
+void DocumentView::clear_underline() {
+    underline = {};
+}
+
+void DocumentView::set_selected_highlight_index(int index) {
+    selected_highlight_index = index;
+}
+
+void DocumentView::set_selected_bookmark_index(int index) {
+    selected_bookmark_index = index;
+}
+
+void DocumentView::set_overview_highlights(const std::vector<DocumentRect>& rects){
+    overview_highlights = rects;
+}
+
+void DocumentView::set_selected_rectangle(AbsoluteRect selected) {
+    selected_rectangle = selected;
+}
+
+void DocumentView::clear_selected_rectangle() {
+    selected_rectangle = {};
+}
+std::optional<AbsoluteRect> DocumentView::get_selected_rectangle() {
+    return selected_rectangle;
+}
+
+void DocumentView::set_pending_download_portals(std::vector<AbsoluteRect>&& portal_rects){
+    pending_download_portals = std::move(portal_rects);
+}
+
+void DocumentView::set_synctex_highlights(std::vector<DocumentRect> highlights) {
+    synctex_highlight_time = QTime::currentTime();
+    synctex_highlights = std::move(highlights);
+}
+
+bool DocumentView::should_show_synxtex_highlights() {
+    if (synctex_highlights.size() > 0) {
+        if ((HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT < 0) || (synctex_highlight_time.msecsTo(QTime::currentTime()) < (HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT * 1000.0f))) {
+            return true;
+        }
+    }
+    return false;
+
+}
+
+bool DocumentView::has_synctex_timed_out() {
+    if (synctex_highlights.size() > 0 && (!should_show_synxtex_highlights())) {
+        synctex_highlights.clear();
+        return true;
+    }
+    return false;
 }

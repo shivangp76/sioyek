@@ -568,9 +568,9 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         // update temp drawings of opengl widget
         //AbsoluteDocumentPos mouse_abspos = WindowPos(mouse_event->pos()).to_absolute(main_document_view);
         AbsoluteDocumentPos mouse_abspos = get_window_abspos(WindowPos(mouse_event->pos()));
-        opengl_widget->moving_drawings.clear();
-        opengl_widget->moving_pixmaps.clear();
-        move_selected_drawings(mouse_abspos, opengl_widget->moving_drawings, opengl_widget->moving_pixmaps);
+        main_document_view->moving_drawings.clear();
+        main_document_view->moving_pixmaps.clear();
+        move_selected_drawings(mouse_abspos, main_document_view->moving_drawings, main_document_view->moving_pixmaps);
         validate_render();
         return;
     }
@@ -579,7 +579,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         if (rect_select_begin.has_value()) {
             rect_select_end = abs_mpos;
             AbsoluteRect selected_rect(rect_select_begin.value(), rect_select_end.value());
-            opengl_widget->set_selected_rectangle(selected_rect);
+            main_document_view->set_selected_rectangle(selected_rect);
 
             validate_render();
         }
@@ -1119,7 +1119,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             }
         }
 
-        if (opengl_widget->has_synctex_timed_out()) {
+        if (main_document_view->has_synctex_timed_out()) {
             is_render_invalidated = true;
         }
 
@@ -1560,7 +1560,7 @@ void MainWidget::handle_escape() {
         //main_document_view->ruler
         if (!done_anything) {
             main_document_view->exit_ruler_mode();
-            opengl_widget->clear_underline();
+            main_document_view->clear_underline();
         }
     }
     //if (opengl_widget) opengl_widget->set_should_draw_vertical_line(false);
@@ -1826,7 +1826,7 @@ void MainWidget::do_synctex_forward_search(const Path& pdf_file_path, const Path
                         }
                     }
 
-                    opengl_widget->set_synctex_highlights({ line_rect });
+                    main_document_view->set_synctex_highlights({ line_rect });
                     if (highlight_rects.size() == 0) {
                         main_document_view->goto_page(target_page);
                     }
@@ -1952,7 +1952,6 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
 
     // reset smart fit when changing documents
     last_smart_fit_page = {};
-    opengl_widget->on_document_view_reset();
     show_password_prompt_if_required();
 
     if (main_document_view_has_document()) {
@@ -2005,7 +2004,6 @@ void MainWidget::open_document_at_location(const Path& path_,
 
     // reset smart fit when changing documents
     last_smart_fit_page = {};
-    opengl_widget->on_document_view_reset();
     show_password_prompt_if_required();
 }
 
@@ -2075,9 +2073,10 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat
             if (should_focus) {
                 main_document_view->set_offset_y(typing_location.value().focus_offset());
             }
-            opengl_widget->set_typing_rect(character_rect, wrong_rect);
+            main_document_view->set_typing_rect(character_rect, wrong_rect);
 
         }
+        validate_render();
         return;
 
     }
@@ -2349,7 +2348,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
         is_selecting = false;
         this->point_select_mode = false;
-        opengl_widget->clear_selected_rectangle();
+        main_document_view->clear_selected_rectangle();
         return;
     }
     if (rect_select_mode) {
@@ -2366,7 +2365,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             if (rect_select_begin.has_value() && rect_select_end.has_value()) {
                 rect_select_end = abs_doc_pos;
                 AbsoluteRect selected_rectangle = AbsoluteRect(rect_select_begin.value(), rect_select_end.value());
-                opengl_widget->set_selected_rectangle(selected_rectangle);
+                main_document_view->set_selected_rectangle(selected_rectangle);
 
                 // is pending rect command
                 if (pending_command_instance) {
@@ -2657,7 +2656,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
         if (!TOUCH_MODE) {
             if (main_document_view) {
                  main_document_view->exit_ruler_mode();
-                 opengl_widget->clear_underline();
+                 main_document_view->clear_underline();
             }
             //if (opengl_widget) opengl_widget->set_should_draw_vertical_line(false);
         }
@@ -3510,7 +3509,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         //current_candid.source_text = reference_info.source_text;
         //smart_view_candidates = { current_candid };
         set_overview_position(reference_info.targets[0].page, reference_info.targets[0].y, reference_type_string(reference_info.reference_type));
-        opengl_widget->set_overview_highlights(reference_info.overview_highlight_rects);
+        main_document_view->set_overview_highlights(reference_info.overview_highlight_rects);
         return true;
     }
 
@@ -4290,7 +4289,7 @@ std::optional<PagelessDocumentRect> MainWidget::get_tag_rect(std::string tag, st
 }
 
 bool MainWidget::is_rotated() {
-    return opengl_widget->is_rotated();
+    return main_document_view->is_rotated();
 }
 
 void MainWidget::show_password_prompt_if_required() {
@@ -4483,7 +4482,7 @@ std::optional<float> MainWidget::move_visual_mark_next_get_offset(){
 }
 
 void MainWidget::move_visual_mark_next() {
-    opengl_widget->clear_underline();
+    main_document_view->clear_underline();
 
     int prev_line_index = main_document_view->get_line_index();
     int vertical_line_page = main_document_view->get_vertical_line_page();
@@ -4549,7 +4548,7 @@ void MainWidget::move_visual_mark_next() {
         AbsoluteDocumentPos underline_pos;
         underline_pos.y = cr.y1;
         underline_pos.x = abspos.x - main_document_view->get_view_width() / main_document_view->get_zoom_level() - next_offset.value() / main_document_view->get_zoom_level();
-        opengl_widget->set_underline(underline_pos);
+        main_document_view->set_underline(underline_pos);
         /* opengl_widget->set_underline() */
     }
 }
@@ -4595,7 +4594,7 @@ AbsoluteRect MainWidget::move_visual_mark(int offset) {
     if (is_reading) {
         read_current_line();
     }
-    opengl_widget->clear_underline();
+    main_document_view->clear_underline();
     return ruler_rect;
 }
 
@@ -5080,7 +5079,7 @@ void MainWidget::set_rect_select_mode(bool mode) {
             handle_command_types(std::make_unique<KeyboardSelectPointCommand>(this, std::move(pending_command_instance)), 0);
         }
         else {
-            opengl_widget->set_selected_rectangle(AbsoluteRect());
+            main_document_view->set_selected_rectangle(AbsoluteRect());
         }
     }
     invalidate_render();
@@ -5094,20 +5093,20 @@ void MainWidget::set_point_select_mode(bool mode) {
             handle_command_types(std::make_unique<KeyboardSelectPointCommand>(this, std::move(pending_command_instance)), 0);
         }
         else {
-            opengl_widget->set_selected_rectangle(AbsoluteRect());
+            main_document_view->set_selected_rectangle(AbsoluteRect());
         }
     }
 }
 
 void MainWidget::clear_selected_rect() {
-    opengl_widget->clear_selected_rectangle();
+    main_document_view->clear_selected_rectangle();
     //rect_select_mode = false;
     //rect_select_begin = {};
     //rect_select_end = {};
 }
 
 std::optional<AbsoluteRect> MainWidget::get_selected_rect_absolute() {
-    return opengl_widget->get_selected_rectangle();
+    return main_document_view->get_selected_rectangle();
 }
 
 std::optional<DocumentRect> MainWidget::get_selected_rect_document() {
@@ -6159,7 +6158,7 @@ void MainWidget::handle_toggle_typing_mode() {
         charaddr.page = page - 1;
         charaddr.next_page();
 
-        opengl_widget->set_typing_rect(DocumentRect(rect_from_quad(charaddr.character->quad), charaddr.page), {});
+        main_document_view->set_typing_rect(DocumentRect(rect_from_quad(charaddr.character->quad), charaddr.page), {});
 
         typing_location = std::move(charaddr);
         main_document_view->set_offset_y(typing_location.value().focus_offset());
@@ -6609,7 +6608,7 @@ void MainWidget::android_handle_visual_mode() {
     if (is_visual_mark_mode()) {
         //opengl_widget->set_should_draw_vertical_line(false);
         main_document_view->exit_ruler_mode();
-        opengl_widget->clear_underline();
+        main_document_view->clear_underline();
     }
     else {
 
@@ -7441,8 +7440,8 @@ void MainWidget::on_config_changed(std::string config_name, bool should_save) {
 }
 
 void MainWidget::handle_undo_marked_data() {
-    if (opengl_widget->marked_data_rects.size() > 0) {
-        opengl_widget->marked_data_rects.pop_back();
+    if (main_document_view->marked_data_rects.size() > 0) {
+        main_document_view->marked_data_rects.pop_back();
     }
 }
 
@@ -7463,83 +7462,83 @@ void MainWidget::handle_add_marked_data() {
         MarkedDataRect begin_rect;
         begin_rect.rect = begin_docrect;
         begin_rect.type = 0;
-        opengl_widget->marked_data_rects.push_back(begin_rect);
+        main_document_view->marked_data_rects.push_back(begin_rect);
 
         MarkedDataRect end_rect;
         end_rect.rect = end_docrect;
         end_rect.type = 1;
-        opengl_widget->marked_data_rects.push_back(end_rect);
+        main_document_view->marked_data_rects.push_back(end_rect);
 
         invalidate_render();
     }
 }
 
 void MainWidget::handle_remove_marked_data() {
-    opengl_widget->marked_data_rects.clear();
+    main_document_view->marked_data_rects.clear();
 }
 
 
 void MainWidget::handle_export_marked_data() {
-    fz_stext_page* stext_page = doc()->get_stext_with_page_number(get_current_page_number());
-    std::vector<fz_stext_char*> flat_chars;
-    get_flat_chars_from_stext_page(stext_page, flat_chars);
-    auto export_path = qgetenv("SIOYEK_DATA_EXPORT").toStdString();
-    QDir export_dir = QDir(QString::fromStdString(export_path));
-    std::string checksum = checksummer->get_checksum_fast(doc()->get_path()).value();
-    QString file_name = QString("%1_%2.json").arg(QString::fromStdString(checksum), QString::number(get_current_page_number()));
-    auto file_path = export_dir.filePath(file_name);
+    // fz_stext_page* stext_page = doc()->get_stext_with_page_number(get_current_page_number());
+    // std::vector<fz_stext_char*> flat_chars;
+    // get_flat_chars_from_stext_page(stext_page, flat_chars);
+    // auto export_path = qgetenv("SIOYEK_DATA_EXPORT").toStdString();
+    // QDir export_dir = QDir(QString::fromStdString(export_path));
+    // std::string checksum = checksummer->get_checksum_fast(doc()->get_path()).value();
+    // QString file_name = QString("%1_%2.json").arg(QString::fromStdString(checksum), QString::number(get_current_page_number()));
+    // auto file_path = export_dir.filePath(file_name);
 
-    QJsonObject json;
+    // QJsonObject json;
 
-    QJsonArray rects;
-    for (auto [type, rect_objects] : opengl_widget->get_marked_data_rect_map()) {
-        for (auto rect_object : rect_objects) {
-            QJsonArray rect;
-            rect.append(rect_object.type);
-            rect.append(rect_object.rect.rect.x0);
-            rect.append(rect_object.rect.rect.x1);
-            rect.append(rect_object.rect.rect.y0);
-            rect.append(rect_object.rect.rect.y1);
-            rects.append(rect);
-        }
+    // QJsonArray rects;
+    // for (auto [type, rect_objects] : main_document_view->get_marked_data_rect_map()) {
+    //     for (auto rect_object : rect_objects) {
+    //         QJsonArray rect;
+    //         rect.append(rect_object.type);
+    //         rect.append(rect_object.rect.rect.x0);
+    //         rect.append(rect_object.rect.rect.x1);
+    //         rect.append(rect_object.rect.rect.y0);
+    //         rect.append(rect_object.rect.rect.y1);
+    //         rects.append(rect);
+    //     }
 
-    }
-    //for (int i = 0; i < opengl_widget->marked_data_rects.size(); i++) {
-    //    QJsonArray rect;
-    //    rect.append(opengl_widget->marked_data_rects[i].first.x0);
-    //    rect.append(opengl_widget->marked_data_rects[i].first.x1);
-    //    rect.append(opengl_widget->marked_data_rects[i].first.y0);
-    //    rect.append(opengl_widget->marked_data_rects[i].first.y1);
-    //    rects.append(rect);
-    //}
+    // }
+    // //for (int i = 0; i < opengl_widget->marked_data_rects.size(); i++) {
+    // //    QJsonArray rect;
+    // //    rect.append(opengl_widget->marked_data_rects[i].first.x0);
+    // //    rect.append(opengl_widget->marked_data_rects[i].first.x1);
+    // //    rect.append(opengl_widget->marked_data_rects[i].first.y0);
+    // //    rect.append(opengl_widget->marked_data_rects[i].first.y1);
+    // //    rects.append(rect);
+    // //}
 
-    json["selected_char_rects"] = rects;
-    json["schema"] = 0;
+    // json["selected_char_rects"] = rects;
+    // json["schema"] = 0;
 
-    QJsonArray page_chars;
+    // QJsonArray page_chars;
 
-    for (auto chr : flat_chars) {
-        PagelessDocumentRect chr_rect = rect_from_quad(chr->quad);
-        QJsonArray chr_json;
-        chr_json.append(chr->c);
-        chr_json.append(chr_rect.x0);
-        chr_json.append(chr_rect.x1);
-        chr_json.append(chr_rect.y0);
-        chr_json.append(chr_rect.y1);
-        page_chars.append(chr_json);
-    }
-    json["page_characters"] = page_chars;
+    // for (auto chr : flat_chars) {
+    //     PagelessDocumentRect chr_rect = rect_from_quad(chr->quad);
+    //     QJsonArray chr_json;
+    //     chr_json.append(chr->c);
+    //     chr_json.append(chr_rect.x0);
+    //     chr_json.append(chr_rect.x1);
+    //     chr_json.append(chr_rect.y0);
+    //     chr_json.append(chr_rect.y1);
+    //     page_chars.append(chr_json);
+    // }
+    // json["page_characters"] = page_chars;
 
-    QJsonDocument json_doc;
-    json_doc.setObject(json);
+    // QJsonDocument json_doc;
+    // json_doc.setObject(json);
 
-    QFile json_file(file_path);
-    json_file.open(QFile::WriteOnly);
-    json_file.write(json_doc.toJson());
-    json_file.close();
+    // QFile json_file(file_path);
+    // json_file.open(QFile::WriteOnly);
+    // json_file.write(json_doc.toJson());
+    // json_file.close();
 
-    opengl_widget->marked_data_rects.clear();
-    invalidate_render();
+    // opengl_widget->marked_data_rects.clear();
+    // invalidate_render();
 
 
 }
@@ -7699,30 +7698,30 @@ void MainWidget::handle_drawing_move(QPoint pos, float pressure) {
     else {
         fdp.thickness = freehand_thickness * thickness_zoom_factor;
     }
-    opengl_widget->current_drawing.points.push_back(fdp);
+    main_document_view->current_drawing.points.push_back(fdp);
 }
 
 void MainWidget::start_drawing() {
     is_drawing = true;
-    opengl_widget->current_drawing.points.clear();
-    opengl_widget->current_drawing.type = current_freehand_type;
-    opengl_widget->current_drawing.alpha = freehand_alpha;
+    main_document_view->current_drawing.points.clear();
+    main_document_view->current_drawing.type = current_freehand_type;
+    main_document_view->current_drawing.alpha = freehand_alpha;
 }
 
 void MainWidget::finish_drawing(QPoint pos) {
     is_drawing = false;
 
-    if (opengl_widget->current_drawing.points.size() == 0) {
+    if (main_document_view->current_drawing.points.size() == 0) {
         handle_drawing_move(pos, -1.0f);
     }
 
-    std::vector<FreehandDrawingPoint> pruned_points = prune_freehand_drawing_points(opengl_widget->current_drawing.points);
-    opengl_widget->current_drawing.points.clear();
+    std::vector<FreehandDrawingPoint> pruned_points = prune_freehand_drawing_points(main_document_view->current_drawing.points);
+    main_document_view->current_drawing.points.clear();
 
     FreehandDrawing pruned_drawing;
     pruned_drawing.points = pruned_points;
-    pruned_drawing.type = opengl_widget->current_drawing.type;
-    pruned_drawing.alpha = opengl_widget->current_drawing.alpha;
+    pruned_drawing.type = main_document_view->current_drawing.type;
+    pruned_drawing.alpha = main_document_view->current_drawing.alpha;
     pruned_drawing.creattion_time = QDateTime::currentDateTime();
 
     if (opengl_widget->get_scratchpad()) {
@@ -7745,7 +7744,7 @@ void MainWidget::delete_freehand_drawings(AbsoluteRect rect) {
     }
     else {
         DocumentRect page_rect = rect.to_document(doc());
-        doc()->delete_page_intersecting_drawings(page_rect.page, rect, opengl_widget->visible_drawing_mask);
+        doc()->delete_page_intersecting_drawings(page_rect.page, rect, main_document_view->visible_drawing_mask);
         set_rect_select_mode(false);
         clear_selected_rect();
         invalidate_render();
@@ -7760,7 +7759,7 @@ void MainWidget::select_freehand_drawings(AbsoluteRect rect) {
         selected_indices = scratchpad->get_intersecting_objects(rect);
     }
     else {
-        selected_indices = doc()->get_page_intersecting_drawing_indices(page_rect.page, rect, opengl_widget->visible_drawing_mask);;
+        selected_indices = doc()->get_page_intersecting_drawing_indices(page_rect.page, rect, main_document_view->visible_drawing_mask);;
     }
 
     selected_drawings.page = page_rect.page;
@@ -7769,18 +7768,18 @@ void MainWidget::select_freehand_drawings(AbsoluteRect rect) {
     selected_freehand_drawings = selected_drawings;
     set_rect_select_mode(false);
     clear_selected_rect();
-    opengl_widget->moving_drawings.clear();
-    opengl_widget->moving_pixmaps.clear();
+    main_document_view->moving_drawings.clear();
+    main_document_view->moving_pixmaps.clear();
 
     if (opengl_widget->get_scratchpad()) {
-        scratchpad->get_selected_objects_with_indices(selected_indices, opengl_widget->moving_drawings, opengl_widget->moving_pixmaps);
+        scratchpad->get_selected_objects_with_indices(selected_indices, main_document_view->moving_drawings, main_document_view->moving_pixmaps);
     }
     else {
         doc()->get_page_freehand_drawings_with_indices(
             selected_freehand_drawings->page,
             selected_freehand_drawings->selected_indices,
-            opengl_widget->moving_drawings,
-            opengl_widget->moving_pixmaps);
+            main_document_view->moving_drawings,
+            main_document_view->moving_pixmaps);
     }
 
     invalidate_render();
@@ -7788,20 +7787,20 @@ void MainWidget::select_freehand_drawings(AbsoluteRect rect) {
 
 void MainWidget::hande_turn_on_all_drawings() {
     for (int i = 0; i < 26; i++) {
-        opengl_widget->visible_drawing_mask[i] = true;
+        main_document_view->visible_drawing_mask[i] = true;
     }
 }
 
 void MainWidget::hande_turn_off_all_drawings() {
     for (int i = 0; i < 26; i++) {
-        opengl_widget->visible_drawing_mask[i] = false;
+        main_document_view->visible_drawing_mask[i] = false;
     }
 }
 
 void MainWidget::handle_toggle_drawing_mask(char symbol) {
 
     if (symbol >= 'a' && symbol <= 'z') {
-        opengl_widget->visible_drawing_mask[symbol - 'a'] = !opengl_widget->visible_drawing_mask[symbol - 'a'];
+        main_document_view->visible_drawing_mask[symbol - 'a'] = !main_document_view->visible_drawing_mask[symbol - 'a'];
     }
 }
 
@@ -8409,8 +8408,8 @@ void MainWidget::handle_freehand_drawing_move_finish() {
     //}
 
     freehand_drawing_move_data = {};
-    opengl_widget->moving_drawings.clear();
-    opengl_widget->moving_pixmaps.clear();
+    main_document_view->moving_drawings.clear();
+    main_document_view->moving_pixmaps.clear();
 
 }
 
@@ -8653,7 +8652,7 @@ void MainWidget::update_opengl_pending_download_portals() {
         }
 
     }
-    opengl_widget->set_pending_download_portals(std::move(pending_rects));
+    main_document_view->set_pending_download_portals(std::move(pending_rects));
     invalidate_render();
 }
 
@@ -8935,7 +8934,7 @@ void MainWidget::show_touch_buttons_for_overview_type(std::string type) {
 void MainWidget::set_overview_page(std::optional<OverviewState> overview) {
 
     if (!overview){
-        opengl_widget->set_overview_highlights({});
+        main_document_view->set_overview_highlights({});
     }
     if (TOUCH_MODE) {
         if (overview) {
@@ -9732,15 +9731,15 @@ void MainWidget::set_highlight_links(bool should_highlight, bool should_show_num
 }
 
 void MainWidget::rotate_clockwise() {
-    opengl_widget->rotate_clockwise();
+    main_document_view->rotate_clockwise();
 }
 
 void MainWidget::rotate_counterclockwise() {
-    opengl_widget->rotate_counterclockwise();
+    main_document_view->rotate_counterclockwise();
 }
 
 void MainWidget::toggle_fastread() {
-    opengl_widget->toggle_fastread_mode();
+    main_document_view->toggle_fastread_mode();
 }
 
 void MainWidget::export_json(std::wstring json_file_path){
@@ -10152,7 +10151,7 @@ void MainWidget::handle_freehand_drawing_selection_click(AbsoluteDocumentPos cli
         doc()->delete_page_intersecting_drawings(
             selected_freehand_drawings->page,
             selected_freehand_drawings->selection_absrect,
-            opengl_widget->visible_drawing_mask);
+            main_document_view->visible_drawing_mask);
     }
 
     FreehandDrawingMoveData md;
@@ -10319,11 +10318,11 @@ PaperDownloadFinishedAction MainWidget::get_paper_download_action_from_string(QS
 
 void MainWidget::set_tag_prefix(std::wstring prefix) {
 
-    opengl_widget->set_tag_prefix(prefix);
+    main_document_view->set_tag_prefix(prefix);
 }
 
 void MainWidget::clear_tag_prefix() {
-    opengl_widget->clear_tag_prefix();
+    main_document_view->clear_tag_prefix();
 }
 
 QPoint MainWidget::cursor_pos() {
@@ -10345,12 +10344,12 @@ void MainWidget::clear_current_document_drawings() {
 
 void MainWidget::set_selected_highlight_index(int index) {
     selected_highlight_index = index;
-    opengl_widget->set_selected_highlight_index(index);
+    main_document_view->set_selected_highlight_index(index);
 }
 
 void MainWidget::set_selected_bookmark_index(int index) {
     selected_bookmark_index = index;
-    opengl_widget->set_selected_bookmark_index(index);
+    main_document_view->set_selected_bookmark_index(index);
 }
 
 void MainWidget::handle_highlight_tags_pre_perform(const std::vector<int>& visible_highlight_indices) {
@@ -10614,7 +10613,7 @@ void MainWidget::highlight_window_points() {
 }
 
 void MainWidget::set_highlighted_tags(std::vector<std::string> tags) {
-    opengl_widget->set_highlighted_tags(tags);
+    main_document_view->set_highlighted_tags(tags);
 }
 
 AbsoluteDocumentPos MainWidget::get_mouse_abspos() {
@@ -11015,10 +11014,10 @@ void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::w
     if (pending_portal) {
         if (pending_portal->second.src_offset_x.has_value()){
             // show pending portal icon for visible portals only
-            opengl_widget->set_pending_portal_position(pending_portal->second.get_rectangle());
+            main_document_view->set_pending_portal_position(pending_portal->second.get_rectangle());
         }
     }
     else {
-        opengl_widget->set_pending_portal_position({});
+        main_document_view->set_pending_portal_position({});
     }
 }

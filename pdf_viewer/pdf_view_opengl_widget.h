@@ -111,10 +111,6 @@ private:
     PdfRenderer* pdf_renderer = nullptr;
 
     bool is_helper = false;
-    std::string tag_prefix = "";
-    std::vector<std::string> highlighted_tags;
-
-    std::optional<AbsoluteRect> pending_portal_rect = {};
 
     QIcon bookmark_icon;
     QIcon portal_icon;
@@ -122,30 +118,13 @@ private:
     QIcon portal_icon_white;
     QIcon hourglass_icon;
 
-    std::optional<AbsoluteRect> character_highlight_rect = {};
-    std::optional<AbsoluteRect> wrong_character_rect = {};
-    bool show_control_rect;
-
-    std::optional<AbsoluteDocumentPos> underline = {};
-    std::vector<DocumentRect> overview_highlights;
-
-    int rotation_index = 0;
-    bool fastread_mode = false;
-    int selected_highlight_index = -1;
-    int selected_bookmark_index = -1;
-
     int last_mouse_down_window_x = 0;
     int last_mouse_down_window_y = 0;
-
     float last_mouse_down_document_offset_x = 0;
     float last_mouse_down_document_offset_y = 0;
-    std::vector<AbsoluteRect> pending_download_portals;
-
-    QDateTime creation_time;
 
     std::optional<std::function<void(const OpenedBookState&)>> on_link_edit = {};
 
-    std::optional<AbsoluteRect> selected_rectangle = {};
 
     GLuint LoadShaders(Path vertex_file_path_, Path fragment_file_path_);
 protected:
@@ -188,29 +167,15 @@ protected:
 
 public:
 
-    bool visible_drawing_mask[26];
-    FreehandDrawing current_drawing;
-    std::vector<FreehandDrawing> moving_drawings;
-    std::vector<PixmapDrawing> moving_pixmaps;
-
-    std::vector<DocumentRect> synctex_highlights;
-    QTime synctex_highlight_time;
-    std::vector<MarkedDataRect> marked_data_rects;
 
     PdfViewOpenGLWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, bool is_helper, QWidget* parent = nullptr);
     ~PdfViewOpenGLWidget();
 
     void handle_escape();
 
-    std::map<int, std::vector<MarkedDataRect>> get_marked_data_rect_map();
-
     bool valid_document();
     void render_overview(OverviewState overview);
     void render_page(int page_number, bool in_overview=false, DocumentView::ColorPalette forced_palette=DocumentView::ColorPalette::None, bool stencils_allowed=true);
-    void set_synctex_highlights(std::vector<DocumentRect> highlights);
-    bool should_show_synxtex_highlights();
-    bool has_synctex_timed_out();
-    void on_document_view_reset();
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
     void mousePressEvent(QMouseEvent* mevent) override;
     void mouseReleaseEvent(QMouseEvent* mevent) override;
@@ -221,32 +186,17 @@ public:
     Document* doc(bool overview=false);
     DocumentView* dv();
 
-    void rotate_clockwise();
-    void rotate_counterclockwise();
-
-    bool is_rotated();
-    void toggle_fastread_mode();
     void setup_text_painter(QPainter* painter);
     void get_overview_window_vertices(float out_vertices[2 * 4]);
 
-    void set_selected_rectangle(AbsoluteRect selected);
-    void clear_selected_rectangle();
     void clear_all_selections();
-
-    std::optional<AbsoluteRect> get_selected_rectangle();
-
-    void set_typing_rect(DocumentRect rect, std::optional<DocumentRect> wrong_rect);
-
     Document* get_current_overview_document();
 
     void get_custom_color_transform_matrix(float matrix_data[16]);
     void get_background_color(float out_background[3]);
-    void set_underline(AbsoluteDocumentPos abspos);
-    void clear_underline();
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
     void render_portal_rect(QPainter* painter, AbsoluteRect portal_absolute_rect, bool is_pending);
-    void set_pending_download_portals(std::vector<AbsoluteRect>&& portal_rects);
     void get_color_for_current_mode(const float* input_color, float* output_color);
     void render_ui_icon_for_current_color_mode(QPainter* painter, const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
     void render_text_highlights();
@@ -255,7 +205,6 @@ public:
     std::array<float, 4> cc4(const float* input_color);
     QColor qcc3(const float* input_color);
     QColor qcc4(const float* input_color);
-    void set_overview_highlights(const std::vector<DocumentRect>& rects);
     bool needs_stencil_buffer();
     void draw_overview_background();
     void draw_overview_border();
@@ -272,11 +221,4 @@ public:
         const std::vector<float>& dot_coordinates,
         const std::vector<unsigned int>& dot_indices,
         const std::vector<GLint>& dot_type_indices);
-    void set_tag_prefix(std::wstring prefix);
-    void clear_tag_prefix();
-    void set_selected_highlight_index(int index);
-    void set_selected_bookmark_index(int index);
-    void set_highlighted_tags(std::vector<std::string> tags);
-    bool is_tag_highlighted(const std::string& tag);
-    void set_pending_portal_position(std::optional<AbsoluteRect> rect);
 };

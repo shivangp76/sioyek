@@ -26,6 +26,11 @@ class ConfigManager;
 class PdfRenderer;
 
 
+struct MarkedDataRect {
+    DocumentRect rect;
+    int type;
+};
+
 class DocumentView {
 protected:
 
@@ -91,7 +96,36 @@ public:
     bool should_show_rect_hints = false;
     ColorPalette color_mode = ColorPalette::Normal;
 
+    std::string tag_prefix = "";
+    std::vector<std::string> highlighted_tags;
+
     std::vector<DocumentRect> word_rects;
+
+    std::optional<AbsoluteRect> pending_portal_rect = {};
+
+    std::optional<AbsoluteRect> character_highlight_rect = {};
+    std::optional<AbsoluteRect> wrong_character_rect = {};
+    bool show_control_rect;
+
+    std::optional<AbsoluteDocumentPos> underline = {};
+    std::vector<DocumentRect> overview_highlights;
+
+    std::vector<AbsoluteRect> pending_download_portals;
+    std::optional<AbsoluteRect> selected_rectangle = {};
+
+    int rotation_index = 0;
+    bool fastread_mode = false;
+    int selected_highlight_index = -1;
+    int selected_bookmark_index = -1;
+
+    bool visible_drawing_mask[26];
+    FreehandDrawing current_drawing;
+    std::vector<FreehandDrawing> moving_drawings;
+    std::vector<PixmapDrawing> moving_pixmaps;
+
+    std::vector<DocumentRect> synctex_highlights;
+    QTime synctex_highlight_time;
+    std::vector<MarkedDataRect> marked_data_rects;
 
     // list of selected characters (e.g. using mouse select) to be highlighted
     std::deque<AbsoluteRect> selected_character_rects;
@@ -130,6 +164,27 @@ public:
     bool is_showing_rect_hints();
     bool on_vertical_scroll();
 
+    void set_tag_prefix(std::wstring prefix);
+    void clear_tag_prefix();
+    void set_highlighted_tags(std::vector<std::string> tags);
+    bool is_tag_highlighted(const std::string& tag);
+
+    void rotate_clockwise();
+    void rotate_counterclockwise();
+    bool is_rotated();
+    void toggle_fastread_mode();
+    void set_typing_rect(DocumentRect highlight_rect, std::optional<DocumentRect> wrong_rect);
+    void set_underline(AbsoluteDocumentPos abspos);
+    void clear_underline();
+    void set_selected_highlight_index(int index);
+    void set_selected_bookmark_index(int index);
+    void set_overview_highlights(const std::vector<DocumentRect>& rects);
+
+    void set_selected_rectangle(AbsoluteRect selected);
+    void clear_selected_rectangle();
+    std::optional<AbsoluteRect> get_selected_rectangle();
+    void set_pending_download_portals(std::vector<AbsoluteRect>&& portal_rects);
+
     // find the closest portal to the current position
     // if limit is true, we only search for portals near the current location and not all portals
     std::optional<Portal> find_closest_portal(bool limit = false);
@@ -160,6 +215,12 @@ public:
     void on_view_size_change(int new_width, int new_height);
     //void absolute_to_window_pos(float absolute_x, float absolute_y, float* window_x, float* window_y);
     NormalizedWindowPos absolute_to_window_pos(AbsoluteDocumentPos absolute_pos);
+
+    void set_pending_portal_position(std::optional<AbsoluteRect> rect);
+    void set_synctex_highlights(std::vector<DocumentRect> highlights);
+
+    bool should_show_synxtex_highlights();
+    bool has_synctex_timed_out();
 
     ColorPalette get_current_color_mode();
 
@@ -356,8 +417,4 @@ public:
 
 };
 
-struct MarkedDataRect {
-    DocumentRect rect;
-    int type;
-};
 
