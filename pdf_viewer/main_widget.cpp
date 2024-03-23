@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // make sure jsons exported by previous sioyek versions can be imported
 // maybe: use a better method to handle deletion of canceled download portals
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -3581,21 +3581,11 @@ void MainWidget::toggle_fullscreen() {
             helper_opengl_widget()->setWindowState(Qt::WindowState::WindowMaximized);
         }
         setWindowState(Qt::WindowState::WindowMaximized);
-#ifndef Q_OS_MACOS
-        if (MACOS_HIDE_TITLEBAR) {
-          hideWindowTitleBarButtons(winId());
-        }
-#endif
     }
     else {
         if (is_helper_visible()){
             helper_opengl_widget()->setWindowState(Qt::WindowState::WindowFullScreen);
         }
-#ifndef Q_OS_MACOS
-        if (MACOS_HIDE_TITLEBAR) {
-          showWindowTitleBarButtons(winId());
-        }
-#endif
         setWindowState(Qt::WindowState::WindowFullScreen);
     }
 }
@@ -9267,9 +9257,11 @@ void MainWidget::screenshot(std::wstring file_path) {
 }
 
 void MainWidget::framebuffer_screenshot(std::wstring file_path) {
+#ifdef SIOYEK_OPENGL_BACKEND
     QImage image = opengl_widget->grabFramebuffer();
     QPixmap pixmap = QPixmap::fromImage(image);
     pixmap.save(QString::fromStdWString(file_path));
+#endif
 
     //QPixmap pixmap(size());
     //render(&pixmap, QPoint(), QRegion(rect()));

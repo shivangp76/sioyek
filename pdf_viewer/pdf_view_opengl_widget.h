@@ -26,12 +26,6 @@
 #include <qdesktopwidget.h>
 #endif
 
-#define SIOYEK_OPENGL_BACKEND
-#ifdef SIOYEK_OPENGL_BACKEND
-using SioyekTextureType = GLuint;
-#else
-using SioyekTextureType = GLuint;
-#endif
 
 #include <qpainter.h>
 
@@ -39,6 +33,7 @@ using SioyekTextureType = GLuint;
 #include "book.h"
 #include "path.h"
 #include "document_view.h"
+#include "pdf_renderer.h"
 
 class DocumentView;
 class PdfRenderer;
@@ -117,8 +112,8 @@ private:
 #ifdef SIOYEK_OPENGL_BACKEND
     OpenGLSharedResources shared_gl_objects;
     GLuint vertex_array_object;
-    QPainter painter;
 #endif
+    QPainter painter;
 
     DocumentView* document_view = nullptr;
     ScratchPad* scratchpad = nullptr;
@@ -156,14 +151,14 @@ protected:
         const std::vector<float>& dot_coordinates,
         const std::vector<unsigned int>& dot_indices,
         const std::vector<GLint>& dot_type_indices);
+#else
+    void paintEvent(QPaintEvent* event);
 #endif
 
 
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags);
     void begin_native_painting();
     void end_native_painting();
-    void set_render_highlight_color(float* color);
-    void set_render_highlight_opacity(float opacity);
     void render_texture(SioyekTextureType texture, float vertices[8], DocumentView::ColorPalette palette);
     void render_page_separator();
 
@@ -199,6 +194,7 @@ protected:
     void bind_default();
     void draw_pixmap(QRect rect, QPixmap* pixmap);
     void fill_rect(QRect rect, const QColor& color);
+    void draw_icon(const QIcon& icon, QRect rect);
     void prepare_line_drawing_pipeline();
     void prepare_highlight_pipeline();
     void prepare_non_compiled_line_drawing_pipeline();

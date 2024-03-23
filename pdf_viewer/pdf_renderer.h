@@ -22,6 +22,13 @@
 extern const int MAX_PENDING_REQUESTS;
 extern const unsigned int CACHE_INVALID_MILIES;
 
+#define SIOYEK_OPENGL_BACKEND
+#ifdef SIOYEK_OPENGL_BACKEND
+using SioyekTextureType = GLuint;
+#else
+using SioyekTextureType = GLuint;
+#endif
+
 struct RenderRequest {
     std::wstring path;
     bool should_render_annotations = true;
@@ -52,7 +59,7 @@ struct RenderResponse {
     fz_pixmap* pixmap = nullptr;
     int width = -1;
     int height = -1;
-    GLuint texture = 0;
+    SioyekTextureType texture = 0;
     bool invalid = false;
     bool pending = true;
 };
@@ -101,11 +108,13 @@ class PdfRenderer : public QObject {
 
     fz_context* init_context();
     fz_document* get_document_with_path(int thread_index, fz_context* mupdf_context, std::wstring path);
-    GLuint try_closest_rendered_page(std::wstring doc_path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
+    SioyekTextureType try_closest_rendered_page(std::wstring doc_path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
     void delete_old_pixmaps(int thread_index, fz_context* mupdf_context);
     void run(int thread_index);
     void run_search(int thread_index);
     int get_pending_response_index_with_thread_index(const RenderRequest& req, int thread_index);
+    SioyekTextureType generate_texture_from_pixmap(fz_pixmap* pixmap);
+    void release_texture(SioyekTextureType texture);
 
 public:
     bool no_rerender = false;
@@ -133,7 +142,7 @@ public:
         std::optional<std::pair<int,
         int>> range = {});
 
-    GLuint find_rendered_page(std::wstring path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
+    SioyekTextureType find_rendered_page(std::wstring path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
     void delete_old_pages(bool force_all = false, bool invalidate_all = false);
     void add_password(std::wstring path, std::string password);
     void debug();

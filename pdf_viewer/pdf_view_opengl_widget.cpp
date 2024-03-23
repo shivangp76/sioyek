@@ -362,9 +362,10 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
 #else
 PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer, bool is_helper, QWidget* parent) :
     QWidget(parent),
+    painter(this),
     document_view(document_view_),
     pdf_renderer(pdf_renderer),
-    is_helper(is_helper),
+    is_helper(is_helper)
 #endif
 {
 
@@ -1682,14 +1683,8 @@ void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const std::vector<F
 
 
 void PdfViewOpenGLWidget::render_compiled_drawings() {
-    //NormalizedWindowPos res;
-    //float half_width = static_cast<float>(view_width) / zoom_level / 2;
-    //float half_height = static_cast<float>(view_height) / zoom_level / 2;
 
-    //res.x = (abs.x + offset_x) / half_width;
-    //res.y = (-abs.y + offset_y) / half_height;
-    // res.x = abs.x / half_width + offset_x / half_width
-    //return res;
+#ifdef SIOYEK_OPENGL_BACKEND
     float mode_highlight_colors[26 * 3];
     for (int i = 0; i < 26; i++) {
         auto res = cc3(&HIGHLIGHT_COLORS[3 * i]);
@@ -1753,10 +1748,14 @@ void PdfViewOpenGLWidget::render_compiled_drawings() {
         glDisable(GL_BLEND);
 
     }
+#else
+    qDebug() << "render compiled drawings not implemented";
+#endif
 }
 
 void PdfViewOpenGLWidget::render_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
 
+#ifdef SIOYEK_OPENGL_BACKEND
     if (drawings.size() == 0) return;
 
     glEnable(GL_BLEND);
@@ -1929,6 +1928,9 @@ void PdfViewOpenGLWidget::render_drawings(DocumentView* dv, const std::vector<Fr
     }
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
+#else
+    qDebug() << "render_drawings not implemented.";
+#endif
 }
 
 
@@ -1953,20 +1955,11 @@ void PdfViewOpenGLWidget::render_portal_rect(AbsoluteRect portal_rect, bool is_p
         }
 
         if (is_pending) {
-            hourglass_icon.paint(&painter, window_qrect);
+            draw_icon(hourglass_icon, window_qrect);
         }
         else{
             render_ui_icon_for_current_color_mode(portal_icon, portal_icon_white, window_qrect);
         }
-        //painter->fillRect(portal_window_rect.x0, portal_window_rect.y0, fz_irect_width(portal_window_rect), fz_irect_height(portal_window_rect), fill_color);
-
-        //QFont font = painter->font();
-        //font.setPointSizeF(5.0f * document_view->get_zoom_level());
-        //painter->setFont(font);
-
-        //painter->setPen(QColor(0, 0, 0));
-        //painter->drawRect(portal_window_rect.x0, portal_window_rect.y0, fz_irect_width(portal_window_rect), fz_irect_height(portal_window_rect));
-        //painter->drawText(window_qrect, Qt::AlignCenter, "P");
     }
 }
 
@@ -2107,21 +2100,20 @@ void PdfViewOpenGLWidget::render_ui_icon_for_current_color_mode(const QIcon& ico
     }
     int num_adjust_pixels = static_cast<int>(window_qrect.width() * 0.065f);
 
-    painter.fillRect(window_qrect.adjusted(num_adjust_pixels, num_adjust_pixels, -num_adjust_pixels, -num_adjust_pixels), convert_float3_to_qcolor(mode_color));
+    fill_rect(window_qrect.adjusted(num_adjust_pixels, num_adjust_pixels, -num_adjust_pixels, -num_adjust_pixels), convert_float3_to_qcolor(mode_color));
 
     if (is_bright(mode_color)){
-        icon_black.paint(&painter, window_qrect);
+        draw_icon(icon_black, window_qrect);
     }
     else{
-        icon_white.paint(&painter, window_qrect);
+        draw_icon(icon_white, window_qrect);
     }
 }
 
 void PdfViewOpenGLWidget::render_text_highlights(){
 
     std::array<float, 3> text_highlight_color = cc3(DEFAULT_TEXT_HIGHLIGHT_COLOR);
-    glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &text_highlight_color[0]);
-    glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
+    set_highlight_color(&text_highlight_color[0], 0.3f);
     std::vector<AbsoluteRect> bounding_rects;
     merge_selected_character_rects(*dv()->get_selected_character_rects(), bounding_rects);
 
@@ -2136,6 +2128,7 @@ void PdfViewOpenGLWidget::render_text_highlights(){
 }
 
 void PdfViewOpenGLWidget::render_highlight_annotations(){
+#ifdef SIOYEK_OPENGL_BACKEND
     if (doc()->can_use_highlights()) {
         const std::vector<Highlight>& highlights = doc()->get_highlights();
         std::vector<int> visible_highlight_indices = dv()->get_visible_highlight_indices();
@@ -2169,6 +2162,10 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                 }
         }
     }
+#else
+    qDebug() << "render_highlight_annotations not implemented";
+#endif
+
 }
 
 
@@ -2184,16 +2181,6 @@ ScratchPad* PdfViewOpenGLWidget::get_scratchpad() {
     return scratchpad;
 }
 
-void PdfViewOpenGLWidget::set_render_highlight_opacity(float opacity){
-    // precondition: highlight program should be bound
-    glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, opacity);
-}
-
-void PdfViewOpenGLWidget::set_render_highlight_color(float* color){
-    // precondition: highlight program should be bound
-    glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &color[0]);
-}
-
 void PdfViewOpenGLWidget::render_selected_rectangle() {
 
     if (document_view->selected_rectangle) {
@@ -2202,8 +2189,7 @@ void PdfViewOpenGLWidget::render_selected_rectangle() {
         write_to_stencil();
         float rectangle_color_[] = { 0.0f, 0.0f, 0.0f };
         auto rectangle_color = cc3(rectangle_color_);
-        set_render_highlight_color(&rectangle_color[0]);
-        set_render_highlight_opacity(0.3f);
+        set_highlight_color(&rectangle_color[0], 0.3f);
         if (!(document_view->selected_rectangle.value() == fz_empty_rect)) {
             render_highlight_absolute(document_view->selected_rectangle.value(), HRF_FILL | HRF_BORDER);
         }
@@ -3043,6 +3029,7 @@ void PdfViewOpenGLWidget::prepare_initial_render_pipeline(){
 }
 
 void PdfViewOpenGLWidget::prepare_link_highlight_state(){
+#ifdef SIOYEK_OPENGL_BACKEND
     std::array<float, 3> link_highlight_color = cc3(DEFAULT_LINK_HIGHLIGHT_COLOR);
 
     glUseProgram(shared_gl_objects.highlight_program);
@@ -3050,11 +3037,18 @@ void PdfViewOpenGLWidget::prepare_link_highlight_state(){
                  1,
                  &link_highlight_color[0]);
     glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
+#else
+    qDebug() << "prepare_link_highlight_state not implemented";
+#endif
 }
 
 void PdfViewOpenGLWidget::set_highlight_color(float* color, float alpha){
+#ifdef SIOYEK_OPENGL_BACKEND
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, color);
     glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, alpha);
+#else
+    qDebug() << "set_highlight_color not implemented";
+#endif
 }
 
 void PdfViewOpenGLWidget::draw_pending_freehand_drawings(const std::vector<int>& visible_pages){
@@ -3081,3 +3075,22 @@ void PdfViewOpenGLWidget::draw_pending_freehand_drawings(const std::vector<int>&
 #endif
 
 }
+
+void PdfViewOpenGLWidget::draw_icon(const QIcon& icon, QRect rect){
+#ifdef SIOYEK_OPENGL_BACKEND
+    icon.paint(&painter, rect);
+#else
+    qDebug() << "draw_icon not implemented";
+#endif
+}
+
+
+#ifndef SIOYEK_OPENGL_BACKEND
+void PdfViewOpenGLWidget::paintEvent(QPaintEvent* event){
+    painter.begin(this);
+    QBrush background(Qt::blue);
+    painter.fillRect(0, 0, width(), height(), background);
+    painter.drawText(rect(), Qt::AlignCenter, "We are so back");
+    painter.end();
+}
+#endif

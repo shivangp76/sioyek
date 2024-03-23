@@ -132,7 +132,7 @@ void PdfRenderer::add_request(std::wstring document_path,
 
 //should only be called from the main thread
 
-GLuint PdfRenderer::find_rendered_page(std::wstring path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
+SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
     //fz_document* doc = get_document_with_path(path);
     if (path.size() > 0) {
         RenderRequest req;
@@ -145,7 +145,7 @@ GLuint PdfRenderer::find_rendered_page(std::wstring path, int page, bool should_
         req.display_scale = display_scale;
         req.should_render_annotations = should_render_annotations;
         cached_response_mutex.lock();
-        GLuint result = 0;
+        SioyekTextureType result = 0;
         for (auto& cached_resp : cached_responses) {
             if (cached_resp.pending) continue;
 
@@ -162,33 +162,7 @@ GLuint PdfRenderer::find_rendered_page(std::wstring path, int page, bool should_
                     result = cached_resp.texture;
                 }
                 else {
-                    glGenTextures(1, &result);
-                    glBindTexture(GL_TEXTURE_2D, result);
-
-                    if (LINEAR_TEXTURE_FILTERING) {
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                    }
-                    else {
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                    }
-
-#ifdef GL_CLAMP
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-#else
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#endif
-
-
-                    // OpenGL usually expects powers of two textures and since our pixmaps dimensions are
-                    // often not powers of two, we set the unpack alignment to 1 (no alignment) 
-
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cached_resp.pixmap->w, cached_resp.pixmap->h, 0, GL_RGB, GL_UNSIGNED_BYTE, cached_resp.pixmap->samples);
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+                    result = generate_texture_from_pixmap(cached_resp.pixmap);
 
                     // don't need the pixmap anymore
                     pixmap_drop_mutex[cached_resp.thread].lock();
@@ -228,7 +202,7 @@ GLuint PdfRenderer::find_rendered_page(std::wstring path, int page, bool should_
     return 0;
 }
 
-GLuint PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
+SioyekTextureType PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
     /*
     If the requested page is not available, we try to find the rendered page with the closest
     possible zoom level to our request and return that instead
@@ -236,7 +210,7 @@ GLuint PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, b
     cached_response_mutex.lock();
 
     float min_diff = 10000.0f;
-    GLuint best_texture = 0;
+    SioyekTextureType best_texture = 0;
 
     for (const auto& cached_resp : cached_responses) {
         if (cached_resp.pending) continue;
@@ -326,7 +300,7 @@ void PdfRenderer::delete_old_pages(bool force_all, bool invalidate_all) {
         pixmap_drop_mutex[resp.thread].unlock();
 
         if (resp.texture != 0) {
-            glDeleteTextures(1, &resp.texture);
+            release_texture(resp.texture);
         }
 
         cached_responses.erase(cached_responses.begin() + index_to_delete);
@@ -726,4 +700,47 @@ int PdfRenderer::get_pending_response_index_with_thread_index(const RenderReques
 
 void PdfRenderer::set_num_cached_pages(int n_cached_pages) {
     num_cached_pages = n_cached_pages;
+}
+
+SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap) {
+#ifdef SIOYEK_OPENGL_BACKEND
+    GLuint result = 0;
+    glGenTextures(1, &result);
+    glBindTexture(GL_TEXTURE_2D, result);
+
+    if (LINEAR_TEXTURE_FILTERING) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
+
+#ifdef GL_CLAMP
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#else
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#endif
+
+    // OpenGL usually expects powers of two textures and since our pixmaps dimensions are
+    // often not powers of two, we set the unpack alignment to 1 (no alignment)
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pixmap->w, pixmap->h, 0, GL_RGB, GL_UNSIGNED_BYTE, pixmap->samples);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+    return result;
+#else
+    return 0;
+#endif
+}
+
+void PdfRenderer::release_texture(SioyekTextureType texture){
+#ifdef SIOYEK_OPENGL_BACKEND
+    glDeleteTextures(1, &texture);
+#else
+#endif
 }
