@@ -95,6 +95,7 @@ void DocumentView::handle_escape() {
     highlighted_tags = {};
     character_highlight_rect = {};
     wrong_character_rect = {};
+    synctex_highlights.clear();
 }
 
 void DocumentView::exit_ruler_mode() {

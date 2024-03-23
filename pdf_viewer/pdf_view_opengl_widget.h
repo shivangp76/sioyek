@@ -26,6 +26,13 @@
 #include <qdesktopwidget.h>
 #endif
 
+#define SIOYEK_OPENGL_BACKEND
+#ifdef SIOYEK_OPENGL_BACKEND
+using SioyekTextureType = GLuint;
+#else
+using SioyekTextureType = GLuint;
+#endif
+
 #include <qpainter.h>
 
 #include "coordinates.h"
@@ -96,16 +103,23 @@ struct OpenGLSharedResources {
 
 
 
+#ifdef SIOYEK_OPENGL_BACKEND
 class PdfViewOpenGLWidget : public QOpenGLWidget, protected QOpenGLExtraFunctions {
+#else
+class PdfViewOpenGLWidget : public QWidget{
+#endif
 //class PdfViewOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_1 {
 public:
 
 
 private:
 
+#ifdef SIOYEK_OPENGL_BACKEND
     OpenGLSharedResources shared_gl_objects;
-    bool is_opengl_initialized = false;
     GLuint vertex_array_object;
+    QPainter painter;
+#endif
+
     DocumentView* document_view = nullptr;
     ScratchPad* scratchpad = nullptr;
     PdfRenderer* pdf_renderer = nullptr;
@@ -126,20 +140,33 @@ private:
     std::optional<std::function<void(const OpenedBookState&)>> on_link_edit = {};
 
 
-    GLuint LoadShaders(Path vertex_file_path_, Path fragment_file_path_);
 protected:
+#ifdef SIOYEK_OPENGL_BACKEND
     void initializeGL() override;
     void resizeGL(int w, int h) override;
+    void paintGL() override;
+    GLuint LoadShaders(Path vertex_file_path_, Path fragment_file_path_);
+    void render_line_window_opengl_backend(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {});
+    void render_highlight_window_opengl_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
+    void compile_drawings_opengl_backend(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
+    void render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview);
+#endif
+
+
+    void clear_background_buffers(float r, float g, float b, GLuint buffer_flags);
+    void begin_native_painting();
+    void end_native_painting();
     void set_render_highlight_color(float* color);
     void set_render_highlight_opacity(float opacity);
+    void render_texture(SioyekTextureType texture, float vertices[8], DocumentView::ColorPalette palette);
+    void render_page_separator();
 
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
     void render_highlight_absolute(AbsoluteRect absolute_document_rect, int flags);
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {});
     void render_highlight_document(DocumentRect doc_rect, int flags=HRF_FILL | HRF_BORDER);
-    void paintGL() override;
     void my_render(QPainter* painter);
-    void render_scratchpad(QPainter* painter);
+    void render_scratchpad();
     void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
     void render_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false);
     void render_compiled_drawings();
@@ -164,7 +191,20 @@ protected:
     void bind_program(DocumentView::ColorPalette forced_palette=DocumentView::ColorPalette::None);
     void bind_points(const std::vector<float>& points);
     void bind_default();
+    void draw_pixmap(QRect rect, QPixmap* pixmap);
+    void fill_rect(QRect rect, const QColor& color);
+    void prepare_line_drawing_pipeline();
+    void prepare_highlight_pipeline();
+    void prepare_non_compiled_line_drawing_pipeline();
+    void enable_multisampling();
+    void disable_multisampling();
+    void set_highlight_color(float* color, float alpha);
+    void draw_pending_freehand_drawings(const std::vector<int>& visible_pages);
+    void render_highlights_and_bookmarks();
 
+    void render_texture();
+    void prepare_initial_render_pipeline();
+    void prepare_link_highlight_state();
 public:
 
 
