@@ -152,14 +152,17 @@ protected:
         const std::vector<unsigned int>& dot_indices,
         const std::vector<GLint>& dot_type_indices);
 #else
-    void paintEvent(QPaintEvent* event);
+    void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+    void render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
+    void render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview);
 #endif
 
 
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags);
     void begin_native_painting();
     void end_native_painting();
-    void render_texture(SioyekTextureType texture, NormalizedWindowRect rect, DocumentView::ColorPalette palette);
+    void render_texture(SioyekTextureType texture, NormalizedWindowRect rect, ColorPalette palette);
     void render_page_separator();
 
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
@@ -189,7 +192,7 @@ protected:
     float last_cache_zoom_level = -1;
     QDateTime last_scratchpad_update_datetime;
 
-    void bind_program(DocumentView::ColorPalette forced_palette=DocumentView::ColorPalette::None);
+    void bind_program(ColorPalette forced_palette=ColorPalette::None);
     void bind_points(const std::vector<float>& points);
     void bind_default();
     void draw_pixmap(QRect rect, QPixmap* pixmap);
@@ -217,7 +220,7 @@ public:
 
     bool valid_document();
     void render_overview(OverviewState overview);
-    void render_page(int page_number, bool in_overview=false, DocumentView::ColorPalette forced_palette=DocumentView::ColorPalette::None, bool stencils_allowed=true);
+    void render_page(int page_number, bool in_overview=false, ColorPalette forced_palette=ColorPalette::None, bool stencils_allowed=true);
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
     void mousePressEvent(QMouseEvent* mevent) override;
     void mouseReleaseEvent(QMouseEvent* mevent) override;
@@ -234,7 +237,6 @@ public:
     void clear_all_selections();
     Document* get_current_overview_document();
 
-    void get_custom_color_transform_matrix(float matrix_data[16]);
     void get_background_color(float out_background[3]);
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
@@ -257,4 +259,5 @@ public:
     bool can_use_cached_scratchpad_framebuffer();
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
     void clear_background_color();
+    ColorPalette get_actual_color_palette(ColorPalette forced_color_palette);
 };

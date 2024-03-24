@@ -10,7 +10,10 @@ extern bool TOUCH_MODE;
 extern bool CASE_SENSITIVE_SEARCH;
 extern bool SMARTCASE_SEARCH;
 extern float GAMMA;
-
+extern float DARK_MODE_CONTRAST;
+extern float CUSTOM_BACKGROUND_COLOR[3];
+extern float CUSTOM_TEXT_COLOR[3];
+extern float CUSTOM_COLOR_CONTRAST;
 
 PdfRenderer::PdfRenderer(int num_threads, bool* should_quit_pointer, fz_context* context_to_clone) : context_to_clone(context_to_clone),
 pixmaps_to_drop(num_threads),
@@ -31,6 +34,52 @@ num_threads(num_threads)
     QObject::connect(&garbage_collect_timer, &QTimer::timeout, [&]() {
         delete_old_pages();
         });
+}
+
+void convert_pixel_to_dark_mode(unsigned char* pixel){
+    QColor inv(
+        static_cast<unsigned char>((127 - pixel[0]) * DARK_MODE_CONTRAST + 127),
+        static_cast<unsigned char>((127 - pixel[1]) * DARK_MODE_CONTRAST + 127),
+        static_cast<unsigned char>((127 - pixel[2]) * DARK_MODE_CONTRAST + 127)
+        );
+
+    QColor hsv_color = inv.toHsv();
+    int new_hue = (hsv_color.hue() + 180) % 360;
+    QColor new_color = QColor::fromHsv(new_hue, hsv_color.saturation(), hsv_color.value());
+
+    pixel[0] = (unsigned char)new_color.red();
+    pixel[1] = (unsigned char)new_color.green();
+    pixel[2] = (unsigned char)new_color.blue();
+}
+
+void get_custom_color_transform_matrix(float matrix_data[16]) {
+    float inputs_inverse[16] = { 0, 1, 0, 0, -1, 1, -1, 1, 1, -1, 0, 0, 0, -1, 1, 0 };
+    float outputs[16] = {
+        CUSTOM_BACKGROUND_COLOR[0], CUSTOM_TEXT_COLOR[0], 1, 0,
+        CUSTOM_BACKGROUND_COLOR[1], CUSTOM_TEXT_COLOR[1], CUSTOM_COLOR_CONTRAST * (1 - CUSTOM_BACKGROUND_COLOR[1]), CUSTOM_COLOR_CONTRAST * (1 - CUSTOM_BACKGROUND_COLOR[1]),
+        CUSTOM_BACKGROUND_COLOR[2], CUSTOM_TEXT_COLOR[2], 0, 1,
+        CUSTOM_BACKGROUND_COLOR[3], CUSTOM_TEXT_COLOR[3], 1, 1,
+    };
+
+    matmul<4, 4, 4>(outputs, inputs_inverse, matrix_data);
+}
+
+void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[16]){
+    float colorf[4];
+    colorf[0] = static_cast<float>(pixel[0]) / 255.0f;
+    colorf[1] = static_cast<float>(pixel[1]) / 255.0f;
+    colorf[2] = static_cast<float>(pixel[2]) / 255.0f;
+    colorf[3] = 1.0f;
+    float transformed_color[4];
+
+    matmul<4, 4, 1>(transform_matrix, colorf, transformed_color);
+    transformed_color[0] = std::clamp(transformed_color[0], 0.0f, 1.0f);
+    transformed_color[1] = std::clamp(transformed_color[1], 0.0f, 1.0f);
+    transformed_color[2] = std::clamp(transformed_color[2], 0.0f, 1.0f);
+
+    pixel[0] = static_cast<unsigned char>(transformed_color[0] * 255);
+    pixel[1] = static_cast<unsigned char>(transformed_color[1] * 255);
+    pixel[2] = static_cast<unsigned char>(transformed_color[2] * 255);
 }
 
 fz_context* PdfRenderer::init_context() {
@@ -59,7 +108,15 @@ void PdfRenderer::join_threads()
 }
 
 
-void PdfRenderer::add_request(std::wstring document_path, int page, bool should_render_annotations, float zoom_level, float display_scale, int index, int num_h_slices, int num_v_slices) {
+void PdfRenderer::add_request(std::wstring document_path,
+                              int page,
+                              bool should_render_annotations,
+                              float zoom_level,
+                              float display_scale,
+                              int index,
+                              int num_h_slices,
+                              int num_v_slices,
+                              ColorPalette color_palette) {
     //fz_document* doc = get_document_with_path(document_path);
     if (document_path.size() > 0) {
         RenderRequest req;
@@ -71,6 +128,7 @@ void PdfRenderer::add_request(std::wstring document_path, int page, bool should_
         req.num_v_slices = num_v_slices;
         req.display_scale = display_scale;
         req.should_render_annotations = should_render_annotations;
+        req.color_palette = color_palette;
 
         pending_requests_mutex.lock();
         // if the zoom level has changed, there is no point in previous requests with a different zoom level
@@ -132,7 +190,7 @@ void PdfRenderer::add_request(std::wstring document_path,
 
 //should only be called from the main thread
 
-SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
+SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
     //fz_document* doc = get_document_with_path(path);
     if (path.size() > 0) {
         RenderRequest req;
@@ -144,6 +202,7 @@ SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, b
         req.num_v_slices = num_v_slices;
         req.display_scale = display_scale;
         req.should_render_annotations = should_render_annotations;
+        req.color_palette = palette;
         cached_response_mutex.lock();
         SioyekTextureType result = 0;
         for (auto& cached_resp : cached_responses) {
@@ -178,15 +237,16 @@ SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, b
         if (result == 0) {
             if (TOUCH_MODE) {
                 if (!no_rerender) {
-                    add_request(path, page, should_render_annotations, zoom_level, display_scale, index, num_h_slices, num_v_slices);
+                    add_request(path, page, should_render_annotations, zoom_level, display_scale, index, num_h_slices, num_v_slices, palette);
                 }
             }
             else {
-                add_request(path, page, should_render_annotations, zoom_level, display_scale, index, num_h_slices, num_v_slices);
+                add_request(path, page, should_render_annotations, zoom_level, display_scale, index, num_h_slices, num_v_slices, palette);
             }
             return try_closest_rendered_page(
                 path,
                 page,
+                palette,
                 should_render_annotations,
                 index,
                 num_h_slices,
@@ -202,7 +262,7 @@ SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, b
     return 0;
 }
 
-SioyekTextureType PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
+SioyekTextureType PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
     /*
     If the requested page is not available, we try to find the rendered page with the closest
     possible zoom level to our request and return that instead
@@ -220,6 +280,9 @@ SioyekTextureType PdfRenderer::try_closest_rendered_page(std::wstring doc_path, 
             (cached_resp.request.path == doc_path) &&
             (cached_resp.request.display_scale == display_scale) &&
             (cached_resp.request.should_render_annotations == should_render_annotations) &&
+#ifndef SIOYEK_OPENGL_BACKEND
+            (cached_resp.request.color_palette == palette) &&
+#endif
             (cached_resp.request.page == page) &&
             (cached_resp.texture != 0)) {
             float diff = cached_resp.request.zoom_level - zoom_level;
@@ -578,6 +641,27 @@ void PdfRenderer::run(int thread_index) {
                     fz_gamma_pixmap(mupdf_context, rendered_pixmap, GAMMA);
                 }
 
+                if (req.color_palette == ColorPalette::Dark){
+                    for (int row = 0; row < rendered_pixmap->h; row++){
+                        unsigned char* row_samples = rendered_pixmap->samples + row * rendered_pixmap->stride;
+                        for (int col = 0; col < rendered_pixmap->w; col++){
+                            unsigned char* pixel = row_samples + col * 3;
+                            convert_pixel_to_dark_mode(pixel);
+                        }
+                    }
+                }
+                else if (req.color_palette == ColorPalette::Custom){
+                    float transform_matrix[16];
+                    get_custom_color_transform_matrix(transform_matrix);
+                    for (int row = 0; row < rendered_pixmap->h; row++){
+                        unsigned char* row_samples = rendered_pixmap->samples + row * rendered_pixmap->stride;
+                        for (int col = 0; col < rendered_pixmap->w; col++){
+                            unsigned char* pixel = row_samples + col * 3;
+                            convert_pixel_to_custom_color(pixel, transform_matrix);
+                        }
+                    }
+                }
+
                 RenderResponse resp;
                 resp.thread = thread_index;
                 resp.request = req;
@@ -638,6 +722,11 @@ bool operator==(const RenderRequest& lhs, const RenderRequest& rhs) {
     if (rhs.should_render_annotations != lhs.should_render_annotations) {
         return false;
     }
+#ifndef SIOYEK_OPENGL_BACKEND
+    if (rhs.color_palette != lhs.color_palette){
+        return false;
+    }
+#endif
     return true;
 }
 
@@ -702,7 +791,7 @@ void PdfRenderer::set_num_cached_pages(int n_cached_pages) {
     num_cached_pages = n_cached_pages;
 }
 
-SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap) {
+SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap){
 #ifdef SIOYEK_OPENGL_BACKEND
     GLuint result = 0;
     glGenTextures(1, &result);
@@ -734,6 +823,8 @@ SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap) {
 
     return result;
 #else
+
+
     QImage image(pixmap->samples, pixmap->w, pixmap->h, pixmap->stride, QImage::Format::Format_RGB888);
     QPixmap* result = new QPixmap(QPixmap::fromImage(image));
 

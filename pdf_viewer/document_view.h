@@ -70,12 +70,6 @@ protected:
     float page_space_y = 0;
 
 public:
-    enum ColorPalette {
-        Normal,
-        Dark,
-        Custom,
-        None
-    };
 
     std::vector<SearchResult> search_results;
     int current_search_result_index = -1;
@@ -239,6 +233,7 @@ public:
     NormalizedWindowPos window_to_normalized_window_pos(WindowPos window_pos);
     WindowPos normalized_window_to_window_pos(NormalizedWindowPos normalized_window_pos);
     WindowRect normalized_to_window_rect(NormalizedWindowRect normalized_rect);
+    QRect normalized_to_window_qrect(NormalizedWindowRect normalized_rect);
     void goto_mark(char symbol);
     void goto_end();
 

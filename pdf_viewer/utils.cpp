@@ -2779,7 +2779,7 @@ QColor convert_float3_to_qcolor(const float* floats) {
 QColor convert_float4_to_qcolor(const float* floats) {
     int colors[4];
     convert_color4(floats, colors);
-    return QColor(qRgba(colors[0], colors[1], colors[2], colors[3]));
+    return QColor(colors[0], colors[1], colors[2], colors[3]);
 }
 
 void convert_qcolor_to_float4(const QColor& color, float* out_floats) {

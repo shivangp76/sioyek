@@ -1674,6 +1674,11 @@ WindowRect DocumentView::normalized_to_window_rect(NormalizedWindowRect normaliz
     return WindowRect(normalized_rect.top_left().to_window(this), normalized_rect.bottom_right().to_window(this));
 }
 
+QRect DocumentView::normalized_to_window_qrect(NormalizedWindowRect normalized_rect) {
+    auto window_rect = normalized_to_window_rect(normalized_rect);
+    return QRect(window_rect.x0, window_rect.y0, window_rect.width(), window_rect.height());
+}
+
 bool DocumentView::is_ruler_mode() {
     return is_ruler_mode_;
 }
@@ -2704,7 +2709,7 @@ DocumentPos DocumentView::window_pos_to_overview_pos(NormalizedWindowPos window_
     return { doc_page, doc_offset_x, doc_offset_y };
 }
 
-DocumentView::ColorPalette DocumentView::get_current_color_mode() {
+ColorPalette DocumentView::get_current_color_mode() {
     return color_mode;
 }
 

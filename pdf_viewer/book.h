@@ -16,6 +16,13 @@
 class DocumentView;
 class Document;
 
+enum class ColorPalette {
+    Normal,
+    Dark,
+    Custom,
+    None
+};
+
 enum class SelectedObjectType {
     Drawing,
     Pixmap

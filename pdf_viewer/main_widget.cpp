@@ -11,6 +11,7 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
+// moving the window to different dpi displays messes with fit_to_page_width etc.
 
 
 #include <iostream>
@@ -6747,13 +6748,13 @@ void MainWidget::persist_config() {
 
 int MainWidget::get_current_colorscheme_index() {
     auto colormode = main_document_view->get_current_color_mode();
-    if (colormode == DocumentView::ColorPalette::Normal) {
+    if (colormode == ColorPalette::Normal) {
         return 0;
     }
-    if (colormode == DocumentView::ColorPalette::Dark) {
+    if (colormode == ColorPalette::Dark) {
         return 1;
     }
-    if (colormode == DocumentView::ColorPalette::Custom) {
+    if (colormode == ColorPalette::Custom) {
         return 2;
     }
     return -1;
@@ -6942,6 +6943,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+    qDebug() << helper_document_view_->get_view_width();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){

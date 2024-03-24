@@ -23,7 +23,7 @@
 extern const int MAX_PENDING_REQUESTS;
 extern const unsigned int CACHE_INVALID_MILIES;
 
-#define SIOYEK_OPENGL_BACKEND
+// #define SIOYEK_OPENGL_BACKEND
 #ifdef SIOYEK_OPENGL_BACKEND
 using SioyekTextureType = GLuint;
 #else
@@ -39,6 +39,7 @@ struct RenderRequest {
     int slice_index = -1;
     int num_h_slices = 1;
     int num_v_slices = 1;
+    ColorPalette color_palette;
 };
 
 struct SearchRequest {
@@ -66,6 +67,8 @@ struct RenderResponse {
 };
 
 bool operator==(const RenderRequest& lhs, const RenderRequest& rhs);
+
+void get_custom_color_transform_matrix(float matrix_data[16]);
 
 class PdfRenderer : public QObject {
     Q_OBJECT
@@ -109,7 +112,7 @@ class PdfRenderer : public QObject {
 
     fz_context* init_context();
     fz_document* get_document_with_path(int thread_index, fz_context* mupdf_context, std::wstring path);
-    SioyekTextureType try_closest_rendered_page(std::wstring doc_path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
+    SioyekTextureType try_closest_rendered_page(std::wstring doc_path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
     void delete_old_pixmaps(int thread_index, fz_context* mupdf_context);
     void run(int thread_index);
     void run_search(int thread_index);
@@ -131,7 +134,15 @@ public:
     bool is_busy();
     bool is_search_busy();
     //should only be called from the main thread
-    void add_request(std::wstring document_path, int page, bool should_render_annotations, float zoom_level, float display_scale, int index, int num_h_slices, int num_v_slices);
+    void add_request(std::wstring document_path,
+                     int page,
+                     bool should_render_annotations,
+                     float zoom_level,
+                     float display_scale,
+                     int index,
+                     int num_h_slices,
+                     int num_v_slices,
+                     ColorPalette color_palette);
     void add_request(std::wstring document_path,
         int page,
         std::wstring term,
@@ -143,7 +154,7 @@ public:
         std::optional<std::pair<int,
         int>> range = {});
 
-    SioyekTextureType find_rendered_page(std::wstring path, int page, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
+    SioyekTextureType find_rendered_page(std::wstring path, int page, ColorPalette color_palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
     void delete_old_pages(bool force_all = false, bool invalidate_all = false);
     void add_password(std::wstring path, std::string password);
     void debug();
