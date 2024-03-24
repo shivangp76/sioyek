@@ -18,9 +18,6 @@
 #include <qopenglextrafunctions.h>
 #include <qopenglfunctions.h>
 #include <qopengl.h>
-#include <qrhiwidget.h>>
-#include <rhi/qrhi.h>
-
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>

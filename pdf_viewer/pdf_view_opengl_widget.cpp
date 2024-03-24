@@ -3021,13 +3021,8 @@ void PdfViewOpenGLWidget::render_texture(SioyekTextureType texture, NormalizedWi
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 #else
     if (!texture) return;
-    auto top_left = window_rect.top_left().to_window(document_view);
-    auto bottom_right = window_rect.bottom_right().to_window(document_view);
-    int width = bottom_right.x - top_left.x;
-    int height = bottom_right.y - top_left.y;
-    QRect window_qrect(top_left.x, top_left.y, width, height);
+    QRect window_qrect = document_view->normalized_to_window_qrect(window_rect);
     painter.drawPixmap(window_qrect, *texture);
-    //todo: handle other color palettes
 
 #endif
 }
@@ -3102,6 +3097,7 @@ void PdfViewOpenGLWidget::draw_icon(const QIcon& icon, QRect rect){
 void PdfViewOpenGLWidget::paintEvent(QPaintEvent* event){
     do_paint();
 }
+
 
 void PdfViewOpenGLWidget::render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
     if (document_view->is_rotated()) {

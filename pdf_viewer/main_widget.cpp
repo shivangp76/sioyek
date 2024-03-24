@@ -11,7 +11,7 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
-// moving the window to different dpi displays messes with fit_to_page_width etc.
+// two page mode fit to page smart is not working well with qpainter backend
 
 
 #include <iostream>
@@ -459,6 +459,9 @@ public:
 
 void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     QWidget::resizeEvent(resize_event);
+#ifdef SIOYEK_IOS
+    opengl_widget->resize(resize_event->size());
+#endif
 
     main_window_width = size().width();
     main_window_height = size().height();
@@ -826,6 +829,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     setAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_AcceptTouchEvents);
 
+#ifdef SIOYEK_IOS
+    setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
+#endif
 
     central_widget = new QWidget(this);
     central_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -1177,9 +1183,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addLayout(hlayout);
 
-#ifdef SIOYEK_MOBILE
+#ifdef SIOYEK_ANDROID
      setLayout(layout);
-#else
+#elif !defined(SIOYEK_IOS)
     central_widget->setLayout(layout);
     opengl_widget->stackUnder(status_label);
     setCentralWidget(central_widget);
@@ -6396,6 +6402,7 @@ bool MainWidget::event(QEvent* event) {
 }
 
 void MainWidget::handle_mobile_selection() {
+    qDebug() << "last hold point: " << last_hold_point;
     fz_stext_char* character_under = get_closest_character_to_cusrsor(last_hold_point);
 
     WindowPos last_hold_point_window_pos = { last_hold_point.x(), last_hold_point.y() };
@@ -6943,7 +6950,11 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << helper_document_view_->get_view_width();
+    qDebug() << "main widget size: " << size();
+    qDebug() << "opengl widget size: " << opengl_widget->size();
+    opengl_widget->resize(size());
+    opengl_widget->move(0, 0);
+    // qDebug() << helper_document_view_->get_view_width();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){

@@ -2545,7 +2545,11 @@ int get_status_bar_height() {
         return STATUS_BAR_FONT_SIZE + 5;
     }
     else {
+#ifdef SIOYEK_IOS
+        return 20 * 3;
+#else
         return 20;
+#endif
     }
 }
 

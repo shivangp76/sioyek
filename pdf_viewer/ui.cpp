@@ -236,7 +236,8 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     QObject::connect(main_menu, &TouchMainMenu::hintClicked, [&]() {
         //main_widget->run_command_with_name("toggle_rect_hints", true);
 
-        main_widget->toggle_scratchpad_mode();
+        // main_widget->toggle_scratchpad_mode();
+        main_widget->handle_debug_command();
         main_widget->pop_current_widget();
 
         main_widget->invalidate_render();
