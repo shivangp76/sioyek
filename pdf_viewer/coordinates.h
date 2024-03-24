@@ -4,6 +4,7 @@
 #include <mupdf/fitz.h>
 #include <qopengl.h>
 #include <algorithm>
+#include <qrect.h>
 
 class Document;
 class DocumentView;
@@ -162,6 +163,10 @@ struct EnhancedRect : public R {
         res.y0 = std::min(R::y0, other.y0);
         res.y1 = std::max(R::y1, other.y1);
         return res;
+    }
+
+    QRect to_qrect(){
+        return QRect(R::x0, R::y0, R::x1 - R::x0, R::y1 - R::y0);
     }
 
 };

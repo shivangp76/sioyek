@@ -605,6 +605,11 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
             draw_stencil_rects(page_number, {page_content});
             use_stencil_to_write(true);
         }
+#else
+        if (dv()->is_two_page_mode()){
+            QRect window_rect = DocumentRect{page_content, page_number}.to_window(document_view).to_qrect();
+            painter.setClipRect(window_rect);
+        }
 #endif
 
         if (is_sliced) {
@@ -1420,6 +1425,8 @@ void PdfViewOpenGLWidget::use_stencil_to_write(bool eq) {
 void PdfViewOpenGLWidget::disable_stencil() {
 #ifdef SIOYEK_OPENGL_BACKEND
     glDisable(GL_STENCIL_TEST);
+#else
+    painter.setClipRect(rect());
 #endif
 }
 
