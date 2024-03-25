@@ -973,6 +973,10 @@ public:
     void delete_menu_nodes(MenuNode* items);
     void set_pending_portal(std::optional<std::wstring> doc_path, Portal portal);
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
+#ifdef SIOYEK_IOS
+public slots:
+    void handle_ios_files(const QUrl& url);
+#endif
 };
 
 MainWidget* get_window_with_window_id(int window_id);

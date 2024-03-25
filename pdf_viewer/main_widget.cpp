@@ -11,7 +11,6 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
-// two page mode fit to page smart is not working well with qpainter backend
 
 
 #include <iostream>
@@ -32,6 +31,7 @@
 #include <qfile.h>
 #include <qdrag.h>
 #include <qmenu.h>
+#include <qdesktopservices.h>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
@@ -1247,6 +1247,10 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     // auto selector = new AndroidSelector(this);
     // selector->show();
     //set_current_widget(selector);
+
+#ifdef SIOYEK_IOS
+    QDesktopServices::setUrlHandler("file", this, "handle_ios_files");
+#endif
 }
 
 MainWidget::~MainWidget() {
@@ -11026,3 +11030,12 @@ void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::w
         main_document_view->set_pending_portal_position({});
     }
 }
+
+#ifdef SIOYEK_IOS
+void MainWidget::handle_ios_files(const QUrl& url){
+    qDebug() << "handle_ios_files called with: " << url;
+    std::wstring path = url.toLocalFile().toStdWString();
+    push_state();
+    open_document(path, &is_render_invalidated);
+}
+#endif
