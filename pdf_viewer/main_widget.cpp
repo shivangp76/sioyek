@@ -66,6 +66,7 @@
 #include <qqmlengine.h>
 #include <qtextdocumentfragment.h>
 #include <qmenubar.h>
+#include <qstylehints.h>
 
 #include <mupdf/fitz.h>
 
@@ -99,8 +100,6 @@ extern "C" {
 #ifdef Q_OS_MACOS
 extern "C" void changeTitlebarColor(WId, double, double, double, double);
 extern "C" void hideWindowTitleBar(WId);
-extern "C" void showWindowTitleBarButtons(WId);
-extern "C" void hideWindowTitleBarButtons(WId);
 #endif
 
 extern int next_window_id;
@@ -202,6 +201,8 @@ extern ScratchPad global_scratchpad;
 extern int NUM_CACHED_PAGES;
 extern bool IGNORE_SCROLL_EVENTS;
 extern bool DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE;
+extern bool USE_SYSTEM_THEME;
+extern bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME;
 
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
 extern std::wstring CONTEXT_MENU_ITEMS;
@@ -1236,11 +1237,15 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     }
 
     if (MACOS_HIDE_TITLEBAR) {
-      hideWindowTitleBar(winId());
+        hideWindowTitleBar(winId());
     }
     menu_bar = create_main_menu_bar();
     setMenuBar(menu_bar);
     menu_bar->stackUnder(text_command_line_edit_container);
+#endif
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    set_color_mode_to_system_theme();
 #endif
 
     setFocus();
@@ -4088,7 +4093,7 @@ void MainWidget::apply_window_params_for_two_window_mode() {
 
 #ifdef Q_OS_MACOS
     if (MACOS_HIDE_TITLEBAR) {
-      hideWindowTitleBar(helper_window->winId());
+        hideWindowTitleBar(helper_window->winId());
     }
 #endif
     //int main_window_width = QApplication::desktop()->screenGeometry(0).width();
@@ -4457,6 +4462,13 @@ void MainWidget::changeEvent(QEvent* event) {
             //main_window_height = get_current_monitor_height();
         }
     }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    if (event->type() == QEvent::ThemeChange) {
+      set_color_mode_to_system_theme();
+    }
+#endif
+
     QWidget::changeEvent(event);
 }
 
@@ -6772,15 +6784,56 @@ int MainWidget::get_current_colorscheme_index() {
 }
 
 void MainWidget::set_dark_mode() {
-    main_document_view->set_dark_mode(true);
+    if (main_document_view->get_current_color_mode() != ColorPalette::Dark) {
+        main_document_view->set_dark_mode(true);
+    }
+    if (helper_opengl_widget_) {
+        if (helper_document_view_->get_current_color_mode() != ColorPalette::Dark) {
+            helper_document_view_->set_dark_mode(true);
+        }
+    }
 }
 
 void MainWidget::set_light_mode() {
-    main_document_view->set_dark_mode(false);
+    if (main_document_view->get_current_color_mode() != ColorPalette::Normal) {
+        main_document_view->set_dark_mode(false);
+    }
+    if (helper_opengl_widget_) {
+        if (helper_document_view_->get_current_color_mode() != ColorPalette::Normal) {
+            helper_document_view_->set_dark_mode(false);
+        }
+    }
 }
 
 void MainWidget::set_custom_color_mode() {
-    main_document_view->set_custom_color_mode(true);
+    if (main_document_view->get_current_color_mode() != ColorPalette::Custom) {
+        main_document_view->set_custom_color_mode(true);
+    }
+    if (helper_opengl_widget_) {
+        if (helper_document_view_->get_current_color_mode() != ColorPalette::Custom) {
+            helper_document_view_->set_custom_color_mode(true);
+        }
+    }
+}
+
+
+void MainWidget::set_color_mode_to_system_theme() {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    if (USE_SYSTEM_THEME) {
+        QStyleHints *style_hints =  QGuiApplication::styleHints();
+        if (style_hints->colorScheme() == Qt::ColorScheme::Light){
+            set_light_mode();
+        }
+        if (style_hints->colorScheme() == Qt::ColorScheme::Dark){
+            if (USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME){
+                set_custom_color_mode();
+            }
+            else{
+                set_dark_mode();
+            }
+        }
+    }
+#endif
 }
 
 void MainWidget::update_highlight_buttons_position() {
@@ -7399,6 +7452,9 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             changeTitlebarColor(winId(), MACOS_TITLEBAR_COLOR[0], MACOS_TITLEBAR_COLOR[1], MACOS_TITLEBAR_COLOR[2], 1.0f);
         }
 #endif
+        if (confname == "use_system_theme") {
+            set_color_mode_to_system_theme();
+        }
 
         if (confname == "tts_rate") {
             if (is_reading) {
@@ -9790,11 +9846,14 @@ void MainWidget::initialize_helper(){
 #ifdef Q_OS_MACOS
     QWidget* helper_window = get_top_level_widget(helper_opengl_widget_);
     if (MACOS_HIDE_TITLEBAR) {
-      hideWindowTitleBar(helper_window->winId());
+        hideWindowTitleBar(helper_window->winId());
     }
     helper_opengl_widget_->show();
     helper_opengl_widget_->hide();
 #endif
+
+    set_color_mode_to_system_theme();
+
     helper_opengl_widget_->register_on_link_edit_listener([this](OpenedBookState state) {
             this->update_closest_link_with_opened_book_state(state);
             });
