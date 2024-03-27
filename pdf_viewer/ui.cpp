@@ -203,10 +203,11 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     QObject::connect(main_menu, &TouchMainMenu::selectTextClicked, [&]() {
         //main_widget->current_widget = {};
         //deleteLater();
-        assert(main_widget->current_widget_stack.back() == this);
-        main_widget->pop_current_widget();
-        main_widget->handle_mobile_selection();
-        main_widget->invalidate_render();
+        // assert(main_widget->current_widget_stack.back() == this);
+        // main_widget->pop_current_widget();
+        // main_widget->handle_mobile_selection();
+        // main_widget->invalidate_render();
+        main_widget->run_command_with_name("start_mobile_text_selection_at_point", true);
         });
 
     QObject::connect(main_menu, &TouchMainMenu::openNewDocClicked, [&]() {
@@ -265,13 +266,19 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
 
         });
 
-    QObject::connect(main_menu, &TouchMainMenu::rulerModeClicked, [&]() {
-        main_widget->android_handle_visual_mode();
-        //main_widget->current_widget = {};
-        //deleteLater();
-        assert(main_widget->current_widget_stack.back() == this);
-        //main_widget->pop_current_widget();
-        main_widget->invalidate_render();
+    QObject::connect(main_menu, &TouchMainMenu::rulerModeClicked, [&, ruler]() {
+        if (main_widget->is_ruler_mode()){
+            main_widget->android_handle_visual_mode();
+            //main_widget->current_widget = {};
+            //deleteLater();
+            assert(main_widget->current_widget_stack.back() == this);
+            //main_widget->pop_current_widget();
+            main_widget->invalidate_render();
+        }
+        else{
+            main_widget->run_command_with_name("ruler_under_selected_point", true);
+        }
+
         });
 
     QObject::connect(main_menu, &TouchMainMenu::searchClicked, [&]() {

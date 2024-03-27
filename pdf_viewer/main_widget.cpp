@@ -234,8 +234,8 @@ extern std::wstring BACK_RECT_TAP_COMMAND;
 extern std::wstring BACK_RECT_HOLD_COMMAND;
 extern std::wstring FORWARD_RECT_TAP_COMMAND;
 extern std::wstring FORWARD_RECT_HOLD_COMMAND;
-extern std::wstring EDIT_PORTAL_TAP_COMMAND;
-extern std::wstring EDIT_PORTAL_HOLD_COMMAND;
+extern std::wstring TOP_CENTER_TAP_COMMAND;
+extern std::wstring TOP_CENTER_HOLD_COMMAND;
 extern std::wstring VISUAL_MARK_NEXT_TAP_COMMAND;
 extern std::wstring VISUAL_MARK_NEXT_HOLD_COMMAND;
 extern std::wstring VISUAL_MARK_PREV_TAP_COMMAND;
@@ -1480,6 +1480,12 @@ std::wstring MainWidget::get_status_string(bool is_right) {
         status_string.replace("%{custom_message}", " [ " + QString::fromStdWString(custom_status_message) + " ]");
     }
 
+    if (pending_command_instance && (status_string.indexOf("%{current_requirement_desc}") != -1)){
+        if (pending_command_instance->next_requirement(this)->type == RequirementType::Point){
+            status_string.replace("%{current_requirement_desc}", " [ " + QString::fromStdString(pending_command_instance->next_requirement(this)->name) + " ] ");
+        }
+    }
+
     bool is_downloading = false;
     if (is_network_manager_running(&is_downloading)) {
         if (is_downloading) {
@@ -1514,6 +1520,7 @@ std::wstring MainWidget::get_status_string(bool is_right) {
     status_string.replace("%{custom_message}", "");
     status_string.replace("%{search_progress}", "");
     status_string.replace("%{download}", "");
+    status_string.replace("%{current_requirement_desc}", "");
 
     if (DEBUG) {
         status_string += " [DEBUG MODE] ";
@@ -3357,9 +3364,9 @@ void MainWidget::toggle_two_window_mode() {
     }
 }
 
-fz_stext_char* MainWidget::get_closest_character_to_cusrsor(QPoint pos) {
+fz_stext_char* MainWidget::get_closest_character_to_cusrsor(AbsoluteDocumentPos pos) {
 
-    DocumentPos doc_pos = WindowPos{ pos.x(), pos.y() }.to_document(main_document_view);
+    DocumentPos doc_pos = pos.to_document(doc());
     int current_page = doc_pos.page;
     fz_stext_page* stext_page = doc()->get_stext_with_page_number(current_page);
     std::vector<fz_stext_char*> flat_chars;
@@ -6381,7 +6388,7 @@ bool MainWidget::event(QEvent* event) {
                         return true;
                     }
                     if (is_in_edit_portal_rect(window_pos)) {
-                        handle_command_types(command_manager->create_macro_command(this, "", EDIT_PORTAL_HOLD_COMMAND), 0);
+                        handle_command_types(command_manager->create_macro_command(this, "", TOP_CENTER_HOLD_COMMAND), 0);
                         invalidate_render();
                         return true;
                     }
@@ -6396,7 +6403,8 @@ bool MainWidget::event(QEvent* event) {
                         }
                     }
 
-                    show_touch_main_menu();
+                    overview_under_pos(last_hold_point);
+                    // show_touch_main_menu();
 
                     return true;
                 }
@@ -6435,12 +6443,14 @@ bool MainWidget::event(QEvent* event) {
     return QWidget::event(event);
 }
 
-void MainWidget::handle_mobile_selection() {
-    qDebug() << "last hold point: " << last_hold_point;
-    fz_stext_char* character_under = get_closest_character_to_cusrsor(last_hold_point);
+void MainWidget::start_mobile_selection_under_point(AbsoluteDocumentPos abspoint) {
+    if (!doc()) return;
 
-    WindowPos last_hold_point_window_pos = { last_hold_point.x(), last_hold_point.y() };
-    DocumentPos last_hold_point_document_pos = main_document_view->window_to_document_pos(last_hold_point_window_pos);
+    fz_stext_char* character_under = get_closest_character_to_cusrsor(abspoint);
+
+    // WindowPos last_hold_point_window_pos = { last_hold_point.x(), last_hold_point.y() };
+    // DocumentPos last_hold_point_document_pos = main_document_view->window_to_document_pos(last_hold_point_window_pos);
+    DocumentPos last_hold_point_document_pos = abspoint.to_document(doc());
 
     if (character_under) {
         int current_page = last_hold_point_document_pos.page;
@@ -6580,7 +6590,7 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
     }
 
     if (is_in_edit_portal_rect(click_pos)) {
-        if (execute_macro_if_enabled(EDIT_PORTAL_TAP_COMMAND)) {
+        if (execute_macro_if_enabled(TOP_CENTER_TAP_COMMAND)) {
             return true;
         }
     }
@@ -7367,6 +7377,9 @@ bool MainWidget::should_show_status_label() {
     }
 
     if (TOUCH_MODE) {
+        if (pending_command_instance && pending_command_instance->next_requirement(this)->type == RequirementType::Point){
+            return true;
+        }
         if (current_widget_stack.size() > 0 || main_document_view->get_is_searching(&prog) || is_pending_link_source_filled()) {
             return true;
         }
@@ -11101,6 +11114,10 @@ void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::w
     else {
         main_document_view->set_pending_portal_position({});
     }
+}
+
+bool MainWidget::is_ruler_mode(){
+    return main_document_view->is_ruler_mode();
 }
 
 #ifdef SIOYEK_IOS

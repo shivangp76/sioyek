@@ -586,7 +586,7 @@ public:
     int get_current_monitor_width(); int get_current_monitor_height();
     std::wstring synctex_under_pos(WindowPos position);
     std::optional<std::wstring> get_paper_name_under_cursor(bool use_last_hold_point = false);
-    fz_stext_char* get_closest_character_to_cusrsor(QPoint pos);
+    fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
     void set_status_message(std::wstring new_status_string);
     void remove_self_from_windows();
     //void handle_additional_command(std::wstring command_name, bool wait=false);
@@ -701,7 +701,7 @@ public:
 
 
     void update_highlight_buttons_position();
-    void handle_mobile_selection();
+    void start_mobile_selection_under_point(AbsoluteDocumentPos point);
     void update_mobile_selection();
     bool handle_quick_tap(WindowPos click_pos);
     bool handle_double_tap(QPoint pos);
@@ -990,6 +990,7 @@ public:
     void delete_menu_nodes(MenuNode* items);
     void set_pending_portal(std::optional<std::wstring> doc_path, Portal portal);
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
+    bool is_ruler_mode();
 #ifdef SIOYEK_IOS
 
 public slots:

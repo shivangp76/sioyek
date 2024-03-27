@@ -4778,6 +4778,66 @@ public:
 
 };
 
+class RulerUnderSelectedPointCommand : public Command {
+public:
+    static inline const std::string cname = "ruler_under_selected_point";
+    static inline const std::string hname = "Select a point to set a ruler";
+
+    std::optional<AbsoluteDocumentPos> point_;
+
+    RulerUnderSelectedPointCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+
+        if (!point_.has_value()) {
+            Requirement req = { RequirementType::Point, "Ruler line location" };
+            return req;
+        }
+        return {};
+    }
+
+    virtual void set_point_requirement(AbsoluteDocumentPos value){
+        point_ = value;
+    }
+
+    void perform() {
+        // QPoint mouse_pos = widget->mapFromGlobal(widget->cursor_pos());
+        WindowPos pos = point_->to_window(widget->main_document_view);
+        widget->visual_mark_under_pos({ pos.x, pos.y });
+    }
+
+
+};
+
+class StartMobileTextSelectionAtPointCommand : public Command {
+public:
+    static inline const std::string cname = "start_mobile_text_selection_at_point";
+    static inline const std::string hname = "Start mobile text selection at selected point";
+
+    std::optional<AbsoluteDocumentPos> point_;
+
+    StartMobileTextSelectionAtPointCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+
+        if (!point_.has_value()) {
+            Requirement req = { RequirementType::Point, "Text selection location" };
+            return req;
+        }
+        return {};
+    }
+
+    virtual void set_point_requirement(AbsoluteDocumentPos value){
+        point_ = value;
+    }
+
+    void perform() {
+        widget->start_mobile_selection_under_point(point_.value());
+    }
+
+
+};
+
 class CloseOverviewCommand : public Command {
 public:
     static inline const std::string cname = "close_overview";
@@ -6610,6 +6670,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<OverviewUnderCursorCommand>();
     register_command<CloseOverviewCommand>();
     register_command<VisualMarkUnderCursorCommand>();
+    register_command<RulerUnderSelectedPointCommand>();
+    register_command<StartMobileTextSelectionAtPointCommand>();
     register_command<CloseVisualMarkCommand>();
     register_command<ZoomInCursorCommand>();
     register_command<ZoomOutCursorCommand>();

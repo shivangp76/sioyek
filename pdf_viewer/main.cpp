@@ -151,7 +151,7 @@ std::wstring PAPERS_FOLDER_PATH = L"";
 std::wstring STATUS_BAR_FORMAT = L"[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}%{closest_bookmark}%{close_portal}%{rect_select}%{custom_message}%{download}";
 std::wstring RIGHT_STATUS_BAR_FORMAT = L"";
 #else
-std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_results}%{search_progress}%{link_status}%{indexing}";
+std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_results}%{search_progress}%{link_status}%{indexing}%{current_requirement_desc}";
 std::wstring RIGHT_STATUS_BAR_FORMAT = L"%{auto_name}";
 #endif
 
@@ -435,12 +435,12 @@ std::wstring TABLET_PEN_DOUBLE_CLICK_COMMAND = L"load_scratchpad";
 std::wstring VOLUME_DOWN_COMMAND = L"";
 std::wstring VOLUME_UP_COMMAND = L"";
 
-std::wstring BACK_RECT_TAP_COMMAND = L"history_back";
+std::wstring BACK_RECT_TAP_COMMAND = L"prev_state";
 std::wstring BACK_RECT_HOLD_COMMAND = L"goto_mark";
-std::wstring FORWARD_RECT_TAP_COMMAND = L"history_forward";
+std::wstring FORWARD_RECT_TAP_COMMAND = L"next_state";
 std::wstring FORWARD_RECT_HOLD_COMMAND = L"set_mark";
-std::wstring EDIT_PORTAL_TAP_COMMAND = L"edit_portal";
-std::wstring EDIT_PORTAL_HOLD_COMMAND = L"";
+std::wstring TOP_CENTER_TAP_COMMAND = L"show_touch_main_menu";
+std::wstring TOP_CENTER_HOLD_COMMAND = L"toggle_dark_mode";
 std::wstring VISUAL_MARK_NEXT_TAP_COMMAND = L"";
 std::wstring VISUAL_MARK_NEXT_HOLD_COMMAND = L"";
 std::wstring VISUAL_MARK_PREV_TAP_COMMAND = L"";

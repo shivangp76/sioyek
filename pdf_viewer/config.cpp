@@ -156,8 +156,8 @@ extern std::wstring BACK_RECT_TAP_COMMAND;
 extern std::wstring BACK_RECT_HOLD_COMMAND;
 extern std::wstring FORWARD_RECT_TAP_COMMAND;
 extern std::wstring FORWARD_RECT_HOLD_COMMAND;
-extern std::wstring EDIT_PORTAL_TAP_COMMAND;
-extern std::wstring EDIT_PORTAL_HOLD_COMMAND;
+extern std::wstring TOP_CENTER_TAP_COMMAND;
+extern std::wstring TOP_CENTER_HOLD_COMMAND;
 extern std::wstring VISUAL_MARK_NEXT_TAP_COMMAND;
 extern std::wstring VISUAL_MARK_NEXT_HOLD_COMMAND;
 extern std::wstring VISUAL_MARK_PREV_TAP_COMMAND;
@@ -1716,7 +1716,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     configs.push_back({
         L"edit_portal_tap_command",
         ConfigType::Macro,
-        &EDIT_PORTAL_TAP_COMMAND,
+                       &TOP_CENTER_TAP_COMMAND,
         string_serializer,
         string_deserializer,
         nullptr
@@ -1724,7 +1724,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     configs.push_back({
         L"edit_portal_hold_command",
         ConfigType::Macro,
-        &EDIT_PORTAL_HOLD_COMMAND,
+        &TOP_CENTER_HOLD_COMMAND,
         string_serializer,
         string_deserializer,
         nullptr
