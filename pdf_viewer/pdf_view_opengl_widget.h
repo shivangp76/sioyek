@@ -43,7 +43,8 @@ enum HighlightRenderFlags
     HRF_BORDER = 1 << 1,
     HRF_UNDERLINE = 1 << 2,
     HRF_STRIKE = 1 << 3,
-    HRF_INVERTED = 1 << 4
+    HRF_INVERTED = 1 << 4,
+    HRF_PAINTOVER = 1 << 5
 };
 
 struct OpenGLSharedResources {

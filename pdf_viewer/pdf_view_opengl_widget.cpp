@@ -3140,7 +3140,28 @@ void PdfViewOpenGLWidget::render_highlight_window_qpainter_backend(NormalizedWin
 
     // no need to draw the fill color if we are in underline/strike mode
     if (flags & HRF_FILL) {
-        painter.fillRect(pixel_window_rect, QBrush(painter.pen().color()));
+
+        if (flags & HRF_INVERTED){
+            auto original_composition_mode = painter.compositionMode();
+            painter.setCompositionMode(QPainter::RasterOp_SourceXorDestination);
+            painter.setPen(QColor(0xff, 0xff, 0xff));
+            painter.fillRect(pixel_window_rect, QBrush(QColor(0xff, 0xff, 0xff)));
+            painter.setCompositionMode(original_composition_mode);
+        }
+        else if (flags & HRF_PAINTOVER){
+            auto original_composition_mode = painter.compositionMode();
+            painter.setCompositionMode(QPainter::RasterOp_NotSourceOrDestination);
+            QColor color = painter.pen().color();
+            color.setAlpha(255);
+            color.setRed(255 - color.red());
+            color.setGreen(255 - color.green());
+            color.setBlue(255 - color.blue());
+            painter.fillRect(pixel_window_rect, QBrush(color));
+            painter.setCompositionMode(original_composition_mode);
+        }
+        else{
+            painter.fillRect(pixel_window_rect, QBrush(painter.pen().color()));
+        }
     }
 
     if (flags & HRF_BORDER) {
