@@ -1241,8 +1241,8 @@ void PdfViewOpenGLWidget::my_render() {
 
     bind_default();
     prepare_highlight_pipeline();
-    render_text_highlights();
     render_highlight_annotations();
+    render_text_highlights();
 
     if (document_view->overview_page) {
         render_overview(document_view->overview_page.value());
