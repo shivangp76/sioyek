@@ -4285,6 +4285,10 @@ int Document::get_page_offset_into_super_fast_index(int from){
     return super_fast_page_begin_indices[from];
 }
 
+QString Document::get_all_document_text(){
+    return QString::fromStdWString(super_fast_search_index);
+}
+
 QString Document::get_rest_of_document_pages_text(int from) {
     if ((from >= 0) && from < super_fast_page_begin_indices.size()) {
         return QString::fromStdWString(super_fast_search_index.substr(super_fast_page_begin_indices[from]));

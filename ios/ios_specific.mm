@@ -1,0 +1,122 @@
+#include <QWidget>
+#import <AVFoundation/AVFoundation.h>
+#import <UIKit/UIKit.h>
+#import <MediaPlayer/MediaPlayer.h>
+
+static AVSpeechSynthesizer* synthesizer = nil;
+static int currentSpokenWordLocation = -1;
+
+extern "C" void iosResumeFunc(){
+}
+
+extern "C" void iosPauseFunc(){
+}
+
+extern "C" int getLastSpokenWordLocation(){
+    return currentSpokenWordLocation;
+}
+
+extern "C" void iosStopReading(){
+    if (synthesizer){
+        if ([synthesizer isSpeaking]){
+            [synthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+            [MPNowPlayingInfoCenter defaultCenter].playbackState = MPNowPlayingPlaybackStateStopped;
+            [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
+        }
+    }
+}
+
+@interface SynthesizerDelegate : NSObject <AVSpeechSynthesizerDelegate>
+@end
+
+@implementation SynthesizerDelegate
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didStartSpeechUtterance:(AVSpeechUtterance *)utterance{
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer didFinishSpeechUtterance:(AVSpeechUtterance *)utterance{
+    [MPNowPlayingInfoCenter defaultCenter].playbackState = MPNowPlayingPlaybackStateStopped;
+    [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)synthesizer 
+    willSpeakRangeOfSpeechString:(NSRange)characterRange 
+    utterance:(AVSpeechUtterance *)utterance{
+
+    if (characterRange.location != NSNotFound){
+        currentSpokenWordLocation = (int)characterRange.location;
+    }
+}
+
+@end
+
+
+
+extern "C" AVSpeechSynthesizer* createSpeechSynthesizer(){
+    synthesizer = [[AVSpeechSynthesizer alloc] init];
+    return synthesizer;
+}
+
+void setupNowPlaying(){
+    [MPNowPlayingInfoCenter defaultCenter].playbackState = MPNowPlayingPlaybackStatePlaying;
+
+    NSMutableDictionary* nowPlayingInfo = [NSMutableDictionary dictionary];
+    [nowPlayingInfo setObject:@"sioyek tts" forKey:MPMediaItemPropertyTitle];
+    [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nowPlayingInfo;
+}
+
+
+void setupRemoteCommandCenter(){
+    MPRemoteCommandCenter* sharedCommandCenter = [MPRemoteCommandCenter sharedCommandCenter];
+    // MPRemoteCommand* playCommand = [sharedCommandCenter playCommand];
+    [sharedCommandCenter.playCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+        [synthesizer continueSpeaking];
+        return MPRemoteCommandHandlerStatusSuccess;
+    }];
+    sharedCommandCenter.playCommand.enabled = true;
+
+    [sharedCommandCenter.pauseCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
+        [synthesizer pauseSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+        return MPRemoteCommandHandlerStatusSuccess;
+    }];
+    sharedCommandCenter.pauseCommand.enabled = true;
+
+}
+
+double convertQtRateToNativeRate(double qtRate){
+    const float range = qtRate >= 0
+                      ? AVSpeechUtteranceMaximumSpeechRate - AVSpeechUtteranceDefaultSpeechRate
+                      : AVSpeechUtteranceDefaultSpeechRate - AVSpeechUtteranceMinimumSpeechRate;
+    return AVSpeechUtteranceDefaultSpeechRate + (qtRate * range);
+}
+
+extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceName, double rate){
+    if (synthesizer == nil) {
+        createSpeechSynthesizer();
+    }
+
+    // NSString* ttsVoiceName = voiceName ? voiceName : @"en-GB";
+    NSString* ttsVoiceName = @"en-GB";
+    AVSpeechSynthesisVoice* voice = [AVSpeechSynthesisVoice voiceWithLanguage:ttsVoiceName];
+    NSArray<AVSpeechSynthesisVoice*>* availableVoices = [AVSpeechSynthesisVoice speechVoices];
+
+    for (int i =0; i < availableVoices.count; i++){
+        if ([voiceName isEqualToString:availableVoices[i].name]){
+            voice = availableVoices[i];
+        }
+    }
+
+    // NSString* ttsVoiceName = voiceName ? voiceName : @"en";
+    SynthesizerDelegate* delegate = [[SynthesizerDelegate alloc] init];
+
+    // AVSpeechSynthesisVoice *defaultAvVoice = [AVSpeechSynthesisVoice voiceWithLanguage:locale.bcp47Name().toNSString()];
+
+    AVSpeechUtterance* utterance = [[AVSpeechUtterance alloc] initWithString:text];
+    utterance.voice = voice;
+    utterance.rate = convertQtRateToNativeRate(rate);
+    synthesizer.delegate = delegate;
+    [synthesizer speakUtterance:utterance];
+    setupNowPlaying();
+    setupRemoteCommandCenter();
+    [utterance release];
+}

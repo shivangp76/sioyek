@@ -102,6 +102,18 @@ extern "C" void changeTitlebarColor(WId, double, double, double, double);
 extern "C" void hideWindowTitleBar(WId);
 #endif
 
+#ifdef SIOYEK_IOS
+// extern "C" void iosTestFunc(NSString* text);
+
+extern "C" void iosResumeFunc();
+extern "C" void iosPauseFunc();
+extern "C" AVSpeechSynthesizer* createSpeechSynthesizer();
+extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceName, double rate);
+extern "C" int getLastSpokenWordLocation();
+extern "C" int iosStopReading();
+
+#endif
+
 extern int next_window_id;
 
 extern bool SHOULD_USE_MULTIPLE_MONITORS;
@@ -1255,6 +1267,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
 #ifdef SIOYEK_IOS
     QDesktopServices::setUrlHandler("file", this, "handle_ios_files");
+    QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QApplication::applicationStateChanged, [&](Qt::ApplicationState state){
+        on_ios_application_state_changed(state);
+    });
 #endif
 }
 
@@ -5761,6 +5776,9 @@ void MainWidget::handle_goto_highlight_global() {
 
 void MainWidget::handle_goto_toc() {
 
+    if (!main_document_view || !main_document_view->get_document()){
+        return;
+    }
     if (main_document_view->get_document()->has_toc()) {
         if (TOUCH_MODE) {
             std::vector<std::wstring> flat_toc;
@@ -7007,11 +7025,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << "main widget size: " << size();
-    qDebug() << "opengl widget size: " << opengl_widget->size();
-    opengl_widget->resize(size());
-    opengl_widget->move(0, 0);
-    // qDebug() << helper_document_view_->get_view_width();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -11097,4 +11110,64 @@ void MainWidget::handle_ios_files(const QUrl& url){
     push_state();
     open_document(path, &is_render_invalidated);
 }
+
+void MainWidget::on_ios_application_state_changed(Qt::ApplicationState state){
+
+    if (state == Qt::ApplicationState::ApplicationActive){
+
+        if (ios_was_suspended){
+            ios_was_suspended = false;
+            on_ios_resume();
+        }
+    }
+
+    if (state == Qt::ApplicationState::ApplicationInactive){
+    }
+
+    if (state == Qt::ApplicationState::ApplicationSuspended){
+        ios_was_suspended = true;
+        if (is_reading){
+            on_ios_suspend_while_reading();
+        }
+    }
+
+    last_ios_application_state = state;
+}
+
+void MainWidget::on_ios_suspend_while_reading(){
+    auto tts_handler = dynamic_cast<QtTextToSpeechHandler*>(tts);
+    double tts_rate = tts_handler->tts->rate();
+    QString tts_voice_name = tts_handler->tts->voice().name();
+
+    handle_stop_reading();
+    int page_number  = main_document_view->get_vertical_line_page();
+    AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
+    std::wstring current_page_text;
+
+    int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
+        page_number,
+        ruler_rect,
+        current_page_text,
+        tts_corresponding_line_rects,
+        tts_corresponding_char_rects);
+    int index_into_document = index_into_page + doc()->get_page_offset_into_super_fast_index(page_number);
+
+
+    QString rest_text = QString::fromStdWString(current_page_text) + get_rest_of_document_pages_text();
+    ios_tts_begin_index_into_document = index_into_document;
+
+    iosPlayTextToSpeechInBackground(
+                rest_text.toNSString(),
+                tts_voice_name.toNSString(),
+                tts_rate);
+}
+
+void MainWidget::on_ios_resume(){
+    iosStopReading();
+    int last_spoken_word_location = getLastSpokenWordLocation();
+    int last_spoken_word_index_into_document = last_spoken_word_location + ios_tts_begin_index_into_document;
+    focus_on_character_offset_into_document(last_spoken_word_index_into_document);
+
+}
+
 #endif

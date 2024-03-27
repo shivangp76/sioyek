@@ -1354,7 +1354,6 @@ void PdfViewOpenGLWidget::register_on_link_edit_listener(std::function<void(cons
 }
 
 void PdfViewOpenGLWidget::draw_empty_helper_message(QString message) {
-#ifdef SIOYEK_OPENGL_BACKEND
     // should be called with native painting disabled
 
     QFontMetrics fm(QApplication::font());
@@ -1369,7 +1368,6 @@ void PdfViewOpenGLWidget::draw_empty_helper_message(QString message) {
     int view_height = dv()->get_view_height();
 
     painter.drawText(view_width / 2 - message_width / 2, view_height / 2 - message_height / 2, message);
-#endif
 }
 
 

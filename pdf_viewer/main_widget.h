@@ -14,6 +14,9 @@
 #include <qquickwidget.h>
 #include <qjsondocument.h>
 #include <qmainwindow.h>
+#ifdef SIOYEK_IOS
+#include <QApplicationStateChangeEvent>
+#endif
 
 #include "book.h"
 #include "input.h"
@@ -118,6 +121,9 @@ enum class PaperDownloadFinishedAction {
     Portal
 };
 
+#ifdef SIOYEK_IOS
+struct AVSpeechSynthesizer;
+#endif
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 #ifdef SIOYEK_MOBILE
@@ -764,6 +770,16 @@ protected:
     void focusInEvent(QFocusEvent* ev);
     void resizeEvent(QResizeEvent* resize_event) override;
     void changeEvent(QEvent* event) override;
+#ifdef SIOYEK_IOS
+    std::optional<Qt::ApplicationState> last_ios_application_state = {};
+    int ios_tts_begin_index_into_document = -1;
+    bool ios_was_suspended = false;
+
+    void on_ios_application_state_changed(Qt::ApplicationState state);
+    void on_ios_suspend_while_reading();
+    void on_ios_resume();
+#endif
+
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
 
     // we already handle drag and drop on macos elsewhere
@@ -975,6 +991,7 @@ public:
     void set_pending_portal(std::optional<std::wstring> doc_path, Portal portal);
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
 #ifdef SIOYEK_IOS
+
 public slots:
     void handle_ios_files(const QUrl& url);
 #endif
