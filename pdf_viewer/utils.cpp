@@ -4394,3 +4394,17 @@ bool is_platform_control_pressed(QKeyEvent* kevent){
         return (kevent->modifiers() & Qt::ControlModifier);
 #endif
 }
+
+int prune_abbreviation_candidate(const std::wstring& super_fast_search_index, int start_index, int end_index, std::wstring abbr){
+    abbr = QString::fromStdWString(abbr).toLower().toStdWString();
+
+    while (start_index < end_index - abbr.size()){
+        if (QChar(super_fast_search_index[start_index]).toLower() != QChar(abbr[0])){
+            start_index++;
+        }
+        else{
+            break;
+        }
+    }
+    return start_index-1;
+}

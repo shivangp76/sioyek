@@ -3889,24 +3889,45 @@ std::optional<DocumentPos> Document::find_abbreviation(std::wstring abbr, std::v
     if (abbr.size() == 0){
         return {};
     }
+    std::wstring candidate_abbr1 = abbr;
+    std::wstring candidate_abbr2;
 
-    std::wstring query = L"(" + abbr + L")";
+    if (abbr.back() == 's'){
+        candidate_abbr2 =  abbr.substr(0, abbr.size()-1);
+    }
+    else{
+        candidate_abbr2 = abbr + L"s";
+    }
 
-    auto searcher = std::default_searcher(query.begin(), query.end(), pred_case_sensitive);
-    auto it = std::search(
+    std::wstring candidate_query1 = L"(" + candidate_abbr1 + L")";
+    std::wstring candidate_query2 = L"(" + candidate_abbr2 + L")";
+
+    auto searcher1 = std::default_searcher(candidate_query1.begin(), candidate_query1.end(), pred_case_sensitive);
+    auto searcher2 = std::default_searcher(candidate_query2.begin(), candidate_query2.end(), pred_case_sensitive);
+
+    auto searcher = searcher1;
+    abbr = candidate_abbr1;
+    auto query = candidate_query1;
+
+    auto it1 = std::search(
         super_fast_search_index.begin(),
         super_fast_search_index.end(),
-        searcher);
+        searcher1);
+    auto it2 = std::search(
+        super_fast_search_index.begin(),
+        super_fast_search_index.end(),
+        searcher2);
+    auto it = it1;
+
+    if (it2 < it1){
+        it = it2;
+        abbr = candidate_abbr2;
+        query = candidate_query2;
+        searcher = searcher2;
+    }
+
 
     if (it == super_fast_search_index.end()){
-        if (abbr.back() == 's'){
-            abbr =  abbr.substr(0, abbr.size()-1);
-            query = L"(" + abbr + L")";
-        }
-        else{
-            abbr = abbr + L"s";
-            query = L"(" + abbr + L")";
-        }
 
         searcher = std::default_searcher(query.begin(), query.end(), pred_case_sensitive);
         it = std::search(
@@ -3919,6 +3940,7 @@ std::optional<DocumentPos> Document::find_abbreviation(std::wstring abbr, std::v
 
     if (it != super_fast_search_index.end()) {
         int index = it - super_fast_search_index.begin();
+        int end_index = index + query.size();
         int abbr_page = 0;
 
         while ((abbr_page < num_pages() - 1) && super_fast_page_begin_indices[abbr_page + 1] < index) {
@@ -3950,7 +3972,14 @@ std::optional<DocumentPos> Document::find_abbreviation(std::wstring abbr, std::v
 
             index--;
         }
-        /* while (index > 0 && super_fast_search_index[index]) */
+        int new_start_index = prune_abbreviation_candidate(super_fast_search_index, index, end_index, abbr);
+        int index_diff = new_start_index - index;
+        for (int i = 0; i < index_diff; i++){
+            if (raw_rects.size() > 0){
+                raw_rects.pop_back();
+            }
+        }
+        index = new_start_index;
 
         if (raw_rects.size() > 0){
             merge_selected_character_rects(raw_rects, merged_rects, false);
