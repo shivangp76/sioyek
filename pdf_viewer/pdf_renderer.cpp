@@ -641,26 +641,57 @@ void PdfRenderer::run(int thread_index) {
                     fz_gamma_pixmap(mupdf_context, rendered_pixmap, GAMMA);
                 }
 
-                if (req.color_palette == ColorPalette::Dark){
+
+
+                // With qpainter backend we need to manually convert pixels to
+                // the current colorscheme. The following code basically does this
+                // conversion for every pixel. For performance reasons we cache the previous result
+                // so we don't have to recompute it when successive pixels are the same
+                // (which happens a lot)
+                auto convert_pixels_with_converter = [&](auto converter){
+                    unsigned char* first_pixel = rendered_pixmap->samples;
+                    unsigned char last_r = first_pixel[0], last_g = first_pixel[1], last_b = first_pixel[2];
+                    converter(first_pixel);
+                    unsigned char res_r = first_pixel[0], res_g = first_pixel[1], res_b = first_pixel[2];
+
                     for (int row = 0; row < rendered_pixmap->h; row++){
                         unsigned char* row_samples = rendered_pixmap->samples + row * rendered_pixmap->stride;
                         for (int col = 0; col < rendered_pixmap->w; col++){
                             unsigned char* pixel = row_samples + col * 3;
-                            convert_pixel_to_dark_mode(pixel);
+                            if (pixel[0] == last_r && pixel[1] == last_g && pixel[2] == last_b){
+                                pixel[0] = res_r;
+                                pixel[1] = res_g;
+                                pixel[2] = res_b;
+                                continue;
+                            }
+                            last_r = pixel[0];
+                            last_g = pixel[1];
+                            last_b = pixel[2];
+
+                            converter(pixel);
+
+                            res_r = pixel[0];
+                            res_g = pixel[1];
+                            res_b = pixel[2];
                         }
                     }
+                };
+
+#ifndef SIOYEK_OPENGL_BACKEND
+                if (req.color_palette == ColorPalette::Dark){
+                    convert_pixels_with_converter([&](unsigned char* pixel){
+                        convert_pixel_to_dark_mode(pixel);
+                    });
                 }
-                else if (req.color_palette == ColorPalette::Custom){
+                if (req.color_palette == ColorPalette::Custom){
                     float transform_matrix[16];
                     get_custom_color_transform_matrix(transform_matrix);
-                    for (int row = 0; row < rendered_pixmap->h; row++){
-                        unsigned char* row_samples = rendered_pixmap->samples + row * rendered_pixmap->stride;
-                        for (int col = 0; col < rendered_pixmap->w; col++){
-                            unsigned char* pixel = row_samples + col * 3;
-                            convert_pixel_to_custom_color(pixel, transform_matrix);
-                        }
-                    }
+
+                    convert_pixels_with_converter([&](unsigned char* pixel){
+                        convert_pixel_to_custom_color(pixel, transform_matrix);
+                    });
                 }
+#endif
 
                 RenderResponse resp;
                 resp.thread = thread_index;
