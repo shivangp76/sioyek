@@ -14,6 +14,7 @@
 #include <memory>
 #include <qcommandlineparser.h>
 
+#include <qkeyevent.h>
 #include <qstandarditemmodel.h>
 #include <qpoint.h>
 #include <qjsonarray.h>
@@ -522,3 +523,6 @@ public:
 std::wstring get_path_extras_file_name(const std::wstring& path);
 QString translate_key_mapping_to_macos(QString mapping);
 std::vector<PagelessDocumentRect> get_image_blocks_from_stext_page(fz_stext_page* stext_page);
+
+bool is_platform_meta_pressed(QKeyEvent* kevent);
+bool is_platform_control_pressed(QKeyEvent* kevent);

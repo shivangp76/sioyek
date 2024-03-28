@@ -256,10 +256,10 @@ void copy_to_clipboard(const std::wstring& text, bool selection) {
 }
 
 #define OPEN_KEY(parent, name, ptr) \
-	RegCreateKeyExA(parent, name, 0, 0, 0, KEY_WRITE, 0, &ptr, 0)
+    RegCreateKeyExA(parent, name, 0, 0, 0, KEY_WRITE, 0, &ptr, 0)
 
 #define SET_KEY(parent, name, value) \
-	RegSetValueExA(parent, name, 0, REG_SZ, (const BYTE *)(value), (DWORD)strlen(value) + 1)
+    RegSetValueExA(parent, name, 0, REG_SZ, (const BYTE *)(value), (DWORD)strlen(value) + 1)
 
 void install_app(const char* argv0)
 {
@@ -557,7 +557,7 @@ bool is_index_reverse_reference_number(const std::vector<fz_stext_char*>& flat_c
     }
     return false;
 
-    //int last_dot_index 
+    //int last_dot_index
 
 }
 
@@ -3611,7 +3611,7 @@ int get_largest_quote_size(const std::wstring& text, int* begin_index, int* end_
     }
     *begin_index = largest_begin_index;
     *end_index = largest_end_index;
-    
+
     return largest_size;
 }
 
@@ -3682,7 +3682,7 @@ std::wstring get_paper_name_from_reference_text(std::wstring reference_text) {
 fz_rect get_first_page_size(fz_context* ctx, const std::wstring& document_path) {
     std::string path = utf8_encode(document_path);
     bool failed = false;
-    
+
     fz_rect bounds;
 
     fz_try(ctx) {
@@ -4289,7 +4289,7 @@ QString translate_key_mapping_to_macos(QString mapping){
     mapping = mapping.replace("<up>", "▲");
     mapping = mapping.replace("<right>", "▶");
     mapping = mapping.replace("<down>", "▼");
-    
+
 
     mapping = mapping.replace("<backspace>", "⌫");
     mapping = mapping.replace("<pageup>", "↑");
@@ -4377,4 +4377,20 @@ std::vector<PagelessDocumentRect> get_image_blocks_from_stext_page(fz_stext_page
         }
     }
     return image_rects;
+}
+
+bool is_platform_meta_pressed(QKeyEvent* kevent){
+#ifdef Q_OS_MACOS
+        return (kevent->modifiers() & Qt::ControlModifier);
+#else
+        return (kevent->modifiers() & Qt::MetaModifier);
+#endif
+}
+
+bool is_platform_control_pressed(QKeyEvent* kevent){
+#ifdef Q_OS_MACOS
+        return (kevent->modifiers() & Qt::MetaModifier);
+#else
+        return (kevent->modifiers() & Qt::ControlModifier);
+#endif
 }
