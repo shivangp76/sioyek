@@ -846,7 +846,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
 
+
     central_widget = new QWidget(this);
+    central_widget->setMouseTracking(true);
     // central_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
 
     inverse_search_command = INVERSE_SEARCH_COMMAND;
