@@ -186,6 +186,7 @@ struct DocumentRect {
     AbsoluteRect to_absolute(Document* doc);
     NormalizedWindowRect to_window_normalized(DocumentView* document_view);
     WindowRect to_window(DocumentView* document_view);
+    QRect to_window_qrect(DocumentView* document_view);
 
     DocumentPos top_left();
     DocumentPos bottom_right();

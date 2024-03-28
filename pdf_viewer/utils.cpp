@@ -4358,3 +4358,23 @@ void AndroidTextToSpeechHandler::set_on_app_resume_callback(std::function<void(b
     android_global_resume_state_callback = callback;
 }
 #endif
+
+std::vector<PagelessDocumentRect> get_image_blocks_from_stext_page(fz_stext_page* stext_page){
+
+    std::vector<PagelessDocumentRect> image_rects;
+    for (fz_stext_block* blk = stext_page->first_block; blk != nullptr; blk = blk->next) {
+        if (blk->type == FZ_STEXT_BLOCK_IMAGE) {
+                float im_x = blk->u.i.transform.e;
+                float im_y = blk->u.i.transform.f;
+                float im_w = blk->u.i.transform.a;
+                float im_h = blk->u.i.transform.d;
+                PagelessDocumentRect image_rect;
+                image_rect.x0 = im_x;
+                image_rect.x1 = im_x + im_w;
+                image_rect.y0 = im_y;
+                image_rect.y1 = im_y + im_h;
+                image_rects.push_back(image_rect);
+        }
+    }
+    return image_rects;
+}

@@ -218,6 +218,11 @@ WindowRect DocumentRect::to_window(DocumentView* document_view) {
     return document_view->document_to_window_irect(*this);
 }
 
+QRect DocumentRect::to_window_qrect(DocumentView* document_view) {
+    WindowRect wind_rect = document_view->document_to_window_irect(*this);
+    return QRect(wind_rect.x0, wind_rect.y0, wind_rect.width(), wind_rect.height());
+}
+
 PagelessDocumentPos DocumentPos::pageless() const {
     return PagelessDocumentPos { x, y };
 }

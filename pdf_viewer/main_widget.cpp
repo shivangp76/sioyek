@@ -11,6 +11,10 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
+// scrollbar not working
+// abbr detection for EBM not working in Fokker papaer
+// <C-k> (and some other commands) in menus does not work
+// improve qpainter backend dark mode and custom color performance
 
 
 #include <iostream>

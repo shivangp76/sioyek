@@ -521,3 +521,4 @@ public:
 
 std::wstring get_path_extras_file_name(const std::wstring& path);
 QString translate_key_mapping_to_macos(QString mapping);
+std::vector<PagelessDocumentRect> get_image_blocks_from_stext_page(fz_stext_page* stext_page);

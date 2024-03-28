@@ -695,21 +695,7 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
             (stencils_allowed)) {
             // render images in forced palette mode
             fz_stext_page * stext_page = dv()->get_document()->get_stext_with_page_number(page_number);
-            std::vector<PagelessDocumentRect> image_rects;
-            for (fz_stext_block* blk = stext_page->first_block; blk != nullptr; blk = blk->next) {
-                if (blk->type == FZ_STEXT_BLOCK_IMAGE) {
-                        float im_x = blk->u.i.transform.e;
-                        float im_y = blk->u.i.transform.f;
-                        float im_w = blk->u.i.transform.a;
-                        float im_h = blk->u.i.transform.d;
-                        PagelessDocumentRect image_rect;
-                        image_rect.x0 = im_x;
-                        image_rect.x1 = im_x + im_w;
-                        image_rect.y0 = im_y;
-                        image_rect.y1 = im_y + im_h;
-                        image_rects.push_back(image_rect);
-                }
-            }
+            std::vector<PagelessDocumentRect> image_rects = get_image_blocks_from_stext_page(stext_page);
 
             glClear(GL_STENCIL_BUFFER_BIT);
             enable_stencil();
