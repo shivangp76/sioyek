@@ -6428,6 +6428,9 @@ bool MainWidget::event(QEvent* event) {
                         dv()->set_zoom_level(dv()->get_zoom_level() * scale, true);
                     }
                 }
+#ifdef SIOYEK_IOS
+                validate_render();
+#endif
                 return true;
             }
 
