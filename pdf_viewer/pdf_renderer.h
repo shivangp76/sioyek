@@ -20,9 +20,6 @@
 
 #include "book.h"
 
-extern const int MAX_PENDING_REQUESTS;
-extern const unsigned int CACHE_INVALID_MILIES;
-
 #define SIOYEK_OPENGL_BACKEND
 #ifdef SIOYEK_OPENGL_BACKEND
 using SioyekTextureType = GLuint;
