@@ -122,7 +122,6 @@ Path auto_config_path(L"");
 Path downloaded_papers_path(L"");
 ScratchPad global_scratchpad;
 
-
 int next_window_id = 0;
 std::vector<MainWidget*> windows;
 QString global_font_family;
