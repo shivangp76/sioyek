@@ -11,6 +11,7 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
+// improve js engine initialization performance
 
 
 #include <iostream>
@@ -7041,6 +7042,8 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+    auto engine = take_js_engine(false);
+    engine->evaluate("console.log(new Error().lineNumber);");
 }
 
 void MainWidget::export_command_names(std::wstring file_path){

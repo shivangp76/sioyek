@@ -1292,6 +1292,28 @@ public:
     }
 };
 
+class AddKeybindCommand : public TextCommand {
+public:
+    static inline const std::string cname = "add_keybind";
+    static inline const std::string hname = "Add Keybinding";
+    AddKeybindCommand(MainWidget* w) : TextCommand(cname, w) {
+    };
+
+    void perform() {
+        QString cmd_string = QString::fromStdWString(text.value());
+        int last_space_index = cmd_string.lastIndexOf(' ');
+        std::wstring command_string = cmd_string.left(last_space_index).toStdWString();
+        std::wstring keybind_string = cmd_string.right(cmd_string.size() - last_space_index - 1).toStdWString();
+        qDebug() << command_string << " | " << keybind_string;
+        widget->input_handler->add_keybind(keybind_string, command_string);
+        //widget->input_handler->add_keybind()
+    }
+
+    std::string text_requirement_name() {
+        return "Search Term";
+    }
+
+};
 class SearchCommand : public TextCommand {
 public:
     static inline const std::string cname = "search";
@@ -6744,6 +6766,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<StartReadingCommand>();
     register_command<StopReadingCommand>();
     register_command<ToggleReadingCommand>();
+    register_command<AddKeybindCommand>();
     register_command<ScanNewFilesFromScanDirCommand>();
     register_command<AddMarkedDataCommand>();
     register_command<RemoveMarkedDataCommand>();
@@ -7047,6 +7070,139 @@ bool is_command_incomplete_macro(const std::vector<std::string>& commands){
     return true;
 }
 
+InputParseTreeNode* parse_line(
+    InputParseTreeNode* root,
+    CommandManager* command_manager,
+    const std::wstring& line,
+    const std::wstring& command_string,
+    const std::wstring& command_file_name,
+    const int& command_line_number) {
+
+    // for example convert "<a-<space>> to ["a", "space"]
+    std::vector<std::wstring> tokens;
+    get_tokens(line, tokens);
+
+    InputParseTreeNode* parent_node = root;
+
+    for (size_t i = 0; i < tokens.size(); i++) {
+        InputParseTreeNode node = parse_token(tokens[i]);
+        bool existing_node = false;
+        for (InputParseTreeNode* child : parent_node->children) {
+            if (child->is_same(&node)) {
+                parent_node = child;
+                existing_node = true;
+                break;
+            }
+        }
+        if (!existing_node) {
+            if ((tokens[i] != L"sym") && (tokens[i] != L"txt")) {
+                if (parent_node->is_final) {
+                    LOG(std::wcerr
+                        << L"Warning: key defined in " << command_file_name
+                        << L":" << command_line_number
+                        << L" for " << command_string
+                        << L" is unreachable, shadowed by final key sequence defined in "
+                        << parent_node->defining_file_path
+                        << L":" << parent_node->defining_file_line << L"\n");
+                }
+                auto new_node = new InputParseTreeNode(node);
+                new_node->defining_file_line = command_line_number;
+                new_node->defining_file_path = command_file_name;
+                parent_node->children.push_back(new_node);
+                parent_node = parent_node->children[parent_node->children.size() - 1];
+            }
+            else {
+                if (tokens[i] == L"sym") {
+                    parent_node->requires_symbol = true;
+                    parent_node->is_final = true;
+                }
+
+                if (tokens[i] == L"txt") {
+                    parent_node->requires_text = true;
+                    parent_node->is_final = true;
+                }
+            }
+        }
+        else if (((size_t)i == (tokens.size() - 1)) &&
+            (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE ||
+                (command_file_name.compare(parent_node->defining_file_path)) == 0)) {
+            if ((parent_node->name_.size() == 0) || parent_node->name_[0].compare(utf8_encode(command_string)) != 0) {
+                if (!is_command_string_modal(command_string)) {
+
+                    std::wcerr << L"Warning: key defined in " << parent_node->defining_file_path
+                        << L":" << parent_node->defining_file_line
+                        << L" overwritten by " << command_file_name
+                        << L":" << command_line_number;
+                    if (parent_node->name_.size() > 0) {
+                        std::wcerr << L". Overriding command: " << line
+                            << L": replacing " << utf8_decode(parent_node->name_[0])
+                            << L" with " << command_string;
+                    }
+                    std::wcerr << L"\n";
+                }
+            }
+        }
+        if ((size_t)i == (tokens.size() - 1)) {
+            parent_node->is_final = true;
+
+            QString command_name_qstr = QString::fromStdWString(command_string);
+            std::vector<std::string> command_names = parse_command_name(command_name_qstr);
+            std::vector<std::string> previous_names = std::move(parent_node->name_);
+            parent_node->name_ = {};
+            parent_node->defining_file_line = command_line_number;
+            parent_node->defining_file_path = command_file_name;
+            for (size_t k = 0; k < command_names.size(); k++) {
+                parent_node->name_.push_back(command_names[k]);
+            }
+            if (command_name_qstr.startsWith("{holdable}")) {
+                if (command_name_qstr.indexOf("|") == -1) {
+                    qDebug() << "Error in " << command_file_name << ":" << command_line_number << ": holdable command " << command_name_qstr << " does not contain a | character";
+                }
+                else {
+                    std::wstring actual_command = command_name_qstr.mid(10).toStdWString();
+                    parent_node->generator = [command_manager, actual_command](MainWidget* w) {return std::make_unique<HoldableCommand>(
+                        w, command_manager, "", actual_command); };
+                }
+            }
+            else if (command_names.size() == 1 && (command_names[0].find("[") == -1) && (command_names[0].find("(") == -1)) {
+                if (command_manager->new_commands.find(command_names[0]) != command_manager->new_commands.end()) {
+                    parent_node->generator = command_manager->new_commands[command_names[0]];
+                }
+                else {
+                    std::wcerr << L"Warning: command " << utf8_decode(command_names[0]) << L" used in " << parent_node->defining_file_path
+                        << L":" << parent_node->defining_file_line << L" not found.\n";
+                }
+            }
+            else {
+                QStringList command_parts;
+                for (int k = 0; k < command_names.size(); k++) {
+                    command_parts.append(QString::fromStdString(command_names[k]));
+                }
+
+                // is the command incomplete and should be appended to previous command instead of replacing it?
+                if (is_command_incomplete_macro(command_names)) {
+                    for (int k = 0; k < previous_names.size(); k++) {
+                        command_parts.append(QString::fromStdString(previous_names[k]));
+                        parent_node->name_.push_back(previous_names[k]);
+                    }
+                }
+
+                std::wstring joined_command = command_parts.join(";").toStdWString();
+                parent_node->generator = [joined_command, command_manager](MainWidget* w) {return std::make_unique<MacroCommand>(w, command_manager, "", joined_command); };
+            }
+            //if (command_names[j].size())
+        }
+        else {
+            if (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE && parent_node->is_final && (parent_node->name_.size() > 0)) {
+                std::wcerr << L"Warning: unmapping " << utf8_decode(parent_node->name_[0]) << L" because of " << command_string << L" which uses " << line << L"\n";
+            }
+            parent_node->is_final = false;
+        }
+
+    }
+    return root;
+}
+
 InputParseTreeNode* parse_lines(
     InputParseTreeNode* root,
     CommandManager* command_manager,
@@ -7057,133 +7213,145 @@ InputParseTreeNode* parse_lines(
 ) {
 
     for (size_t j = 0; j < lines.size(); j++) {
-        std::wstring line = lines[j];
+        parse_line(
+            root,
+            command_manager,
+            lines[j],
+            command_strings[j],
+            command_file_names[j],
+            command_line_numbers[j]
+        );
+        //std::wstring line = lines[j];
 
-        // for example convert "<a-<space>> to ["a", "space"]
-        std::vector<std::wstring> tokens;
-        get_tokens(line, tokens);
+        //// for example convert "<a-<space>> to ["a", "space"]
+        //std::vector<std::wstring> tokens;
+        //get_tokens(line, tokens);
 
-        InputParseTreeNode* parent_node = root;
+        //InputParseTreeNode* parent_node = root;
 
-        for (size_t i = 0; i < tokens.size(); i++) {
-            InputParseTreeNode node = parse_token(tokens[i]);
-            bool existing_node = false;
-            for (InputParseTreeNode* child : parent_node->children) {
-                if (child->is_same(&node)) {
-                    parent_node = child;
-                    existing_node = true;
-                    break;
-                }
-            }
-            if (!existing_node) {
-                if ((tokens[i] != L"sym") && (tokens[i] != L"txt")) {
-                    if (parent_node->is_final) {
-                        LOG(std::wcerr
-                            << L"Warning: key defined in " << command_file_names[j]
-                            << L":" << command_line_numbers[j]
-                            << L" for " << command_strings[j]
-                            << L" is unreachable, shadowed by final key sequence defined in "
-                            << parent_node->defining_file_path
-                            << L":" << parent_node->defining_file_line << L"\n");
-                    }
-                    auto new_node = new InputParseTreeNode(node);
-                    new_node->defining_file_line = command_line_numbers[j];
-                    new_node->defining_file_path = command_file_names[j];
-                    parent_node->children.push_back(new_node);
-                    parent_node = parent_node->children[parent_node->children.size() - 1];
-                }
-                else {
-                    if (tokens[i] == L"sym") {
-                        parent_node->requires_symbol = true;
-                        parent_node->is_final = true;
-                    }
+        //for (size_t i = 0; i < tokens.size(); i++) {
+        //    InputParseTreeNode node = parse_token(tokens[i]);
+        //    bool existing_node = false;
+        //    for (InputParseTreeNode* child : parent_node->children) {
+        //        if (child->is_same(&node)) {
+        //            parent_node = child;
+        //            existing_node = true;
+        //            break;
+        //        }
+        //    }
+        //    if (!existing_node) {
+        //        if ((tokens[i] != L"sym") && (tokens[i] != L"txt")) {
+        //            if (parent_node->is_final) {
+        //                LOG(std::wcerr
+        //                    << L"Warning: key defined in " << command_file_names[j]
+        //                    << L":" << command_line_numbers[j]
+        //                    << L" for " << command_strings[j]
+        //                    << L" is unreachable, shadowed by final key sequence defined in "
+        //                    << parent_node->defining_file_path
+        //                    << L":" << parent_node->defining_file_line << L"\n");
+        //            }
+        //            auto new_node = new InputParseTreeNode(node);
+        //            new_node->defining_file_line = command_line_numbers[j];
+        //            new_node->defining_file_path = command_file_names[j];
+        //            parent_node->children.push_back(new_node);
+        //            parent_node = parent_node->children[parent_node->children.size() - 1];
+        //        }
+        //        else {
+        //            if (tokens[i] == L"sym") {
+        //                parent_node->requires_symbol = true;
+        //                parent_node->is_final = true;
+        //            }
 
-                    if (tokens[i] == L"txt") {
-                        parent_node->requires_text = true;
-                        parent_node->is_final = true;
-                    }
-                }
-            }
-            else if (((size_t)i == (tokens.size() - 1)) &&
-                (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE ||
-                    (command_file_names[j].compare(parent_node->defining_file_path)) == 0)) {
-                if ((parent_node->name_.size() == 0) || parent_node->name_[0].compare(utf8_encode(command_strings[j])) != 0) {
-                    if (!is_command_string_modal(command_strings[j])) {
+        //            if (tokens[i] == L"txt") {
+        //                parent_node->requires_text = true;
+        //                parent_node->is_final = true;
+        //            }
+        //        }
+        //    }
+        //    else if (((size_t)i == (tokens.size() - 1)) &&
+        //        (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE ||
+        //            (command_file_names[j].compare(parent_node->defining_file_path)) == 0)) {
+        //        if ((parent_node->name_.size() == 0) || parent_node->name_[0].compare(utf8_encode(command_strings[j])) != 0) {
+        //            if (!is_command_string_modal(command_strings[j])) {
 
-                        std::wcerr << L"Warning: key defined in " << parent_node->defining_file_path
-                            << L":" << parent_node->defining_file_line
-                            << L" overwritten by " << command_file_names[j]
-                            << L":" << command_line_numbers[j];
-                        if (parent_node->name_.size() > 0) {
-                            std::wcerr << L". Overriding command: " << line
-                                << L": replacing " << utf8_decode(parent_node->name_[0])
-                                << L" with " << command_strings[j];
-                        }
-                        std::wcerr << L"\n";
-                    }
-                }
-            }
-            if ((size_t)i == (tokens.size() - 1)) {
-                parent_node->is_final = true;
+        //                std::wcerr << L"Warning: key defined in " << parent_node->defining_file_path
+        //                    << L":" << parent_node->defining_file_line
+        //                    << L" overwritten by " << command_file_names[j]
+        //                    << L":" << command_line_numbers[j];
+        //                if (parent_node->name_.size() > 0) {
+        //                    std::wcerr << L". Overriding command: " << line
+        //                        << L": replacing " << utf8_decode(parent_node->name_[0])
+        //                        << L" with " << command_strings[j];
+        //                }
+        //                std::wcerr << L"\n";
+        //            }
+        //        }
+        //    }
+        //    if ((size_t)i == (tokens.size() - 1)) {
+        //        parent_node->is_final = true;
 
-                QString command_name_qstr = QString::fromStdWString(command_strings[j]);
-                std::vector<std::string> command_names = parse_command_name(command_name_qstr);
-                std::vector<std::string> previous_names = std::move(parent_node->name_);
-                parent_node->name_ = {};
-                parent_node->defining_file_line = command_line_numbers[j];
-                parent_node->defining_file_path = command_file_names[j];
-                for (size_t k = 0; k < command_names.size(); k++) {
-                    parent_node->name_.push_back(command_names[k]);
-                }
-                if (command_name_qstr.startsWith("{holdable}")) {
-                    if (command_name_qstr.indexOf("|") == -1) {
-                        qDebug() << "Error in " << command_file_names[j] << ":" << command_line_numbers[j] << ": holdable command " << command_name_qstr << " does not contain a | character";
-                    }
-                    else {
-                        std::wstring actual_command = command_name_qstr.mid(10).toStdWString();
-                        parent_node->generator = [command_manager, actual_command](MainWidget* w) {return std::make_unique<HoldableCommand>(
-                            w, command_manager, "", actual_command); };
-                    }
-                }
-                else if (command_names.size() == 1 && (command_names[0].find("[") == -1) && (command_names[0].find("(") == -1)) {
-                    if (command_manager->new_commands.find(command_names[0]) != command_manager->new_commands.end()) {
-                        parent_node->generator = command_manager->new_commands[command_names[0]];
-                    }
-                    else {
-                        std::wcerr << L"Warning: command " << utf8_decode(command_names[0]) << L" used in " << parent_node->defining_file_path
-                            << L":" << parent_node->defining_file_line << L" not found.\n";
-                    }
-                }
-                else {
-                    QStringList command_parts;
-                    for (int k = 0; k < command_names.size(); k++) {
-                        command_parts.append(QString::fromStdString(command_names[k]));
-                    }
+        //        QString command_name_qstr = QString::fromStdWString(command_strings[j]);
+        //        std::vector<std::string> command_names = parse_command_name(command_name_qstr);
+        //        std::vector<std::string> previous_names = std::move(parent_node->name_);
+        //        parent_node->name_ = {};
+        //        parent_node->defining_file_line = command_line_numbers[j];
+        //        parent_node->defining_file_path = command_file_names[j];
+        //        for (size_t k = 0; k < command_names.size(); k++) {
+        //            parent_node->name_.push_back(command_names[k]);
+        //        }
+        //        if (command_name_qstr.startsWith("{holdable}")) {
+        //            if (command_name_qstr.indexOf("|") == -1) {
+        //                qDebug() << "Error in " << command_file_names[j] << ":" << command_line_numbers[j] << ": holdable command " << command_name_qstr << " does not contain a | character";
+        //            }
+        //            else {
+        //                std::wstring actual_command = command_name_qstr.mid(10).toStdWString();
+        //                parent_node->generator = [command_manager, actual_command](MainWidget* w) {return std::make_unique<HoldableCommand>(
+        //                    w, command_manager, "", actual_command); };
+        //            }
+        //        }
+        //        else if (command_names.size() == 1 && (command_names[0].find("[") == -1) && (command_names[0].find("(") == -1)) {
+        //            if (command_manager->new_commands.find(command_names[0]) != command_manager->new_commands.end()) {
+        //                parent_node->generator = command_manager->new_commands[command_names[0]];
+        //            }
+        //            else {
+        //                std::wcerr << L"Warning: command " << utf8_decode(command_names[0]) << L" used in " << parent_node->defining_file_path
+        //                    << L":" << parent_node->defining_file_line << L" not found.\n";
+        //            }
+        //        }
+        //        else {
+        //            QStringList command_parts;
+        //            for (int k = 0; k < command_names.size(); k++) {
+        //                command_parts.append(QString::fromStdString(command_names[k]));
+        //            }
 
-                    // is the command incomplete and should be appended to previous command instead of replacing it?
-                    if (is_command_incomplete_macro(command_names)) {
-                        for (int k = 0; k < previous_names.size(); k++) {
-                            command_parts.append(QString::fromStdString(previous_names[k]));
-                            parent_node->name_.push_back(previous_names[k]);
-                        }
-                    }
+        //            // is the command incomplete and should be appended to previous command instead of replacing it?
+        //            if (is_command_incomplete_macro(command_names)) {
+        //                for (int k = 0; k < previous_names.size(); k++) {
+        //                    command_parts.append(QString::fromStdString(previous_names[k]));
+        //                    parent_node->name_.push_back(previous_names[k]);
+        //                }
+        //            }
 
-                    std::wstring joined_command = command_parts.join(";").toStdWString();
-                    parent_node->generator = [joined_command, command_manager](MainWidget* w) {return std::make_unique<MacroCommand>(w, command_manager, "", joined_command); };
-                }
-                //if (command_names[j].size())
-            }
-            else {
-                if (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE && parent_node->is_final && (parent_node->name_.size() > 0)) {
-                    std::wcerr << L"Warning: unmapping " << utf8_decode(parent_node->name_[0]) << L" because of " << command_strings[j] << L" which uses " << line << L"\n";
-                }
-                parent_node->is_final = false;
-            }
+        //            std::wstring joined_command = command_parts.join(";").toStdWString();
+        //            parent_node->generator = [joined_command, command_manager](MainWidget* w) {return std::make_unique<MacroCommand>(w, command_manager, "", joined_command); };
+        //        }
+        //        //if (command_names[j].size())
+        //    }
+        //    else {
+        //        if (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE && parent_node->is_final && (parent_node->name_.size() > 0)) {
+        //            std::wcerr << L"Warning: unmapping " << utf8_decode(parent_node->name_[0]) << L" because of " << command_strings[j] << L" which uses " << line << L"\n";
+        //        }
+        //        parent_node->is_final = false;
+        //    }
 
-        }
+        //}
     }
 
     return root;
+}
+
+void InputHandler::add_keybind(const std::wstring& keybind, const std::wstring& command) {
+    parse_line(root, command_manager, keybind, command, L"<no file>", -1);
 }
 
 InputParseTreeNode* parse_lines(
