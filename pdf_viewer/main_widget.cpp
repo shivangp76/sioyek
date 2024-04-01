@@ -242,7 +242,6 @@ extern std::wstring VISUAL_MARK_NEXT_TAP_COMMAND;
 extern std::wstring VISUAL_MARK_NEXT_HOLD_COMMAND;
 extern std::wstring VISUAL_MARK_PREV_TAP_COMMAND;
 extern std::wstring VISUAL_MARK_PREV_HOLD_COMMAND;
-extern bool DEBUG;
 extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
 extern std::wstring TABLET_PEN_CLICK_COMMAND;
 extern std::wstring TABLET_PEN_DOUBLE_CLICK_COMMAND;
@@ -1526,10 +1525,10 @@ std::wstring MainWidget::get_status_string(bool is_right) {
     status_string.replace("%{download}", "");
     status_string.replace("%{current_requirement_desc}", "");
 
-    if (DEBUG) {
-        status_string += " [DEBUG MODE] ";
-        status_string += QString::number(network_manager.findChildren<QNetworkReply*>().size());
-    }
+    //if (DEBUG) {
+    //    status_string += " [DEBUG MODE] ";
+    //    status_string += QString::number(network_manager.findChildren<QNetworkReply*>().size());
+    //}
     if (opengl_widget->get_scratchpad()) {
         status_string += QString("[ zoom: %1]").arg(QString::number(dv()->get_zoom_level()));
     }
