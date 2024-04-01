@@ -102,6 +102,7 @@ HEADERS += \
 
 android{
     DEFINES += SIOYEK_ANDROID
+    DEFINES += SIOYEK_MOBILE
     QT += core-private
 }
 

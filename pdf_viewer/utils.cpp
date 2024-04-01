@@ -1112,7 +1112,7 @@ void split_key_string(std::wstring haystack, const std::wstring& needle, std::ve
 
 void run_command(std::wstring command, QStringList parameters, bool wait) {
 // ios does not have QProcess
-#ifndef SIOYEK_IOS
+#ifndef SIOYEK_MOBILE
 
 
 #ifdef Q_OS_WIN

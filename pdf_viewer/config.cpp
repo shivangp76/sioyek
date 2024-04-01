@@ -4,6 +4,7 @@
 #include <map>
 #include <qdir.h>
 //#include <ui.h>
+extern Path android_config_path;
 
 int FONT_SIZE = -1;
 int STATUS_BAR_FONT_SIZE = -1;

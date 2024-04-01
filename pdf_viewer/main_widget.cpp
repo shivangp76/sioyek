@@ -844,7 +844,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     setAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_AcceptTouchEvents);
 
-#ifdef SIOYEK_IOS
+#ifdef SIOYEK_MOBILE
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
 

@@ -144,6 +144,8 @@ extern std::wstring SEARCH_URLS[26];
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool NO_AUTO_CONFIG;
 extern bool DEFAULT_DARK_MODE;
+extern std::wstring VOLUME_UP_COMMAND;
+extern std::wstring VOLUME_DOWN_COMMAND;
 
 std::wstring strip_uri(std::wstring pdf_file_name) {
 
@@ -844,8 +846,11 @@ int main(int argc, char* args[]) {
 
     QFileSystemWatcher key_file_watcher;
     add_paths_to_file_system_watcher(key_file_watcher, default_keys_path, user_keys_paths);
-    // QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+#ifdef SIOYEK_IOS
     QQuickWindow::setGraphicsApi(QSGRendererInterface::MetalRhi);
+#else
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+#endif
 
 
     MainWidget* main_widget = new MainWidget(mupdf_context, &db_manager, &document_manager, &config_manager, command_manager, &input_handler, &checksummer, &quit);
