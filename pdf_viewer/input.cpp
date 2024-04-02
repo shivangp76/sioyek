@@ -1305,7 +1305,7 @@ public:
         std::wstring command_string = cmd_string.left(last_space_index).toStdWString();
         std::wstring keybind_string = cmd_string.right(cmd_string.size() - last_space_index - 1).toStdWString();
         qDebug() << command_string << " | " << keybind_string;
-        widget->input_handler->add_keybind(keybind_string, command_string);
+        widget->input_handler->add_keybind(keybind_string, command_string, L"[no file]", -1);
         //widget->input_handler->add_keybind()
     }
 
@@ -7103,7 +7103,7 @@ bool is_command_incomplete_macro(const std::vector<std::string>& commands){
     return true;
 }
 
-InputParseTreeNode* parse_line(
+bool parse_line(
     InputParseTreeNode* root,
     CommandManager* command_manager,
     const std::wstring& line,
@@ -7112,6 +7112,7 @@ InputParseTreeNode* parse_line(
     const int& command_line_number) {
 
     // for example convert "<a-<space>> to ["a", "space"]
+    bool has_warning = false;
     std::vector<std::wstring> tokens;
     get_tokens(line, tokens);
 
@@ -7162,6 +7163,7 @@ InputParseTreeNode* parse_line(
             if ((parent_node->name_.size() == 0) || parent_node->name_[0].compare(utf8_encode(command_string)) != 0) {
                 if (!is_command_string_modal(command_string)) {
 
+                    has_warning = true;
                     std::wcerr << L"Warning: key defined in " << parent_node->defining_file_path
                         << L":" << parent_node->defining_file_line
                         << L" overwritten by " << command_file_name
@@ -7214,6 +7216,7 @@ InputParseTreeNode* parse_line(
                     parent_node->generator = command_manager->new_commands[command_names[0]];
                 }
                 else {
+                    has_warning = true;
                     std::wcerr << L"Warning: command " << utf8_decode(command_names[0]) << L" used in " << parent_node->defining_file_path
                         << L":" << parent_node->defining_file_line << L" not found.\n";
                 }
@@ -7239,13 +7242,14 @@ InputParseTreeNode* parse_line(
         }
         else {
             if (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE && parent_node->is_final && (parent_node->name_.size() > 0)) {
+                has_warning = true;
                 std::wcerr << L"Warning: unmapping " << utf8_decode(parent_node->name_[0]) << L" because of " << command_string << L" which uses " << line << L"\n";
             }
             parent_node->is_final = false;
         }
 
     }
-    return root;
+    return has_warning;
 }
 
 InputParseTreeNode* parse_lines(
@@ -7395,8 +7399,8 @@ InputParseTreeNode* parse_lines(
     return root;
 }
 
-void InputHandler::add_keybind(const std::wstring& keybind, const std::wstring& command) {
-    parse_line(root, command_manager, keybind, command, L"<no file>", -1);
+bool InputHandler::add_keybind(const std::wstring& keybind, const std::wstring& command, const std::wstring& file_name, int line_number) {
+    return parse_line(root, command_manager, keybind, command, file_name, line_number);
 }
 
 InputParseTreeNode* parse_lines(

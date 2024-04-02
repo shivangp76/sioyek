@@ -908,7 +908,7 @@ int main(int argc, char* args[]) {
 
     handle_args(app.arguments());
     main_widget->execute_macro_if_enabled(STARTUP_COMMANDS);
-    main_widget->run_startup_js();
+    main_widget->run_startup_js(true);
 
     //main_widget->run_multiple_commands(STARTUP_COMMANDS);
 

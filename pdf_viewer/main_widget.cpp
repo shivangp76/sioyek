@@ -9156,21 +9156,22 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
     else {
         engine.evaluate("__sioyek_keybind_function_index=0;\
                         function addKeybind(keybind, callable){\
+                            let backtrace = __get_stacktrace();\
+                            let line = new Error().stack;\
                             if (typeof(callable) == 'string'){\
-                                sioyek_api.register_string_keybind(keybind, callable);\
+                                sioyek_api.register_string_keybind(keybind, callable, backtrace[0], backtrace[1]);\
                             }\
                             else{\
                                 let name = '__sioyek_keybind_function_' + __sioyek_keybind_function_index;\
                                 __sioyek_keybind_function_index++;\
                                 this[name] = callable;\
-                                sioyek_api.register_function_keybind(keybind, name);\
+                                let hasWarning = sioyek_api.register_function_keybind(keybind, name, backtrace[0], backtrace[1]);\
                                 return name;\
                             }\
                         }\
-                        function addKeybindAsync(keybind, str){\
-                            if (typeof(str) != 'string'){ console.log('async keybinds can only be strings'); }\
-                            sioyek_api.register_function_keybind_async(keybind, str);\
-                            return name;\
+                        function addKeybindAsync(keybind, callable){\
+                            let backtrace = __get_stacktrace();\
+                            sioyek_api.register_function_keybind_async(keybind, callable, backtrace[0], backtrace[1]);\
                         }\
                         ");
         engine.evaluate("\
@@ -11164,26 +11165,56 @@ bool MainWidget::is_ruler_mode(){
     return main_document_view->is_ruler_mode();
 }
 
-void MainWidget::register_function_keybind(QString keybind, QString function_name){
-    input_handler->add_keybind(keybind.toStdWString(), L"{jscall}" + function_name.toStdWString());
+bool MainWidget::register_function_keybind(QString keybind, QString function_name, QString file_name, int line_number){
+
+    return input_handler->add_keybind(
+        keybind.toStdWString(),
+        L"{jscall}" + function_name.toStdWString(),
+        file_name.toStdWString(),
+        line_number
+    );
 }
 
-void MainWidget::register_function_keybind_async(QString keybind, QString code){
-    input_handler->add_keybind(keybind.toStdWString(), L"{jsasync}" + code.toStdWString());
+void MainWidget::register_function_keybind_async(QString keybind, QString code, QString file_name, int line_number){
+    input_handler->add_keybind(
+        keybind.toStdWString(),
+        L"{jsasync}" + code.toStdWString(),
+        file_name.toStdWString(),
+        line_number
+    );
 }
 
-void MainWidget::register_string_keybind(QString keybind, QString commands_string){
-    input_handler->add_keybind(keybind.toStdWString(), commands_string.toStdWString());
+void MainWidget::register_string_keybind(QString keybind, QString commands_string, QString file_name, int line_number){
+    input_handler->add_keybind(
+        keybind.toStdWString(),
+        commands_string.toStdWString(),
+        file_name.toStdWString(),
+        line_number
+    );
 }
 
-void MainWidget:: run_startup_js() {
+void MainWidget:: run_startup_js(bool first_run) {
 #ifndef SIOYEK_MOBILE
-    QFile sioyek_js(QString::fromStdWString(sioyek_js_path.get_path()));
+    QString js_path_qstring = QString::fromStdWString(sioyek_js_path.get_path());
+    QFile sioyek_js(js_path_qstring);
 
     if (sioyek_js.exists()) {
         sioyek_js.open(QIODeviceBase::ReadOnly);
         auto js_engine = take_js_engine(false);
-        js_engine->evaluate(QString::fromUtf8(sioyek_js.readAll()));
+        QString prelude = "let __first_run = %{FIRST_RUN};\n\
+            if (!__first_run){addKeybind = ()=>{}; addKeybindAsync = ()=>{}}\n\
+            function __get_stacktrace(){\n\
+                let lines = new Error().stack.split('\\n');\n\
+                let line = lines[lines.length-1];\n\
+                let lineNumber =  (0 + line.split(':')[1]) - %{PRELUDE_LINES};\n\
+                return ['"+ js_path_qstring + "', lineNumber];\
+            }\
+            ";
+        int n_lines = prelude.count('\n');
+        prelude = prelude.replace("%{PRELUDE_LINES}", QString::number(n_lines));
+        prelude = prelude.replace("%{FIRST_RUN}", first_run ? "true" : "false");
+        QString file_data = QString::fromUtf8(sioyek_js.readAll());
+        js_engine->evaluate(prelude + file_data);
         sioyek_js.close();
     }
 #endif

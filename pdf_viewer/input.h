@@ -161,7 +161,7 @@ public:
     //char create_link_sumbol = 0;
     //char create_bookmark_symbol = 0;
 
-    void add_keybind(const std::wstring& keybind, const std::wstring& command);
+    bool add_keybind(const std::wstring& keybind, const std::wstring& command, const std::wstring& file_name, int line_number);
     InputHandler(const Path& default_path, const std::vector<Path>& user_paths, CommandManager* cm);
     void reload_config_files(const Path& default_path, const std::vector<Path>& user_path);
     //std::vector<std::unique_ptr<Command>> handle_key(QKeyEvent* key_event, bool shift_pressed, bool control_pressed, bool alt_pressed ,int* num_repeats);
