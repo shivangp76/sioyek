@@ -7046,8 +7046,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    auto engine = take_js_engine(false);
-    engine->evaluate("console.log(new Error().lineNumber);");
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -9071,7 +9069,7 @@ QJSEngine* MainWidget::take_js_engine(bool async) {
         js_engine->setObjectOwnership(this, QJSEngine::CppOwnership);
 
         js_engine->globalObject().setProperty("sioyek_api", sioyek_object);
-        js_engine->globalObject().setProperty("sioyek", export_javascript_api(*js_engine, false));
+        export_javascript_api(*js_engine, false);
         sync_js_engine = js_engine;
         return sync_js_engine;
 
@@ -9101,7 +9099,7 @@ QJSEngine* MainWidget::take_js_engine(bool async) {
     js_engine->setObjectOwnership(this, QJSEngine::CppOwnership);
 
     js_engine->globalObject().setProperty("sioyek_api", sioyek_object);
-    js_engine->globalObject().setProperty("sioyek", export_javascript_api(*js_engine, true));
+    export_javascript_api(*js_engine, true);
     return js_engine;
 }
 
@@ -9110,51 +9108,61 @@ void MainWidget::release_async_js_engine(QJSEngine* engine) {
     available_async_engines.push_back(engine);
 }
 
-QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async){
+QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
 
     QJSValue res = engine.newObject();
+    engine.globalObject().setProperty("sioyek", res);
 
     QStringList command_names = command_manager->get_all_command_names();
-    for (auto command_name : command_names) {
-        QString command_name_ = command_name;
-        if (command_name_ == "import") {
-            command_name_ = "import_";
-        }
-        if (is_async) {
-            res.setProperty(command_name_, engine.evaluate("(...args)=>{\
-                let command_name ='" + command_name_ + "';\
-                let args_strings = args.map((arg)=>{return '' + arg;});\
-                let args_string = args_strings.join(',');\
-                if (args_string.length > 0){return sioyek_api.run_macro_on_main_thread(command_name + '(' + args_string + ')');}\
-                else {return sioyek_api.run_macro_on_main_thread(command_name);}\
-                }"));
+    QString all_command_eval_string = "[";
+    for (int i = 0; i < command_names.size(); i++) {
+        if (command_names[i] == "import") continue;
+        all_command_eval_string += "\"" + command_names[i] + "\"";
 
-            res.setProperty('$' + command_name_, engine.evaluate("(...args)=>{\
-                let command_name ='" + command_name_ + "';\
-                let args_strings = args.map((arg)=>{return '' + arg;});\
-                let args_string = args_strings.join(',');\
-                if (args_string.length > 0){return sioyek_api.run_macro_on_main_thread(command_name + '(' + args_string + ')');}\
-                else {return sioyek_api.run_macro_on_main_thread(command_name, false);}\
-                }"));
+        if (i < command_names.size() - 1) {
+            all_command_eval_string += ",";
         }
-        else {
-            res.setProperty(command_name_, engine.evaluate("(...args)=>{\
-                let command_name ='" + command_name_ + "';\
-                let args_strings = args.map((arg)=>{return '' + arg;});\
-                let args_string = args_strings.join(',');\
-                if (args_string.length > 0){return sioyek_api.execute_macro_sync(command_name + '(' + args_string + ')');}\
-                else {return sioyek_api.execute_macro_sync(command_name);}\
-                }"));
 
-            res.setProperty('$' + command_name_, engine.evaluate("(...args)=>{\
-                let command_name ='" + command_name_ + "';\
-                let args_strings = args.map((arg)=>{return '' + arg;});\
-                let args_string = args_strings.join(',');\
-                if (args_string.length > 0){return sioyek_api.execute_macro_sync(command_name + '(' + args_string + ')');}\
-                else {return sioyek_api.execute_macro_sync(command_name);}\
-                }"));
-        }
     }
+    all_command_eval_string += "]";
+    engine.evaluate("__all_command_names=" + all_command_eval_string);
+
+    //engine.globalObject().setProperty("__all_command_names", command_names);
+
+
+    if (is_async) {
+        engine.evaluate("\
+            for (let i = 0; i < __all_command_names.length; i++){\
+                let cname = __all_command_names[i];\
+                sioyek[cname] = (...args)=>{\
+                    let arg_strings = args.map((arg) => {return '' + arg;});\
+                    let args_string = arg_strings.join(',');\
+                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname + '(' + args_string + ')');}\
+                    else {return sioyek_api.run_macro_on_main_thread(cname);}\
+                };\
+                sioyek['$' + cname] = (...args)=>{\
+                    let arg_strings = args.map((arg) => {return '' + arg;});\
+                    let args_string = arg_strings.join(',');\
+                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname + '(' + args_string + ')', false);}\
+                    else {return sioyek_api.run_macro_on_main_thread(cname, false);}\
+                };\
+            }\
+        ");
+    }
+    else {
+        engine.evaluate("\
+            for (let i = 0; i < __all_command_names.length; i++){\
+                let cname = __all_command_names[i];\
+                sioyek[cname] = (...args)=>{\
+                    let arg_strings = args.map((arg) => {return '' + arg;});\
+                    let args_string = arg_strings.join(',');\
+                    if (args_string.length > 0) {return sioyek_api.execute_macro_sync(cname + '(' + args_string + ')');}\
+                    else {return sioyek_api.execute_macro_sync(cname);}\
+                }\
+            }\
+        ");
+    }
+
 
     return res;
 }
