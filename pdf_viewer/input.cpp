@@ -1608,6 +1608,19 @@ public:
 
 };
 
+
+class GetModeString : public Command {
+
+public:
+    static inline const std::string cname = "get_mode_string";
+    static inline const std::string hname = "";
+    GetModeString(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        result = QString::fromStdString(widget->get_current_mode_string()).toStdWString();
+    }
+};
+
 class GetStateJsonCommand : public Command {
 
 public:
@@ -2962,6 +2975,25 @@ public:
 
     void perform() {
         widget->run_javascript_command(code, entry_point, is_async);
+    }
+
+    std::string get_name() {
+        return command_name;
+    }
+
+};
+
+class JsCallCommand : public Command {
+public:
+    std::string command_name;
+    std::wstring funcall;
+
+    JsCallCommand(std::string command_name, std::wstring func_, MainWidget* widget) : Command(command_name, widget){
+        funcall = func_ + L"()";
+    };
+
+    void perform() {
+        widget->run_javascript_command(funcall, {}, false);
     }
 
     std::string get_name() {
@@ -6553,6 +6585,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowOptionsCommand>();
     register_command<ShowTextPromptCommand>();
     register_command<GetStateJsonCommand>();
+    register_command<GetModeString>();
     register_command<GetPaperNameCommand>();
     register_command<GetOverviewPaperName>();
     register_command<GetAnnotationsJsonCommand>();
@@ -7163,6 +7196,18 @@ InputParseTreeNode* parse_line(
                     parent_node->generator = [command_manager, actual_command](MainWidget* w) {return std::make_unique<HoldableCommand>(
                         w, command_manager, "", actual_command); };
                 }
+            }
+            else if (command_name_qstr.startsWith("{jscall}")) {
+                std::wstring actual_command = command_name_qstr.mid(8).toStdWString();
+                parent_node->generator = [command_manager, actual_command](MainWidget* w) {return std::make_unique<JsCallCommand>("", actual_command, w); };
+
+            }
+            else if (command_name_qstr.startsWith("{jsasync}")) {
+                std::wstring code = L"(" + command_name_qstr.mid(9).toStdWString() + L")()";
+                std::optional<std::wstring> entry = {};
+                parent_node->generator = [command_manager, entry, code](MainWidget* w) {return std::make_unique<JavascriptCommand>("", code, entry, true, w); };
+    //JavascriptCommand(std::string command_name, std::wstring code_, std::optional<std::wstring> entry_point_, bool is_async_, MainWidget* w) :  Command(command_name, w), command_name(command_name) {
+
             }
             else if (command_names.size() == 1 && (command_names[0].find("[") == -1) && (command_names[0].find("(") == -1)) {
                 if (command_manager->new_commands.find(command_names[0]) != command_manager->new_commands.end()) {

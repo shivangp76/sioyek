@@ -98,6 +98,7 @@ std::ofstream LOG_FILE;
 
 Path standard_data_path;
 Path default_config_path(L"");
+Path sioyek_js_path(L".sioyek.js");
 Path default_keys_path(L"");
 std::vector<Path> user_config_paths = {};
 std::vector<Path> user_keys_paths = {};
@@ -907,6 +908,7 @@ int main(int argc, char* args[]) {
 
     handle_args(app.arguments());
     main_widget->execute_macro_if_enabled(STARTUP_COMMANDS);
+    main_widget->run_startup_js();
 
     //main_widget->run_multiple_commands(STARTUP_COMMANDS);
 

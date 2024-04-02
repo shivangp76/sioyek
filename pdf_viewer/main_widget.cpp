@@ -141,6 +141,7 @@ extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
 extern Path default_config_path;
 extern Path default_keys_path;
+extern Path sioyek_js_path;
 extern std::vector<Path> user_config_paths;
 extern std::vector<Path> user_keys_paths;
 extern Path database_file_path;
@@ -5982,6 +5983,7 @@ MainWidget* MainWidget::handle_new_window() {
     new_widget->show();
     new_widget->apply_window_params_for_one_window_mode();
     new_widget->execute_macro_if_enabled(STARTUP_COMMANDS);
+    new_widget->run_startup_js();
 
     windows.push_back(new_widget);
     return new_widget;
@@ -7046,6 +7048,8 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+    //QJSValue value;
+    //value.call()
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -9150,6 +9154,25 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
         ");
     }
     else {
+        engine.evaluate("__sioyek_keybind_function_index=0;\
+                        function addKeybind(keybind, callable){\
+                            if (typeof(callable) == 'string'){\
+                                sioyek_api.register_string_keybind(keybind, callable);\
+                            }\
+                            else{\
+                                let name = '__sioyek_keybind_function_' + __sioyek_keybind_function_index;\
+                                __sioyek_keybind_function_index++;\
+                                this[name] = callable;\
+                                sioyek_api.register_function_keybind(keybind, name);\
+                                return name;\
+                            }\
+                        }\
+                        function addKeybindAsync(keybind, str){\
+                            if (typeof(str) != 'string'){ console.log('async keybinds can only be strings'); }\
+                            sioyek_api.register_function_keybind_async(keybind, str);\
+                            return name;\
+                        }\
+                        ");
         engine.evaluate("\
             for (let i = 0; i < __all_command_names.length; i++){\
                 let cname = __all_command_names[i];\
@@ -11139,6 +11162,31 @@ void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::w
 
 bool MainWidget::is_ruler_mode(){
     return main_document_view->is_ruler_mode();
+}
+
+void MainWidget::register_function_keybind(QString keybind, QString function_name){
+    input_handler->add_keybind(keybind.toStdWString(), L"{jscall}" + function_name.toStdWString());
+}
+
+void MainWidget::register_function_keybind_async(QString keybind, QString code){
+    input_handler->add_keybind(keybind.toStdWString(), L"{jsasync}" + code.toStdWString());
+}
+
+void MainWidget::register_string_keybind(QString keybind, QString commands_string){
+    input_handler->add_keybind(keybind.toStdWString(), commands_string.toStdWString());
+}
+
+void MainWidget:: run_startup_js() {
+#ifndef SIOYEK_MOBILE
+    QFile sioyek_js(QString::fromStdWString(sioyek_js_path.get_path()));
+
+    if (sioyek_js.exists()) {
+        sioyek_js.open(QIODeviceBase::ReadOnly);
+        auto js_engine = take_js_engine(false);
+        js_engine->evaluate(QString::fromUtf8(sioyek_js.readAll()));
+        sioyek_js.close();
+    }
+#endif
 }
 
 #ifdef SIOYEK_IOS
