@@ -12,6 +12,7 @@
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
 // improve js engine initialization performance
+// improve touch mode scrolling
 
 
 #include <iostream>
@@ -229,6 +230,7 @@ extern std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW;
 extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 
+extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern std::wstring RIGHT_CLICK_COMMAND;
 extern std::wstring MIDDLE_CLICK_COMMAND;
 extern int MAX_TAB_COUNT;
@@ -249,6 +251,7 @@ extern std::wstring TABLET_PEN_DOUBLE_CLICK_COMMAND;
 extern bool ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL;
 extern float PAGE_SPACE_X;
 extern float PAGE_SPACE_Y;
+extern Path sioyek_temp_text_path;
 
 extern std::wstring MIDDLE_LEFT_RECT_TAP_COMMAND;
 extern std::wstring MIDDLE_LEFT_RECT_HOLD_COMMAND;
@@ -949,6 +952,21 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect(pdf_renderer, &PdfRenderer::render_advance, this, &MainWidget::invalidate_render);
     QObject::connect(pdf_renderer, &PdfRenderer::search_advance, this, &MainWidget::invalidate_ui);
 
+    QObject::connect(&external_command_edit_watcher, &QFileSystemWatcher::fileChanged, [&]() {
+        if (text_command_line_edit->isVisible()) {
+            QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
+
+            if (file.open(QIODeviceBase::ReadOnly)) {
+                QString content = QString::fromUtf8(file.readAll());
+                text_command_line_edit->setText(content);
+                text_command_line_edit->textEdited(content);
+
+            }
+
+            file.close();
+        }
+        });
+        
     // we check periodically to see if the ui needs updating
     // this is done so that thousands of search results only trigger
     // a few rerenders
@@ -7050,6 +7068,13 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 void MainWidget::handle_debug_command() {
     //QJSValue value;
     //value.call()
+    //QTextDocument td;
+    //td.allFormats()
+    //QTextCharFormat(td.allFormats()[0]);
+    //qDebug() << "-------";
+    //for (auto& format : td.allFormats()) {
+    //    qDebug() << format.isCharFormat();
+    //}
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -11218,6 +11243,26 @@ void MainWidget:: run_startup_js(bool first_run) {
         sioyek_js.close();
     }
 #endif
+}
+
+void MainWidget::open_external_text_editor() {
+    if (EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
+        show_error_message(L"You should configure external_text_editor_command in you configs file");
+        return;
+    }
+
+    QString path_qstring = QString::fromStdWString(sioyek_temp_text_path.get_path());
+    QFile external_file(path_qstring);
+
+    external_file.open(QIODeviceBase::WriteOnly);
+    external_file.write(text_command_line_edit->text().toUtf8());
+    external_file.close();
+
+    std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND).replace("%{file}", QString::fromStdWString(sioyek_temp_text_path.get_path())).toStdWString();
+    execute_command(command);
+    if (external_command_edit_watcher.files().size() == 0) {
+        external_command_edit_watcher.addPath(path_qstring);
+    }
 }
 
 #ifdef SIOYEK_IOS

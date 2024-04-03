@@ -99,6 +99,7 @@ std::ofstream LOG_FILE;
 Path standard_data_path;
 Path default_config_path(L"");
 Path sioyek_js_path(L".sioyek.js");
+Path sioyek_temp_text_path(L".sioyek.temp");
 Path default_keys_path(L"");
 std::vector<Path> user_config_paths = {};
 std::vector<Path> user_keys_paths = {};
@@ -350,6 +351,7 @@ void configure_paths() {
 
 #endif
     auto_config_path = standard_data_path.slash(L"auto.config");
+    sioyek_temp_text_path = standard_data_path.slash(L".sioyek.temp");
     // user_config_paths.insert(user_config_paths.begin(), auto_config_path);
     downloaded_papers_path = standard_data_path.slash(L"downloads");
 #endif

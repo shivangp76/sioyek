@@ -7,6 +7,9 @@
 #include <qfile.h>
 #include <qpainterpath.h>>
 #include <qregion.h>>
+#include <qtextdocument.h>
+#include <qabstracttextdocumentlayout.h>
+#include <qtextcursor.h>
 
 #include "pdf_view_opengl_widget.h"
 #include "path.h"
@@ -1059,9 +1062,10 @@ void PdfViewOpenGLWidget::my_render() {
                         flags |= Qt::AlignLeft;
                     }
 
-                    if (bookmarks[i].description[0] == '#') {
+                    QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
+                    if (bookmarks[i].description[0] == '#' && (!desc_qstring.startsWith("#markdown"))) {
 
-                        QString box_text = QString::fromStdWString(bookmarks[i].description).split(' ')[0];
+                        QString box_text = desc_qstring.split(' ')[0];
                         std::optional<char> bm_type = bookmarks[i].get_type();
                         if (!bm_type.has_value()){
                             painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
@@ -1077,14 +1081,48 @@ void PdfViewOpenGLWidget::my_render() {
                     }
                     else {
                         if (i == document_view->selected_bookmark_index) {
+                            painter.save();
                             float temp_color[3] = {0.5f, 0.5f, 0.5f};
                             painter.setPen(convert_float3_to_qcolor(&temp_color[0]));
                             painter.setPen(Qt::DashLine);
                             QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                             painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
                             painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                            painter.restore();
                         }
-                        painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
+                        if (desc_qstring.startsWith("#markdown")) {
+
+                            painter.save();
+                            painter.setClipRect(window_qrect);
+                            painter.translate(window_qrect.topLeft());
+
+                            //painter.setBrush(QBrush(Qt::black));
+                            QTextDocument td;
+                            //td.setDefaultStyleSheet("*{font-size: 24 !important; color: rgb(255, 0, 0)}");
+
+                            auto formats = td.allFormats();
+                            QTextCharFormat old_format = formats[0].toCharFormat();
+
+                            td.setMarkdown(desc_qstring.mid(9).trimmed(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
+
+                            td.setTextWidth(window_qrect.width());
+                            td.setDefaultFont(font);
+
+                            QTextCursor cursor(&td);
+                            QTextCharFormat format;
+                            cursor.select(QTextCursor::Document);
+                            QAbstractTextDocumentLayout::PaintContext ctx;
+                            window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
+                            ctx.clip = window_qrect;
+                            ctx.palette.setColor(QPalette::ColorRole::Text, painter.pen().color());
+                            td.documentLayout()->draw(&painter, ctx);
+
+                            painter.restore();
+                        }
+                        else {
+                            painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
+                        }
+
                     }
 
                 }

@@ -1314,6 +1314,7 @@ public:
     }
 
 };
+
 class SearchCommand : public TextCommand {
 public:
     static inline const std::string cname = "search";
@@ -4158,6 +4159,20 @@ public:
     bool requires_document() { return false; }
 };
 
+class OpenExternalTextEditorCommand : public Command {
+public:
+    static inline const std::string cname = "open_external_text_editor";
+    static inline const std::string hname = "Edit the current text input in the configured external text editor";
+
+    OpenExternalTextEditorCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->open_external_text_editor();
+    }
+
+    bool requires_document() { return false; }
+};
+
 class ToggleDarkModeCommand : public Command {
 public:
     static inline const std::string cname = "toggle_dark_mode";
@@ -6685,6 +6700,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowContextMenuCommand>();
     register_command<ShowCustomContextMenuCommand>();
     register_command<ToggleDarkModeCommand>();
+    register_command<OpenExternalTextEditorCommand>();
     register_command<TogglePresentationModeCommand>();
     register_command<TurnOnPresentationModeCommand>();
     register_command<ToggleMouseDragMode>();

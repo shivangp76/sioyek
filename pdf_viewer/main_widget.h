@@ -14,6 +14,7 @@
 #include <qquickwidget.h>
 #include <qjsondocument.h>
 #include <qmainwindow.h>
+#include <qfilesystemwatcher.h>
 #ifdef SIOYEK_IOS
 #include <QApplicationStateChangeEvent>
 #endif
@@ -146,6 +147,7 @@ public:
     QMenuBar* menu_bar = nullptr;
     int window_id;
 
+    QFileSystemWatcher external_command_edit_watcher;
     TextToSpeechHandler* tts = nullptr;
     // is the TTS engine currently reading text?
     bool is_reading = false;
@@ -995,6 +997,7 @@ public:
     void set_pending_portal(std::optional<std::wstring> doc_path, Portal portal);
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     bool is_ruler_mode();
+    void open_external_text_editor();
 #ifdef SIOYEK_IOS
 
 public slots:
