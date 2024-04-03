@@ -209,6 +209,7 @@ std::wstring CONTEXT_MENU_ITEMS_FOR_HIGHLIGHTS = L"delete_highlight|edit_selecte
 std::wstring CONTEXT_MENU_ITEMS_FOR_BOOKMARKS = L"delete_visible_bookmark|edit_selected_bookmark|move_selected_bookmark";
 std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW = L"";
 std::wstring EXTERNAL_TEXT_EDITOR_COMMAND = L"";
+bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS = false;
 
 bool RIGHT_CLICK_CONTEXT_MENU = false;
 #ifdef SIOYEK_MOBILE
@@ -979,6 +980,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"highlight_middle_click", &HIGHLIGHT_MIDDLE_CLICK);
     add_bool(L"auto_rename_downloaded_papers", &AUTO_RENAME_DOWNLOADED_PAPERS);
     add_bool(L"super_fast_search", &SUPER_FAST_SEARCH);
+    add_bool(L"save_externally_edited_text_on_focus", &SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS);
     add_bool(L"incremental_search", &INCREMENTAL_SEARCH);
     add_bool(L"show_closest_bookmark_in_statusbar", &SHOW_CLOSEST_BOOKMARK_IN_STATUSBAR);
     add_bool(L"show_close_portal_in_statusbar", &SHOW_CLOSE_PORTAL_IN_STATUSBAR);

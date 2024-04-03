@@ -148,6 +148,8 @@ public:
     int window_id;
 
     QFileSystemWatcher external_command_edit_watcher;
+    bool is_external_file_edited = false;
+
     TextToSpeechHandler* tts = nullptr;
     // is the TTS engine currently reading text?
     bool is_reading = false;
@@ -998,6 +1000,7 @@ public:
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     bool is_ruler_mode();
     void open_external_text_editor();
+    void handle_text_edit_return_pressed();
 #ifdef SIOYEK_IOS
 
 public slots:

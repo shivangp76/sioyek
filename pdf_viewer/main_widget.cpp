@@ -230,6 +230,7 @@ extern std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW;
 extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 
+extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern std::wstring RIGHT_CLICK_COMMAND;
 extern std::wstring MIDDLE_CLICK_COMMAND;
@@ -954,6 +955,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     QObject::connect(&external_command_edit_watcher, &QFileSystemWatcher::fileChanged, [&]() {
         if (text_command_line_edit->isVisible()) {
+            is_external_file_edited = true;
             QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
 
             if (file.open(QIODeviceBase::ReadOnly)) {
@@ -2097,6 +2099,15 @@ bool MainWidget::handle_command_types(std::unique_ptr<Command> new_command, int 
 
 }
 
+void MainWidget::handle_text_edit_return_pressed() {
+    if (text_command_line_edit_container->isVisible()) {
+        text_command_line_edit_container->hide();
+        setFocus();
+        handle_pending_text_command(text_command_line_edit->text().toStdWString());
+        return;
+    }
+}
+
 void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat) {
 
     if (released && (!is_auto_repeat)) {
@@ -2167,12 +2178,7 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat
         }
 
         if (kevent->key() == Qt::Key::Key_Return || kevent->key() == Qt::Key::Key_Enter) {
-            if (text_command_line_edit_container->isVisible()) {
-                text_command_line_edit_container->hide();
-                setFocus();
-                handle_pending_text_command(text_command_line_edit->text().toStdWString());
-                return;
-            }
+            handle_text_edit_return_pressed();
         }
 
         std::vector<int> ignored_codes = {
@@ -6286,6 +6292,17 @@ int MainWidget::num_visible_links() {
 bool MainWidget::event(QEvent* event) {
     QTabletEvent* te = dynamic_cast<QTabletEvent*>(event);
     QKeyEvent* ke = dynamic_cast<QKeyEvent*>(event);
+
+    if (event->type() == QEvent::WindowActivate) {
+        if (SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS && is_external_file_edited) {
+            if (text_command_line_edit->isVisible()) {
+                handle_text_edit_return_pressed();
+                is_external_file_edited = false;
+            }
+
+        }
+    }
+
     if (ke && (ke->type() == QEvent::KeyPress)) {
         // Apparently Qt doesn't send keyPressEvent for tab and backtab anymore, so we have to
         // manually handle them here.
@@ -11260,6 +11277,7 @@ void MainWidget::open_external_text_editor() {
 
     std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND).replace("%{file}", QString::fromStdWString(sioyek_temp_text_path.get_path())).toStdWString();
     execute_command(command);
+    is_external_file_edited = false;
     if (external_command_edit_watcher.files().size() == 0) {
         external_command_edit_watcher.addPath(path_qstring);
     }
