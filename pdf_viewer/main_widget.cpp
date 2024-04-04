@@ -955,6 +955,15 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect(pdf_renderer, &PdfRenderer::search_advance, this, &MainWidget::invalidate_ui);
 
     QObject::connect(&external_command_edit_watcher, &QFileSystemWatcher::fileChanged, [&]() {
+
+        // hack: this should not be necessary (after all, how could we be receiving fileChanged events
+        // if external_command_edit_watcher.files().size() == 0?) but for some reason when editing files
+        // using vim they somehow get unregistered from the file watcher
+        if (external_command_edit_watcher.files().size() == 0) {
+            QString path_qstring = QString::fromStdWString(sioyek_temp_text_path.get_path());
+            external_command_edit_watcher.addPath(path_qstring);
+        }
+
         if (text_command_line_edit->isVisible()) {
             is_external_file_edited = true;
             QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
