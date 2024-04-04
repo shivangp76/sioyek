@@ -3302,9 +3302,21 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     }
 
     if (is_control_pressed) {
-        float zoom_factor = 1.0f + num_repeats_f_y * (ZOOM_INC_FACTOR - 1.0f);
-        zoom(mouse_window_pos, zoom_factor, wevent->angleDelta().y() > 0);
-        return;
+        if (main_document_view->get_overview_page() && main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
+            if (wevent->angleDelta().y() > 0) {
+                main_document_view->zoom_in_overview();
+            }
+            else if (wevent->angleDelta().y() < 0) {
+                main_document_view->zoom_out_overview();
+            }
+            validate_render();
+            return;
+        }
+        else {
+            float zoom_factor = 1.0f + num_repeats_f_y * (ZOOM_INC_FACTOR - 1.0f);
+            zoom(mouse_window_pos, zoom_factor, wevent->angleDelta().y() > 0);
+            return;
+        }
     }
     if (is_shift_pressed) {
         float inverse_factor = INVERTED_HORIZONTAL_SCROLLING ? -1.0f : 1.0f;
