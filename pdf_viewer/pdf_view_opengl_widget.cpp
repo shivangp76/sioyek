@@ -2230,22 +2230,12 @@ ScratchPad* PdfViewOpenGLWidget::get_scratchpad() {
 void PdfViewOpenGLWidget::render_selected_rectangle() {
 
     if (document_view->selected_rectangle) {
-        enable_stencil();
-
-        write_to_stencil();
         float rectangle_color_[] = { 0.0f, 0.0f, 0.0f };
         auto rectangle_color = cc3(rectangle_color_);
         set_highlight_color(&rectangle_color[0], 0.3f);
-        if (!(document_view->selected_rectangle.value() == fz_empty_rect)) {
-            render_highlight_absolute(document_view->selected_rectangle.value(), HRF_FILL | HRF_BORDER);
-        }
-
-        use_stencil_to_write(false);
-
+        render_highlight_absolute(document_view->selected_rectangle.value(), HRF_FILL | HRF_BORDER);
         NormalizedWindowRect window_rect({ -1, -1, 1, 1 });
         render_highlight_window(window_rect, true);
-
-        disable_stencil();
     }
 }
 
