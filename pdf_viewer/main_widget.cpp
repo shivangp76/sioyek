@@ -11,9 +11,8 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
-// improve js engine initialization performance
-// improve touch mode scrolling
 // preview in touch mode should ignore white margins
+// improve box rendering in opengl backend
 
 
 #include <iostream>
@@ -280,6 +279,7 @@ extern bool PAPER_DOWNLOAD_CREATE_PORTAL;
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool USE_KEYBOARD_POINT_SELECTION;
 
+extern bool SNAP_DRAGGING;
 extern bool TOUCH_MODE;
 
 const int MAX_SCROLLBAR = 10000;
@@ -750,6 +750,24 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
         if (horizontal_scroll_locked) {
             diff_doc.values[0] = 0;
+        }
+        if (is_dragging_snapped) {
+            // initially we assume the user is trying to move vertically and therefore
+            // dragging is snapped to vertical direction, until the users moves sufficiently
+            // in the horizontal direction
+            float abs_x = std::abs(diff_doc.values[0]);
+            float abs_y = std::abs(diff_doc.values[1]);
+
+            if (((abs_x + abs_y > 20) && (abs_x / abs_y > 0.6f)) || ((abs_x + abs_y > 10 && (abs_x / abs_y > 2)))) {
+                last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
+                last_mouse_down_window_pos = mpos;
+                diff_doc.values[0] = 0;
+                diff_doc.values[1] = 0;
+                is_dragging_snapped = false;
+            }
+            else {
+                diff_doc.values[0] = 0;
+            }
         }
         if (!ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL) {
             float current_page_width = doc()->get_page_width(get_current_page_number());
@@ -2381,6 +2399,9 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                 //            QPoint velocity = diff_vector / (time_msecs / 1000.0f) * 2;
                 velocity_x = -vel.x();
                 velocity_y = vel.y();
+                if (is_dragging_snapped) {
+                    velocity_x = 0;
+                }
                 if (is_moving()) {
                     validation_interval_timer->setInterval(0);
                 }
@@ -2541,6 +2562,9 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         }
         else {
             is_dragging = true;
+            if (SNAP_DRAGGING) {
+                is_dragging_snapped = true;
+            }
         }
     }
     else {

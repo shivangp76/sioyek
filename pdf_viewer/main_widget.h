@@ -310,6 +310,7 @@ public:
 
     // are we currently dragging the document
     bool is_dragging = false;
+    bool is_dragging_snapped = false;
     // are we performing pinch to zoom gesture
     bool is_pinching = false;
 

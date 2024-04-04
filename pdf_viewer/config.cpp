@@ -44,6 +44,7 @@ bool NO_AUTO_CONFIG = false;
 bool USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE = true;
 bool HIDE_OVERLAPPING_LINK_LABELS = true;
 bool DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE = false;
+bool SNAP_DRAGGING = true;
 
 std::wstring SEARCH_URLS[26];
 std::wstring EXECUTE_COMMANDS[26];
@@ -998,6 +999,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"vimtex_wsl_fix", &VIMTEX_WSL_FIX);
     add_bool(L"sliced_rendering", &SLICED_RENDERING);
     add_bool(L"touch_mode", &TOUCH_MODE);
+    add_bool(L"initial_snapped_dragging", &SNAP_DRAGGING);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_string(L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
