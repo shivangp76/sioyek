@@ -232,16 +232,17 @@ void DocumentView::goto_portal(Portal* link) {
     }
 }
 
-void DocumentView::delete_closest_portal() {
+std::string DocumentView::delete_closest_portal() {
     if (current_document) {
-        current_document->delete_closest_portal(get_offsets().y);
+        return current_document->delete_closest_portal(get_offsets().y);
     }
 }
 
-void DocumentView::delete_closest_bookmark() {
+std::string DocumentView::delete_closest_bookmark() {
     if (current_document) {
-        delete_closest_bookmark_to_offset(get_offsets().y);
+        return delete_closest_bookmark_to_offset(get_offsets().y);
     }
+    return "";
 }
 
 // todo: these should be in Document not here
@@ -261,8 +262,8 @@ void DocumentView::delete_highlight(Highlight hl) {
     current_document->delete_highlight(hl);
 }
 
-void DocumentView::delete_closest_bookmark_to_offset(float offset) {
-    current_document->delete_closest_bookmark(offset);
+std::string DocumentView::delete_closest_bookmark_to_offset(float offset) {
+    return current_document->delete_closest_bookmark(offset);
 }
 
 float DocumentView::get_offset_x() {

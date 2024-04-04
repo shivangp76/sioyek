@@ -123,6 +123,11 @@ enum class PaperDownloadFinishedAction {
     Portal
 };
 
+struct RecentlyUpdatedPortalState {
+    std::string uuid;
+    QDateTime last_modification_time;
+};
+
 #ifdef SIOYEK_IOS
 struct AVSpeechSynthesizer;
 #endif
@@ -694,7 +699,10 @@ public:
     std::optional<QString> highlight_annotation_changed_hook_function_name = {};
     std::optional<QString> highlight_type_changed_hook_function_name = {};
     std::optional<QString> add_mark_hook_function_name = {};
-    std::optional<QString> page_change_hook_function_name = {};
+    std::optional<QString> add_portal_hook_function_name = {};
+    std::optional<QString> delete_portal_hook_function_name = {};
+    std::optional<QString> edit_portal_hook_function_name = {};
+    std::optional<RecentlyUpdatedPortalState> recently_updated_portal = {};
 
     // whether mouse is pressed, `is_pressed` is true, we add mouse positions to `position_buffer`
     bool is_pressed = false;
@@ -715,6 +723,7 @@ public:
     std::optional<Portal> last_dispplayed_portal = {};
 
 
+    void set_recently_updated_portal(const std::string& uuid);
     void update_highlight_buttons_position();
     void start_mobile_selection_under_point(AbsoluteDocumentPos point);
     void update_mobile_selection();
@@ -1015,6 +1024,7 @@ public:
     void handle_text_edit_return_pressed();
     void call_async_js_function_with_args(const QString& code, QJsonArray args);
     void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
+    void call_js_function_with_portal_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void on_new_bookmark_added(const std::string& uuid);
     void on_bookmark_deleted(const std::string& uuid);
@@ -1027,6 +1037,9 @@ public:
     void delete_highlight_with_uuid(const std::string& uuid);
     void delete_current_document_highlight_with_index(int index);
     void delete_current_document_highlight(Highlight* hl);
+    void on_new_portal_added(const std::string& uuid);
+    void on_portal_deleted(const std::string& uuid);
+    void on_portal_edited(const std::string& uuid);
 
     std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
 

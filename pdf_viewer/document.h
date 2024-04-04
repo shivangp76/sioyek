@@ -213,7 +213,7 @@ public:
     bool get_is_indexing();
     fz_stext_page* get_stext_with_page_number(fz_context* ctx, int page_number, fz_document* doc = nullptr);
     fz_stext_page* get_stext_with_page_number(int page_number);
-    int add_portal(Portal link, bool insert_into_database = true);
+    std::string add_portal(Portal link, bool insert_into_database = true);
     std::wstring get_path();
     std::string get_checksum();
     std::optional<std::string> get_checksum_fast();
@@ -225,9 +225,9 @@ public:
 
     std::optional<Portal> find_closest_portal(float to_offset_y, int* index = nullptr);
     bool update_portal(Portal new_link);
-    void delete_closest_bookmark(float to_y_offset);
+    std::string delete_closest_bookmark(float to_y_offset);
     void delete_bookmark(int index);
-    void delete_closest_portal(float to_offset_y);
+    std::string delete_closest_portal(float to_offset_y);
     int get_portal_index_with_uuid(const std::string& uuid);
     void delete_portal_with_uuid(const std::string& uuid);
     std::vector<BookMark>& get_bookmarks();

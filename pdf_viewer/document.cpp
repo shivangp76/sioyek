@@ -373,7 +373,7 @@ bool Document::get_is_indexing() {
     return is_indexing;
 }
 
-int Document::add_portal(Portal portal, bool insert_into_database) {
+std::string Document::add_portal(Portal portal, bool insert_into_database) {
     portal.uuid = new_uuid_utf8();
     portal.update_creation_time();
     portals.push_back(portal);
@@ -402,7 +402,7 @@ int Document::add_portal(Portal portal, bool insert_into_database) {
         }
         is_annotations_dirty = true;
     }
-    return index;
+    return portal.uuid;
 }
 
 
@@ -448,13 +448,16 @@ int Document::find_closest_highlight_index(const std::vector<Highlight>& sorted_
     return min_index;
 }
 
-void Document::delete_closest_bookmark(float to_y_offset) {
+std::string Document::delete_closest_bookmark(float to_y_offset) {
     int closest_index = find_closest_bookmark_index(bookmarks, to_y_offset);
     if (closest_index > -1) {
+        std::string uuid = bookmarks[closest_index].uuid;
         db_manager->delete_bookmark(bookmarks[closest_index].uuid);
         is_annotations_dirty = true;
         bookmarks.erase(bookmarks.begin() + closest_index);
+        return uuid;
     }
+    return "";
 }
 
 void Document::delete_bookmark(int index) {
@@ -516,13 +519,16 @@ bool Document::update_portal(Portal new_portal) {
     return false;
 }
 
-void Document::delete_closest_portal(float to_offset_y) {
+std::string Document::delete_closest_portal(float to_offset_y) {
     int closest_index = -1;
     if (find_closest_portal(to_offset_y, &closest_index)) {
-        db_manager->delete_portal(portals[closest_index].uuid);
+        std::string uuid = portals[closest_index].uuid;
+        db_manager->delete_portal(uuid);
         portals.erase(portals.begin() + closest_index);
         is_annotations_dirty = true;
+        return uuid;
     }
+    return "";
 }
 
 int Document::get_portal_index_with_uuid(const std::string& uuid) {

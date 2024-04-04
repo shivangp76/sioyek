@@ -497,10 +497,6 @@ Document* PdfViewOpenGLWidget::doc(bool overview){
 }
 
 void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPalette forced_color_palette, bool stencils_allowed) {
-    if (is_helper){
-        qDebug() << "helper render_page called";
-    }
-
     if (!valid_document()) return;
 
     int nh, nv;

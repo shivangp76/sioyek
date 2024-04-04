@@ -184,13 +184,13 @@ public:
     std::optional<Portal> find_closest_portal(bool limit = false);
     std::optional<BookMark> find_closest_bookmark();
     void goto_portal(Portal* link);
-    void delete_closest_portal();
-    void delete_closest_bookmark();
+    std::string delete_closest_portal();
+    std::string delete_closest_bookmark();
     Highlight get_highlight_with_index(int index);
     std::string delete_highlight_with_index(int index);
     std::string delete_bookmark_with_index(int index);
     void delete_highlight(Highlight hl);
-    void delete_closest_bookmark_to_offset(float offset);
+    std::string delete_closest_bookmark_to_offset(float offset);
     float get_offset_x();
     float get_offset_y();
     AbsoluteDocumentPos get_offsets();

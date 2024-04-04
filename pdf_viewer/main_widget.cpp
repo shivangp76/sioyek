@@ -1156,6 +1156,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             selection_begin_indicator->update_pos();
             selection_end_indicator->update_pos();
         }
+        if (recently_updated_portal.has_value() &&
+            (recently_updated_portal->last_modification_time.msecsTo(QDateTime::currentDateTime()) > 1000)) {
+            on_portal_edited(recently_updated_portal->uuid);
+            recently_updated_portal = {};
+        }
 
         if (doc()) {
             if (doc()->get_should_reload_annotations()) {
@@ -1926,8 +1931,25 @@ void MainWidget::update_link_with_opened_book_state(Portal lnk, const OpenedBook
     }
 
     db_manager->update_portal(lnk.uuid, new_state.offset_x, new_state.offset_y, new_state.zoom_level);
+    set_recently_updated_portal(lnk.uuid);
 
     portal_to_edit = {};
+}
+
+void MainWidget::set_recently_updated_portal(const std::string& uuid) {
+    if (recently_updated_portal.has_value()) {
+        if (recently_updated_portal->uuid == uuid) {
+            recently_updated_portal->last_modification_time = QDateTime::currentDateTime();
+            return;
+        }
+        else {
+            on_portal_edited(recently_updated_portal->uuid);
+        }
+    }
+    RecentlyUpdatedPortalState s;
+    s.uuid = uuid;
+    s.last_modification_time = QDateTime::currentDateTime();
+    recently_updated_portal = s;
 }
 
 void MainWidget::update_closest_link_with_opened_book_state(const OpenedBookState& new_state) {
@@ -2623,6 +2645,8 @@ void MainWidget::prev_state() {
             }
 
             db_manager->update_portal(portal_to_edit->uuid, state.offset_x, state.offset_y, state.zoom_level);
+            set_recently_updated_portal(portal_to_edit->uuid);
+
             portal_to_edit = {};
         }
 
@@ -3684,7 +3708,9 @@ void MainWidget::set_presentation_mode(bool mode) {
 void MainWidget::complete_pending_link(const PortalViewState& destination_view_state) {
     Portal& pl = current_pending_portal.value().second;
     pl.dst = destination_view_state;
-    main_document_view->get_document()->add_portal(pl);
+    std::string uuid = doc()->add_portal(pl);
+    on_new_portal_added(uuid);
+
     set_pending_portal({});
 }
 
@@ -4944,34 +4970,44 @@ std::optional<DocumentPos> MainWidget::get_overview_position() {
 
 void MainWidget::add_portal(std::wstring source_path, Portal new_link) {
     if (source_path == main_document_view->get_document()->get_path()) {
-        main_document_view->get_document()->add_portal(new_link);
+        std::string uuid = main_document_view->get_document()->add_portal(new_link);
+        on_new_portal_added(uuid);
     }
     else {
         const std::unordered_map<std::wstring, Document*> cached_documents = document_manager->get_cached_documents();
         for (auto [doc_path, doc] : cached_documents) {
             if (source_path == doc_path) {
-                doc->add_portal(new_link, false);
+                std::string uuid = doc->add_portal(new_link, false);
+                on_new_portal_added(uuid);
             }
         }
 
         if (new_link.is_visible()) {
-            db_manager->insert_visible_portal(checksummer->get_checksum(source_path),
+            std::string uuid = utf8_encode(new_uuid());
+            bool success = db_manager->insert_visible_portal(checksummer->get_checksum(source_path),
                 new_link.dst.document_checksum,
                 new_link.dst.book_state.offset_x,
                 new_link.dst.book_state.offset_y,
                 new_link.dst.book_state.zoom_level,
                 new_link.src_offset_x.value(),
                 new_link.src_offset_y,
-                new_uuid());
+                utf8_decode(uuid));
+            if (success) {
+                on_new_portal_added(uuid);
+            }
         }
         else {
-            db_manager->insert_portal(checksummer->get_checksum(source_path),
+            std::string uuid = utf8_encode(new_uuid());
+            bool success = db_manager->insert_portal(checksummer->get_checksum(source_path),
                 new_link.dst.document_checksum,
                 new_link.dst.book_state.offset_x,
                 new_link.dst.book_state.offset_y,
                 new_link.dst.book_state.zoom_level,
                 new_link.src_offset_y,
-                new_uuid());
+                utf8_decode(uuid));
+            if (success) {
+                on_new_portal_added(uuid);
+            }
         }
     }
 }
@@ -5495,7 +5531,8 @@ void MainWidget::portal_to_definition() {
         link.dst.book_state.offset_y = abspos.y;
         link.dst.book_state.zoom_level = main_document_view->get_zoom_level();
         link.src_offset_y = main_document_view->get_ruler_pos();
-        doc()->add_portal(link, true);
+        std::string uuid = doc()->add_portal(link, true);
+        on_new_portal_added(uuid);
     }
 }
 
@@ -5591,7 +5628,9 @@ void MainWidget::handle_goto_portal_list() {
 
         },
         [&](Portal* portal) {
-            doc()->delete_portal_with_uuid(portal->uuid);
+            std::string uuid = portal->uuid;
+            doc()->delete_portal_with_uuid(uuid);
+            on_portal_deleted(uuid);
         },
             [&](Portal* portal) {
                 portal_to_edit = *portal;
@@ -6074,7 +6113,9 @@ void MainWidget::handle_portal_to_link(const std::wstring& text) {
         portal.dst.book_state.offset_y = dst_abspos.y;
         portal.dst.book_state.zoom_level = main_document_view->get_zoom_level();
         portal.src_offset_y = src_abspos.y;
-        doc()->add_portal(portal, true);
+        std::string uuid = doc()->add_portal(portal, true);
+        on_new_portal_added(uuid);
+
     }
     reset_highlight_links();
 }
@@ -6406,8 +6447,11 @@ bool MainWidget::event(QEvent* event) {
                         selected_portal_index = portal_index;
                         show_touch_buttons({ L"Delete" }, {}, [this](int index, std::wstring name) {
                             if (selected_portal_index > -1) {
-                                doc()->delete_portal_with_uuid(doc()->get_portals()[selected_portal_index].uuid);
+                                int del_index = selected_portal_index;
                                 selected_portal_index = -1;
+                                std::string uuid = doc()->get_portals()[del_index].uuid;
+                                doc()->delete_portal_with_uuid(uuid);
+                                on_portal_deleted(uuid);
                                 pop_current_widget();
                                 invalidate_render();
                             }
@@ -8769,7 +8813,9 @@ void MainWidget::finish_pending_download_portal(std::wstring download_paper_name
 
             if (src_doc) {
                 db_manager->insert_document_hash(downloaded_file_path, checksum);
-                int portal_index = src_doc->add_portal(pending_portal, true);
+                std::string portal_uuid = src_doc->add_portal(pending_portal, true);
+                on_new_portal_added(portal_uuid);
+                int portal_index = src_doc->get_portal_index_with_uuid(portal_uuid);
                 // when a download is finished while we are moving the pending portal, convert the
                 // pending portal move to the actual portal move
                 if (portal_move_data && portal_move_data->is_pending && portal_move_data->index == i) {
@@ -11263,8 +11309,14 @@ void MainWidget::register_hook_function(QString type, QString name) {
     if (type == "add_mark") {
         add_mark_hook_function_name = name;
     }
-    if (type == "page_changed") {
-        page_change_hook_function_name = name;
+    if (type == "add_portal") {
+        add_portal_hook_function_name = name;
+    }
+    if (type == "delete_portal") {
+        delete_portal_hook_function_name = name;
+    }
+    if (type == "edit_portal") {
+        edit_portal_hook_function_name = name;
     }
 }
 
@@ -11427,9 +11479,37 @@ void MainWidget::call_js_function_with_highlight_arg_with_uuid(const QString& fu
     }
 }
 
+void MainWidget::call_js_function_with_portal_arg_with_uuid(const QString& function_name, const std::string& uuid) {
+    int portal_index = doc()->get_portal_index_with_uuid(uuid);
+    if (portal_index >= 0 && portal_index < doc()->get_portals().size()) {
+        Portal portal = doc()->get_portals()[portal_index];
+        call_async_js_function_with_args(function_name, QJsonArray() << portal.to_json(""));
+    }
+}
+
 void MainWidget::on_new_bookmark_added(const std::string& uuid) {
     if (add_bookmark_hook_function_name) {
         call_js_function_with_bookmark_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
+    }
+}
+
+void MainWidget::on_new_portal_added(const std::string& uuid) {
+    if (add_portal_hook_function_name) {
+        call_js_function_with_portal_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
+    }
+}
+
+void MainWidget::on_portal_deleted(const std::string& uuid) {
+    if (delete_portal_hook_function_name) {
+        call_async_js_function_with_args(delete_portal_hook_function_name.value(),
+            QJsonArray() << QString::fromStdString(uuid));
+    }
+}
+
+void MainWidget::on_portal_edited(const std::string& uuid) {
+    if (edit_portal_hook_function_name) {
+        call_async_js_function_with_args(edit_portal_hook_function_name.value(),
+            QJsonArray() << QString::fromStdString(uuid));
     }
 }
 

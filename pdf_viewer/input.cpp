@@ -3383,7 +3383,8 @@ public:
     static inline const std::string hname = "Delete the closest portal";
     DeletePortalCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->main_document_view->delete_closest_portal();
+        std::string uuid = widget->main_document_view->delete_closest_portal();
+        widget->on_portal_deleted(uuid);
         widget->validate_render();
     }
 };
@@ -3394,7 +3395,8 @@ public:
     static inline const std::string hname = "Delete the closest bookmark";
     DeleteBookmarkCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->main_document_view->delete_closest_bookmark();
+        std::string uuid = widget->main_document_view->delete_closest_bookmark();
+        widget->on_bookmark_deleted(uuid);
         widget->validate_render();
     }
 };
