@@ -307,6 +307,7 @@ public:
     void fit_to_page_height(bool smart = false);
     void fit_to_page_height_and_width_smart();
     void fit_to_page_height_width_minimum(int statusbar_height);
+    void fit_overview_width();
     void persist(bool persist_drawings = false);
     std::wstring get_current_chapter_name();
     std::optional<AbsoluteRect> get_control_rect();

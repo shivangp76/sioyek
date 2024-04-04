@@ -991,6 +991,21 @@ void DocumentView::fit_to_page_height_width_minimum(int statusbar_height) {
 
 }
 
+void DocumentView::fit_overview_width() {
+
+    if (overview_page) {
+        AbsoluteDocumentPos overview_abspos = { overview_page->absolute_offset_x, overview_page->absolute_offset_y };
+        DocumentPos overview_docpos = overview_abspos.to_document(current_document);
+        float left_ratio = 0, right_ratio = 0;
+        int normal_page_width;
+        float overview_page_width = current_document->get_page_size_smart(true, overview_docpos.page, &left_ratio, &right_ratio, &normal_page_width);
+        float overview_width_in_pixels = overview_half_width * view_width;
+        float overview_zoom_level = overview_width_in_pixels / overview_page_width;
+        overview_page->zoom_level = overview_zoom_level;
+
+    }
+}
+
 void DocumentView::persist(bool persist_drawings) {
     if (!current_document) return;
     AbsoluteDocumentPos abs_offset = get_offsets();

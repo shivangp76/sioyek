@@ -13,6 +13,7 @@
 // smartviewcandidates are not filled when right clicking on a link?
 // preview in touch mode should ignore white margins
 // improve box rendering in opengl backend
+// ctrl+mouse wheel should zoom in overview window
 
 
 #include <iostream>
@@ -3624,6 +3625,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         }
         else {
             set_overview_link(link.value());
+            main_document_view->fit_overview_width();
             return true;
         }
     }
@@ -3642,6 +3644,8 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         //smart_view_candidates = { current_candid };
         set_overview_position(reference_info.targets[0].page, reference_info.targets[0].y, reference_type_string(reference_info.reference_type));
         main_document_view->set_overview_highlights(reference_info.overview_highlight_rects);
+
+        main_document_view->fit_overview_width();
         return true;
     }
 
