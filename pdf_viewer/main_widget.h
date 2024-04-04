@@ -702,6 +702,9 @@ public:
     std::optional<QString> add_portal_hook_function_name = {};
     std::optional<QString> delete_portal_hook_function_name = {};
     std::optional<QString> edit_portal_hook_function_name = {};
+    std::optional<QString> open_document_hook_function_name = {};
+    std::optional<QString> open_new_document_hook_function_name = {};
+
     std::optional<RecentlyUpdatedPortalState> recently_updated_portal = {};
 
     // whether mouse is pressed, `is_pressed` is true, we add mouse positions to `position_buffer`
@@ -1040,6 +1043,7 @@ public:
     void on_new_portal_added(const std::string& uuid);
     void on_portal_deleted(const std::string& uuid);
     void on_portal_edited(const std::string& uuid);
+    void on_open_document(const std::wstring& path);
 
     std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
 

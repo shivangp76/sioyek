@@ -2002,6 +2002,8 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     main_document_view->on_view_size_change(main_window_width, main_window_height);
     main_document_view->open_document(path.get_path(), &this->is_render_invalidated);
 
+    on_open_document(path.get_path());
+
     if (doc()) {
         document_manager->add_tab(doc()->get_path());
         //doc()->set_only_for_portal(false);
@@ -4230,6 +4232,7 @@ void MainWidget::open_document(const std::wstring& doc_path,
     if (main_document_view) {
         main_document_view->persist();
     }
+    on_open_document(doc_path);
 
     main_document_view->open_document(doc_path, invalid_flag, load_prev_state, prev_state, force_load_dimensions);
 
@@ -11288,35 +11291,41 @@ void MainWidget::register_hook_function(QString type, QString name) {
     if (type == "add_bookmark") {
         add_bookmark_hook_function_name = name;
     }
-    if (type == "delete_bookmark") {
+    else if (type == "delete_bookmark") {
         delete_bookmark_hook_function_name = name;
     }
-    if (type == "edit_bookmark") {
+    else if (type == "edit_bookmark") {
         edit_bookmark_hook_function_name = name;
     }
-    if (type == "add_highlight") {
+    else if (type == "add_highlight") {
         add_highlight_hook_function_name = name;
     }
-    if (type == "delete_highlight") {
+    else if (type == "delete_highlight") {
         delete_highlight_hook_function_name = name;
     }
-    if (type == "highlight_annotation_changed") {
+    else if (type == "highlight_annotation_changed") {
         highlight_annotation_changed_hook_function_name = name;
     }
-    if (type == "highlight_type_changed") {
+    else if (type == "highlight_type_changed") {
         highlight_type_changed_hook_function_name = name;
     }
-    if (type == "add_mark") {
+    else if (type == "add_mark") {
         add_mark_hook_function_name = name;
     }
-    if (type == "add_portal") {
+    else if (type == "add_portal") {
         add_portal_hook_function_name = name;
     }
-    if (type == "delete_portal") {
+    else if (type == "delete_portal") {
         delete_portal_hook_function_name = name;
     }
-    if (type == "edit_portal") {
+    else if (type == "edit_portal") {
         edit_portal_hook_function_name = name;
+    }
+    else if (type == "open_document") {
+        open_document_hook_function_name = name;
+    }
+    else if (type == "open_new_document") {
+        open_new_document_hook_function_name = name;
     }
 }
 
@@ -11539,6 +11548,18 @@ void MainWidget::on_highlight_type_edited(const std::string& uuid) {
     }
 }
 
+void MainWidget::on_open_document(const std::wstring& path) {
+    if (open_new_document_hook_function_name) {
+        if (!checksummer->get_checksum_fast(path).has_value()) {
+            call_async_js_function_with_args(open_new_document_hook_function_name.value(),
+                QJsonArray() << QString::fromStdWString(path));
+        }
+    }
+    if (open_document_hook_function_name) {
+        call_async_js_function_with_args(open_document_hook_function_name.value(),
+            QJsonArray() << QString::fromStdWString(path));
+    }
+}
 
 #ifdef SIOYEK_IOS
 void MainWidget::handle_ios_files(const QUrl& url){
