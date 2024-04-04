@@ -352,6 +352,7 @@ void configure_paths() {
 #endif
     auto_config_path = standard_data_path.slash(L"auto.config");
     sioyek_temp_text_path = standard_data_path.slash(L".sioyek.temp");
+    sioyek_js_path = standard_data_path.slash(L".sioyek.js");
     // user_config_paths.insert(user_config_paths.begin(), auto_config_path);
     downloaded_papers_path = standard_data_path.slash(L"downloads");
 #endif
