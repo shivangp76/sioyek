@@ -9,6 +9,7 @@
 #include <optional>
 #include <deque>
 #include <mutex>
+#include <thread>
 
 #include <qnetworkaccessmanager.h>
 #include <qquickwidget.h>
@@ -685,6 +686,16 @@ public:
     QPoint last_quick_tap_position;
     std::optional<QPoint> context_menu_right_click_pos = {};
 
+    std::optional<QString> add_bookmark_hook_function_name = {};
+    std::optional<QString> delete_bookmark_hook_function_name = {};
+    std::optional<QString> edit_bookmark_hook_function_name = {};
+    std::optional<QString> add_highlight_hook_function_name = {};
+    std::optional<QString> delete_highlight_hook_function_name = {};
+    std::optional<QString> highlight_annotation_changed_hook_function_name = {};
+    std::optional<QString> highlight_type_changed_hook_function_name = {};
+    std::optional<QString> add_mark_hook_function_name = {};
+    std::optional<QString> page_change_hook_function_name = {};
+
     // whether mouse is pressed, `is_pressed` is true, we add mouse positions to `position_buffer`
     bool is_pressed = false;
     // list of mouse positions used to calculate the velocity when flicking in touch mode
@@ -936,6 +947,7 @@ public:
     Q_INVOKABLE void set_variable(QString name, QVariant var);
     Q_INVOKABLE QVariant get_variable(QString name);
     Q_INVOKABLE bool register_function_keybind(QString keybind, QString name, QString file_name, int line_number);
+    Q_INVOKABLE void register_hook_function(QString type, QString name);
     Q_INVOKABLE void register_function_keybind_async(QString keybind, QString code, QString file_name, int line_number);
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
     void run_startup_js(bool first_run=false);
@@ -1001,6 +1013,28 @@ public:
     bool is_ruler_mode();
     void open_external_text_editor();
     void handle_text_edit_return_pressed();
+    void call_async_js_function_with_args(const QString& code, QJsonArray args);
+    void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
+    void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
+    void on_new_bookmark_added(const std::string& uuid);
+    void on_bookmark_deleted(const std::string& uuid);
+    void on_bookmark_edited(const std::string& uuid);
+    void on_new_highlight_added(const std::string& uuid);
+    void on_highlight_deleted(const std::string& uuid);
+    void on_mark_added(const std::string& uuid, char type);
+    void on_highlight_annotation_edited(const std::string& uuid);
+    void on_highlight_type_edited(const std::string& uuid);
+    void delete_highlight_with_uuid(const std::string& uuid);
+    void delete_current_document_highlight_with_index(int index);
+    void delete_current_document_highlight(Highlight* hl);
+
+    std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
+
+
+    void update_highlight_annot_with_uuid(const std::string& uuid, const std::wstring& new_annot);
+    void delete_current_document_bookmark(int index);
+    void delete_global_bookmark(const std::string& uuid);
+
 #ifdef SIOYEK_IOS
 
 public slots:

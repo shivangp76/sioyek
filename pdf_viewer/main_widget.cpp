@@ -13,6 +13,7 @@
 // smartviewcandidates are not filled when right clicking on a link?
 // improve js engine initialization performance
 // improve touch mode scrolling
+// preview in touch mode should ignore white margins
 
 
 #include <iostream>
@@ -2930,7 +2931,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         else {
             handle_left_click({ mevent->pos().x(), mevent->pos().y() }, false, is_shift_pressed, is_control_pressed, is_command_pressed, is_alt_pressed);
             if (is_select_highlight_mode && (main_document_view->selected_character_rects.size() > 0)) {
-                main_document_view->add_highlight(selection_begin, selection_end, select_highlight_type);
+                add_highlight_to_current_document(selection_begin, selection_end, select_highlight_type);
                 clear_selected_text();
             }
             if (main_document_view->selected_character_rects.size() > 0) {
@@ -2968,7 +2969,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
                 && main_document_view->selected_character_rects.size() > 0
                 && !(main_document_view && main_document_view->get_overview_page())) {
 
-                main_document_view->add_highlight(selection_begin, selection_end, select_highlight_type);
+                add_highlight_to_current_document(selection_begin, selection_end, select_highlight_type);
                 clear_selected_text();
 
                 validate_render();
@@ -5302,16 +5303,18 @@ bool MainWidget::is_rect_visible(DocumentRect rect) {
 
 void MainWidget::set_mark_in_current_location(char symbol) {
     // it is a global mark, we delete other marks with the same symbol from database and add the new mark
+    std::string uuid;
     if (isupper(symbol)) {
         db_manager->delete_mark_with_symbol(symbol);
         // we should also delete the cached marks
         document_manager->delete_global_mark(symbol);
-        main_document_view->add_mark(symbol);
+        uuid = main_document_view->add_mark(symbol);
     }
     else {
-        main_document_view->add_mark(symbol);
+        uuid = main_document_view->add_mark(symbol);
         validate_render();
     }
+    on_mark_added(uuid, symbol);
 }
 
 void MainWidget::goto_mark(char symbol) {
@@ -5634,7 +5637,8 @@ void MainWidget::handle_goto_bookmark() {
 
         },
         [&](BookMark* bm) {
-            main_document_view->delete_closest_bookmark_to_offset(bm->get_y_offset());
+            int bookmark_index = doc()->get_bookmark_index_with_uuid(bm->uuid);
+            delete_current_document_bookmark(bookmark_index);
         },
             [&](BookMark* bm) {
             set_selected_bookmark_index(doc()->get_bookmark_index_with_uuid(bm->uuid));
@@ -5673,15 +5677,21 @@ void MainWidget::handle_goto_bookmark_global() {
             advance_command(std::move(pending_command_instance));
         },
         [&](BookState* book_state) {
-            db_manager->delete_bookmark(book_state->uuid);
+            delete_global_bookmark(book_state->uuid);
         }
         );
     show_current_widget();
 }
 
+std::string MainWidget::add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type) {
+    std::string uuid = main_document_view->add_highlight_(selection_begin, selection_end, type);
+    on_new_highlight_added(uuid);
+    return uuid;
+}
+
 std::wstring MainWidget::handle_add_highlight(char symbol) {
     if (main_document_view->selected_character_rects.size() > 0) {
-        std::string uuid = main_document_view->add_highlight(selection_begin, selection_end, symbol);
+        std::string uuid = add_highlight_to_current_document(selection_begin, selection_end, symbol);
         clear_selected_text();
         return utf8_decode(uuid);
     }
@@ -5694,6 +5704,7 @@ std::wstring MainWidget::handle_add_highlight(char symbol) {
 void MainWidget::change_selected_highlight_type(char new_type) {
     if (selected_highlight_index != -1) {
         doc()->update_highlight_type(selected_highlight_index, new_type);
+        on_highlight_type_edited(doc()->get_highlights()[selected_highlight_index].uuid);
     }
 }
 
@@ -5742,7 +5753,7 @@ void MainWidget::handle_goto_highlight() {
             advance_command(std::move(pending_command_instance));
         },
         [&](Highlight* hl) {
-            main_document_view->delete_highlight(*hl);
+            delete_current_document_highlight(hl);
         },
             [&](Highlight* hl) {
             set_selected_highlight_index(doc()->get_highlight_index_with_uuid(hl->uuid));
@@ -5809,7 +5820,7 @@ void MainWidget::handle_goto_highlight_global() {
                 //open_document(book_state->document_path, 0.0f, book_state->offset_y);
             }
         }, [&](BookState* state) {
-            db_manager->delete_highlight(state->uuid);
+            delete_highlight_with_uuid(state->uuid);
         });
 
     show_current_widget();
@@ -6247,22 +6258,24 @@ void MainWidget::handle_delete_highlight_under_cursor() {
         if (selected_highlight_index == sel_highlight) {
             selected_highlight_index = -1;
         }
-        main_document_view->delete_highlight_with_index(sel_highlight);
+        delete_current_document_highlight_with_index(sel_highlight);
     }
 }
 
 void MainWidget::handle_delete_selected_highlight() {
     if (selected_highlight_index != -1) {
-        main_document_view->delete_highlight_with_index(selected_highlight_index);
+        int sel_index = selected_highlight_index;
         set_selected_highlight_index(-1);
+        delete_current_document_highlight_with_index(sel_index);
     }
     validate_render();
 }
 
 void MainWidget::handle_delete_selected_bookmark() {
     if (selected_bookmark_index != -1) {
-        main_document_view->delete_bookmark_with_index(selected_bookmark_index);
+        int sel_index = selected_bookmark_index;
         set_selected_bookmark_index(-1);
+        delete_current_document_bookmark(sel_index);
     }
     validate_render();
 }
@@ -6299,7 +6312,6 @@ bool MainWidget::event(QEvent* event) {
                 handle_text_edit_return_pressed();
                 is_external_file_edited = false;
             }
-
         }
     }
 
@@ -6372,7 +6384,7 @@ bool MainWidget::event(QEvent* event) {
 
                             if (selected_bookmark_index > -1) {
                                 if (name == L"Delete") {
-                                    doc()->delete_bookmark(selected_bookmark_index);
+                                    delete_current_document_bookmark(selected_bookmark_index);
                                     set_selected_bookmark_index(-1);
                                     pop_current_widget();
                                     invalidate_render();
@@ -6817,7 +6829,7 @@ void MainWidget::handle_touch_highlight() {
     AbsoluteDocumentPos begin_abspos = selection_begin_indicator->get_docpos().to_absolute(doc());
     AbsoluteDocumentPos end_abspos = selection_end_indicator->get_docpos().to_absolute(doc());
 
-    main_document_view->add_highlight(begin_abspos, end_abspos, select_highlight_type);
+    add_highlight_to_current_document(begin_abspos, end_abspos, select_highlight_type);
 
     invalidate_render();
 }
@@ -8212,7 +8224,7 @@ bool MainWidget::ensure_internet_permission() {
 void MainWidget::add_text_annotation_to_selected_highlight(const std::wstring& annot_text) {
     if (selected_highlight_index > -1) {
         Highlight hl = main_document_view->get_highlight_with_index(selected_highlight_index);
-        doc()->update_highlight_add_text_annotation(hl.uuid, annot_text);
+        update_highlight_annot_with_uuid(hl.uuid, annot_text);
     }
 }
 
@@ -8221,17 +8233,33 @@ void MainWidget::change_selected_bookmark_text(const std::wstring& new_text) {
         if (new_text.size() > 0) {
             float new_font_size = doc()->get_bookmarks()[selected_bookmark_index].font_size;
             doc()->update_bookmark_text(selected_bookmark_index, new_text, new_font_size);
+            on_bookmark_edited(doc()->get_bookmarks()[selected_bookmark_index].uuid);
         }
         else {
-            doc()->delete_bookmark(selected_bookmark_index);
+            delete_current_document_bookmark(selected_bookmark_index);
         }
     }
+}
+
+void MainWidget::update_highlight_annot_with_uuid(const std::string& uuid, const std::wstring& new_annot) {
+    doc()->update_highlight_add_text_annotation(uuid, new_annot);
+    on_highlight_annotation_edited(uuid);
+}
+
+void MainWidget::delete_current_document_bookmark(int index) {
+    std::string uuid = main_document_view->delete_bookmark_with_index(index);
+    on_bookmark_deleted(uuid);
+}
+
+void MainWidget::delete_global_bookmark(const std::string& uuid) {
+    db_manager->delete_bookmark(uuid);
+    on_bookmark_deleted(uuid);
 }
 
 void MainWidget::change_selected_highlight_text_annot(const std::wstring& new_text) {
 
     if (selected_highlight_index != -1) {
-        doc()->update_highlight_add_text_annotation(doc()->get_highlight_index_uuid(selected_highlight_index), new_text);
+        update_highlight_annot_with_uuid(doc()->get_highlight_index_uuid(selected_highlight_index), new_text);
     }
 }
 
@@ -9197,6 +9225,9 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
     }
     else {
         engine.evaluate("__sioyek_keybind_function_index=0;\
+                        function addHook(eventType, codeString){\
+                            sioyek_api.register_hook_function(eventType, codeString);\
+                        }\
                         function addKeybind(keybind, callable){\
                             let backtrace = __get_stacktrace();\
                             let line = new Error().stack;\
@@ -11207,6 +11238,36 @@ bool MainWidget::is_ruler_mode(){
     return main_document_view->is_ruler_mode();
 }
 
+void MainWidget::register_hook_function(QString type, QString name) {
+    if (type == "add_bookmark") {
+        add_bookmark_hook_function_name = name;
+    }
+    if (type == "delete_bookmark") {
+        delete_bookmark_hook_function_name = name;
+    }
+    if (type == "edit_bookmark") {
+        edit_bookmark_hook_function_name = name;
+    }
+    if (type == "add_highlight") {
+        add_highlight_hook_function_name = name;
+    }
+    if (type == "delete_highlight") {
+        delete_highlight_hook_function_name = name;
+    }
+    if (type == "highlight_annotation_changed") {
+        highlight_annotation_changed_hook_function_name = name;
+    }
+    if (type == "highlight_type_changed") {
+        highlight_type_changed_hook_function_name = name;
+    }
+    if (type == "add_mark") {
+        add_mark_hook_function_name = name;
+    }
+    if (type == "page_changed") {
+        page_change_hook_function_name = name;
+    }
+}
+
 bool MainWidget::register_function_keybind(QString keybind, QString function_name, QString file_name, int line_number){
 
     return input_handler->add_keybind(
@@ -11282,6 +11343,122 @@ void MainWidget::open_external_text_editor() {
         external_command_edit_watcher.addPath(path_qstring);
     }
 }
+
+void MainWidget::on_bookmark_deleted(const std::string& uuid) {
+    if (delete_bookmark_hook_function_name) {
+        call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
+    }
+}
+
+void MainWidget::on_highlight_deleted(const std::string& uuid){
+    if (delete_highlight_hook_function_name) {
+        call_async_js_function_with_args(delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
+    }
+}
+
+
+void MainWidget::delete_highlight_with_uuid(const std::string& uuid) {
+    db_manager->delete_highlight(uuid);
+    on_highlight_deleted(uuid);
+}
+
+void MainWidget::delete_current_document_highlight_with_index(int index) {
+    std::string uuid = main_document_view->delete_highlight_with_index(index);
+    on_highlight_deleted(uuid);
+}
+
+void MainWidget::delete_current_document_highlight(Highlight* hl) {
+    std::string uuid = hl->uuid;
+    main_document_view->delete_highlight(*hl);
+    on_highlight_deleted(uuid);
+}
+
+void MainWidget::on_bookmark_edited(const std::string& uuid) {
+    call_js_function_with_bookmark_arg_with_uuid(edit_bookmark_hook_function_name.value(), uuid);
+}
+
+//void MainWidget::call_js_function_with_args(const QString& function_name) {
+void MainWidget::call_async_js_function_with_args(const QString& code, QJsonArray args){
+    //auto engine = take_js_engine(true);
+    //QJSValue func = engine->evaluate(function_name);
+    std::thread ext_thread = std::thread([&, code, args]() {
+        QJSEngine* engine = take_js_engine(true);
+        //auto jsargs = engine->toScriptValue(args);
+        auto func = engine->evaluate(code);
+        QJSValueList js_args;
+        for (auto arg : args) {
+            if (arg.isArray()) {
+                js_args.push_back(engine->toScriptValue(arg.toArray()));
+            }
+            else if (arg.isBool()) {
+                js_args.push_back(engine->toScriptValue(arg.toBool()));
+            }
+            else if (arg.isDouble()) {
+                js_args.push_back(engine->toScriptValue(arg.toDouble()));
+            }
+            else if (arg.isObject()) {
+                js_args.push_back(engine->toScriptValue(arg.toObject()));
+            }
+            else if (arg.isString()) {
+                js_args.push_back(engine->toScriptValue(arg.toString()));
+            }
+        }
+        func.call(js_args);
+        release_async_js_engine(engine);
+        });
+    ext_thread.detach();
+
+}
+
+void MainWidget::call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid) {
+    int bookmark_index = doc()->get_bookmark_index_with_uuid(uuid);
+    if (bookmark_index >= 0 && bookmark_index < doc()->get_bookmarks().size()) {
+        BookMark bookmark = doc()->get_bookmarks()[bookmark_index];
+        call_async_js_function_with_args(function_name, QJsonArray() << bookmark.to_json(""));
+    }
+}
+
+void MainWidget::call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid) {
+    int highlight_index = doc()->get_highlight_index_with_uuid(uuid);
+    if (highlight_index >= 0 && highlight_index < doc()->get_highlights().size()) {
+        Highlight highlight = doc()->get_highlights()[highlight_index];
+
+        call_async_js_function_with_args(function_name, QJsonArray() << highlight.to_json(""));
+    }
+}
+
+void MainWidget::on_new_bookmark_added(const std::string& uuid) {
+    if (add_bookmark_hook_function_name) {
+        call_js_function_with_bookmark_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
+    }
+}
+
+void MainWidget::on_mark_added(const std::string& uuid, char type) {
+    if (add_mark_hook_function_name) {
+
+        QString type_string = QString(QChar(type));
+        call_async_js_function_with_args(add_mark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid) << type_string);
+    }
+}
+
+void MainWidget::on_new_highlight_added(const std::string& uuid) {
+    if (add_highlight_hook_function_name) {
+        call_js_function_with_highlight_arg_with_uuid(add_highlight_hook_function_name.value(), uuid);
+    }
+}
+
+void MainWidget::on_highlight_annotation_edited(const std::string& uuid) {
+    if (highlight_annotation_changed_hook_function_name) {
+        call_js_function_with_highlight_arg_with_uuid(highlight_annotation_changed_hook_function_name.value(), uuid);
+    }
+}
+
+void MainWidget::on_highlight_type_edited(const std::string& uuid) {
+    if (highlight_type_changed_hook_function_name) {
+        call_js_function_with_highlight_arg_with_uuid(highlight_type_changed_hook_function_name.value(), uuid);
+    }
+}
+
 
 #ifdef SIOYEK_IOS
 void MainWidget::handle_ios_files(const QUrl& url){

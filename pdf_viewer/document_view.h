@@ -187,8 +187,8 @@ public:
     void delete_closest_portal();
     void delete_closest_bookmark();
     Highlight get_highlight_with_index(int index);
-    void delete_highlight_with_index(int index);
-    void delete_bookmark_with_index(int index);
+    std::string delete_highlight_with_index(int index);
+    std::string delete_bookmark_with_index(int index);
     void delete_highlight(Highlight hl);
     void delete_closest_bookmark_to_offset(float offset);
     float get_offset_x();
@@ -203,9 +203,9 @@ public:
     std::optional<PdfLink> get_link_in_pos(WindowPos pos);
     int get_highlight_index_in_pos(WindowPos pos);
     void get_text_selection(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, bool is_word_selection, std::deque<AbsoluteRect>& selected_characters, std::wstring& text_selection);
-    void add_mark(char symbol);
+    std::string add_mark(char symbol);
     std::string add_bookmark(std::wstring desc);
-    std::string add_highlight(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
+    std::string add_highlight_(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     void on_view_size_change(int new_width, int new_height);
     //void absolute_to_window_pos(float absolute_x, float absolute_y, float* window_x, float* window_y);
     NormalizedWindowPos absolute_to_window_pos(AbsoluteDocumentPos absolute_pos);

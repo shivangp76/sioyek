@@ -1942,6 +1942,7 @@ public:
 
     void perform() {
         std::string uuid = widget->main_document_view->add_bookmark(text.value());
+        widget->on_new_bookmark_added(uuid);
         result = utf8_decode(uuid);
     }
 
@@ -2003,6 +2004,7 @@ public:
     void perform() {
         if (text_->size() > 0) {
             std::string uuid = widget->doc()->add_pending_bookmark(pending_index, text_.value());
+            widget->on_new_bookmark_added(uuid);
             widget->invalidate_render();
             result = utf8_decode(uuid);
             widget->set_selected_bookmark_index(-1);
@@ -2249,6 +2251,7 @@ public:
         //widget->doc()->add_freetext_bookmark(text_.value(), rect_.value());
         if (text_.value().size() > 0) {
             std::string uuid = widget->doc()->add_pending_bookmark(pending_index, text_.value());
+            widget->on_new_bookmark_added(uuid);
             result = utf8_decode(uuid);
             widget->set_selected_bookmark_index(-1);
         }
@@ -5147,7 +5150,7 @@ public:
     AddHighlightWithCurrentTypeCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
         if (widget->main_document_view->selected_character_rects.size() > 0) {
-            widget->main_document_view->add_highlight(widget->selection_begin, widget->selection_end, widget->select_highlight_type);
+            widget->add_highlight_to_current_document(widget->selection_begin, widget->selection_end, widget->select_highlight_type);
             widget->clear_selected_text();
         }
     }

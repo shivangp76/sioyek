@@ -189,8 +189,8 @@ public:
     void add_freetext_bookmark_with_color(const std::wstring& desc, AbsoluteRect absrect, float* color, float font_size = -1);
     std::string add_highlight(const std::wstring& desc, const std::vector<AbsoluteRect>& highlight_rects, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string add_highlight(const std::wstring& annot, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
-    void delete_highlight_with_index(int index);
-    void delete_bookmark_with_index(int index);
+    std::string delete_highlight_with_index(int index);
+    std::string delete_bookmark_with_index(int index);
     void delete_highlight(Highlight hl);
     int get_bookmark_index_at_pos(AbsoluteDocumentPos abspos);
     int get_portal_index_at_pos(AbsoluteDocumentPos abspos);
@@ -246,7 +246,7 @@ public:
     fz_link* get_page_links(int page_number);
     const std::vector<PdfLink>& get_page_merged_pdf_links(int page_number);
     PdfLink pdf_link_from_fz_link(int page, fz_link* link);
-    void add_mark(char symbol, float y_offset, std::optional<float> x_offset, std::optional<float> zoom_level);
+    std::string add_mark(char symbol, float y_offset, std::optional<float> x_offset, std::optional<float> zoom_level);
     bool remove_mark(char symbol);
     std::optional<Mark> get_mark_if_exists(char symbol);
     ~Document();

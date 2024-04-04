@@ -467,20 +467,22 @@ void Document::delete_bookmark(int index) {
     }
 }
 
-void Document::delete_highlight_with_index(int index) {
+std::string Document::delete_highlight_with_index(int index) {
     Highlight highlight_to_delete = highlights[index];
 
     db_manager->delete_highlight(highlight_to_delete.uuid);
     highlights.erase(highlights.begin() + index);
     is_annotations_dirty = true;
+    return highlight_to_delete.uuid;
 }
 
-void Document::delete_bookmark_with_index(int index) {
+std::string Document::delete_bookmark_with_index(int index) {
     BookMark bookmark_to_delete = bookmarks[index];
 
     db_manager->delete_bookmark(bookmark_to_delete.uuid);
     bookmarks.erase(bookmarks.begin() + index);
     is_annotations_dirty = true;
+    return bookmark_to_delete.uuid;
 }
 
 void Document::delete_highlight(Highlight hl) {
@@ -589,7 +591,7 @@ const std::vector<Highlight> Document::get_highlights_sorted(char type) const {
 }
 
 
-void Document::add_mark(char symbol, float y_offset, std::optional<float> x_offset, std::optional<float> zoom_level) {
+std::string Document::add_mark(char symbol, float y_offset, std::optional<float> x_offset, std::optional<float> zoom_level) {
     int current_mark_index = get_mark_index(symbol);
     if (current_mark_index == -1) {
         Mark m;
@@ -601,6 +603,7 @@ void Document::add_mark(char symbol, float y_offset, std::optional<float> x_offs
         marks.push_back(m);
         db_manager->insert_mark(get_checksum(), symbol, y_offset, new_uuid(), x_offset, zoom_level);
         is_annotations_dirty = true;
+        return m.uuid;
     }
     else {
         marks[current_mark_index].y_offset = y_offset;
@@ -609,6 +612,7 @@ void Document::add_mark(char symbol, float y_offset, std::optional<float> x_offs
         marks[current_mark_index].update_modification_time();
         db_manager->update_mark(get_checksum(), symbol, y_offset, x_offset, zoom_level);
         is_annotations_dirty = true;
+        return marks[current_mark_index].uuid;
     }
 }
 

@@ -249,12 +249,12 @@ Highlight DocumentView::get_highlight_with_index(int index) {
     return current_document->get_highlights()[index];
 }
 
-void DocumentView::delete_highlight_with_index(int index) {
-    current_document->delete_highlight_with_index(index);
+std::string DocumentView::delete_highlight_with_index(int index) {
+    return current_document->delete_highlight_with_index(index);
 }
 
-void DocumentView::delete_bookmark_with_index(int index) {
-    current_document->delete_bookmark_with_index(index);
+std::string DocumentView::delete_bookmark_with_index(int index) {
+    return current_document->delete_bookmark_with_index(index);
 }
 
 void DocumentView::delete_highlight(Highlight hl) {
@@ -346,12 +346,13 @@ int DocumentView::get_highlight_index_in_pos(WindowPos window_pos) {
     return smallest_containing_highlight_index;
 }
 
-void DocumentView::add_mark(char symbol) {
+std::string DocumentView::add_mark(char symbol) {
     //assert(current_document);
     if (current_document) {
         AbsoluteDocumentPos current_offset = get_offsets();
-        current_document->add_mark(symbol, current_offset.y, current_offset.x, zoom_level);
+        return current_document->add_mark(symbol, current_offset.y, current_offset.x, zoom_level);
     }
+    return "";
 }
 
 std::string DocumentView::add_bookmark(std::wstring desc) {
@@ -362,7 +363,7 @@ std::string DocumentView::add_bookmark(std::wstring desc) {
     return "";
 }
 
-std::string DocumentView::add_highlight(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type) {
+std::string DocumentView::add_highlight_(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type) {
 
     if (current_document) {
         std::deque<AbsoluteRect> selected_characters;
