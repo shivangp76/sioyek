@@ -503,6 +503,7 @@ public:
 
     MainWidget(
         fz_context* mupdf_context,
+        PdfRenderer* pdf_renderer,
         DatabaseManager* db_manager,
         DocumentManager* document_manager,
         ConfigManager* config_manager,

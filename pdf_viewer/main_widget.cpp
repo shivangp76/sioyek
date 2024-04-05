@@ -11,10 +11,6 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
-// preview in touch mode should ignore white margins
-// improve box rendering in opengl backend
-// ctrl+mouse wheel should zoom in overview window
-
 
 #include <iostream>
 #include <vector>
@@ -830,11 +826,12 @@ void MainWidget::closeEvent(QCloseEvent* close_event) {
     handle_close_event();
 }
 
-MainWidget::MainWidget(MainWidget* other) : MainWidget(other->mupdf_context, other->db_manager, other->document_manager, other->config_manager, other->command_manager, other->input_handler, other->checksummer, other->should_quit) {
+MainWidget::MainWidget(MainWidget* other) : MainWidget(other->mupdf_context, other->pdf_renderer, other->db_manager, other->document_manager, other->config_manager, other->command_manager, other->input_handler, other->checksummer, other->should_quit) {
 
 }
 
 MainWidget::MainWidget(fz_context* mupdf_context,
+    PdfRenderer* pdf_renderer,
     DatabaseManager* db_manager,
     DocumentManager* document_manager,
     ConfigManager* config_manager,
@@ -849,6 +846,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QMainWindow(parent),
 #endif
     mupdf_context(mupdf_context),
+    pdf_renderer(pdf_renderer),
     db_manager(db_manager),
     document_manager(document_manager),
     config_manager(config_manager),
@@ -878,9 +876,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     // central_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
 
     inverse_search_command = INVERSE_SEARCH_COMMAND;
-    pdf_renderer = new PdfRenderer(4, should_quit_ptr, mupdf_context);
-    pdf_renderer->set_num_cached_pages(NUM_CACHED_PAGES);
-    pdf_renderer->start_threads();
+    //pdf_renderer = new PdfRenderer(4, should_quit_ptr, mupdf_context);
+    //pdf_renderer->set_num_cached_pages(NUM_CACHED_PAGES);
+    //pdf_renderer->start_threads();
 
 
     //scratchpad = new ScratchPad();
@@ -6098,6 +6096,7 @@ void MainWidget::handle_move_screen(int amount) {
 
 MainWidget* MainWidget::handle_new_window() {
     MainWidget* new_widget = new MainWidget(mupdf_context,
+        pdf_renderer,
         db_manager,
         document_manager,
         config_manager,
