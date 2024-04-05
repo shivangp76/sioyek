@@ -657,9 +657,23 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     // if the mouse has moved too much when pressing middle mouse button, we assume that the user wants to drag
     // instead of smart jump
     if (QGuiApplication::mouseButtons() & Qt::MouseButton::MiddleButton) {
-        if ((!bookmark_move_data.has_value()) && (!portal_move_data.has_value())) {
-            if ((mpos.manhattan(last_mouse_down_window_pos)) > 50) {
-                is_dragging = true;
+
+
+        if (main_document_view->get_overview_page() && main_document_view->is_window_point_in_overview(normal_mpos)) {
+            if (!overview_touch_move_data.has_value()) {
+                OverviewTouchMoveData touch_move_data;
+                touch_move_data.original_mouse_normalized_pos = normal_mpos;
+                float overview_offset_y = main_document_view->get_overview_page()->absolute_offset_y;
+                float overview_offset_x = main_document_view->get_overview_page()->absolute_offset_x;
+                touch_move_data.overview_original_pos_absolute = AbsoluteDocumentPos{ overview_offset_x, overview_offset_y };
+                overview_touch_move_data = touch_move_data;
+            }
+        }
+        else {
+            if ((!bookmark_move_data.has_value()) && (!portal_move_data.has_value())) {
+                if ((mpos.manhattan(last_mouse_down_window_pos)) > 50) {
+                    is_dragging = true;
+                }
             }
         }
     }
@@ -3021,6 +3035,10 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     if (mevent->button() == Qt::MouseButton::MiddleButton) {
 
 
+        if (overview_touch_move_data.has_value()) {
+            overview_touch_move_data = {};
+            return;
+        }
         if (!is_dragging) {
 
             if (HIGHLIGHT_MIDDLE_CLICK
@@ -8595,7 +8613,7 @@ void MainWidget::handle_portal_move() {
 }
 
 bool MainWidget::is_middle_click_being_used() {
-    return bookmark_move_data.has_value() || is_dragging;
+    return bookmark_move_data.has_value() || overview_touch_move_data.has_value() || is_dragging;
 }
 
 void MainWidget::begin_bookmark_move(int index, AbsoluteDocumentPos begin_cursor_pos) {
