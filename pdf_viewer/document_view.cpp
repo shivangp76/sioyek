@@ -1001,6 +1001,11 @@ void DocumentView::fit_overview_width() {
         float overview_page_width = current_document->get_page_size_smart(true, overview_docpos.page, &left_ratio, &right_ratio, &normal_page_width);
         float overview_width_in_pixels = overview_half_width * view_width;
         float overview_zoom_level = overview_width_in_pixels / overview_page_width;
+        if (overview_zoom_level > 10) {
+            overview_zoom_level = 10;
+        }
+        overview_page->absolute_offset_x = normal_page_width / 2 -
+            (left_ratio * normal_page_width + overview_width_in_pixels / overview_zoom_level / 2);
         overview_page->zoom_level = overview_zoom_level;
 
     }
