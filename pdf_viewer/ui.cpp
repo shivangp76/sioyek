@@ -1779,7 +1779,10 @@ void BaseSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
     int parent_height = parentWidget()->height();
     setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
     move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, 0);
-    on_config_file_changed();
+    if (!is_initialized) {
+        is_initialized = true;
+        on_config_file_changed();
+    }
 }
 
 

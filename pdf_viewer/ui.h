@@ -129,6 +129,7 @@ protected:
     bool is_fuzzy = false;
     int pressed_row = -1;
     QPoint pressed_pos;
+    bool is_initialized = false;
 
     QAbstractItemView* abstract_item_view;
 
