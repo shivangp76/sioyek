@@ -248,7 +248,7 @@ QString android_file_uri_from_content_uri(QString uri);
 char get_highlight_color_type(float color[3]);
 float* get_highlight_type_color(char type);
 void lighten_color(float input[3], float output[3]);
-std::wstring clean_bib_item(std::wstring bib_item);
+QString clean_bib_item(QString bib_item);
 std::wstring clean_link_source_text(std::wstring link_source_text);
 std::vector<FreehandDrawingPoint> prune_freehand_drawing_points(const std::vector<FreehandDrawingPoint>& points);
 std::optional<DocumentRect> find_expanding_rect(bool before, fz_stext_page* page, DocumentRect page_rect);
@@ -333,7 +333,7 @@ std::map<std::string, int> annotation_prism(std::vector<T>& file_annotations,
 }
 
 PagelessDocumentRect get_range_rect_union(const std::vector<PagelessDocumentRect>& rects, int first_index, int last_index);
-std::wstring get_paper_name_from_reference_text(std::wstring reference_text);
+QString get_paper_name_from_reference_text(QString reference_text);
 fz_rect get_first_page_size(fz_context* ctx, const std::wstring& document_path);
 QString get_direct_pdf_url_from_archive_url(QString url);
 QString get_original_url_from_archive_url(QString url);

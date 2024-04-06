@@ -70,6 +70,7 @@ protected:
     float page_space_y = 0;
 
 public:
+    std::vector<std::vector<AbsoluteRect>>  debug_highlight_rects;
 
     std::vector<SearchResult> search_results;
     int current_search_result_index = -1;

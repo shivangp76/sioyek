@@ -1656,8 +1656,8 @@ public:
     GetOverviewPaperName(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        std::optional<std::wstring> paper_name = widget->get_overview_paper_name();
-        result = paper_name.value_or(L"");
+        std::optional<QString> paper_name = widget->get_overview_paper_name();
+        result = paper_name.value_or("").toStdWString();
     }
 };
 
@@ -5439,7 +5439,7 @@ public:
     }
 
     void pre_perform() {
-        std::optional<std::wstring> paper_name = widget->get_overview_paper_name();
+        std::optional<QString> paper_name = widget->get_overview_paper_name();
         src_doc_path = widget->doc()->get_path();
 
         if (paper_name) {
@@ -5448,14 +5448,14 @@ public:
             if (TOUCH_MODE) {
                 TouchTextEdit* paper_name_editor = dynamic_cast<TouchTextEdit*>(widget->current_widget_stack.back());
                 if (paper_name_editor) {
-                    paper_name_editor->set_text(paper_name.value());
+                    paper_name_editor->set_text(paper_name.value().toStdWString());
                     widget->close_overview();
                 }
                 //widget->close_overview();
             }
             else {
                 widget->text_command_line_edit->setText(
-                    QString::fromStdWString(paper_name.value())
+                    paper_name.value()
                 );
                 widget->close_overview();
             }

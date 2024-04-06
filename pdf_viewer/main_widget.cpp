@@ -3502,7 +3502,7 @@ fz_stext_char* MainWidget::get_closest_character_to_cusrsor(AbsoluteDocumentPos 
     return find_closest_char_to_document_point(flat_chars, doc_point, &location_index);
 }
 
-std::optional<std::wstring> MainWidget::get_direct_paper_name_under_pos(DocumentPos docpos) {
+std::optional<QString> MainWidget::get_direct_paper_name_under_pos(DocumentPos docpos) {
     return main_document_view->get_document()->
         get_paper_name_at_position(docpos);
 }
@@ -3521,7 +3521,7 @@ AbsoluteDocumentPos MainWidget::get_absolute_document_pos_under_window_pos(Windo
     return get_document_pos_under_window_pos(window_pos).to_absolute(doc());
 }
 
-std::optional<std::wstring> MainWidget::get_paper_name_under_cursor(bool use_last_hold_point) {
+std::optional<QString> MainWidget::get_paper_name_under_cursor(bool use_last_hold_point) {
     QPoint mouse_pos;
     if (use_last_hold_point) {
         mouse_pos = last_hold_point;
@@ -3556,7 +3556,7 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
     // if overview page is open and we middle click on a paper name, search it in a search engine
     if (main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
         DocumentPos docpos = main_document_view->window_pos_to_overview_pos({ normal_x, normal_y });
-        std::optional<std::wstring> paper_name = main_document_view->get_document()->get_paper_name_at_position(docpos);
+        std::optional<QString> paper_name = main_document_view->get_document()->get_paper_name_at_position(docpos);
         if (paper_name) {
             handle_search_paper_name(paper_name.value(), is_shift_pressed);
         }
@@ -3574,7 +3574,7 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
         long_jump_to_destination(text_under_pos_info.targets[0].page, text_under_pos_info.targets[0].y);
     }
     else {
-        std::optional<std::wstring> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos.pageless());
+        std::optional<QString> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos.pageless());
         if (paper_name_on_pointer) {
             handle_search_paper_name(paper_name_on_pointer.value(), is_shift_pressed);
         }
@@ -3999,9 +3999,9 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
             command_parts[i].replace("%{mouse_pos_document}", QString::number(mouse_pos_document.page) + " " + QString::number(mouse_pos_document.x) + " " + QString::number(mouse_pos_document.y));
             //command_parts[i].replace("%{mouse_pos_document}", QString("%1 %2 %3").arg(mouse_pos_document.page, mouse_pos_document.x, mouse_pos_document.y));
             if (command_parts[i].indexOf("%{paper_name}") != -1) {
-                std::optional<std::wstring> maybe_paper_name = get_paper_name_under_cursor();
+                std::optional<QString> maybe_paper_name = get_paper_name_under_cursor();
                 if (maybe_paper_name) {
-                    command_parts[i].replace("%{paper_name}", QString::fromStdWString(maybe_paper_name.value()));
+                    command_parts[i].replace("%{paper_name}", maybe_paper_name.value());
                 }
             }
 
@@ -4049,7 +4049,7 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
 
 }
 
-void MainWidget::handle_search_paper_name(std::wstring paper_name, bool is_shift_pressed) {
+void MainWidget::handle_search_paper_name(QString paper_name, bool is_shift_pressed) {
     if (paper_name.size() > 5) {
         char type;
         if (is_shift_pressed) {
@@ -4059,7 +4059,7 @@ void MainWidget::handle_search_paper_name(std::wstring paper_name, bool is_shift
             type = MIDDLE_CLICK_SEARCH_ENGINE[0];
         }
         if ((type >= 'a') && (type <= 'z')) {
-            search_custom_engine(paper_name, SEARCH_URLS[type - 'a']);
+            search_custom_engine(paper_name.toStdWString(), SEARCH_URLS[type - 'a']);
         }
     }
 
@@ -7208,15 +7208,47 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    //QJSValue value;
-    //value.call()
-    //QTextDocument td;
-    //td.allFormats()
-    //QTextCharFormat(td.allFormats()[0]);
-    //qDebug() << "-------";
-    //for (auto& format : td.allFormats()) {
-    //    qDebug() << format.isCharFormat();
+
+    int cp = main_document_view->get_center_page_number();
+
+    std::vector<std::vector<PagelessDocumentRect>> rects;
+    std::vector<std::vector<AbsoluteRect>> absrects;
+    std::vector<QString> candidates = doc()->get_page_bib_candidates(cp, &rects);
+    //for (int i = 0; i < candidates.size(); i++) {
+    //    qDebug() << i << ": " << QString::fromStdWString(candidates[i]);
     //}
+    int mouse_index = -1;
+
+    WindowPos mouse_pos = mapFromGlobal(QCursor::pos());
+    AbsoluteDocumentPos mouse_abspos = mouse_pos.to_absolute(dv());
+
+    for (int i = 0; i < rects.size(); i++) {
+        auto bib_rects = rects[i];
+        absrects.push_back({});
+        for (auto rect : bib_rects) {
+            AbsoluteRect absrect = DocumentRect{ rect, cp }.to_absolute(doc());
+            absrects.back().push_back(absrect);
+            if (absrect.contains(mouse_abspos)) {
+                mouse_index = i;
+            }
+        }
+    }
+
+    if (mouse_index == -1) {
+        main_document_view->debug_highlight_rects = absrects;
+    }
+    else {
+        QString selected_bib = candidates[mouse_index];
+        QString paper_name = get_paper_name_from_reference_text(selected_bib);
+        int name_index = selected_bib.indexOf(paper_name);
+        dv()->debug_highlight_rects = {};
+        dv()->debug_highlight_rects.push_back({});
+        for (int i = 0; i < paper_name.size(); i++) {
+            dv()->debug_highlight_rects.back().push_back(DocumentRect{ rects[mouse_index][name_index + i] , cp}.to_absolute(doc()));
+        }
+        //qDebug() << dv()->debug_highlight_rects[0].size() << " " << paper_name.size();
+    }
+
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -7358,11 +7390,11 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
     }
     WindowPos pos(mouse_pos.x(), mouse_pos.y());
     DocumentPos doc_pos = get_document_pos_under_window_pos(pos);
-    std::optional<std::wstring> paper_name = get_paper_name_under_pos(doc_pos, true);
+    std::optional<QString> paper_name = get_paper_name_under_pos(doc_pos, true);
 
 
     if (paper_name) {
-        std::wstring bib_text = clean_bib_item(paper_name.value());
+        QString bib_text = clean_bib_item(paper_name.value());
 
         if (get_default_paper_download_finish_action() == PaperDownloadFinishedAction::Portal) {
             AbsoluteDocumentPos source_position;
@@ -7373,26 +7405,26 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
                 source_position = doc_pos.to_absolute(doc());
             }
 
-            create_pending_download_portal(source_position, bib_text);
+            create_pending_download_portal(source_position, bib_text.toStdWString());
         }
         if (TOUCH_MODE) {
-            show_text_prompt(bib_text, [this](std::wstring text) {
+            show_text_prompt(bib_text.toStdWString(), [this](std::wstring text) {
                 QNetworkReply* reply = download_paper_with_name(text, get_default_paper_download_finish_action());
                 });
         }
         else {
-            download_paper_with_name(bib_text, get_default_paper_download_finish_action());
+            download_paper_with_name(bib_text.toStdWString(), get_default_paper_download_finish_action());
         }
     }
 }
 
-std::optional<std::wstring> MainWidget::get_paper_name_under_pos(DocumentPos docpos, bool clean) {
+std::optional<QString> MainWidget::get_paper_name_under_pos(DocumentPos docpos, bool clean) {
 
     std::optional<PdfLink> pdf_link_ = doc()->get_link_in_pos(docpos);
 
     if (is_pos_inside_selected_text(docpos)) {
         // if user is clicking on a selected text, we assume they want to download the text
-        return selected_text;
+        return QString::fromStdWString(selected_text);
     }
     else if (pdf_link_) {
         // first, we  try to detect if we are on a PDF link or a non-link reference
@@ -7444,7 +7476,7 @@ std::optional<std::wstring> MainWidget::get_paper_name_under_pos(DocumentPos doc
         }
         else {
             //std::optional<std::wstring> paper_name = get_paper_name_under_cursor(alksdh);
-            std::optional<std::wstring> paper_name = get_direct_paper_name_under_pos(docpos);
+            std::optional<QString> paper_name = get_direct_paper_name_under_pos(docpos);
             if (paper_name) {
                 return paper_name;
             }
@@ -8831,12 +8863,12 @@ std::optional<AbsoluteRect> MainWidget::get_overview_source_rect() {
     return {};
 }
 
-std::optional<std::wstring> MainWidget::get_overview_paper_name() {
+std::optional<QString> MainWidget::get_overview_paper_name() {
     if (main_document_view->get_overview_page()) {
         if (smart_view_candidates.size() > 0) {
             DocumentPos center_document = smart_view_candidates[index_into_candidates].source_rect.center().to_document(doc());
 
-            std::optional<std::wstring> bib_string = {};
+            std::optional<QString> bib_string = {};
 
             if (smart_view_candidates[index_into_candidates].source_text.size() > 0) {
 
@@ -9126,11 +9158,11 @@ void MainWidget::download_selected_text() {
             auto bib_item_ = doc()->get_page_bib_with_reference(page, source_text);
             if (bib_item_) {
                 auto [bib_item_text, bib_item_rect] = bib_item_.value();
-                std::wstring paper_name = get_paper_name_from_reference_text(bib_item_text);
+                QString paper_name = get_paper_name_from_reference_text(bib_item_text);
                 AbsoluteDocumentPos source_pos = source_rect.center();
                 //source_pos.x = (source_rect.x1 + source_rect.x1) / 2;
                 //source_pos.y = (source_rect.y0 + source_rect.y1) /2 ;
-                show_text_prompt(paper_name, [this, source_pos](std::wstring confirmed_paper_name) {
+                show_text_prompt(paper_name.toStdWString(), [this, source_pos](std::wstring confirmed_paper_name) {
                     download_and_portal(confirmed_paper_name, source_pos);
                     });
             }
@@ -9140,7 +9172,7 @@ void MainWidget::download_selected_text() {
 
 void MainWidget::download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos) {
 
-    std::wstring cleaned_paper_name = clean_bib_item(unclean_paper_name);
+    std::wstring cleaned_paper_name = clean_bib_item(QString::fromStdWString(unclean_paper_name)).toStdWString();
     create_pending_download_portal(source_pos, cleaned_paper_name);
     download_paper_with_name(cleaned_paper_name, PaperDownloadFinishedAction::Portal);
 }

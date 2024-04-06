@@ -413,7 +413,7 @@ public:
     void add_text_annotation_to_selected_highlight(const std::wstring& annot_text);
 
     // search the `paper_name` in one of the configurable when middle-click or shift+middle-clicking on paper's name
-    void handle_search_paper_name(std::wstring paper_name, bool is_shift_pressed);
+    void handle_search_paper_name(QString paper_name, bool is_shift_pressed);
 
     void persist(bool persist_drawings = false);
     bool is_pending_link_source_filled();
@@ -597,7 +597,7 @@ public:
     void set_inverse_search_command(const std::wstring& new_command);
     int get_current_monitor_width(); int get_current_monitor_height();
     std::wstring synctex_under_pos(WindowPos position);
-    std::optional<std::wstring> get_paper_name_under_cursor(bool use_last_hold_point = false);
+    std::optional<QString> get_paper_name_under_cursor(bool use_last_hold_point = false);
     fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
     void set_status_message(std::wstring new_status_string);
     void remove_self_from_windows();
@@ -656,8 +656,8 @@ public:
     void handle_pause();
     void read_current_line();
     void download_paper_under_cursor(bool use_last_touch_pos = false);
-    std::optional<std::wstring> get_direct_paper_name_under_pos(DocumentPos docpos);
-    std::optional<std::wstring> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
+    std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
+    std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
     QNetworkReply* download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action);
     bool is_pos_inside_selected_text(DocumentPos docpos);
     void handle_debug_command();
@@ -847,7 +847,7 @@ public:
     void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
     bool goto_ith_next_overview(int i);
     void on_overview_source_updated();
-    std::optional<std::wstring> get_overview_paper_name();
+    std::optional<QString> get_overview_paper_name();
     std::optional<AbsoluteRect> get_overview_source_rect();
 
     void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);

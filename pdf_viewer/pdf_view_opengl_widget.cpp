@@ -992,7 +992,22 @@ void PdfViewOpenGLWidget::my_render() {
         }
     }
 
+    if (dv()->debug_highlight_rects.size() > 0) {
+
+        //float dbg_color[3] = { 1, 0, 1 };
+        for (int i = 0; i < dv()->debug_highlight_rects.size(); i++) {
+
+            int index = i % 26;
+            std::array<float, 3> text_highlight_color = cc3(&HIGHLIGHT_COLORS[3 * index]);
+            set_highlight_color(&text_highlight_color[0], 0.3f);
+
+            for (int j = 0; j < dv()->debug_highlight_rects[i].size(); j++) {
+                render_highlight_absolute(dv()->debug_highlight_rects[i][j], HRF_FILL | HRF_BORDER);
+            }
+        }
+    }
     draw_pending_freehand_drawings(visible_pages);
+
 
     end_native_painting();
 
@@ -1235,6 +1250,7 @@ void PdfViewOpenGLWidget::my_render() {
             }
         }
     }
+
 
 
     if (document_view->should_show_rect_hints) {

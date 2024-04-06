@@ -3175,21 +3175,21 @@ std::wstring clean_link_source_text(std::wstring link_source_text) {
     return text.toStdWString();
 }
 
-std::wstring clean_bib_item(std::wstring bib_item) {
-    QString bib_item_qstring = QString::fromStdWString(bib_item);
-    int bracket_index = bib_item_qstring.indexOf("]");
+QString clean_bib_item(QString bib_item) {
+    int bracket_index = bib_item.indexOf("]");
     if (bracket_index >= 0 && bracket_index < 10) {
-        bib_item_qstring = bib_item_qstring.right(bib_item_qstring.size() - bracket_index - 1);
+        bib_item = bib_item.right(bib_item.size() - bracket_index - 1);
     }
 
-    int arxiv_index = bib_item_qstring.toLower().indexOf("arxiv");
+    int arxiv_index = bib_item.toLower().indexOf("arxiv");
     if (arxiv_index >= 0) {
-        bib_item_qstring = bib_item_qstring.left(arxiv_index);
+        bib_item = bib_item.left(arxiv_index);
     }
 
-    std::wstring candid = bib_item_qstring.toStdWString();
-    while (candid.size() > 0 && ((candid[candid.size() - 1] > 128) || !std::isalpha(candid[candid.size() - 1]))) {
-        candid = candid.substr(0, candid.size() - 1);
+    QString candid = bib_item;
+    //while (candid.size() > 0 && ((candid[candid.size() - 1].unicode() > 128) || !std::isalpha(candid[candid.size() - 1]))) {
+    while (candid.size() > 0 && ((candid[candid.size() - 1].unicode() > 128) || !candid.back().isLetter())) {
+        candid = candid.right(candid.size() - 1);
     }
     return candid;
 }
@@ -3576,7 +3576,7 @@ PagelessDocumentRect get_range_rect_union(const std::vector<PagelessDocumentRect
 }
 
 
-int get_largest_quote_size(const std::wstring& text, int* begin_index, int* end_index) {
+int get_largest_quote_size(const QString& text, int* begin_index, int* end_index) {
     bool is_in_quote = false;
     int largest_size = -1;
     int largest_begin_index = -1;
@@ -3587,7 +3587,7 @@ int get_largest_quote_size(const std::wstring& text, int* begin_index, int* end_
     int current_begin_index = -1;
 
     for (int i = 0; i < text.size(); i++) {
-        if ((text[i] == '"') || (text[i] == 8220) || (text[i] == 8221)) {
+        if ((text[i] == '"') || (text[i].unicode() == 8220) || (text[i].unicode() == 8221)) {
             if (is_in_quote) {
                 is_in_quote = false;
                 if (current_size > largest_size) {
@@ -3615,37 +3615,38 @@ int get_largest_quote_size(const std::wstring& text, int* begin_index, int* end_
     return largest_size;
 }
 
-bool is_quote_reference(const std::wstring& text, int* begin_index, int* end_index) {
+bool is_quote_reference(const QString& text, int* begin_index, int* end_index) {
     return get_largest_quote_size(text, begin_index, end_index) > 15;
 }
 
-std::wstring strip_garbage_from_paper_name(std::wstring paper_name) {
+QString strip_garbage_from_paper_name(QString paper_name) {
     std::vector<int> garbage_characters = { '.', ',', ':', '"', '\'', ' ', 8220, 8221 };
     int first_index = 0;
     int last_index = paper_name.size()-1;
 
-    while (std::find(garbage_characters.begin(), garbage_characters.end(), paper_name[first_index]) != garbage_characters.end()) {
+    while (std::find(garbage_characters.begin(), garbage_characters.end(), paper_name[first_index].unicode()) != garbage_characters.end()) {
         first_index++;
     }
 
-    while (std::find(garbage_characters.begin(), garbage_characters.end(), paper_name[last_index]) != garbage_characters.end()) {
+    while (std::find(garbage_characters.begin(), garbage_characters.end(), paper_name[last_index].unicode()) != garbage_characters.end()) {
         last_index--;
     }
+
     if (last_index > first_index) {
-        return paper_name.substr(first_index, last_index - first_index + 1);
+        return paper_name.mid(first_index, last_index - first_index + 1);
     }
-    return L"";
+    return "";
 }
 
-std::wstring get_paper_name_from_reference_text(std::wstring reference_text) {
+QString get_paper_name_from_reference_text(QString reference_text) {
     if (PAPER_DOWNLOAD_AUTODETECT_PAPER_NAME) {
 
         int quote_begin_index, quote_end_index;
         if (is_quote_reference(reference_text, &quote_begin_index, &quote_end_index)) {
-            return strip_garbage_from_paper_name(reference_text.substr(quote_begin_index, quote_end_index - quote_begin_index));
+            return strip_garbage_from_paper_name(reference_text.mid(quote_begin_index, quote_end_index - quote_begin_index));
         }
 
-        QString str = QString::fromStdWString(reference_text);
+        QString str = reference_text;
         //QRegularExpression reference_ending_dot_regex = QRegularExpression("(\.\w*In )|(\.\w*[aA]r[xX]iv )|(\.\w*[aA]r[X]iv )");
         QRegularExpression reference_ending_dot_regex = QRegularExpression("(\.\w*In )|(\.\w*[aA]r[xX]iv )");
 
@@ -3667,7 +3668,7 @@ std::wstring get_paper_name_from_reference_text(std::wstring reference_text) {
             //    res = res.right(res.size() - 1);
             //}
             if (res.size() > 10) {
-                return strip_garbage_from_paper_name(res.toStdWString());
+                return strip_garbage_from_paper_name(res);
             }
             else {
                 ending_index = starting_index;
@@ -3766,14 +3767,14 @@ bool is_dot_index_end_of_a_reference(const std::vector<DocumentCharacter>& flat_
         }
     }
     if (next_non_whitespace_index > -1 && prev_index > -1) {
-        if (context_begin >= 0 && context_end < flat_chars.size()) {
-            std::wstring context;
-            for (int i = context_begin; i < context_end; i++) {
-                context.push_back(flat_chars[i].c);
-            }
-            int a = 2;
-            //qDebug() << QString::fromStdWString(context) << "!!" << QString(QChar(flat_chars[next_non_whitespace_index]->c));
-        }
+        //if (context_begin >= 0 && context_end < flat_chars.size()) {
+        //    std::wstring context;
+        //    for (int i = context_begin; i < context_end; i++) {
+        //        context.push_back(flat_chars[i].c);
+        //    }
+        //    int a = 2;
+        //    //qDebug() << QString::fromStdWString(context) << "!!" << QString(QChar(flat_chars[next_non_whitespace_index]->c));
+        //}
         fz_rect dot_rect = flat_chars[prev_index].rect;
         fz_rect next_rect = flat_chars[next_non_whitespace_index].rect;
         float height = std::abs(next_rect.y1 - next_rect.y0);
@@ -3813,20 +3814,20 @@ bool is_year(QString str) {
     return false;
 }
 
-bool is_text_refernce_rather_than_paper_name(std::wstring text) {
+bool is_text_refernce_rather_than_paper_name(QString text) {
     text = strip_garbage_from_paper_name(text);
 
     if (text.size() > 50) {
         return false;
     }
-    if ((text.find(L"et al") != -1) || (text.find(L"et. al") != -1)) {
+    if ((text.indexOf(L"et al") != -1) || (text.indexOf(L"et. al") != -1)) {
         return true;
     }
-    if (text.back() >= 0 && text.back() <= 128 && std::isdigit(text.back())) {
+    if (text.back() >= 0 && text.back().unicode() <= 128 && text.back().isDigit()) {
         return true;
     }
 
-    QStringList parts = QString::fromStdWString(text).split(QRegularExpression("[ \(\)]"));
+    QStringList parts = text.split(QRegularExpression("[ \(\)]"));
     for (int i = 0; i < parts.size(); i++) {
         if (is_year(parts[i])) {
             return true;

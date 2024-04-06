@@ -291,13 +291,13 @@ public:
 
     std::optional<std::wstring> get_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position);
     std::optional<std::wstring> get_reference_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
-    std::optional<std::wstring> get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position);
+    std::optional<QString> get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position);
     std::optional<std::wstring> get_equation_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::pair<std::wstring, std::wstring>> get_generic_link_name_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::wstring> get_regex_match_at_position(const std::wregex& regex, const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::wstring> get_text_at_position(DocumentPos position);
     std::optional<std::wstring> get_reference_text_at_position(DocumentPos position, std::pair<int, int>* out_range);
-    std::optional<std::wstring> get_paper_name_at_position(DocumentPos position);
+    std::optional<QString> get_paper_name_at_position(DocumentPos position);
     std::optional<std::wstring> get_equation_text_at_position(DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::pair<std::wstring, std::wstring>> get_generic_link_name_at_position(DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::wstring> get_regex_match_at_position(const std::wregex& regex, DocumentPos position, std::pair<int, int>* out_range);
@@ -313,8 +313,8 @@ public:
         extras[name] = value;
     }
 
-    std::vector<std::wstring> get_page_bib_candidates(int page_number, std::vector<PagelessDocumentRect>* out_end_rects = nullptr);
-    std::optional<std::pair<std::wstring, PagelessDocumentRect>> get_page_bib_with_reference(int page_number, std::wstring reference_text);
+    std::vector<QString> get_page_bib_candidates(int page_number, std::vector<std::vector<PagelessDocumentRect>>* out_end_rects = nullptr);
+    std::optional<std::pair<QString, PagelessDocumentRect>> get_page_bib_with_reference(int page_number, std::wstring reference_text);
 
     void get_text_selection(AbsoluteDocumentPos selection_begin,
         AbsoluteDocumentPos selection_end,
