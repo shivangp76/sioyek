@@ -45,6 +45,7 @@ struct OverviewState {
     float zoom_level = -1;
     Document* doc = nullptr;
     std::optional<std::string> overview_type;
+    std::vector<AbsoluteRect> highlight_rects;
 };
 
 struct OpenedBookState {

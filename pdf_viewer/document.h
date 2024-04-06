@@ -314,7 +314,7 @@ public:
     }
 
     std::vector<QString> get_page_bib_candidates(int page_number, std::vector<std::vector<PagelessDocumentRect>>* out_end_rects = nullptr);
-    std::optional<std::pair<QString, PagelessDocumentRect>> get_page_bib_with_reference(int page_number, std::wstring reference_text);
+    std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> get_page_bib_with_reference(int page_number, std::wstring reference_text);
 
     void get_text_selection(AbsoluteDocumentPos selection_begin,
         AbsoluteDocumentPos selection_end,

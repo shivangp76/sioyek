@@ -536,10 +536,14 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 
 }
 
-void MainWidget::set_overview_position(int page, float offset, std::optional<std::string> overview_type) {
+void MainWidget::set_overview_position(int page, float offset, std::optional<std::string> overview_type, std::optional<std::vector<AbsoluteRect>> overview_highlights) {
     if (page >= 0) {
 
         auto overview_state = OverviewState{ DocumentPos{ page, 0, offset }.to_absolute(doc()).y, 0, -1, nullptr };
+
+        if (overview_highlights.has_value()) {
+            overview_state.highlight_rects = overview_highlights.value();
+        }
         overview_state.overview_type = overview_type;
         set_overview_page(overview_state);
         invalidate_render();
@@ -559,7 +563,17 @@ void MainWidget::set_overview_link(PdfLink link) {
         current_candidate.source_text = source_text;
         smart_view_candidates = { current_candidate };
         index_into_candidates = 0;
-        set_overview_position(page - 1, offset_y, "link");
+
+        auto bib_res = doc()->get_page_bib_with_reference(page - 1, source_text);
+        std::vector<AbsoluteRect> overview_highlight_rects;
+        if (bib_res.has_value()) {
+            for (auto& r : bib_res.value().second) {
+                overview_highlight_rects.push_back(DocumentRect{ r, page - 1 }.to_absolute(doc()));
+            }
+        }
+        //get_paper_name_from_reference_text(QString::fromStdWString(source_text));
+        set_overview_position(page - 1, offset_y, "link", overview_highlight_rects);
+
     }
 }
 
@@ -2828,7 +2842,12 @@ ReferenceType MainWidget::find_location_of_selected_text(int* out_page, float* o
             auto res = doc()->get_page_bib_with_reference(page, query);
             if (res) {
                 *out_page = page;
-                *out_offset = res.value().second.y0;
+                *out_offset = res.value().second.back().y0;
+                if (out_highlight_rects) {
+                    for (auto& r : res.value().second) {
+                        out_highlight_rects->push_back(DocumentRect{ r, page });
+                    }
+                }
                 return ReferenceType::Reference;
             }
         }
@@ -7214,40 +7233,26 @@ void MainWidget::handle_debug_command() {
     std::vector<std::vector<PagelessDocumentRect>> rects;
     std::vector<std::vector<AbsoluteRect>> absrects;
     std::vector<QString> candidates = doc()->get_page_bib_candidates(cp, &rects);
-    //for (int i = 0; i < candidates.size(); i++) {
-    //    qDebug() << i << ": " << QString::fromStdWString(candidates[i]);
-    //}
-    int mouse_index = -1;
 
     WindowPos mouse_pos = mapFromGlobal(QCursor::pos());
     AbsoluteDocumentPos mouse_abspos = mouse_pos.to_absolute(dv());
 
+
     for (int i = 0; i < rects.size(); i++) {
         auto bib_rects = rects[i];
         absrects.push_back({});
-        for (auto rect : bib_rects) {
-            AbsoluteRect absrect = DocumentRect{ rect, cp }.to_absolute(doc());
-            absrects.back().push_back(absrect);
-            if (absrect.contains(mouse_abspos)) {
-                mouse_index = i;
-            }
-        }
-    }
 
-    if (mouse_index == -1) {
-        main_document_view->debug_highlight_rects = absrects;
-    }
-    else {
-        QString selected_bib = candidates[mouse_index];
+        QString selected_bib = candidates[i];
         QString paper_name = get_paper_name_from_reference_text(selected_bib);
         int name_index = selected_bib.indexOf(paper_name);
-        dv()->debug_highlight_rects = {};
-        dv()->debug_highlight_rects.push_back({});
-        for (int i = 0; i < paper_name.size(); i++) {
-            dv()->debug_highlight_rects.back().push_back(DocumentRect{ rects[mouse_index][name_index + i] , cp}.to_absolute(doc()));
+        //dv()->debug_highlight_rects = {};
+        //dv()->debug_highlight_rects.push_back({});
+        for (int j = 0; j < paper_name.size(); j++) {
+            absrects.back().push_back(DocumentRect{ rects[i][name_index + j] , cp }.to_absolute(doc()));
+            //dv()->debug_highlight_rects.back().push_back();
         }
-        //qDebug() << dv()->debug_highlight_rects[0].size() << " " << paper_name.size();
     }
+    dv()->debug_highlight_rects = absrects;
 
 }
 
@@ -8826,7 +8831,11 @@ bool MainWidget::goto_ith_next_overview(int i) {
         index_into_candidates = mod((index_into_candidates + i), smart_view_candidates.size());
         if (std::holds_alternative<DocumentPos>(smart_view_candidates[index_into_candidates].target_pos)) {
             DocumentPos docpos = std::get<DocumentPos>(smart_view_candidates[index_into_candidates].target_pos);
-            set_overview_position(docpos.page, docpos.y);
+            set_overview_position(
+                docpos.page,
+                docpos.y,
+                reference_type_string(smart_view_candidates[index_into_candidates].reference_type)
+            );
         }
         else {
             AbsoluteDocumentPos abspos = std::get<AbsoluteDocumentPos>(smart_view_candidates[index_into_candidates].target_pos);

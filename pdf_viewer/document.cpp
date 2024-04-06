@@ -3018,6 +3018,17 @@ std::vector<QString> Document::get_page_bib_candidates(int page_number, std::vec
                 LL_ITER(chr, line->first_char) {
                     block_string.push_back(QChar(chr->c));
                     block_rects.push_back(PagelessDocumentRect(fz_rect_from_quad(chr->quad)));
+
+                    if (chr->next == nullptr) {
+                        if (chr->c == '-') {
+                            block_string.removeLast();
+                            block_rects.pop_back();
+                        }
+                        else {
+                            block_string.push_back(' ');
+                            block_rects.push_back(PagelessDocumentRect(fz_rect_from_quad(chr->quad)));
+                        }
+                    }
                 }
             }
         }
@@ -3037,7 +3048,7 @@ std::vector<QString> Document::get_page_bib_candidates(int page_number, std::vec
     return candidates;
 }
 
-std::optional<std::pair<QString, PagelessDocumentRect>> Document::get_page_bib_with_reference(int page_number, std::wstring reference_text) {
+std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> Document::get_page_bib_with_reference(int page_number, std::wstring reference_text) {
     //todo: use the reference offset as well as the page to more accurately get the reference 
 
     reference_text = remove_et_al(reference_text);
@@ -3054,7 +3065,7 @@ std::optional<std::pair<QString, PagelessDocumentRect>> Document::get_page_bib_w
 
     for (int i = 0; i < bib_text_prefixes.size(); i++) {
         if (bib_text_prefixes[i].indexOf(reference_text_qstring) != -1) {
-            return std::make_pair(bib_texts_[i], bib_rects[i].back());
+            return std::make_pair(bib_texts_[i], bib_rects[i]);
         }
     }
 
@@ -3067,7 +3078,7 @@ std::optional<std::pair<QString, PagelessDocumentRect>> Document::get_page_bib_w
         auto encoded_bib_text = bib_text_prefixes[i].toUtf8();
         int current_score = lcs(&encoded_bib_text[0], &encoded_reference_text[0], encoded_bib_text.size(), encoded_reference_text.size());
         if (current_score == max_score) {
-            return std::make_pair(bib_texts_[i], bib_rects[i].back());
+            return std::make_pair(bib_texts_[i], bib_rects[i]);
         }
         if (current_score > score) {
             score = current_score;
@@ -3075,7 +3086,7 @@ std::optional<std::pair<QString, PagelessDocumentRect>> Document::get_page_bib_w
         }
     }
     if (max_score_index >= 0) {
-        return std::make_pair(bib_texts_[max_score_index], bib_rects[max_score_index].back());
+        return std::make_pair(bib_texts_[max_score_index], bib_rects[max_score_index]);
     }
 
     return {};

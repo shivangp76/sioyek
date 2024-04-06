@@ -2915,6 +2915,7 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
             render_highlight_window(target, HRF_FILL | HRF_BORDER);
         }
     }
+
     if (document_view->overview_highlights.size() > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
         glUseProgram(shared_gl_objects.highlight_program);

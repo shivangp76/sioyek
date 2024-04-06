@@ -3638,45 +3638,66 @@ QString strip_garbage_from_paper_name(QString paper_name) {
     return "";
 }
 
-QString get_paper_name_from_reference_text(QString reference_text) {
-    if (PAPER_DOWNLOAD_AUTODETECT_PAPER_NAME) {
-
-        int quote_begin_index, quote_end_index;
-        if (is_quote_reference(reference_text, &quote_begin_index, &quote_end_index)) {
-            return strip_garbage_from_paper_name(reference_text.mid(quote_begin_index, quote_end_index - quote_begin_index));
-        }
-
-        QString str = reference_text;
-        //QRegularExpression reference_ending_dot_regex = QRegularExpression("(\.\w*In )|(\.\w*[aA]r[xX]iv )|(\.\w*[aA]r[X]iv )");
-        QRegularExpression reference_ending_dot_regex = QRegularExpression("(\.\w*In )|(\.\w*[aA]r[xX]iv )");
-
-        int ending_index = str.lastIndexOf(reference_ending_dot_regex);
-        if (ending_index == -1) {
-            int last_dot_index = str.lastIndexOf(".");
-            // igonre if the last dot is close to the end
-            if (str.size() - last_dot_index < 8) {
-                str = str.left(last_dot_index - 1);
-            }
-            ending_index = str.lastIndexOf(".") + 1;
-        }
-
-        while (ending_index > -1) {
-            str = str.left(ending_index - 1);
-            int starting_index = str.lastIndexOf(".");
-            QString res = str.right(str.size() - starting_index - 1).trimmed();
-            //if (res.size() > 0 && res[0] == ':') {
-            //    res = res.right(res.size() - 1);
-            //}
-            if (res.size() > 10) {
-                return strip_garbage_from_paper_name(res);
-            }
-            else {
-                ending_index = starting_index;
-            }
+bool could_dot_span_be_refernce_name(const QString& span_text) {
+    if (span_text.indexOf("http") != -1) return false;
+    if (span_text.startsWith("In Pro") || span_text.startsWith("In Inte") || span_text.startsWith("arxiv") || span_text.startsWith("arXiv") || span_text.startsWith("ArXiv")) return false;
+    if (span_text.startsWith("Springer") || span_text.startsWith("semanticscholar") || span_text.startsWith("International") || span_text.startsWith("In ") || span_text.startsWith("In:")) return false;
+    QString weird_characters = ";,[]/%_";
+    int n_weird = 0;
+    for (auto ch : span_text) {
+        if (ch.isDigit() || (weird_characters.indexOf(ch) != -1)) {
+            n_weird++;
         }
     }
+    if (static_cast<float>(n_weird) / span_text.size() > 0.2f) return false;
 
-    return reference_text;
+    return true;
+}
+
+
+QString get_paper_name_from_reference_text(QString reference_text) {
+
+    int quote_begin_index, quote_end_index;
+    if (is_quote_reference(reference_text, &quote_begin_index, &quote_end_index)) {
+        return strip_garbage_from_paper_name(reference_text.mid(quote_begin_index, quote_end_index - quote_begin_index));
+    }
+    int first_dot_index = reference_text.indexOf('.');
+    int last_dot_index = reference_text.lastIndexOf('.');
+    if (last_dot_index == (reference_text.size() - 1)) last_dot_index = reference_text.left(reference_text.size() - 1).lastIndexOf('.');
+    if (first_dot_index == last_dot_index) {
+        return strip_garbage_from_paper_name(reference_text.mid(last_dot_index));
+    }
+
+    QString str = reference_text;
+    //QRegularExpression reference_ending_dot_regex = QRegularExpression("(\.\w*In )|(\.\w*[aA]r[xX]iv )|(\.\w*[aA]r[X]iv )");
+    //QRegularExpression reference_ending_dot_regex = QRegularExpression("(\.\w*In )|(\.\w*[aA]r[xX]iv )");
+    QRegularExpression reference_ending_dot_regex = QRegularExpression("(\\.\w*In )|(\\.\w*[aA]r[xX]iv )");
+
+    int ending_index = str.lastIndexOf(reference_ending_dot_regex);
+    if (ending_index == -1) {
+        int last_dot_index = str.lastIndexOf(".");
+        // igonre if the last dot is close to the end
+        if (str.size() - last_dot_index < 8) {
+            str = str.left(last_dot_index - 1);
+        }
+        ending_index = str.lastIndexOf(".") + 1;
+    }
+
+    while (ending_index > -1) {
+        str = str.left(ending_index);
+        int starting_index = str.lastIndexOf(".");
+        QString res = str.right(str.size() - starting_index - 1).trimmed();
+        //if (res.size() > 0 && res[0] == ':') {
+        //    res = res.right(res.size() - 1);
+        //}
+        if (res.size() > 11 && could_dot_span_be_refernce_name(res)) {
+            return strip_garbage_from_paper_name(res);
+        }
+        else {
+            ending_index = starting_index;
+        }
+    }
+    return "";
 
 }
 
