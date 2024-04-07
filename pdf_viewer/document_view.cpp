@@ -1363,12 +1363,22 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
 
                 for (auto link : pdf_links) {
                     auto parsed_uri = parse_uri(get_document()->get_mupdf_context(), get_document()->doc, link.uri);
+                    PdfLinkTextInfo link_info = get_document()->get_pdf_link_text(link);
+
                     SmartViewCandidate candid;
                     candid.doc = get_document();
                     candid.source_rect = current_document->document_to_absolute_rect(DocumentRect(link.rects[0], line_page_number));
-                    candid.source_text = get_document()->get_pdf_link_text(link).link_text;
+                    candid.source_text = link_info.link_text;
                     candid.target_pos = DocumentPos{ parsed_uri.page - 1, parsed_uri.x, parsed_uri.y };
                     candid.reference_type = ReferenceType::Link;
+
+                    //is_reference
+                    bool is_reference = is_link_a_reference(link, link_info);
+                    if (is_reference) {
+                        candid.highlight_rects = get_reference_link_highlights(parsed_uri.page - 1, link, link_info);
+                        candid.reference_type = ReferenceType::RefLink;
+                    }
+
                     result.push_back(candid);
                 }
 
@@ -3281,7 +3291,7 @@ void DocumentView::set_overview_link(PdfLink link) {
         index_into_candidates = 0;
         std::vector<DocumentRect> overview_highlight_rects = get_reference_link_highlights(page - 1, link, link_info);
 
-        set_overview_position(page - 1, offset_y, "link", overview_highlight_rects);
+        set_overview_position(page - 1, offset_y, is_reference > 0 ? "reflink" : "link", overview_highlight_rects);
         //main_document_view->set_overview_highlights(overview_highlight_rects);
 
     }

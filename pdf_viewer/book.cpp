@@ -371,5 +371,6 @@ std::string reference_type_string(ReferenceType rt) {
     if (rt == ReferenceType::Abbreviation) return "abbreviation";
     if (rt == ReferenceType::Generic) return "generic";
     if (rt == ReferenceType::Link) return "link";
+    if (rt == ReferenceType::RefLink) return "reflink";
     return "";
 }

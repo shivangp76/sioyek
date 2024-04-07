@@ -300,6 +300,7 @@ enum class ReferenceType {
     Reference,
     Abbreviation,
     Link,
+    RefLink,
     None
 };
 
@@ -367,7 +368,6 @@ struct PdfLinkTextInfo {
     fz_stext_block* block = nullptr;
     int position_in_block = -1;
 };
-
 struct TextUnderPointerInfo{
     ReferenceType reference_type;
     std::vector<DocumentPos> targets;

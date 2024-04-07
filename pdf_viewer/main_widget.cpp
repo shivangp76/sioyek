@@ -3468,7 +3468,8 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         }
         else {
             dv()->set_overview_link(link.value());
-            main_document_view->fit_overview_width();
+            on_overview_source_updated();
+            //main_document_view->fit_overview_width();
             return true;
         }
     }
@@ -3487,8 +3488,8 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         //smart_view_candidates = { current_candid };
         dv()->set_overview_position(reference_info.targets[0].page, reference_info.targets[0].y, reference_type_string(reference_info.reference_type));
         main_document_view->set_overview_highlights(reference_info.overview_highlight_rects);
-
-        main_document_view->fit_overview_width();
+        on_overview_source_updated();
+        //main_document_view->fit_overview_width();
         return true;
     }
 
@@ -5387,9 +5388,19 @@ void MainWidget::overview_to_definition() {
 
         if (candidates.size() > 0) {
             DocumentPos first_docpos = candidates[0].get_docpos(main_document_view);
+            AbsoluteDocumentPos first_abspos = first_docpos.to_absolute(doc());
             dv()->smart_view_candidates = candidates;
             dv()->index_into_candidates = 0;
-            dv()->set_overview_position(first_docpos.page, first_docpos.y, reference_type_string(candidates[0].reference_type));
+            //dv()->set_overview_position(first_docpos.page, first_docpos.y, reference_type_string(candidates[0].reference_type));
+            OverviewState overview_state;
+            overview_state.absolute_offset_x = 0;
+            overview_state.absolute_offset_y = first_abspos.y;
+            overview_state.doc = doc();
+            overview_state.highlight_rects = candidates[0].highlight_rects;
+            overview_state.overview_type = reference_type_string(candidates[0].reference_type);
+
+            set_overview_page(overview_state);
+            //dv()->set_overview_highlights(candidates[0].highlight_rects);
             on_overview_source_updated();
         }
     }
@@ -6384,6 +6395,7 @@ bool MainWidget::event(QEvent* event) {
                     }
 
                     overview_under_pos(last_hold_point);
+                    update_touch_overview_buttons(dv()->overview_page);
                     // show_touch_main_menu();
 
                     return true;
@@ -8571,6 +8583,7 @@ bool MainWidget::goto_ith_next_overview(int i) {
             set_overview_page(state);
             invalidate_render();
         }
+        dv()->set_overview_highlights(dv()->smart_view_candidates[dv()->index_into_candidates].highlight_rects);
         on_overview_source_updated();
         return true;
     }
@@ -8585,6 +8598,7 @@ void MainWidget::on_overview_source_updated() {
             show_touch_buttons_for_overview_type(reference_type_string(current_candidate.reference_type));
         }
     }
+    dv()->fit_overview_width();
 
     //if (index_into_candidates >= 0 && index_into_candidates < smart_view_candidates.size()) {
     //    main_document_view->set_overview_highlights(smart_view_candidates[index_into_candidates].highlight_rects);
@@ -8936,7 +8950,7 @@ void MainWidget::show_touch_buttons_for_overview_type(std::string type) {
     button_icons = { L"qrc:/icons/go-to-file.svg" };
     button_names = { L"Go" };
 
-    if (type == "reference" || type == "link") {
+    if (type == "reference" || type == "reflink") {
         button_icons.push_back(L"qrc:/icons/paper-download.svg");
         button_names.push_back(L"Download");
     }
@@ -8973,20 +8987,13 @@ void MainWidget::show_touch_buttons_for_overview_type(std::string type) {
         });
 }
 
-void MainWidget::set_overview_page(std::optional<OverviewState> overview) {
-
-    if (!overview){
-        main_document_view->set_overview_highlights({});
-    }
-    else {
-        main_document_view->set_overview_highlights(overview->highlight_rects);
-    }
+void MainWidget::update_touch_overview_buttons(const std::optional<OverviewState>& overview) {
     if (TOUCH_MODE) {
         if (overview) {
-            if (!main_document_view->get_overview_page().has_value()) {
-                // show the overview buttons when a new overview is displayed
+            //if (!main_document_view->get_overview_page().has_value()) {
+            //    // show the overview buttons when a new overview is displayed
                 show_touch_buttons_for_overview_type(overview->overview_type.value_or(""));
-            }
+            //}
         }
         else {
             if (current_widget_stack.size() > 0) {
@@ -8996,8 +9003,20 @@ void MainWidget::set_overview_page(std::optional<OverviewState> overview) {
             }
         }
     }
+}
 
+void MainWidget::set_overview_page(std::optional<OverviewState> overview) {
+
+    if (!overview){
+        main_document_view->set_overview_highlights({});
+    }
+    else {
+        main_document_view->set_overview_highlights(overview->highlight_rects);
+    }
+
+    update_touch_overview_buttons(overview);
     main_document_view->set_overview_page(overview);
+
 }
 
 QJSEngine* MainWidget::take_js_engine(bool async) {
