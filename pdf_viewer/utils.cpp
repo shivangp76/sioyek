@@ -935,17 +935,19 @@ bool is_separator(fz_stext_char* last_char, fz_stext_char* current_char) {
 }
 
 
-std::wstring get_string_from_stext_block(fz_stext_block* block, bool handle_rtl) {
+std::wstring get_string_from_stext_block(fz_stext_block* block, bool handle_rtl, bool dehyphenate) {
     if (block->type == FZ_STEXT_BLOCK_TEXT) {
         std::wstring res;
         LL_ITER(line, block->u.t.first_line) {
             res += get_string_from_stext_line(line, handle_rtl);
             if (line->next && res.size() > 0) {
-                if (res.back() == '-') {
-                    res.pop_back();
-                }
-                else {
-                    res.push_back(' ');
+                if (dehyphenate) {
+                    if (res.back() == '-') {
+                        res.pop_back();
+                    }
+                    else {
+                        res.push_back(' ');
+                    }
                 }
             }
         }

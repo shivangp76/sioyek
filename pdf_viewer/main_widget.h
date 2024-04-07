@@ -72,13 +72,6 @@ struct MenuNode {
     std::vector<MenuNode*> children;
 };
 
-struct TextUnderPointerInfo{
-    ReferenceType reference_type;
-    std::vector<DocumentPos> targets;
-    AbsoluteRect source_rect;
-    std::wstring source_text;
-    std::vector<DocumentRect> overview_highlight_rects;
-};
 
 struct BookmarkMoveData {
     int index;
@@ -227,8 +220,6 @@ public:
     // is the case, which means that we need to update `selected_text_` before using it.
     bool selected_text_is_dirty = false;
 
-    // selected text (using mouse cursor or other methods) which is used e.g. for copying or highlighting
-    std::wstring selected_text;
 
     // whether we are in rect/point select mode (some commands require a rectangle to be executed
     // for example `delete_freehand_drawings`)
@@ -379,12 +370,6 @@ public:
 
     std::vector<PendingDownloadPortal> pending_download_portals;
 
-    // A list of candiadates to be shown in the overview window. We use simple heuristics to determine the
-    // target of references, while this works most of the time, it is not perfect. So we keep a list of candidates
-    // which the user can naviagte through using `next_preview` and `previous_preview` commands which move
-    // `index_into_candidates` pointer to the next/previous candidate
-    std::vector<SmartViewCandidate> smart_view_candidates;
-    int index_into_candidates = 0;
 
     // when selecting text, we update the rendering faster, this timer is used 
     // so that we don't update the rendering too fast
@@ -563,16 +548,16 @@ public:
     void show_current_widget();
     bool focus_on_visual_mark_pos(bool moving_down);
     void toggle_visual_scroll_mode();
-    void set_overview_link(PdfLink link);
-    void set_overview_position(
-        int page,
-        float offset,
-        std::optional<std::string> overview_type,
-        std::optional<std::vector<AbsoluteRect>> overview_highlights = {}
-    );
+    //void set_overview_link(PdfLink link);
+    //void set_overview_position(
+    //    int page,
+    //    float offset,
+    //    std::optional<std::string> overview_type,
+    //    std::optional<std::vector<DocumentRect>> overview_highlights = {}
+    //);
 
-    ReferenceType find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects = nullptr);
-    TextUnderPointerInfo find_location_of_text_under_pointer(DocumentPos docpos, bool update_candidates = false);
+    //ReferenceType find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects = nullptr);
+    //TextUnderPointerInfo find_location_of_text_under_pointer(DocumentPos docpos, bool update_candidates = false);
     std::optional<std::wstring> get_current_file_name();
     CommandManager* get_command_manager();
 
@@ -662,10 +647,9 @@ public:
     void handle_pause();
     void read_current_line();
     void download_paper_under_cursor(bool use_last_touch_pos = false);
-    std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
-    std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
+    //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
+    //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
     QNetworkReply* download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action);
-    bool is_pos_inside_selected_text(DocumentPos docpos);
     void handle_debug_command();
     void handle_add_marked_data();
     void handle_undo_marked_data();
@@ -876,8 +860,6 @@ public:
         std::vector<std::wstring> buttons,
         std::vector<std::wstring> tips,
         std::function<void(int, std::wstring)> on_select, bool top=true);
-    bool is_pos_inside_selected_text(AbsoluteDocumentPos pos);
-    bool is_pos_inside_selected_text(WindowPos pos);
     void create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name);
     void download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos);
     void download_selected_text();

@@ -1612,7 +1612,7 @@ std::optional<std::pair<std::wstring, std::wstring>> Document::get_generic_link_
     std::pair<int,
     int>* out_range) {
 
-    std::wregex regex(L"[a-zA-Z]{3,}(\.){0,1}[ \t]+[0-9]+(\.[0-9]+)*");
+    std::wregex regex(L"[a-zA-Z]{3,}(\.){0,1}[ \t]+[0-9]+(\\.[0-9]+)*");
     std::optional<std::wstring> match_string = get_regex_match_at_position(regex, flat_chars, position, out_range);
     if (match_string) {
         std::vector<std::wstring> parts = split_whitespace(match_string.value());
@@ -2530,15 +2530,24 @@ std::optional<PdfLink> Document::get_link_in_pos(const DocumentPos& pos) {
     return get_link_in_pos(pos.page, pos.x, pos.y);
 }
 
-std::wstring Document::get_pdf_link_text(PdfLink link) {
+PdfLinkTextInfo Document::get_pdf_link_text(PdfLink link){
+
     int page = link.source_page;
 
-    std::wstring res;
+    fz_stext_block* last_block = nullptr;
+    int block_pos = 0;
+    bool position_is_set = false;
+
+    PdfLinkTextInfo res;
     for (int rect_index = 0; rect_index < link.rects.size(); rect_index++) {
 
         PagelessDocumentRect current_link_rect = link.rects[rect_index];
 
         for (auto [block, line, chr] : page_iterator(page)) {
+            if (block != last_block) {
+                last_block = block;
+                block_pos = 0;
+            }
             PagelessDocumentRect charrect = fz_rect_from_quad(chr->quad);
             float y = (charrect.y0 + charrect.y1) / 2;
             float x = (charrect.x0 + charrect.x1) / 2;
@@ -2551,10 +2560,18 @@ std::wstring Document::get_pdf_link_text(PdfLink link) {
             charrect.x1 = x;
 
             if (rects_intersect(charrect, current_link_rect)) {
-                res.push_back(chr->c);
+                res.link_text.push_back(chr->c);
+                res.chr = chr;
+                res.line = line;
+                res.block = block;
+                res.position_in_block = block_pos;
             }
+            block_pos++;
         }
+
     }
+
+
     return res;
 }
 
@@ -3076,6 +3093,8 @@ std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> Document::g
     for (int i = 0; i < bib_text_prefixes.size(); i++) {
         //std::string encoded_bib_text = utf8_encode(bib_text_prefixes[i]);
         auto encoded_bib_text = bib_text_prefixes[i].toUtf8();
+        if (encoded_bib_text.size() == 0) continue;
+
         int current_score = lcs(&encoded_bib_text[0], &encoded_reference_text[0], encoded_bib_text.size(), encoded_reference_text.size());
         if (current_score == max_score) {
             return std::make_pair(bib_texts_[i], bib_rects[i]);

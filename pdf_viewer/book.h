@@ -45,7 +45,7 @@ struct OverviewState {
     float zoom_level = -1;
     Document* doc = nullptr;
     std::optional<std::string> overview_type;
-    std::vector<AbsoluteRect> highlight_rects;
+    std::vector<DocumentRect> highlight_rects;
 };
 
 struct OpenedBookState {
@@ -311,6 +311,7 @@ struct SmartViewCandidate {
     std::wstring source_text;
     std::variant<DocumentPos, AbsoluteDocumentPos> target_pos;
     ReferenceType reference_type = ReferenceType::None;
+    std::vector<DocumentRect> highlight_rects;
 
     Document* get_document(DocumentView* view);
     DocumentPos get_docpos(DocumentView* view);
@@ -358,3 +359,19 @@ bool operator==(const Portal& lhs, const Portal& rhs);
 bool are_same(const BookMark& lhs, const BookMark& rhs);
 
 bool are_same(const Highlight& lhs, const Highlight& rhs);
+
+struct PdfLinkTextInfo {
+    std::wstring link_text = L"";
+    fz_stext_char* chr = nullptr;
+    fz_stext_line* line = nullptr;
+    fz_stext_block* block = nullptr;
+    int position_in_block = -1;
+};
+
+struct TextUnderPointerInfo{
+    ReferenceType reference_type;
+    std::vector<DocumentPos> targets;
+    AbsoluteRect source_rect;
+    std::wstring source_text;
+    std::vector<DocumentRect> overview_highlight_rects;
+};

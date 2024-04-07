@@ -1366,7 +1366,7 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
                     SmartViewCandidate candid;
                     candid.doc = get_document();
                     candid.source_rect = current_document->document_to_absolute_rect(DocumentRect(link.rects[0], line_page_number));
-                    candid.source_text = get_document()->get_pdf_link_text(link);
+                    candid.source_text = get_document()->get_pdf_link_text(link).link_text;
                     candid.target_pos = DocumentPos{ parsed_uri.page - 1, parsed_uri.x, parsed_uri.y };
                     candid.reference_type = ReferenceType::Link;
                     result.push_back(candid);
@@ -2928,3 +2928,381 @@ bool DocumentView::has_synctex_timed_out() {
     }
     return false;
 }
+
+bool DocumentView::is_pos_inside_selected_text(AbsoluteDocumentPos pos) {
+    for (auto rect : selected_character_rects) {
+        if (rect.contains(pos)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool DocumentView::is_pos_inside_selected_text(DocumentPos docpos) {
+    return is_pos_inside_selected_text(docpos.to_absolute(current_document));
+}
+
+bool DocumentView::is_pos_inside_selected_text(WindowPos pos) {
+    return is_pos_inside_selected_text(pos.to_absolute(this));
+}
+
+std::optional<QString> DocumentView::get_paper_name_under_pos(DocumentPos docpos, bool clean) {
+
+    std::optional<PdfLink> pdf_link_ = current_document->get_link_in_pos(docpos);
+
+    if (is_pos_inside_selected_text(docpos)) {
+        // if user is clicking on a selected text, we assume they want to download the text
+        return QString::fromStdWString(selected_text);
+    }
+    else if (pdf_link_) {
+        // first, we  try to detect if we are on a PDF link or a non-link reference
+        // (something like [14] or [Doe et. al.]) and then find the paper name in the
+        // referenced location. If we can't match the current text as a refernce source,
+        // we assume the text under cursor is the paper name.
+
+        PdfLink pdf_link = pdf_link_.value();
+        std::wstring link_text = current_document->get_pdf_link_text(pdf_link).link_text;
+        auto [link_page, offset_x, offset_y] = parse_uri(current_document->get_mupdf_context(), current_document->doc, pdf_link.uri);
+
+        auto res = current_document->get_page_bib_with_reference(link_page - 1, link_text);
+        if (res) {
+            if (clean) {
+                return get_paper_name_from_reference_text(res.value().first);
+            }
+            else {
+                return res.value().first;
+            }
+        }
+        else {
+            return {};
+        }
+    }
+    else {
+        auto ref_ = current_document->get_reference_text_at_position(docpos, nullptr);
+        /* int target_page = -1; */
+        /* float target_offset; */
+        /* std::wstring source_text; */
+
+        if (ref_){
+            TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(docpos);
+            if ((reference_info.reference_type == ReferenceType::Reference) && (reference_info.targets.size() > 0)){
+                std::wstring ref = ref_.value();
+                auto res = current_document->get_page_bib_with_reference(reference_info.targets[0].page, ref);
+                if (res) {
+                    if (clean) {
+                        return get_paper_name_from_reference_text(res.value().first);
+                    }
+                    else {
+                        return res.value().first;
+                    }
+                }
+                else {
+                    return {};
+                }
+            }
+
+        }
+        else {
+            //std::optional<std::wstring> paper_name = get_paper_name_under_cursor(alksdh);
+            std::optional<QString> paper_name = get_direct_paper_name_under_pos(docpos);
+            if (paper_name) {
+                return paper_name;
+            }
+        }
+    }
+
+    return {};
+}
+
+std::optional<QString> DocumentView::get_direct_paper_name_under_pos(DocumentPos docpos) {
+    return current_document->get_paper_name_at_position(docpos);
+}
+
+TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentPos docpos,  bool update_candidates) {
+
+    //auto [page, offset_x, offset_y] = main_document_view->window_to_document_pos(pointer_pos);
+    //auto [page, offset_x, offset_y] = docpos;
+    TextUnderPointerInfo res;
+
+    int current_page_number = get_current_page_number();
+
+    fz_stext_page* stext_page = current_document->get_stext_with_page_number(docpos.page);
+    std::vector<fz_stext_char*> flat_chars;
+    get_flat_chars_from_stext_page(stext_page, flat_chars);
+
+    std::pair<int, int> reference_range = std::make_pair(-1, -1);
+
+    std::optional<std::pair<std::wstring, std::wstring>> generic_pair = \
+        current_document->get_generic_link_name_at_position(flat_chars, docpos.pageless(), &reference_range);
+
+    std::optional<std::wstring> reference_text_on_pointer = current_document->get_reference_text_at_position(flat_chars, docpos.pageless(), &reference_range);
+    std::optional<std::wstring> equation_text_on_pointer = current_document->get_equation_text_at_position(flat_chars, docpos.pageless(), &reference_range);
+
+    DocumentRect source_rect_document = DocumentRect{ fz_empty_rect, docpos.page };
+    AbsoluteRect source_rect_absolute = { fz_empty_rect };
+
+    if ((reference_range.first > -1) && (reference_range.second > 0)) {
+        source_rect_document.rect = rect_from_quad(flat_chars[reference_range.first]->quad);
+        for (int i = reference_range.first + 1; i <= reference_range.second; i++) {
+            source_rect_document.rect = fz_union_rect(source_rect_document.rect, rect_from_quad(flat_chars[i]->quad));
+        }
+        source_rect_absolute = source_rect_document.to_absolute(current_document);
+        res.source_rect = source_rect_absolute;
+        /* *out_rect = source_rect_absolute; */
+    }
+
+    if (generic_pair) {
+        std::vector<DocumentPos> candidates = current_document->find_generic_locations(generic_pair.value().first,
+            generic_pair.value().second);
+        if (candidates.size() > 0) {
+            if (update_candidates) {
+                smart_view_candidates.clear();
+                for (auto candid : candidates) {
+                    SmartViewCandidate smart_view_candid;
+                    smart_view_candid.source_rect = source_rect_absolute;
+                    smart_view_candid.target_pos = candid;
+                    smart_view_candid.source_text = generic_pair.value().first + L" " + generic_pair.value().second;
+                    smart_view_candidates.push_back(smart_view_candid);
+                }
+                //smart_view_candidates = candidates;
+                index_into_candidates = 0;
+                //on_overview_source_updated();
+                res.source_text = smart_view_candidates[index_into_candidates].source_text;
+            }
+            else {
+                res.source_text = generic_pair.value().first + L" " + generic_pair.value().second;
+            }
+
+            res.targets.push_back(candidates[index_into_candidates]);
+            //res.page = candidates[index_into_candidates].page;
+            //res.offset = candidates[index_into_candidates].y;
+            res.reference_type = ReferenceType::Generic;
+            return res;
+        }
+    }
+    if (equation_text_on_pointer) {
+        std::vector<IndexedData> eqdata_ = current_document->find_equation_with_string(equation_text_on_pointer.value(), current_page_number);
+        if (eqdata_.size() > 0) {
+            IndexedData refdata = eqdata_[0];
+            res.source_text = refdata.text;
+
+            res.targets.push_back(DocumentPos{refdata.page, 0, refdata.y_offset});
+            //res.page = refdata.page;
+            //res.offset = refdata.y_offset;
+            res.reference_type = ReferenceType::Equation;
+            return res;
+        }
+    }
+
+    if (reference_text_on_pointer) {
+        std::vector<IndexedData> refdata_ = current_document->find_reference_with_string(reference_text_on_pointer.value(), current_page_number);
+        if (refdata_.size() > 0) {
+            res.reference_type = ReferenceType::Reference;
+
+            for (auto refdata : refdata_) {
+                res.source_text = refdata.text;
+                res.targets.push_back(DocumentPos{refdata.page, 0, refdata.y_offset});
+            }
+
+            return res;
+        }
+
+    }
+    if (is_pos_inside_selected_text(docpos)){
+        if (selected_text.size() > 0 && current_document->is_super_fast_index_ready()) {
+            int target_page;
+            float target_y_offset;
+            res.reference_type = find_location_of_selected_text(&target_page, &target_y_offset, &res.source_rect, &res.source_text, &res.overview_highlight_rects);
+            res.targets.push_back(DocumentPos{ target_page, 0, target_y_offset });
+            return res;
+            /* ReferenceType MainWidget::find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects) { */
+        }
+    }
+    else{
+        std::wregex abbr_regex(L"[A-Z]+s?");
+        std::optional<std::wstring> abbr_under_pointer = current_document->get_regex_match_at_position(abbr_regex, flat_chars, docpos.pageless(), &reference_range);
+        if (abbr_under_pointer){
+            std::optional<DocumentPos> abbr_definition_location = current_document->find_abbreviation(abbr_under_pointer.value(), res.overview_highlight_rects);
+            if (abbr_definition_location){
+                res.source_text = abbr_under_pointer.value();
+                res.targets.push_back(DocumentPos{ abbr_definition_location->page, 0, abbr_definition_location->y});
+                //res.page = abbr_definition_location->page;
+                //res.offset = abbr_definition_location->y;
+                res.reference_type = ReferenceType::Abbreviation;
+                return res;
+            }
+        }
+    }
+
+
+    res.reference_type = ReferenceType::None;
+    return res;
+}
+
+int DocumentView::get_current_page_number() {
+    if (is_ruler_mode()) {
+        return get_vertical_line_page();
+    }
+    else {
+        return get_center_page_number();
+    }
+}
+
+ReferenceType DocumentView::find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects) {
+    if (selected_text.size() > 0) {
+
+        std::wstring query = selected_text;
+        *out_source_text = query;
+        if (selected_character_rects.size() > 0) {
+            if (out_rect) {
+                *out_rect = selected_character_rects[0];
+            }
+        }
+
+        if (is_abbreviation(query) && (out_highlight_rects != nullptr)){
+            /* std::vector<DocumentRect> overview_highlights; */
+            std::optional<DocumentPos> abbr_definition_location = current_document->find_abbreviation(query, *out_highlight_rects);
+            /* opengl_widget->set_overview_highlights(overview_highlights); */
+            if (abbr_definition_location){
+                *out_page = abbr_definition_location->page;
+                *out_offset = abbr_definition_location->y;
+                return ReferenceType::Abbreviation;
+            }
+            else{
+                return ReferenceType::None;
+            }
+        }
+        else{
+            int page = current_document->find_reference_page_with_reference_text(query);
+            if (page < 0) return ReferenceType::None;
+            auto res = current_document->get_page_bib_with_reference(page, query);
+            if (res) {
+                *out_page = page;
+                *out_offset = res.value().second.back().y0;
+                if (out_highlight_rects) {
+                    QString paper_name = get_paper_name_from_reference_text(res->first);
+                    int paper_name_index = res->first.indexOf(paper_name);
+                    //for (auto& r : res.value().second) {
+                    //    out_highlight_rects->push_back(DocumentRect{ r, page });
+                    //}
+                    for (int i = 0; i < paper_name.size(); i++) {
+                        out_highlight_rects->push_back(DocumentRect{ res->second[paper_name_index + i], page});
+                    }
+                }
+                return ReferenceType::Reference;
+            }
+        }
+
+    }
+    return ReferenceType::None;
+}
+
+bool DocumentView::is_text_source_referncish_at_position(const std::wstring& text, int position) {
+    // todo: should be moved to Document
+
+    QString qtext = QString::fromStdWString(text);
+    QStringList parts = qtext.split(" ");
+    int num_chars_skipped = 0;
+    int word_index = 0;
+    for (int i = 0; i < parts.size(); i++) {
+        QString w = parts[i];
+        if (num_chars_skipped + 1 + w.size() > position) {
+            word_index = i;
+            break;
+        }
+
+        num_chars_skipped += 1 + w.size();
+    }
+    int prev_word_index = word_index - 1;
+    QString prev_word = "";
+    if (prev_word_index >= 0) {
+        prev_word = parts[prev_word_index];
+    }
+    prev_word = prev_word.toLower();
+    QStringList non_ref_words = {
+        "table",
+        "equation",
+        "figure",
+        "fig.",
+        "fig",
+        "theorem",
+        "lemma",
+        "section",
+        "sect.",
+        "appendix"
+    };
+    if (non_ref_words.indexOf(prev_word) != -1) return false;
+    //TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(docpos, true);
+    return true;
+}
+
+bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInfo& link_info) {
+
+    PagelessDocumentPos pageless_pos = PagelessDocumentRect{ fz_rect_from_quad(link_info.chr->quad) }.center();
+    DocumentPos link_pos = { link.source_page, pageless_pos.x, pageless_pos.y };
+    TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(link_pos, true);
+    bool is_reference = reference_info.reference_type == ReferenceType::None || reference_info.reference_type == ReferenceType::Reference;
+    if (is_reference) {
+        std::wstring block_string = get_string_from_stext_block(link_info.block, false, false);
+        is_reference = is_reference && is_text_source_referncish_at_position(block_string, link_info.position_in_block);
+    }
+    return is_reference;
+}
+
+std::vector<DocumentRect> DocumentView::get_reference_link_highlights(int dest_page, const PdfLink& link, const PdfLinkTextInfo& link_info) {
+    auto bib_res = current_document->get_page_bib_with_reference(dest_page, link_info.link_text);
+    std::vector<DocumentRect> overview_highlight_rects;
+    if (bib_res.has_value()) {
+        QString paper_name = get_paper_name_from_reference_text(bib_res->first);
+        int paper_name_start_index = bib_res->first.indexOf(paper_name);
+        const std::vector<PagelessDocumentRect>& bib_rects = bib_res->second;
+
+        for (int i = 0; i < paper_name.size(); i++) {
+            overview_highlight_rects.push_back(DocumentRect{ bib_rects[paper_name_start_index + i] , dest_page });
+        }
+    }
+    return overview_highlight_rects;
+}
+
+void DocumentView::set_overview_link(PdfLink link) {
+
+    auto [page, offset_x, offset_y] = parse_uri(current_document->get_mupdf_context(), current_document->doc, link.uri);
+    if (page >= 1) {
+        AbsoluteRect source_absolute_rect = DocumentRect(link.rects[0], link.source_page).to_absolute(current_document);
+        PdfLinkTextInfo link_info = current_document->get_pdf_link_text(link);
+        std::wstring source_text = link_info.link_text;
+        bool is_reference = is_link_a_reference(link, link_info);
+
+        SmartViewCandidate current_candidate;
+        current_candidate.source_rect = source_absolute_rect;
+        current_candidate.target_pos = DocumentPos{ page - 1, 0, offset_y };
+        current_candidate.source_text = source_text;
+        smart_view_candidates = { current_candidate };
+        index_into_candidates = 0;
+        std::vector<DocumentRect> overview_highlight_rects = get_reference_link_highlights(page - 1, link, link_info);
+
+        set_overview_position(page - 1, offset_y, "link", overview_highlight_rects);
+        //main_document_view->set_overview_highlights(overview_highlight_rects);
+
+    }
+}
+
+void DocumentView::set_overview_position(
+    int page,
+    float offset,
+    std::optional<std::string> overview_type,
+    std::optional<std::vector<DocumentRect>> overview_highlights
+) {
+    if (page >= 0) {
+
+        auto overview_state = OverviewState{ DocumentPos{ page, 0, offset }.to_absolute(current_document).y, 0, -1, nullptr };
+
+        if (overview_highlights.has_value()) {
+            overview_state.highlight_rects = overview_highlights.value();
+        }
+        overview_state.overview_type = overview_type;
+        set_overview_page(overview_state);
+        set_overview_highlights(overview_state.highlight_rects);
+    }
+}
+

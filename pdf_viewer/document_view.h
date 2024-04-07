@@ -108,6 +108,16 @@ public:
     std::vector<AbsoluteRect> pending_download_portals;
     std::optional<AbsoluteRect> selected_rectangle = {};
 
+    // selected text (using mouse cursor or other methods) which is used e.g. for copying or highlighting
+    std::wstring selected_text;
+
+    // A list of candiadates to be shown in the overview window. We use simple heuristics to determine the
+    // target of references, while this works most of the time, it is not perfect. So we keep a list of candidates
+    // which the user can naviagte through using `next_preview` and `previous_preview` commands which move
+    // `index_into_candidates` pointer to the next/previous candidate
+    std::vector<SmartViewCandidate> smart_view_candidates;
+    int index_into_candidates = 0;
+
     int rotation_index = 0;
     bool fastread_mode = false;
     int selected_highlight_index = -1;
@@ -158,6 +168,15 @@ public:
     void hide_rect_hints();
     bool is_showing_rect_hints();
     bool on_vertical_scroll();
+    bool is_pos_inside_selected_text(AbsoluteDocumentPos pos);
+    bool is_pos_inside_selected_text(DocumentPos docpos);
+    bool is_pos_inside_selected_text(WindowPos pos);
+    std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean=false);
+    std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
+    TextUnderPointerInfo find_location_of_text_under_pointer(DocumentPos docpos, bool update_candidates=false);
+    int get_current_page_number();
+    ReferenceType find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects = nullptr);
+
 
     void set_tag_prefix(std::wstring prefix);
     void clear_tag_prefix();
@@ -323,6 +342,18 @@ public:
     std::optional<AbsoluteRect> get_ruler_rect();
     //float get_vertical_line_pos();
     float get_ruler_pos();
+
+    bool is_link_a_reference(const PdfLink& link, const PdfLinkTextInfo& link_info);
+    std::vector<DocumentRect> get_reference_link_highlights(int dest_page, const PdfLink& link, const PdfLinkTextInfo& link_info);
+    bool is_text_source_referncish_at_position(const std::wstring& text, int position);
+    void set_overview_link(PdfLink link);
+    void set_overview_position(
+        int page,
+        float offset,
+        std::optional<std::string> overview_type,
+        std::optional<std::vector<DocumentRect>> overview_highlights = {}
+    );
+    bool overview_under_pos(WindowPos pos);
 
     //float get_vertical_line_window_y();
     float get_ruler_window_y();

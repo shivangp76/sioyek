@@ -60,6 +60,7 @@ struct CachedPageIndex {
     std::vector<PagelessDocumentRect> rects;
 };
 
+
 class Document {
 
 private:
@@ -362,7 +363,7 @@ public:
     std::optional<PdfLink> get_link_in_pos(int page, float x, float y);
     std::optional<PdfLink> get_link_in_pos(const DocumentPos& pos);
     std::vector<PdfLink> get_links_in_page_rect(int page, AbsoluteRect rect);
-    std::wstring get_pdf_link_text(PdfLink link);
+    PdfLinkTextInfo get_pdf_link_text(PdfLink link);
     std::string get_highlight_index_uuid(int index);
     std::string get_bookmark_index_uuid(int index);
 

@@ -4642,6 +4642,7 @@ public:
             fz_irect rect = rect_.value();
             widget->overview_under_pos({ (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2 });
             widget->set_should_highlight_words(false);
+            widget->invalidate_render();
         }
     }
 
@@ -4814,6 +4815,7 @@ public:
     void perform() {
         QPoint mouse_pos = widget->mapFromGlobal(widget->cursor_pos());
         widget->overview_under_pos({ mouse_pos.x(), mouse_pos.y() });
+        widget->invalidate_render();
     }
 
 };
@@ -5325,7 +5327,7 @@ public:
     static inline const std::string hname = "Go to the next candidate in overview window";
     NextPreviewCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        if (widget->smart_view_candidates.size() > 0) {
+        if (widget->dv()->smart_view_candidates.size() > 0) {
             //widget->index_into_candidates = (widget->index_into_candidates + 1) % widget->smart_view_candidates.size();
             //widget->set_overview_position(widget->smart_view_candidates[widget->index_into_candidates].page, widget->smart_view_candidates[widget->index_into_candidates].y);
             widget->goto_ith_next_overview(1);
@@ -5340,7 +5342,7 @@ public:
     static inline const std::string hname = "Go to the previous candidate in overview window";
     PreviousPreviewCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        if (widget->smart_view_candidates.size() > 0) {
+        if (widget->dv()->smart_view_candidates.size() > 0) {
             //widget->index_into_candidates = mod(widget->index_into_candidates - 1, widget->smart_view_candidates.size());
             //widget->set_overview_position(widget->smart_view_candidates[widget->index_into_candidates].page, widget->smart_view_candidates[widget->index_into_candidates].y);
             widget->goto_ith_next_overview(-1);
@@ -7030,7 +7032,7 @@ InputParseTreeNode parse_token(std::wstring token) {
     std::vector<std::wstring> subcommands;
     split_key_string(token, L"-", subcommands);
 
-    for (size_t i = 0; i < subcommands.size() - 1; i++) {
+    for (int i = 0; i < static_cast<int>(subcommands.size()) - 1; i++) {
         if (subcommands[i] == L"C") {
             res.control_modifier = true;
         }
@@ -7149,6 +7151,8 @@ bool parse_line(
     InputParseTreeNode* parent_node = root;
 
     for (size_t i = 0; i < tokens.size(); i++) {
+        if (tokens[i].size() == 0) continue;
+
         InputParseTreeNode node = parse_token(tokens[i]);
         bool existing_node = false;
         for (InputParseTreeNode* child : parent_node->children) {
