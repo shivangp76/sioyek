@@ -314,6 +314,7 @@ public:
         extras[name] = value;
     }
 
+    std::vector<QString> get_page_bib_candidates_old(int page_number, std::vector<std::vector<PagelessDocumentRect>>* out_rects = nullptr);
     std::vector<QString> get_page_bib_candidates(int page_number, std::vector<std::vector<PagelessDocumentRect>>* out_end_rects = nullptr);
     std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> get_page_bib_with_reference(int page_number, std::wstring reference_text);
 

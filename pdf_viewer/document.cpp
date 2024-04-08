@@ -3021,10 +3021,156 @@ int Document::reflow(int page) {
 //    return outputs;
 //}
 
+std::vector<QString> Document::get_page_bib_candidates_old(int page_number, std::vector<std::vector<PagelessDocumentRect>>* out_rects){
+    fz_stext_page* stext_page = get_stext_with_page_number(page_number);
+    std::vector<DocumentCharacter> flat_chars;
+
+    //get_flat_chars_from_stext_page(stext_page, flat_chars, true);
+    get_flat_chars_from_stext_page_for_bib_detection(stext_page, flat_chars);
+
+    std::vector<PagelessDocumentRect> char_rects;
+
+    float page_width = page_widths[page_number];
+    float page_height = page_heights[page_number];
+
+    std::vector<int> dot_indices;
+    std::vector<int> end_indices;
+
+    std::vector<int> bracket_end_indices;
+    std::vector<int> indented_end_indices;
+
+    QString raw_text;
+    for (int i = 0; i < flat_chars.size(); i++) {
+        if (flat_chars[i].c == '.') {
+            dot_indices.push_back(i);
+        }
+        else if (flat_chars[i].is_final && i < (flat_chars.size() - 1) && (flat_chars[i + 1].c == '[')) {
+            dot_indices.push_back(i);
+        }
+
+        char_rects.push_back(flat_chars[i].rect);
+        raw_text.push_back(QChar(flat_chars[i].c));
+    }
+
+    for (int dot_index : dot_indices) {
+        if (is_dot_index_end_of_a_reference(flat_chars, dot_index)) {
+            end_indices.push_back(dot_index);
+
+            if (dot_index + 1 < flat_chars.size() && (flat_chars[dot_index + 1].c == '[')) {
+                bracket_end_indices.push_back(dot_index);
+            }
+
+            if (dot_index + 1 < flat_chars.size()){
+                int next_index = dot_index + 1;
+
+                // skip phantom spaces
+                if (flat_chars[next_index].stext_char == nullptr) next_index++;
+
+                if (next_index == flat_chars.size()) {
+                    indented_end_indices.push_back(dot_index);
+                }
+                else {
+                    PagelessDocumentRect dot_line_begin_rect = rect_from_quad(flat_chars[dot_index].stext_line->first_char->quad);
+                    PagelessDocumentRect next_line_rect = flat_chars[next_index].rect;
+                    float next_x = next_line_rect.center().x;
+
+                    if (next_x < dot_line_begin_rect.x0) {
+                        indented_end_indices.push_back(dot_index);
+                    }
+                    else if (std::abs(next_line_rect.y0 - dot_line_begin_rect.y0) > (5 * next_line_rect.height())) {
+                        indented_end_indices.push_back(dot_index);
+                    }
+                }
+            }
+
+        }
+
+    }
+    if (bracket_end_indices.size() > 3) {
+        end_indices = bracket_end_indices;
+    }
+
+    if (indented_end_indices.size() > 3 && indented_end_indices.size() > bracket_end_indices.size()) {
+        end_indices = indented_end_indices;
+    }
+
+    std::vector<PagelessDocumentRect> res;
+    for (int i = 0; i < end_indices.size(); i++) {
+        res.push_back(char_rects[end_indices[i]]);
+    }
+
+    std::vector<QString> reference_texts;
+    if (end_indices.size() == 0) {
+        return reference_texts;
+    }
+
+    reference_texts.push_back(raw_text.mid(0, end_indices[0]));
+    for (int i = 1; i < end_indices.size(); i++) {
+        int length = end_indices[i] - end_indices[i - 1];
+        reference_texts.push_back(raw_text.mid(end_indices[i-1] + 1, length));
+    }
+
+    // try to remove the texts before the first bib item
+
+    int bib_index = -1;
+
+    for (int i = 0; i < std::min<int>(5, reference_texts.size()); i++) {
+        int last_bib_index = reference_texts[i].toLower().lastIndexOf("bibliography");
+        int last_ref_index = reference_texts[i].toLower().lastIndexOf("references");
+        int len = -1;
+
+        if (last_bib_index != -1) {
+            len = std::string("bibligraphy").size();
+        }
+        if (last_ref_index != -1) {
+            len = std::string("references").size();
+        }
+
+        int last_index = std::max(last_bib_index, last_ref_index);
+        if (last_index != -1) {
+            bib_index = i;
+            reference_texts[i] = reference_texts[i].mid(last_index + len, reference_texts[i].size() - last_index - len);
+            break;
+
+        }
+    }
+
+    for (int i = 0; i < bib_index; i++) {
+        reference_texts.erase(reference_texts.begin());
+        end_indices.erase(end_indices.begin());
+    }
+
+    if (out_rects) {
+
+
+        for (int i = 0; i < end_indices.size(); i++) {
+            out_rects->push_back({});
+
+            for (int j = 0; j < reference_texts[i].size(); j++) {
+                out_rects->back().push_back(char_rects[end_indices[i] - reference_texts[i].size() + j + 1]);
+            }
+        }
+
+    }
+
+    return reference_texts;
+
+}
+
 std::vector<QString> Document::get_page_bib_candidates(int page_number, std::vector<std::vector<PagelessDocumentRect>>* out_rects) {
 
     std::vector<QString> candidates;
     fz_stext_page* stext_page = get_stext_with_page_number(page_number);
+
+    int n_blocks = 0;
+
+    LL_ITER(_, stext_page->first_block) {
+        n_blocks++;
+    }
+    if (n_blocks < 5) {
+        return get_page_bib_candidates_old(page_number, out_rects);
+    }
+
 
     LL_ITER(block, stext_page->first_block) {
         QString block_string = "";

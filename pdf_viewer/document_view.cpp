@@ -3164,7 +3164,9 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
             float target_y_offset;
             res.reference_type = find_location_of_selected_text(&target_page, &target_y_offset, &res.source_rect, &res.source_text, &res.overview_highlight_rects);
             res.targets.push_back(DocumentPos{ target_page, 0, target_y_offset });
-            fill_text_under_pointer_info_reference_highlight_rects(res);
+            if (res.reference_type == ReferenceType::Reference) {
+                fill_text_under_pointer_info_reference_highlight_rects(res);
+            }
             return res;
             /* ReferenceType MainWidget::find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects) { */
         }
