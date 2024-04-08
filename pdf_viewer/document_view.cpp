@@ -1450,6 +1450,7 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
                             candid.source_text = parts[j].trimmed().toStdWString();
                             candid.target_pos = DocumentPos{ index[0].page, 0, index[0].y_offset };
                             candid.reference_type = ReferenceType::Reference;
+                            fill_smart_view_candidate_reference_highlight_rects(candid);
                             reference_positions.push_back(candid);
                         }
                         n_chars_seen += parts[j].size() + 1;
@@ -1465,6 +1466,7 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
                     candid.source_text = reference_texts[i];
                     candid.target_pos = DocumentPos{ index[0].page, 0, index[0].y_offset };
                     candid.reference_type = ReferenceType::Reference;
+                    fill_smart_view_candidate_reference_highlight_rects(candid);
                     reference_positions.push_back(candid);
                     //reference_positions.push_back(
                     //    std::make_pair(
@@ -2956,6 +2958,43 @@ bool DocumentView::is_pos_inside_selected_text(WindowPos pos) {
     return is_pos_inside_selected_text(pos.to_absolute(this));
 }
 
+std::vector<DocumentRect> DocumentView::get_paper_name_rects_from_page_and_source_text(int page, const std::wstring& source_text) {
+
+    auto ref_ = current_document->get_page_bib_with_reference(page, source_text);
+
+    if (ref_) {
+        auto [bib_str, rects] = ref_.value();
+        QString paper_name = get_paper_name_from_reference_text(bib_str);
+        int paper_name_index = bib_str.indexOf(paper_name);
+        std::deque<PagelessDocumentRect> paper_name_rects;
+        std::vector<PagelessDocumentRect> paper_name_merged_rects;
+
+        for (int i = 0; i < paper_name.size(); i++) {
+            paper_name_rects.push_back(rects[paper_name_index + i]);
+        }
+
+        merge_selected_character_rects(paper_name_rects, paper_name_merged_rects);
+        std::vector<DocumentRect> paper_name_document_rects;
+        for (auto rect : paper_name_merged_rects) {
+            paper_name_document_rects.push_back(DocumentRect{ rect, page });
+        }
+        return paper_name_document_rects;
+
+    }
+    return {};
+}
+
+void DocumentView::fill_text_under_pointer_info_reference_highlight_rects(TextUnderPointerInfo& info) {
+    info.overview_highlight_rects = get_paper_name_rects_from_page_and_source_text(info.targets[0].page, info.source_text);
+}
+
+void DocumentView::fill_smart_view_candidate_reference_highlight_rects(SmartViewCandidate& candidate) {
+    candidate.highlight_rects = get_paper_name_rects_from_page_and_source_text(
+        candidate.get_docpos(this).page, candidate.source_text
+    );
+
+}
+
 std::optional<QString> DocumentView::get_paper_name_under_pos(DocumentPos docpos, bool clean) {
 
     std::optional<PdfLink> pdf_link_ = current_document->get_link_in_pos(docpos);
@@ -3114,6 +3153,7 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
                 res.targets.push_back(DocumentPos{refdata.page, 0, refdata.y_offset});
             }
 
+            fill_text_under_pointer_info_reference_highlight_rects(res);
             return res;
         }
 
@@ -3124,6 +3164,7 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
             float target_y_offset;
             res.reference_type = find_location_of_selected_text(&target_page, &target_y_offset, &res.source_rect, &res.source_text, &res.overview_highlight_rects);
             res.targets.push_back(DocumentPos{ target_page, 0, target_y_offset });
+            fill_text_under_pointer_info_reference_highlight_rects(res);
             return res;
             /* ReferenceType MainWidget::find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects) { */
         }
@@ -3267,9 +3308,21 @@ std::vector<DocumentRect> DocumentView::get_reference_link_highlights(int dest_p
         int paper_name_start_index = bib_res->first.indexOf(paper_name);
         const std::vector<PagelessDocumentRect>& bib_rects = bib_res->second;
 
+        std::deque<PagelessDocumentRect> paper_name_character_rects;
+        std::vector<PagelessDocumentRect> paper_name_merged_rects;
+
         for (int i = 0; i < paper_name.size(); i++) {
-            overview_highlight_rects.push_back(DocumentRect{ bib_rects[paper_name_start_index + i] , dest_page });
+            paper_name_character_rects.push_back(bib_rects[paper_name_start_index + i]);
+            //overview_highlight_rects.push_back(DocumentRect{ bib_rects[paper_name_start_index + i] , dest_page });
         }
+        merge_selected_character_rects<PagelessDocumentRect>(paper_name_character_rects, paper_name_merged_rects);
+
+        for (auto& r : paper_name_merged_rects) {
+            overview_highlight_rects.push_back(DocumentRect{ r , dest_page });
+        }
+        //for (int i = 0; i < paper_name.size(); i++) {
+        //    overview_highlight_rects.push_back(DocumentRect{ bib_rects[paper_name_start_index + i] , dest_page });
+        //}
     }
     return overview_highlight_rects;
 }

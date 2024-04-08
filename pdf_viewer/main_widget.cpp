@@ -11,6 +11,7 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
+// use left click to drag annotations
 
 #include <iostream>
 #include <vector>
@@ -7031,31 +7032,41 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 void MainWidget::handle_debug_command() {
 
-    int cp = main_document_view->get_center_page_number();
+    //auto page = doc()->get_stext_with_page_number(dv()->get_current_page_number());
+    //int n_blocks = 0;
+    //auto blk = page->first_block;
+    //while (blk) {
+    //    blk = blk->next;
+    //    n_blocks++;
+    //}
+    //qDebug() << n_blocks;
 
-    std::vector<std::vector<PagelessDocumentRect>> rects;
-    std::vector<std::vector<AbsoluteRect>> absrects;
-    std::vector<QString> candidates = doc()->get_page_bib_candidates(cp, &rects);
+    
+    //int cp = main_document_view->get_center_page_number();
 
-    WindowPos mouse_pos = mapFromGlobal(QCursor::pos());
-    AbsoluteDocumentPos mouse_abspos = mouse_pos.to_absolute(dv());
+    //std::vector<std::vector<PagelessDocumentRect>> rects;
+    //std::vector<std::vector<AbsoluteRect>> absrects;
+    //std::vector<QString> candidates = doc()->get_page_bib_candidates(cp, &rects);
+
+    //WindowPos mouse_pos = mapFromGlobal(QCursor::pos());
+    //AbsoluteDocumentPos mouse_abspos = mouse_pos.to_absolute(dv());
 
 
-    for (int i = 0; i < rects.size(); i++) {
-        auto bib_rects = rects[i];
-        absrects.push_back({});
+    //for (int i = 0; i < rects.size(); i++) {
+    //    auto bib_rects = rects[i];
+    //    absrects.push_back({});
 
-        QString selected_bib = candidates[i];
-        QString paper_name = get_paper_name_from_reference_text(selected_bib);
-        int name_index = selected_bib.indexOf(paper_name);
-        //dv()->debug_highlight_rects = {};
-        //dv()->debug_highlight_rects.push_back({});
-        for (int j = 0; j < paper_name.size(); j++) {
-            absrects.back().push_back(DocumentRect{ rects[i][name_index + j] , cp }.to_absolute(doc()));
-            //dv()->debug_highlight_rects.back().push_back();
-        }
-    }
-    dv()->debug_highlight_rects = absrects;
+    //    QString selected_bib = candidates[i];
+    //    QString paper_name = get_paper_name_from_reference_text(selected_bib);
+    //    int name_index = selected_bib.indexOf(paper_name);
+    //    //dv()->debug_highlight_rects = {};
+    //    //dv()->debug_highlight_rects.push_back({});
+    //    for (int j = 0; j < paper_name.size(); j++) {
+    //        absrects.back().push_back(DocumentRect{ rects[i][name_index + j] , cp }.to_absolute(doc()));
+    //        //dv()->debug_highlight_rects.back().push_back();
+    //    }
+    //}
+    //dv()->debug_highlight_rects = absrects;
 
 }
 

@@ -171,6 +171,10 @@ public:
     bool is_pos_inside_selected_text(AbsoluteDocumentPos pos);
     bool is_pos_inside_selected_text(DocumentPos docpos);
     bool is_pos_inside_selected_text(WindowPos pos);
+    //std::optional<QString> get_paper_name_from_reference_info(const TextUnderPointerInfo& info);
+    void fill_text_under_pointer_info_reference_highlight_rects(TextUnderPointerInfo& info);
+    void fill_smart_view_candidate_reference_highlight_rects(SmartViewCandidate& candidate);
+    std::vector<DocumentRect> get_paper_name_rects_from_page_and_source_text(int page, const std::wstring& source_text);
     std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean=false);
     std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     TextUnderPointerInfo find_location_of_text_under_pointer(DocumentPos docpos, bool update_candidates=false);
