@@ -8454,8 +8454,11 @@ void MainWidget::handle_portal_move() {
     else {
         Portal& portal = doc()->get_portals()[index];
 
+        portal.update_merged_rect(doc());
+
         portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
         portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+
     }
 }
 

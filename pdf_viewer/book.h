@@ -254,6 +254,9 @@ struct Portal : Annotation {
     float src_offset_y;
     std::optional<float> src_offset_x = {};
 
+    mutable bool is_merged_rect_valid = false;
+    mutable std::optional<AbsoluteRect> merged_rect = {};
+
     bool is_visible() const;
 
     QJsonObject to_json(std::string doc_checksum) const;
@@ -261,6 +264,8 @@ struct Portal : Annotation {
     void add_to_tuples(std::vector<std::pair<std::string, QVariant>>& tuples) override;
 
     AbsoluteRect get_rectangle() const;
+    AbsoluteRect get_actual_rectangle() const;
+    void update_merged_rect(Document* doc) const;
 };
 
 

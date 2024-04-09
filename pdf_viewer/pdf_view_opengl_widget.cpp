@@ -1024,19 +1024,38 @@ void PdfViewOpenGLWidget::my_render() {
     draw_pending_freehand_drawings(visible_pages);
 
 
+    const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
+    const std::vector<Portal>& portals = doc()->get_portals();
+    prepare_highlight_pipeline();
+    float color[] = {1, 1, 1};
+    set_highlight_color(color, 0.3f);
+    if (doc()->can_use_highlights()) {
+        for (int i = 0; i < portals.size(); i++) {
+            if (portals[i].is_visible()) {
+                if (!portals[i].is_merged_rect_valid) {
+                    portals[i].update_merged_rect(doc());
+                    portals[i].is_merged_rect_valid = true;
+                }
+                if (portals[i].merged_rect) {
+                    render_highlight_absolute(portals[i].get_rectangle(), HRF_FILL | HRF_INVERTED);
+                }
+            }
+        }
+    }
+
     end_native_painting();
 
 
     if (doc()->can_use_highlights()) {
-        const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
-        const std::vector<Portal>& portals = doc()->get_portals();
 
         for (int i = 0; i < document_view->pending_download_portals.size(); i++) {
             render_portal_rect(document_view->pending_download_portals[i], true);
         }
         for (int i = 0; i < portals.size(); i++) {
             if (portals[i].is_visible()) {
-                render_portal_rect(portals[i].get_rectangle(), false);
+                if (!portals[i].merged_rect) {
+                    render_portal_rect(portals[i].get_rectangle(), false);
+                }
             }
         }
 

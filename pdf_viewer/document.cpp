@@ -402,6 +402,7 @@ std::string Document::add_portal(Portal portal, bool insert_into_database) {
         }
         is_annotations_dirty = true;
     }
+    portals[index].update_merged_rect(this);
     return portal.uuid;
 }
 

@@ -20,7 +20,7 @@
 
 #include "book.h"
 
-#define SIOYEK_OPENGL_BACKEND
+//#define SIOYEK_OPENGL_BACKEND
 #ifdef SIOYEK_OPENGL_BACKEND
 using SioyekTextureType = GLuint;
 #else

@@ -316,12 +316,19 @@ AbsoluteRect BookMark::get_rectangle() const{
     }
 }
 
-AbsoluteRect Portal::get_rectangle() const{
+AbsoluteRect Portal::get_actual_rectangle() const{
 
     return AbsoluteRect(
         AbsoluteDocumentPos{ src_offset_x.value() - BOOKMARK_RECT_SIZE, src_offset_y - BOOKMARK_RECT_SIZE},
         AbsoluteDocumentPos{ src_offset_x.value() + BOOKMARK_RECT_SIZE, src_offset_y + BOOKMARK_RECT_SIZE}
     );
+}
+
+AbsoluteRect Portal::get_rectangle() const{
+
+    if (merged_rect) return merged_rect.value();
+    return get_actual_rectangle();
+
 }
 
 float BookMark::get_y_offset() const{
@@ -373,4 +380,25 @@ std::string reference_type_string(ReferenceType rt) {
     if (rt == ReferenceType::Link) return "link";
     if (rt == ReferenceType::RefLink) return "reflink";
     return "";
+}
+
+void Portal::update_merged_rect(Document* doc) const{
+    qDebug() << "update_merged_rect called";
+
+    if (merged_rect) {
+        if (!merged_rect->intersects(get_actual_rectangle())) {
+            merged_rect = {};
+        }
+    }
+    if (!merged_rect.has_value()) {
+        int source_page = doc->absolute_to_page_pos(AbsoluteDocumentPos{ 0, src_offset_y }).page;
+        for (const auto& link : doc->get_page_merged_pdf_links(source_page)) {
+            if (link.rects.size() > 0) {
+                AbsoluteRect link_rect = DocumentRect{ link.rects[0], source_page }.to_absolute(doc);
+                if (link_rect.intersects(get_actual_rectangle())) {
+                    merged_rect = link_rect;
+                }
+            }
+        }
+    }
 }
