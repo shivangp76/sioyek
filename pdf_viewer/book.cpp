@@ -383,7 +383,6 @@ std::string reference_type_string(ReferenceType rt) {
 }
 
 void Portal::update_merged_rect(Document* doc) const{
-    qDebug() << "update_merged_rect called";
 
     if (merged_rect) {
         if (!merged_rect->intersects(get_actual_rectangle())) {
