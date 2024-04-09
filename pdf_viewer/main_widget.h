@@ -73,22 +73,6 @@ struct MenuNode {
 };
 
 
-struct BookmarkMoveData {
-    int index;
-    AbsoluteDocumentPos initial_begin_position;
-    AbsoluteDocumentPos initial_end_position;
-    AbsoluteDocumentPos initial_mouse_position;
-};
-
-
-struct PortalMoveData {
-    int index;
-    AbsoluteDocumentPos initial_position;
-    AbsoluteDocumentPos initial_mouse_position;
-    bool is_pending = false;
-};
-
-
 struct SelectedDrawings {
     int page;
     AbsoluteRect selection_absrect;
@@ -103,18 +87,41 @@ struct PendingDownloadPortal {
     bool marked = false;
 };
 
-struct FreehandDrawingMoveData {
-    std::vector<FreehandDrawing> initial_drawings;
-    std::vector<PixmapDrawing> initial_pixmaps;
-    AbsoluteDocumentPos initial_mouse_position;
-};
-
 enum class PaperDownloadFinishedAction {
     None,
     OpenInSameWindow,
     OpenInNewWindow,
     Portal
 };
+
+enum class VisibleObjectType {
+    Portal,
+    PendingPortal,
+    Bookmark,
+    Highlight
+};
+
+struct VisibleObjectIndex {
+    VisibleObjectType object_type;
+    int index;
+
+    void handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos);
+    void handle_move(MainWidget* widget);
+    void handle_move_end(MainWidget* widget);
+};
+
+struct VisibleObjectMoveData {
+    VisibleObjectIndex index;
+    AbsoluteDocumentPos initial_position;
+    AbsoluteDocumentPos initial_mouse_position;
+};
+
+struct FreehandDrawingMoveData {
+    std::vector<FreehandDrawing> initial_drawings;
+    std::vector<PixmapDrawing> initial_pixmaps;
+    AbsoluteDocumentPos initial_mouse_position;
+};
+
 
 struct RecentlyUpdatedPortalState {
     std::string uuid;
@@ -230,8 +237,7 @@ public:
     std::optional<AbsoluteDocumentPos> rect_select_begin = {};
     std::optional<AbsoluteDocumentPos> rect_select_end = {};
 
-    std::optional<BookmarkMoveData> bookmark_move_data = {};
-    std::optional<PortalMoveData> portal_move_data = {};
+    std::optional<VisibleObjectMoveData> visible_object_move_data = {};
 
     // when set, mouse wheel moves the ruler
     bool visual_scroll_mode = false;
@@ -826,9 +832,12 @@ public:
     void handle_command_text_change(const QString& new_text);
     TextToSpeechHandler* get_tts();
     void handle_bookmark_move_finish();
+    void handle_portal_move_finish();
+
+    void handle_visible_object_move();
     void handle_bookmark_move();
     void handle_portal_move();
-    void handle_portal_move_finish();
+
     bool is_middle_click_being_used();
     void begin_bookmark_move(int index, AbsoluteDocumentPos begin_cursor_pos);
     void begin_portal_move(int index, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
@@ -1043,6 +1052,8 @@ public:
     void delete_current_document_bookmark(int index);
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
+
+    std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 
 #ifdef SIOYEK_IOS
 

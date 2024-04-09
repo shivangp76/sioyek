@@ -12,6 +12,7 @@
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
 // use left click to drag annotations
+// delete command should be generic and target visible objects
 
 #include <iostream>
 #include <vector>
@@ -623,12 +624,8 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
 
 
-    if (bookmark_move_data) {
-        handle_bookmark_move();
-        validate_render();
-    }
-    if (portal_move_data) {
-        handle_portal_move();
+    if (visible_object_move_data) {
+        visible_object_move_data->index.handle_move(this);
         validate_render();
     }
 
@@ -648,7 +645,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             }
         }
         else {
-            if ((!bookmark_move_data.has_value()) && (!portal_move_data.has_value())) {
+            if (!visible_object_move_data.has_value()) {
                 if ((mpos.manhattan(last_mouse_down_window_pos)) > 50) {
                     is_dragging = true;
                 }
@@ -2983,22 +2980,10 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
         last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
 
         AbsoluteDocumentPos abs_mpos = dv()->window_to_absolute_document_pos(last_mouse_down_window_pos);
-        if ((!bookmark_move_data.has_value()) && (!portal_move_data.has_value())) {
-            int bookmark_index = doc()->get_bookmark_index_at_pos(abs_mpos);
-            if (bookmark_index >= 0) {
-                begin_bookmark_move(bookmark_index, abs_mpos);
-                return;
-            }
-            int portal_index = doc()->get_portal_index_at_pos(abs_mpos);
-            if (portal_index >= 0) {
-                begin_portal_move(portal_index, abs_mpos, false);
-                return;
-            }
-
-            int pending_portal_index = get_pending_portal_index_at_pos(abs_mpos);
-            if (pending_portal_index >= 0) {
-                begin_portal_move(pending_portal_index, abs_mpos, true);
-                return;
+        if (!visible_object_move_data.has_value()) {
+            auto visible_object_index = get_visible_object_at_pos(abs_mpos);
+            if (visible_object_index.has_value()) {
+                visible_object_index->handle_move_begin(this, abs_mpos);
             }
         }
     }
@@ -8385,102 +8370,118 @@ TextToSpeechHandler* MainWidget::get_tts() {
 }
 
 void MainWidget::handle_bookmark_move_finish() {
-    BookMark& bm = doc()->get_bookmarks()[bookmark_move_data->index];
-    doc()->update_bookmark_position(bookmark_move_data->index, { bm.begin_x, bm.begin_y }, { bm.end_x, bm.end_y });
+    int index = visible_object_move_data->index.index;
+    BookMark& bm = doc()->get_bookmarks()[index];
+    doc()->update_bookmark_position(index, { bm.begin_x, bm.begin_y }, { bm.end_x, bm.end_y });
 }
 
 void MainWidget::handle_portal_move_finish() {
-    if (!portal_move_data->is_pending) {
-        Portal& portal = doc()->get_portals()[portal_move_data->index];
-        doc()->update_portal_src_position(portal_move_data->index, { portal.src_offset_x.value(), portal.src_offset_y });
+    if (!(visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
+        int index = visible_object_move_data->index.index;
+        Portal& portal = doc()->get_portals()[index];
+        doc()->update_portal_src_position(index, { portal.src_offset_x.value(), portal.src_offset_y });
+    }
+}
+
+void MainWidget::handle_visible_object_move() {
+    if (visible_object_move_data.has_value()) {
+        auto type = visible_object_move_data->index.object_type;
+        if (type == VisibleObjectType::Bookmark) {
+            handle_bookmark_move();
+        }
+        else if (type == VisibleObjectType::Portal || type == VisibleObjectType::PendingPortal) {
+            handle_portal_move();
+        }
     }
 }
 
 void MainWidget::handle_bookmark_move() {
     AbsoluteDocumentPos current_mouse_abspos = get_cursor_abspos();
 
-    float diff_x = current_mouse_abspos.x - bookmark_move_data->initial_mouse_position.x;
-    float diff_y = current_mouse_abspos.y - bookmark_move_data->initial_mouse_position.y;
+    float diff_x = current_mouse_abspos.x - visible_object_move_data->initial_mouse_position.x;
+    float diff_y = current_mouse_abspos.y - visible_object_move_data->initial_mouse_position.y;
 
-    BookMark& bookmark = doc()->get_bookmarks()[bookmark_move_data->index];
+    BookMark& bookmark = doc()->get_bookmarks()[visible_object_move_data->index.index];
 
-    bookmark.begin_x = bookmark_move_data->initial_begin_position.x + diff_x;
-    bookmark.begin_y = bookmark_move_data->initial_begin_position.y + diff_y;
+    auto bm_width = bookmark.rect().width();
+    auto bm_height = bookmark.rect().height();
 
-    if (bookmark.end_y >= 0) {
-        bookmark.end_x = bookmark_move_data->initial_end_position.x + diff_x;
-        bookmark.end_y = bookmark_move_data->initial_end_position.y + diff_y;
+    bookmark.begin_x = visible_object_move_data->initial_position.x + diff_x;
+    bookmark.begin_y = visible_object_move_data->initial_position.y + diff_y;
+
+    if (bookmark.is_freetext()) {
+        bookmark.end_x = bookmark.begin_x + bm_width;
+        bookmark.end_y = bookmark.begin_y + bm_height;
     }
 }
 
 void MainWidget::handle_portal_move() {
     AbsoluteDocumentPos current_mouse_abspos = get_cursor_abspos();
 
-    float diff_x = current_mouse_abspos.x - portal_move_data->initial_mouse_position.x;
-    float diff_y = current_mouse_abspos.y - portal_move_data->initial_mouse_position.y;
+    float diff_x = current_mouse_abspos.x - visible_object_move_data->initial_mouse_position.x;
+    float diff_y = current_mouse_abspos.y - visible_object_move_data->initial_mouse_position.y;
 
-    if (portal_move_data->is_pending) {
-        if (pending_download_portals.size() > portal_move_data->index) {
-            pending_download_portals[portal_move_data->index].pending_portal.src_offset_x = portal_move_data->initial_position.x + diff_x;
-            pending_download_portals[portal_move_data->index].pending_portal.src_offset_y = portal_move_data->initial_position.y + diff_y;
+    int index = visible_object_move_data->index.index;
+    if (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal) {
+        if (pending_download_portals.size() > index) {
+            pending_download_portals[index].pending_portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
+            pending_download_portals[index].pending_portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
             update_opengl_pending_download_portals();
         }
     }
     else {
-        Portal& portal = doc()->get_portals()[portal_move_data->index];
+        Portal& portal = doc()->get_portals()[index];
 
-        portal.src_offset_x = portal_move_data->initial_position.x + diff_x;
-        portal.src_offset_y = portal_move_data->initial_position.y + diff_y;
+        portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
+        portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
     }
 }
 
 bool MainWidget::is_middle_click_being_used() {
-    return bookmark_move_data.has_value() || overview_touch_move_data.has_value() || is_dragging;
+    return visible_object_move_data.has_value() || overview_touch_move_data.has_value() || is_dragging;
 }
 
 void MainWidget::begin_bookmark_move(int index, AbsoluteDocumentPos begin_cursor_pos) {
-    BookmarkMoveData move_data;
-    move_data.index = index;
+    VisibleObjectMoveData move_data;
+    move_data.index.index = index;
+    move_data.index.object_type = VisibleObjectType::Bookmark;
 
-    move_data.initial_begin_position.x = doc()->get_bookmarks()[index].begin_x;
-    move_data.initial_begin_position.y = doc()->get_bookmarks()[index].begin_y;
-    move_data.initial_end_position.x = doc()->get_bookmarks()[index].end_x;
-    move_data.initial_end_position.y = doc()->get_bookmarks()[index].end_y;
+    move_data.initial_position.x = doc()->get_bookmarks()[index].begin_x;
+    move_data.initial_position.y = doc()->get_bookmarks()[index].begin_y;
 
     move_data.initial_mouse_position = begin_cursor_pos;
-    bookmark_move_data = move_data;
+    visible_object_move_data = move_data;
 }
 
 
 void MainWidget::begin_portal_move(int index, AbsoluteDocumentPos begin_cursor_pos, bool is_pending) {
-    PortalMoveData move_data;
-    move_data.index = index;
+    VisibleObjectMoveData move_data;
+    move_data.index.index = index;
 
     if (is_pending) {
+        move_data.index.object_type = VisibleObjectType::PendingPortal;
         if (index < pending_download_portals.size()) {
             move_data.initial_position.x = pending_download_portals[index].pending_portal.src_offset_x.value();
             move_data.initial_position.y = pending_download_portals[index].pending_portal.src_offset_y;
 
             move_data.initial_mouse_position = begin_cursor_pos;
-            move_data.is_pending = is_pending;
-            portal_move_data = move_data;
+            visible_object_move_data = move_data;
         }
     }
     else {
-
+        move_data.index.object_type = VisibleObjectType::Portal;
         if (doc()->get_portals()[index].src_offset_x) {
             move_data.initial_position.x = doc()->get_portals()[index].src_offset_x.value();
             move_data.initial_position.y = doc()->get_portals()[index].src_offset_y;
 
             move_data.initial_mouse_position = begin_cursor_pos;
-            move_data.is_pending = is_pending;
-            portal_move_data = move_data;
+            visible_object_move_data = move_data;
         }
     }
 }
 
 bool MainWidget::should_drag() {
-    return is_dragging && (!bookmark_move_data.has_value()) && (!portal_move_data.has_value());
+    return is_dragging && (!visible_object_move_data.has_value());
 }
 
 void MainWidget::handle_freehand_drawing_move_finish() {
@@ -8720,9 +8721,11 @@ void MainWidget::finish_pending_download_portal(std::wstring download_paper_name
                 int portal_index = src_doc->get_portal_index_with_uuid(portal_uuid);
                 // when a download is finished while we are moving the pending portal, convert the
                 // pending portal move to the actual portal move
-                if (portal_move_data && portal_move_data->is_pending && portal_move_data->index == i) {
-                    portal_move_data->is_pending = false;
-                    portal_move_data->index = portal_index;
+                if (visible_object_move_data
+                    && (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)
+                    && visible_object_move_data->index.index == i) {
+                    visible_object_move_data->index.object_type = VisibleObjectType::Portal;
+                    visible_object_move_data->index.index = portal_index;
                 }
             }
         }
@@ -8836,19 +8839,19 @@ int MainWidget::get_pending_portal_index_at_pos(AbsoluteDocumentPos abspos) {
 void MainWidget::update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices) {
 
     int index_diff = 0;
-    if (portal_move_data && portal_move_data->is_pending) {
+    if (visible_object_move_data && (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
         for (int i = 0; i < removed_indices.size(); i++) {
             int index = removed_indices[i];
 
-            if (index == portal_move_data->index) {
-                portal_move_data = {};
+            if (index == visible_object_move_data->index.index) {
+                visible_object_move_data = {};
                 return;
             }
-            if (index < portal_move_data->index) {
+            if (index < visible_object_move_data->index.index) {
                 index_diff++;
             }
         }
-        portal_move_data->index -= index_diff;
+        visible_object_move_data->index.index -= index_diff;
     }
 
 
@@ -9911,7 +9914,7 @@ bool MainWidget::does_current_widget_consume_quicktap_event(){
 }
 
 bool MainWidget::is_moving_annotations(){
-    if (bookmark_move_data || portal_move_data || freehand_drawing_move_data) {
+    if (visible_object_move_data || freehand_drawing_move_data) {
         return true;
     }
     return false;
@@ -10797,21 +10800,14 @@ void MainWidget::move_selected_bookmark_to_mouse_cursor() {
 
 bool MainWidget::handle_annotation_move_finish(){
 
-    if (bookmark_move_data) {
-        handle_bookmark_move_finish();
-        bookmark_move_data = {};
+    if (visible_object_move_data) {
+        visible_object_move_data->index.handle_move_end(this);
+        visible_object_move_data = {};
         is_dragging = false;
         is_selecting = false;
         return true;
     }
 
-    if (portal_move_data) {
-        handle_portal_move_finish();
-        portal_move_data = {};
-        is_dragging = false;
-        is_selecting = false;
-        return true;
-    }
     if (freehand_drawing_move_data) {
         handle_freehand_drawing_move_finish();
         invalidate_render();
@@ -11451,6 +11447,60 @@ void MainWidget::on_open_document(const std::wstring& path) {
     }
 }
 
+std::optional<VisibleObjectIndex> MainWidget::get_visible_object_at_pos(AbsoluteDocumentPos pos) {
+    int bookmark_index = doc()->get_bookmark_index_at_pos(pos);
+    if (bookmark_index >= 0) {
+        return VisibleObjectIndex{VisibleObjectType::Bookmark, bookmark_index};
+    }
+    int portal_index = doc()->get_portal_index_at_pos(pos);
+    if (portal_index >= 0) {
+        return VisibleObjectIndex{VisibleObjectType::Portal, portal_index};
+    }
+
+    int pending_portal_index = get_pending_portal_index_at_pos(pos);
+    if (pending_portal_index >= 0) {
+        return VisibleObjectIndex{VisibleObjectType::PendingPortal, pending_portal_index};
+    }
+
+    return {};
+}
+
+void VisibleObjectIndex::handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos) {
+
+    if (object_type == VisibleObjectType::Bookmark) {
+        widget->begin_bookmark_move(index, mouse_pos);
+    }
+    else if (object_type == VisibleObjectType::Portal) {
+        widget->begin_portal_move(index, mouse_pos, false);
+    }
+    else if (object_type == VisibleObjectType::PendingPortal) {
+        widget->begin_portal_move(index, mouse_pos, true);
+    }
+}
+
+void VisibleObjectIndex::handle_move(MainWidget* widget){
+    if (object_type == VisibleObjectType::Bookmark) {
+        widget->handle_bookmark_move();
+    }
+    else if ((object_type == VisibleObjectType::Portal) || (object_type == VisibleObjectType::PendingPortal)) {
+        widget->handle_portal_move();
+    }
+}
+
+void VisibleObjectIndex::handle_move_end(MainWidget* widget){
+    if (object_type == VisibleObjectType::Bookmark) {
+        widget->handle_bookmark_move_finish();
+    }
+    else if ((object_type == VisibleObjectType::Portal) || (object_type == VisibleObjectType::PendingPortal)) {
+        widget->handle_portal_move_finish();
+    }
+}
+
+//void VisibleObjectMoveData::handle_move_begin(MainWidget* widget) {
+//
+//}
+//
+ 
 #ifdef SIOYEK_IOS
 void MainWidget::handle_ios_files(const QUrl& url){
     qDebug() << "handle_ios_files called with: " << url;
