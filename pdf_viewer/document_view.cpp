@@ -1937,7 +1937,17 @@ void ScratchPad::clear() {
 }
 
 bool ScratchPad::is_compile_invalid() {
+#ifdef SIOYEK_OPENGL_BACKEND
     return !is_compile_valid;
+#else
+    if (!is_compile_valid) return true;
+    if (cached_pixmap) {
+        if (cached_pixmap->zoom_level != zoom_level) return true;
+        if (cached_pixmap->offset_x != offset.x) return true;
+        if (cached_pixmap->offset_y != offset.y) return true;
+    }
+    return false;
+#endif
 }
 
 std::vector<int> DocumentView::get_visible_bookmark_indices() {
@@ -2579,6 +2589,15 @@ NormalizedWindowRect DocumentView::get_overview_rect_pixel_perfect(int widget_wi
     res.y1 = (static_cast<float>(y1_pixel) / static_cast<float>(widget_height)) * 2.0f - 1.0f;
 
     return res;
+}
+
+WindowRect DocumentView::get_overview_download_rect() {
+    WindowPos top_left = NormalizedWindowPos{ overview_offset_x - overview_half_width, overview_offset_y + overview_half_height}.to_window(this);
+    //top_left.x += 1;
+    top_left.y += 2;
+
+    WindowPos bottom_right = WindowPos{ top_left.x + 20, top_left.y + 20 };
+    return WindowRect(top_left, bottom_right);
 }
 
 std::vector<NormalizedWindowRect> DocumentView::get_overview_border_rects() {

@@ -3621,6 +3621,14 @@ bool is_quote_reference(const QString& text, int* begin_index, int* end_index) {
     return get_largest_quote_size(text, begin_index, end_index) > 15;
 }
 
+QString remove_final_small_comma_from_end(QString reference_text) {
+    int last_comma_index = reference_text.lastIndexOf(",");
+    if (last_comma_index > reference_text.size() - 7) {
+        return reference_text.left(last_comma_index);
+    }
+    return reference_text;
+}
+
 QString strip_garbage_from_paper_name(QString paper_name) {
     std::vector<int> garbage_characters = { '.', ',', ':', '"', '\'', ' ', 8220, 8221 };
     int first_index = 0;
@@ -3635,7 +3643,7 @@ QString strip_garbage_from_paper_name(QString paper_name) {
     }
 
     if (last_index > first_index) {
-        return paper_name.mid(first_index, last_index - first_index + 1);
+        return remove_final_small_comma_from_end(paper_name.mid(first_index, last_index - first_index + 1));
     }
     return "";
 }
@@ -3657,8 +3665,10 @@ bool could_dot_span_be_refernce_name(const QString& span_text) {
 }
 
 
+
 QString get_paper_name_from_reference_text(QString reference_text) {
 
+    reference_text = reference_text.trimmed();
     int quote_begin_index, quote_end_index;
     if (is_quote_reference(reference_text, &quote_begin_index, &quote_end_index)) {
         return strip_garbage_from_paper_name(reference_text.mid(quote_begin_index, quote_end_index - quote_begin_index));

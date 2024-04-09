@@ -1,4 +1,4 @@
-#include <cmath>
+﻿#include <cmath>
 
 #include <qcolor.h>
 #include <qmouseevent.h>
@@ -74,6 +74,7 @@ extern bool HIDE_OVERLAPPING_LINK_LABELS;
 extern bool PRESERVE_IMAGE_COLORS;
 extern bool INVERTED_PRESERVED_IMAGE_COLORS;
 extern bool INVERT_SELECTED_TEXT;
+extern bool DEBUG;
 
 extern int NUM_PRERENDERED_NEXT_SLIDES;
 extern int NUM_PRERENDERED_PREV_SLIDES;
@@ -350,10 +351,10 @@ void PdfViewOpenGLWidget::render_scratchpad() {
 
     render_compiled_drawings();
     prepare_non_compiled_line_drawing_pipeline();
-    render_drawings(scratchpad, scratchpad->get_non_compiled_drawings());
-    render_drawings(scratchpad, document_view->moving_drawings, true);
-    render_drawings(scratchpad, document_view->moving_drawings, false);
-    render_drawings(scratchpad, pending_drawing);
+    render_drawings(&painter, scratchpad, scratchpad->get_non_compiled_drawings());
+    render_drawings(&painter, scratchpad, document_view->moving_drawings, true);
+    render_drawings(&painter, scratchpad, document_view->moving_drawings, false);
+    render_drawings(&painter, scratchpad, pending_drawing);
 
     disable_multisampling();
 
@@ -444,6 +445,20 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
 #else
     render_overview_qpainter_backend(window_rect, overview);
 #endif
+
+    if (dv()->overview_page && (dv()->overview_page->highlight_rects.size() > 0)) {
+
+        if ((dv()->overview_page->overview_type == "reference") || (dv()->overview_page->overview_type == "reflink")) {
+            QRect download_rect = dv()->get_overview_download_rect().to_qrect();
+            //painter.drawRect(download_rect);
+            //painter.setBrush(Qt::black);
+            painter.fillRect(download_rect, QBrush(Qt::black));
+            painter.setPen(Qt::white);
+            painter.drawText(download_rect, Qt::AlignCenter, "↓");
+
+            painter.beginNativePainting();
+        }
+    }
 }
 
 
@@ -1706,7 +1721,35 @@ void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const std::vector<F
 #ifdef SIOYEK_OPENGL_BACKEND
     return compile_drawings_opengl_backend(dv, drawings);
 #else
-    qDebug() << "compile_drawings not implemented.";
+
+
+    if (drawings.size() == 0) {
+        scratchpad->on_compile();
+    }
+
+    QPixmap pixmap(rect().size());
+    pixmap.fill(Qt::transparent);
+    QPainter pixmap_painter(&pixmap);
+    pixmap_painter.setRenderHints(QPainter::RenderHint::Antialiasing, true);
+    render_drawings(&pixmap_painter, dv, drawings);
+
+    CachedScratchpadPixmapData cached_pixmap_data;
+    cached_pixmap_data.offset_x = dv->get_offset_x();
+    cached_pixmap_data.offset_y = dv->get_offset_y();
+    cached_pixmap_data.zoom_level = dv->get_zoom_level();
+    cached_pixmap_data.pixmap = pixmap;
+    scratchpad->cached_pixmap = std::make_unique<CachedScratchpadPixmapData>(cached_pixmap_data);
+    scratchpad->on_compile();
+
+
+    //QPainterPath path;
+    //for (const auto& drawing : drawings) {
+    //    path.line
+    //}
+    //std::vector<QLineF> compiled_lines;
+    //painter.drawLines()
+    //scratchpad->on_compile();
+    //qDebug() << "compile_drawings not implemented.";
 #endif
 }
 
@@ -1782,11 +1825,14 @@ void PdfViewOpenGLWidget::render_compiled_drawings() {
 
     }
 #else
-    qDebug() << "render compiled drawings not implemented";
+    if (scratchpad->cached_pixmap) {
+        painter.drawPixmap(rect(), scratchpad->cached_pixmap->pixmap);
+    }
+    //qDebug() << "render compiled drawings not implemented";
 #endif
 }
 
-void PdfViewOpenGLWidget::render_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
+void PdfViewOpenGLWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
 
 #ifdef SIOYEK_OPENGL_BACKEND
     if (drawings.size() == 0) return;
@@ -1963,12 +2009,14 @@ void PdfViewOpenGLWidget::render_drawings(DocumentView* dv, const std::vector<Fr
     glDisable(GL_BLEND);
 #else
 
+
+
     float last_thickness = -1;
     char last_drawing_type = 0;
 
     for (auto& drawing: drawings){
         if (drawing.points.size() > 0 && ((drawing.points[0].thickness != last_thickness) || (drawing.type != last_drawing_type))){
-            float current_thickness = drawing.points[0].thickness * document_view->get_zoom_level();
+            float current_thickness = drawing.points[0].thickness * dv->get_zoom_level();
             float current_drawing_color_[4] = { HIGHLIGHT_COLORS[(drawing.type - 'a') * 3],
                 HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 1],
                  HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 2],
@@ -1982,22 +2030,23 @@ void PdfViewOpenGLWidget::render_drawings(DocumentView* dv, const std::vector<Fr
                 color = Qt::yellow;
                 current_thickness *= 3;
             }
-            painter.setPen(QPen(color, current_thickness, Qt::PenStyle::SolidLine, Qt::PenCapStyle::RoundCap, Qt::PenJoinStyle::RoundJoin));
+            p->setPen(QPen(color, current_thickness, Qt::PenStyle::SolidLine, Qt::PenCapStyle::RoundCap, Qt::PenJoinStyle::RoundJoin));
         }
         if (drawing.points.size() == 1){
-            WindowPos begin = drawing.points[0].pos.to_window(document_view);
-            painter.drawPoint(QPoint(begin.x, begin.y));
+            WindowPos begin = drawing.points[0].pos.to_window(dv);
+            p->drawPoint(QPoint(begin.x, begin.y));
         }
         else{
 
             for (int i = 1; i < drawing.points.size(); i++){
-                WindowPos begin = drawing.points[i-1].pos.to_window(document_view);
-                WindowPos end = drawing.points[i].pos.to_window(document_view);
-                painter.drawLine(QLine(begin.x, begin.y, end.x, end.y));
+                WindowPos begin = drawing.points[i-1].pos.to_window(dv);
+                WindowPos end = drawing.points[i].pos.to_window(dv);
+                p->drawLine(QLine(begin.x, begin.y, end.x, end.y));
             }
         }
     }
-// void PdfViewOpenGLWidget::render_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
+
+    
 #endif
 }
 
@@ -2966,11 +3015,7 @@ void PdfViewOpenGLWidget::clear_background_buffers(float r, float g, float b, GL
 }
 
 void PdfViewOpenGLWidget::draw_pixmap(QRect rect, QPixmap* pixmap){
-#ifdef SIOYEK_OPENGL_BACKEND
     painter.drawPixmap(rect, *pixmap);
-#else
-    qDebug() << "draw_pixmap not implemented";
-#endif
 }
 
 void PdfViewOpenGLWidget::fill_rect(QRect rect, const QColor& color){
@@ -3105,11 +3150,11 @@ void PdfViewOpenGLWidget::draw_pending_freehand_drawings(const std::vector<int>&
     enable_multisampling();
     for (auto page : visible_pages) {
 
-        render_drawings(dv(), doc()->get_page_drawings(page));
+        render_drawings(&painter, dv(), doc()->get_page_drawings(page));
     }
-    render_drawings(dv(), document_view->moving_drawings, true);
-    render_drawings(dv(), document_view->moving_drawings, false);
-    render_drawings(dv(), pending_drawing);
+    render_drawings(&painter, dv(), document_view->moving_drawings, true);
+    render_drawings(&painter, dv(), document_view->moving_drawings, false);
+    render_drawings(&painter, dv(), pending_drawing);
 
     disable_multisampling();
     bind_default();

@@ -217,6 +217,7 @@ extern bool DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE;
 extern bool USE_SYSTEM_THEME;
 extern bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME;
 extern bool ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW;
+extern bool DEBUG;
 
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
 extern std::wstring CONTEXT_MENU_ITEMS;
@@ -705,12 +706,24 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     if (!is_scratchpad_mode()){
         if (main_document_view->is_window_point_in_overview(normal_mpos)) {
             link = doc()->get_link_in_pos(main_document_view->window_pos_to_overview_pos(normal_mpos));
-            if (link) {
+            if (link || dv()->get_overview_download_rect().contains(mpos)) {
                 setCursor(Qt::PointingHandCursor);
             }
             else {
-                setCursor(Qt::ArrowCursor);
+                OverviewSide border_side;
+                if (dv()->is_window_point_in_overview_border(normal_mpos, &border_side)) {
+                    if (border_side == OverviewSide::bottom || border_side == OverviewSide::top) {
+                        setCursor(Qt::SizeVerCursor);
+                    }
+                    else {
+                        setCursor(Qt::SizeHorCursor);
+                    }
+                }
+                else {
+                    setCursor(Qt::ArrowCursor);
+                }
             }
+
             return;
         }
 
@@ -1376,6 +1389,10 @@ bool MainWidget::is_pending_link_source_filled() {
 std::wstring MainWidget::get_status_string(bool is_right) {
 
     QString status_string = QString::fromStdWString(STATUS_BAR_FORMAT);
+    if (DEBUG) {
+        status_string = status_string + " [DEBUG]";
+    }
+
     if (is_right) {
         status_string = QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT);
     }
@@ -2339,6 +2356,15 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
 
 }
 
+void MainWidget::download_and_portal_to_highlighted_overview_paper() {
+    auto paper_name = get_overview_paper_name();
+    auto source_rect = get_overview_source_rect();
+    if (paper_name && source_rect) {
+        download_paper_with_name(paper_name->toStdWString(), get_default_paper_download_finish_action());
+        download_and_portal(paper_name->toStdWString(), source_rect->center());
+    }
+}
+
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
 
     if (is_rotated()) {
@@ -2496,8 +2522,20 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
     if (down == true) {
 
+        bool is_in_overview = main_document_view->is_window_point_in_overview(click_normalized_window_pos);
+        bool is_in_download = dv()->get_overview_download_rect().contains(click_pos);
         OverviewSide border_index = static_cast<OverviewSide>(-1);
-        if (main_document_view->is_window_point_in_overview_border(click_normalized_window_pos, &border_index)) {
+
+        if (!TOUCH_MODE && is_in_overview && is_in_download) {
+            last_mouse_down = abs_doc_pos;
+            download_and_portal_to_highlighted_overview_paper();
+            close_overview();
+
+            //execute_macro_if_enabled(L"download_overview_paper");
+            return;
+        }
+
+        if (!is_in_download && main_document_view->is_window_point_in_overview_border(click_normalized_window_pos, &border_index)) {
             OverviewResizeData resize_data;
             resize_data.original_normal_mouse_pos = click_normalized_window_pos;
             resize_data.original_rect = main_document_view->get_overview_rect();
@@ -2505,7 +2543,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             overview_resize_data = resize_data;
             return;
         }
-        if (main_document_view->is_window_point_in_overview(click_normalized_window_pos)) {
+        if (is_in_overview) {
             float original_offset_x, original_offset_y;
 
             if (TOUCH_MODE) {
@@ -3487,8 +3525,8 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         //current_candid.target_pos = reference_info.targets[0];
         //current_candid.source_text = reference_info.source_text;
         //smart_view_candidates = { current_candid };
-        dv()->set_overview_position(reference_info.targets[0].page, reference_info.targets[0].y, reference_type_string(reference_info.reference_type));
-        main_document_view->set_overview_highlights(reference_info.overview_highlight_rects);
+        dv()->set_overview_position(reference_info.targets[0].page, reference_info.targets[0].y, reference_type_string(reference_info.reference_type), reference_info.overview_highlight_rects);
+        //main_document_view->set_overview_highlights(reference_info.overview_highlight_rects);
         on_overview_source_updated();
         //main_document_view->fit_overview_width();
         return true;

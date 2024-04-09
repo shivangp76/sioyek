@@ -25,6 +25,7 @@ float UNSELECTED_SEARCH_HIGHLIGHT_COLOR[3] = { 0.0f, 0.5f, 0.5f };
 float GAMMA = 1.0f;
 bool DEBUG_DISPLAY_FREEHAND_POINTS = false;
 bool DEBUG_SMOOTH_FREEHAND_DRAWINGS = true;
+bool DEBUG = false;
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
 #else
@@ -999,6 +1000,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"vimtex_wsl_fix", &VIMTEX_WSL_FIX);
     add_bool(L"sliced_rendering", &SLICED_RENDERING);
     add_bool(L"touch_mode", &TOUCH_MODE);
+    add_bool(L"debug_mode", &DEBUG);
     add_bool(L"initial_snapped_dragging", &SNAP_DRAGGING);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_string(L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS);

@@ -310,6 +310,7 @@ public:
     NormalizedWindowRect get_overview_rect();
     NormalizedWindowRect get_overview_rect_pixel_perfect(int widget_width, int widget_height, int view_width, int view_height);
     std::vector<NormalizedWindowRect> get_overview_border_rects();
+    WindowRect get_overview_download_rect();
     bool is_window_point_in_overview(NormalizedWindowPos window_point);
     bool is_window_point_in_overview_border(NormalizedWindowPos window_point, OverviewSide* which_border);
     void get_overview_offsets(float* offset_x, float* offset_y);
@@ -413,6 +414,13 @@ public:
 };
 
 
+struct CachedScratchpadPixmapData {
+    QPixmap pixmap;
+    float zoom_level;
+    float offset_x;
+    float offset_y;
+};
+
 class ScratchPad : public DocumentView {
 private:
     std::vector<FreehandDrawing> all_drawings;
@@ -422,6 +430,9 @@ public:
 
     std::vector<PixmapDrawing> pixmaps;
     std::optional<CompiledDrawingData> cached_compiled_drawing_data = {};
+#ifndef SIOYEK_OPENGL_BACKEND
+    std::unique_ptr<CachedScratchpadPixmapData> cached_pixmap = {};
+#endif
 
     ScratchPad();
     bool set_offsets(float new_offset_x, float new_offset_y, bool force = false);

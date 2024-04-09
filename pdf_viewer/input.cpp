@@ -5431,12 +5431,12 @@ public:
 
         std::wstring text_ = text.value();
 
-        widget->download_paper_with_name(text_, widget->get_default_paper_download_finish_action());
-
         if (source_rect) {
             widget->download_and_portal(text_, source_rect->center());
         }
-
+        else {
+            widget->download_paper_with_name(text_, widget->get_default_paper_download_finish_action());
+        }
 
     }
 

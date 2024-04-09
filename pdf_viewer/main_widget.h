@@ -1042,6 +1042,7 @@ public:
     void update_highlight_annot_with_uuid(const std::string& uuid, const std::wstring& new_annot);
     void delete_current_document_bookmark(int index);
     void delete_global_bookmark(const std::string& uuid);
+    void download_and_portal_to_highlighted_overview_paper();
 
 #ifdef SIOYEK_IOS
 
