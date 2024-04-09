@@ -564,6 +564,13 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     AbsoluteDocumentPos abs_mpos = get_window_abspos(mpos);
     NormalizedWindowPos normal_mpos = mpos.to_window_normalized(main_document_view);
 
+    // we start moving visible objects when the mouse has moved for some distance after clicking
+    // so we can distinguish between single-click selects and mouse drags
+    if (visible_object_move_data && !visible_object_move_data->is_moving) {
+        if (manhattan_distance(visible_object_move_data->initial_mouse_position, abs_mpos) > 5) {
+            visible_object_move_data->is_moving = true;
+        }
+    }
     if (freehand_drawing_move_data) {
         // update temp drawings of opengl widget
         //AbsoluteDocumentPos mouse_abspos = WindowPos(mouse_event->pos()).to_absolute(main_document_view);
@@ -625,7 +632,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
 
     if (visible_object_move_data) {
-        visible_object_move_data->index.handle_move(this);
+        visible_object_move_data->handle_move(this);
         validate_render();
     }
 
@@ -2531,6 +2538,18 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             //execute_macro_if_enabled(L"download_overview_paper");
             return;
         }
+        auto visible_object = get_visible_object_at_pos(abs_doc_pos);
+
+        // if we click on a visilbe object, we consider it as a potential for drag-move
+        // we don't start it now though (hence is_moving=false) because the user might just
+        // be clicking on an object to select it rather than drag it, we start dragging
+        // after the mouse has moved a certain amount in mouseMoveEvent
+        if (visible_object) {
+            last_mouse_down = abs_doc_pos;
+            visible_object->handle_move_begin(this, abs_doc_pos);
+            visible_object_move_data->is_moving = false;
+            return;
+        }
 
         if (!is_in_download && main_document_view->is_window_point_in_overview_border(click_normalized_window_pos, &border_index)) {
             OverviewResizeData resize_data;
@@ -2625,8 +2644,11 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             is_word_selecting = false;
         }
         else {
-            //            WindowPos current_window_pos = {};
-            //            handle_click(click_pos);
+            // clear the potential drag candidate as we are clicking rather than dragging
+            if (visible_object_move_data && !visible_object_move_data->is_moving) {
+                visible_object_move_data = {};
+            }
+
             if (!TOUCH_MODE) {
                 handle_click(click_pos);
                 clear_selected_text();
@@ -10800,8 +10822,8 @@ void MainWidget::move_selected_bookmark_to_mouse_cursor() {
 
 bool MainWidget::handle_annotation_move_finish(){
 
-    if (visible_object_move_data) {
-        visible_object_move_data->index.handle_move_end(this);
+    if (visible_object_move_data && visible_object_move_data->is_moving) {
+        visible_object_move_data->handle_move_end(this);
         visible_object_move_data = {};
         is_dragging = false;
         is_selecting = false;
@@ -11478,21 +11500,25 @@ void VisibleObjectIndex::handle_move_begin(MainWidget* widget, AbsoluteDocumentP
     }
 }
 
-void VisibleObjectIndex::handle_move(MainWidget* widget){
-    if (object_type == VisibleObjectType::Bookmark) {
-        widget->handle_bookmark_move();
-    }
-    else if ((object_type == VisibleObjectType::Portal) || (object_type == VisibleObjectType::PendingPortal)) {
-        widget->handle_portal_move();
+void VisibleObjectMoveData::handle_move(MainWidget* widget){
+    if (is_moving) {
+        if (index.object_type == VisibleObjectType::Bookmark) {
+            widget->handle_bookmark_move();
+        }
+        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal)) {
+            widget->handle_portal_move();
+        }
     }
 }
 
-void VisibleObjectIndex::handle_move_end(MainWidget* widget){
-    if (object_type == VisibleObjectType::Bookmark) {
-        widget->handle_bookmark_move_finish();
-    }
-    else if ((object_type == VisibleObjectType::Portal) || (object_type == VisibleObjectType::PendingPortal)) {
-        widget->handle_portal_move_finish();
+void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
+    if (is_moving) {
+        if (index.object_type == VisibleObjectType::Bookmark) {
+            widget->handle_bookmark_move_finish();
+        }
+        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal)) {
+            widget->handle_portal_move_finish();
+        }
     }
 }
 

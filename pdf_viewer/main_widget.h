@@ -106,14 +106,16 @@ struct VisibleObjectIndex {
     int index;
 
     void handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos);
-    void handle_move(MainWidget* widget);
-    void handle_move_end(MainWidget* widget);
 };
 
 struct VisibleObjectMoveData {
     VisibleObjectIndex index;
     AbsoluteDocumentPos initial_position;
     AbsoluteDocumentPos initial_mouse_position;
+    bool is_moving = true;
+
+    void handle_move(MainWidget* widget);
+    void handle_move_end(MainWidget* widget);
 };
 
 struct FreehandDrawingMoveData {
