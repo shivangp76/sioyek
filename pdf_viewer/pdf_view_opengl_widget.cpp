@@ -578,6 +578,10 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
             &rendered_width,
             &rendered_height);
 
+        if (is_helper && !texture) {
+            is_helper_waiting_for_render = true;
+        }
+
 
         // when rotating, we swap nv and nh 
         int nh_ = nh;
@@ -822,6 +826,8 @@ void PdfViewOpenGLWidget::my_render() {
         render_page(presentation_page_number);
     }
     else {
+
+        is_helper_waiting_for_render = false;
 
         for (int page : visible_pages) {
             render_page(page);

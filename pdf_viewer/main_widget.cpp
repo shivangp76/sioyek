@@ -1816,7 +1816,7 @@ void MainWidget::validate_render() {
         opengl_widget->update();
     }
 
-    if (is_helper_visible() && (should_update_portal || helper_opengl_widget()->hasFocus())) {
+    if (is_helper_visible() && (should_update_portal || helper_opengl_widget()->hasFocus() || helper_opengl_widget()->is_helper_waiting_for_render)) {
         helper_opengl_widget()->update();
     }
 

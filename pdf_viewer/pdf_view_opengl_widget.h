@@ -210,6 +210,7 @@ protected:
     void prepare_initial_render_pipeline();
     void prepare_link_highlight_state();
 public:
+    bool is_helper_waiting_for_render = false;
 
 
     PdfViewOpenGLWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, bool is_helper, QWidget* parent = nullptr);
