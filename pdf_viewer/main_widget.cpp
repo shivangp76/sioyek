@@ -9514,7 +9514,7 @@ void MainWidget::handle_select_ruler_text() {
         selection_end = abspos_end;
 
         main_document_view->selected_character_rects.clear();
-        doc()->get_text_selection(abspos_begin, abspos_end, false, main_document_view->selected_character_rects, selected_text);
+        doc()->get_text_selection(abspos_begin, abspos_end, false, main_document_view->selected_character_rects, main_document_view->selected_text);
     }
 }
 
