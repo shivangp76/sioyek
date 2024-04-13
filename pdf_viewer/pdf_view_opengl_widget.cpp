@@ -2261,11 +2261,18 @@ void PdfViewOpenGLWidget::render_text_highlights(){
     merge_selected_character_rects(*dv()->get_selected_character_rects(), bounding_rects);
 
     for (auto rect : bounding_rects) {
+
+        int line_pending_flags = HRF_FILL | HRF_INVERTED;
+        int normal_flags = HRF_FILL | HRF_BORDER;
         if (INVERT_SELECTED_TEXT) {
-            render_highlight_absolute(rect, HRF_FILL | HRF_INVERTED);
+            std::swap(line_pending_flags, normal_flags);
+        }
+
+        if (dv()->is_line_select_mode()) {
+            render_highlight_absolute(rect, line_pending_flags);
         }
         else {
-            render_highlight_absolute(rect, HRF_FILL | HRF_BORDER);
+            render_highlight_absolute(rect, normal_flags);
         }
     }
 }

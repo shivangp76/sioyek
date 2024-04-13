@@ -5174,7 +5174,7 @@ public:
     AddHighlightWithCurrentTypeCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
         if (widget->main_document_view->selected_character_rects.size() > 0) {
-            widget->add_highlight_to_current_document(widget->selection_begin, widget->selection_end, widget->select_highlight_type);
+            widget->add_highlight_to_current_document(widget->dv()->selection_begin, widget->dv()->selection_end, widget->select_highlight_type);
             widget->clear_selected_text();
         }
     }
@@ -5399,7 +5399,7 @@ public:
     GotoSelectedTextCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->long_jump_to_destination(widget->selection_begin.y);
+        widget->long_jump_to_destination(widget->dv()->selection_begin.y);
     }
 
 };
@@ -5635,7 +5635,8 @@ public:
     SelectRulerTextCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_select_ruler_text();
+        widget->main_document_view->toggle_line_select_mode();
+        //widget->handle_select_ruler_text();
     }
 
 };

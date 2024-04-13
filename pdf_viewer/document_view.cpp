@@ -97,6 +97,9 @@ void DocumentView::handle_escape() {
     character_highlight_rect = {};
     wrong_character_rect = {};
     synctex_highlights.clear();
+    if (line_select_mode) {
+        toggle_line_select_mode();
+    }
 }
 
 void DocumentView::exit_ruler_mode() {
@@ -1280,6 +1283,10 @@ void DocumentView::set_line_index(int index, int page) {
         if (index >= 0 && index < lines.size()) {
             ruler_rect = lines[index];
         }
+    }
+
+    if (line_select_mode) {
+        select_ruler_text();
     }
 
 }
@@ -3388,5 +3395,42 @@ void DocumentView::set_overview_position(
         set_overview_page(overview_state);
         set_overview_highlights(overview_state.highlight_rects);
     }
+}
+
+void DocumentView::select_ruler_text() {
+    std::optional<AbsoluteRect> ruler_rect_ = get_ruler_rect();
+    if (ruler_rect_) {
+        auto ruler_rect = ruler_rect_.value();
+
+        AbsoluteDocumentPos abspos_begin = ruler_rect.center_left();
+        AbsoluteDocumentPos abspos_end = ruler_rect.center_right();
+        if (line_select_mode && line_select_begin.has_value()) {
+            abspos_begin = line_select_begin.value();
+            selection_end = abspos_end;
+        }
+        else {
+            line_select_begin = abspos_begin;
+            selection_begin = abspos_begin;
+        }
+
+        selected_character_rects.clear();
+        current_document->get_text_selection(abspos_begin, abspos_end, false, selected_character_rects, selected_text);
+    }
+}
+
+void DocumentView::toggle_line_select_mode() {
+
+    if (line_select_mode == false) {
+        select_ruler_text();
+        line_select_mode = true;
+    }
+    else {
+        line_select_mode = false;
+        line_select_begin = {};
+    }
+}
+
+bool DocumentView::is_line_select_mode() {
+    return line_select_mode;
 }
 

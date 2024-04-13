@@ -89,7 +89,15 @@ public:
     bool should_highlight_words = false;
     bool should_show_numbers = false;
     bool should_show_rect_hints = false;
+
     ColorPalette color_mode = ColorPalette::Normal;
+
+    bool line_select_mode = false;
+    std::optional<AbsoluteDocumentPos> line_select_begin = {};
+
+    // begin/end position of the current text selection
+    AbsoluteDocumentPos selection_begin;
+    AbsoluteDocumentPos selection_end;
 
     std::string tag_prefix = "";
     std::vector<std::string> highlighted_tags;
@@ -410,6 +418,10 @@ public:
     float get_page_space_x();
     float get_page_space_y();
     bool fast_coordinates();
+
+    void select_ruler_text();
+    void toggle_line_select_mode();
+    bool is_line_select_mode();
 
 };
 

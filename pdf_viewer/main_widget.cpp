@@ -13,6 +13,8 @@
 // smartviewcandidates are not filled when right clicking on a link?
 // use left click to drag annotations
 // delete command should be generic and target visible objects
+// the download icon is not displayed when we move to the next possible overview
+// add some commands like { } to text selection mode
 
 #include <iostream>
 #include <vector>
@@ -798,13 +800,13 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         int msecs_since_last_text_select = last_text_select_time.msecsTo(QTime::currentTime());
         if (msecs_since_last_text_select > 16 || msecs_since_last_text_select < 0) {
 
-            selection_begin = last_mouse_down;
-            selection_end = abs_mpos;
+            dv()->selection_begin = last_mouse_down;
+            dv()->selection_end = abs_mpos;
             //fz_point selection_begin = { last_mouse_down.x(), last_mouse_down.y()};
             //fz_point selection_end = { document_x, document_y };
 
-            main_document_view->get_text_selection(selection_begin,
-                selection_end,
+            main_document_view->get_text_selection(dv()->selection_begin,
+                dv()->selection_end,
                 is_word_selecting,
                 main_document_view->selected_character_rects,
                 dv()->selected_text);
@@ -1646,6 +1648,7 @@ void MainWidget::handle_escape() {
 
     pop_current_widget();
 
+    bool was_line_select = dv()->line_select_mode;
     if (main_document_view) {
         main_document_view->handle_escape();
         opengl_widget->handle_escape();
@@ -1661,7 +1664,9 @@ void MainWidget::handle_escape() {
         }
 
         set_overview_page({});
-        clear_selected_text();
+        if (!was_line_select) {
+            clear_selected_text();
+        }
 
         //main_document_view->ruler
         if (!done_anything) {
@@ -2582,7 +2587,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             return;
         }
 
-        selection_begin = abs_doc_pos;
+        dv()->selection_begin = abs_doc_pos;
         //selection_begin_x = x_;
         //selection_begin_y = y_;
 
@@ -2613,7 +2618,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         }
     }
     else {
-        selection_end = abs_doc_pos;
+        dv()->selection_end = abs_doc_pos;
 
         is_selecting = false;
         is_dragging = false;
@@ -2880,7 +2885,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         else {
             handle_left_click({ mevent->pos().x(), mevent->pos().y() }, false, is_shift_pressed, is_control_pressed, is_command_pressed, is_alt_pressed);
             if (is_select_highlight_mode && (main_document_view->selected_character_rects.size() > 0)) {
-                add_highlight_to_current_document(selection_begin, selection_end, select_highlight_type);
+                add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, select_highlight_type);
                 clear_selected_text();
             }
             if (main_document_view->selected_character_rects.size() > 0) {
@@ -2922,7 +2927,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
                 && main_document_view->selected_character_rects.size() > 0
                 && !(main_document_view && main_document_view->get_overview_page())) {
 
-                add_highlight_to_current_document(selection_begin, selection_end, select_highlight_type);
+                add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, select_highlight_type);
                 clear_selected_text();
 
                 validate_render();
@@ -3845,10 +3850,10 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
             std::wstring current_selected_text = get_selected_text();
 
             if (current_selected_text.size() > 0) {
-                auto selection_begin_document = main_document_view->get_document()->absolute_to_page_pos(selection_begin);
+                auto selection_begin_document = main_document_view->get_document()->absolute_to_page_pos(dv()->selection_begin);
                 command_parts[i].replace("%{selection_begin_document}",
                     QString::number(selection_begin_document.page) + " " + QString::number(selection_begin_document.x) + " " + QString::number(selection_begin_document.y));
-                auto selection_end_document = main_document_view->get_document()->absolute_to_page_pos(selection_end);
+                auto selection_end_document = main_document_view->get_document()->absolute_to_page_pos(dv()->selection_end);
                 command_parts[i].replace("%{selection_end_document}",
                     QString::number(selection_end_document.page) + " " + QString::number(selection_end_document.x) + " " + QString::number(selection_end_document.y));
             }
@@ -5665,7 +5670,7 @@ std::string MainWidget::add_highlight_to_current_document(AbsoluteDocumentPos se
 
 std::wstring MainWidget::handle_add_highlight(char symbol) {
     if (main_document_view->selected_character_rects.size() > 0) {
-        std::string uuid = add_highlight_to_current_document(selection_begin, selection_end, symbol);
+        std::string uuid = add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, symbol);
         clear_selected_text();
         return utf8_decode(uuid);
     }
@@ -7549,8 +7554,8 @@ void MainWidget::handle_add_marked_data() {
     std::deque<AbsoluteRect> local_selected_rects;
     std::wstring local_selected_text;
 
-    main_document_view->get_text_selection(selection_begin,
-        selection_end,
+    main_document_view->get_text_selection(dv()->selection_begin,
+        dv()->selection_end,
         is_word_selecting,
         local_selected_rects,
         local_selected_text);
@@ -7955,7 +7960,7 @@ void MainWidget::move_selection_end(bool expand, bool word) {
 
     if (new_end_) {
         AbsoluteRect new_end = new_end_.value();
-        selection_end = new_end.center();
+        dv()->selection_end = new_end.center();
     }
 
 }
@@ -7973,7 +7978,7 @@ void MainWidget::move_selection_begin(bool expand, bool word) {
 
     if (new_begin_) {
         AbsoluteRect new_begin = new_begin_.value();
-        selection_begin = new_begin.center();
+        dv()->selection_begin = new_begin.center();
     }
 }
 
@@ -8007,8 +8012,8 @@ void MainWidget::handle_move_text_mark_backward(bool word) {
 const std::wstring& MainWidget::get_selected_text() {
     if (selected_text_is_dirty) {
         std::deque<AbsoluteRect> dummy_rects;
-        main_document_view->get_text_selection(selection_begin,
-            selection_end,
+        main_document_view->get_text_selection(dv()->selection_begin,
+            dv()->selection_end,
             is_word_selecting,
             dummy_rects,
             dv()->selected_text);
@@ -8028,13 +8033,13 @@ void MainWidget::expand_selection_vertical(bool begin, bool below) {
     std::optional<AbsoluteRect> next_rect = doc()->get_rect_vertically(below, scr[index]);
     if (next_rect) {
         if (begin) {
-            selection_begin = next_rect->center();
+            dv()->selection_begin = next_rect->center();
         }
         else {
-            selection_end = next_rect->center();
+            dv()->selection_end = next_rect->center();
         }
-        main_document_view->get_text_selection(selection_begin,
-            selection_end,
+        main_document_view->get_text_selection(dv()->selection_begin,
+            dv()->selection_end,
             is_word_selecting,
             main_document_view->selected_character_rects,
             dv()->selected_text);
@@ -9493,8 +9498,8 @@ void MainWidget::handle_select_current_search_match() {
         AbsoluteDocumentPos abspos_begin = selection_begin_doc.to_absolute(doc());
         AbsoluteDocumentPos abspos_end = selection_end_doc.to_absolute(doc());
 
-        selection_begin = abspos_begin;
-        selection_end = abspos_end;
+        dv()->selection_begin = abspos_begin;
+        dv()->selection_end = abspos_end;
 
         main_document_view->selected_character_rects.clear();
         doc()->get_text_selection(abspos_begin, abspos_end, false, main_document_view->selected_character_rects, dv()->selected_text);
@@ -9503,19 +9508,7 @@ void MainWidget::handle_select_current_search_match() {
 }
 
 void MainWidget::handle_select_ruler_text() {
-    std::optional<AbsoluteRect> ruler_rect_ = main_document_view->get_ruler_rect();
-    if (ruler_rect_) {
-        auto ruler_rect = ruler_rect_.value();
-
-        AbsoluteDocumentPos abspos_begin = ruler_rect.center_left();
-        AbsoluteDocumentPos abspos_end = ruler_rect.center_right();
-
-        selection_begin = abspos_begin;
-        selection_end = abspos_end;
-
-        main_document_view->selected_character_rects.clear();
-        doc()->get_text_selection(abspos_begin, abspos_end, false, main_document_view->selected_character_rects, main_document_view->selected_text);
-    }
+    dv()->select_ruler_text();
 }
 
 void MainWidget::handle_stop_search() {

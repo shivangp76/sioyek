@@ -220,9 +220,6 @@ public:
     // last window position when mouse was clicked, we use this in mouse drag mode
     WindowPos last_mouse_down_window_pos;
 
-    // begin/end position of the current text selection
-    AbsoluteDocumentPos selection_begin;
-    AbsoluteDocumentPos selection_end;
 
     // when moving the text selection using keyboard, `selection_begin` and `selection_end`
     // might be out of sync with `selected_text_`. `selected_text_is_dirty` is true when this
