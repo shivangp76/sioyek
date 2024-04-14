@@ -15,6 +15,8 @@
 // delete command should be generic and target visible objects
 // the download icon is not displayed when we move to the next possible overview
 // add some commands like { } to text selection mode
+// fix interaction of macro and holdable commands
+// add a command to select a ruler using keyboard
 
 #include <iostream>
 #include <vector>
@@ -5253,6 +5255,10 @@ void MainWidget::clear_selected_text() {
     main_document_view->mark_end = true;
     main_document_view->should_show_text_selection_marker = false;
     dv()->selected_text.clear();
+    if (dv()->is_line_select_mode()) {
+        dv()->line_select_begin = {};
+        dv()->line_select_mode = false;
+    }
     selected_text_is_dirty = false;
 
 }

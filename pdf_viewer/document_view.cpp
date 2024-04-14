@@ -3411,6 +3411,7 @@ void DocumentView::select_ruler_text() {
         else {
             line_select_begin = abspos_begin;
             selection_begin = abspos_begin;
+            selection_end = abspos_end;
         }
 
         selected_character_rects.clear();
