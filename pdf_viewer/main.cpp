@@ -149,6 +149,9 @@ extern std::wstring VOLUME_UP_COMMAND;
 extern std::wstring VOLUME_DOWN_COMMAND;
 extern int NUM_CACHED_PAGES;
 
+const std::wstring SIOYEK_TOKEN_URL = L"http://localhost:8081/token";
+std::string ACCESS_TOKEN = "";
+
 std::wstring strip_uri(std::wstring pdf_file_name) {
 
     if (pdf_file_name.size() > 1) {

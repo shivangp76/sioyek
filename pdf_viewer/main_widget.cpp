@@ -5328,6 +5328,11 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstr
             Requirement next_requirement = pending_command_instance->next_requirement(this).value();
             if (next_requirement.type == RequirementType::Text) {
                 show_textbar(utf8_decode(next_requirement.name), pending_command_instance->get_text_default_value());
+                text_command_line_edit->setEchoMode(QLineEdit::EchoMode::Normal);
+            }
+            else if (next_requirement.type == RequirementType::Password) {
+                show_textbar(utf8_decode(next_requirement.name), pending_command_instance->get_text_default_value());
+                text_command_line_edit->setEchoMode(QLineEdit::EchoMode::Password);
             }
             else if (next_requirement.type == RequirementType::Symbol) {
                 if (TOUCH_MODE) {
@@ -11540,6 +11545,9 @@ void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
     }
 }
 
+void MainWidget::handle_login(std::wstring username, std::wstring password) {
+    qDebug() << "trying to log in with username: " << username << " and password: " << password;
+}
 //void VisibleObjectMoveData::handle_move_begin(MainWidget* widget) {
 //
 //}

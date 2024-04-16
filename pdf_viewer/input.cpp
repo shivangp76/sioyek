@@ -448,7 +448,7 @@ public:
             for (int i = 0; i < commands.size(); i++) {
                 std::optional<Requirement> req = commands[i]->next_requirement(widget);
                 if (req) {
-                    if (req.value().type == RequirementType::Text) {
+                    if (req.value().type == RequirementType::Text || req.value().type == RequirementType::Password) {
                         commands[i]->set_text_requirement(value);
                     }
                     return;
@@ -885,7 +885,7 @@ void Command::set_next_requirement_with_string(std::wstring str) {
     std::optional<Requirement> maybe_req = next_requirement(widget);
     if (maybe_req) {
         Requirement req = maybe_req.value();
-        if (req.type == RequirementType::Text) {
+        if (req.type == RequirementType::Text || req.type == RequirementType::Password) {
             set_text_requirement(str);
         }
         else if (req.type == RequirementType::Symbol) {
@@ -5422,6 +5422,38 @@ public:
 
 };
 
+class LoginCommand : public Command {
+public:
+    static inline const std::string cname = "login";
+    static inline const std::string hname = "Login to sioyek";
+    std::optional<std::wstring> username;
+    std::optional<std::wstring> password;
+
+    LoginCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+        if (username.has_value() && password.has_value()) return {};
+        if (username.has_value()) {
+            return Requirement{ RequirementType::Password, "password" };
+        }
+        return Requirement{ RequirementType::Text, "username" };
+    }
+
+
+    void set_text_requirement(std::wstring value) {
+        if (username.has_value()) {
+            password = value;
+        }
+        else {
+            username = value;
+        }
+    }
+
+    void perform() {
+        widget->handle_login(username.value(), password.value());
+    }
+};
+
 class FocusTextCommand : public TextCommand {
 public:
     static inline const std::string cname = "focus_text";
@@ -6891,6 +6923,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<PrintNonDefaultConfigs>();
     register_command<SetWindowRectCommand>();
     register_command<MoveSelectedBookmarkCommand>();
+    register_command<LoginCommand>();
     register_command<CloseWindowCommand>("q");
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {

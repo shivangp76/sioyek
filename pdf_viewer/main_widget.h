@@ -1052,6 +1052,7 @@ public:
     void delete_current_document_bookmark(int index);
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
+    void handle_login(std::wstring username, std::wstring password);
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

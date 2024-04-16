@@ -18,6 +18,7 @@ class ConfigManager;
 
 enum RequirementType {
     Text,
+    Password,
     Symbol,
     File,
     Folder,
