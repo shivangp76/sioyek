@@ -1053,6 +1053,8 @@ public:
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
     void handle_login(std::wstring username, std::wstring password);
+    void persist_access_token(std::string access_token);
+    void load_access_token();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

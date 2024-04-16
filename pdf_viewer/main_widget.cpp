@@ -119,6 +119,8 @@ extern "C" int iosStopReading();
 
 #endif
 
+
+extern std::string ACCESS_TOKEN;
 extern int next_window_id;
 
 extern bool SHOULD_USE_MULTIPLE_MONITORS;
@@ -146,6 +148,7 @@ extern int STATUS_BAR_FONT_SIZE;
 extern Path default_config_path;
 extern Path default_keys_path;
 extern Path sioyek_js_path;
+extern Path sioyek_access_token_path;
 extern std::vector<Path> user_config_paths;
 extern std::vector<Path> user_keys_paths;
 extern Path database_file_path;
@@ -1025,6 +1028,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         if (!reply->property("sioyek_js_extension").isNull()) {
             return;
         }
+        if (!reply->property("sioyek_handled").isNull()) {
+            return;
+        }
+        //reply->finish
+        //reply->has
 
         std::wstring reply_url = reply->url().toString().toStdWString();
         QString reply_host = reply->url().host();
@@ -11546,7 +11554,37 @@ void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
 }
 
 void MainWidget::handle_login(std::wstring username, std::wstring password) {
-    qDebug() << "trying to log in with username: " << username << " and password: " << password;
+    QNetworkRequest req;
+    req.setUrl(QUrl("http://localhost:8081/token"));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    QUrlQuery params;
+    params.addQueryItem("username", QString::fromStdWString(username));
+    params.addQueryItem("password", QString::fromStdWString(password));
+    QNetworkReply* reply = network_manager.post(req, params.query().toUtf8());
+
+    reply->setProperty("sioyek_handled", true);
+
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
+        auto json_resp = QJsonDocument::fromJson(reply->readAll());
+        ACCESS_TOKEN = json_resp.object()["access_token"].toString().toStdString();
+        persist_access_token(ACCESS_TOKEN);
+        });
+}
+
+void MainWidget::persist_access_token(std::string access_token) {
+    QFile access_token_file(QString::fromStdWString(sioyek_access_token_path.get_path()));
+    if (access_token_file.open(QIODeviceBase::WriteOnly)) {
+        access_token_file.write(QString::fromStdString(access_token).toUtf8());
+        access_token_file.close();
+    }
+}
+
+void MainWidget::load_access_token() {
+    QFile access_token_file(QString::fromStdWString(sioyek_access_token_path.get_path()));
+    if (access_token_file.open(QIODeviceBase::ReadOnly)) {
+        ACCESS_TOKEN = QString::fromUtf8(access_token_file.readAll()).toStdString();
+        access_token_file.close();
+    }
 }
 //void VisibleObjectMoveData::handle_move_begin(MainWidget* widget) {
 //

@@ -5454,6 +5454,18 @@ public:
     }
 };
 
+class LoginUsingAccessTokenCommand : public Command {
+public:
+    static inline const std::string cname = "login_using_access_token";
+    static inline const std::string hname = "Login using the saved access token from previous login";
+    LoginUsingAccessTokenCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->load_access_token();
+    }
+
+};
+
 class FocusTextCommand : public TextCommand {
 public:
     static inline const std::string cname = "focus_text";
@@ -6924,6 +6936,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SetWindowRectCommand>();
     register_command<MoveSelectedBookmarkCommand>();
     register_command<LoginCommand>();
+    register_command<LoginUsingAccessTokenCommand>();
     register_command<CloseWindowCommand>("q");
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {
