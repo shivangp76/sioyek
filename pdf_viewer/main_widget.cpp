@@ -72,6 +72,7 @@
 #include <qtextdocumentfragment.h>
 #include <qmenubar.h>
 #include <qstylehints.h>
+#include <qhttpmultipart.h>
 
 #include <mupdf/fitz.h>
 
@@ -121,6 +122,8 @@ extern "C" int iosStopReading();
 
 
 extern std::string ACCESS_TOKEN;
+extern std::wstring SIOYEK_TOKEN_URL;
+extern std::wstring SIOYEK_UPLOAD_URL;
 extern int next_window_id;
 
 extern bool SHOULD_USE_MULTIPLE_MONITORS;
@@ -1410,7 +1413,7 @@ std::wstring MainWidget::get_status_string(bool is_right) {
     }
 
     if (is_right) {
-        status_string = QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT);
+        status_string = QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT) + " [ " + get_login_status_string() + " ]";
     }
 
     if (status_string.size() == 0) return L"";
@@ -1612,6 +1615,15 @@ std::wstring MainWidget::get_status_string(bool is_right) {
 
     //return ss.str();
     return status_string.toStdWString();
+}
+
+QString MainWidget::get_login_status_string() {
+    if (ACCESS_TOKEN.size() > 0) {
+        return "Logged in";
+    }
+    else {
+        return "Logged out";
+    }
 }
 
 void MainWidget::handle_escape() {
@@ -7101,42 +7113,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 void MainWidget::handle_debug_command() {
 
-    //auto page = doc()->get_stext_with_page_number(dv()->get_current_page_number());
-    //int n_blocks = 0;
-    //auto blk = page->first_block;
-    //while (blk) {
-    //    blk = blk->next;
-    //    n_blocks++;
-    //}
-    //qDebug() << n_blocks;
-
-    
-    //int cp = main_document_view->get_center_page_number();
-
-    //std::vector<std::vector<PagelessDocumentRect>> rects;
-    //std::vector<std::vector<AbsoluteRect>> absrects;
-    //std::vector<QString> candidates = doc()->get_page_bib_candidates(cp, &rects);
-
-    //WindowPos mouse_pos = mapFromGlobal(QCursor::pos());
-    //AbsoluteDocumentPos mouse_abspos = mouse_pos.to_absolute(dv());
-
-
-    //for (int i = 0; i < rects.size(); i++) {
-    //    auto bib_rects = rects[i];
-    //    absrects.push_back({});
-
-    //    QString selected_bib = candidates[i];
-    //    QString paper_name = get_paper_name_from_reference_text(selected_bib);
-    //    int name_index = selected_bib.indexOf(paper_name);
-    //    //dv()->debug_highlight_rects = {};
-    //    //dv()->debug_highlight_rects.push_back({});
-    //    for (int j = 0; j < paper_name.size(); j++) {
-    //        absrects.back().push_back(DocumentRect{ rects[i][name_index + j] , cp }.to_absolute(doc()));
-    //        //dv()->debug_highlight_rects.back().push_back();
-    //    }
-    //}
-    //dv()->debug_highlight_rects = absrects;
-
+    upload_current_file();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -11555,7 +11532,7 @@ void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
 
 void MainWidget::handle_login(std::wstring username, std::wstring password) {
     QNetworkRequest req;
-    req.setUrl(QUrl("http://localhost:8081/token"));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_TOKEN_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     QUrlQuery params;
     params.addQueryItem("username", QString::fromStdWString(username));
@@ -11565,10 +11542,69 @@ void MainWidget::handle_login(std::wstring username, std::wstring password) {
     reply->setProperty("sioyek_handled", true);
 
     QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
-        auto json_resp = QJsonDocument::fromJson(reply->readAll());
-        ACCESS_TOKEN = json_resp.object()["access_token"].toString().toStdString();
-        persist_access_token(ACCESS_TOKEN);
+        if (handle_network_reply_if_error(reply)) {
+            auto json_resp = QJsonDocument::fromJson(reply->readAll());
+            ACCESS_TOKEN = json_resp.object()["access_token"].toString().toStdString();
+            persist_access_token(ACCESS_TOKEN);
+        }
         });
+}
+
+bool MainWidget::handle_network_reply_if_error(QNetworkReply* reply) {
+    // returns true if there were no errors
+
+    int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (status_code != 200) {
+
+        auto data = reply->readAll();
+        auto json_resp = QJsonDocument::fromJson(data);
+        if (!json_resp.object().find("detail").value().isNull()) {
+            QString error_msg = json_resp.object()["detail"].toString();
+            show_error_message(error_msg.toStdWString());
+        }
+        else {
+            QString error_msg = QString::fromUtf8(data);
+            show_error_message(error_msg.toStdWString());
+        }
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+void MainWidget::upload_current_file() {
+    QFile* file = new QFile(QString::fromStdWString(doc()->get_path()));
+    if (file->open(QIODevice::ReadOnly)) {
+        QHttpMultiPart* parts = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+        QHttpPart file_part;
+        file_part.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"file\"; filename=\"" + file->fileName() + "\"");
+        file_part.setBodyDevice(file);
+        parts->append(file_part);
+
+
+        QNetworkRequest req;
+        req.setRawHeader("Authorization", ("Bearer " + QString::fromStdString(ACCESS_TOKEN)).toUtf8());
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_UPLOAD_URL)));
+        //qDebug() << "boundary is:" << parts->boundary();
+        //qDebug() << "file size  is:" << file->size();
+
+        // DO NOT use the Qt's default boundary, it does not work
+        parts->setBoundary(create_random_string().toUtf8());
+        req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
+
+        QNetworkReply* reply = network_manager.post(req, parts);
+        reply->setProperty("sioyek_handled", true);
+        QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
+
+            if (handle_network_reply_if_error(reply)) {
+                qDebug() << "upload successful";
+            }
+            });
+
+        parts->setParent(reply);
+    }
 }
 
 void MainWidget::persist_access_token(std::string access_token) {
@@ -11586,10 +11622,6 @@ void MainWidget::load_access_token() {
         access_token_file.close();
     }
 }
-//void VisibleObjectMoveData::handle_move_begin(MainWidget* widget) {
-//
-//}
-//
  
 #ifdef SIOYEK_IOS
 void MainWidget::handle_ios_files(const QUrl& url){

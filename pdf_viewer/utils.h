@@ -528,3 +528,4 @@ bool is_platform_meta_pressed(QKeyEvent* kevent);
 bool is_platform_control_pressed(QKeyEvent* kevent);
 
 int prune_abbreviation_candidate(const std::wstring& super_fast_search_index, int start_index, int end_index, std::wstring abbr);
+QString create_random_string(int length=31);

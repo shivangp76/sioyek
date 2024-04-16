@@ -1055,6 +1055,9 @@ public:
     void handle_login(std::wstring username, std::wstring password);
     void persist_access_token(std::string access_token);
     void load_access_token();
+    void upload_current_file();
+    QString get_login_status_string();
+    bool handle_network_reply_if_error(QNetworkReply* reply);
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

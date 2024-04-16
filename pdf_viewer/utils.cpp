@@ -32,6 +32,7 @@
 #include <qjsonarray.h>
 #include <quuid.h>
 #include <qjsondocument.h>
+#include <qrandom.h>
 #include "path.h"
 
 #ifdef SIOYEK_ANDROID
@@ -4442,3 +4443,17 @@ int prune_abbreviation_candidate(const std::wstring& super_fast_search_index, in
     }
     return start_index-1;
 }
+
+QString create_random_string(int length) {
+    const QString chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+
+    QString s;
+    for (int i = 0; i < length; ++i)
+    {
+        int index = QRandomGenerator::global()->generate() % chars.length();
+        QChar nextChar = chars.at(index);
+        s.append(nextChar);
+    }
+    return s;
+}
+
