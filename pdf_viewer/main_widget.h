@@ -655,6 +655,7 @@ public:
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
     QNetworkReply* download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action);
+    QNetworkReply* download_paper_with_name_old(const std::wstring& name, PaperDownloadFinishedAction action);
     void handle_debug_command();
     void handle_add_marked_data();
     void handle_undo_marked_data();
@@ -665,6 +666,7 @@ public:
     void hande_turn_off_all_drawings();
     void handle_toggle_drawing_mask(char symbol);
     void show_command_palette();
+    void get_url_file_size(QString url);
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
     AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);
@@ -1058,6 +1060,11 @@ public:
     void upload_current_file();
     QString get_login_status_string();
     bool handle_network_reply_if_error(QNetworkReply* reply);
+    void update_current_document_checksum(std::string checksum);
+    void authorize_request(QNetworkRequest* req);
+    void download_unsynced_files();
+    void download_file_with_hash(QString hash);
+    std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

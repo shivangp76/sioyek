@@ -1744,8 +1744,8 @@ std::optional<std::wstring> Document::get_text_at_position(const std::vector<fz_
 }
 
 QString clean_bib_string_quotations(QString bib_string){
-    int start_index= bib_string.indexOf(L"“");
-    int end_index= bib_string.indexOf(L"”");
+    int start_index= bib_string.indexOf("“");
+    int end_index= bib_string.indexOf("”");
     if ((start_index != -1) && (end_index != -1)){
         if ((end_index - start_index) > bib_string.size() / 2){
             return bib_string.mid(start_index+1, end_index - start_index-1);

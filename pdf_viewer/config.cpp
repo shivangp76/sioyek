@@ -50,11 +50,16 @@ bool SNAP_DRAGGING = true;
 std::wstring SEARCH_URLS[26];
 std::wstring EXECUTE_COMMANDS[26];
 std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
-std::wstring PAPER_SEARCH_URL = L"https://search.fatcat.wiki/fatcat_release/_search?q=%{query}";
+//std::wstring PAPER_SEARCH_URL = L"https://search.fatcat.wiki/fatcat_release/_search?q=%{query}";
+//std::wstring PAPER_SEARCH_URL_PATH = L"hits.hits[]._source.best_pdf_url";
+//std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
+//std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 
-std::wstring PAPER_SEARCH_URL_PATH = L"hits.hits[]._source.best_pdf_url";
-std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
-std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
+std::wstring PAPER_SEARCH_URL = L"https://scholar.google.com/scholar?oi=gsr-r&output=gsb&q=%{query}";
+
+std::wstring PAPER_SEARCH_URL_PATH = L"r[].u";
+std::wstring PAPER_SEARCH_TILE_PATH = L"r[].t";
+std::wstring PAPER_SEARCH_CONTRIB_PATH = L"r[].m";
 
 std::wstring MIDDLE_CLICK_SEARCH_ENGINE = L"s";
 std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";

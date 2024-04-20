@@ -3854,7 +3854,7 @@ bool is_text_refernce_rather_than_paper_name(QString text) {
     if (text.size() > 50) {
         return false;
     }
-    if ((text.indexOf(L"et al") != -1) || (text.indexOf(L"et. al") != -1)) {
+    if ((text.indexOf("et al") != -1) || (text.indexOf("et. al") != -1)) {
         return true;
     }
     if (text.back() >= 0 && text.back().unicode() <= 128 && text.back().isDigit()) {
