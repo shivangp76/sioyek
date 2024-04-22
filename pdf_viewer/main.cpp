@@ -865,6 +865,7 @@ int main(int argc, char* args[]) {
     pdf_renderer.set_num_cached_pages(NUM_CACHED_PAGES);
     pdf_renderer.start_threads();
     MainWidget* main_widget = new MainWidget(mupdf_context, &pdf_renderer, &db_manager, &document_manager, &config_manager, command_manager, &input_handler, &checksummer, &quit);
+    main_widget->auto_login();
     windows.push_back(main_widget);
 
 #ifndef SIOYEK_MOBILE

@@ -667,6 +667,7 @@ public:
     void handle_toggle_drawing_mask(char symbol);
     void show_command_palette();
     void get_url_file_size(QString url);
+    void auto_login();
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
     AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);

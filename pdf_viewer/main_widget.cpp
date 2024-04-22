@@ -126,6 +126,7 @@ extern std::string APPLICATION_VERSION;
 extern std::string ACCESS_TOKEN;
 std::wstring SIOYEK_TOKEN_URL = L"http://localhost:8081/token";
 std::wstring SIOYEK_PAPER_URL_URL = L"http://localhost:8081/get_paper_url";
+std::wstring SIOYEK_ECHO_URL = L"http://localhost:8081/echo_user";
 std::wstring SIOYEK_UPLOAD_URL = L"http://localhost:8081/upload_file";
 std::wstring SIOYEK_USER_FILE_HASH_SET_URL = L"http://localhost:8081/user_hash_set";
 std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = L"http://localhost:8081/download_hash";
@@ -234,6 +235,7 @@ extern bool USE_SYSTEM_THEME;
 extern bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME;
 extern bool ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW;
 extern bool DEBUG;
+extern bool AUTO_LOGIN_ON_STARTUP;
 
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
@@ -1032,10 +1034,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         QString rep_url = reply->url().toString();
-        if (status_code == 401) {
-            show_error_message(L"This action requires login");
-            return;
-        }
 
         if (!reply->property("sioyek_network_request_type").isNull()) {
             // handled in a different place
@@ -1045,6 +1043,10 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             return;
         }
         if (!reply->property("sioyek_handled").isNull()) {
+            return;
+        }
+        if (status_code == 401) {
+            show_error_message(L"This action requires login");
             return;
         }
 
@@ -7111,17 +7113,14 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 void MainWidget::handle_debug_command() {
 
-    QUrl url(QString::fromStdWString(SIOYEK_PAPER_URL_URL));
-    QUrlQuery query;
-    query.addQueryItem("paper_title", "attention is all you need");
-    url.setQuery(query);
+    QUrl url(QString::fromStdWString(SIOYEK_ECHO_URL));
 
     QNetworkRequest req;
     authorize_request(&req);
     req.setUrl(url);
     auto reply = network_manager.get(req);
     reply->setProperty("sioyek_handled", true);
-    
+    //
     QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
         qDebug() << QString::fromUtf8(reply->readAll());
         });
@@ -11798,6 +11797,26 @@ void MainWidget::load_access_token() {
     if (access_token_file.open(QIODeviceBase::ReadOnly)) {
         ACCESS_TOKEN = QString::fromUtf8(access_token_file.readAll()).toStdString();
         access_token_file.close();
+
+        if (ACCESS_TOKEN.size() > 0) {
+            // make sure the access token is still valid
+            QUrl url(QString::fromStdWString(SIOYEK_ECHO_URL));
+
+            QNetworkRequest req;
+            authorize_request(&req);
+            req.setUrl(url);
+            auto reply = network_manager.get(req);
+            reply->setProperty("sioyek_handled", true);
+            //
+            QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
+                int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                if (status_code == 401) {
+                    ACCESS_TOKEN = "";
+                    persist_access_token(ACCESS_TOKEN);
+                    show_error_message(L"Access token was expired, please login again");
+                }
+                });
+        }
     }
 }
 
@@ -11834,6 +11853,12 @@ void MainWidget::get_url_file_size(QString url) {
 
 }
  
+void MainWidget::auto_login() {
+    if (AUTO_LOGIN_ON_STARTUP) {
+        load_access_token();
+    }
+}
+
 #ifdef SIOYEK_IOS
 void MainWidget::handle_ios_files(const QUrl& url){
     qDebug() << "handle_ios_files called with: " << url;
