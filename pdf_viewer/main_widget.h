@@ -87,12 +87,6 @@ struct PendingDownloadPortal {
     bool marked = false;
 };
 
-enum class PaperDownloadFinishedAction {
-    None,
-    OpenInSameWindow,
-    OpenInNewWindow,
-    Portal
-};
 
 enum class VisibleObjectType {
     Portal,
@@ -134,6 +128,35 @@ struct RecentlyUpdatedPortalState {
 struct AVSpeechSynthesizer;
 #endif
 
+class SioyekNetworkManager : public QObject {
+    Q_OBJECT
+private:
+public:
+    QNetworkAccessManager network_manager;
+    std::string ACCESS_TOKEN;
+    std::wstring SIOYEK_TOKEN_URL = L"http://localhost:8081/token";
+    std::wstring SIOYEK_PAPER_URL_URL = L"http://localhost:8081/get_paper_url";
+    std::wstring SIOYEK_ECHO_URL = L"http://localhost:8081/echo_user";
+    std::wstring SIOYEK_UPLOAD_URL = L"http://localhost:8081/upload_file";
+    std::wstring SIOYEK_USER_FILE_HASH_SET_URL = L"http://localhost:8081/user_hash_set";
+    std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = L"http://localhost:8081/download_hash";
+
+    SioyekNetworkManager(QObject* parent=nullptr);
+    void login(std::wstring username, std::wstring password);
+    bool handle_network_reply_if_error(QNetworkReply* reply);
+    void persist_access_token(std::string access_token);
+    void load_access_token();
+    void authorize_request(QNetworkRequest* req);
+    void download_file_with_hash(QString hash);
+    void upload_file(QString path, QString hash);
+    QNetworkReply* get_user_file_hash_set_reply();
+    void update_user_files_hash_set();
+    std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
+    QNetworkReply* download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn);
+    void download_unsynced_files(DatabaseManager* db_manager);
+    QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
+};
+
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 #ifdef SIOYEK_MOBILE
 class MainWidget : public QQuickWidget {
@@ -148,6 +171,7 @@ public:
     CommandManager* command_manager = nullptr;
     ConfigManager* config_manager = nullptr;
     QNetworkAccessManager network_manager;
+    SioyekNetworkManager* sioyek_network_manager;
     PdfRenderer* pdf_renderer = nullptr;
     InputHandler* input_handler = nullptr;
     CachedChecksummer* checksummer = nullptr;
@@ -457,7 +481,6 @@ public:
         const std::vector<std::wstring>& download_urls,
         std::wstring paper_name,
         PaperDownloadFinishedAction action);
-    QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
 
     QRect get_main_window_rect();
     QRect get_helper_window_rect();
@@ -477,6 +500,7 @@ public:
     void return_to_last_visual_mark();
     bool is_visual_mark_mode();
     void reload(bool flush = true);
+    QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
 
     void reset_highlight_links();
     void set_rect_select_mode(bool mode);
@@ -484,6 +508,7 @@ public:
     void clear_selected_rect();
     void clear_selected_text();
     void toggle_pdf_annotations();
+    void on_paper_downloaded(QNetworkReply* reply);
 
     void expand_selection_vertical(bool begin, bool below);
 
@@ -500,6 +525,7 @@ public:
         CommandManager* command_manager,
         InputHandler* input_handler,
         CachedChecksummer* checksummer,
+        SioyekNetworkManager* sioyek_network_manager,
         bool* should_quit_ptr,
         QWidget* parent = nullptr
     );
@@ -654,7 +680,6 @@ public:
     void download_paper_under_cursor(bool use_last_touch_pos = false);
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
-    QNetworkReply* download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action);
     QNetworkReply* download_paper_with_name_old(const std::wstring& name, PaperDownloadFinishedAction action);
     void handle_debug_command();
     void handle_add_marked_data();
@@ -904,7 +929,6 @@ public:
     bool is_search_ready();
     bool is_index_ready();
     void advance_waiting_command(std::string waiting_command_name);
-    std::string get_user_agent_string();
     void handle_select_current_search_match();
     void handle_select_ruler_text();
     void handle_stop_search();
@@ -983,8 +1007,6 @@ public:
     void set_current_freehand_alpha(float alpha);
     void show_draw_controls();
     PaperDownloadFinishedAction get_default_paper_download_finish_action();
-    QString get_paper_download_finish_action_string(PaperDownloadFinishedAction action);
-    PaperDownloadFinishedAction get_paper_download_action_from_string(QString str);
     void set_tag_prefix(std::wstring prefix);
     void clear_tag_prefix();
     bool show_contextual_context_menu();
@@ -1055,17 +1077,11 @@ public:
     void delete_current_document_bookmark(int index);
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
-    void handle_login(std::wstring username, std::wstring password);
-    void persist_access_token(std::string access_token);
-    void load_access_token();
     void upload_current_file();
     QString get_login_status_string();
-    bool handle_network_reply_if_error(QNetworkReply* reply);
     void update_current_document_checksum(std::string checksum);
-    void authorize_request(QNetworkRequest* req);
-    void download_unsynced_files();
-    void download_file_with_hash(QString hash);
-    std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
+    bool is_current_document_available_on_server();
+    void handle_login(std::wstring username, std::wstring password);
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

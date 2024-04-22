@@ -1786,7 +1786,10 @@ public:
     DownloadPaperWithNameCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void perform() {
-        widget->download_paper_with_name(text.value(), PaperDownloadFinishedAction::OpenInNewWindow);
+        widget->sioyek_network_manager->download_paper_with_name(text.value(), PaperDownloadFinishedAction::OpenInNewWindow, [&](QNetworkReply* reply) {
+            widget->on_paper_downloaded(reply);
+            });
+
     }
 
     std::string text_requirement_name() {
@@ -5461,7 +5464,19 @@ public:
     LoginUsingAccessTokenCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->load_access_token();
+        widget->sioyek_network_manager->load_access_token();
+    }
+
+};
+
+class UploadCurrentFileCommand : public Command {
+public:
+    static inline const std::string cname = "upload_current_file";
+    static inline const std::string hname = "Upload the current file to sioyek servers";
+    UploadCurrentFileCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->upload_current_file();
     }
 
 };
@@ -5499,7 +5514,9 @@ public:
             widget->download_and_portal(text_, source_rect->center());
         }
         else {
-            widget->download_paper_with_name(text_, widget->get_default_paper_download_finish_action());
+            widget->sioyek_network_manager->download_paper_with_name(text_, widget->get_default_paper_download_finish_action(), [&](QNetworkReply* reply) {
+                widget->on_paper_downloaded(reply);
+                });
         }
 
     }
@@ -6937,6 +6954,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<MoveSelectedBookmarkCommand>();
     register_command<LoginCommand>();
     register_command<LoginUsingAccessTokenCommand>();
+    register_command<UploadCurrentFileCommand>();
     register_command<CloseWindowCommand>("q");
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {

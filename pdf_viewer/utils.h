@@ -29,6 +29,13 @@
 #define LL_ITER(name, start) for(auto name=start;(name);name=name->next)
 #define LOG(expr) if (VERBOSE) {(expr);};
 
+enum class PaperDownloadFinishedAction {
+    None,
+    OpenInSameWindow,
+    OpenInNewWindow,
+    Portal
+};
+
 struct JsCommandInfo {
     std::wstring pref_file_path;
     std::wstring js_file_path;
@@ -529,3 +536,6 @@ bool is_platform_control_pressed(QKeyEvent* kevent);
 
 int prune_abbreviation_candidate(const std::wstring& super_fast_search_index, int start_index, int end_index, std::wstring abbr);
 QString create_random_string(int length=31);
+QString get_paper_download_finish_action_string(PaperDownloadFinishedAction action);
+PaperDownloadFinishedAction get_paper_download_action_from_string(QString str);
+std::string get_user_agent_string();

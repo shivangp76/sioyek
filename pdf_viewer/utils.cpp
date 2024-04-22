@@ -4457,3 +4457,23 @@ QString create_random_string(int length) {
     return s;
 }
 
+
+QString get_paper_download_finish_action_string(PaperDownloadFinishedAction action) {
+    if (action == PaperDownloadFinishedAction::None) return "none";
+    if (action == PaperDownloadFinishedAction::OpenInSameWindow) return "same_window";
+    if (action == PaperDownloadFinishedAction::OpenInNewWindow) return "new_window";
+    if (action == PaperDownloadFinishedAction::Portal) return "portal";
+    return "";
+}
+
+PaperDownloadFinishedAction get_paper_download_action_from_string(QString str) {
+    if (str == "none") return PaperDownloadFinishedAction::None;
+    if (str == "same_window") return PaperDownloadFinishedAction::OpenInSameWindow;
+    if (str == "new_window") return PaperDownloadFinishedAction::OpenInNewWindow;
+    if (str == "portal") return PaperDownloadFinishedAction::Portal;
+    return PaperDownloadFinishedAction::None;
+}
+
+std::string get_user_agent_string() {
+    return "Sioyek/3.0";
+}
