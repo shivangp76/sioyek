@@ -10,6 +10,7 @@
 #include <deque>
 #include <mutex>
 #include <thread>
+#include <unordered_set>
 
 #include <qnetworkaccessmanager.h>
 #include <qquickwidget.h>
@@ -140,6 +141,7 @@ public:
     std::wstring SIOYEK_UPLOAD_URL = L"http://localhost:8081/upload_file";
     std::wstring SIOYEK_USER_FILE_HASH_SET_URL = L"http://localhost:8081/user_hash_set";
     std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = L"http://localhost:8081/download_hash";
+    std::unordered_set<std::string> SERVER_HASHES = {};
 
     SioyekNetworkManager(QObject* parent=nullptr);
     void login(std::wstring username, std::wstring password);
@@ -155,6 +157,7 @@ public:
     QNetworkReply* download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn);
     void download_unsynced_files(DatabaseManager* db_manager);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
+    bool is_checksum_available_on_server(const std::string& checksum);
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays

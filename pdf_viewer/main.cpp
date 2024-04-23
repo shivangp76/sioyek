@@ -151,7 +151,6 @@ extern std::wstring VOLUME_DOWN_COMMAND;
 extern int NUM_CACHED_PAGES;
 
 std::string ACCESS_TOKEN = "";
-std::unordered_set<std::string> SERVER_HASHES = {};
 
 std::wstring strip_uri(std::wstring pdf_file_name) {
 

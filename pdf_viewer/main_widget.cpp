@@ -123,7 +123,6 @@ extern "C" int iosStopReading();
 
 extern std::string APPLICATION_VERSION;
 
-extern std::unordered_set<std::string> SERVER_HASHES;
 
 extern int next_window_id;
 
@@ -492,7 +491,7 @@ public:
 bool MainWidget::is_current_document_available_on_server() {
     std::optional<std::string> maybe_checksum = doc()->get_checksum_fast();
     if (maybe_checksum.has_value()) {
-        return SERVER_HASHES.find(maybe_checksum.value()) != SERVER_HASHES.end();
+        return sioyek_network_manager->is_checksum_available_on_server(maybe_checksum.value());
     }
     else {
         return false;
@@ -11593,9 +11592,6 @@ void MainWidget::upload_current_file() {
 }
 
 
-
-
-
 void MainWidget::update_current_document_checksum(std::string checksum) {
     //todo:
     qDebug() << "update_current_document_checksum not implemented";
@@ -11891,6 +11887,7 @@ void SioyekNetworkManager::upload_file(QString path, QString hash) {
         QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
 
             if (handle_network_reply_if_error(reply)) {
+                update_user_files_hash_set();
                 auto json_resp = QJsonDocument::fromJson(reply->readAll());
                 if (json_resp["status"] != "OK" && json_resp["type"] == "incorrect_file_hash") {
                     //todo: update_current_document_checksum()
@@ -12091,4 +12088,8 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_url(std::wstring paper_
 
 QNetworkReply* MainWidget::download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action) {
     return sioyek_network_manager->download_paper_with_url(paper_url, use_archive_url, action);
+}
+
+bool SioyekNetworkManager::is_checksum_available_on_server(const std::string& checksum) {
+    return SERVER_HASHES.find(checksum) != SERVER_HASHES.end();
 }
