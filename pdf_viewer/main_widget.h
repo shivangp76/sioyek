@@ -141,7 +141,11 @@ public:
     std::wstring SIOYEK_UPLOAD_URL = L"http://localhost:8081/upload_file";
     std::wstring SIOYEK_USER_FILE_HASH_SET_URL = L"http://localhost:8081/user_hash_set";
     std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = L"http://localhost:8081/download_hash";
+    std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = L"http://localhost:8081/sync_opened_book";
+    std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = L"http://localhost:8081/get_opened_book";
     std::unordered_set<std::string> SERVER_HASHES = {};
+
+    QDateTime last_document_location_upload_time;
 
     SioyekNetworkManager(QObject* parent=nullptr);
     void login(std::wstring username, std::wstring password);
@@ -154,10 +158,13 @@ public:
     QNetworkReply* get_user_file_hash_set_reply();
     void update_user_files_hash_set();
     std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
-    QNetworkReply* download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn);
+    QNetworkReply* download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn);
     void download_unsynced_files(DatabaseManager* db_manager);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
     bool is_checksum_available_on_server(const std::string& checksum);
+    void sync_file_location(QString hash, QString document_title, float offset_y);
+    QNetworkReply* get_opened_book_data_from_checksum(QObject* parent, QString checksum, std::function<void(QJsonObject)> fn);
+    bool should_sync_location();
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -299,6 +306,7 @@ public:
     // set to be INTERVAL_TIME (which is 200ms at the time of writing this comment), however, it is set to a much
     // lower value when in smooth scroll mode or when user flicks a document in touch mode
     QTimer* validation_interval_timer = nullptr;
+    QTimer* network_timer = nullptr;
 
     // the portal to be edited. This is usually set by `edit_portal` command which jumps to the portal
     // when we go back to the original location by jumping back in history, the portal will be edited
@@ -446,6 +454,7 @@ public:
     void next_state();
     void prev_state();
     void update_current_history_index();
+    void handle_periodic_network_operations();
 
     void set_main_document_view_state(DocumentViewState new_view_state);
     void handle_click(WindowPos pos);
@@ -1073,6 +1082,8 @@ public:
     void on_portal_edited(const std::string& uuid);
     void on_open_document(const std::wstring& path);
 
+    void handle_server_document_location_mismatch(float local_offset_y, float server_offset_y);
+
     std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
 
 
@@ -1085,6 +1096,7 @@ public:
     void update_current_document_checksum(std::string checksum);
     bool is_current_document_available_on_server();
     void handle_login(std::wstring username, std::wstring password);
+    void sync_current_file_location_to_servers();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

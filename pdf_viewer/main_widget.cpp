@@ -241,6 +241,7 @@ extern std::wstring CONTEXT_MENU_ITEMS_FOR_BOOKMARKS;
 extern std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW;
 extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
+extern std::wstring DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
@@ -489,6 +490,10 @@ public:
 };
 
 bool MainWidget::is_current_document_available_on_server() {
+    if (!doc()) {
+        return false;
+    }
+    
     std::optional<std::string> maybe_checksum = doc()->get_checksum_fast();
     if (maybe_checksum.has_value()) {
         return sioyek_network_manager->is_checksum_available_on_server(maybe_checksum.value());
@@ -1035,6 +1040,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     validation_interval_timer = new QTimer(this);
     validation_interval_timer->setInterval(INTERVAL_TIME);
 
+    network_timer = new QTimer(this);
+    network_timer->setInterval(10000);
+
     QObject::connect(&network_manager, &QNetworkAccessManager::finished, [this](QNetworkReply* reply) {
         reply->deleteLater();
 
@@ -1265,7 +1273,12 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             }
         }
         });
+    connect(network_timer, &QTimer::timeout, [&]() {
+        handle_periodic_network_operations();
+        });
+
     validation_interval_timer->start();
+    network_timer->start();
 
 
     scroll_bar = new QScrollBar(this);
@@ -1358,12 +1371,20 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #endif
 }
 
+void MainWidget::handle_periodic_network_operations() {
+    if (sioyek_network_manager->should_sync_location()) {
+        sync_current_file_location_to_servers();
+    }
+}
+
 MainWidget::~MainWidget() {
+
     if (is_reading) {
         is_reading = false;
         get_tts()->stop();
     }
     validation_interval_timer->stop();
+    network_timer->stop();
     remove_self_from_windows();
 
     if (windows.size() == 0) {
@@ -2068,6 +2089,9 @@ void MainWidget::open_document_with_hash(const std::string& path, std::optional<
 }
 
 void MainWidget::open_document(const Path& path, std::optional<float> offset_x, std::optional<float> offset_y, std::optional<float> zoom_level) {
+    if (doc()) {
+        sync_current_file_location_to_servers();
+    }
 
     opengl_widget->clear_all_selections();
 
@@ -7128,16 +7152,11 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    //qDebug() << "asd" << sioyek_network_manager->findChildren<QNetworkReply*>().size();
-    //qDebug() << "asd" << sioyek_network_manager->children().size();
-    //QUrl url(QString::fromStdWString(SIOYEK_ECHO_URL));
-    //QNetworkRequest req;
-    //authorize_request(&req);
-    //req.setUrl(url);
-    //sioyek_network_manager->get(req);
-    //QObject::connect(sioyek_network_manager, &SioyekNetworkManager::finished, [](QNetworkReply* reply) {
-    //    qDebug() << reply->readAll();
-    //    });
+    if (doc()->get_checksum_fast()) {
+        auto reply = sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&](QJsonObject obj) {
+            toggle_dark_mode();
+            });
+    }
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -7301,7 +7320,7 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
         }
         if (TOUCH_MODE) {
             show_text_prompt(bib_text.toStdWString(), [this](std::wstring text) {
-                QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(text,
+                QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, text,
                 get_default_paper_download_finish_action(),
                 [this](QNetworkReply* reply) {
                         on_paper_downloaded(reply);
@@ -7309,7 +7328,7 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
                 });
         }
         else {
-            sioyek_network_manager->download_paper_with_name(bib_text.toStdWString(),
+            sioyek_network_manager->download_paper_with_name(this, bib_text.toStdWString(),
                 get_default_paper_download_finish_action(),
                 [this](QNetworkReply* reply) {
                     on_paper_downloaded(reply);
@@ -9052,7 +9071,7 @@ void MainWidget::download_and_portal(std::wstring unclean_paper_name, AbsoluteDo
 
     std::wstring cleaned_paper_name = clean_bib_item(QString::fromStdWString(unclean_paper_name)).toStdWString();
     create_pending_download_portal(source_pos, cleaned_paper_name);
-    sioyek_network_manager->download_paper_with_name(cleaned_paper_name, PaperDownloadFinishedAction::Portal, [&](QNetworkReply* reply) {
+    sioyek_network_manager->download_paper_with_name(this, cleaned_paper_name, PaperDownloadFinishedAction::Portal, [&](QNetworkReply* reply) {
         on_paper_downloaded(reply);
         });
 }
@@ -11524,6 +11543,32 @@ void MainWidget::on_open_document(const std::wstring& path) {
         call_async_js_function_with_args(open_document_hook_function_name.value(),
             QJsonArray() << QString::fromStdWString(path));
     }
+
+    if (sioyek_network_manager->ACCESS_TOKEN.size() > 0) {
+        // check if the server's document location is different from the local location
+        if (doc()->get_checksum_fast()) {
+            sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&](QJsonObject obj) {
+                qDebug() << obj;
+                float server_offset_y = obj["result"].toObject()["offset_y"].toDouble();
+                if (std::abs(server_offset_y - main_document_view->get_offset_y()) > 100) {
+                    handle_server_document_location_mismatch(main_document_view->get_offset_y(), server_offset_y);
+                }
+                });
+        }
+    }
+}
+
+void MainWidget::handle_server_document_location_mismatch(float local_offset_y, float server_offset_y) {
+    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == L"local") return;
+    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == L"server") {
+        main_document_view->set_offset_y(server_offset_y);
+    }
+    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == L"ask") {
+        int res = show_option_buttons(L"Do you want to move to server location?", { L"Yes", L"No" });
+        if (res == 0) {
+            main_document_view->set_offset_y(server_offset_y);
+        }
+    }
 }
 
 std::optional<VisibleObjectIndex> MainWidget::get_visible_object_at_pos(AbsoluteDocumentPos pos) {
@@ -11709,6 +11754,8 @@ void MainWidget::on_ios_resume(){
 
 
 SioyekNetworkManager::SioyekNetworkManager(QObject* parent) : QObject(parent) {
+    last_document_location_upload_time = QDateTime::currentDateTime();
+
 }
 
 
@@ -11743,6 +11790,7 @@ bool SioyekNetworkManager::handle_network_reply_if_error(QNetworkReply* reply) {
         if (data.size() > 0) {
             auto json_resp = QJsonDocument::fromJson(data);
             if (!json_resp.isNull() && !json_resp.object().find("detail").value().isNull()) {
+            //if (!json_resp.isNull() && !json_resp.object().find("detail").value().isNull()) {
                 QString error_msg = json_resp.object()["detail"].toString();
                 show_error_message(error_msg.toStdWString());
             }
@@ -11925,7 +11973,7 @@ std::optional<QJsonDocument> SioyekNetworkManager::get_network_json_reply(QNetwo
     return {};
 }
 
-QNetworkReply* SioyekNetworkManager::download_paper_with_name(const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn) {
+QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn) {
     std::wstring download_name = name;
     if (name.size() > 0 && name[0] == ':') {
         download_name = name.substr(1, name.size() - 1);
@@ -11950,7 +11998,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(const std::wstring
     auto reply = network_manager.get(req);
     reply->setProperty("sioyek_paper_name", QString::fromStdWString(name));
     reply->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
-    QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, parent, fn=std::move(fn)]() {
         reply->deleteLater();
 
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -12000,6 +12048,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(const std::wstring
                 fn(download_reply);
                 download_reply->deleteLater();
                 });
+            download_reply->setParent(parent); // fn should not be called if parent is deleted
         }
         else {
             // could not find the paper
@@ -12092,4 +12141,79 @@ QNetworkReply* MainWidget::download_paper_with_url(std::wstring paper_url, bool 
 
 bool SioyekNetworkManager::is_checksum_available_on_server(const std::string& checksum) {
     return SERVER_HASHES.find(checksum) != SERVER_HASHES.end();
+}
+
+void MainWidget::sync_current_file_location_to_servers() {
+    if (doc() && doc()->get_checksum_fast()) {
+        sioyek_network_manager->sync_file_location(
+            QString::fromStdString(doc()->get_checksum_fast().value()),
+            QString::fromStdWString(doc()->detect_paper_name()),
+            main_document_view->get_offset_y()
+        );
+    }
+}
+
+bool SioyekNetworkManager::should_sync_location(){
+    return last_document_location_upload_time.msecsTo(QDateTime::currentDateTime()) > 1000 * 60;
+}
+
+void SioyekNetworkManager::sync_file_location(QString hash, QString document_title, float offset_y) {
+    last_document_location_upload_time = QDateTime::currentDateTime();
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SYNC_OPENED_BOOK_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    //QUrlQuery params;
+    //params.addQueryItem("file_checksum", hash);
+    //params.addQueryItem("document_name", document_title);
+    //params.addQueryItem("offset_y", QString::number(offset_y));
+    QJsonObject obj;
+    obj["file_checksum"] = hash;
+    obj["document_name"] = document_title;
+    obj["offset_y"] = offset_y;
+
+    QJsonDocument json_doc(obj);
+
+
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+
+    reply->setProperty("sioyek_handled", true);
+
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
+        if (handle_network_reply_if_error(reply)) {
+            qDebug() << reply->readAll();
+        }
+        });
+}
+
+QNetworkReply* SioyekNetworkManager::get_opened_book_data_from_checksum(QObject* parent, QString checksum, std::function<void(QJsonObject)> fn) {
+    QUrl url(QString::fromStdWString(SIOYEK_GET_OPENED_BOOK_DATA_URL));
+    QUrlQuery params;
+    params.addQueryItem("file_checksum", checksum);
+    url.setQuery(params);
+
+    QNetworkRequest req;
+    req.setUrl(url);
+    authorize_request(&req);
+    auto reply = network_manager.get(req);
+
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
+        if (handle_network_reply_if_error(reply)) {
+
+            auto raw_data = reply->readAll();
+            QJsonDocument json_doc = QJsonDocument::fromJson(raw_data);
+            if (!json_doc.isNull()) {
+                fn(json_doc.object());
+            }
+        }
+        });
+    // this is usually the widget that issued the request
+    // otherwise fn might be called after widget is destroyed, which might
+    // crash if fn does something with the widget
+    reply->setParent(parent);
+    return reply;
+
 }

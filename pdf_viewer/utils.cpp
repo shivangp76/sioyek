@@ -320,6 +320,17 @@ void show_error_message(const std::wstring& error_message) {
     msgBox.exec();
 }
 
+int show_option_buttons(const std::wstring& error_message, const std::vector<std::wstring>& buttons) {
+    QMessageBox msgBox;
+    msgBox.setText(QString::fromStdWString(error_message));
+    for (auto& btn_text : buttons) {
+        msgBox.addButton(QString::fromStdWString(btn_text), QMessageBox::ActionRole);
+    }
+    //msgBox.setStandardButtons(QMessageBox::Ok);
+    //msgBox.setDefaultButton(QMessageBox::Ok);
+    return msgBox.exec();
+}
+
 std::wstring utf8_decode(const std::string& encoded_str) {
     std::wstring res;
     utf8::utf8to32(encoded_str.begin(), encoded_str.end(), std::back_inserter(res));

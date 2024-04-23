@@ -1786,7 +1786,7 @@ public:
     DownloadPaperWithNameCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->download_paper_with_name(text.value(), PaperDownloadFinishedAction::OpenInNewWindow, [&](QNetworkReply* reply) {
+        widget->sioyek_network_manager->download_paper_with_name(widget, text.value(), PaperDownloadFinishedAction::OpenInNewWindow, [&](QNetworkReply* reply) {
             widget->on_paper_downloaded(reply);
             });
 
@@ -5481,6 +5481,29 @@ public:
 
 };
 
+class DownloadUnsyncedFilesCommand : public Command {
+public:
+    static inline const std::string cname = "download_unsynced_files";
+    static inline const std::string hname = "Download unsynced files from sioyek servers";
+    DownloadUnsyncedFilesCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->sioyek_network_manager->download_unsynced_files(widget->db_manager);
+    }
+
+};
+
+class SyncCurrentFileLocation : public Command {
+public:
+    static inline const std::string cname = "sync_current_file_location";
+    static inline const std::string hname = "Sync the current file location to sioyek servers";
+    SyncCurrentFileLocation(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->sync_current_file_location_to_servers();
+    }
+};
+
 class FocusTextCommand : public TextCommand {
 public:
     static inline const std::string cname = "focus_text";
@@ -5514,7 +5537,7 @@ public:
             widget->download_and_portal(text_, source_rect->center());
         }
         else {
-            widget->sioyek_network_manager->download_paper_with_name(text_, widget->get_default_paper_download_finish_action(), [&](QNetworkReply* reply) {
+            widget->sioyek_network_manager->download_paper_with_name(widget, text_, widget->get_default_paper_download_finish_action(), [&](QNetworkReply* reply) {
                 widget->on_paper_downloaded(reply);
                 });
         }
@@ -6955,6 +6978,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<LoginCommand>();
     register_command<LoginUsingAccessTokenCommand>();
     register_command<UploadCurrentFileCommand>();
+    register_command<DownloadUnsyncedFilesCommand>();
+    register_command<SyncCurrentFileLocation>();
     register_command<CloseWindowCommand>("q");
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {
