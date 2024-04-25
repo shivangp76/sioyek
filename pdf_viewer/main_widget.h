@@ -163,6 +163,7 @@ public:
     std::unordered_map<std::string, OpenedBookInfo> server_opened_files;
     std::unordered_map<std::string, float> last_server_location;
     ServerStatus status = ServerStatus::NotLoggedIn;
+    bool one_time_network_operations_performed = false;
 
     QDateTime last_document_location_upload_time;
 
@@ -187,6 +188,7 @@ public:
     void set_last_server_location(std::string checksum, float offset_y);
     void download_opened_files_info(MainWidget* widget, std::function<void(QJsonObject)> fn);
     std::vector<OpenedBookInfo> get_excluded_opened_files(std::vector<std::string>& excluded_checksums);
+    void handle_one_time_network_operations();
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -1125,6 +1127,7 @@ public:
     void update_current_document_checksum(std::string checksum);
     bool is_current_document_available_on_server();
     void handle_login(std::wstring username, std::wstring password);
+    void handle_logout();
     void sync_current_file_location_to_servers();
     void handle_open_server_only_file();
     void download_and_open(std::string checksum, QString file_name, float offset_y);

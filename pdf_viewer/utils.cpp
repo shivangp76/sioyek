@@ -2635,6 +2635,10 @@ QString get_status_stylesheet(bool nofont, int font_size) {
     return get_color_stylesheet(STATUS_BAR_COLOR, STATUS_BAR_TEXT_COLOR, nofont, font_size);
 }
 
+QString get_status_button_stylesheet(bool nofont, int font_size) {
+    return get_color_stylesheet(STATUS_BAR_TEXT_COLOR, STATUS_BAR_COLOR, nofont, font_size) + "padding-left: 5px; padding-right: 5px;";
+}
+
 QString get_list_item_stylesheet() {
     return QString("background-color: red; padding-bottom: 20px; padding-top: 20px;");
 }

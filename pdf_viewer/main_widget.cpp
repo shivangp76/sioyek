@@ -944,9 +944,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     status_label_right->setStyleSheet(get_status_stylesheet());
     status_label_right->setFont(label_font);
 
-    resume_to_server_position_button = new QPushButton("");
-    resume_to_server_position_button->setIcon(style()->standardIcon(QStyle::StandardPixmap::SP_ArrowBack));
+    resume_to_server_position_button = new QPushButton("RESUME");
+    //resume_to_server_position_button->setIcon(style()->standardIcon(QStyle::StandardPixmap::SP_ArrowBack));
     resume_to_server_position_button->setToolTip("Resume to server location");
+    resume_to_server_position_button->setCursor(Qt::PointingHandCursor);
+    resume_to_server_position_button->setStyleSheet(get_status_button_stylesheet());
 
     right_status_container_layout->addWidget(resume_to_server_position_button);
     right_status_container_layout->addWidget(status_label_right);
@@ -6099,9 +6101,6 @@ void MainWidget::handle_open_prev_doc() {
             }
         }
     }
-
-
-
 
     set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
         [&](OpenedBookInfo* info) {
@@ -11750,6 +11749,11 @@ void MainWidget::handle_login(std::wstring username, std::wstring password) {
     sioyek_network_manager->login(username, password);
 }
 
+void MainWidget::handle_logout() {
+    sioyek_network_manager->ACCESS_TOKEN = "";
+    sioyek_network_manager->persist_access_token(sioyek_network_manager->ACCESS_TOKEN);
+}
+
 
 void MainWidget::upload_current_file() {
     sioyek_network_manager->upload_file(
@@ -11903,6 +11907,7 @@ void SioyekNetworkManager::login(std::wstring username, std::wstring password) {
             ACCESS_TOKEN = json_resp.object()["access_token"].toString().toStdString();
             status = ServerStatus::LoggedIn;
             persist_access_token(ACCESS_TOKEN);
+            handle_one_time_network_operations();
         }
         });
 }
@@ -11980,6 +11985,7 @@ void SioyekNetworkManager::load_access_token() {
                 }
                 else {
                     status = ServerStatus::LoggedIn;
+                    handle_one_time_network_operations();
                 }
                 });
         }
@@ -12428,7 +12434,8 @@ void SioyekNetworkManager::download_opened_files_info(MainWidget* parent, std::f
     authorize_request(&req);
 
     QNetworkReply* reply = network_manager.get(req);
-    reply->setParent(parent);
+
+    if (parent) reply->setParent(parent);
 
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
         auto data = reply->readAll();
@@ -12540,4 +12547,15 @@ void MainWidget::manage_last_document_checksum() {
 
 void MainWidget::on_checksum_computed() {
     handle_sync_open_document();
+}
+
+void SioyekNetworkManager::handle_one_time_network_operations() {
+    if (status == ServerStatus::LoggedIn) {
+        if (!one_time_network_operations_performed) {
+            one_time_network_operations_performed = true;
+            download_opened_files_info(nullptr, [&](QJsonObject obj) {
+                });
+        }
+    }
+
 }

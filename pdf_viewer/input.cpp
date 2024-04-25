@@ -5476,6 +5476,18 @@ public:
     }
 };
 
+class LogoutCommand : public Command {
+public:
+    static inline const std::string cname = "logout";
+    static inline const std::string hname = "Logout from sioyek servers";
+
+    LogoutCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_logout();
+    }
+};
+
 class LoginUsingAccessTokenCommand : public Command {
 public:
     static inline const std::string cname = "login_using_access_token";
@@ -6996,6 +7008,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SetWindowRectCommand>();
     register_command<MoveSelectedBookmarkCommand>();
     register_command<LoginCommand>();
+    register_command<LogoutCommand>();
     register_command<LoginUsingAccessTokenCommand>();
     register_command<UploadCurrentFileCommand>();
     register_command<DownloadUnsyncedFilesCommand>();

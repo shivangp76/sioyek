@@ -196,6 +196,7 @@ int get_status_bar_height();
 void flat_char_prism2(const std::vector<fz_stext_char*>& chars, int page, std::wstring& output_text, std::vector<int>& page_begin_indices);
 void flat_char_prism(const std::vector<fz_stext_char*>& chars, int page, std::wstring& output_text, std::vector<int>& pages, std::vector<PagelessDocumentRect>& rects);
 QString get_status_stylesheet(bool nofont = false, int font_size=-1);
+QString get_status_button_stylesheet(bool nofont = false, int font_size=-1);
 QString get_ui_stylesheet(bool nofont, int font_size=-1);
 QString get_selected_stylesheet(bool nofont = false);
 
