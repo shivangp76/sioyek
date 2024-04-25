@@ -17,6 +17,8 @@
 // add some commands like { } to text selection mode
 // fix interaction of macro and holdable commands
 // add a command to select a ruler using keyboard
+// customized portal zoom levels should not be reset
+// checksummer.get_path should use a hashmap instead of iterating over all paths
 
 #include <iostream>
 #include <vector>
@@ -6034,6 +6036,8 @@ void MainWidget::handle_open_prev_doc() {
     std::vector<std::wstring> opened_docs_actual_names;
     std::vector<OpenedBookInfo> opened_docs;
     std::vector<std::string> opened_docs_hashes;
+    std::vector<OpenedBookInfo> opened_docs_instances;
+
     std::wstring current_path = L"";
 
     if (doc()) {
@@ -6049,8 +6053,7 @@ void MainWidget::handle_open_prev_doc() {
     if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
         std::vector<OpenedBookInfo> server_opened_books = sioyek_network_manager->get_excluded_opened_files(opened_docs_hashes);
 
-        auto first = opened_docs.begin();
-        auto middle = opened_docs.end();
+        auto middle_index = opened_docs.size();
 
         for (auto& server_book : server_opened_books) {
             server_book.checksum = "SERVER://" + server_book.checksum;
@@ -6058,7 +6061,7 @@ void MainWidget::handle_open_prev_doc() {
         }
 
         auto last = opened_docs.end();
-        std::inplace_merge(first, middle, last, [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
+        std::inplace_merge(opened_docs.begin(), opened_docs.begin() + middle_index, last, [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
             return lhs.last_access_time < rhs.last_access_time;
             });
     }
@@ -6068,6 +6071,7 @@ void MainWidget::handle_open_prev_doc() {
             opened_docs_names.push_back(L"[🌐] " + opened_doc.file_name.toStdWString());
             //opened_docs_hashes.push_back(opened_doc.checksum);
             opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
+            opened_docs_instances.push_back(opened_doc);
         }
         else {
 
@@ -6091,6 +6095,7 @@ void MainWidget::handle_open_prev_doc() {
                 }
                 //opened_docs_hashes.push_back(opened_doc.checksum);
                 opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
+                opened_docs_instances.push_back(opened_doc);
             }
         }
     }
@@ -6098,7 +6103,7 @@ void MainWidget::handle_open_prev_doc() {
 
 
 
-    set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs, -1,
+    set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
         [&](OpenedBookInfo* info) {
             if ((info->checksum.size() > 0) && (pending_command_instance)) {
                 QString doc_hash_qstring = QString::fromStdString(info->checksum);
