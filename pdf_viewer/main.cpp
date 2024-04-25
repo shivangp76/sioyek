@@ -870,7 +870,6 @@ int main(int argc, char* args[]) {
 
     MainWidget* main_widget = new MainWidget(mupdf_context, &pdf_renderer, &db_manager, &document_manager, &config_manager, command_manager, &input_handler, &checksummer, &sioyek_network_manager, &quit);
     main_widget->auto_login();
-    sioyek_network_manager.update_user_files_hash_set();
     sioyek_network_manager.handle_one_time_network_operations();
     windows.push_back(main_widget);
 

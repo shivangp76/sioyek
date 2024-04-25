@@ -20,6 +20,7 @@
 // customized portal zoom levels should not be reset
 // checksummer.get_path should use a hashmap instead of iterating over all paths
 // better handling of enum configs
+// maybe add ability to click on other status bar items. e.g. clicking on the chapter name could open the table of contents
 
 #include <iostream>
 #include <vector>
@@ -11757,6 +11758,12 @@ void MainWidget::handle_login(std::wstring username, std::wstring password) {
 void MainWidget::handle_logout() {
     sioyek_network_manager->ACCESS_TOKEN = "";
     sioyek_network_manager->persist_access_token(sioyek_network_manager->ACCESS_TOKEN);
+    sioyek_network_manager->one_time_network_operations_performed = false;
+    sioyek_network_manager->SERVER_HASHES.clear();
+    sioyek_network_manager->server_opened_files.clear();
+    sioyek_network_manager->last_server_location.clear();
+    sioyek_network_manager->status = ServerStatus::NotLoggedIn;
+
 }
 
 
@@ -12557,6 +12564,7 @@ void MainWidget::on_checksum_computed() {
 void SioyekNetworkManager::handle_one_time_network_operations() {
     if (status == ServerStatus::LoggedIn) {
         if (!one_time_network_operations_performed) {
+            update_user_files_hash_set();
             one_time_network_operations_performed = true;
             download_opened_files_info(nullptr, [&](QJsonObject obj) {
                 });
@@ -12577,6 +12585,11 @@ void MainWidget::handle_resume_to_server_location() {
 }
 
 void MainWidget::handle_server_actions_button_pressed() {
-    qDebug() << "server actions button pressed";
+    if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
+        show_context_menu("logout");
+    }
+    else if (sioyek_network_manager->status == ServerStatus::NotLoggedIn) {
+        show_context_menu("login");
+    }
 
 }
