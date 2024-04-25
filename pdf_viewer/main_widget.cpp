@@ -6032,7 +6032,7 @@ void MainWidget::handle_open_prev_doc() {
 
     std::vector<std::wstring> opened_docs_names;
     std::vector<std::wstring> opened_docs_actual_names;
-    std::vector<std::pair<std::wstring, std::wstring>> opened_docs_hash_names;
+    std::vector<OpenedBookInfo> opened_docs;
     std::vector<std::string> opened_docs_hashes;
     std::wstring current_path = L"";
 
@@ -6041,10 +6041,10 @@ void MainWidget::handle_open_prev_doc() {
     }
 
 
-    db_manager->select_opened_books_path_and_doc_names(opened_docs_hash_names);
+    db_manager->select_opened_books(opened_docs);
 
-    for (const auto& [doc_hash_, actual_doc_name] : opened_docs_hash_names) {
-        std::optional<std::wstring> path = checksummer->get_path(utf8_encode(doc_hash_));
+    for (const auto& opened_doc : opened_docs) {
+        std::optional<std::wstring> path = checksummer->get_path(opened_doc.checksum);
         if (path) {
             if (path == current_path) continue;
 
@@ -6062,8 +6062,8 @@ void MainWidget::handle_open_prev_doc() {
                 opened_docs_names.push_back(Path(path.value()).filename().value_or(L"<ERROR>"));
 #endif
             }
-            opened_docs_hashes.push_back(utf8_encode(doc_hash_));
-            opened_docs_actual_names.push_back(actual_doc_name);
+            opened_docs_hashes.push_back(opened_doc.checksum);
+            opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
         }
     }
 
@@ -12400,7 +12400,7 @@ void SioyekNetworkManager::download_opened_files_info(MainWidget* parent, std::f
 
                 for (int i = 0; i < results.size(); i++) {
                     QJsonObject result_object = results.at(i).toObject();
-                    ServerOpenedFileInfo opened_file_info;
+                    OpenedBookInfo opened_file_info;
                     opened_file_info.checksum = result_object["file_checksum"].toString().toStdString();
                     opened_file_info.document_title = result_object["document_name"].toString();
                     opened_file_info.file_name = result_object["file_name"].toString();
@@ -12416,7 +12416,7 @@ void SioyekNetworkManager::download_opened_files_info(MainWidget* parent, std::f
 
 }
 
- std::vector<ServerOpenedFileInfo> SioyekNetworkManager::get_excluded_opened_files(std::vector<std::string>& excluded_checksums) {
+ std::vector<OpenedBookInfo> SioyekNetworkManager::get_excluded_opened_files(std::vector<std::string>& excluded_checksums) {
     //std::unordered_map<QString, QString>  something;
      std::vector<std::string> server_checksums;
      for (auto& [checksum, _] : server_opened_files) {
@@ -12434,7 +12434,7 @@ void SioyekNetworkManager::download_opened_files_info(MainWidget* parent, std::f
         std::back_inserter(server_only_checksums)
     );
 
-    std::vector<ServerOpenedFileInfo> server_only_files;
+    std::vector<OpenedBookInfo> server_only_files;
     for (auto checksum : server_only_checksums) {
         server_only_files.push_back(server_opened_files[checksum]);
     }
@@ -12448,7 +12448,7 @@ void MainWidget::handle_open_server_only_file() {
     db_manager->get_all_local_checksums(local_checksums);
 
     std::vector<std::vector<std::wstring>> values;
-    std::vector<ServerOpenedFileInfo> keys;
+    std::vector<OpenedBookInfo> keys;
 
     values.push_back({});
 
@@ -12458,11 +12458,11 @@ void MainWidget::handle_open_server_only_file() {
         keys.push_back(opened_file_info);
     }
 
-    set_filtered_select_menu<ServerOpenedFileInfo>(this, false, true, values, keys, -1, [this](ServerOpenedFileInfo* val) {
+    set_filtered_select_menu<OpenedBookInfo>(this, false, true, values, keys, -1, [this](OpenedBookInfo* val) {
 
         download_and_open(val->checksum, val->file_name, val->offset_y);
         },
-        [](ServerOpenedFileInfo* val) {
+        [](OpenedBookInfo* val) {
 
         });
     show_current_widget();

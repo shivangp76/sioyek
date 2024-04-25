@@ -138,13 +138,6 @@ enum class ServerStatus {
     LoggedIn
 };
 
-struct ServerOpenedFileInfo {
-    std::string checksum;
-    QString document_title;
-    QString file_name;
-    QDateTime last_access_time;
-    float offset_y;
-};
 
 struct LastDocumentChecksum {
     Document* doc = nullptr;
@@ -167,7 +160,7 @@ public:
     std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = L"http://localhost:8081/get_opened_book";
     std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = L"http://localhost:8081/get_opened_books";
     std::unordered_set<std::string> SERVER_HASHES = {};
-    std::unordered_map<std::string, ServerOpenedFileInfo> server_opened_files;
+    std::unordered_map<std::string, OpenedBookInfo> server_opened_files;
     std::unordered_map<std::string, float> last_server_location;
     ServerStatus status = ServerStatus::NotLoggedIn;
 
@@ -193,7 +186,7 @@ public:
     bool should_sync_location();
     void set_last_server_location(std::string checksum, float offset_y);
     void download_opened_files_info(MainWidget* widget, std::function<void(QJsonObject)> fn);
-    std::vector<ServerOpenedFileInfo> get_excluded_opened_files(std::vector<std::string>& excluded_checksums);
+    std::vector<OpenedBookInfo> get_excluded_opened_files(std::vector<std::string>& excluded_checksums);
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays

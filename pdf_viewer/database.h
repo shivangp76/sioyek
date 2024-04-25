@@ -9,6 +9,7 @@
 
 class CachedChecksummer;
 
+
 class DatabaseManager {
 private:
     sqlite3* local_db;
@@ -67,7 +68,9 @@ public:
     bool update_bookmark_change_position(const std::string& uuid, AbsoluteDocumentPos new_begin, AbsoluteDocumentPos new_end);
     bool update_portal_change_src_position(const std::string& uuid, AbsoluteDocumentPos new_pos);
     bool select_opened_books_path_values(std::vector<std::wstring>& out_result);
-    bool select_opened_books_path_and_doc_names(std::vector<std::pair<std::wstring, std::wstring>>& out_result);
+    //bool select_opened_books_path_and_doc_names(std::vector<std::pair<std::wstring, std::wstring>>& out_result);
+    bool select_opened_books(std::vector<OpenedBookInfo>& out_result);
+
     bool delete_mark_with_symbol(char symbol);
     bool select_global_mark(char symbol, std::vector<std::pair<std::string, float>>& out_result);
     bool delete_opened_book(const std::string& book_path);

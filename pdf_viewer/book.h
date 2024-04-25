@@ -33,6 +33,14 @@ struct SelectedObjectIndex {
     SelectedObjectType type;
 };
 
+struct OpenedBookInfo {
+    std::string checksum;
+    QString document_title;
+    QString file_name;
+    QDateTime last_access_time;
+    float offset_y;
+};
+
 struct BookState {
     std::wstring document_path;
     float offset_y;

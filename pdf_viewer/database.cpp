@@ -91,6 +91,26 @@ static int prev_doc_with_name_callback(void* res_vector, int argc, char** argv, 
     return 0;
 }
 
+static int opened_books_callback(void* res_vector, int argc, char** argv, char** col_name) {
+    std::vector<OpenedBookInfo>* res = (std::vector<OpenedBookInfo>*) res_vector;
+
+    assert(argc == 3);
+
+    OpenedBookInfo info;
+
+    info.checksum = argv[0];
+    info.document_title = "";
+    if (argv[1]) {
+        info.document_title = argv[1];
+    }
+    if (argv[2]) {
+        info.last_access_time = QDateTime::fromString(QString(argv[3]), Qt::ISODate);
+    }
+
+    res->push_back(info);
+    return 0;
+}
+
 static int mark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<Mark>* res = (std::vector<Mark>*)res_vector;
@@ -1017,13 +1037,24 @@ bool DatabaseManager::select_opened_books_path_values(std::vector<std::wstring>&
         error_message);
 }
 
-bool DatabaseManager::select_opened_books_path_and_doc_names(std::vector<std::pair<std::wstring, std::wstring>>& out_result) {
+//bool DatabaseManager::select_opened_books_path_and_doc_names(std::vector<std::pair<std::wstring, std::wstring>>& out_result) {
+//    std::wstringstream ss;
+//    ss << "SELECT path, document_name FROM opened_books order by datetime(last_access_time) desc;";
+//    char* error_message = nullptr;
+//    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), prev_doc_with_name_callback, &out_result, &error_message);
+//    return handle_error(
+//        "select_opened_books_path_and_doc_names",
+//        error_code,
+//        error_message);
+//}
+
+bool DatabaseManager::select_opened_books(std::vector<OpenedBookInfo>& out_result) {
     std::wstringstream ss;
-    ss << "SELECT path, document_name FROM opened_books order by datetime(last_access_time) desc;";
+    ss << "SELECT path, document_name, last_access_time FROM opened_books ORDER BY datetime(last_access_time) DESC;";
     char* error_message = nullptr;
-    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), prev_doc_with_name_callback, &out_result, &error_message);
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), opened_books_callback, &out_result, &error_message);
     return handle_error(
-        "select_opened_books_path_and_doc_names",
+        "select_opened_books",
         error_code,
         error_message);
 }
