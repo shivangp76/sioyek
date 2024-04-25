@@ -128,6 +128,7 @@ extern std::string APPLICATION_VERSION;
 
 extern int next_window_id;
 
+extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;
 extern bool SHOULD_USE_MULTIPLE_MONITORS;
 extern bool MULTILINE_MENUS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
@@ -11653,7 +11654,7 @@ void MainWidget::handle_sync_open_document() {
             sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&](QJsonObject obj) {
                 qDebug() << obj;
                 float server_offset_y = obj["result"].toObject()["offset_y"].toDouble();
-                if (std::abs(server_offset_y - main_document_view->get_offset_y()) > 100) {
+                if (std::abs(server_offset_y - main_document_view->get_offset_y()) > SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD) {
                     handle_server_document_location_mismatch(main_document_view->get_offset_y(), server_offset_y);
                 }
                 });

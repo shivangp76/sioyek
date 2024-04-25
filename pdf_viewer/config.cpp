@@ -103,6 +103,7 @@ float HIGHLIGHT_COLORS[26 * 3] = { \
 1.00, 0.31, 0.02
 };
 
+float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD = 1000;
 float DARK_MODE_CONTRAST = 0.8f;
 float ZOOM_INC_FACTOR = 1.2f;
 float VERTICAL_MOVE_AMOUNT = 1.0f;
@@ -902,6 +903,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color4(L"keyboard_selected_tag_background_color", KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO);
     add_float(L"synctex_highlight_timeout", &HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT, FloatExtras{-1.0f, 100.0f});
     add_float(L"dark_mode_contrast", &DARK_MODE_CONTRAST, FloatExtras{0.0f, 1.0f});
+    add_float(L"server_and_local_document_mismatch_threshold", &SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD, FloatExtras{0.0f, 100000.0f});
     add_float(L"freetext_bookmark_font_size", &FREETEXT_BOOKMARK_FONT_SIZE, FloatExtras{0.0f, 100.0f});
     add_float(L"custom_color_contrast", &CUSTOM_COLOR_CONTRAST, FloatExtras{0.0f, 1.0f});
     add_float(L"zoom_inc_factor", &ZOOM_INC_FACTOR, FloatExtras{1.0f, 2.0f});
