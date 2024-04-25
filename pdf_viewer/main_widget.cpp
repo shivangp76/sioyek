@@ -19,6 +19,7 @@
 // add a command to select a ruler using keyboard
 // customized portal zoom levels should not be reset
 // checksummer.get_path should use a hashmap instead of iterating over all paths
+// better handling of enum configs
 
 #include <iostream>
 #include <vector>
@@ -945,14 +946,19 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     status_label_right->setStyleSheet(get_status_stylesheet());
     status_label_right->setFont(label_font);
 
+    server_actions_button = new QPushButton(get_login_status_string());
+    server_actions_button->setCursor(Qt::PointingHandCursor);
+
     resume_to_server_position_button = new QPushButton("RESUME");
     //resume_to_server_position_button->setIcon(style()->standardIcon(QStyle::StandardPixmap::SP_ArrowBack));
     resume_to_server_position_button->setToolTip("Resume to server location");
     resume_to_server_position_button->setCursor(Qt::PointingHandCursor);
     resume_to_server_position_button->setStyleSheet(get_status_button_stylesheet());
 
+
     right_status_container_layout->addWidget(resume_to_server_position_button);
     right_status_container_layout->addWidget(status_label_right);
+    right_status_container_layout->addWidget(server_actions_button);
 
     resume_to_server_position_button->hide();
 
@@ -1028,6 +1034,10 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     QObject::connect(resume_to_server_position_button, &QPushButton::clicked, [&]() {
         handle_resume_to_server_location();
+        });
+
+    QObject::connect(server_actions_button, &QPushButton::clicked, [&]() {
+        handle_server_actions_button_pressed();
         });
 
     QObject::connect(&external_command_edit_watcher, &QFileSystemWatcher::fileChanged, [&]() {
@@ -1463,7 +1473,7 @@ std::wstring MainWidget::get_status_string(bool is_right) {
     }
 
     if (is_right) {
-        status_string = QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT) + " [ " + get_login_status_string() + " ]";
+        status_string = QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT);
     }
 
     if (status_string.size() == 0) return L"";
@@ -1668,34 +1678,34 @@ std::wstring MainWidget::get_status_string(bool is_right) {
 }
 
 QString MainWidget::get_login_status_string() {
-    QString login_status;
-    QString document_status;
+    //QString login_status;
+    //QString document_status;
+    QString server_status_string;
 
     if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
-        login_status = "Logged in";
         if (is_current_document_available_on_server()) {
-            document_status = "YES";
+            server_status_string = "SYNCED";
         }
         else {
-            document_status = "NO";
+            server_status_string = "UNSYNCED";
         }
     }
     else {
         if (sioyek_network_manager->status == ServerStatus::NotLoggedIn) {
-            login_status = "Logged out";
+            server_status_string = "OFFLINE";
         }
         else if (sioyek_network_manager->status == ServerStatus::ServerOffline) {
-            login_status = "Server offline";
+            server_status_string = "SERVER OFFLINE";
         }
         else if (sioyek_network_manager->status == ServerStatus::InvalidCredentials) {
-            login_status = "Invalid credentials";
+            server_status_string = "EXPIRED CREDENTIALS";
         }
         else if (sioyek_network_manager->status == ServerStatus::LoggingIn) {
-            login_status = "Logging in";
+            server_status_string = "LOGGING IN";
         }
     }
 
-    return login_status + " " + document_status;
+    return "[ " + server_status_string + " ]";
 }
 
 void MainWidget::handle_escape() {
@@ -1934,6 +1944,7 @@ void MainWidget::validate_render() {
 void MainWidget::validate_ui() {
     status_label_left->setText(QString::fromStdWString(get_status_string(false)));
     status_label_right->setText(QString::fromStdWString(get_status_string(true)));
+    server_actions_button->setText(get_login_status_string());
     is_ui_invalidated = false;
 }
 
@@ -12563,4 +12574,9 @@ void MainWidget::handle_resume_to_server_location() {
             invalidate_render();
         }
     }
+}
+
+void MainWidget::handle_server_actions_button_pressed() {
+    qDebug() << "server actions button pressed";
+
 }

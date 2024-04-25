@@ -395,6 +395,7 @@ public:
     QLabel* status_label_left = nullptr;
     QLabel* status_label_right = nullptr;
     QWidget* status_label = nullptr;
+    QPushButton* server_actions_button = nullptr;
     QPushButton* resume_to_server_position_button = nullptr;
     int text_suggestion_index = 0;
 
@@ -1132,6 +1133,7 @@ public:
     void handle_open_server_only_file();
     void download_and_open(std::string checksum, QString file_name, float offset_y);
     void handle_resume_to_server_location();
+    void handle_server_actions_button_pressed();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 
