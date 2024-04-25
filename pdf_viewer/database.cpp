@@ -1122,6 +1122,18 @@ bool DatabaseManager::get_prev_path_hash_pairs(std::vector<std::pair<std::wstrin
         error_message);
 }
 
+bool DatabaseManager::get_all_local_checksums(std::vector<std::string>& out_checksum) {
+    std::wstringstream ss;
+    ss << "SELECT DISTINCT path FROM opened_books;";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), string_select_callback, &out_checksum, &error_message);
+    return handle_error(
+        "get_all_local_checksums",
+        error_code,
+        error_message);
+}
+
 bool DatabaseManager::select_highlight(const std::string& book_path, std::vector<Highlight>& out_result) {
     std::wstringstream ss;
     ss << "select desc, text_annot, begin_x, begin_y, end_x, end_y, type, uuid, creation_time, modification_time from highlights where document_path='" << esc(book_path) << "';";

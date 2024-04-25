@@ -95,6 +95,7 @@ public:
     bool get_path_from_hash(const std::string& checksum, std::vector<std::wstring>& out_paths);
     bool get_hash_from_path(const std::string& path, std::vector<std::wstring>& out_checksum);
     bool get_prev_path_hash_pairs(std::vector<std::pair<std::wstring, std::wstring>>& out_pairs);
+    bool get_all_local_checksums(std::vector<std::string>& out_checksum);
     bool insert_document_hash(const std::wstring& path, const std::string& checksum);
     void upgrade_database_hashes();
     void split_database(const std::wstring& local_database_path, const std::wstring& global_database_path, bool was_using_hashes);

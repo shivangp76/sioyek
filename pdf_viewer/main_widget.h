@@ -33,6 +33,7 @@ class QLocalSocket;
 class QLineEdit;
 class QTextEdit;
 class QTimer;
+class QPushButton;
 class QDragEvent;
 class QDropEvent;
 class QScrollBar;
@@ -129,6 +130,27 @@ struct RecentlyUpdatedPortalState {
 struct AVSpeechSynthesizer;
 #endif
 
+enum class ServerStatus {
+    NotLoggedIn,
+    InvalidCredentials,
+    ServerOffline,
+    LoggingIn,
+    LoggedIn
+};
+
+struct ServerOpenedFileInfo {
+    std::string checksum;
+    QString document_title;
+    QString file_name;
+    QDateTime last_access_time;
+    float offset_y;
+};
+
+struct LastDocumentChecksum {
+    Document* doc = nullptr;
+    std::optional<std::string> checksum;
+};
+
 class SioyekNetworkManager : public QObject {
     Q_OBJECT
 private:
@@ -143,28 +165,35 @@ public:
     std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = L"http://localhost:8081/download_hash";
     std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = L"http://localhost:8081/sync_opened_book";
     std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = L"http://localhost:8081/get_opened_book";
+    std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = L"http://localhost:8081/get_opened_books";
     std::unordered_set<std::string> SERVER_HASHES = {};
+    std::unordered_map<std::string, ServerOpenedFileInfo> server_opened_files;
+    std::unordered_map<std::string, float> last_server_location;
+    ServerStatus status = ServerStatus::NotLoggedIn;
 
     QDateTime last_document_location_upload_time;
 
     SioyekNetworkManager(QObject* parent=nullptr);
     void login(std::wstring username, std::wstring password);
-    bool handle_network_reply_if_error(QNetworkReply* reply);
+    bool handle_network_reply_if_error(QNetworkReply* reply, bool show_message);
     void persist_access_token(std::string access_token);
     void load_access_token();
     void authorize_request(QNetworkRequest* req);
-    void download_file_with_hash(QString hash);
-    void upload_file(QString path, QString hash);
+    void download_file_with_hash(QObject* parent, QString hash, std::function<void(QString)> fn);
+    void upload_file(QObject* parent, QString path, QString hash, std::function<void()> fn);
     QNetworkReply* get_user_file_hash_set_reply();
     void update_user_files_hash_set();
     std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
     QNetworkReply* download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn);
-    void download_unsynced_files(DatabaseManager* db_manager);
+    void download_unsynced_files(QObject* parent, DatabaseManager* db_manager);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
     bool is_checksum_available_on_server(const std::string& checksum);
-    void sync_file_location(QString hash, QString document_title, float offset_y);
+    void sync_file_location(QString hash, QString document_title, QString timestamp, float offset_y);
     QNetworkReply* get_opened_book_data_from_checksum(QObject* parent, QString checksum, std::function<void(QJsonObject)> fn);
     bool should_sync_location();
+    void set_last_server_location(std::string checksum, float offset_y);
+    void download_opened_files_info(MainWidget* widget, std::function<void(QJsonObject)> fn);
+    std::vector<ServerOpenedFileInfo> get_excluded_opened_files(std::vector<std::string>& excluded_checksums);
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -188,6 +217,8 @@ public:
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
+
+    LastDocumentChecksum last_document_checksum;
 
     QFileSystemWatcher external_command_edit_watcher;
     bool is_external_file_edited = false;
@@ -369,6 +400,7 @@ public:
     QLabel* status_label_left = nullptr;
     QLabel* status_label_right = nullptr;
     QWidget* status_label = nullptr;
+    QPushButton* resume_to_server_position_button = nullptr;
     int text_suggestion_index = 0;
 
     int last_pause_rest_of_document_page = -1;
@@ -458,6 +490,8 @@ public:
 
     void set_main_document_view_state(DocumentViewState new_view_state);
     void handle_click(WindowPos pos);
+    void manage_last_document_checksum();
+    void on_checksum_computed();
 
     void update_selected_bookmark_font_size();
     //bool eventFilter(QObject* obj, QEvent* event) override;
@@ -1082,6 +1116,8 @@ public:
     void on_portal_edited(const std::string& uuid);
     void on_open_document(const std::wstring& path);
 
+    void handle_sync_open_document();
+
     void handle_server_document_location_mismatch(float local_offset_y, float server_offset_y);
 
     std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
@@ -1097,6 +1133,8 @@ public:
     bool is_current_document_available_on_server();
     void handle_login(std::wstring username, std::wstring password);
     void sync_current_file_location_to_servers();
+    void handle_open_server_only_file();
+    void download_and_open(std::string checksum, QString file_name, float offset_y);
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

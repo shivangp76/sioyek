@@ -2824,6 +2824,25 @@ public:
     bool requires_document() { return false; }
 };
 
+class OpenServerOnlyFile : public Command {
+public:
+    static inline const std::string cname = "open_server_only_file";
+    static inline const std::string hname = "Search and open files located only in sioyek servers";
+    OpenServerOnlyFile(MainWidget* w) : Command(cname, w) {};
+
+    std::wstring file_name;
+
+    bool pushes_state() {
+        return true;
+    }
+
+    void perform() {
+        widget->handle_open_server_only_file();
+    }
+
+    bool requires_document() { return false; }
+};
+
 
 class MoveSmoothCommand : public Command {
     bool was_held = false;
@@ -5488,7 +5507,7 @@ public:
     DownloadUnsyncedFilesCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->download_unsynced_files(widget->db_manager);
+        widget->sioyek_network_manager->download_unsynced_files(widget, widget->db_manager);
     }
 
 };
@@ -6771,6 +6790,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<NextPageCommand>();
     register_command<PreviousPageCommand>();
     register_command<OpenDocumentCommand>();
+    register_command<OpenServerOnlyFile>();
     register_command<ScreenshotCommand>();
     register_command<FramebufferScreenshotCommand>();
     register_command<WaitCommand>();
