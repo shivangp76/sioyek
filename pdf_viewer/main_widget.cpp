@@ -1026,14 +1026,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect(pdf_renderer, &PdfRenderer::search_advance, this, &MainWidget::invalidate_ui);
 
     QObject::connect(resume_to_server_position_button, &QPushButton::clicked, [&]() {
-        if (doc() && doc()->get_checksum_fast()) {
-            auto res = sioyek_network_manager->last_server_location.find(doc()->get_checksum_fast().value());
-            if (res != sioyek_network_manager->last_server_location.end()) {
-                long_jump_to_destination(res->second);
-                resume_to_server_position_button->hide();
-                invalidate_render();
-            }
-        }
+        handle_resume_to_server_location();
         });
 
     QObject::connect(&external_command_edit_watcher, &QFileSystemWatcher::fileChanged, [&]() {
@@ -12558,4 +12551,15 @@ void SioyekNetworkManager::handle_one_time_network_operations() {
         }
     }
 
+}
+
+void MainWidget::handle_resume_to_server_location() {
+    if (doc() && doc()->get_checksum_fast()) {
+        auto res = sioyek_network_manager->last_server_location.find(doc()->get_checksum_fast().value());
+        if (res != sioyek_network_manager->last_server_location.end()) {
+            long_jump_to_destination(res->second);
+            resume_to_server_position_button->hide();
+            invalidate_render();
+        }
+    }
 }

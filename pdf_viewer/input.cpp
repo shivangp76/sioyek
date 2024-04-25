@@ -5488,6 +5488,18 @@ public:
     }
 };
 
+class ResumeToServerLocationCommand : public Command {
+public:
+    static inline const std::string cname = "resume_to_server";
+    static inline const std::string hname = "Jump to the location of current document in sioyek servers";
+
+    ResumeToServerLocationCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_resume_to_server_location();
+    }
+};
+
 class LoginUsingAccessTokenCommand : public Command {
 public:
     static inline const std::string cname = "login_using_access_token";
@@ -7009,6 +7021,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<MoveSelectedBookmarkCommand>();
     register_command<LoginCommand>();
     register_command<LogoutCommand>();
+    register_command<ResumeToServerLocationCommand>();
     register_command<LoginUsingAccessTokenCommand>();
     register_command<UploadCurrentFileCommand>();
     register_command<DownloadUnsyncedFilesCommand>();

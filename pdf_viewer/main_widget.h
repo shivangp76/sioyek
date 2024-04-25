@@ -1131,6 +1131,7 @@ public:
     void sync_current_file_location_to_servers();
     void handle_open_server_only_file();
     void download_and_open(std::string checksum, QString file_name, float offset_y);
+    void handle_resume_to_server_location();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 
