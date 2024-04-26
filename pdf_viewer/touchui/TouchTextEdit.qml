@@ -19,6 +19,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.top: parent.top
         height: parent.height / 8
+        color: "white"
         id: label
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

@@ -211,6 +211,7 @@ void configure_paths_android() {
 
     database_file_path = standard_data_path.slash(L"test.db");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
+    sioyek_access_token_path = standard_data_path.slash(L"access_token.sioyek");
     local_database_file_path = standard_data_path.slash(L"local.db");
     global_database_file_path = standard_data_path.slash(L"shared.db");
     android_config_path = standard_data_path.slash(L"saved.config");

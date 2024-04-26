@@ -735,7 +735,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         new_overview_state.doc = main_document_view->get_overview_page()->doc;
         new_overview_state.zoom_level = main_document_view->get_overview_page()->zoom_level;
 
-        set_overview_page(new_overview_state);
+        set_overview_page(new_overview_state, false);
         validate_render();
 
     }
@@ -776,7 +776,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         else {
             setCursor(Qt::ArrowCursor);
             if (HOVER_OVERVIEW) {
-                set_overview_page({});
+                set_overview_page({}, false);
                 //            invalidate_render();
             }
         }
@@ -941,7 +941,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     status_label_left->setStyleSheet(get_status_stylesheet());
     status_label_left->setFont(label_font);
 
-    QHBoxLayout* right_status_container_layout = new QHBoxLayout(this);
+    QHBoxLayout* right_status_container_layout = new QHBoxLayout();
 
     status_label_right = new QLabel();
     status_label_right->setStyleSheet(get_status_stylesheet());
@@ -1723,7 +1723,7 @@ void MainWidget::handle_escape() {
     if (main_document_view) {
         bool should_return = false;
         if (main_document_view->get_overview_page()) {
-            set_overview_page({});
+            set_overview_page({}, false);
             should_return = true;
         }
         else if (main_document_view->get_is_searching(nullptr)) {
@@ -1776,7 +1776,7 @@ void MainWidget::handle_escape() {
             done_anything = true;
         }
 
-        set_overview_page({});
+        set_overview_page({}, false);
         if (!was_line_select) {
             clear_selected_text();
         }
@@ -1833,7 +1833,7 @@ void MainWidget::validate_render() {
                 //opengl_widget->get_overview_offsets(&overview_offset_x, &overview_offset_y);
                 //opengl_widget->set_overview_offsets(overview_offset_x, overview_offset_y + smooth_scroll_speed * secs);
                 state.absolute_offset_y += smooth_scroll_speed * secs;
-                set_overview_page(state);
+                set_overview_page(state, false);
             }
             float accel = SMOOTH_SCROLL_DRAG;
             if (smooth_scroll_speed > 0) {
@@ -2437,7 +2437,7 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
     }
 
     if ((down == true) && main_document_view->get_overview_page()) {
-        set_overview_page({});
+        set_overview_page({}, false);
         //main_document_view->set_line_index(-1);
         invalidate_render();
         return;
@@ -3628,7 +3628,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
                 overview.doc = dst_doc;
                 overview.absolute_offset_y = portal.value().dst.book_state.offset_y;
                 overview.overview_type = "portal";
-                set_overview_page(overview);
+                set_overview_page(overview, true);
                 invalidate_render();
                 return true;
             }
@@ -3673,7 +3673,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
 
 void MainWidget::set_synctex_mode(bool mode) {
     if (mode) {
-        set_overview_page({});
+        set_overview_page({}, false);
     }
     this->synctex_mode = mode;
 }
@@ -4766,14 +4766,14 @@ void MainWidget::scroll_overview(int vertical_amount, int horizontal_amount) {
     OverviewState state = main_document_view->get_overview_page().value();
     state.absolute_offset_y += 36.0f * vertical_move_amount * vertical_amount;
     state.absolute_offset_x += 36.0f * vertical_move_amount * horizontal_amount;
-    set_overview_page(state);
+    set_overview_page(state, false);
     handle_portal_overview_update();
 }
 
 void MainWidget::scroll_overview_vertical(float amount){
     OverviewState state = main_document_view->get_overview_page().value();
     state.absolute_offset_y += amount;
-    set_overview_page(state);
+    set_overview_page(state, false);
     handle_portal_overview_update();
 }
 
@@ -5210,7 +5210,7 @@ void MainWidget::goto_overview() {
                 long_jump_to_destination(maybe_overview_position.value());
             }
         }
-        set_overview_page({});
+        set_overview_page({}, false);
 
     }
 }
@@ -5584,13 +5584,13 @@ void MainWidget::overview_to_definition() {
             overview_state.highlight_rects = candidates[0].highlight_rects;
             overview_state.overview_type = reference_type_string(candidates[0].reference_type);
 
-            set_overview_page(overview_state);
+            set_overview_page(overview_state, true);
             //dv()->set_overview_highlights(candidates[0].highlight_rects);
             on_overview_source_updated();
         }
     }
     else {
-        set_overview_page({});
+        set_overview_page({}, false);
     }
 }
 
@@ -6366,7 +6366,7 @@ void MainWidget::handle_toggle_smooth_scroll_mode() {
 
 void MainWidget::handle_overview_to_portal() {
     if (main_document_view->get_overview_page()) {
-        set_overview_page({});
+        set_overview_page({}, false);
     }
     else {
 
@@ -6381,7 +6381,7 @@ void MainWidget::handle_overview_to_portal() {
                     doc->open(&is_render_invalidated, true);
                     overview_state.absolute_offset_y = portal.dst.book_state.offset_y;
                     overview_state.doc = doc;
-                    set_overview_page(overview_state);
+                    set_overview_page(overview_state, true);
                 }
             }
         }
@@ -6830,7 +6830,7 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
         NormalizedWindowPos nwp = main_document_view->window_to_normalized_window_pos({ window_pos.x(), window_pos.y() });
 
         if (!main_document_view->is_window_point_in_overview({ nwp.x, nwp.y })) {
-            set_overview_page({});
+            set_overview_page({}, false);
         }
     }
 
@@ -7253,7 +7253,14 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << current_widget_stack.size();
+
+    QFile access_token_file(QString::fromStdWString(sioyek_access_token_path.get_path()));
+    if (access_token_file.open(QIODeviceBase::ReadOnly)) {
+        qDebug() << QString::fromUtf8(access_token_file.readAll());
+        //access_token_file.write(QString::fromStdString(access_token).toUtf8());
+        access_token_file.close();
+    }
+    //qDebug() << current_widget_stack.size();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -8837,7 +8844,7 @@ bool MainWidget::goto_ith_next_overview(int i) {
             OverviewState state;
             state.doc = overview_doc;
             state.absolute_offset_y = abspos.y;
-            set_overview_page(state);
+            set_overview_page(state, true);
             invalidate_render();
         }
         dv()->set_overview_highlights(dv()->smart_view_candidates[dv()->index_into_candidates].highlight_rects);
@@ -9066,7 +9073,7 @@ void MainWidget::update_pending_portal_indices_after_removed_indices(std::vector
 
 }
 void MainWidget::close_overview() {
-    set_overview_page({});
+    set_overview_page({}, false);
 }
 
 std::vector<Portal> MainWidget::get_ruler_portals() {
@@ -9098,7 +9105,7 @@ void MainWidget::handle_overview_to_ruler_portal() {
         OverviewState state;
         state.doc = dv()->smart_view_candidates[0].doc;
         state.absolute_offset_y = candidates[0].dst.book_state.offset_y;
-        set_overview_page(state);
+        set_overview_page(state, true);
         invalidate_render();
     }
 
@@ -9268,7 +9275,7 @@ void MainWidget::update_touch_overview_buttons(const std::optional<OverviewState
     }
 }
 
-void MainWidget::set_overview_page(std::optional<OverviewState> overview) {
+void MainWidget::set_overview_page(std::optional<OverviewState> overview, bool should_update_buttons) {
 
     if (!overview){
         main_document_view->set_overview_highlights({});
@@ -9277,7 +9284,9 @@ void MainWidget::set_overview_page(std::optional<OverviewState> overview) {
         main_document_view->set_overview_highlights(overview->highlight_rects);
     }
 
-    update_touch_overview_buttons(overview);
+    if (should_update_buttons) {
+        update_touch_overview_buttons(overview);
+    }
     main_document_view->set_overview_page(overview);
 
 }

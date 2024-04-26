@@ -4967,7 +4967,7 @@ public:
     CloseOverviewCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->set_overview_page({});
+        widget->set_overview_page({}, false);
     }
 
 };

@@ -46,7 +46,11 @@ bool USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE = true;
 bool HIDE_OVERLAPPING_LINK_LABELS = true;
 bool DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE = false;
 bool SNAP_DRAGGING = true;
+#ifndef SIOYEK_MOBILE
 bool AUTO_LOGIN_ON_STARTUP = false;
+#else
+bool AUTO_LOGIN_ON_STARTUP = true;
+#endif
 
 std::wstring SEARCH_URLS[26];
 std::wstring EXECUTE_COMMANDS[26];
