@@ -6084,9 +6084,18 @@ void MainWidget::handle_open_prev_doc() {
         }
 
         auto last = opened_docs.end();
+        // at the time of this commit, inplace_merge on android seems to be wrong, so we
+        // sort the entire array instead, we should just be using the inplace_merge when
+        // it is fixed
+#ifndef SIOYEK_MOBILE
         std::inplace_merge(opened_docs.begin(), opened_docs.begin() + middle_index, last, [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
             return lhs.last_access_time > rhs.last_access_time;
             });
+#else
+        std::sort(opened_docs.begin(), opened_docs.end(), [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
+            return lhs.last_access_time > rhs.last_access_time;
+            });
+#endif
     }
 
     for (const auto& opened_doc : opened_docs) {
