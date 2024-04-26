@@ -12586,7 +12586,12 @@ void MainWidget::handle_resume_to_server_location() {
 
 void MainWidget::handle_server_actions_button_pressed() {
     if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
-        show_context_menu("logout");
+        if (!is_current_document_available_on_server()) {
+            show_context_menu("logout|upload_current_file");
+        }
+        else {
+            show_context_menu("logout");
+        }
     }
     else if (sioyek_network_manager->status == ServerStatus::NotLoggedIn) {
         show_context_menu("login");
