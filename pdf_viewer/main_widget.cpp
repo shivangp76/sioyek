@@ -956,6 +956,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     resume_to_server_position_button->setCursor(Qt::PointingHandCursor);
     resume_to_server_position_button->setStyleSheet(get_status_button_stylesheet());
 
+    resume_to_server_position_button->setFocusPolicy(Qt::FocusPolicy::NoFocus);
+    server_actions_button->setFocusPolicy(Qt::FocusPolicy::NoFocus);
+
 
     right_status_container_layout->addWidget(resume_to_server_position_button);
     right_status_container_layout->addWidget(status_label_right);
