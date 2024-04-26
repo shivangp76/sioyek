@@ -6,6 +6,8 @@ TouchMainMenu::TouchMainMenu(bool fit_mode, bool portaling, bool fullscreen, boo
 
     setAttribute(Qt::WA_NoMousePropagation);
 
+    bool is_logged_in = false;
+
     quick_widget = new QQuickWidget(this);
 
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
@@ -19,6 +21,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode, bool portaling, bool fullscreen, boo
     quick_widget->rootContext()->setContextProperty("_speaking", speaking);
     quick_widget->rootContext()->setContextProperty("_portaling", portaling);
     quick_widget->rootContext()->setContextProperty("_fit", fit_mode);
+    quick_widget->rootContext()->setContextProperty("_loggedIn", is_logged_in);
 
     quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchMainMenu.qml"));
 
@@ -179,10 +182,20 @@ TouchMainMenu::TouchMainMenu(bool fit_mode, bool portaling, bool fullscreen, boo
         SIGNAL(downloadPaperClicked()),
         this,
         SLOT(handleDownloadPaper()));
+
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(loginClicked()),
+        this,
+        SLOT(handleLogin()));
 }
 
 void TouchMainMenu::handleDrawingMode() {
     emit drawingModeClicked();
+}
+
+void TouchMainMenu::handleLogin() {
+    emit loginClicked();
 }
 
 void TouchMainMenu::handleSelectText() {

@@ -12,11 +12,23 @@ Rectangle {
     signal cancelled();
     id: root
 
+    Label{
+        text: _name
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: parent.height / 8
+        id: label
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+
+    }
+
     TextInput{
         id: edit
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.top: parent.top
+        anchors.top: label.bottom
         height: 3 * parent.height / 4
         color: "white"
         text: _initialValue
@@ -25,7 +37,6 @@ Rectangle {
         onAccepted:{
             root.confirmed(edit.text);
         }
-
     }
 
     TouchButtonGroup{

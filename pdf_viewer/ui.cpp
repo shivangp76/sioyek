@@ -312,6 +312,9 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     QObject::connect(main_menu, &TouchMainMenu::horizontalLockClicked, [&]() {
         main_widget->run_command_with_name("toggle_horizontal_scroll_lock");
         });
+    QObject::connect(main_menu, &TouchMainMenu::loginClicked, [&]() {
+        main_widget->run_command_with_name("login");
+        });
 
     //    QObject::connect(set_background_color, &QPushButton::pressed, [&](){
 

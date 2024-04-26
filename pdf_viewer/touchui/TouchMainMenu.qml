@@ -38,6 +38,7 @@ Rectangle{
     signal fitToPageWidthClicked();
     signal drawingModeButtonClicked();
     signal downloadPaperClicked();
+    signal loginClicked();
 
     property bool is_fit: _fit;
     property bool is_ruler: _ruler;
@@ -47,6 +48,33 @@ Rectangle{
         spacing: 0
         anchors.fill: parent
 
+        Item{
+
+            Layout.preferredHeight: Math.max(parent.height / 6, 100)
+            Layout.preferredWidth: parent.width
+
+            Item{
+                width: parent.width
+                height: parent.height
+
+
+
+                TouchButtonGroup{
+                    buttons: ["Login"]
+                    anchors.bottom: parent.bottom
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.margins: 10
+                    onButtonClicked: function(index, name){
+                        if (index == 0){
+                            loginClicked();
+                        }
+                    }
+
+                }
+            }
+        }
 
         Item{
 

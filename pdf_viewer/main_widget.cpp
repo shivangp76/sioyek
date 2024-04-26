@@ -951,11 +951,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     server_actions_button->setCursor(Qt::PointingHandCursor);
 
     resume_to_server_position_button = new QPushButton("RESUME");
-    //resume_to_server_position_button->setIcon(style()->standardIcon(QStyle::StandardPixmap::SP_ArrowBack));
     resume_to_server_position_button->setToolTip("Resume to server location");
     resume_to_server_position_button->setCursor(Qt::PointingHandCursor);
     resume_to_server_position_button->setStyleSheet(get_status_button_stylesheet());
 
+    // we don't want the statusbar buttons to steal the input focus when clicked
     resume_to_server_position_button->setFocusPolicy(Qt::FocusPolicy::NoFocus);
     server_actions_button->setFocusPolicy(Qt::FocusPolicy::NoFocus);
 

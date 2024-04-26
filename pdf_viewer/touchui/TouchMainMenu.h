@@ -39,6 +39,7 @@ public slots:
     void handleDrawingMode();
     void handleDownloadPaper();
     void handleHint();
+    void handleLogin();
 
 signals:
     void selectTextClicked();
@@ -67,6 +68,7 @@ signals:
     void drawingModeClicked();
     void downloadPaperClicked();
     void hintClicked();
+    void loginClicked();
 
 private:
     QQuickWidget* quick_widget = nullptr;
