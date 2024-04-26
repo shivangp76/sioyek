@@ -1707,7 +1707,7 @@ QString MainWidget::get_login_status_string() {
             server_status_string = "SERVER OFFLINE";
         }
         else if (sioyek_network_manager->status == ServerStatus::InvalidCredentials) {
-            server_status_string = "EXPIRED CREDENTIALS";
+            server_status_string = "EXPIRED/INVALID CREDENTIALS";
         }
         else if (sioyek_network_manager->status == ServerStatus::LoggingIn) {
             server_status_string = "LOGGING IN";
@@ -11908,6 +11908,15 @@ void SioyekNetworkManager::login(std::wstring username, std::wstring password) {
             persist_access_token(ACCESS_TOKEN);
             handle_one_time_network_operations();
         }
+        else {
+            int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (status_code == 401) {
+                status = ServerStatus::InvalidCredentials;
+            }
+            else {
+                status = ServerStatus::NotLoggedIn;
+            }
+        }
         });
 }
 
@@ -12580,7 +12589,7 @@ void MainWidget::handle_server_actions_button_pressed() {
             show_context_menu("logout");
         }
     }
-    else if (sioyek_network_manager->status == ServerStatus::NotLoggedIn) {
+    else if ((sioyek_network_manager->status == ServerStatus::NotLoggedIn) || (sioyek_network_manager->status == ServerStatus::InvalidCredentials)) {
         show_context_menu("login");
     }
 
