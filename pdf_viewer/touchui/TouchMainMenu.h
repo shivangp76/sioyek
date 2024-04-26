@@ -9,7 +9,16 @@
 class TouchMainMenu : public QWidget {
     Q_OBJECT
 public:
-    TouchMainMenu(bool fit_mode, bool portaling, bool fullscreen, bool ruler, bool speaking, bool locked, int current_colorscheme_index, QWidget* parent = nullptr);
+    TouchMainMenu(bool fit_mode,
+        bool portaling,
+        bool fullscreen,
+        bool ruler,
+        bool speaking,
+        bool locked,
+        int current_colorscheme_index,
+        bool is_logged_in,
+        bool is_current_document_synced,
+        QWidget* parent);
     void resizeEvent(QResizeEvent* resize_event) override;
 
 public slots:
@@ -40,6 +49,8 @@ public slots:
     void handleDownloadPaper();
     void handleHint();
     void handleLogin();
+    void handleLogout();
+    void handleSync();
 
 signals:
     void selectTextClicked();
@@ -69,7 +80,8 @@ signals:
     void downloadPaperClicked();
     void hintClicked();
     void loginClicked();
-
+    void logoutClicked();
+    void syncClicked();
 private:
     QQuickWidget* quick_widget = nullptr;
 

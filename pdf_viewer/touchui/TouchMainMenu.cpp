@@ -2,11 +2,18 @@
 #include "qqmlengine.h"
 
 
-TouchMainMenu::TouchMainMenu(bool fit_mode, bool portaling, bool fullscreen, bool ruler, bool speaking, bool locked, int current_colorscheme_index, QWidget* parent) : QWidget(parent) {
+TouchMainMenu::TouchMainMenu(bool fit_mode,
+    bool portaling, 
+    bool fullscreen,
+    bool ruler,
+    bool speaking,
+    bool locked,
+    int current_colorscheme_index,
+    bool is_logged_in,
+    bool is_current_document_synced,
+    QWidget* parent) : QWidget(parent) {
 
     setAttribute(Qt::WA_NoMousePropagation);
-
-    bool is_logged_in = false;
 
     quick_widget = new QQuickWidget(this);
 
@@ -22,6 +29,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode, bool portaling, bool fullscreen, boo
     quick_widget->rootContext()->setContextProperty("_portaling", portaling);
     quick_widget->rootContext()->setContextProperty("_fit", fit_mode);
     quick_widget->rootContext()->setContextProperty("_loggedIn", is_logged_in);
+    quick_widget->rootContext()->setContextProperty("_synced", is_current_document_synced);
 
     quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchMainMenu.qml"));
 
@@ -188,6 +196,18 @@ TouchMainMenu::TouchMainMenu(bool fit_mode, bool portaling, bool fullscreen, boo
         SIGNAL(loginClicked()),
         this,
         SLOT(handleLogin()));
+
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(logoutClicked()),
+        this,
+        SLOT(handleLogout()));
+
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(syncClicked()),
+        this,
+        SLOT(handleSync()));
 }
 
 void TouchMainMenu::handleDrawingMode() {
@@ -196,6 +216,14 @@ void TouchMainMenu::handleDrawingMode() {
 
 void TouchMainMenu::handleLogin() {
     emit loginClicked();
+}
+
+void TouchMainMenu::handleLogout() {
+    emit logoutClicked();
+}
+
+void TouchMainMenu::handleSync() {
+    emit syncClicked();
 }
 
 void TouchMainMenu::handleSelectText() {

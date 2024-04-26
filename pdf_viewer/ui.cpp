@@ -153,8 +153,19 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     bool speaking = main_widget->is_reading;
     bool portaling = main_widget->is_pending_link_source_filled();
     bool fit_mode = main_widget->last_smart_fit_page.has_value();
+    bool is_logged_in = main_widget->sioyek_network_manager->status == ServerStatus::LoggedIn;
+    bool is_current_document_synced = main_widget->is_current_document_available_on_server();
 
-    main_menu = new TouchMainMenu(fit_mode, portaling, fullscreen, ruler, speaking, horizontal_locked, current_colorscheme_index, this);
+    main_menu = new TouchMainMenu(fit_mode,
+        portaling,
+        fullscreen,
+        ruler,
+        speaking,
+        horizontal_locked,
+        current_colorscheme_index,
+        is_logged_in,
+        is_current_document_synced,
+        this);
 
 
     //    set_rect_config_button = new QPushButton("Rect Config", this);
@@ -313,7 +324,18 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         main_widget->run_command_with_name("toggle_horizontal_scroll_lock");
         });
     QObject::connect(main_menu, &TouchMainMenu::loginClicked, [&]() {
+        main_widget->pop_current_widget();
         main_widget->run_command_with_name("login");
+        });
+
+    QObject::connect(main_menu, &TouchMainMenu::logoutClicked, [&]() {
+        main_widget->pop_current_widget();
+        main_widget->run_command_with_name("logout");
+        });
+
+    QObject::connect(main_menu, &TouchMainMenu::syncClicked, [&]() {
+        main_widget->pop_current_widget();
+        main_widget->run_command_with_name("upload_current_file");
         });
 
     //    QObject::connect(set_background_color, &QPushButton::pressed, [&](){

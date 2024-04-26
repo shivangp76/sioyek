@@ -39,6 +39,8 @@ Rectangle{
     signal drawingModeButtonClicked();
     signal downloadPaperClicked();
     signal loginClicked();
+    signal logoutClicked();
+    signal syncClicked();
 
     property bool is_fit: _fit;
     property bool is_ruler: _ruler;
@@ -50,7 +52,8 @@ Rectangle{
 
         Item{
 
-            Layout.preferredHeight: Math.max(parent.height / 6, 100)
+            //Layout.preferredHeight: Math.max(parent.height / 6, 100)
+            Layout.preferredHeight: firsttools.height + 20
             Layout.preferredWidth: parent.width
 
             Item{
@@ -60,7 +63,7 @@ Rectangle{
 
 
                 TouchButtonGroup{
-                    buttons: ["Login"]
+                    buttons: _loggedIn ? (_synced ? ["Logout"] : ["Logout", "Sync"]) :["Login"]
                     anchors.bottom: parent.bottom
                     anchors.top: parent.top
                     anchors.left: parent.left
@@ -68,7 +71,17 @@ Rectangle{
                     anchors.margins: 10
                     onButtonClicked: function(index, name){
                         if (index == 0){
-                            loginClicked();
+                            if (_loggedIn){
+                                logoutClicked();
+                            }
+                            else{
+                                loginClicked();
+                            }
+                        }
+                        if (index == 1){
+                            if (_loggedIn){
+                                syncClicked();
+                            }
                         }
                     }
 
