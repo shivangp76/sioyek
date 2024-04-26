@@ -104,7 +104,7 @@ static int opened_books_callback(void* res_vector, int argc, char** argv, char**
         info.document_title = argv[1];
     }
     if (argv[2]) {
-        info.last_access_time = QDateTime::fromString(QString(argv[3]), Qt::ISODate);
+        info.last_access_time = QDateTime::fromString(QString(argv[2]), Qt::ISODate);
     }
 
     res->push_back(info);

@@ -6085,7 +6085,7 @@ void MainWidget::handle_open_prev_doc() {
 
         auto last = opened_docs.end();
         std::inplace_merge(opened_docs.begin(), opened_docs.begin() + middle_index, last, [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
-            return lhs.last_access_time < rhs.last_access_time;
+            return lhs.last_access_time > rhs.last_access_time;
             });
     }
 
