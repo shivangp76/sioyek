@@ -1250,6 +1250,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
 
+        if (sioyek_network_manager->status != last_server_status) {
+            last_server_status = sioyek_network_manager->status;
+            invalidate_ui();
+        }
+
         cleanup_expired_pending_portals();
         manage_last_document_checksum();
         if (TOUCH_MODE && selection_begin_indicator) {
@@ -3378,7 +3383,7 @@ void MainWidget::show_mark_selector() {
         });
 }
 
-void MainWidget::show_textbar(const std::wstring& command_name, const std::wstring& initial_value) {
+void MainWidget::show_textbar(const std::wstring& command_name, bool is_password, const std::wstring& initial_value) {
     QString init = "";
     text_suggestion_index = 0;
 
@@ -3387,7 +3392,7 @@ void MainWidget::show_textbar(const std::wstring& command_name, const std::wstri
     }
     if (TOUCH_MODE) {
 
-        TouchTextEdit* edit_widget = new TouchTextEdit(QString::fromStdWString(command_name), init, this);
+        TouchTextEdit* edit_widget = new TouchTextEdit(QString::fromStdWString(command_name), init, is_password, this);
 
         QObject::connect(edit_widget, &TouchTextEdit::confirmed, [&](QString text) {
             pop_current_widget();
@@ -3414,6 +3419,12 @@ void MainWidget::show_textbar(const std::wstring& command_name, const std::wstri
         text_command_line_edit->setFocus();
         if (initial_value.size() > 0) {
             text_command_line_edit->selectAll();
+        }
+        if (is_password) {
+            text_command_line_edit->setEchoMode(QLineEdit::EchoMode::Password);
+        }
+        else {
+            text_command_line_edit->setEchoMode(QLineEdit::EchoMode::Normal);
         }
     }
 }
@@ -3846,6 +3857,9 @@ void MainWidget::pop_current_widget(bool canceled) {
     }
     if (current_widget_stack.size() > 0) {
         current_widget_stack.back()->show();
+    }
+    else {
+        setFocus();
     }
 }
 
@@ -5438,12 +5452,10 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstr
 
             Requirement next_requirement = pending_command_instance->next_requirement(this).value();
             if (next_requirement.type == RequirementType::Text) {
-                show_textbar(utf8_decode(next_requirement.name), pending_command_instance->get_text_default_value());
-                text_command_line_edit->setEchoMode(QLineEdit::EchoMode::Normal);
+                show_textbar(utf8_decode(next_requirement.name), false, pending_command_instance->get_text_default_value());
             }
             else if (next_requirement.type == RequirementType::Password) {
-                show_textbar(utf8_decode(next_requirement.name), pending_command_instance->get_text_default_value());
-                text_command_line_edit->setEchoMode(QLineEdit::EchoMode::Password);
+                show_textbar(utf8_decode(next_requirement.name), true, pending_command_instance->get_text_default_value());
             }
             else if (next_requirement.type == RequirementType::Symbol) {
                 if (TOUCH_MODE) {
@@ -7241,35 +7253,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-
-    sioyek_network_manager->download_opened_files_info(this, [&](QJsonObject obj) {
-        handle_open_server_only_file();
-        //std::vector<std::string> local_checksums;
-        //db_manager->get_all_local_checksums(local_checksums);
-
-        //auto server_files = sioyek_network_manager->get_excluded_opened_files(local_checksums);
-        //if (server_files.size() > 0) {
-        //    for (auto& opened_file : server_files) {
-        //        qDebug() << opened_file.file_name;
-        //    }
-        //}
-        //else {
-        //    qDebug() << "no server only file";
-        //}
-        });
-
-    //std::vector<std::string> local_checksums;
-    //db_manager->get_all_local_checksums(local_checksums);
-    //for (auto checksum : local_checksums) {
-    //    qDebug() << QString::fromStdString(checksum);
-    //}
-
-    //sioyek_network_manager->download_opened_files_info(this, )
-    //if (doc()->get_checksum_fast()) {
-    //    auto reply = sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&](QJsonObject obj) {
-    //        toggle_dark_mode();
-    //        });
-    //}
+    qDebug() << current_widget_stack.size();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -9208,7 +9192,7 @@ void MainWidget::create_pending_download_portal(AbsoluteDocumentPos source_posit
 }
 
 void MainWidget::show_text_prompt(std::wstring initial_value, std::function<void(std::wstring)> on_select) {
-    auto new_widget = new TouchTextEdit("Enter text", QString::fromStdWString(initial_value), this);
+    auto new_widget = new TouchTextEdit("Enter text", QString::fromStdWString(initial_value), false, this);
 
     QObject::connect(new_widget, &TouchTextEdit::confirmed, [this, on_select](QString text) {
         on_select(text.toStdWString());

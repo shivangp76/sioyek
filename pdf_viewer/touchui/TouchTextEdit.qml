@@ -12,6 +12,7 @@ Rectangle {
     signal cancelled();
     id: root
 
+
     Label{
         text: _name
         anchors.left: parent.left
@@ -24,18 +25,48 @@ Rectangle {
 
     }
 
-    TextInput{
-        id: edit
+    Item{
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: label.bottom
+        id: edit
         height: 3 * parent.height / 4
-        color: "white"
-        text: _initialValue
-        focus: true
-        wrapMode: TextInput.WrapAnywhere
-        onAccepted:{
-            root.confirmed(edit.text);
+        property alias loaderItem:textLoader.item
+        Component {
+            id: normalInput
+            TextInput{
+                anchors.fill: parent
+                color: "white"
+                text: _initialValue
+                focus: true
+                id: textView
+                wrapMode: TextInput.WrapAnywhere
+                onAccepted:{
+                    root.confirmed(edit.text);
+                }
+            }
+        }
+
+        Component {
+            id: passwordInput
+            TextInput{
+                anchors.fill: parent
+                color: "white"
+                text: _initialValue
+                focus: true
+                id: textView
+                echoMode: TextInput.Password
+                wrapMode: TextInput.WrapAnywhere
+                onAccepted:{
+                    root.confirmed(edit.text);
+                }
+            }
+        }
+
+        Loader{
+            anchors.fill: parent
+            id: textLoader
+            sourceComponent: _isPassword ? passwordInput : normalInput
         }
     }
 
@@ -48,7 +79,7 @@ Rectangle {
         buttons: ["Cancel", "Confirm"]
         onButtonClicked: function(index, name){
             if (index == 1){
-                root.confirmed(edit.text);
+                root.confirmed(edit.loaderItem.text);
             }
             if (index == 0){
                 root.cancelled();

@@ -446,6 +446,8 @@ public:
     // last time we updated `smooth_scroll_speed` 
     QTime last_speed_update_time = QTime::currentTime();
 
+    std::optional<ServerStatus> last_server_status = {};
+
     QJSEngine* sync_js_engine = nullptr;
     std::vector<QJSEngine*> available_async_engines;
     std::mutex available_engine_mutex;
@@ -496,7 +498,7 @@ public:
     void change_selected_bookmark_text(const std::wstring& new_text);
     void change_selected_highlight_text_annot(const std::wstring& new_text);
     char get_current_selected_highlight_type();
-    void show_textbar(const std::wstring& command_name, const std::wstring& initial_value = L"");
+    void show_textbar(const std::wstring& command_name, bool is_password, const std::wstring& initial_value = L"");
     void show_mark_selector();
     void toggle_two_window_mode();
     void toggle_window_configuration();
