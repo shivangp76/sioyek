@@ -150,15 +150,16 @@ private:
 public:
     QNetworkAccessManager network_manager;
     std::string ACCESS_TOKEN;
-    std::wstring SIOYEK_TOKEN_URL = L"http://localhost:8081/token";
-    std::wstring SIOYEK_PAPER_URL_URL = L"http://localhost:8081/get_paper_url";
-    std::wstring SIOYEK_ECHO_URL = L"http://localhost:8081/echo_user";
-    std::wstring SIOYEK_UPLOAD_URL = L"http://localhost:8081/upload_file";
-    std::wstring SIOYEK_USER_FILE_HASH_SET_URL = L"http://localhost:8081/user_hash_set";
-    std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = L"http://localhost:8081/download_hash";
-    std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = L"http://localhost:8081/sync_opened_book";
-    std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = L"http://localhost:8081/get_opened_book";
-    std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = L"http://localhost:8081/get_opened_books";
+    const std::wstring SIOYEK_HOST = L"http://192.168.1.23:8081/";
+    const std::wstring SIOYEK_TOKEN_URL = SIOYEK_HOST + L"token";
+    const std::wstring SIOYEK_PAPER_URL_URL = SIOYEK_HOST + L"get_paper_url";
+    const std::wstring SIOYEK_ECHO_URL = SIOYEK_HOST + L"echo_user";
+    const std::wstring SIOYEK_UPLOAD_URL = SIOYEK_HOST + L"upload_file";
+    const std::wstring SIOYEK_USER_FILE_HASH_SET_URL = SIOYEK_HOST + L"user_hash_set";
+    const std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = SIOYEK_HOST + L"download_hash";
+    const std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = SIOYEK_HOST + L"sync_opened_book";
+    const std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = SIOYEK_HOST + L"get_opened_book";
+    std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = SIOYEK_HOST + L"get_opened_books";
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_map<std::string, OpenedBookInfo> server_opened_files;
     std::unordered_map<std::string, float> last_server_location;
