@@ -1,4 +1,5 @@
 ﻿// deduplicate database code
+// refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // maybe: use a better method to handle deletion of canceled download portals
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -21,6 +22,8 @@
 // checksummer.get_path should use a hashmap instead of iterating over all paths
 // better handling of enum configs
 // maybe add ability to click on other status bar items. e.g. clicking on the chapter name could open the table of contents
+// make sure deleteLater is called on all network requests
+// when uploading the unsynced deletions, we should upload the unsynced deletions of all documents not just the current document
 
 #include <iostream>
 #include <vector>
@@ -1283,6 +1286,10 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         }
         else if (is_ui_invalidated) {
             validate_ui();
+        }
+        if (doc() && doc()->annotations_are_freshly_loaded) {
+            doc()->annotations_are_freshly_loaded = false;
+            sync_highlights_with_server();
         }
 
         if (QGuiApplication::mouseButtons() & Qt::MouseButton::MiddleButton) {
@@ -6290,6 +6297,66 @@ void MainWidget::handle_keys_user_all() {
     show_current_widget();
 }
 
+void MainWidget::sync_highlights_with_server() {
+    if (!doc()) return;
+    if (!doc()->get_checksum_fast()) return;
+
+    QString document_checksum = QString::fromStdString(doc()->get_checksum_fast().value());
+
+    sioyek_network_manager->perform_unsynced_inserts_and_deletes(this, document_checksum, [&, document_checksum, this]() {
+        sioyek_network_manager->get_document_highlights(this, document_checksum,
+        [&, document_checksum](std::vector<Highlight>&& highlights, std::optional<QDateTime> server_access_time) {
+                std::vector<std::string> local_highlight_uuids;
+                std::vector<std::string> server_highlight_uuids;
+                std::unordered_map<std::string, int> server_uuid_to_index_map;
+                std::unordered_map<std::string, int> local_uuid_to_index_map;
+
+                auto local_doc_highlights = doc()->get_highlights();
+                for (int i = 0; i < local_doc_highlights.size(); i++) {
+                    auto hl = local_doc_highlights[i];
+                    local_highlight_uuids.push_back(hl.uuid);
+                    local_uuid_to_index_map[hl.uuid] = i;
+                }
+
+                for (int i = 0; i < highlights.size(); i++) {
+                    auto& hl = highlights[i];
+                    server_highlight_uuids.push_back(hl.uuid);
+                    server_uuid_to_index_map[hl.uuid] = i;
+                }
+
+                std::sort(local_highlight_uuids.begin(), local_highlight_uuids.end());
+                std::sort(server_highlight_uuids.begin(), server_highlight_uuids.end());
+
+                std::vector<std::string> server_only_uuids;
+                std::vector<std::string> local_only_uuids;
+
+                std::set_difference(server_highlight_uuids.begin(), server_highlight_uuids.end(),
+                    local_highlight_uuids.begin(), local_highlight_uuids.end(),
+                    std::back_inserter(server_only_uuids));
+
+                std::set_difference(local_highlight_uuids.begin(), local_highlight_uuids.end(),
+                    server_highlight_uuids.begin(), server_highlight_uuids.end(),
+                    std::back_inserter(local_only_uuids));
+
+                //// todo: this should be batched
+                doc()->lock_highlights_mutex();
+                for (const auto& uuid : local_only_uuids) {
+                    doc()->delete_highlight_with_uuid(uuid, true);
+                }
+                doc()->unlock_highlights_mutex();
+
+                // todo: this should be batched
+                for (const auto& uuid : server_only_uuids) {
+                    doc()->add_highlight_with_existing_uuid(highlights[server_uuid_to_index_map[uuid]]);
+                }
+                invalidate_render();
+            });
+
+        });
+
+
+}
+
 void MainWidget::handle_prefs_user_all() {
     std::vector<Path> prefs_paths = config_manager->get_all_user_config_files();
     std::vector<std::wstring> prefs_paths_wstring;
@@ -7262,14 +7329,13 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-
-    QFile access_token_file(QString::fromStdWString(sioyek_access_token_path.get_path()));
-    if (access_token_file.open(QIODeviceBase::ReadOnly)) {
-        qDebug() << QString::fromUtf8(access_token_file.readAll());
-        //access_token_file.write(QString::fromStdString(access_token).toUtf8());
-        access_token_file.close();
-    }
-    //qDebug() << current_widget_stack.size();
+    //std::vector<std::string> uuids;
+    //for (auto& hl : doc()->get_highlights()) {
+    //    uuids.push_back(hl.uuid);
+    //}
+    //db_manager->set_highlight_uuids_to_synced(uuids);
+    //db_manager->debug();
+    //qDebug() << "has column: " << db_manager->has_column("highlights", "uuid");
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -11516,6 +11582,34 @@ void MainWidget::on_highlight_deleted(const std::string& uuid){
     if (delete_highlight_hook_function_name) {
         call_async_js_function_with_args(delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
     }
+    sync_deleted_highlight(uuid);
+}
+
+void MainWidget::sync_deleted_highlight(const std::string& uuid) {
+    if (is_current_document_available_on_server()) {
+        auto checksum = doc()->get_checksum_fast();
+        if (checksum) {
+            sioyek_network_manager->delete_highlight(
+                this,
+                QString::fromStdString(checksum.value()),
+                QString::fromStdString(uuid),
+                [this, uuid, checksum]() { // on success
+                    //db_manager->set_highlight_uuid_to_synced(uuid);
+
+                },
+                [this, uuid, checksum]() { // on fail
+                    db_manager->insert_unsynced_deletion("highlight", uuid, checksum.value());
+                }
+            );
+        }
+    }
+    else {
+        auto checksum = doc()->get_checksum_fast();
+        if (checksum && should_upload_current_document_annotations_to_server()) {
+            db_manager->insert_unsynced_deletion("highlight", uuid, checksum.value());
+        }
+    }
+    doc()->update_last_local_edit_time();
 }
 
 
@@ -11631,22 +11725,68 @@ void MainWidget::on_mark_added(const std::string& uuid, char type) {
     }
 }
 
+bool MainWidget::should_upload_current_document_annotations_to_server() {
+    // todo: there should be a field in the database which says if we should
+    // upload document annotations (usful when the device is offline so we can't
+    // ask the server if the document is synced to the server)
+    return sioyek_network_manager->ACCESS_TOKEN.size() > 0;
+}
+
 void MainWidget::on_new_highlight_added(const std::string& uuid) {
     if (add_highlight_hook_function_name) {
         call_js_function_with_highlight_arg_with_uuid(add_highlight_hook_function_name.value(), uuid);
     }
+
+    if (is_current_document_available_on_server()) {
+        int highlight_index = doc()->get_highlight_index_with_uuid(uuid);
+        std::optional<std::string> checksum = doc()->get_checksum_fast();
+        if (highlight_index >= 0 && checksum) {
+            Highlight highlight = doc()->get_highlights()[highlight_index];
+            sioyek_network_manager->upload_highlight(this,
+                QString::fromStdString(checksum.value()),
+                highlight,
+                [&, uuid, this]() { // on success
+                    db_manager->set_highlight_uuid_to_synced(uuid);
+                },
+                [&, uuid, this]() { // on failure
+                }
+            );
+        }
+    }
+    doc()->update_last_local_edit_time();
 }
 
 void MainWidget::on_highlight_annotation_edited(const std::string& uuid) {
     if (highlight_annotation_changed_hook_function_name) {
         call_js_function_with_highlight_arg_with_uuid(highlight_annotation_changed_hook_function_name.value(), uuid);
     }
+    sync_edited_highlight(uuid);
 }
 
 void MainWidget::on_highlight_type_edited(const std::string& uuid) {
     if (highlight_type_changed_hook_function_name) {
         call_js_function_with_highlight_arg_with_uuid(highlight_type_changed_hook_function_name.value(), uuid);
     }
+    sync_edited_highlight(uuid);
+}
+
+void MainWidget::sync_edited_highlight(const std::string& uuid) {
+    if (is_current_document_available_on_server()) {
+        int index = doc()->get_highlight_index_with_uuid(uuid);
+        if (index >= 0) {
+            std::optional<std::string> doc_checksum = doc()->get_checksum_fast();
+            const Highlight& hl = doc()->get_highlights()[index];
+            if (doc_checksum.has_value()) {
+                sioyek_network_manager->upload_highlight(this,
+                    QString::fromStdString(doc_checksum.value()),
+                    hl,
+                    []() {},
+                    []() {}
+                );
+            }
+        }
+    }
+    doc()->update_last_local_edit_time();
 }
 
 void MainWidget::on_open_document(const std::wstring& path) {
@@ -12377,10 +12517,6 @@ void SioyekNetworkManager::sync_file_location(QString hash, QString document_tit
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SYNC_OPENED_BOOK_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-    //QUrlQuery params;
-    //params.addQueryItem("file_checksum", hash);
-    //params.addQueryItem("document_name", document_title);
-    //params.addQueryItem("offset_y", QString::number(offset_y));
     QJsonObject obj;
     obj["file_checksum"] = hash;
     obj["document_name"] = document_title;
@@ -12611,4 +12747,194 @@ void MainWidget::handle_server_actions_button_pressed() {
         show_context_menu("login");
     }
 
+}
+
+void SioyekNetworkManager::upload_highlight(
+    MainWidget* parent,
+    const QString& checksum,
+    const Highlight& highlight,
+    std::function<void()> on_success,
+    std::function<void()> on_fail) {
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_ADD_HIGHLIGHT_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["file_checksum"] = checksum;
+    obj["desc"] = QString::fromStdWString(highlight.description);
+    obj["text_annot"] = QString::fromStdWString(highlight.text_annot);
+    obj["type"] = QString(QChar(highlight.type));
+    obj["creation_time"] = QString::fromStdString(highlight.creation_time);
+    obj["modification_time"] = QString::fromStdString(highlight.modification_time);
+    obj["uuid"] = QString::fromStdString(highlight.uuid);
+    obj["begin_x"] = highlight.selection_begin.x;
+    obj["begin_y"] = highlight.selection_begin.y;
+    obj["end_x"] = highlight.selection_end.x;
+    obj["end_y"] = highlight.selection_end.y;
+
+    QJsonDocument json_doc(obj);
+
+
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_success=std::move(on_success), on_fail=std::move(on_fail)]() {
+        reply->deleteLater();
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code == 200) {
+            on_success();
+        }
+        else {
+            on_fail();
+        }
+        });
+}
+
+void SioyekNetworkManager::delete_highlight(QObject* parent, const QString& file_checksum, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail) {
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DELETE_HIGHLIGHT_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["uuid"] = uuid;
+    obj["file_checksum"] = file_checksum;
+
+    QJsonDocument json_doc(obj);
+
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    reply->setParent(parent);
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_fail=std::move(on_fail), on_success=std::move(on_success)]() {
+        reply->deleteLater();
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code != 200) {
+            on_fail();
+        }
+        else {
+            on_success();
+        }
+        });
+}
+
+void SioyekNetworkManager::get_document_highlights(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::optional<QDateTime>)> fn){
+    QUrl url(QString::fromStdWString(SIOYEK_GET_DOCUMENT_HIGHLIGHTS_URL));
+    QUrlQuery params;
+    params.addQueryItem("file_checksum", document_checksum);
+    url.setQuery(params);
+
+    QNetworkRequest req;
+    req.setUrl(url);
+    authorize_request(&req);
+    auto reply = network_manager.get(req);
+    reply->setParent(parent);
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
+        reply->deleteLater();
+
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code == 200) {
+            auto data = reply->readAll();
+            QJsonObject result_object = QJsonDocument::fromJson(data).object();
+            std::optional<QDateTime> last_access_time = {};
+            if (!result_object["last_access_time"].isNull()) {
+                last_access_time = QDateTime::fromString(result_object["last_access_time"].toString(), Qt::DateFormat::ISODate);
+                last_access_time->setTimeSpec(Qt::UTC);
+            }
+
+            QJsonArray json_highlights = result_object["highlights"].toArray();
+
+            std::vector<Highlight> res;
+            for (int i = 0; i < json_highlights.size(); i++) {
+                QJsonObject json_highlight = json_highlights[i].toObject();
+
+                Highlight highlight;
+                highlight.description = json_highlight["desc"].toString().toStdWString();
+                highlight.text_annot = json_highlight["text_annot"].toString().toStdWString();
+                highlight.type = (char)json_highlight["type"].toString().toInt();
+                highlight.creation_time = json_highlight["creation_time"].toString().toStdString();
+                highlight.modification_time = json_highlight["modification_time"].toString().toStdString();
+                highlight.selection_begin.x = json_highlight["begin_x"].toDouble();
+                highlight.selection_begin.y = json_highlight["begin_y"].toDouble();
+                highlight.selection_end.x = json_highlight["end_x"].toDouble();
+                highlight.selection_end.y = json_highlight["end_y"].toDouble();
+                highlight.uuid = json_highlight["uuid"].toString().toStdString();
+                res.push_back(highlight);
+            }
+            fn(std::move(res), last_access_time);
+
+        }
+
+        });
+}
+
+void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* parent, const QString& checksum, std::function<void()> on_done) {
+    std::vector<std::pair<std::wstring, std::wstring>> unsynced_deletes;
+    std::vector<std::string> unsynced_highlight_insert_uuids;
+    std::unordered_set<std::string> unsynced_insert_uuids;
+
+    std::vector<Highlight> unsycned_highlights;
+
+    parent->db_manager->get_all_unsynced_deletions(checksum.toStdString(), unsynced_deletes);
+    parent->db_manager->get_document_unsynced_highlight_uuids(checksum.toStdString(), unsynced_highlight_insert_uuids);
+    for (auto& uuid : unsynced_highlight_insert_uuids) {
+        unsynced_insert_uuids.insert(uuid);
+    }
+
+    //for (auto& [type, uuid] : unsynced_inserts) {
+    //    unsynced_insert_uuids.insert(QString::fromStdWString(uuid).toStdString());
+    //}
+
+    for (auto& hl : parent->doc()->get_highlights()) {
+        if (unsynced_insert_uuids.find(hl.uuid) != unsynced_insert_uuids.end()) {
+            unsycned_highlights.push_back(hl);
+        }
+    }
+
+    if (unsynced_deletes.size() == 0 && unsycned_highlights.size() == 0) {
+        on_done();
+    }
+    else {
+        // 
+        QNetworkRequest req;
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SYNC_DELETES_URL)));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+        QJsonArray deletes_array;
+        for (auto& [type, uuid] : unsynced_deletes) {
+            QJsonObject obj;
+            obj["type"] = QString::fromStdWString(type);
+            obj["uuid"] = QString::fromStdWString(uuid);
+            deletes_array.push_back(obj);
+        }
+
+        QJsonArray highlights_array;
+        for (auto& hl : unsycned_highlights) {
+            highlights_array.append(hl.to_json(checksum.toStdString()));
+        }
+
+        QJsonObject obj;
+        obj["unsynced_deletes"] = deletes_array;
+        obj["highlights"] = highlights_array;
+        obj["file_checksum"] = checksum;
+
+        QJsonDocument json_doc(obj);
+
+
+        authorize_request(&req);
+
+        QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+        QObject::connect(reply, &QNetworkReply::finished, [this, checksum, unsynced_highlight_insert_uuids, parent, reply, on_done=std::move(on_done)]() {
+            reply->deleteLater();
+            int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (status_code == 200) {
+                parent->db_manager->clear_unsynced_deletions(checksum.toStdString());
+                parent->db_manager->set_highlight_uuids_to_synced(unsynced_highlight_insert_uuids);
+                //parent->db_manager->
+                //parent->db_manager->clear_unsynced_additions(checksum.toStdString());
+            }
+            on_done();
+            });
+    }
 }

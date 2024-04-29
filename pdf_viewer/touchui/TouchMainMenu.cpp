@@ -208,6 +208,12 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
         SIGNAL(syncClicked()),
         this,
         SLOT(handleSync()));
+
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(refreshClicked()),
+        this,
+        SLOT(handleRefresh()));
 }
 
 void TouchMainMenu::handleDrawingMode() {
@@ -224,6 +230,10 @@ void TouchMainMenu::handleLogout() {
 
 void TouchMainMenu::handleSync() {
     emit syncClicked();
+}
+
+void TouchMainMenu::handleRefresh() {
+    emit refreshClicked();
 }
 
 void TouchMainMenu::handleSelectText() {

@@ -38,6 +38,11 @@ static int null_callback(void* notused, int argc, char** argv, char** col_name) 
     return 0;
 }
 
+static int count_callback(void* res_ptr, int argc, char** argv, char** col_name) {
+    *(int*)res_ptr = atoi(argv[0]);
+    return 0;
+}
+
 static int id_callback(void* res_vector, int argc, char** argv, char** col_name) {
     std::vector<int>* res = (std::vector<int>*) res_vector;
 
@@ -114,7 +119,7 @@ static int opened_books_callback(void* res_vector, int argc, char** argv, char**
 static int mark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<Mark>* res = (std::vector<Mark>*)res_vector;
-    assert(argc == 7);
+    assert(argc == 8);
 
     char symbol = argv[0][0];
     float offset_y = atof(argv[1]);
@@ -125,6 +130,7 @@ static int mark_select_callback(void* res_vector, int argc, char** argv, char** 
     std::string uuid = argv[4];
     std::string creation_time = argv[5];
     std::string modification_time = argv[6];
+    bool is_synced = atoi(argv[7]);
 
     Mark m;
     m.y_offset = offset_y;
@@ -134,6 +140,7 @@ static int mark_select_callback(void* res_vector, int argc, char** argv, char** 
     m.modification_time = modification_time;
     m.x_offset = offset_x;
     m.zoom_level = zoom_level;
+    m.is_synced = is_synced;
 
     res->push_back(m);
     return 0;
@@ -155,7 +162,7 @@ static int global_mark_select_callback(void* res_vector, int argc, char** argv, 
 static int global_bookmark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<std::pair<std::string, BookMark>>* res = (std::vector<std::pair<std::string, BookMark>>*)res_vector;
-    assert(argc == 10);
+    assert(argc == 11);
 
     std::string path = argv[0];
     std::wstring desc = utf8_decode(argv[1]);
@@ -188,6 +195,7 @@ static int global_bookmark_select_callback(void* res_vector, int argc, char** ar
     std::string uuid = argv[7];
     std::string creation_time = argv[8];
     std::string modification_time = argv[9];
+    bool is_synced = atoi(argv[10]);
 
     BookMark bm;
     bm.description = desc;
@@ -199,6 +207,7 @@ static int global_bookmark_select_callback(void* res_vector, int argc, char** ar
     bm.begin_y = begin_y;
     bm.end_x = end_x;
     bm.end_y = end_y;
+    bm.is_synced = is_synced;
 
     res->push_back(std::make_pair(path, bm));
     return 0;
@@ -207,7 +216,7 @@ static int global_bookmark_select_callback(void* res_vector, int argc, char** ar
 static int global_highlight_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<std::pair<std::string, Highlight>>* res = (std::vector<std::pair<std::string, Highlight>>*)res_vector;
-    assert(argc == 11);
+    assert(argc == 12);
 
     std::string path = argv[0];
     std::wstring desc = utf8_decode(argv[1]);
@@ -225,6 +234,7 @@ static int global_highlight_select_callback(void* res_vector, int argc, char** a
     std::string uuid = argv[8];
     std::string creation_time = argv[9];
     std::string modification_time = argv[10];
+    bool is_synced = atoi(argv[11]);
 
     Highlight highlight;
     highlight.description = desc;
@@ -237,6 +247,7 @@ static int global_highlight_select_callback(void* res_vector, int argc, char** a
     highlight.uuid = uuid;
     highlight.creation_time = creation_time;
     highlight.modification_time = modification_time;
+    highlight.is_synced = is_synced;
 
     res->push_back(std::make_pair(path, highlight));
     return 0;
@@ -245,7 +256,7 @@ static int global_highlight_select_callback(void* res_vector, int argc, char** a
 static int bookmark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<BookMark>* res = (std::vector<BookMark>*)res_vector;
-    assert(argc == 14);
+    assert(argc == 15);
 
     std::wstring desc = utf8_decode(argv[0]);
     float offset_y = -1;
@@ -296,6 +307,7 @@ static int bookmark_select_callback(void* res_vector, int argc, char** argv, cha
     std::string uuid = argv[11];
     std::string creation_time = argv[12];
     std::string modification_time = argv[13];
+    bool is_synced = atoi(argv[14]);
 
     BookMark bm;
     bm.y_offset_ = offset_y;
@@ -312,6 +324,7 @@ static int bookmark_select_callback(void* res_vector, int argc, char** argv, cha
     bm.color[2] = color_blue;
     bm.font_size = font_size;
     bm.font_face = font_face;
+    bm.is_synced = is_synced;
 
     res->push_back(bm);
     return 0;
@@ -366,7 +379,7 @@ static int version_callback(void* res, int argc, char** argv, char** col_name) {
 static int highlight_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<Highlight>* res = (std::vector<Highlight>*)res_vector;
-    assert(argc == 10);
+    assert(argc == 11);
 
     std::wstring desc = utf8_decode(argv[0]);
     std::wstring text_annot = L"";
@@ -383,6 +396,7 @@ static int highlight_select_callback(void* res_vector, int argc, char** argv, ch
     std::string uuid = argv[7];
     std::string creation_time = argv[8];
     std::string modification_time = argv[9];
+    bool is_synced = atoi(argv[10]);
 
     Highlight highlight;
     highlight.description = desc;
@@ -393,6 +407,7 @@ static int highlight_select_callback(void* res_vector, int argc, char** argv, ch
     highlight.creation_time = creation_time;
     highlight.modification_time = modification_time;
     highlight.uuid = uuid;
+    highlight.is_synced = is_synced;
     res->push_back(highlight);
 
     return 0;
@@ -401,7 +416,7 @@ static int highlight_select_callback(void* res_vector, int argc, char** argv, ch
 static int link_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<Portal>* res = (std::vector<Portal>*)res_vector;
-    assert(argc == 9);
+    assert(argc == 10);
 
     bool is_visible = false;
 
@@ -419,6 +434,7 @@ static int link_select_callback(void* res_vector, int argc, char** argv, char** 
     std::string uuid = argv[6];
     std::string creation_time = argv[7];
     std::string modification_time = argv[8];
+    bool is_synced = atoi(argv[9]);
 
     Portal link;
     link.dst.document_checksum = dst_path;
@@ -430,6 +446,7 @@ static int link_select_callback(void* res_vector, int argc, char** argv, char** 
     link.uuid = uuid;
     link.creation_time = creation_time;
     link.modification_time = modification_time;
+    link.is_synced = is_synced;
 
     res->push_back(link);
     return 0;
@@ -549,6 +566,39 @@ bool DatabaseManager::create_opened_books_table() {
     return handle_error("create_opened_books_table", error_code, error_message);
 }
 
+bool DatabaseManager::create_server_update_time_table() {
+
+    const char* create_update_times_table = "CREATE TABLE IF NOT EXISTS update_times ("\
+        "checksum TEXT UNIQUE,"\
+        "last_update_time TIMESTAMP);";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, create_update_times_table, null_callback, 0, &error_message);
+    return handle_error("create_update_times_table", error_code, error_message);
+}
+
+bool DatabaseManager::create_unsynced_deletions_table() {
+    const char* create_update_times_table = "CREATE TABLE IF NOT EXISTS local_unsynced_deletions ("\
+        "type TEXT NOT NULL,"\
+        "checksum TEXT NOT NULL,"\
+        "uuid TEXT UNIQUE NOT NULL);";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, create_update_times_table, null_callback, 0, &error_message);
+    return handle_error("create_unsynced_deletions_table", error_code, error_message);
+}
+//
+//bool DatabaseManager::create_unsynced_additions_table() {
+//    const char* create_update_times_table = "CREATE TABLE IF NOT EXISTS local_unsynced_additions ("\
+//        "type TEXT NOT NULL,"\
+//        "checksum TEXT NOT NULL,"\
+//        "uuid TEXT UNIQUE NOT NULL);";
+//
+//    char* error_message = nullptr;
+//    int error_code = sqlite3_exec(local_db, create_update_times_table, null_callback, 0, &error_message);
+//    return handle_error("create_unsynced_additions_table", error_code, error_message);
+//}
+
 bool DatabaseManager::create_marks_table() {
     const char* create_marks_sql = "CREATE TABLE IF NOT EXISTS marks ("\
         "id INTEGER PRIMARY KEY AUTOINCREMENT," \
@@ -560,6 +610,7 @@ bool DatabaseManager::create_marks_table() {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT,"\
+        "is_synced BOOLEAN DEFAULT 0,"\
         "UNIQUE(document_path, symbol));";
 
     char* error_message = nullptr;
@@ -578,6 +629,7 @@ bool DatabaseManager::create_bookmarks_table() {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT,"\
+        "is_synced BOOLEAN DEFAULT 0,"\
         "font_size integer DEFAULT -1,"\
         "color_red real DEFAULT 0,"\
         "color_green real DEFAULT 0,"\
@@ -607,6 +659,7 @@ bool DatabaseManager::create_highlights_table() {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT,"\
+        "is_synced BOOLEAN DEFAULT 0,"\
         "begin_x real,"\
         "begin_y real,"\
         "end_x real,"\
@@ -641,6 +694,7 @@ bool DatabaseManager::create_links_table() {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT,"\
+        "is_synced BOOLEAN DEFAULT 0,"\
         "src_document TEXT,"\
         "dst_document TEXT,"\
         "src_offset_y REAL,"\
@@ -862,6 +916,115 @@ bool DatabaseManager::insert_highlight_with_annotation(const std::string& docume
         error_message);
 }
 
+bool DatabaseManager::insert_highlight_with_annotation_synced(const std::string& document_path,
+    const std::wstring& desc,
+    const std::wstring& annot,
+    float begin_x,
+    float begin_y,
+    float end_x,
+    float end_y,
+    char type,
+    std::wstring uuid) {
+
+    std::wstringstream ss;
+    ss << "INSERT INTO highlights (document_path, desc, text_annot, type, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced) VALUES ('" <<
+        esc(document_path) << "', '" <<
+        esc(desc) << "', '" <<
+        esc(annot) << "', '" <<
+        type << "' , " <<
+        begin_x << " , " <<
+        begin_y << " , " <<
+        end_x << " , " <<
+        end_y << ", '" <<
+        esc(uuid) << "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);";
+    char* error_message = nullptr;
+
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "insert_highlight_with_annotation_synced",
+        error_code,
+        error_message);
+}
+
+
+bool DatabaseManager::insert_unsynced_deletion(const std::string& type, const std::string& uuid, const std::string& checksum) {
+    return generic_insert_run_query("local_unsynced_deletions",
+        {
+            { "type", QString::fromStdString(type) },
+            { "uuid", QString::fromStdString(uuid) },
+            { "checksum", QString::fromStdString(checksum) }
+        },
+        local_db
+    );
+}
+
+//bool DatabaseManager::insert_unsynced_addition(const std::string& type, const std::string& uuid, const std::string& checksum) {
+//    return generic_insert_run_query("local_unsynced_additions",
+//        {
+//            { "type", QString::fromStdString(type) },
+//            { "uuid", QString::fromStdString(uuid) },
+//            { "checksum", QString::fromStdString(checksum) }
+//        },
+//        local_db
+//    );
+//}
+
+bool DatabaseManager::get_all_unsynced_deletions(const std::string& checksum, std::vector<std::pair<std::wstring, std::wstring>>& out_results) {
+    std::wstringstream ss;
+    ss << "SELECT type, uuid FROM local_unsynced_deletions WHERE checksum='" << esc(checksum) << "';";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), wstring_pair_select_callback, &out_results, &error_message);
+    return handle_error(
+        "get_all_unsynced_deletions",
+        error_code,
+        error_message);
+}
+
+//bool DatabaseManager::get_all_unsynced_additions(const std::string& checksum, std::vector<std::pair<std::wstring, std::wstring>>& out_results) {
+//    std::wstringstream ss;
+//    ss << "SELECT type, uuid FROM local_unsynced_additions WHERE checksum='" << esc(checksum) << "';";
+//    char* error_message = nullptr;
+//    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), wstring_pair_select_callback, &out_results, &error_message);
+//    return handle_error(
+//        "get_all_unsynced_additions",
+//        error_code,
+//        error_message);
+//}
+
+
+bool DatabaseManager::clear_unsynced_deletions(const std::string& checksum) {
+    std::wstringstream ss;
+    ss << "DELETE FROM local_unsynced_deletions WHERE checksum='" << esc(checksum) << "';";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), nullptr, nullptr, &error_message);
+    return handle_error(
+        "clear_unsynced_deletions",
+        error_code,
+        error_message);
+}
+
+//bool DatabaseManager::clear_unsynced_additions(const std::string& checksum) {
+//    std::wstringstream ss;
+//    ss << "DELETE FROM local_unsynced_additions WHERE checksum='" << esc(checksum) << "';";
+//    char* error_message = nullptr;
+//    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), nullptr, nullptr, &error_message);
+//    return handle_error(
+//        "clear_unsynced_additions",
+//        error_code,
+//        error_message);
+//}
+
+bool DatabaseManager::get_document_unsynced_highlight_uuids(const std::string& checksum, std::vector<std::string>& out_uuids) {
+    std::wstringstream ss;
+    ss << "SELECT uuid FROM highlights WHERE document_path='" << esc(checksum) << "' AND is_synced=0;";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), string_select_callback, &out_uuids, &error_message);
+    return handle_error(
+        "get_all_unsynced_highlight_uuids",
+        error_code,
+        error_message);
+}
+
 bool DatabaseManager::insert_portal(const std::string& src_document_path,
     const std::string& dst_document_path,
     float dst_offset_x,
@@ -1059,6 +1222,57 @@ bool DatabaseManager::select_opened_books(std::vector<OpenedBookInfo>& out_resul
         error_message);
 }
 
+std::optional<std::string> DatabaseManager::get_document_last_access_time(const std::string& checksum) {
+    std::wstringstream ss;
+    ss << "SELECT last_access_time FROM opened_books WHERE path='" << esc(checksum) << "';";
+    std::vector<std::string> out_result;
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), string_select_callback, &out_result, &error_message);
+    bool res = handle_error(
+        "get_document_last_access_time",
+        error_code,
+        error_message);
+    if (res && out_result.size() > 0) {
+        return out_result[0];
+    }
+    else {
+        return {};
+    }
+
+}
+
+bool DatabaseManager::insert_update_time(const std::string& checksum){
+    std::wstringstream ss;
+    ss << "INSERT OR REPLACE INTO update_times(checksum, last_update_time) VALUES ('" <<
+        esc(checksum) << "', CURRENT_TIMESTAMP);";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "insert_update_time",
+        error_code,
+        error_message);
+}
+
+std::optional<std::string> DatabaseManager::get_update_time(const std::string& checksum) {
+    std::wstringstream ss;
+    ss << "SELECT last_update_time FROM update_times WHERE checksum='" << esc(checksum) << "';";
+
+    std::vector<std::string> res;
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), string_select_callback, &res, &error_message);
+    bool success = handle_error(
+        "get_update_time",
+        error_code,
+        error_message);
+    if (success) {
+        if (res.size() > 0) {
+            return res[0];
+        }
+    }
+    return {};
+}
+
 //bool DatabaseManager::select_opened_books_hashes_and_names(std::vector<std::pair<std::wstring, std::wstring>> &out_result) {
 //	std::vector<std::wstring> hashes;
 //	select_opened_books_path_values(hashes);
@@ -1083,7 +1297,7 @@ bool DatabaseManager::select_opened_books(std::vector<OpenedBookInfo>& out_resul
 
 bool DatabaseManager::select_mark(const std::string& book_path, std::vector<Mark>& out_result) {
     std::wstringstream ss;
-    ss << "select symbol, offset_y, offset_x, zoom_level, uuid, creation_time, modification_time from marks where document_path='" << esc(book_path) << "';";
+    ss << "select symbol, offset_y, offset_x, zoom_level, uuid, creation_time, modification_time, is_synced from marks where document_path='" << esc(book_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), mark_select_callback, &out_result, &error_message);
@@ -1107,7 +1321,7 @@ bool DatabaseManager::select_global_mark(char symbol, std::vector<std::pair<std:
 
 bool DatabaseManager::select_bookmark(const std::string& book_path, std::vector<BookMark>& out_result) {
     std::wstringstream ss;
-    ss << "select desc, offset_y, begin_x, begin_y, end_x, end_y, color_red, color_green, color_blue, font_size, font_face, uuid, creation_time, modification_time from bookmarks where document_path='" << esc(book_path) << "';";
+    ss << "select desc, offset_y, begin_x, begin_y, end_x, end_y, color_red, color_green, color_blue, font_size, font_face, uuid, creation_time, modification_time, is_synced from bookmarks where document_path='" << esc(book_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), bookmark_select_callback, &out_result, &error_message);
@@ -1167,7 +1381,7 @@ bool DatabaseManager::get_all_local_checksums(std::vector<std::string>& out_chec
 
 bool DatabaseManager::select_highlight(const std::string& book_path, std::vector<Highlight>& out_result) {
     std::wstringstream ss;
-    ss << "select desc, text_annot, begin_x, begin_y, end_x, end_y, type, uuid, creation_time, modification_time from highlights where document_path='" << esc(book_path) << "';";
+    ss << "select desc, text_annot, begin_x, begin_y, end_x, end_y, type, uuid, creation_time, modification_time, is_synced from highlights where document_path='" << esc(book_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), highlight_select_callback, &out_result, &error_message);
@@ -1179,7 +1393,7 @@ bool DatabaseManager::select_highlight(const std::string& book_path, std::vector
 
 bool DatabaseManager::select_highlight_with_type(const std::string& book_path, char type, std::vector<Highlight>& out_result) {
     std::wstringstream ss;
-    ss << "select desc, begin_x, begin_y, end_x, end_y, type, uuid, creation_time, modification_time from highlights where document_path='" << esc(book_path) << "' AND type='" << type << "';";
+    ss << "select desc, begin_x, begin_y, end_x, end_y, type, uuid, creation_time, modification_time, is_synced from highlights where document_path='" << esc(book_path) << "' AND type='" << type << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), highlight_select_callback, &out_result, &error_message);
@@ -1191,7 +1405,7 @@ bool DatabaseManager::select_highlight_with_type(const std::string& book_path, c
 
 bool DatabaseManager::global_select_highlight(std::vector<std::pair<std::string, Highlight>>& out_result) {
     std::wstringstream ss;
-    ss << "select document_path, desc, text_annot, type, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time from highlights;";
+    ss << "select document_path, desc, text_annot, type, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced from highlights;";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), global_highlight_select_callback, &out_result, &error_message);
@@ -1203,7 +1417,7 @@ bool DatabaseManager::global_select_highlight(std::vector<std::pair<std::string,
 
 bool DatabaseManager::global_select_bookmark(std::vector<std::pair<std::string, BookMark>>& out_result) {
     std::wstringstream ss;
-    ss << "select document_path, desc, offset_y, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time from bookmarks;";
+    ss << "select document_path, desc, offset_y, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced from bookmarks;";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), global_bookmark_select_callback, &out_result, &error_message);
@@ -1215,7 +1429,7 @@ bool DatabaseManager::global_select_bookmark(std::vector<std::pair<std::string, 
 
 bool DatabaseManager::select_links(const std::string& src_document_path, std::vector<Portal>& out_result) {
     std::wstringstream ss;
-    ss << "select dst_document, src_offset_y, src_offset_x, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time from links where src_document='" << esc(src_document_path) << "';";
+    ss << "select dst_document, src_offset_y, src_offset_x, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced from links where src_document='" << esc(src_document_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), link_select_callback, &out_result, &error_message);
@@ -1232,6 +1446,25 @@ void DatabaseManager::create_tables() {
     create_highlights_table();
     create_links_table();
     create_document_hash_table();
+    create_server_update_time_table();
+    create_unsynced_deletions_table();
+    //create_unsynced_additions_table();
+    if (!has_column("highlights", "is_synced")) {
+        add_synced_columns();
+    }
+}
+
+void DatabaseManager::add_synced_columns() {
+    const char* add_sync_to_highlights_sql = "ALTER TABLE highlights ADD COLUMN is_synced BOOLEAN DEFAULT 0";
+    const char* add_sync_to_bookmarks_sql = "ALTER TABLE bookmarks ADD COLUMN is_synced BOOLEAN DEFAULT 0";
+    const char* add_sync_to_marks_sql = "ALTER TABLE marks ADD COLUMN is_synced BOOLEAN DEFAULT 0";
+    const char* add_sync_to_portals_sql = "ALTER TABLE links ADD COLUMN is_synced BOOLEAN DEFAULT 0";
+
+    char* error_message = nullptr;
+    sqlite3_exec(global_db, add_sync_to_highlights_sql, null_callback, 0, &error_message);
+    sqlite3_exec(global_db, add_sync_to_bookmarks_sql, null_callback, 0, &error_message);
+    sqlite3_exec(global_db, add_sync_to_marks_sql, null_callback, 0, &error_message);
+    sqlite3_exec(global_db, add_sync_to_portals_sql, null_callback, 0, &error_message);
 }
 
 bool update_string_value(sqlite3* db,
@@ -1254,6 +1487,7 @@ bool update_string_value(sqlite3* db,
 bool update_mark_path(sqlite3* db, const std::wstring& path, const std::wstring& new_path) {
     return update_string_value(db, L"marks", L"document_path", path, new_path);
 }
+
 
 bool update_opened_book_path(sqlite3* db, const std::wstring& path, const std::wstring& new_path) {
     return update_string_value(db, L"opened_books", L"path", path, new_path);
@@ -1949,11 +2183,17 @@ bool DatabaseManager::generic_update_run_query(std::string table_name,
 }
 
 bool DatabaseManager::generic_insert_run_query(std::string table_name,
-    std::vector<std::pair<std::string, QVariant>> values) {
+    std::vector<std::pair<std::string, QVariant>> values,
+    sqlite3* db) {
     std::wstring query = generic_insert_create_query(table_name, values);
 
     char* error_message = nullptr;
-    int error_code = sqlite3_exec(global_db, utf8_encode(query).c_str(), null_callback, 0, &error_message);
+
+    if (db == nullptr) {
+        db = global_db;
+    }
+
+    int error_code = sqlite3_exec(db, utf8_encode(query).c_str(), null_callback, 0, &error_message);
     return handle_error(
         "generic_insert_run_query",
         error_code,
@@ -2079,6 +2319,39 @@ bool DatabaseManager::delete_annotation(Annotation* annot) {
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
     return handle_error(
         "delete_annotation",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::has_column(const std::string& table_name, const std::string& column_name) {
+    char* error_message = nullptr;
+    int count = -1;
+    std::wstringstream ss;
+    ss << "SELECT COUNT(*) FROM pragma_table_info('" << esc(table_name) << "') WHERE name='" << esc(column_name) <<"';";
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
+    return count > 0;
+}
+
+bool DatabaseManager::set_highlight_uuid_to_synced(const std::string& uuid) {
+    return set_highlight_uuids_to_synced({ uuid });
+}
+
+bool DatabaseManager::set_highlight_uuids_to_synced(const std::vector<std::string>& uuids) {
+    std::wstringstream ss;
+    ss << "UPDATE highlights SET is_synced=1 WHERE uuid IN (";
+    for (int i = 0; i < uuids.size(); i++) {
+        ss << "'" << esc(uuids[i]) << "'";
+        if (i < uuids.size() - 1) {
+            ss << ",";
+        }
+    }
+    ss << ");";
+
+    char* error_message = nullptr;
+
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "set_highlight_uuids_to_synced",
         error_code,
         error_message);
 }

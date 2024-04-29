@@ -51,6 +51,7 @@ public slots:
     void handleLogin();
     void handleLogout();
     void handleSync();
+    void handleRefresh();
 
 signals:
     void selectTextClicked();
@@ -82,6 +83,7 @@ signals:
     void loginClicked();
     void logoutClicked();
     void syncClicked();
+    void refreshClicked();
 private:
     QQuickWidget* quick_widget = nullptr;
 

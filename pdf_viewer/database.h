@@ -21,6 +21,9 @@ private:
     void create_tables();
     bool create_document_hash_table();
     bool create_highlights_table();
+    bool create_server_update_time_table();
+    bool create_unsynced_deletions_table();
+    //bool create_unsynced_additions_table();
 public:
     bool open(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path);
     bool select_opened_book(const std::string& book_path, std::vector<OpenedBookState>& out_result);
@@ -70,6 +73,7 @@ public:
     bool select_opened_books_path_values(std::vector<std::wstring>& out_result);
     //bool select_opened_books_path_and_doc_names(std::vector<std::pair<std::wstring, std::wstring>>& out_result);
     bool select_opened_books(std::vector<OpenedBookInfo>& out_result);
+    std::optional<std::string> get_document_last_access_time(const std::string& checksum);
 
     bool delete_mark_with_symbol(char symbol);
     bool select_global_mark(char symbol, std::vector<std::pair<std::string, float>>& out_result);
@@ -95,6 +99,17 @@ public:
         float end_y,
         char type,
         std::wstring uuid);
+
+    bool insert_highlight_with_annotation_synced(const std::string& checksum,
+        const std::wstring& desc,
+        const std::wstring& annot,
+        float begin_x,
+        float begin_y,
+        float end_x,
+        float end_y,
+        char type,
+        std::wstring uuid);
+
     bool get_path_from_hash(const std::string& checksum, std::vector<std::wstring>& out_paths);
     bool get_hash_from_path(const std::string& path, std::vector<std::wstring>& out_checksum);
     bool get_prev_path_hash_pairs(std::vector<std::pair<std::wstring, std::wstring>>& out_pairs);
@@ -115,8 +130,19 @@ public:
     bool select_all_bookmark_ids(std::vector<int>& mark_ids);
     bool select_all_highlight_ids(std::vector<int>& mark_ids);
     bool select_all_portal_ids(std::vector<int>& mark_ids);
+    bool insert_update_time(const std::string& checksum);
+    std::optional<std::string> get_update_time(const std::string& checksum);
 
     std::string get_annot_table_name(Annotation* annot);
+    bool insert_unsynced_deletion(const std::string& type, const std::string& uuid, const std::string& checksum);
+    //bool insert_unsynced_addition(const std::string& type, const std::string& uuid, const std::string& checksum);
+
+    bool get_document_unsynced_highlight_uuids(const std::string& checksum, std::vector<std::string>& out_uuids);
+    bool get_all_unsynced_deletions(const std::string& checksum, std::vector<std::pair<std::wstring, std::wstring>>& out_results);
+    //bool get_all_unsynced_additions(const std::string& checksum, std::vector<std::pair<std::wstring, std::wstring>>& out_results);
+
+    bool clear_unsynced_deletions(const std::string& checksum);
+    //bool clear_unsynced_additions(const std::string& checksum);
 
     bool insert_annotation(Annotation* annot, std::string document_hash);
     bool update_annotation(Annotation* annot);
@@ -135,7 +161,11 @@ public:
         std::vector<std::pair<std::string, QVariant>> updated_values);
 
     bool generic_insert_run_query(std::string table_name,
-        std::vector<std::pair<std::string, QVariant>> values);
+        std::vector<std::pair<std::string, QVariant>> values, sqlite3* db=nullptr);
+    bool has_column(const std::string& table_name, const std::string& column_name);
+    void add_synced_columns();
+    bool set_highlight_uuids_to_synced(const std::vector<std::string>& uuids);
+    bool set_highlight_uuid_to_synced(const std::string& uuid);
 };
 
 

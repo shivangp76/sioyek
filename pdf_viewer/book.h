@@ -71,6 +71,7 @@ struct Annotation {
     std::string creation_time;
     std::string modification_time;
     std::string uuid;
+    bool is_synced = false;
 
     virtual QJsonObject to_json(std::string doc_checksum) const = 0;
     virtual void  add_to_tuples(std::vector<std::pair<std::string, QVariant>>& tuples) = 0;

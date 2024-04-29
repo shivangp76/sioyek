@@ -41,6 +41,7 @@ Rectangle{
     signal loginClicked();
     signal logoutClicked();
     signal syncClicked();
+    signal refreshClicked();
 
     property bool is_fit: _fit;
     property bool is_ruler: _ruler;
@@ -63,7 +64,7 @@ Rectangle{
 
 
                 TouchButtonGroup{
-                    buttons: _loggedIn ? (_synced ? ["Logout"] : ["Logout", "Sync"]) :["Login"]
+                    buttons: _loggedIn ? (_synced ? ["Logout", "Refresh"] : ["Logout", "Sync"]) :["Login"]
                     anchors.bottom: parent.bottom
                     anchors.top: parent.top
                     anchors.left: parent.left
@@ -78,9 +79,12 @@ Rectangle{
                                 loginClicked();
                             }
                         }
-                        if (index == 1){
-                            if (_loggedIn){
+                        if (index == 1 && _loggedIn){
+                            if (!_synced){
                                 syncClicked();
+                            }
+                            else{
+                                refreshClicked();
                             }
                         }
                     }

@@ -66,6 +66,7 @@ class Document {
 private:
 
     std::mutex drawings_mutex;
+    std::mutex highlights_mutex;
     std::map<int, std::vector<FreehandDrawing>> page_freehand_drawings;
     // it means we have modified freehand drawings since the document was loaded
     // which means that when we exit, we must write the modified drawings to the drawings file
@@ -172,6 +173,7 @@ private:
 public:
     fz_document* doc = nullptr;
     std::wstring detected_paper_name = L"";
+    bool annotations_are_freshly_loaded = false;
 
     PageIterator page_iterator(int page_number);
     int get_page_text_and_line_rects_after_rect(int page_number,
@@ -188,9 +190,11 @@ public:
     void undo_pending_bookmark(int index);
     void add_freetext_bookmark(const std::wstring& desc, AbsoluteRect absrect);
     void add_freetext_bookmark_with_color(const std::wstring& desc, AbsoluteRect absrect, float* color, float font_size = -1);
+    std::string add_highlight_with_existing_uuid(const Highlight& highlight);
     std::string add_highlight(const std::wstring& desc, const std::vector<AbsoluteRect>& highlight_rects, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string add_highlight(const std::wstring& annot, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string delete_highlight_with_index(int index);
+    bool delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     std::string delete_bookmark_with_index(int index);
     void delete_highlight(Highlight hl);
     int get_bookmark_index_at_pos(AbsoluteDocumentPos abspos);
@@ -205,6 +209,9 @@ public:
     QString get_rest_of_document_pages_text(int from);
     int get_page_offset_into_super_fast_index(int from);
     int get_page_from_character_offset(int offset);
+
+    void update_last_local_edit_time();
+    std::optional<QDateTime> last_server_update_time();
 
     void fill_highlight_rects(fz_context* ctx, fz_document* doc);
     void fill_index_highlight_rects(int highlight_index, fz_context* thread_context = nullptr, fz_document* thread_document = nullptr);
@@ -401,6 +408,8 @@ public:
     void load_drawings();
     void load_annotations(bool sync = false);
     void load_drawings_async();
+    void lock_highlights_mutex();
+    void unlock_highlights_mutex();
     //void persist_drawings_async();
 
     std::wstring detect_paper_name(fz_context* context, fz_document* doc);

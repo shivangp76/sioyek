@@ -5524,6 +5524,19 @@ public:
 
 };
 
+class ResyncDocumentCommand : public Command {
+public:
+    static inline const std::string cname = "resync_document";
+
+    static inline const std::string hname = "Re-sync current document's annotations with sioyek servers";
+    ResyncDocumentCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_sync_open_document();
+    }
+
+};
+
 class DownloadUnsyncedFilesCommand : public Command {
 public:
     static inline const std::string cname = "download_unsynced_files";
@@ -7024,6 +7037,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ResumeToServerLocationCommand>();
     register_command<LoginUsingAccessTokenCommand>();
     register_command<UploadCurrentFileCommand>();
+    register_command<ResyncDocumentCommand>();
     register_command<DownloadUnsyncedFilesCommand>();
     register_command<SyncCurrentFileLocation>();
     register_command<CloseWindowCommand>("q");

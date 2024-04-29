@@ -160,6 +160,11 @@ public:
     const std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = SIOYEK_HOST + L"sync_opened_book";
     const std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = SIOYEK_HOST + L"get_opened_book";
     std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = SIOYEK_HOST + L"get_opened_books";
+    std::wstring SIOYEK_ADD_HIGHLIGHT_URL = SIOYEK_HOST + L"add_highlight";
+    std::wstring SIOYEK_GET_DOCUMENT_HIGHLIGHTS_URL = SIOYEK_HOST + L"get_highlights_for_document";
+    std::wstring SIOYEK_DELETE_HIGHLIGHT_URL = SIOYEK_HOST + L"delete_highlight";
+    std::wstring SIOYEK_SYNC_DELETES_URL = SIOYEK_HOST + L"sync_deletes";
+
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_map<std::string, OpenedBookInfo> server_opened_files;
     std::unordered_map<std::string, float> last_server_location;
@@ -190,6 +195,10 @@ public:
     void download_opened_files_info(MainWidget* widget, std::function<void(QJsonObject)> fn);
     std::vector<OpenedBookInfo> get_excluded_opened_files(std::vector<std::string>& excluded_checksums);
     void handle_one_time_network_operations();
+    void upload_highlight(MainWidget* parent, const QString& checksum, const Highlight& highlight, std::function<void()> on_success, std::function<void()> on_fail);
+    void delete_highlight(QObject* parent, const QString& file_checksum, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail);
+    void get_document_highlights(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::optional<QDateTime> last_access_time)> fn);
+    void perform_unsynced_inserts_and_deletes(MainWidget* parent, const QString& checksum, std::function<void()> on_done);
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -795,6 +804,8 @@ public:
     int ruler_moving_distance_traveled = 0;
     std::optional<Portal> last_dispplayed_portal = {};
 
+    bool should_upload_current_document_annotations_to_server();
+
 
     void set_recently_updated_portal(const std::string& uuid);
     void update_highlight_buttons_position();
@@ -1114,6 +1125,8 @@ public:
     void on_portal_deleted(const std::string& uuid);
     void on_portal_edited(const std::string& uuid);
     void on_open_document(const std::wstring& path);
+    void sync_edited_highlight(const std::string& uuid);
+    void sync_deleted_highlight(const std::string& uuid);
 
     void handle_sync_open_document();
 
@@ -1137,6 +1150,7 @@ public:
     void download_and_open(std::string checksum, QString file_name, float offset_y);
     void handle_resume_to_server_location();
     void handle_server_actions_button_pressed();
+    void sync_highlights_with_server();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

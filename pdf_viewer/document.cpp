@@ -165,6 +165,7 @@ void Document::load_document_metadata_from_db() {
         db_manager->select_highlight(checksum, highlights);
         db_manager->select_links(checksum, portals);
         should_reload_annotations = false;
+        annotations_are_freshly_loaded = true;
     }
     else {
         auto checksum_thread = std::thread([&]() {
@@ -179,6 +180,7 @@ void Document::load_document_metadata_from_db() {
                 // we already have a document with the same hash so there might be
                 // annotations that are not loaded
                 should_reload_annotations = true;
+                annotations_are_freshly_loaded = true;
             }
             db_manager->insert_document_hash(get_path(), checksum);
             });
@@ -335,6 +337,23 @@ std::string Document::add_highlight(const std::wstring& annot, AbsoluteDocumentP
     return highlight.uuid;
 }
 
+std::string Document::add_highlight_with_existing_uuid(const Highlight& highlight) {
+    db_manager->insert_highlight_with_annotation_synced(
+        get_checksum(),
+        highlight.description,
+        highlight.text_annot,
+        highlight.selection_begin.x,
+        highlight.selection_begin.y,
+        highlight.selection_end.x,
+        highlight.selection_end.y,
+        highlight.type,
+        utf8_decode(highlight.uuid));
+    highlights.push_back(highlight);
+    fill_index_highlight_rects(highlights.size()-1);
+    is_annotations_dirty = true;
+    return highlight.uuid;
+}
+
 std::string Document::add_highlight(const std::wstring& desc,
     const std::vector<AbsoluteRect>& highlight_rects,
     AbsoluteDocumentPos selection_begin,
@@ -478,6 +497,16 @@ std::string Document::delete_highlight_with_index(int index) {
     highlights.erase(highlights.begin() + index);
     is_annotations_dirty = true;
     return highlight_to_delete.uuid;
+}
+
+bool Document::delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
+    int index = get_highlight_index_with_uuid(uuid);
+    if (delete_only_if_synced && (index >= 0) && (!highlights[index].is_synced)) {
+        return false;
+    }
+
+    return delete_highlight_with_index(index).size() > 0;
+    //return db_manager->delete_highlight(uuid);
 }
 
 std::string Document::delete_bookmark_with_index(int index) {
@@ -1137,7 +1166,9 @@ void Document::load_page_dimensions(bool force_load_now) {
             }
             page_dims_mutex.unlock();
 
+            highlights_mutex.lock();
             fill_highlight_rects(context_, doc_);
+            highlights_mutex.unlock();
             detected_paper_name = detect_paper_name(context_, doc_);
             //db_manager->set_actual_document_name(get_checksum(), detected_paper_name);
 
@@ -4480,3 +4511,32 @@ std::wstring Document::get_detected_paper_name_if_exists() {
     return detected_paper_name;
 }
 
+void Document::update_last_local_edit_time() {
+    std::optional<std::string> doc_checksum = get_checksum_fast();
+    if (doc_checksum.has_value()) {
+        db_manager->insert_update_time(doc_checksum.value());
+    }
+}
+
+std::optional<QDateTime> Document::last_server_update_time(){
+    auto checksum = get_checksum_fast();
+    if (checksum.has_value()) {
+        std::optional<std::string> time_string = db_manager->get_update_time(checksum.value());
+        if (time_string) {
+            QDateTime time = QDateTime::fromString(QString::fromStdString(time_string.value()), Qt::ISODate);
+            time.setTimeSpec(Qt::UTC);
+            return time;
+        }
+
+    }
+    return {};
+    //db_manager->get_update_time(doc()->get_check)
+}
+
+void Document::lock_highlights_mutex() {
+    highlights_mutex.lock();
+}
+
+void Document::unlock_highlights_mutex() {
+    highlights_mutex.unlock();
+}

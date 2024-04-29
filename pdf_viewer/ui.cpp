@@ -338,6 +338,11 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         main_widget->run_command_with_name("upload_current_file");
         });
 
+    QObject::connect(main_menu, &TouchMainMenu::refreshClicked, [&]() {
+        main_widget->pop_current_widget();
+        main_widget->run_command_with_name("resync_document");
+        });
+
     //    QObject::connect(set_background_color, &QPushButton::pressed, [&](){
 
     //        auto command = main_widget->command_manager->get_command_with_name("setconfig_background_color");
