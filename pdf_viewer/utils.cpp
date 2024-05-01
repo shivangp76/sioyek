@@ -1939,6 +1939,9 @@ QCommandLineParser* get_command_line_parser() {
     QCommandLineOption shared_database_path_option("shared-database-path", "Specify which file to use for shared data (bookmarks, highlights, etc.)", "path");
     parser->addOption(shared_database_path_option);
 
+    QCommandLineOption local_database_path_option("local-database-path", "Specify which file to use for local data", "path");
+    parser->addOption(local_database_path_option);
+
     QCommandLineOption verbose_option("verbose", "Print extra information in commnad line.");
     parser->addOption(verbose_option);
 

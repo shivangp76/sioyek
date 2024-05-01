@@ -804,7 +804,7 @@ public:
     int ruler_moving_distance_traveled = 0;
     std::optional<Portal> last_dispplayed_portal = {};
 
-    bool should_upload_current_document_annotations_to_server();
+    bool should_sync_current_document_to_server();
 
 
     void set_recently_updated_portal(const std::string& uuid);

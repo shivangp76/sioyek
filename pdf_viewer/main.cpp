@@ -759,8 +759,13 @@ int main(int argc, char* args[]) {
         global_database_file_path = SHARED_DATABASE_PATH;
     }
     char* shared_database_path_arg = get_argv_value(argc, args, "--shared-database-path");
+    char* local_database_path_arg = get_argv_value(argc, args, "--local-database-path");
+
     if (shared_database_path_arg) {
         global_database_file_path = utf8_decode(std::string(shared_database_path_arg));
+    }
+    if (local_database_path_arg) {
+        local_database_file_path = utf8_decode(std::string(local_database_path_arg));
     }
 
     verify_paths();

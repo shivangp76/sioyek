@@ -65,6 +65,7 @@ public:
     bool global_select_highlight(std::vector<std::pair<std::string, Highlight>>& out_result);
     //bool update_portal(const std::string& checksum, float dst_offset_x, float dst_offset_y, float dst_zoom_level, float src_offset_y);
     bool update_portal(const std::string& uuid, float dst_offset_x, float dst_offset_y, float dst_zoom_level);
+    bool update_highlight_with_server_highlight(const Highlight& server_highlight);
     bool update_highlight_add_annotation(const std::string& uuid, const std::wstring& text_annot);
     bool update_highlight_type(const std::string& uuid, char new_type);
     bool update_bookmark_change_text(const std::string& uuid, const std::wstring& new_text, float new_font_size);
@@ -164,8 +165,12 @@ public:
         std::vector<std::pair<std::string, QVariant>> values, sqlite3* db=nullptr);
     bool has_column(const std::string& table_name, const std::string& column_name);
     void add_synced_columns();
+    void add_document_sync_columns();
     bool set_highlight_uuids_to_synced(const std::vector<std::string>& uuids);
     bool set_highlight_uuid_to_synced(const std::string& uuid);
+    bool set_document_to_synced(const std::string& checksum);
+    bool set_document_to_unsynced(const std::string& checksum);
+    bool is_document_synced(const std::string& checksum);
 };
 
 

@@ -24,6 +24,7 @@
 // maybe add ability to click on other status bar items. e.g. clicking on the chapter name could open the table of contents
 // make sure deleteLater is called on all network requests
 // when uploading the unsynced deletions, we should upload the unsynced deletions of all documents not just the current document
+// create a worker thread in SioyekNetworkManager to handle longer-lasting operations asynchronously
 
 #include <iostream>
 #include <vector>
@@ -1703,7 +1704,12 @@ QString MainWidget::get_login_status_string() {
             server_status_string = "SYNCED";
         }
         else {
-            server_status_string = "UNSYNCED";
+            if (should_sync_current_document_to_server()) {
+                server_status_string = "SYNC PENDING";
+            }
+            else {
+                server_status_string = "UNSYNCED";
+            }
         }
     }
     else {
@@ -6329,6 +6335,7 @@ void MainWidget::sync_highlights_with_server() {
 
                 std::vector<std::string> server_only_uuids;
                 std::vector<std::string> local_only_uuids;
+                std::vector<std::string> intersection_uuids;
 
                 std::set_difference(server_highlight_uuids.begin(), server_highlight_uuids.end(),
                     local_highlight_uuids.begin(), local_highlight_uuids.end(),
@@ -6337,6 +6344,39 @@ void MainWidget::sync_highlights_with_server() {
                 std::set_difference(local_highlight_uuids.begin(), local_highlight_uuids.end(),
                     server_highlight_uuids.begin(), server_highlight_uuids.end(),
                     std::back_inserter(local_only_uuids));
+
+                std::set_intersection(server_highlight_uuids.begin(), server_highlight_uuids.end(),
+                    local_highlight_uuids.begin(), local_highlight_uuids.end(),
+                    std::back_inserter(intersection_uuids));
+
+
+                for (const auto& uuid : intersection_uuids) {
+                    const Highlight& local_highlight = local_doc_highlights[local_uuid_to_index_map[uuid]];
+                    const Highlight& server_highlight = highlights[server_uuid_to_index_map[uuid]];
+
+                    // sync only if the highlight has changed
+                    if ((local_highlight.type != server_highlight.type) ||
+                        (local_highlight.text_annot.size() != server_highlight.text_annot.size()) ||
+                        (local_highlight.text_annot != server_highlight.text_annot)) {
+                        QDateTime local_modification_time = QDateTime::fromString(QString::fromStdString(local_highlight.modification_time), Qt::ISODate);
+                        QDateTime server_modification_time = QDateTime::fromString(QString::fromStdString(server_highlight.modification_time), Qt::ISODate);
+                        if (server_modification_time > local_modification_time) {
+                            // server is the authority
+                            db_manager->update_highlight_with_server_highlight(server_highlight);
+                        }
+                        else {
+                            // todo: this should be batched
+                            sioyek_network_manager->upload_highlight(this,
+                                QString::fromStdString(doc()->get_checksum_fast().value()),
+                                local_highlight,
+                                []() {
+                                },
+                                []() {
+                                }
+                            );
+                        }
+                    }
+                }
 
                 //// todo: this should be batched
                 doc()->lock_highlights_mutex();
@@ -11605,7 +11645,7 @@ void MainWidget::sync_deleted_highlight(const std::string& uuid) {
     }
     else {
         auto checksum = doc()->get_checksum_fast();
-        if (checksum && should_upload_current_document_annotations_to_server()) {
+        if (checksum && should_sync_current_document_to_server()) {
             db_manager->insert_unsynced_deletion("highlight", uuid, checksum.value());
         }
     }
@@ -11725,11 +11765,11 @@ void MainWidget::on_mark_added(const std::string& uuid, char type) {
     }
 }
 
-bool MainWidget::should_upload_current_document_annotations_to_server() {
-    // todo: there should be a field in the database which says if we should
-    // upload document annotations (usful when the device is offline so we can't
-    // ask the server if the document is synced to the server)
-    return sioyek_network_manager->ACCESS_TOKEN.size() > 0;
+bool MainWidget::should_sync_current_document_to_server() {
+    if (doc()) {
+        return doc()->get_is_synced();
+    }
+    return false;
 }
 
 void MainWidget::on_new_highlight_added(const std::string& uuid) {
@@ -11913,6 +11953,9 @@ void MainWidget::handle_logout() {
 
 
 void MainWidget::upload_current_file() {
+    if (!doc()) return;
+
+    doc()->set_is_synced(true);
     sioyek_network_manager->upload_file(
         this,
         QString::fromStdWString(doc()->get_path()),
@@ -12764,7 +12807,7 @@ void SioyekNetworkManager::upload_highlight(
     obj["file_checksum"] = checksum;
     obj["desc"] = QString::fromStdWString(highlight.description);
     obj["text_annot"] = QString::fromStdWString(highlight.text_annot);
-    obj["type"] = QString(QChar(highlight.type));
+    obj["type"] = highlight.type;
     obj["creation_time"] = QString::fromStdString(highlight.creation_time);
     obj["modification_time"] = QString::fromStdString(highlight.modification_time);
     obj["uuid"] = QString::fromStdString(highlight.uuid);

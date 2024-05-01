@@ -3774,7 +3774,7 @@ public:
 
 class GotoBeginningCommand : public Command {
 public:
-    static inline const std::string cname = "goto_beginning";
+    static inline const std::string cname = "goto_begining";
     static inline const std::string hname = "Go to the beginning of the document";
     GotoBeginningCommand(MainWidget* w) : Command(cname, w) {};
 public:
@@ -6974,7 +6974,6 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DownloadOverviewPaperCommand>();
     register_command<GotoWindowCommand>();
     register_command<ToggleSmoothScrollModeCommand>();
-    register_command<GotoBeginningCommand>();
     register_command<ToggleScrollbarCommand>();
     register_command<OverviewToPortalCommand>();
     register_command<OverviewRulerPortalCommand>();

@@ -4540,3 +4540,23 @@ void Document::lock_highlights_mutex() {
 void Document::unlock_highlights_mutex() {
     highlights_mutex.unlock();
 }
+
+bool Document::get_is_synced() {
+    if (cached_is_synced) return cached_is_synced.value();
+    if (!get_checksum_fast()) return false;
+
+    cached_is_synced = db_manager->is_document_synced(get_checksum_fast().value());
+    return cached_is_synced.value();
+}
+
+void Document::set_is_synced(bool synced) {
+    cached_is_synced = synced;
+    if (get_checksum_fast()) {
+        if (synced) {
+            db_manager->set_document_to_synced(get_checksum_fast().value());
+        }
+        else {
+            db_manager->set_document_to_unsynced(get_checksum_fast().value());
+        }
+    }
+}

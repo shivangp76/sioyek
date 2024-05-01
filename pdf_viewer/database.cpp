@@ -559,7 +559,8 @@ bool DatabaseManager::create_opened_books_table() {
         "zoom_level REAL,"\
         "offset_x REAL,"\
         "offset_y REAL,"\
-        "last_access_time TEXT);";
+        "last_access_time TEXT,"\
+        "is_synced BOOLEAN DEFAULT 0); ";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, create_opened_books_sql, null_callback, 0, &error_message);
@@ -1452,6 +1453,10 @@ void DatabaseManager::create_tables() {
     if (!has_column("highlights", "is_synced")) {
         add_synced_columns();
     }
+
+    if (!has_column("opened_books", "is_synced")) {
+        add_document_sync_columns();
+    }
 }
 
 void DatabaseManager::add_synced_columns() {
@@ -1464,6 +1469,13 @@ void DatabaseManager::add_synced_columns() {
     sqlite3_exec(global_db, add_sync_to_highlights_sql, null_callback, 0, &error_message);
     sqlite3_exec(global_db, add_sync_to_bookmarks_sql, null_callback, 0, &error_message);
     sqlite3_exec(global_db, add_sync_to_marks_sql, null_callback, 0, &error_message);
+    sqlite3_exec(global_db, add_sync_to_portals_sql, null_callback, 0, &error_message);
+}
+
+void DatabaseManager::add_document_sync_columns() {
+
+    char* error_message = nullptr;
+    const char* add_sync_to_portals_sql = "ALTER TABLE opened_books ADD COLUMN is_synced BOOLEAN DEFAULT 0";
     sqlite3_exec(global_db, add_sync_to_portals_sql, null_callback, 0, &error_message);
 }
 
@@ -1940,6 +1952,12 @@ void DatabaseManager::migrate_version_1_to_2() {
     queries_to_run.push_back("ALTER TABLE marks ADD COLUMN offset_x real;");
     queries_to_run.push_back("ALTER TABLE marks ADD COLUMN zoom_level real;");
     queries_to_run.push_back("ALTER TABLE opened_books ADD COLUMN document_name TEXT;");
+    queries_to_run.push_back("ALTER TABLE opened_books ADD COLUMN is_synced BOOLEAN DEFAULT 0;");
+
+    queries_to_run.push_back("ALTER TABLE highlights ADD COLUMN is_synced BOOLEAN DEFAULT 0;");
+    queries_to_run.push_back("ALTER TABLE bookmarks ADD COLUMN is_synced BOOLEAN DEFAULT 0;");
+    queries_to_run.push_back("ALTER TABLE marks ADD COLUMN is_synced BOOLEAN DEFAULT 0;");
+    queries_to_run.push_back("ALTER TABLE links ADD COLUMN is_synced BOOLEAN DEFAULT 0;");
 
     std::string transaction = "BEGIN TRANSACTION;\n";
     for (auto q : queries_to_run) {
@@ -2087,6 +2105,18 @@ bool DatabaseManager::select_all_portal_ids(std::vector<int>& portal_ids) {
         error_message);
 }
 
+
+bool DatabaseManager::update_highlight_with_server_highlight(const Highlight& server_highlight) {
+    return generic_update_run_query("highlights",
+        {
+            {"uuid", QString::fromStdString(server_highlight.uuid)},
+        },
+        {
+            {"text_annot",QString::fromStdWString(server_highlight.text_annot)},
+            {"type", QChar(server_highlight.type)},
+            {"modification_time", QString::fromStdString(server_highlight.modification_time)},
+        });
+}
 bool DatabaseManager::update_highlight_add_annotation(const std::string& uuid, const std::wstring& text_annot) {
 
     return generic_update_run_query("highlights",
@@ -2354,4 +2384,46 @@ bool DatabaseManager::set_highlight_uuids_to_synced(const std::vector<std::strin
         "set_highlight_uuids_to_synced",
         error_code,
         error_message);
+}
+
+bool DatabaseManager::set_document_to_synced(const std::string& checksum) {
+    std::wstringstream ss;
+    ss << "UPDATE opened_books SET is_synced=1 WHERE path='" << esc(checksum) << "';";
+
+    char* error_message = nullptr;
+
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "set_document_to_synced",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::set_document_to_unsynced(const std::string& checksum) {
+    std::wstringstream ss;
+    ss << "UPDATE opened_books SET is_synced=0 WHERE path='" << esc(checksum) << "';";
+
+    char* error_message = nullptr;
+
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "set_document_to_unsynced",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::is_document_synced(const std::string& checksum) {
+    std::wstringstream ss;
+    ss << "SELECT is_synced FROM opened_books WHERE path='" << esc(checksum) << "'";
+
+    char* error_message = nullptr;
+
+    int is_synced = 0;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), count_callback, &is_synced, &error_message);
+    bool ok = handle_error(
+        "set_document_to_unsynced",
+        error_code,
+        error_message);
+
+    return is_synced;
 }

@@ -174,6 +174,7 @@ public:
     fz_document* doc = nullptr;
     std::wstring detected_paper_name = L"";
     bool annotations_are_freshly_loaded = false;
+    std::optional<bool> cached_is_synced;
 
     PageIterator page_iterator(int page_number);
     int get_page_text_and_line_rects_after_rect(int page_number,
@@ -212,6 +213,9 @@ public:
 
     void update_last_local_edit_time();
     std::optional<QDateTime> last_server_update_time();
+
+    bool get_is_synced();
+    void set_is_synced(bool synced);
 
     void fill_highlight_rects(fz_context* ctx, fz_document* doc);
     void fill_index_highlight_rects(int highlight_index, fz_context* thread_context = nullptr, fz_document* thread_document = nullptr);
