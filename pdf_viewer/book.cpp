@@ -109,13 +109,11 @@ QJsonObject BookMark::to_json(std::string doc_checksum) const
     res["end_x"] = end_x;
     res["end_y"] = end_y;
 
-    if (is_freetext()) {
-        res["color_red"] = color[0];
-        res["color_green"] = color[1];
-        res["color_blue"] = color[2];
-        res["font_size"] = font_size;
-        res["font_face"] = QString::fromStdWString(font_face);
-    }
+    res["color_red"] = color[0];
+    res["color_green"] = color[1];
+    res["color_blue"] = color[2];
+    res["font_size"] = font_size;
+    res["font_face"] = QString::fromStdWString(font_face);
 
     add_metadata_to_json(res);
 
@@ -212,7 +210,12 @@ void Highlight::from_json(const QJsonObject& json_object)
     selection_end.x = json_object["selection_end_x"].toDouble();
     selection_end.y = json_object["selection_end_y"].toDouble();
     description = json_object["description"].toString().toStdWString();
-    type = static_cast<char>(json_object["type"].toInt());
+    if (json_object["type"].isDouble()) {
+        type = static_cast<char>(json_object["type"].toInt());
+    }
+    else {
+        type = static_cast<char>(json_object["type"].toString().toInt());
+    }
 
     load_metadata_from_json(json_object);
 }
@@ -270,6 +273,7 @@ bool operator==(const Mark& lhs, const Mark& rhs)
 
 bool operator==(const BookMark& lhs, const BookMark& rhs)
 {
+    //return lhs.uuid == rhs.uuid;
     return  (lhs.y_offset_ == rhs.y_offset_) && (lhs.description == rhs.description);
 }
 
@@ -279,6 +283,7 @@ bool operator==(const fz_point& lhs, const fz_point& rhs) {
 
 bool operator==(const Highlight& lhs, const Highlight& rhs)
 {
+    //return lhs.uuid == rhs.uuid;
     return  (lhs.selection_begin.x == rhs.selection_begin.x) && (lhs.selection_end.x == rhs.selection_end.x) &&
         (lhs.selection_begin.y == rhs.selection_begin.y) && (lhs.selection_end.y == rhs.selection_end.y);
 }
@@ -290,6 +295,30 @@ bool operator==(const Portal& lhs, const Portal& rhs)
 
 bool are_same(const BookMark& lhs, const BookMark& rhs) {
     return are_same(lhs.begin_x, rhs.begin_x) && are_same(lhs.begin_y, rhs.begin_y) && are_same(lhs.end_x, rhs.end_x) && are_same(lhs.end_y, rhs.end_y);
+}
+
+bool has_changed(const Highlight& lhs, const Highlight& rhs){
+    if (lhs.modification_time == rhs.modification_time) {
+        return false;
+    }
+    return (lhs.text_annot != rhs.text_annot) || (lhs.type != rhs.type);
+}
+
+bool has_changed(const BookMark& lhs, const BookMark& rhs) {
+    if (lhs.modification_time == rhs.modification_time) {
+        return false;
+    }
+
+    return (lhs.description != rhs.description) ||
+        (lhs.begin_x != rhs.begin_x) ||
+        (lhs.begin_y != rhs.begin_y) ||
+        (lhs.end_x != rhs.end_x) ||
+        (lhs.end_y != rhs.end_y) ||
+        (lhs.font_size != rhs.font_size) ||
+        (lhs.font_face != rhs.font_face) ||
+        (lhs.color[0] != rhs.color[0]) ||
+        (lhs.color[1] != rhs.color[1]) ||
+        (lhs.color[2] != rhs.color[2]);
 }
 
 bool are_same(const Highlight& lhs, const Highlight& rhs) {

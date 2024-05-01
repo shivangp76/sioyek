@@ -67,6 +67,7 @@ private:
 
     std::mutex drawings_mutex;
     std::mutex highlights_mutex;
+
     std::map<int, std::vector<FreehandDrawing>> page_freehand_drawings;
     // it means we have modified freehand drawings since the document was loaded
     // which means that when we exit, we must write the modified drawings to the drawings file
@@ -192,11 +193,13 @@ public:
     void add_freetext_bookmark(const std::wstring& desc, AbsoluteRect absrect);
     void add_freetext_bookmark_with_color(const std::wstring& desc, AbsoluteRect absrect, float* color, float font_size = -1);
     std::string add_highlight_with_existing_uuid(const Highlight& highlight);
+    std::string add_bookmark_with_existing_uuid(const BookMark& bookmark);
     std::string add_highlight(const std::wstring& desc, const std::vector<AbsoluteRect>& highlight_rects, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string add_highlight(const std::wstring& annot, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string delete_highlight_with_index(int index);
     bool delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     std::string delete_bookmark_with_index(int index);
+    bool delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     void delete_highlight(Highlight hl);
     int get_bookmark_index_at_pos(AbsoluteDocumentPos abspos);
     int get_portal_index_at_pos(AbsoluteDocumentPos abspos);

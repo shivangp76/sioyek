@@ -1022,7 +1022,7 @@ void DocumentView::persist(bool persist_drawings) {
         abs_offset.x = 0;
     }
 
-    db_manager->update_book(current_document->get_checksum(), zoom_level, abs_offset.x, abs_offset.y, current_document->detect_paper_name());
+    db_manager->update_book(current_document->get_checksum(), current_document->get_is_synced(), zoom_level, abs_offset.x, abs_offset.y, current_document->detect_paper_name());
     if (persist_drawings) {
         current_document->persist_drawings();
         current_document->persist_annotations();

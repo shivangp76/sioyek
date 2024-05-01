@@ -375,6 +375,9 @@ bool are_same(const BookMark& lhs, const BookMark& rhs);
 
 bool are_same(const Highlight& lhs, const Highlight& rhs);
 
+bool has_changed(const BookMark& lhs, const BookMark& rhs);
+bool has_changed(const Highlight& lhs, const Highlight& rhs);
+
 struct PdfLinkTextInfo {
     std::wstring link_text = L"";
     fz_stext_char* chr = nullptr;

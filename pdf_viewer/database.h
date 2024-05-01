@@ -34,12 +34,13 @@ public:
         std::optional<float> offset_x = {},
         std::optional<float> zoom_level = {});
     bool update_mark(const std::string& checksum, char symbol, float offset_y, std::optional<float> offset_x, std::optional<float> zoom_level);
-    bool update_book(const std::string& path, float zoom_level, float offset_x, float offset_y, std::wstring actual_name=L"");
+    bool update_book(const std::string& path, bool is_synced, float zoom_level, float offset_x, float offset_y, std::wstring actual_name=L"");
     bool select_mark(const std::string& checksum, std::vector<Mark>& out_result);
     bool insert_bookmark(const std::string& checksum, const std::wstring& desc, float offset_y, std::wstring uuid);
     bool insert_bookmark_marked(const std::string& checksum, const std::wstring& desc, float offset_x, float offset_y, std::wstring uuid);
     //bool insert_bookmark_freetext(const std::string& checksum, const std::wstring& desc, float begin_x, float begin_y, float end_x, float end_y, float color_red, float color_green, float color_blue, float font_size, std::string font_face, std::wstring uuid);
     bool insert_bookmark_freetext(const std::string& checksum, const BookMark& bm);
+    bool insert_bookmark_synced(const std::string& checksum, const BookMark& bm);
     bool select_bookmark(const std::string& checksum, std::vector<BookMark>& out_result);
     bool insert_portal(const std::string& src_checksum,
         const std::string& dst_checksum,
@@ -66,6 +67,8 @@ public:
     //bool update_portal(const std::string& checksum, float dst_offset_x, float dst_offset_y, float dst_zoom_level, float src_offset_y);
     bool update_portal(const std::string& uuid, float dst_offset_x, float dst_offset_y, float dst_zoom_level);
     bool update_highlight_with_server_highlight(const Highlight& server_highlight);
+    bool update_bookmark_with_server_bookmark(const BookMark& server_highlight);
+    bool update_annot_with_server_annot(const Annotation* server_annot);
     bool update_highlight_add_annotation(const std::string& uuid, const std::wstring& text_annot);
     bool update_highlight_type(const std::string& uuid, char new_type);
     bool update_bookmark_change_text(const std::string& uuid, const std::wstring& new_text, float new_font_size);
@@ -139,6 +142,7 @@ public:
     //bool insert_unsynced_addition(const std::string& type, const std::string& uuid, const std::string& checksum);
 
     bool get_document_unsynced_highlight_uuids(const std::string& checksum, std::vector<std::string>& out_uuids);
+    bool get_document_unsynced_bookmark_uuids(const std::string& checksum, std::vector<std::string>& out_uuids);
     bool get_all_unsynced_deletions(const std::string& checksum, std::vector<std::pair<std::wstring, std::wstring>>& out_results);
     //bool get_all_unsynced_additions(const std::string& checksum, std::vector<std::pair<std::wstring, std::wstring>>& out_results);
 
@@ -166,7 +170,7 @@ public:
     bool has_column(const std::string& table_name, const std::string& column_name);
     void add_synced_columns();
     void add_document_sync_columns();
-    bool set_highlight_uuids_to_synced(const std::vector<std::string>& uuids);
+    bool set_annot_uuids_to_synced(const std::string& table_name, const std::vector<std::string>& uuids);
     bool set_highlight_uuid_to_synced(const std::string& uuid);
     bool set_document_to_synced(const std::string& checksum);
     bool set_document_to_unsynced(const std::string& checksum);

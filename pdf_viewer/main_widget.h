@@ -160,10 +160,12 @@ public:
     const std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = SIOYEK_HOST + L"sync_opened_book";
     const std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = SIOYEK_HOST + L"get_opened_book";
     std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = SIOYEK_HOST + L"get_opened_books";
-    std::wstring SIOYEK_ADD_HIGHLIGHT_URL = SIOYEK_HOST + L"add_highlight";
-    std::wstring SIOYEK_GET_DOCUMENT_HIGHLIGHTS_URL = SIOYEK_HOST + L"get_highlights_for_document";
-    std::wstring SIOYEK_DELETE_HIGHLIGHT_URL = SIOYEK_HOST + L"delete_highlight";
+    std::wstring SIOYEK_GET_DOCUMENT_ANNOTATIONS_URL = SIOYEK_HOST + L"get_annotations_for_document";
     std::wstring SIOYEK_SYNC_DELETES_URL = SIOYEK_HOST + L"sync_deletes";
+    std::wstring SIOYEK_ADD_HIGHLIGHT_URL = SIOYEK_HOST + L"add_highlight";
+    std::wstring SIOYEK_DELETE_ANNOT_URL = SIOYEK_HOST + L"delete_annot";
+    std::wstring SIOYEK_ADD_BOOKMARK_URL = SIOYEK_HOST + L"add_bookmark";
+    std::wstring SIOYEK_DELETE_BOOKMARK_URL = SIOYEK_HOST + L"delete_bookmark";
 
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_map<std::string, OpenedBookInfo> server_opened_files;
@@ -195,10 +197,14 @@ public:
     void download_opened_files_info(MainWidget* widget, std::function<void(QJsonObject)> fn);
     std::vector<OpenedBookInfo> get_excluded_opened_files(std::vector<std::string>& excluded_checksums);
     void handle_one_time_network_operations();
-    void upload_highlight(MainWidget* parent, const QString& checksum, const Highlight& highlight, std::function<void()> on_success, std::function<void()> on_fail);
-    void delete_highlight(QObject* parent, const QString& file_checksum, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail);
-    void get_document_highlights(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::optional<QDateTime> last_access_time)> fn);
+    //void upload_bookmark(MainWidget* parent, const QString& checksum, const BookMark& highlight, std::function<void()> on_success, std::function<void()> on_fail);
+    void delete_annot(QObject* parent, const QString& file_checksum, const QString& annot_type, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail);
+    void get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::optional<QDateTime> last_access_time)> fn);
     void perform_unsynced_inserts_and_deletes(MainWidget* parent, const QString& checksum, std::function<void()> on_done);
+    const std::wstring& get_url_for_annot_upload(const Annotation* annot);
+    //const std::wstring& get_url_for_annot_delete(const Annotation* annot);
+
+    void upload_annot(MainWidget* parent, const QString& checksum, const Annotation& annot, std::function<void()> on_success, std::function<void()> on_fail);
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -1150,7 +1156,7 @@ public:
     void download_and_open(std::string checksum, QString file_name, float offset_y);
     void handle_resume_to_server_location();
     void handle_server_actions_button_pressed();
-    void sync_highlights_with_server();
+    void sync_annotations_with_server();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

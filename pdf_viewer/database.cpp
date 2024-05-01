@@ -751,11 +751,11 @@ bool DatabaseManager::insert_document_hash(const std::wstring& path, const std::
     return handle_error("insert_document_hash", insert_error_code, insert_error_message);
 }
 
-bool DatabaseManager::update_book(const std::string& path, float zoom_level, float offset_x, float offset_y, std::wstring actual_name) {
+bool DatabaseManager::update_book(const std::string& path, bool is_synced, float zoom_level, float offset_x, float offset_y, std::wstring actual_name) {
 
     std::wstringstream ss;
-    ss << "insert or replace into opened_books(path, zoom_level, offset_x, offset_y, last_access_time, document_name) values ('" <<
-        esc(path) << "', " << zoom_level << ", " << offset_x << ", " << offset_y << ", datetime('now'), '" << esc(actual_name) << "');";
+    ss << "insert or replace into opened_books(path, zoom_level, offset_x, offset_y, last_access_time, document_name, is_synced) values ('" <<
+        esc(path) << "', " << zoom_level << ", " << offset_x << ", " << offset_y << ", datetime('now'), '" << esc(actual_name) << "', " << (is_synced ? 1 : 0) << ");";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
@@ -852,6 +852,31 @@ bool DatabaseManager::insert_bookmark_freetext(const std::string& document_path,
         << bm.font_size << ", '"
         << bm.font_face << "', '"
         << esc(bm.uuid) << "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);";
+    char* error_message = nullptr;
+
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "insert_bookmark_freetext",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::insert_bookmark_synced(const std::string& document_path, const BookMark& bm) {
+
+    std::wstringstream ss;
+    ss << "INSERT INTO bookmarks (document_path, desc, begin_x, begin_y, end_x, end_y, color_red, color_green, color_blue, font_size, font_face, uuid, creation_time, modification_time, is_synced) VALUES ('"
+        << esc(document_path) << "', '"
+        << esc(bm.description) << "', "
+        << bm.begin_x << " , "
+        << bm.begin_y << " , "
+        << bm.end_x << " , "
+        << bm.end_y << ", "
+        << bm.color[0] << ", "
+        << bm.color[1] << ", "
+        << bm.color[2] << ", "
+        << bm.font_size << ", '"
+        << bm.font_face << "', '"
+        << esc(bm.uuid) << "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
@@ -1026,6 +1051,16 @@ bool DatabaseManager::get_document_unsynced_highlight_uuids(const std::string& c
         error_message);
 }
 
+bool DatabaseManager::get_document_unsynced_bookmark_uuids(const std::string& checksum, std::vector<std::string>& out_uuids) {
+    std::wstringstream ss;
+    ss << "SELECT uuid FROM bookmarks WHERE document_path='" << esc(checksum) << "' AND is_synced=0;";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), string_select_callback, &out_uuids, &error_message);
+    return handle_error(
+        "get_all_unsynced_highlight_uuids",
+        error_code,
+        error_message);
+}
 bool DatabaseManager::insert_portal(const std::string& src_document_path,
     const std::string& dst_document_path,
     float dst_offset_x,
@@ -1623,7 +1658,7 @@ void DatabaseManager::split_database(const std::wstring& local_database_path, co
     }
 
     for (const auto& [hash, book_state] : opened_book_states) {
-        update_book(hash, book_state.zoom_level, book_state.offset_x, book_state.offset_y);
+        update_book(hash, false, book_state.zoom_level, book_state.offset_x, book_state.offset_y);
     }
     for (const auto& [hash, mark] : marks) {
         insert_mark(hash, mark.symbol, mark.y_offset, new_uuid());
@@ -1798,7 +1833,7 @@ void DatabaseManager::import_json(std::wstring json_file_path, CachedChecksummer
 
         if (path) {
             //update_book(db, path.value(), zoom_level, offset_x, offset_y);
-            update_book(checksum, zoom_level, offset_x, offset_y);
+            update_book(checksum, false, zoom_level, offset_x, offset_y);
         }
 
         for (const auto& bm : new_bookmarks) {
@@ -2117,6 +2152,41 @@ bool DatabaseManager::update_highlight_with_server_highlight(const Highlight& se
             {"modification_time", QString::fromStdString(server_highlight.modification_time)},
         });
 }
+
+bool DatabaseManager::update_bookmark_with_server_bookmark(const BookMark& server_bookmark) {
+    return generic_update_run_query("bookmarks",
+        {
+            {"uuid", QString::fromStdString(server_bookmark.uuid)},
+        },
+        {
+            {"desc",QString::fromStdWString(server_bookmark.description)},
+            {"font_size", server_bookmark.font_size},
+            {"font_face", QString::fromStdWString(server_bookmark.font_face)},
+            {"color_red", server_bookmark.color[0]},
+            {"color_green", server_bookmark.color[1]},
+            {"color_blue", server_bookmark.color[2]},
+            {"begin_x", server_bookmark.begin_x},
+            {"begin_y", server_bookmark.begin_y},
+            {"end_x", server_bookmark.end_x},
+            {"end_y", server_bookmark.end_y},
+            {"offset_y", server_bookmark.y_offset_},
+            {"modification_time", QString::fromStdString(server_bookmark.modification_time)},
+        });
+}
+
+bool DatabaseManager::update_annot_with_server_annot(const Annotation* server_annot) {
+
+    if (dynamic_cast<const Highlight*>(server_annot)) {
+        return update_highlight_with_server_highlight(*dynamic_cast<const Highlight*>(server_annot));
+    }
+
+    if (dynamic_cast<const BookMark*>(server_annot)) {
+        return update_bookmark_with_server_bookmark(*dynamic_cast<const BookMark*>(server_annot));
+    }
+
+    return false;
+}
+
 bool DatabaseManager::update_highlight_add_annotation(const std::string& uuid, const std::wstring& text_annot) {
 
     return generic_update_run_query("highlights",
@@ -2363,12 +2433,12 @@ bool DatabaseManager::has_column(const std::string& table_name, const std::strin
 }
 
 bool DatabaseManager::set_highlight_uuid_to_synced(const std::string& uuid) {
-    return set_highlight_uuids_to_synced({ uuid });
+    return set_annot_uuids_to_synced("highlights", { uuid });
 }
 
-bool DatabaseManager::set_highlight_uuids_to_synced(const std::vector<std::string>& uuids) {
+bool DatabaseManager::set_annot_uuids_to_synced(const std::string& table_name, const std::vector<std::string>& uuids) {
     std::wstringstream ss;
-    ss << "UPDATE highlights SET is_synced=1 WHERE uuid IN (";
+    ss << "UPDATE " << esc(table_name) << " SET is_synced=1 WHERE uuid IN (";
     for (int i = 0; i < uuids.size(); i++) {
         ss << "'" << esc(uuids[i]) << "'";
         if (i < uuids.size() - 1) {
@@ -2381,7 +2451,7 @@ bool DatabaseManager::set_highlight_uuids_to_synced(const std::vector<std::strin
 
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
     return handle_error(
-        "set_highlight_uuids_to_synced",
+        "set_annot_uuids_to_synced",
         error_code,
         error_message);
 }

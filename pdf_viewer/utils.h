@@ -541,3 +541,71 @@ QString create_random_string(int length=31);
 QString get_paper_download_finish_action_string(PaperDownloadFinishedAction action);
 PaperDownloadFinishedAction get_paper_download_action_from_string(QString str);
 std::string get_user_agent_string();
+
+template<typename T>
+struct DecomposeSetResult {
+    std::vector<T> A_minus_B;
+    std::vector<T> B_minus_A;
+    std::vector<std::pair<T, T>> intersection;
+};
+
+template<typename T>
+DecomposeSetResult<T> decompose_sets(const std::vector<T>& A, const std::vector<T>& B){
+    std::unordered_map<std::string, int> A_id_to_index;
+    std::unordered_map<std::string, int> B_id_to_index;
+
+    std::vector<std::string> A_ids;
+    std::vector<std::string> B_ids;
+
+    std::vector<std::string> A_minus_B_ids;
+    std::vector<std::string> B_minus_A_ids;
+    std::vector<std::string> intersection_ids;
+
+    DecomposeSetResult<T> res;
+
+
+    for (int i = 0; i < A.size(); i++) {
+        A_id_to_index[A[i].uuid] = i;
+        A_ids.push_back(A[i].uuid);
+    }
+
+    for (int i = 0; i < B.size(); i++) {
+        B_id_to_index[B[i].uuid] = i;
+        B_ids.push_back(B[i].uuid);
+    }
+
+    std::sort(A_ids.begin(), A_ids.end());
+    std::sort(B_ids.begin(), B_ids.end());
+
+    std::set_difference(
+        A_ids.begin(), A_ids.end(),
+        B_ids.begin(), B_ids.end(),
+        std::back_inserter(A_minus_B_ids)
+    );
+
+    std::set_difference(
+        B_ids.begin(), B_ids.end(),
+        A_ids.begin(), A_ids.end(),
+        std::back_inserter(B_minus_A_ids)
+    );
+
+    std::set_intersection(
+        A_ids.begin(), A_ids.end(),
+        B_ids.begin(), B_ids.end(),
+        std::back_inserter(intersection_ids)
+    );
+
+    for (auto& id : A_minus_B_ids) {
+        res.A_minus_B.push_back(A[A_id_to_index[id]]);
+    }
+
+    for (auto& id : B_minus_A_ids) {
+        res.B_minus_A.push_back(B[B_id_to_index[id]]);
+    }
+
+    for (auto& id : intersection_ids) {
+        res.intersection.push_back(std::make_pair(A[A_id_to_index[id]], B[B_id_to_index[id]]));
+    }
+    return res;
+
+}

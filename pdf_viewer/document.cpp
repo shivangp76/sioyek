@@ -354,6 +354,17 @@ std::string Document::add_highlight_with_existing_uuid(const Highlight& highligh
     return highlight.uuid;
 }
 
+std::string Document::add_bookmark_with_existing_uuid(const BookMark& bookmark) {
+    db_manager->insert_bookmark_synced(
+        get_checksum(),
+        bookmark
+        );
+
+    bookmarks.push_back(bookmark);
+    is_annotations_dirty = true;
+    return bookmark.uuid;
+}
+
 std::string Document::add_highlight(const std::wstring& desc,
     const std::vector<AbsoluteRect>& highlight_rects,
     AbsoluteDocumentPos selection_begin,
@@ -501,11 +512,23 @@ std::string Document::delete_highlight_with_index(int index) {
 
 bool Document::delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
     int index = get_highlight_index_with_uuid(uuid);
+    if (index < 0) return false;
     if (delete_only_if_synced && (index >= 0) && (!highlights[index].is_synced)) {
         return false;
     }
 
     return delete_highlight_with_index(index).size() > 0;
+    //return db_manager->delete_highlight(uuid);
+}
+
+bool Document::delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
+    int index = get_bookmark_index_with_uuid(uuid);
+    if (index < 0) return false;
+    if (delete_only_if_synced && (index >= 0) && (!bookmarks[index].is_synced)) {
+        return false;
+    }
+
+    return delete_bookmark_with_index(index).size() > 0;
     //return db_manager->delete_highlight(uuid);
 }
 
