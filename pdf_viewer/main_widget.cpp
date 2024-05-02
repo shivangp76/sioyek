@@ -11723,6 +11723,10 @@ void MainWidget::on_new_bookmark_added(const std::string& uuid) {
     if (add_bookmark_hook_function_name) {
         call_js_function_with_bookmark_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
     }
+
+    sync_newly_added_annot("bookmark", uuid);
+
+    doc()->update_last_local_edit_time();
 }
 
 void MainWidget::on_new_portal_added(const std::string& uuid) {
@@ -11760,27 +11764,33 @@ bool MainWidget::should_sync_current_document_to_server() {
     return false;
 }
 
-void MainWidget::on_new_highlight_added(const std::string& uuid) {
-    if (add_highlight_hook_function_name) {
-        call_js_function_with_highlight_arg_with_uuid(add_highlight_hook_function_name.value(), uuid);
-    }
-
+void MainWidget::sync_newly_added_annot(const std::string& annot_type, const std::string& uuid) {
     if (is_current_document_available_on_server()) {
-        int highlight_index = doc()->get_highlight_index_with_uuid(uuid);
+        //int highlight_index = doc()->get_highlight_index_with_uuid(uuid);
+        const Annotation* annot = doc()->get_annot_with_uuid(annot_type, uuid);
         std::optional<std::string> checksum = doc()->get_checksum_fast();
-        if (highlight_index >= 0 && checksum) {
-            Highlight highlight = doc()->get_highlights()[highlight_index];
+        if ((annot != nullptr) && checksum) {
             sioyek_network_manager->upload_annot(this,
                 QString::fromStdString(checksum.value()),
-                highlight,
-                [&, uuid, this]() { // on success
-                    db_manager->set_highlight_uuid_to_synced(uuid);
+                *annot,
+                [&, uuid, this, annot_type]() { // on success
+                    //db_manager->set_highlight_uuid_to_synced(uuid);
+                    std::string table_name = db_manager->get_table_name_for_annot_type(annot_type);
+                    db_manager->set_annot_uuids_to_synced(table_name, {uuid});
                 },
                 [&, uuid, this]() { // on failure
                 }
             );
         }
     }
+}
+
+void MainWidget::on_new_highlight_added(const std::string& uuid) {
+    if (add_highlight_hook_function_name) {
+        call_js_function_with_highlight_arg_with_uuid(add_highlight_hook_function_name.value(), uuid);
+    }
+    sync_newly_added_annot("highlight", uuid);
+
     doc()->update_last_local_edit_time();
 }
 

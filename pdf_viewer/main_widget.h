@@ -1157,6 +1157,7 @@ public:
     void handle_resume_to_server_location();
     void handle_server_actions_button_pressed();
     void sync_annotations_with_server();
+    void sync_newly_added_annot(const std::string& annot_type, const std::string& uuid);
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

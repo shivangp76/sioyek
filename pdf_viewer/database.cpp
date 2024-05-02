@@ -2497,3 +2497,12 @@ bool DatabaseManager::is_document_synced(const std::string& checksum) {
 
     return is_synced;
 }
+
+std::string DatabaseManager::get_table_name_for_annot_type(const std::string& annot_type) {
+    if (annot_type == "highlight") return "highlights";
+    if (annot_type == "bookmark") return "bookmarks";
+    if (annot_type == "portal") return "links";
+
+    return "";
+
+}
