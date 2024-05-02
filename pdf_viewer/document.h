@@ -251,9 +251,12 @@ public:
     std::vector<Portal> get_sorted_portals() const;
     const std::vector<Highlight>& get_highlights() const;
     int get_highlight_index_with_uuid(std::string uuid);
+    //int get_annot_index_with_uuid(const std::string& annot_type, const std::string& uuid);
     int get_bookmark_index_with_uuid(std::string uuid);
     const std::vector<Highlight> get_highlights_of_type(char type) const;
     const std::vector<Highlight> get_highlights_sorted(char type = 0) const;
+
+    const Annotation* get_annot_with_uuid(const std::string& annot_type, const std::string& uuid);
 
     std::optional<Highlight> get_next_highlight(float abs_y, char type = 0, int offset = 0) const;
     std::optional<Highlight> get_prev_highlight(float abs_y, char type = 0, int offset = 0) const;

@@ -1131,8 +1131,8 @@ public:
     void on_portal_deleted(const std::string& uuid);
     void on_portal_edited(const std::string& uuid);
     void on_open_document(const std::wstring& path);
-    void sync_edited_highlight(const std::string& uuid);
-    void sync_deleted_highlight(const std::string& uuid);
+    void sync_edited_annot(const std::string& annot_type, const std::string& uuid);
+    void sync_deleted_annot(const std::string& annot_type, const std::string& uuid);
 
     void handle_sync_open_document();
 

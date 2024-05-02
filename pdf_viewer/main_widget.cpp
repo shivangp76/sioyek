@@ -25,7 +25,8 @@
 // make sure deleteLater is called on all network requests
 // when uploading the unsynced deletions, we should upload the unsynced deletions of all documents not just the current document
 // create a worker thread in SioyekNetworkManager to handle longer-lasting operations asynchronously
-// todo: maybe change from_json methods in annotations into a static method
+// maybe change from_json methods in annotations into a static method
+// allow resizing bookmarks
 
 #include <iostream>
 #include <vector>
@@ -8680,6 +8681,7 @@ void MainWidget::handle_bookmark_move_finish() {
     int index = visible_object_move_data->index.index;
     BookMark& bm = doc()->get_bookmarks()[index];
     doc()->update_bookmark_position(index, { bm.begin_x, bm.begin_y }, { bm.end_x, bm.end_y });
+    on_bookmark_edited(bm.uuid);
 }
 
 void MainWidget::handle_portal_move_finish() {
@@ -11597,30 +11599,31 @@ void MainWidget::on_bookmark_deleted(const std::string& uuid) {
     if (delete_bookmark_hook_function_name) {
         call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
     }
+    sync_deleted_annot("bookmark", uuid);
 }
 
 void MainWidget::on_highlight_deleted(const std::string& uuid){
     if (delete_highlight_hook_function_name) {
         call_async_js_function_with_args(delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
     }
-    sync_deleted_highlight(uuid);
+    sync_deleted_annot("highlight", uuid);
 }
 
-void MainWidget::sync_deleted_highlight(const std::string& uuid) {
+void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::string& uuid) {
     if (is_current_document_available_on_server()) {
         auto checksum = doc()->get_checksum_fast();
         if (checksum) {
             sioyek_network_manager->delete_annot(
                 this,
                 QString::fromStdString(checksum.value()),
-                "highlight",
+                QString::fromStdString(annot_type),
                 QString::fromStdString(uuid),
                 [this, uuid, checksum]() { // on success
                     //db_manager->set_highlight_uuid_to_synced(uuid);
 
                 },
-                [this, uuid, checksum]() { // on fail
-                    db_manager->insert_unsynced_deletion("highlight", uuid, checksum.value());
+                [this, uuid, checksum, annot_type]() { // on fail
+                    db_manager->insert_unsynced_deletion(annot_type, uuid, checksum.value());
                 }
             );
         }
@@ -11652,7 +11655,10 @@ void MainWidget::delete_current_document_highlight(Highlight* hl) {
 }
 
 void MainWidget::on_bookmark_edited(const std::string& uuid) {
-    call_js_function_with_bookmark_arg_with_uuid(edit_bookmark_hook_function_name.value(), uuid);
+    if (edit_bookmark_hook_function_name) {
+        call_js_function_with_bookmark_arg_with_uuid(edit_bookmark_hook_function_name.value(), uuid);
+    }
+    sync_edited_annot("bookmark", uuid);
 }
 
 //void MainWidget::call_js_function_with_args(const QString& function_name) {
@@ -11782,26 +11788,25 @@ void MainWidget::on_highlight_annotation_edited(const std::string& uuid) {
     if (highlight_annotation_changed_hook_function_name) {
         call_js_function_with_highlight_arg_with_uuid(highlight_annotation_changed_hook_function_name.value(), uuid);
     }
-    sync_edited_highlight(uuid);
+    sync_edited_annot("highlight", uuid);
 }
 
 void MainWidget::on_highlight_type_edited(const std::string& uuid) {
     if (highlight_type_changed_hook_function_name) {
         call_js_function_with_highlight_arg_with_uuid(highlight_type_changed_hook_function_name.value(), uuid);
     }
-    sync_edited_highlight(uuid);
+    sync_edited_annot("highlight", uuid);
 }
 
-void MainWidget::sync_edited_highlight(const std::string& uuid) {
+void MainWidget::sync_edited_annot(const std::string& annot_type, const std::string& uuid) {
     if (is_current_document_available_on_server()) {
-        int index = doc()->get_highlight_index_with_uuid(uuid);
-        if (index >= 0) {
+        const Annotation* annot = doc()->get_annot_with_uuid(annot_type, uuid);
+        if (annot) {
             std::optional<std::string> doc_checksum = doc()->get_checksum_fast();
-            const Highlight& hl = doc()->get_highlights()[index];
             if (doc_checksum.has_value()) {
                 sioyek_network_manager->upload_annot(this,
                     QString::fromStdString(doc_checksum.value()),
-                    hl,
+                    *annot,
                     []() {},
                     []() {}
                 );

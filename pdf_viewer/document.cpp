@@ -3945,6 +3945,23 @@ void Document::get_page_freehand_drawings_with_indices(int page, const std::vect
     }
     //return results;
 }
+
+const Annotation* Document::get_annot_with_uuid(const std::string& annot_type, const std::string& uuid){
+
+    if (annot_type == "highlight") {
+        int index = get_highlight_index_with_uuid(uuid);
+        if (index >= 0) return &highlights[index];
+        return {};
+    }
+    if (annot_type == "bookmark") {
+        int index = get_bookmark_index_with_uuid(uuid);
+        if (index >= 0) return &bookmarks[index];
+        return {};
+    }
+
+    return nullptr;
+}
+
 int Document::get_highlight_index_with_uuid(std::string uuid) {
     for (int i = 0; i < highlights.size(); i++) {
         if (highlights[i].uuid == uuid) {
