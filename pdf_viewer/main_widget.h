@@ -534,6 +534,7 @@ public:
     void execute_command(std::wstring command, std::wstring text = L"", bool wait = false);
     //QString get_status_stylesheet();
     void smart_jump_under_pos(WindowPos pos);
+    void open_overview_to_document(Document* document, float offset_y);
     bool overview_under_pos(WindowPos pos);
     void visual_mark_under_pos(WindowPos pos);
     bool is_network_manager_running(bool* is_downloading = nullptr);

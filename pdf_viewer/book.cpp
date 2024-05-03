@@ -69,20 +69,28 @@ std::vector<std::pair<std::string, QVariant>> Annotation::to_tuples() {
 }
 
 QDateTime Annotation::get_creation_datetime() const {
-    return QDateTime::fromString(QString::fromStdString(creation_time), "yyyy-MM-dd HH:mm:ss");
+    //return QDateTime::fromString(QString::fromStdString(creation_time), "yyyy-MM-dd HH:mm:ss");
+    QDateTime res = QDateTime::fromString(QString::fromStdString(creation_time), Qt::ISODate);
+    res.setTimeSpec(Qt::UTC);
+    return res;
 }
 
 QDateTime Annotation::get_modification_datetime() const {
-    return QDateTime::fromString(QString::fromStdString(modification_time), "yyyy-MM-dd HH:mm:ss");
+    //return QDateTime::fromString(QString::fromStdString(modification_time), "yyyy-MM-dd HH:mm:ss");
+    QDateTime res = QDateTime::fromString(QString::fromStdString(modification_time), Qt::ISODate);
+    res.setTimeSpec(Qt::UTC);
+    return res;
 }
 
 void Annotation::update_creation_time() {
-    creation_time = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss").toStdString();
+    //creation_time = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss").toStdString();
+    creation_time = QDateTime::currentDateTime().toUTC().toString(Qt::ISODate).toStdString();
     update_modification_time();
 }
 
 void Annotation::update_modification_time() {
-    modification_time = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss").toStdString();
+    //modification_time = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss").toStdString();
+    modification_time = QDateTime::currentDateTime().toUTC().toString(Qt::ISODate).toStdString();
 }
 
 void Mark::from_json(const QJsonObject& json_object)

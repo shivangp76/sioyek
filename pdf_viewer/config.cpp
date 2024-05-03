@@ -52,6 +52,8 @@ bool AUTO_LOGIN_ON_STARTUP = false;
 bool AUTO_LOGIN_ON_STARTUP = true;
 #endif
 
+bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS = true;
+
 std::wstring SEARCH_URLS[26];
 std::wstring EXECUTE_COMMANDS[26];
 std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
@@ -1016,6 +1018,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"debug_mode", &DEBUG);
     add_bool(L"initial_snapped_dragging", &SNAP_DRAGGING);
     add_bool(L"auto_login_on_startup", &AUTO_LOGIN_ON_STARTUP);
+    add_bool(L"automatically_upload_portal_destination_for_synced_documents", &AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_string(L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);

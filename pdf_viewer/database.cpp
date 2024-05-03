@@ -876,12 +876,12 @@ bool DatabaseManager::insert_bookmark_synced(const std::string& document_path, c
         << bm.color[2] << ", "
         << bm.font_size << ", '"
         << bm.font_face << "', '"
-        << esc(bm.uuid) << "', '" << esc(bm.creation_time) << "', " << esc(bm.modification_time) << ", 1);";
+        << esc(bm.uuid) << "', '" << esc(bm.creation_time) << "', '" << esc(bm.modification_time) << "', 1);";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
     return handle_error(
-        "insert_bookmark_freetext",
+        "insert_bookmark_synced",
         error_code,
         error_message);
 }
@@ -977,7 +977,7 @@ bool DatabaseManager::insert_highlight_synced(const std::string& document_path,
         hl.selection_begin.y << " , " <<
         hl.selection_end.x << " , " <<
         hl.selection_end.y << ", '" <<
-        esc(hl.uuid) << "', '" << esc(hl.creation_time) << "', " << esc(hl.modification_time) << ", 1);";
+        esc(hl.uuid) << "', '" << esc(hl.creation_time) << "', '" << esc(hl.modification_time) << "', 1);";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);

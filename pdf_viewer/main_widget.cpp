@@ -28,6 +28,7 @@
 // maybe change from_json methods in annotations into a static method
 // allow resizing bookmarks
 // network manager should have direct access to db_manager so it doesn't have to go through MainWidget
+// add a worker thread to db_manager to handle updates asynchronously
 
 #include <iostream>
 #include <vector>
@@ -304,6 +305,7 @@ extern bool PAPER_DOWNLOAD_CREATE_PORTAL;
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool USE_KEYBOARD_POINT_SELECTION;
 
+extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;
 extern bool TOUCH_MODE;
 
@@ -2100,6 +2102,7 @@ void MainWidget::update_link_with_opened_book_state(Portal lnk, const OpenedBook
     lnk.dst.book_state = new_state;
 
     if (link_owner) {
+        // todo: this is slow, we should make db_manager updates asyncronous to speed this up
         link_owner->update_portal(lnk);
     }
 
@@ -2943,7 +2946,16 @@ void MainWidget::handle_click(WindowPos click_pos) {
         Portal portal = doc()->get_portals()[selected_portal_index];
 
         push_state();
-        open_document(portal.dst);
+        if (document_manager->get_document_with_checksum(portal.dst.document_checksum)) {
+            open_document(portal.dst);
+        }
+        else if (sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
+            sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal.dst.document_checksum), [this, portal](QString path) {
+    //void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
+                open_document(path.toStdWString(), &is_render_invalidated, false, portal.dst.book_state);
+                });
+        }
+
 
         return;
     }
@@ -3623,6 +3635,15 @@ void MainWidget::visual_mark_under_pos(WindowPos pos) {
     }
 }
 
+void MainWidget::open_overview_to_document(Document* dst_doc, float offset_y) {
+    dst_doc->open(&is_render_invalidated, true);
+    dst_doc->load_page_dimensions(true);
+    OverviewState overview;
+    overview.doc = dst_doc;
+    overview.absolute_offset_y = offset_y;
+    overview.overview_type = "portal";
+    set_overview_page(overview, true);
+}
 
 bool MainWidget::overview_under_pos(WindowPos pos) {
 
@@ -3635,19 +3656,24 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
     if (portal) {
         Document* dst_doc = document_manager->get_document_with_checksum(portal.value().dst.document_checksum);
         if (dst_doc) {
-            dst_doc->open(&is_render_invalidated, true);
-
-            dst_doc->load_page_dimensions(true);
             selected_portal_index = portal_index;
-            if (dst_doc) {
-                OverviewState overview;
-                overview.doc = dst_doc;
-                overview.absolute_offset_y = portal.value().dst.book_state.offset_y;
-                overview.overview_type = "portal";
-                set_overview_page(overview, true);
-                invalidate_render();
-                return true;
-            }
+
+            open_overview_to_document(dst_doc, portal.value().dst.book_state.offset_y);
+
+            invalidate_render();
+            return true;
+        }
+        else if (sioyek_network_manager->is_checksum_available_on_server(portal->dst.document_checksum)) { // check if the document is available on server
+            sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal->dst.document_checksum),
+                [this, portal_index, portal_v=portal.value()](QString path) {
+                Document* downloaded_dst_doc = document_manager->get_document(path.toStdWString());
+                if (downloaded_dst_doc) {
+                    selected_portal_index = portal_index;
+                    open_overview_to_document(downloaded_dst_doc, portal_v.dst.book_state.offset_y);
+                    invalidate_render();
+                }
+                });
+            return true;
         }
 
     }
@@ -6330,6 +6356,8 @@ void MainWidget::sync_annotations_with_server() {
                         if (has_changed(local_annot, server_annot)) {
                             QDateTime local_modification_time = QDateTime::fromString(QString::fromStdString(local_annot.modification_time), Qt::ISODate);
                             QDateTime server_modification_time = QDateTime::fromString(QString::fromStdString(server_annot.modification_time), Qt::ISODate);
+                            local_modification_time.setTimeSpec(Qt::UTC);
+                            server_modification_time.setTimeSpec(Qt::UTC);
                             if (server_modification_time > local_modification_time) {
                                 // server is the authority
                                 db_manager->update_annot_with_server_annot(&server_annot);
@@ -7362,7 +7390,12 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-
+    //QDateTime now = QDateTime::currentDateTime().toUTC();
+    //QDateTime reborn = QDateTime::fromString(now.toString(Qt::ISODate), Qt::ISODate);
+    //reborn.setTimeSpec(Qt::UTC);
+    //qDebug() << now.toString(Qt::ISODate);
+    //qDebug() << reborn.toString(Qt::ISODate);
+    //qDebug() << now.secsTo(reborn);
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -11731,6 +11764,23 @@ void MainWidget::on_new_portal_added(const std::string& uuid) {
         call_js_function_with_portal_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
     }
     sync_newly_added_annot("portal", uuid);
+    if (AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS) {
+        int portal_index = doc()->get_portal_index_with_uuid(uuid);
+        if (portal_index >= 0) {
+            Portal& portal = doc()->get_portals()[portal_index];
+            if (!sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
+                std::optional<std::wstring> document_path = document_manager->get_path_from_hash(portal.dst.document_checksum);
+                if (document_path) {
+                    sioyek_network_manager->upload_file(
+                        this,
+                        QString::fromStdWString(document_path.value()),
+                        QString::fromStdString(portal.dst.document_checksum), [this]() {
+                            sioyek_network_manager->update_user_files_hash_set();
+                        });
+                }
+            }
+        }
+    }
 
     doc()->update_last_local_edit_time();
 }
@@ -11748,6 +11798,7 @@ void MainWidget::on_portal_edited(const std::string& uuid) {
         call_async_js_function_with_args(edit_portal_hook_function_name.value(),
             QJsonArray() << QString::fromStdString(uuid));
     }
+    qDebug() << "on portal edited called";
 }
 
 void MainWidget::on_mark_added(const std::string& uuid, char type) {
@@ -12354,6 +12405,7 @@ void SioyekNetworkManager::update_user_files_hash_set() {
             auto json_reply_ = get_network_json_reply(reply);
             if (json_reply_) {
                 QJsonObject json_object = json_reply_->object();
+                SERVER_HASHES.clear();
                 for (auto server_hash : json_object["results"].toArray()) {
                     SERVER_HASHES.insert(server_hash.toString().toStdString());
                 }
