@@ -11800,7 +11800,7 @@ void MainWidget::on_portal_edited(const std::string& uuid) {
         call_async_js_function_with_args(edit_portal_hook_function_name.value(),
             QJsonArray() << QString::fromStdString(uuid));
     }
-    qDebug() << "on portal edited called";
+    sync_edited_annot("portal", uuid);
 }
 
 void MainWidget::on_mark_added(const std::string& uuid, char type) {
