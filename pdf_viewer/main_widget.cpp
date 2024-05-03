@@ -27,6 +27,7 @@
 // create a worker thread in SioyekNetworkManager to handle longer-lasting operations asynchronously
 // maybe change from_json methods in annotations into a static method
 // allow resizing bookmarks
+// network manager should have direct access to db_manager so it doesn't have to go through MainWidget
 
 #include <iostream>
 #include <vector>
@@ -6313,13 +6314,15 @@ void MainWidget::sync_annotations_with_server() {
 
     sioyek_network_manager->perform_unsynced_inserts_and_deletes(this, document_checksum, [&, document_checksum, this]() {
         sioyek_network_manager->get_document_annotations(this, document_checksum,
-        [&, document_checksum](std::vector<Highlight>&& server_highlights, std::vector<BookMark>&& server_bookmarks, std::optional<QDateTime> server_access_time) {
+        [&, document_checksum](std::vector<Highlight>&& server_highlights, std::vector<BookMark>&& server_bookmarks, std::vector<Portal>&& server_portals, std::optional<QDateTime> server_access_time) {
 
                 const std::vector<Highlight>& local_highlights = doc()->get_highlights();
                 const std::vector<BookMark>& local_bookmarks = doc()->get_bookmarks();
+                const std::vector<Portal>& local_portals = doc()->get_portals();
 
                 auto [local_only_highlights, server_only_highlights, intersection_highlights] = decompose_sets(local_highlights, server_highlights);
                 auto [local_only_bookmarks, server_only_bookmarks, intersection_bookmarks] = decompose_sets(local_bookmarks, server_bookmarks);
+                auto [local_only_portals, server_only_portals, intersection_portals] = decompose_sets(local_portals, server_portals);
 
                 auto sync_annot_intersection = [&](auto intersection) {
                     for (const auto& [local_annot, server_annot] : intersection) {
@@ -6348,6 +6351,7 @@ void MainWidget::sync_annotations_with_server() {
 
                 sync_annot_intersection(intersection_highlights);
                 sync_annot_intersection(intersection_bookmarks);
+                sync_annot_intersection(intersection_portals);
 
 
                 //// todo: this should be batched
@@ -6361,6 +6365,10 @@ void MainWidget::sync_annotations_with_server() {
                     doc()->delete_bookmark_with_uuid(local_bookmark.uuid, true);
                 }
 
+                for (const auto& local_portal : local_only_portals) {
+                    doc()->delete_portal_with_uuid(local_portal.uuid, true);
+                }
+
                 // todo: this should be batched
                 for (const auto& server_highlight : server_only_highlights) {
                     doc()->add_highlight_with_existing_uuid(server_highlight);
@@ -6368,6 +6376,10 @@ void MainWidget::sync_annotations_with_server() {
 
                 for (const auto& server_bookmark : server_only_bookmarks) {
                     doc()->add_bookmark_with_existing_uuid(server_bookmark);
+                }
+
+                for (const auto& server_portal : server_only_portals) {
+                    doc()->add_portal_with_existing_uuid(server_portal);
                 }
 
                 invalidate_render();
@@ -7350,6 +7362,11 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+
+    auto bookmarks = doc()->get_bookmarks();
+    for (const auto& bookmark : bookmarks) {
+        qDebug() << "is synced : " << bookmark.is_synced;
+    }
 
     //std::vector<std::string> uuids;
     //for (auto& hl : doc()->get_highlights()) {
@@ -11733,6 +11750,9 @@ void MainWidget::on_new_portal_added(const std::string& uuid) {
     if (add_portal_hook_function_name) {
         call_js_function_with_portal_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
     }
+    sync_newly_added_annot("portal", uuid);
+
+    doc()->update_last_local_edit_time();
 }
 
 void MainWidget::on_portal_deleted(const std::string& uuid) {
@@ -11776,7 +11796,17 @@ void MainWidget::sync_newly_added_annot(const std::string& annot_type, const std
                 [&, uuid, this, annot_type]() { // on success
                     //db_manager->set_highlight_uuid_to_synced(uuid);
                     std::string table_name = db_manager->get_table_name_for_annot_type(annot_type);
-                    db_manager->set_annot_uuids_to_synced(table_name, {uuid});
+                    std::vector<std::string> uuids = { uuid };
+                    if (annot_type == "highlight") {
+                        doc()->set_annots_to_synced<Highlight>(uuids);
+                    }
+                    else if (annot_type == "bookmark") {
+                        doc()->set_annots_to_synced<BookMark>(uuids);
+                    }
+                    else if (annot_type == "portal") {
+                        doc()->set_annots_to_synced<Portal>(uuids);
+                    }
+                    //db_manager->set_annot_uuids_to_synced(table_name, {uuid});
                 },
                 [&, uuid, this]() { // on failure
                 }
@@ -12810,6 +12840,7 @@ void SioyekNetworkManager::upload_annot(
     QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_success=std::move(on_success), on_fail=std::move(on_fail)]() {
         reply->deleteLater();
+        qDebug() << "reply: " << reply->readAll();
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status_code == 200) {
             on_success();
@@ -12875,7 +12906,7 @@ void SioyekNetworkManager::delete_annot(QObject* parent, const QString& file_che
         });
 }
 
-void SioyekNetworkManager::get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::optional<QDateTime>)> fn){
+void SioyekNetworkManager::get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime>)> fn){
     QUrl url(QString::fromStdWString(SIOYEK_GET_DOCUMENT_ANNOTATIONS_URL));
     QUrlQuery params;
     params.addQueryItem("file_checksum", document_checksum);
@@ -12901,9 +12932,11 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
 
             QJsonArray json_highlights = result_object["highlights"].toArray();
             QJsonArray json_bookmarks = result_object["bookmarks"].toArray();
+            QJsonArray json_portals = result_object["portals"].toArray();
 
             std::vector<Highlight> res_highlights;
             std::vector<BookMark> res_bookmarks;
+            std::vector<Portal> res_portals;
 
             for (int i = 0; i < json_highlights.size(); i++) {
                 QJsonObject json_highlight = json_highlights[i].toObject();
@@ -12920,7 +12953,15 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
                 res_bookmarks.push_back(bookmark);
             }
 
-            fn(std::move(res_highlights), std::move(res_bookmarks), last_access_time);
+            for (int i = 0; i < json_portals.size(); i++) {
+                QJsonObject json_portal = json_portals[i].toObject();
+
+                Portal portal;
+                portal.from_json(json_portal);
+                res_portals.push_back(portal);
+            }
+
+            fn(std::move(res_highlights), std::move(res_bookmarks), std::move(res_portals), last_access_time);
 
         }
 
@@ -12929,39 +12970,58 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
 
 void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* parent, const QString& checksum, std::function<void()> on_done) {
     std::vector<std::pair<std::wstring, std::wstring>> unsynced_deletes;
-    std::vector<std::string> unsynced_highlight_insert_uuids;
-    std::unordered_set<std::string> unsynced_highlight_uuids_set;
-    std::vector<std::string> unsynced_bookmark_insert_uuids;
-    std::unordered_set<std::string> unsynced_bookmark_uuids_set;
 
-    std::vector<Highlight> unsycned_highlights;
-    std::vector<BookMark> unsynced_bookmarks;
+    //std::vector<std::string> unsynced_highlight_insert_uuids;
+    //std::unordered_set<std::string> unsynced_highlight_uuids_set;
+    //std::vector<std::string> unsynced_bookmark_insert_uuids;
+    //std::unordered_set<std::string> unsynced_bookmark_uuids_set;
+
+    //std::vector<std::string> unsynced_portal_insert_uuids;
+    //std::unordered_set<std::string> unsynced_portal_uuids_set;
+
+    //std::vector<Highlight> unsycned_highlights;
+    //std::vector<BookMark> unsynced_bookmarks;
+    //std::vector<BookMark> unsynced_portals;
+
+
+    //auto get_unsynced_uuids = [&](const std::string& table_name) -> std::pair<std::vector<std::string>, std::unordered_set<std::string>> {
+    //    std::vector<std::string> res_vector;
+    //    std::unordered_set<std::string> res_set;
+
+    //    parent->db_manager->get_document_unsynced_table_uuids(table_name, checksum.toStdString(), res_vector);
+    //    for (auto& uuid : res_vector) {
+    //        res_set.insert(uuid);
+    //    }
+    //    return std::make_pair(res_vector, res_set);
+
+    //    };
+
+    //auto [unsynced_highlight_insert_uuids, unsynced_highlight_uuids_set] = get_unsynced_uuids("highlights");
+    //auto [unsynced_bookmark_insert_uuids, unsynced_bookmark_uuids_set] = get_unsynced_uuids("bookmarks");
+    //auto [unsynced_portal_insert_uuids, unsynced_portal_uuids_set] = get_unsynced_uuids("portals");
+
+    //for (auto& hl : parent->doc()->get_highlights()) {
+    //    if (unsynced_highlight_uuids_set.find(hl.uuid) != unsynced_highlight_uuids_set.end()) {
+    //        unsycned_highlights.push_back(hl);
+    //    }
+    //}
+
+    //for (auto& bm : parent->doc()->get_bookmarks()) {
+    //    if (unsynced_bookmark_uuids_set.find(bm.uuid) != unsynced_bookmark_uuids_set.end()) {
+    //        unsynced_bookmarks.push_back(bm);
+    //    }
+    //}
 
     parent->db_manager->get_all_unsynced_deletions(checksum.toStdString(), unsynced_deletes);
 
-    parent->db_manager->get_document_unsynced_highlight_uuids(checksum.toStdString(), unsynced_highlight_insert_uuids);
-    for (auto& uuid : unsynced_highlight_insert_uuids) {
-        unsynced_highlight_uuids_set.insert(uuid);
-    }
+    std::vector<Highlight> unsynced_highlights = parent->doc()->get_unsynced_annots<Highlight>();
+    std::vector<BookMark> unsynced_bookmarks = parent->doc()->get_unsynced_annots<BookMark>();
+    std::vector<Portal> unsynced_portals = parent->doc()->get_unsynced_annots<Portal>();
+    std::vector<std::string> unsynced_highlight_uuids = get_uuids(unsynced_highlights);
+    std::vector<std::string> unsynced_bookmark_uuids = get_uuids(unsynced_bookmarks);
+    std::vector<std::string> unsynced_portal_uuids = get_uuids(unsynced_portals);
 
-    parent->db_manager->get_document_unsynced_bookmark_uuids(checksum.toStdString(), unsynced_bookmark_insert_uuids);
-    for (auto& uuid : unsynced_bookmark_insert_uuids) {
-        unsynced_bookmark_uuids_set.insert(uuid);
-    }
-
-    for (auto& hl : parent->doc()->get_highlights()) {
-        if (unsynced_highlight_uuids_set.find(hl.uuid) != unsynced_highlight_uuids_set.end()) {
-            unsycned_highlights.push_back(hl);
-        }
-    }
-
-    for (auto& bm : parent->doc()->get_bookmarks()) {
-        if (unsynced_bookmark_uuids_set.find(bm.uuid) != unsynced_bookmark_uuids_set.end()) {
-            unsynced_bookmarks.push_back(bm);
-        }
-    }
-
-    if (unsynced_deletes.size() == 0 && unsycned_highlights.size() == 0 && unsynced_bookmarks.size() == 0) {
+    if (unsynced_deletes.size() == 0 && unsynced_highlights.size() == 0 && unsynced_bookmarks.size() == 0 && unsynced_portals.size() == 0) {
         on_done();
     }
     else {
@@ -12980,7 +13040,9 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* pare
 
         QJsonArray highlights_array;
         QJsonArray bookmarks_array;
-        for (auto& hl : unsycned_highlights) {
+        QJsonArray portals_array;
+
+        for (auto& hl : unsynced_highlights) {
             highlights_array.append(hl.to_json(checksum.toStdString()));
         }
 
@@ -12988,10 +13050,15 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* pare
             bookmarks_array.append(bm.to_json(checksum.toStdString()));
         }
 
+        for (auto& portal : unsynced_portals) {
+            portals_array.append(portal.to_json(checksum.toStdString()));
+        }
+
         QJsonObject obj;
         obj["unsynced_deletes"] = deletes_array;
         obj["highlights"] = highlights_array;
         obj["bookmarks"] = bookmarks_array;
+        obj["portals"] = portals_array;
         obj["file_checksum"] = checksum;
 
         QJsonDocument json_doc(obj);
@@ -13000,13 +13067,25 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* pare
         authorize_request(&req);
 
         QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
-        QObject::connect(reply, &QNetworkReply::finished, [this, checksum, unsynced_highlight_insert_uuids, unsynced_bookmark_insert_uuids, parent, reply, on_done=std::move(on_done)]() {
+        QObject::connect(reply, &QNetworkReply::finished, [
+                this,
+                checksum,
+                unsynced_highlight_uuids = std::move(unsynced_highlight_uuids),
+                unsynced_bookmark_uuids = std::move(unsynced_bookmark_uuids),
+                unsynced_portal_uuids = std::move(unsynced_portal_uuids),
+                parent,
+                reply, on_done = std::move(on_done)
+        ]() {
             reply->deleteLater();
+            qDebug() << reply->readAll();
             int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (status_code == 200) {
                 parent->db_manager->clear_unsynced_deletions(checksum.toStdString());
-                parent->db_manager->set_annot_uuids_to_synced("highlights", unsynced_highlight_insert_uuids);
-                parent->db_manager->set_annot_uuids_to_synced("bookmarks", unsynced_bookmark_insert_uuids);
+                parent->doc()->set_annots_to_synced<Highlight>(unsynced_highlight_uuids);
+                parent->doc()->set_annots_to_synced<BookMark>(unsynced_bookmark_uuids);
+                parent->doc()->set_annots_to_synced<Portal>(unsynced_portal_uuids);
+                //parent->db_manager->set_annot_uuids_to_synced("highlights", unsynced_highlight_uuids);
+                //parent->db_manager->set_annot_uuids_to_synced("bookmarks", unsynced_bookmark_uuids);
                 //parent->db_manager->
                 //parent->db_manager->clear_unsynced_additions(checksum.toStdString());
             }
@@ -13021,6 +13100,9 @@ const std::wstring& SioyekNetworkManager::get_url_for_annot_upload(const Annotat
     }
     if (dynamic_cast<const BookMark*>(annot)) {
         return SIOYEK_ADD_BOOKMARK_URL;
+    }
+    if (dynamic_cast<const Portal*>(annot)) {
+        return SIOYEK_ADD_PORTAL_URL;
     }
 
     return L"";

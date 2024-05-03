@@ -22,6 +22,8 @@
 
 #include "book.h"
 #include "coordinates.h"
+#include "database.h"
+#include "utils.h"
 
 class CachedChecksummer;
 class DatabaseManager;
@@ -194,6 +196,7 @@ public:
     void add_freetext_bookmark_with_color(const std::wstring& desc, AbsoluteRect absrect, float* color, float font_size = -1);
     std::string add_highlight_with_existing_uuid(const Highlight& highlight);
     std::string add_bookmark_with_existing_uuid(const BookMark& bookmark);
+    std::string add_portal_with_existing_uuid(const Portal& portal);
     std::string add_highlight(const std::wstring& desc, const std::vector<AbsoluteRect>& highlight_rects, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string add_highlight(const std::wstring& annot, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string delete_highlight_with_index(int index);
@@ -244,7 +247,7 @@ public:
     void delete_bookmark(int index);
     std::string delete_closest_portal(float to_offset_y);
     int get_portal_index_with_uuid(const std::string& uuid);
-    void delete_portal_with_uuid(const std::string& uuid);
+    void delete_portal_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     std::vector<BookMark>& get_bookmarks();
     std::vector<Portal>& get_portals();
     std::vector<BookMark> get_sorted_bookmarks() const;
@@ -449,6 +452,75 @@ public:
     QJsonArray get_marks_json();
 
     std::wstring get_detected_paper_name_if_exists();
+
+    template <typename T>
+    const std::vector<T>& get_annots() = delete;
+
+    template <>
+    const std::vector<Highlight>& get_annots<Highlight>() {
+        return get_highlights();
+    }
+
+    template <>
+    const std::vector<BookMark>& get_annots<BookMark>() {
+        return get_bookmarks();
+    }
+
+    template <>
+    const std::vector<Portal>& get_annots<Portal>() {
+        return get_portals();
+    }
+
+    template <typename T>
+    std::vector<T>& get_annots_mut() = delete;
+
+    template <>
+    std::vector<Highlight>& get_annots_mut<Highlight>() {
+        return highlights;
+    }
+
+    template <>
+    std::vector<BookMark>& get_annots_mut<BookMark>() {
+        return bookmarks;
+    }
+
+    template <>
+    std::vector<Portal>& get_annots_mut<Portal>() {
+        return portals;
+    }
+
+    template <typename T>
+    std::vector<T> get_unsynced_annots() {
+        auto all_annots = get_annots<T>();
+        std::vector<T> res;
+        for (auto& annot : all_annots) {
+            if (!annot.is_synced) {
+                res.push_back(annot);
+            }
+        }
+        return res;
+    }
+
+    template<typename T>
+    void set_annots_to_synced(std::vector<std::string> uuids) {
+        std::sort(uuids.begin(), uuids.end());
+
+        auto& annots = get_annots_mut<T>();
+        std::vector<int> unsynced_indices;
+        for (int i = 0; i < annots.size(); i++) {
+            auto& annot = annots[i];
+            if (!annot.is_synced) {
+                unsynced_indices.push_back(i);
+            }
+        }
+        for (auto index : unsynced_indices) {
+            if (std::binary_search(uuids.begin(), uuids.end(), annots[index].uuid)) {
+                annots[index].is_synced = true;
+            }
+        }
+        this->db_manager->set_annot_uuids_to_synced_(T::TABLE_NAME, uuids);
+
+    }
 
     friend class DocumentManager;
 };

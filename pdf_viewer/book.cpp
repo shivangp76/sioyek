@@ -297,6 +297,19 @@ bool are_same(const BookMark& lhs, const BookMark& rhs) {
     return are_same(lhs.begin_x, rhs.begin_x) && are_same(lhs.begin_y, rhs.begin_y) && are_same(lhs.end_x, rhs.end_x) && are_same(lhs.end_y, rhs.end_y);
 }
 
+bool has_changed(const Portal& lhs, const Portal& rhs) {
+    if (
+        lhs.src_offset_x != rhs.src_offset_x ||
+        lhs.src_offset_y != rhs.src_offset_y ||
+        lhs.dst.book_state.offset_x != rhs.dst.book_state.offset_x ||
+        lhs.dst.book_state.offset_y != rhs.dst.book_state.offset_y ||
+        lhs.dst.book_state.zoom_level != rhs.dst.book_state.zoom_level
+        ) {
+        return true;
+    }
+    return false;
+}
+
 bool has_changed(const Highlight& lhs, const Highlight& rhs){
     if (lhs.modification_time == rhs.modification_time) {
         return false;

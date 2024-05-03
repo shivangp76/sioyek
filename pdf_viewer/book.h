@@ -94,6 +94,8 @@ struct Annotation {
     Lower case marks are local to the document and upper case marks are global.
 */
 struct Mark : Annotation {
+    static inline const std::string TABLE_NAME = "marks";
+
     float y_offset;
     char symbol;
     std::optional<float> x_offset = {};
@@ -108,6 +110,8 @@ struct Mark : Annotation {
     A bookmark is similar to mark but instead of being indexed by a symbol, it has a description.
 */
 struct BookMark : Annotation {
+    static inline const std::string TABLE_NAME = "bookmarks";
+
     float y_offset_ = -1;
     std::wstring description;
 
@@ -137,6 +141,8 @@ struct BookMark : Annotation {
 };
 
 struct Highlight : Annotation {
+    static inline const std::string TABLE_NAME = "highlights";
+
     AbsoluteDocumentPos selection_begin;
     AbsoluteDocumentPos selection_end;
     std::wstring description;
@@ -257,6 +263,8 @@ struct OverviewTouchMoveData {
     Note that this is different from PdfLink which is the built-in link functionality in PDF file format.
 */
 struct Portal : Annotation {
+    static inline const std::string TABLE_NAME = "links";
+
     static Portal with_src_offset(float src_offset);
 
     PortalViewState dst;
@@ -377,6 +385,7 @@ bool are_same(const Highlight& lhs, const Highlight& rhs);
 
 bool has_changed(const BookMark& lhs, const BookMark& rhs);
 bool has_changed(const Highlight& lhs, const Highlight& rhs);
+bool has_changed(const Portal& lhs, const Portal& rhs);
 
 struct PdfLinkTextInfo {
     std::wstring link_text = L"";

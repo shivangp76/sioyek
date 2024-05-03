@@ -609,3 +609,12 @@ DecomposeSetResult<T> decompose_sets(const std::vector<T>& A, const std::vector<
     return res;
 
 }
+
+template<typename T>
+std::vector<std::string> get_uuids(const std::vector<T>& annots) {
+    std::vector<std::string> res;
+    for (auto& annot : annots) {
+        res.push_back(annot.uuid);
+    }
+    return res;
+}

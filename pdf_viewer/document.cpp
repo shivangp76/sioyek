@@ -338,16 +338,7 @@ std::string Document::add_highlight(const std::wstring& annot, AbsoluteDocumentP
 }
 
 std::string Document::add_highlight_with_existing_uuid(const Highlight& highlight) {
-    db_manager->insert_highlight_with_annotation_synced(
-        get_checksum(),
-        highlight.description,
-        highlight.text_annot,
-        highlight.selection_begin.x,
-        highlight.selection_begin.y,
-        highlight.selection_end.x,
-        highlight.selection_end.y,
-        highlight.type,
-        utf8_decode(highlight.uuid));
+    db_manager->insert_highlight_synced(get_checksum(), highlight);
     highlights.push_back(highlight);
     fill_index_highlight_rects(highlights.size()-1);
     is_annotations_dirty = true;
@@ -363,6 +354,17 @@ std::string Document::add_bookmark_with_existing_uuid(const BookMark& bookmark) 
     bookmarks.push_back(bookmark);
     is_annotations_dirty = true;
     return bookmark.uuid;
+}
+
+std::string Document::add_portal_with_existing_uuid(const Portal& portal) {
+    db_manager->insert_portal_synced(
+        get_checksum(),
+        portal
+        );
+
+    portals.push_back(portal);
+    is_annotations_dirty = true;
+    return portal.uuid;
 }
 
 std::string Document::add_highlight(const std::wstring& desc,
@@ -593,8 +595,13 @@ int Document::get_portal_index_with_uuid(const std::string& uuid) {
     return -1;
 }
 
-void Document::delete_portal_with_uuid(const std::string& uuid) {
+void Document::delete_portal_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
     int index = get_portal_index_with_uuid(uuid);
+    if (index < 0) return;
+
+    if (delete_only_if_synced && (index >= 0) && (!portals[index].is_synced)) {
+        return;
+    }
     if (index > -1) {
         db_manager->delete_portal(uuid);
         portals.erase(portals.begin() + index);
@@ -3951,12 +3958,17 @@ const Annotation* Document::get_annot_with_uuid(const std::string& annot_type, c
     if (annot_type == "highlight") {
         int index = get_highlight_index_with_uuid(uuid);
         if (index >= 0) return &highlights[index];
-        return {};
+        return nullptr;
     }
     if (annot_type == "bookmark") {
         int index = get_bookmark_index_with_uuid(uuid);
         if (index >= 0) return &bookmarks[index];
-        return {};
+        return nullptr;
+    }
+    if (annot_type == "portal") {
+        int index = get_portal_index_with_uuid(uuid);
+        if (index >= 0) return &portals[index];
+        return nullptr;
     }
 
     return nullptr;

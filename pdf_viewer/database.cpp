@@ -876,7 +876,29 @@ bool DatabaseManager::insert_bookmark_synced(const std::string& document_path, c
         << bm.color[2] << ", "
         << bm.font_size << ", '"
         << bm.font_face << "', '"
-        << esc(bm.uuid) << "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);";
+        << esc(bm.uuid) << "', '" << esc(bm.creation_time) << "', " << esc(bm.modification_time) << ", 1);";
+    char* error_message = nullptr;
+
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "insert_bookmark_freetext",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::insert_portal_synced(const std::string& document_path, const Portal& portal) {
+
+    std::wstring src_offset_x_string = portal.src_offset_x ? QString::number(portal.src_offset_x.value()).toStdWString() : L"NULL";
+    std::wstringstream ss;
+    ss << "INSERT INTO links (src_document, dst_document, src_offset_x, src_offset_y, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced) VALUES ('"
+        << esc(document_path) << "', '"
+        << esc(portal.dst.document_checksum) << "', "
+        << src_offset_x_string << " , "
+        << portal.src_offset_y << " , "
+        << portal.dst.book_state.offset_x << " , "
+        << portal.dst.book_state.offset_y << ", "
+        << portal.dst.book_state.zoom_level << ", '"
+        << esc(portal.uuid) << "', '" << esc(portal.creation_time) << "', '" << esc(portal.modification_time) << "', 1);";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
@@ -942,27 +964,20 @@ bool DatabaseManager::insert_highlight_with_annotation(const std::string& docume
         error_message);
 }
 
-bool DatabaseManager::insert_highlight_with_annotation_synced(const std::string& document_path,
-    const std::wstring& desc,
-    const std::wstring& annot,
-    float begin_x,
-    float begin_y,
-    float end_x,
-    float end_y,
-    char type,
-    std::wstring uuid) {
+bool DatabaseManager::insert_highlight_synced(const std::string& document_path,
+    const Highlight& hl) {
 
     std::wstringstream ss;
     ss << "INSERT INTO highlights (document_path, desc, text_annot, type, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced) VALUES ('" <<
         esc(document_path) << "', '" <<
-        esc(desc) << "', '" <<
-        esc(annot) << "', '" <<
-        type << "' , " <<
-        begin_x << " , " <<
-        begin_y << " , " <<
-        end_x << " , " <<
-        end_y << ", '" <<
-        esc(uuid) << "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);";
+        esc(hl.description) << "', '" <<
+        esc(hl.text_annot) << "', '" <<
+        hl.type << "' , " <<
+        hl.selection_begin.x << " , " <<
+        hl.selection_begin.y << " , " <<
+        hl.selection_end.x << " , " <<
+        hl.selection_end.y << ", '" <<
+        esc(hl.uuid) << "', '" << esc(hl.creation_time) << "', " << esc(hl.modification_time) << ", 1);";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
@@ -1040,9 +1055,9 @@ bool DatabaseManager::clear_unsynced_deletions(const std::string& checksum) {
 //        error_message);
 //}
 
-bool DatabaseManager::get_document_unsynced_highlight_uuids(const std::string& checksum, std::vector<std::string>& out_uuids) {
+bool DatabaseManager::get_document_unsynced_table_uuids(const std::string& table_name, const std::string& checksum, std::vector<std::string>& out_uuids) {
     std::wstringstream ss;
-    ss << "SELECT uuid FROM highlights WHERE document_path='" << esc(checksum) << "' AND is_synced=0;";
+    ss << "SELECT uuid FROM " << esc(table_name) << " WHERE document_path='" << esc(checksum) << "' AND is_synced=0;";
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), string_select_callback, &out_uuids, &error_message);
     return handle_error(
@@ -1051,16 +1066,17 @@ bool DatabaseManager::get_document_unsynced_highlight_uuids(const std::string& c
         error_message);
 }
 
-bool DatabaseManager::get_document_unsynced_bookmark_uuids(const std::string& checksum, std::vector<std::string>& out_uuids) {
-    std::wstringstream ss;
-    ss << "SELECT uuid FROM bookmarks WHERE document_path='" << esc(checksum) << "' AND is_synced=0;";
-    char* error_message = nullptr;
-    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), string_select_callback, &out_uuids, &error_message);
-    return handle_error(
-        "get_all_unsynced_highlight_uuids",
-        error_code,
-        error_message);
-}
+//bool DatabaseManager::get_document_unsynced_bookmark_uuids(const std::string& checksum, std::vector<std::string>& out_uuids) {
+//    std::wstringstream ss;
+//    ss << "SELECT uuid FROM bookmarks WHERE document_path='" << esc(checksum) << "' AND is_synced=0;";
+//    char* error_message = nullptr;
+//    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), string_select_callback, &out_uuids, &error_message);
+//    return handle_error(
+//        "get_all_unsynced_highlight_uuids",
+//        error_code,
+//        error_message);
+//}
+
 bool DatabaseManager::insert_portal(const std::string& src_document_path,
     const std::string& dst_document_path,
     float dst_offset_x,
@@ -2174,6 +2190,29 @@ bool DatabaseManager::update_bookmark_with_server_bookmark(const BookMark& serve
         });
 }
 
+bool DatabaseManager::update_portal_with_server_portal(const Portal& server_portal){
+
+    std::string src_offset_x_string = server_portal.src_offset_x ? QString::number(server_portal.src_offset_x.value()).toStdString() : "NULL";
+    std::wstringstream ss;
+    ss << "UPDATE links set creation_time='" << esc(server_portal.creation_time) <<
+        "', modification_time='" << esc(server_portal.modification_time) <<
+        "', dst_document='" << esc(server_portal.dst.document_checksum) <<
+        "', src_offset_x=" << esc(src_offset_x_string) <<
+        ", src_offset_y=" << server_portal.src_offset_y << 
+        ", dst_offset_x=" << server_portal.dst.book_state.offset_x << 
+        ", dst_offset_y=" << server_portal.dst.book_state.offset_y << 
+        ", dst_zoom_level=" << server_portal.dst.book_state.zoom_level << 
+        ", is_synced=1" <<
+        " where uuid='" << esc(server_portal.uuid) << "';";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "update_portal_with_server_portal",
+        error_code,
+        error_message);
+}
+
 bool DatabaseManager::update_annot_with_server_annot(const Annotation* server_annot) {
 
     if (dynamic_cast<const Highlight*>(server_annot)) {
@@ -2182,6 +2221,10 @@ bool DatabaseManager::update_annot_with_server_annot(const Annotation* server_an
 
     if (dynamic_cast<const BookMark*>(server_annot)) {
         return update_bookmark_with_server_bookmark(*dynamic_cast<const BookMark*>(server_annot));
+    }
+
+    if (dynamic_cast<const Portal*>(server_annot)) {
+        return update_portal_with_server_portal(*dynamic_cast<const Portal*>(server_annot));
     }
 
     return false;
@@ -2432,11 +2475,11 @@ bool DatabaseManager::has_column(const std::string& table_name, const std::strin
     return count > 0;
 }
 
-bool DatabaseManager::set_highlight_uuid_to_synced(const std::string& uuid) {
-    return set_annot_uuids_to_synced("highlights", { uuid });
-}
+//bool DatabaseManager::set_highlight_uuid_to_synced(const std::string& uuid) {
+//    return set_annot_uuids_to_synced("highlights", { uuid });
+//}
 
-bool DatabaseManager::set_annot_uuids_to_synced(const std::string& table_name, const std::vector<std::string>& uuids) {
+bool DatabaseManager::set_annot_uuids_to_synced_(const std::string& table_name, const std::vector<std::string>& uuids) {
     std::wstringstream ss;
     ss << "UPDATE " << esc(table_name) << " SET is_synced=1 WHERE uuid IN (";
     for (int i = 0; i < uuids.size(); i++) {
