@@ -7363,18 +7363,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 void MainWidget::handle_debug_command() {
 
-    auto bookmarks = doc()->get_bookmarks();
-    for (const auto& bookmark : bookmarks) {
-        qDebug() << "is synced : " << bookmark.is_synced;
-    }
-
-    //std::vector<std::string> uuids;
-    //for (auto& hl : doc()->get_highlights()) {
-    //    uuids.push_back(hl.uuid);
-    //}
-    //db_manager->set_highlight_uuids_to_synced(uuids);
-    //db_manager->debug();
-    //qDebug() << "has column: " << db_manager->has_column("highlights", "uuid");
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -9114,22 +9102,14 @@ void MainWidget::cleanup_expired_pending_portals() {
     std::vector<int> indices_to_delete;
 
     if ((pending_download_portals.size() > 0) && (current_widget_stack.size() == 0)) {
-        //auto children_ = sioyek_network_manager->network_manager.findChildren<QNetworkReply*>();
-        auto children_ = findChildren<QNetworkReply*>();
-        QList<QNetworkReply*> children;
-
-        for (int i = 0; i < children_.size(); i++) {
-            if (children_[i]->isRunning()) {
-                children.append(children_[i]);
-            }
-        }
+        auto children_ = findChildren<QNetworkReply*>() + sioyek_network_manager->network_manager.findChildren<QNetworkReply*>();
 
         for (int i = 0; i < pending_download_portals.size(); i++) {
             auto paper_name = pending_download_portals[i].paper_name;
             bool still_pending = false;
             //network_manager.
-            for (int i = 0; i < children.size(); i++) {
-                auto paper_name_prop = children[i]->property("sioyek_paper_name");
+            for (int i = 0; i < children_.size(); i++) {
+                auto paper_name_prop = children_[i]->property("sioyek_paper_name");
                 if ((!paper_name_prop.isNull()) && paper_name_prop.toString().toStdWString() == paper_name) {
                     still_pending = true;
                 }
@@ -12457,12 +12437,27 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
 
         if (matching_index > -1) {
             auto download_reply = download_paper_with_url(paper_urls[matching_index].toStdWString(), false, download_finish_action);
-            download_reply->setProperty("sioyek_paper_name",
-                QString::fromStdWString(paper_name));
-            download_reply->setProperty("sioyek_actual_paper_name",
-                QString::fromStdWString(paper_titles[matching_index].toStdWString()));
-            QObject::connect(download_reply, &QNetworkReply::finished, [this, download_reply, fn=std::move(fn)]() {
-                fn(download_reply);
+            QString sioyek_paper_name = QString::fromStdWString(paper_name);
+            QString sioyek_actual_paper_name = paper_titles[matching_index];
+            download_reply->setProperty("sioyek_paper_name", sioyek_paper_name);
+            download_reply->setProperty("sioyek_actual_paper_name", sioyek_actual_paper_name);
+
+            QObject::connect(download_reply, &QNetworkReply::finished, [this, download_reply, sioyek_paper_name, sioyek_actual_paper_name, download_finish_action, fn=std::move(fn)]() {
+                int status_code = download_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                if (status_code == 200) {
+                    fn(download_reply);
+                }
+                else if (status_code == 301) { // handle redirects
+                    QString redirect_url = download_reply->header(QNetworkRequest::LocationHeader).toString();
+
+                    auto redirect_download_reply = download_paper_with_url(redirect_url.toStdWString(), false, download_finish_action);
+                    redirect_download_reply->setProperty("sioyek_paper_name", sioyek_paper_name);
+                    redirect_download_reply->setProperty("sioyek_actual_paper_name", sioyek_actual_paper_name);
+                    QObject::connect(redirect_download_reply, &QNetworkReply::finished, [this, redirect_download_reply, fn=std::move(fn)]() {
+                        fn(redirect_download_reply);
+                        });
+
+                }
                 download_reply->deleteLater();
                 });
             download_reply->setParent(parent); // fn should not be called if parent is deleted
