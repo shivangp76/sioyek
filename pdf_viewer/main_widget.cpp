@@ -11740,6 +11740,7 @@ void MainWidget::on_portal_deleted(const std::string& uuid) {
         call_async_js_function_with_args(delete_portal_hook_function_name.value(),
             QJsonArray() << QString::fromStdString(uuid));
     }
+    sync_deleted_annot("portal", uuid);
 }
 
 void MainWidget::on_portal_edited(const std::string& uuid) {
