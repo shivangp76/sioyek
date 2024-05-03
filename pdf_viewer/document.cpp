@@ -3953,7 +3953,7 @@ void Document::get_page_freehand_drawings_with_indices(int page, const std::vect
     //return results;
 }
 
-const Annotation* Document::get_annot_with_uuid(const std::string& annot_type, const std::string& uuid){
+Annotation* Document::get_annot_with_uuid(const std::string& annot_type, const std::string& uuid){
 
     if (annot_type == "highlight") {
         int index = get_highlight_index_with_uuid(uuid);
@@ -4583,6 +4583,32 @@ std::optional<QDateTime> Document::last_server_update_time(){
     }
     return {};
     //db_manager->get_update_time(doc()->get_check)
+}
+
+void Document::update_annotation_with_server_annotation(const Annotation* server_annotation) {
+    if (dynamic_cast<const BookMark*>(server_annotation)) {
+        const BookMark* bookmark_server_annotation = dynamic_cast<const BookMark*>(server_annotation);
+        int bookmark_index = get_bookmark_index_with_uuid(server_annotation->uuid);
+        if (bookmark_index >= 0) {
+            bookmarks[bookmark_index] = *bookmark_server_annotation;
+        }
+    }
+    else if (dynamic_cast<const Highlight*>(server_annotation)) {
+        const Highlight* highlight_server_annotation = dynamic_cast<const Highlight*>(server_annotation);
+        int highlight_index = get_highlight_index_with_uuid(server_annotation->uuid);
+        if (highlight_index >= 0) {
+            highlights[highlight_index] = *highlight_server_annotation;
+        }
+    }
+    else if (dynamic_cast<const Portal*>(server_annotation)) {
+        const Portal* portal_server_annotation = dynamic_cast<const Portal*>(server_annotation);
+        int portal_index = get_portal_index_with_uuid(server_annotation->uuid);
+        if (portal_index >= 0) {
+            portals[portal_index] = *portal_server_annotation;
+        }
+    }
+
+    db_manager->update_annot_with_server_annot(server_annotation);
 }
 
 void Document::lock_highlights_mutex() {

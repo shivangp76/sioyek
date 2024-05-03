@@ -241,6 +241,8 @@ public:
     int find_closest_portal_index(const std::vector<Portal>& sorted_bookmarks, float to_offset_y) const;
     int find_closest_highlight_index(const std::vector<Highlight>& sorted_highlights, float to_offset_y) const;
 
+    void update_annotation_with_server_annotation(const Annotation* server_annotation);
+
     std::optional<Portal> find_closest_portal(float to_offset_y, int* index = nullptr);
     bool update_portal(Portal new_link);
     std::string delete_closest_bookmark(float to_y_offset);
@@ -259,7 +261,7 @@ public:
     const std::vector<Highlight> get_highlights_of_type(char type) const;
     const std::vector<Highlight> get_highlights_sorted(char type = 0) const;
 
-    const Annotation* get_annot_with_uuid(const std::string& annot_type, const std::string& uuid);
+    Annotation* get_annot_with_uuid(const std::string& annot_type, const std::string& uuid);
 
     std::optional<Highlight> get_next_highlight(float abs_y, char type = 0, int offset = 0) const;
     std::optional<Highlight> get_prev_highlight(float abs_y, char type = 0, int offset = 0) const;

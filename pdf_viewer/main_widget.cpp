@@ -6350,7 +6350,8 @@ void MainWidget::sync_annotations_with_server() {
                 auto [local_only_bookmarks, server_only_bookmarks, intersection_bookmarks] = decompose_sets(local_bookmarks, server_bookmarks);
                 auto [local_only_portals, server_only_portals, intersection_portals] = decompose_sets(local_portals, server_portals);
 
-                auto sync_annot_intersection = [&](auto intersection) {
+                auto sync_annot_intersection = [&, this, document_checksum=doc()->get_checksum_fast()](auto intersection) {
+                    Document* synced_doc = document_manager->get_document_with_checksum(document_checksum.value());
                     for (const auto& [local_annot, server_annot] : intersection) {
                         // sync only if the annotation has changed
                         if (has_changed(local_annot, server_annot)) {
@@ -6360,7 +6361,8 @@ void MainWidget::sync_annotations_with_server() {
                             server_modification_time.setTimeSpec(Qt::UTC);
                             if (server_modification_time > local_modification_time) {
                                 // server is the authority
-                                db_manager->update_annot_with_server_annot(&server_annot);
+                                //db_manager->update_annot_with_server_annot(&server_annot);
+                                synced_doc->update_annotation_with_server_annotation(&server_annot);
                             }
                             else {
                                 // todo: this should be batched
