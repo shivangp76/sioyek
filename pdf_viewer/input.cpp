@@ -1955,6 +1955,7 @@ public:
     }
 };
 
+
 class AddBookmarkMarkedCommand : public Command {
 
 public:
@@ -5524,6 +5525,18 @@ public:
 
 };
 
+class DeleteCurrentFileFromServer : public Command {
+public:
+    static inline const std::string cname = "delete_current_file_from_server";
+    static inline const std::string hname = "Delete the current file from sioyek servers";
+    DeleteCurrentFileFromServer(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->delete_current_file_from_server();
+    }
+
+};
+
 class ResyncDocumentCommand : public Command {
 public:
     static inline const std::string cname = "resync_document";
@@ -7036,6 +7049,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ResumeToServerLocationCommand>();
     register_command<LoginUsingAccessTokenCommand>();
     register_command<UploadCurrentFileCommand>();
+    register_command<DeleteCurrentFileFromServer>();
     register_command<ResyncDocumentCommand>();
     register_command<DownloadUnsyncedFilesCommand>();
     register_command<SyncCurrentFileLocation>();

@@ -167,8 +167,10 @@ public:
     std::wstring SIOYEK_ADD_BOOKMARK_URL = SIOYEK_HOST + L"add_bookmark";
     std::wstring SIOYEK_ADD_PORTAL_URL = SIOYEK_HOST + L"add_portal";
     std::wstring SIOYEK_DELETE_BOOKMARK_URL = SIOYEK_HOST + L"delete_bookmark";
+    std::wstring SIOYEK_DELETE_FILE_URL = SIOYEK_HOST + L"delete_file";
 
     std::unordered_set<std::string> SERVER_HASHES = {};
+    std::unordered_set<std::string> SERVER_DELETED_FILES = {};
     std::unordered_map<std::string, OpenedBookInfo> server_opened_files;
     std::unordered_map<std::string, float> last_server_location;
     ServerStatus status = ServerStatus::NotLoggedIn;
@@ -206,6 +208,7 @@ public:
     //const std::wstring& get_url_for_annot_delete(const Annotation* annot);
 
     void upload_annot(MainWidget* parent, const QString& checksum, const Annotation& annot, std::function<void()> on_success, std::function<void()> on_fail);
+    void delete_file_with_checksum(const QString& checksum);
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -1160,6 +1163,7 @@ public:
     void handle_server_actions_button_pressed();
     void sync_annotations_with_server();
     void sync_newly_added_annot(const std::string& annot_type, const std::string& uuid);
+    void delete_current_file_from_server();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

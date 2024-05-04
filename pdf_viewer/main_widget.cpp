@@ -29,6 +29,10 @@
 // allow resizing bookmarks
 // network manager should have direct access to db_manager so it doesn't have to go through MainWidget
 // add a worker thread to db_manager to handle updates asynchronously
+// maybe we want to sync portal updates at a lower rate when user is scrolling the portal view (and thus constantly updating it)
+// the RESUME button should probably be hidden when jumping to another doucment
+// set the is_synced bit of a document in database when it is deleted from another machine
+// only peform operation on network replies if status is OK 
 
 #include <iostream>
 #include <vector>
@@ -11910,11 +11914,17 @@ void MainWidget::handle_sync_open_document() {
         // check if the server's document location is different from the local location
         if (doc() && doc()->get_checksum_fast()) {
             sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&](QJsonObject obj) {
-                qDebug() << obj;
-                float server_offset_y = obj["result"].toObject()["offset_y"].toDouble();
-                if (std::abs(server_offset_y - main_document_view->get_offset_y()) > SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD) {
-                    handle_server_document_location_mismatch(main_document_view->get_offset_y(), server_offset_y);
+
+                if (obj["status"] == "OK") {
+                    float server_offset_y = obj["result"].toObject()["offset_y"].toDouble();
+                    if (std::abs(server_offset_y - main_document_view->get_offset_y()) > SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD) {
+                        handle_server_document_location_mismatch(main_document_view->get_offset_y(), server_offset_y);
+                    }
                 }
+                else if (obj["status"] == "DELETED") {
+                    doc()->set_is_synced(false);
+                }
+
                 });
         }
     }
@@ -12408,8 +12418,12 @@ void SioyekNetworkManager::update_user_files_hash_set() {
             if (json_reply_) {
                 QJsonObject json_object = json_reply_->object();
                 SERVER_HASHES.clear();
+                SERVER_DELETED_FILES.clear();
                 for (auto server_hash : json_object["results"].toArray()) {
                     SERVER_HASHES.insert(server_hash.toString().toStdString());
+                }
+                for (auto server_deleted_file : json_object["deleted_files"].toArray()) {
+                    SERVER_DELETED_FILES.insert(server_deleted_file.toString().toStdString());
                 }
             }
             });
@@ -13168,3 +13182,30 @@ const std::wstring& SioyekNetworkManager::get_url_for_annot_upload(const Annotat
 //
 //    return L"";
 //}
+
+void MainWidget::delete_current_file_from_server() {
+    if (doc() && doc()->get_checksum_fast()) {
+        doc()->set_is_synced(false);
+        sioyek_network_manager->delete_file_with_checksum(QString::fromStdString(doc()->get_checksum_fast().value()));
+    }
+}
+
+void SioyekNetworkManager::delete_file_with_checksum(const QString& checksum) {
+
+    if (SERVER_HASHES.find(checksum.toStdString()) != SERVER_HASHES.end()) {
+        SERVER_HASHES.erase(checksum.toStdString());
+    }
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DELETE_FILE_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["file_checksum"] = checksum;
+
+    QJsonDocument json_doc(obj);
+
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+}
