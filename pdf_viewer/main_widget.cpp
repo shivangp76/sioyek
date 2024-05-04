@@ -7396,12 +7396,9 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    //QDateTime now = QDateTime::currentDateTime().toUTC();
-    //QDateTime reborn = QDateTime::fromString(now.toString(Qt::ISODate), Qt::ISODate);
-    //reborn.setTimeSpec(Qt::UTC);
-    //qDebug() << now.toString(Qt::ISODate);
-    //qDebug() << reborn.toString(Qt::ISODate);
-    //qDebug() << now.secsTo(reborn);
+    char* str = nullptr;
+    //qDebug() << QString::fromUtf8(str);
+    //db_manager->debug();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){

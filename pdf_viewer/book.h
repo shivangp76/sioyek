@@ -68,14 +68,22 @@ struct OpenedBookState {
 };
 
 struct Annotation {
+
+    static inline const QString CREATION_TIME_COLUMN_NAME = "creation_time";
     std::string creation_time;
+
+    static inline const QString MODIFICATION_TIME_COLUMN_NAME = "modification_time";
     std::string modification_time;
+
+    static inline const QString UUID_COLUMN_NAME = "uuid";
     std::string uuid;
+
+    static inline const QString IS_SYNCED_COLUMN_NAME = "is_synced";
     bool is_synced = false;
 
     virtual QJsonObject to_json(std::string doc_checksum) const = 0;
-    virtual void  add_to_tuples(std::vector<std::pair<std::string, QVariant>>& tuples) = 0;
-    virtual std::vector<std::pair<std::string, QVariant>> to_tuples();
+    virtual void  add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) = 0;
+    virtual std::vector<std::pair<QString, QVariant>> to_tuples();
     virtual void from_json(const QJsonObject& json_object) = 0;
 
     void add_metadata_to_json(QJsonObject& obj) const;
@@ -96,14 +104,21 @@ struct Annotation {
 struct Mark : Annotation {
     static inline const std::string TABLE_NAME = "marks";
 
+    static inline const QString Y_OFFSET_COLUMN_NAME = "offset_y";
     float y_offset;
+
+    static inline const QString SYMBOL_COLUMN_NAME = "symbol";
     char symbol;
+
+    static inline const QString X_OFFSET_COLUMN_NAME = "offset_x";
     std::optional<float> x_offset = {};
+
+    static inline const QString ZOOM_LEVEL_COLUMN_NAME = "zoom_level";
     std::optional<float> zoom_level = {};
 
     QJsonObject to_json(std::string doc_checksum) const;
     void from_json(const QJsonObject& json_object);
-    void add_to_tuples(std::vector<std::pair<std::string, QVariant>>& tuples) override;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
 };
 
 /*
@@ -112,16 +127,34 @@ struct Mark : Annotation {
 struct BookMark : Annotation {
     static inline const std::string TABLE_NAME = "bookmarks";
 
+    static inline const QString Y_OFFSET_COLUMN_NAME = "offset_y";
     float y_offset_ = -1;
+
+    static inline const QString DESCRIPTION_COLUMN_NAME = "desc";
     std::wstring description;
 
+    static inline const QString BEGIN_X_COLUMN_NAME = "begin_x";
     float begin_x = -1;
+
+    static inline const QString BEGIN_Y_COLUMN_NAME = "begin_y";
     float begin_y = -1;
+
+    static inline const QString END_X_COLUMN_NAME = "end_x";
     float end_x = -1;
+
+    static inline const QString END_Y_COLUMN_NAME = "end_y";
     float end_y = -1;
 
+    
+    static inline const QString COLOR_R_COLUMN_NAME = "color_red";
+    static inline const QString COLOR_G_COLUMN_NAME = "color_green";
+    static inline const QString COLOR_B_COLUMN_NAME = "color_blue";
     float color[3] = { 0 };
+
+    static inline const QString FONT_SIZE_COLUMN_NAME = "font_size";
     float font_size = -1;
+
+    static inline const QString FONT_FACE_COLUMN_NAME = "font_face";
     std::wstring font_face;
 
     AbsoluteDocumentPos begin_pos();
@@ -129,7 +162,7 @@ struct BookMark : Annotation {
     AbsoluteRect rect();
     QJsonObject to_json(std::string doc_checksum) const;
     void from_json(const QJsonObject& json_object);
-    void add_to_tuples(std::vector<std::pair<std::string, QVariant>>& tuples) override;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
     float get_y_offset() const;
 
     bool is_freetext() const;
@@ -143,15 +176,27 @@ struct BookMark : Annotation {
 struct Highlight : Annotation {
     static inline const std::string TABLE_NAME = "highlights";
 
+    static inline const QString SELECTION_BEGIN_X_COLUMN_NAME = "begin_x";
+    static inline const QString SELECTION_BEGIN_Y_COLUMN_NAME = "begin_y";
     AbsoluteDocumentPos selection_begin;
+
+    static inline const QString SELECTION_END_X_COLUMN_NAME = "end_x";
+    static inline const QString SELECTION_END_Y_COLUMN_NAME = "end_y";
     AbsoluteDocumentPos selection_end;
+
+    static inline const QString DESCRIPTION_COLUMN_NAME = "desc";
     std::wstring description;
+
+    static inline const QString TEXT_ANNOT_COLUMN_NAME = "text_annot";
     std::wstring text_annot;
+
+    static inline const QString TYPE_COLUMN_NAME = "type";
     char type;
+
     std::vector<AbsoluteRect> highlight_rects;
 
     QJsonObject to_json(std::string doc_checksum) const;
-    void add_to_tuples(std::vector<std::pair<std::string, QVariant>>& tuples) override;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
     void from_json(const QJsonObject& json_object);
 
 };
@@ -267,8 +312,16 @@ struct Portal : Annotation {
 
     static Portal with_src_offset(float src_offset);
 
+    static inline const QString DST_DOCUMENT_COLUMN_NAME = "dst_document";
+    static inline const QString DST_OFFSET_X_COLUMN_NAME = "dst_offset_x";
+    static inline const QString DST_OFFSET_Y_COLUMN_NAME = "dst_offset_y";
+    static inline const QString DST_ZOOM_LEVEL_COLUMN_NAME = "dst_zoom_level";
     PortalViewState dst;
+
+    static inline const QString SRC_OFFSET_Y_COLUMN_NAME = "src_offset_y";
     float src_offset_y;
+
+    static inline const QString SRC_OFFSET_X_COLUMN_NAME = "src_offset_x";
     std::optional<float> src_offset_x = {};
 
     mutable bool is_merged_rect_valid = false;
@@ -278,7 +331,7 @@ struct Portal : Annotation {
 
     QJsonObject to_json(std::string doc_checksum) const;
     void from_json(const QJsonObject& json_object);
-    void add_to_tuples(std::vector<std::pair<std::string, QVariant>>& tuples) override;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
 
     AbsoluteRect get_rectangle() const;
     AbsoluteRect get_actual_rectangle() const;

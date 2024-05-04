@@ -9,9 +9,13 @@
 
 class CachedChecksummer;
 
-
 class DatabaseManager {
 private:
+    sqlite3_stmt* select_opened_books_stmt = nullptr;
+
+    sqlite3_stmt* select_document_portals_stmt = nullptr;
+    int select_document_portals_stmt_src_document_index = -1;
+
     sqlite3* local_db;
     sqlite3* global_db;
     bool create_opened_books_table();
@@ -149,18 +153,19 @@ public:
     bool update_file_name(std::wstring old_name, std::wstring new_name);
 
     std::wstring generic_update_create_query(std::string table_name,
-        std::vector<std::pair<std::string, QVariant>> selections,
-        std::vector<std::pair<std::string, QVariant>> updated_values);
+        std::vector<std::pair<QString, QVariant>> selections,
+        std::vector<std::pair<QString, QVariant>> updated_values);
 
     std::wstring generic_insert_create_query(std::string table_name,
-        std::vector<std::pair<std::string, QVariant>> values);
+        std::vector<std::pair<QString, QVariant>> values);
 
     bool generic_update_run_query(std::string table_name,
-        std::vector<std::pair<std::string, QVariant>> selections,
-        std::vector<std::pair<std::string, QVariant>> updated_values);
+        std::vector<std::pair<QString, QVariant>> selections,
+        std::vector<std::pair<QString, QVariant>> updated_values);
 
     bool generic_insert_run_query(std::string table_name,
-        std::vector<std::pair<std::string, QVariant>> values, sqlite3* db=nullptr);
+        std::vector<std::pair<QString, QVariant>> values, sqlite3* db=nullptr);
+
     bool has_column(const std::string& table_name, const std::string& column_name);
     void add_synced_columns();
     void add_document_sync_columns();
@@ -170,6 +175,9 @@ public:
     bool set_document_to_unsynced(const std::string& checksum);
     bool is_document_synced(const std::string& checksum);
     std::string get_table_name_for_annot_type(const std::string& annot_type);
+    void debug();
+
+    bool generic_prepared_statement_run(sqlite3* db, sqlite3_stmt** stmt, const std::string& query, std::function<void()> on_init,std::function<void()> bind_params, std::function<void()> on_row);
 };
 
 

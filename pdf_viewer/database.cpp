@@ -23,6 +23,21 @@ extern bool DEBUG;
 extern float HIGHLIGHT_DELETE_THRESHOLD;
 extern int DATABASE_VERSION;
 
+std::string column_std_string(sqlite3_stmt* stmt, int index) {
+    const unsigned char* text = sqlite3_column_text(stmt, index);
+    return QString::fromUtf8(text).toStdString();
+}
+
+std::wstring column_std_wstring(sqlite3_stmt* stmt, int index) {
+    const unsigned char* text = sqlite3_column_text(stmt, index);
+    return QString::fromUtf8(text).toStdWString();
+}
+
+QString column_qstring(sqlite3_stmt* stmt, int index) {
+    const unsigned char* text = sqlite3_column_text(stmt, index);
+    return QString::fromUtf8(text);
+}
+
 std::wstring esc(const std::wstring& inp) {
     char* data = sqlite3_mprintf("%q", utf8_encode(inp).c_str());
     std::wstring escaped_string = utf8_decode(data);
@@ -96,25 +111,25 @@ static int prev_doc_with_name_callback(void* res_vector, int argc, char** argv, 
     return 0;
 }
 
-static int opened_books_callback(void* res_vector, int argc, char** argv, char** col_name) {
-    std::vector<OpenedBookInfo>* res = (std::vector<OpenedBookInfo>*) res_vector;
-
-    assert(argc == 3);
-
-    OpenedBookInfo info;
-
-    info.checksum = argv[0];
-    info.document_title = "";
-    if (argv[1]) {
-        info.document_title = argv[1];
-    }
-    if (argv[2]) {
-        info.last_access_time = QDateTime::fromString(QString(argv[2]), Qt::ISODate);
-    }
-
-    res->push_back(info);
-    return 0;
-}
+//static int opened_books_callback(void* res_vector, int argc, char** argv, char** col_name) {
+//    std::vector<OpenedBookInfo>* res = (std::vector<OpenedBookInfo>*) res_vector;
+//
+//    assert(argc == 3);
+//
+//    OpenedBookInfo info;
+//
+//    info.checksum = argv[0];
+//    info.document_title = "";
+//    if (argv[1]) {
+//        info.document_title = argv[1];
+//    }
+//    if (argv[2]) {
+//        info.last_access_time = QDateTime::fromString(QString(argv[2]), Qt::ISODate);
+//    }
+//
+//    res->push_back(info);
+//    return 0;
+//}
 
 static int mark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
@@ -413,44 +428,44 @@ static int highlight_select_callback(void* res_vector, int argc, char** argv, ch
     return 0;
 }
 
-static int link_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
-
-    std::vector<Portal>* res = (std::vector<Portal>*)res_vector;
-    assert(argc == 10);
-
-    bool is_visible = false;
-
-    std::string dst_path = argv[0];
-    float src_offset_y = atof(argv[1]);
-    std::optional<float> src_offset_x = {};
-
-    if (argv[2]) {
-        src_offset_x = atof(argv[2]);
-    }
-
-    float dst_offset_x = atof(argv[3]);
-    float dst_offset_y = atof(argv[4]);
-    float dst_zoom_level = atof(argv[5]);
-    std::string uuid = argv[6];
-    std::string creation_time = argv[7];
-    std::string modification_time = argv[8];
-    bool is_synced = atoi(argv[9]);
-
-    Portal link;
-    link.dst.document_checksum = dst_path;
-    link.src_offset_y = src_offset_y;
-    link.src_offset_x = src_offset_x;
-    link.dst.book_state.offset_x = dst_offset_x;
-    link.dst.book_state.offset_y = dst_offset_y;
-    link.dst.book_state.zoom_level = dst_zoom_level;
-    link.uuid = uuid;
-    link.creation_time = creation_time;
-    link.modification_time = modification_time;
-    link.is_synced = is_synced;
-
-    res->push_back(link);
-    return 0;
-}
+//static int link_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
+//
+//    std::vector<Portal>* res = (std::vector<Portal>*)res_vector;
+//    assert(argc == 10);
+//
+//    bool is_visible = false;
+//
+//    std::string dst_path = argv[0];
+//    float src_offset_y = atof(argv[1]);
+//    std::optional<float> src_offset_x = {};
+//
+//    if (argv[2]) {
+//        src_offset_x = atof(argv[2]);
+//    }
+//
+//    float dst_offset_x = atof(argv[3]);
+//    float dst_offset_y = atof(argv[4]);
+//    float dst_zoom_level = atof(argv[5]);
+//    std::string uuid = argv[6];
+//    std::string creation_time = argv[7];
+//    std::string modification_time = argv[8];
+//    bool is_synced = atoi(argv[9]);
+//
+//    Portal link;
+//    link.dst.document_checksum = dst_path;
+//    link.src_offset_y = src_offset_y;
+//    link.src_offset_x = src_offset_x;
+//    link.dst.book_state.offset_x = dst_offset_x;
+//    link.dst.book_state.offset_y = dst_offset_y;
+//    link.dst.book_state.zoom_level = dst_zoom_level;
+//    link.uuid = uuid;
+//    link.creation_time = creation_time;
+//    link.modification_time = modification_time;
+//    link.is_synced = is_synced;
+//
+//    res->push_back(link);
+//    return 0;
+//}
 
 //template<typename T>
 //T parse_single(char* inp) {
@@ -521,6 +536,8 @@ bool handle_error(const QString& func_name, int error_code, char* error_message)
 }
 
 bool DatabaseManager::open(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path) {
+
+    //sqlite3_config(SQLITE_CONFIG_SERIALIZED);
 
     std::string local_database_file_path_utf8 = utf8_encode(local_db_file_path);
     int local_rc = sqlite3_open(local_database_file_path_utf8.c_str(), &local_db);
@@ -1263,15 +1280,81 @@ bool DatabaseManager::select_opened_books_path_values(std::vector<std::wstring>&
 //        error_message);
 //}
 
+bool DatabaseManager::generic_prepared_statement_run(sqlite3* db, sqlite3_stmt** stmt, const std::string& query, std::function<void()> on_init, std::function<void()> bind_params, std::function<void()> on_row) {
+
+    if (*stmt == nullptr) {
+        auto is_ok = sqlite3_prepare_v2(db, query.c_str(), query.size(), stmt, nullptr);
+        if (!(is_ok == SQLITE_OK)) {
+            qDebug() << QString::fromUtf8(sqlite3_errmsg(db));
+            return false;
+            //return handle_error("select_opened_books", is_ok, sqlite3_errmsg(global_db));
+        }
+        on_init();
+    }
+
+    bind_params();
+    while (true) {
+        auto state = sqlite3_step(*stmt);
+        if (state != SQLITE_ROW) {
+            break;
+        }
+        on_row();
+
+    }
+    sqlite3_reset(*stmt);
+    return true;
+}
+
 bool DatabaseManager::select_opened_books(std::vector<OpenedBookInfo>& out_result) {
-    std::wstringstream ss;
-    ss << "SELECT path, document_name, last_access_time FROM opened_books ORDER BY datetime(last_access_time) DESC;";
-    char* error_message = nullptr;
-    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), opened_books_callback, &out_result, &error_message);
-    return handle_error(
-        "select_opened_books",
-        error_code,
-        error_message);
+    std::string query = "SELECT path, document_name, last_access_time FROM opened_books ORDER BY datetime(last_access_time) DESC;"; //std::wstringstream ss;
+    return generic_prepared_statement_run(global_db, &select_opened_books_stmt, query,
+        []() {}, []() {},
+        [&]() {
+            OpenedBookInfo row;
+
+            row.checksum = column_std_string(select_opened_books_stmt, 0);
+            row.document_title = column_qstring(select_opened_books_stmt, 1);
+            row.last_access_time = QDateTime::fromString(column_qstring(select_opened_books_stmt, 2), Qt::ISODate);
+
+            out_result.push_back(row);
+        });
+
+    //if (select_opened_books_stmt == nullptr) {
+    //    auto is_ok = sqlite3_prepare_v2(global_db, query.c_str(), query.size(), &select_opened_books_stmt, nullptr);
+    //    if (!(is_ok == SQLITE_OK)) {
+    //        return false;
+    //        //return handle_error("select_opened_books", is_ok, sqlite3_errmsg(global_db));
+    //    }
+    //}
+
+    //while (true) {
+    //    auto state = sqlite3_step(select_opened_books_stmt);
+    //    if (state != SQLITE_ROW) {
+    //        break;
+    //    }
+    //    OpenedBookInfo row;
+
+    //    const unsigned char* checksum_utf8 = sqlite3_column_text(select_opened_books_stmt, 0);
+    //    const unsigned char* document_name_utf8 = sqlite3_column_text(select_opened_books_stmt, 1);
+    //    const unsigned char* last_access_time_utf8 = sqlite3_column_text(select_opened_books_stmt, 2);
+
+    //    row.checksum = QString::fromUtf8(checksum_utf8).toStdString();
+    //    row.document_title = QString::fromUtf8(document_name_utf8);
+    //    row.last_access_time = QDateTime::fromString(QString::fromUtf8(last_access_time_utf8));
+    //    out_result.push_back(row);
+
+    //}
+    //return true;
+
+
+
+    //ss << "SELECT path, document_name, last_access_time FROM opened_books ORDER BY datetime(last_access_time) DESC;";
+    //char* error_message = nullptr;
+    //int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), opened_books_callback, &out_result, &error_message);
+    //return handle_error(
+    //    "select_opened_books",
+    //    error_code,
+    //    error_message);
 }
 
 std::optional<std::string> DatabaseManager::get_document_last_access_time(const std::string& checksum) {
@@ -1480,15 +1563,48 @@ bool DatabaseManager::global_select_bookmark(std::vector<std::pair<std::string, 
 }
 
 bool DatabaseManager::select_links(const std::string& src_document_path, std::vector<Portal>& out_result) {
-    std::wstringstream ss;
-    ss << "select dst_document, src_offset_y, src_offset_x, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced from links where src_document='" << esc(src_document_path) << "';";
+    std::string query = "select dst_document, src_offset_y, src_offset_x, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced from links where src_document =:src_document;";
+    return generic_prepared_statement_run(global_db, &select_document_portals_stmt, query,
+        [&]() { // on init
+            select_document_portals_stmt_src_document_index = sqlite3_bind_parameter_index(select_document_portals_stmt, ":src_document");
+        },
+        [&]() { // bind params
+            sqlite3_bind_text(
+                select_document_portals_stmt,
+                select_document_portals_stmt_src_document_index,
+                src_document_path.c_str(),
+                src_document_path.size(),
+                nullptr
+            );
+        },
+        [&]() { // on row
+            Portal row;
 
-    char* error_message = nullptr;
-    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), link_select_callback, &out_result, &error_message);
-    return handle_error(
-        "select_links",
-        error_code,
-        error_message);
+            row.dst.document_checksum = column_std_string(select_document_portals_stmt, 0);
+            row.src_offset_y = sqlite3_column_double(select_document_portals_stmt, 1);
+            if (sqlite3_column_type(select_document_portals_stmt, 2) != SQLITE_NULL) {
+                row.src_offset_x = sqlite3_column_double(select_document_portals_stmt, 2);
+            }
+            row.dst.book_state.offset_x = sqlite3_column_double(select_document_portals_stmt, 3);
+            row.dst.book_state.offset_y = sqlite3_column_double(select_document_portals_stmt, 4);
+            row.dst.book_state.zoom_level = sqlite3_column_double(select_document_portals_stmt, 5);
+            row.uuid = column_std_string(select_document_portals_stmt, 6);
+            row.creation_time = column_std_string(select_document_portals_stmt, 7);
+            row.modification_time = column_std_string(select_document_portals_stmt, 8);
+            row.is_synced = sqlite3_column_int(select_document_portals_stmt, 9);
+            out_result.push_back(row);
+
+        });
+
+    //std::wstringstream ss;
+    //ss << "select dst_document, src_offset_y, src_offset_x, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced from links where src_document='" << esc(src_document_path) << "';";
+
+    //char* error_message = nullptr;
+    //int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), link_select_callback, &out_result, &error_message);
+    //return handle_error(
+    //    "select_links",
+    //    error_code,
+    //    error_message);
 }
 
 void DatabaseManager::create_tables() {
@@ -2313,8 +2429,8 @@ std::wstring encode_variant(QVariant var) {
 }
 
 bool DatabaseManager::generic_update_run_query(std::string table_name,
-    std::vector<std::pair<std::string, QVariant>> selections,
-    std::vector<std::pair<std::string, QVariant>> updated_values) {
+    std::vector<std::pair<QString, QVariant>> selections,
+    std::vector<std::pair<QString, QVariant>> updated_values) {
     std::wstring query = generic_update_create_query(table_name, selections, updated_values);
 
     char* error_message = nullptr;
@@ -2326,7 +2442,7 @@ bool DatabaseManager::generic_update_run_query(std::string table_name,
 }
 
 bool DatabaseManager::generic_insert_run_query(std::string table_name,
-    std::vector<std::pair<std::string, QVariant>> values,
+    std::vector<std::pair<QString, QVariant>> values,
     sqlite3* db) {
     std::wstring query = generic_insert_create_query(table_name, values);
 
@@ -2344,14 +2460,14 @@ bool DatabaseManager::generic_insert_run_query(std::string table_name,
 }
 
 std::wstring DatabaseManager::generic_insert_create_query(std::string table_name,
-    std::vector<std::pair<std::string, QVariant>> values) {
+    std::vector<std::pair<QString, QVariant>> values) {
     std::wstringstream query;
     query << "INSERT INTO " << esc(table_name) << " ( ";
 
     for (int i = 0; i < values.size(); i++) {
         auto [column_name, _] = values[i];
 
-        query << esc(column_name);
+        query << column_name.toStdWString();
 
         if (i < values.size() - 1) {
             query << L", ";
@@ -2388,15 +2504,15 @@ bool DatabaseManager::update_file_name(std::wstring old_name, std::wstring new_n
 }
 
 std::wstring DatabaseManager::generic_update_create_query(std::string table_name,
-    std::vector<std::pair<std::string, QVariant>> selections,
-    std::vector<std::pair<std::string, QVariant>> updated_values) {
+    std::vector<std::pair<QString, QVariant>> selections,
+    std::vector<std::pair<QString, QVariant>> updated_values) {
     std::wstringstream query;
     query << "UPDATE " << esc(table_name) << " SET ";
 
     for (int i = 0; i < updated_values.size(); i++) {
         auto [column_name, column_value] = updated_values[i];
 
-        query << esc(column_name) << L" = ";
+        query << column_name.toStdWString() << L" = ";
         query << encode_variant(column_value);
 
         if (i < updated_values.size() - 1) {
@@ -2408,7 +2524,7 @@ std::wstring DatabaseManager::generic_update_create_query(std::string table_name
     for (int i = 0; i < selections.size(); i++) {
         auto [column_name, column_value] = selections[i];
 
-        query << esc(column_name) << L" = ";
+        query << column_name.toStdWString() << L" = ";
         query << encode_variant(column_value);
 
         if (i < selections.size() - 1) {
@@ -2547,5 +2663,39 @@ std::string DatabaseManager::get_table_name_for_annot_type(const std::string& an
     if (annot_type == "portal") return "links";
 
     return "";
+
+}
+
+void DatabaseManager::debug() {
+    std::string query = "SELECT document_name FROM opened_books WHERE id=:id;";
+    sqlite3_stmt* statement;
+    auto is_ok = sqlite3_prepare_v2(global_db, query.c_str(), query.size(), &statement, nullptr);
+    int id_index = sqlite3_bind_parameter_index(statement, ":id");
+
+    if (is_ok == SQLITE_OK) {
+        sqlite3_bind_int(statement, id_index, 92);
+        while (true) {
+            auto state = sqlite3_step(statement);
+            if (state != SQLITE_ROW) {
+                break;
+            }
+            const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
+            qDebug() << QString::fromUtf8(document_name_utf8);
+
+        }
+
+        sqlite3_reset(statement);
+
+        sqlite3_bind_int(statement, id_index, 270);
+        while (true) {
+            auto state = sqlite3_step(statement);
+            if (state != SQLITE_ROW) {
+                break;
+            }
+            const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
+            qDebug() << QString::fromUtf8(document_name_utf8);
+
+        }
+    }
 
 }
