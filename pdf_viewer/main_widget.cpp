@@ -25,8 +25,6 @@
 // make sure deleteLater is called on all network requests
 // when uploading the unsynced deletions, we should upload the unsynced deletions of all documents not just the current document
 // create a worker thread in SioyekNetworkManager to handle longer-lasting operations asynchronously
-// maybe change from_json methods in annotations into a static method
-// allow resizing bookmarks
 
 #include <iostream>
 #include <vector>

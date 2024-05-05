@@ -750,23 +750,20 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
             for (int i = 0; i < json_highlights.size(); i++) {
                 QJsonObject json_highlight = json_highlights[i].toObject();
 
-                Highlight highlight;
-                highlight.from_json(json_highlight);
+                Highlight highlight = Highlight::from_json(json_highlight);
                 res_highlights.push_back(highlight);
             }
             for (int i = 0; i < json_bookmarks.size(); i++) {
                 QJsonObject json_bookmark = json_bookmarks[i].toObject();
 
-                BookMark bookmark;
-                bookmark.from_json(json_bookmark);
+                BookMark bookmark = BookMark::from_json(json_bookmark);
                 res_bookmarks.push_back(bookmark);
             }
 
             for (int i = 0; i < json_portals.size(); i++) {
                 QJsonObject json_portal = json_portals[i].toObject();
 
-                Portal portal;
-                portal.from_json(json_portal);
+                Portal portal = Portal::from_json(json_portal);
                 res_portals.push_back(portal);
             }
 

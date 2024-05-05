@@ -286,8 +286,7 @@ std::vector<T> load_from_json_array(const QJsonArray& item_list) {
 
     for (int i = 0; i < item_list.size(); i++) {
         QJsonObject current_json_object = item_list.at(i).toObject();
-        T current_object;
-        current_object.from_json(current_json_object);
+        auto current_object = T::from_json(current_json_object);
         res.push_back(current_object);
     }
     return res;

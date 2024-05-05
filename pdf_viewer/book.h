@@ -106,7 +106,6 @@ struct Annotation {
     virtual QJsonObject to_json(std::string doc_checksum) const = 0;
     virtual void  add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) = 0;
     virtual std::vector<std::pair<QString, QVariant>> to_tuples();
-    virtual void from_json(const QJsonObject& json_object) = 0;
 
     void add_metadata_to_json(QJsonObject& obj) const;
     void load_metadata_from_json(const QJsonObject& obj);
@@ -124,6 +123,8 @@ struct Annotation {
     Lower case marks are local to the document and upper case marks are global.
 */
 struct Mark : Annotation {
+    static Mark from_json(const QJsonObject& json_object);
+
     static inline const std::string TABLE_NAME = "marks";
 
     static inline const QString Y_OFFSET_COLUMN_NAME = "offset_y";
@@ -139,7 +140,6 @@ struct Mark : Annotation {
     std::optional<float> zoom_level = {};
 
     QJsonObject to_json(std::string doc_checksum) const;
-    void from_json(const QJsonObject& json_object);
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
 };
 
@@ -147,6 +147,8 @@ struct Mark : Annotation {
     A bookmark is similar to mark but instead of being indexed by a symbol, it has a description.
 */
 struct BookMark : Annotation {
+    static BookMark from_json(const QJsonObject& json_object);
+
     static inline const std::string TABLE_NAME = "bookmarks";
 
     static inline const QString Y_OFFSET_COLUMN_NAME = "offset_y";
@@ -183,7 +185,6 @@ struct BookMark : Annotation {
     AbsoluteDocumentPos end_pos();
     AbsoluteRect rect();
     QJsonObject to_json(std::string doc_checksum) const;
-    void from_json(const QJsonObject& json_object);
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
     float get_y_offset() const;
 
@@ -198,6 +199,8 @@ struct BookMark : Annotation {
 };
 
 struct Highlight : Annotation {
+    static Highlight from_json(const QJsonObject& json_object);
+
     static inline const std::string TABLE_NAME = "highlights";
 
     static inline const QString SELECTION_BEGIN_X_COLUMN_NAME = "begin_x";
@@ -221,7 +224,6 @@ struct Highlight : Annotation {
 
     QJsonObject to_json(std::string doc_checksum) const;
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
-    void from_json(const QJsonObject& json_object);
 
 };
 
@@ -333,6 +335,8 @@ struct OverviewTouchMoveData {
     Note that this is different from PdfLink which is the built-in link functionality in PDF file format.
 */
 struct Portal : Annotation {
+    static Portal from_json(const QJsonObject& json_object);
+
     static inline const std::string TABLE_NAME = "links";
 
     static Portal with_src_offset(float src_offset);
@@ -355,7 +359,6 @@ struct Portal : Annotation {
     bool is_visible() const;
 
     QJsonObject to_json(std::string doc_checksum) const;
-    void from_json(const QJsonObject& json_object);
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
 
     AbsoluteRect get_rectangle() const;

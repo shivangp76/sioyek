@@ -97,22 +97,24 @@ void Annotation::update_modification_time() {
     modification_time = QDateTime::currentDateTime().toUTC().toString(Qt::ISODate).toStdString();
 }
 
-void Mark::from_json(const QJsonObject& json_object)
+Mark Mark::from_json(const QJsonObject& json_object)
 {
 
+    Mark res;
     if (json_object.contains("y_offset")) { // old style from previous sioyek versions 
-        y_offset = json_object["y_offset"].toDouble();
-        symbol = static_cast<char>(json_object["symbol"].toInt());
+        res.y_offset = json_object["y_offset"].toDouble();
+        res.symbol = static_cast<char>(json_object["symbol"].toInt());
     }
     else {
-        y_offset = json_object[Mark::Y_OFFSET_COLUMN_NAME].toDouble();
+        res.y_offset = json_object[Mark::Y_OFFSET_COLUMN_NAME].toDouble();
         if (json_object.contains(Mark::X_OFFSET_COLUMN_NAME)) {
-            x_offset = json_object[Mark::X_OFFSET_COLUMN_NAME].toDouble();
+            res.x_offset = json_object[Mark::X_OFFSET_COLUMN_NAME].toDouble();
         }
-        symbol = static_cast<char>(json_object[Mark::SYMBOL_COLUMN_NAME].toInt());
+        res.symbol = static_cast<char>(json_object[Mark::SYMBOL_COLUMN_NAME].toInt());
     }
 
-    load_metadata_from_json(json_object);
+    res.load_metadata_from_json(json_object);
+    return res;
 
 }
 
@@ -163,40 +165,43 @@ void BookMark::add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) 
     tuples.push_back({BookMark::FONT_FACE_COLUMN_NAME, QString::fromStdWString(font_face) });
 }
 
-void BookMark::from_json(const QJsonObject& json_object)
+BookMark BookMark::from_json(const QJsonObject& json_object)
 {
+    BookMark res;
+
     if (json_object.contains("description")) { // old style exported from previous sioyek versions
 
-        y_offset_ = json_object["y_offset"].toDouble();
-        description = json_object["description"].toString().toStdWString();
-        begin_x = json_object["begin_x"].toDouble();
-        begin_y = json_object["begin_y"].toDouble();
-        end_x = json_object["end_x"].toDouble();
-        end_y = json_object["end_y"].toDouble();
+        res.y_offset_ = json_object["y_offset"].toDouble();
+        res.description = json_object["description"].toString().toStdWString();
+        res.begin_x = json_object["begin_x"].toDouble();
+        res.begin_y = json_object["begin_y"].toDouble();
+        res.end_x = json_object["end_x"].toDouble();
+        res.end_y = json_object["end_y"].toDouble();
 
         if (json_object.contains("color_red")) {
-            color[0] = json_object["color_red"].toDouble();
-            color[1] = json_object["color_green"].toDouble();
-            color[2] = json_object["color_blue"].toDouble();
-            font_size = json_object["font_size"].toDouble();
-            font_face = json_object["font_face"].toString().toStdWString();
+            res.color[0] = json_object["color_red"].toDouble();
+            res.color[1] = json_object["color_green"].toDouble();
+            res.color[2] = json_object["color_blue"].toDouble();
+            res.font_size = json_object["font_size"].toDouble();
+            res.font_face = json_object["font_face"].toString().toStdWString();
         }
     }
     else {
-        y_offset_ = json_object[BookMark::Y_OFFSET_COLUMN_NAME].toDouble();
-        description = json_object[BookMark::DESCRIPTION_COLUMN_NAME].toString().toStdWString();
-        begin_x = json_object[BookMark::BEGIN_X_COLUMN_NAME].toDouble();
-        begin_y = json_object[BookMark::BEGIN_Y_COLUMN_NAME].toDouble();
-        end_x = json_object[BookMark::END_X_COLUMN_NAME].toDouble();
-        end_y = json_object[BookMark::END_Y_COLUMN_NAME].toDouble();
-        color[0] = json_object[BookMark::COLOR_R_COLUMN_NAME].toDouble();
-        color[1] = json_object[BookMark::COLOR_G_COLUMN_NAME].toDouble();
-        color[2] = json_object[BookMark::COLOR_B_COLUMN_NAME].toDouble();
-        font_size = json_object[BookMark::FONT_SIZE_COLUMN_NAME].toDouble();
-        font_face = json_object[BookMark::FONT_FACE_COLUMN_NAME].toString().toStdWString();
+        res.y_offset_ = json_object[BookMark::Y_OFFSET_COLUMN_NAME].toDouble();
+        res.description = json_object[BookMark::DESCRIPTION_COLUMN_NAME].toString().toStdWString();
+        res.begin_x = json_object[BookMark::BEGIN_X_COLUMN_NAME].toDouble();
+        res.begin_y = json_object[BookMark::BEGIN_Y_COLUMN_NAME].toDouble();
+        res.end_x = json_object[BookMark::END_X_COLUMN_NAME].toDouble();
+        res.end_y = json_object[BookMark::END_Y_COLUMN_NAME].toDouble();
+        res.color[0] = json_object[BookMark::COLOR_R_COLUMN_NAME].toDouble();
+        res.color[1] = json_object[BookMark::COLOR_G_COLUMN_NAME].toDouble();
+        res.color[2] = json_object[BookMark::COLOR_B_COLUMN_NAME].toDouble();
+        res.font_size = json_object[BookMark::FONT_SIZE_COLUMN_NAME].toDouble();
+        res.font_face = json_object[BookMark::FONT_FACE_COLUMN_NAME].toString().toStdWString();
     }
 
-    load_metadata_from_json(json_object);
+    res.load_metadata_from_json(json_object);
+    return res;
 }
 
 bool BookMark::is_freetext() const {
@@ -248,37 +253,39 @@ void Highlight::add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples)
     tuples.push_back({ Highlight::TYPE_COLUMN_NAME, QChar(type) });
 }
 
-void Highlight::from_json(const QJsonObject& json_object)
+Highlight Highlight::from_json(const QJsonObject& json_object)
 {
+    Highlight res;
     if (json_object.contains("selection_begin_x")) { // old style exported from previous sioyek versions
 
-        selection_begin.x = json_object["selection_begin_x"].toDouble();
-        selection_begin.y = json_object["selection_begin_y"].toDouble();
-        selection_end.x = json_object["selection_end_x"].toDouble();
-        selection_end.y = json_object["selection_end_y"].toDouble();
-        description = json_object["description"].toString().toStdWString();
+        res.selection_begin.x = json_object["selection_begin_x"].toDouble();
+        res.selection_begin.y = json_object["selection_begin_y"].toDouble();
+        res.selection_end.x = json_object["selection_end_x"].toDouble();
+        res.selection_end.y = json_object["selection_end_y"].toDouble();
+        res.description = json_object["description"].toString().toStdWString();
         if (json_object["type"].isDouble()) {
-            type = static_cast<char>(json_object["type"].toInt());
+            res.type = static_cast<char>(json_object["type"].toInt());
         }
         else {
-            type = static_cast<char>(json_object["type"].toString().toInt());
+            res.type = static_cast<char>(json_object["type"].toString().toInt());
         }
     }
     else {
-        selection_begin.x = json_object[Highlight::SELECTION_BEGIN_X_COLUMN_NAME].toDouble();
-        selection_begin.y = json_object[Highlight::SELECTION_BEGIN_Y_COLUMN_NAME].toDouble();
-        selection_end.x = json_object[Highlight::SELECTION_END_X_COLUMN_NAME].toDouble();
-        selection_end.y = json_object[Highlight::SELECTION_END_Y_COLUMN_NAME].toDouble();
-        description = json_object[Highlight::DESCRIPTION_COLUMN_NAME].toString().toStdWString();
+        res.selection_begin.x = json_object[Highlight::SELECTION_BEGIN_X_COLUMN_NAME].toDouble();
+        res.selection_begin.y = json_object[Highlight::SELECTION_BEGIN_Y_COLUMN_NAME].toDouble();
+        res.selection_end.x = json_object[Highlight::SELECTION_END_X_COLUMN_NAME].toDouble();
+        res.selection_end.y = json_object[Highlight::SELECTION_END_Y_COLUMN_NAME].toDouble();
+        res.description = json_object[Highlight::DESCRIPTION_COLUMN_NAME].toString().toStdWString();
         if (json_object[Highlight::TYPE_COLUMN_NAME].isDouble()) {
-            type = static_cast<char>(json_object[Highlight::TYPE_COLUMN_NAME].toInt());
+            res.type = static_cast<char>(json_object[Highlight::TYPE_COLUMN_NAME].toInt());
         }
         else {
-            type = static_cast<char>(json_object[Highlight::TYPE_COLUMN_NAME].toString().toInt());
+            res.type = static_cast<char>(json_object[Highlight::TYPE_COLUMN_NAME].toString().toInt());
         }
     }
 
-    load_metadata_from_json(json_object);
+    res.load_metadata_from_json(json_object);
+    return res;
 }
 
 QJsonObject Portal::to_json(std::string doc_checksum) const
@@ -299,34 +306,36 @@ QJsonObject Portal::to_json(std::string doc_checksum) const
     return res;
 }
 
-void Portal::from_json(const QJsonObject& json_object)
+Portal Portal::from_json(const QJsonObject& json_object)
 {
+    Portal res;
     if (json_object.contains("dst_checksum")) { // old style from previous sioyek versions
-        src_offset_y = json_object["src_offset_y"].toDouble();
-        dst.document_checksum = json_object["dst_checksum"].toString().toStdString();
-        dst.book_state.offset_x = json_object["dst_offset_x"].toDouble();
-        dst.book_state.offset_y = json_object["dst_offset_y"].toDouble();
-        dst.book_state.zoom_level = json_object["dst_zoom_level"].toDouble();
+        res.src_offset_y = json_object["src_offset_y"].toDouble();
+        res.dst.document_checksum = json_object["dst_checksum"].toString().toStdString();
+        res.dst.book_state.offset_x = json_object["dst_offset_x"].toDouble();
+        res.dst.book_state.offset_y = json_object["dst_offset_y"].toDouble();
+        res.dst.book_state.zoom_level = json_object["dst_zoom_level"].toDouble();
 
         if (json_object.contains("src_offset_x")) {
 
-            src_offset_x = json_object["src_offset_x"].toDouble();
+            res.src_offset_x = json_object["src_offset_x"].toDouble();
         }
     }
     else{
-        src_offset_y = json_object[Portal::SRC_OFFSET_Y_COLUMN_NAME].toDouble();
-        dst.document_checksum = json_object[Portal::DST_DOCUMENT_COLUMN_NAME].toString().toStdString();
-        dst.book_state.offset_x = json_object[Portal::DST_OFFSET_X_COLUMN_NAME].toDouble();
-        dst.book_state.offset_y = json_object[Portal::DST_OFFSET_Y_COLUMN_NAME].toDouble();
-        dst.book_state.zoom_level = json_object[Portal::DST_ZOOM_LEVEL_COLUMN_NAME].toDouble();
+        res.src_offset_y = json_object[Portal::SRC_OFFSET_Y_COLUMN_NAME].toDouble();
+        res.dst.document_checksum = json_object[Portal::DST_DOCUMENT_COLUMN_NAME].toString().toStdString();
+        res.dst.book_state.offset_x = json_object[Portal::DST_OFFSET_X_COLUMN_NAME].toDouble();
+        res.dst.book_state.offset_y = json_object[Portal::DST_OFFSET_Y_COLUMN_NAME].toDouble();
+        res.dst.book_state.zoom_level = json_object[Portal::DST_ZOOM_LEVEL_COLUMN_NAME].toDouble();
 
         if (json_object.contains(Portal::SRC_OFFSET_X_COLUMN_NAME)) {
 
-            src_offset_x = json_object[Portal::SRC_OFFSET_X_COLUMN_NAME].toDouble();
+            res.src_offset_x = json_object[Portal::SRC_OFFSET_X_COLUMN_NAME].toDouble();
         }
     }
 
-    load_metadata_from_json(json_object);
+    res.load_metadata_from_json(json_object);
+    return res;
 }
 
 void Portal::add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) {
