@@ -537,7 +537,7 @@ bool handle_error(const QString& func_name, int error_code, char* error_message)
 
 bool DatabaseManager::open(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path) {
 
-    //sqlite3_config(SQLITE_CONFIG_SERIALIZED);
+    sqlite3_config(SQLITE_CONFIG_SERIALIZED);
 
     std::string local_database_file_path_utf8 = utf8_encode(local_db_file_path);
     int local_rc = sqlite3_open(local_database_file_path_utf8.c_str(), &local_db);
@@ -1137,8 +1137,7 @@ bool DatabaseManager::insert_visible_portal(const std::string& src_checksum,
                });
 }
 
-bool DatabaseManager::update_portal(const std::string& uuid, float dst_offset_x, float dst_offset_y, float dst_zoom_level) {
-
+bool DatabaseManager::update_portal(const std::string& uuid, float dst_offset_x, float dst_offset_y, float dst_zoom_level){
     std::wstringstream ss;
     ss << "UPDATE links SET dst_offset_x=" << dst_offset_x << ", dst_offset_y=" << dst_offset_y <<
         ", dst_zoom_level=" << dst_zoom_level << ", modification_time=CURRENT_TIMESTAMP WHERE uuid='" <<

@@ -106,6 +106,7 @@
 #include "utf8.h"
 #include "synctex/synctex_parser.h"
 #include "path.h"
+#include "background_tasks.h"
 #include "touchui/TouchMarkSelector.h"
 #include "checksum.h"
 #include "touchui/TouchSettings.h"
@@ -880,7 +881,7 @@ void MainWidget::closeEvent(QCloseEvent* close_event) {
     handle_close_event();
 }
 
-MainWidget::MainWidget(MainWidget* other) : MainWidget(other->mupdf_context, other->pdf_renderer, other->db_manager, other->document_manager, other->config_manager, other->command_manager, other->input_handler, other->checksummer, other->sioyek_network_manager, other->should_quit) {
+MainWidget::MainWidget(MainWidget* other) : MainWidget(other->mupdf_context, other->pdf_renderer, other->db_manager, other->document_manager, other->config_manager, other->command_manager, other->input_handler, other->checksummer, other->sioyek_network_manager, other->background_task_manager, other->should_quit) {
 
 }
 
@@ -893,6 +894,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     InputHandler* input_handler,
     CachedChecksummer* checksummer,
     SioyekNetworkManager* sioyek_network_manager_,
+    BackgroundTaskManager* task_manager,
     bool* should_quit_ptr,
     QWidget* parent) :
 #ifdef SIOYEK_MOBILE
@@ -909,6 +911,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     checksummer(checksummer),
     sioyek_network_manager(sioyek_network_manager_),
     should_quit(should_quit_ptr),
+    background_task_manager(task_manager),
     command_manager(command_manager)
 {
     //main_widget->quickWindow()->setGraphicsApi(QSGRendererInterface::OpenGL);
@@ -1263,6 +1266,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
 
+        if (scheduled_portal_update) {
+            update_link_with_opened_book_state(scheduled_portal_update->portal, scheduled_portal_update->state, true);
+            scheduled_portal_update = {};
+
+        }
         if (sioyek_network_manager->status != last_server_status) {
             last_server_status = sioyek_network_manager->status;
             invalidate_ui();
@@ -1437,6 +1445,7 @@ void MainWidget::handle_periodic_network_operations() {
 }
 
 MainWidget::~MainWidget() {
+    background_task_manager->delete_tasks_with_parent(this);
 
     if (is_reading) {
         is_reading = false;
@@ -2099,7 +2108,14 @@ void MainWidget::do_synctex_forward_search(const Path& pdf_file_path, const Path
 }
 
 
-void MainWidget::update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state) {
+void MainWidget::schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state) {
+    ScheduledPortalUpdate update;
+    update.portal = lnk;
+    update.state = new_state;
+    scheduled_portal_update = update;
+}
+
+void MainWidget::update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state, bool async) {
     std::wstring docpath = main_document_view->get_document()->get_path();
     Document* link_owner = document_manager->get_document(docpath);
 
@@ -2110,7 +2126,14 @@ void MainWidget::update_link_with_opened_book_state(Portal lnk, const OpenedBook
         link_owner->update_portal(lnk);
     }
 
-    db_manager->update_portal(lnk.uuid, new_state.offset_x, new_state.offset_y, new_state.zoom_level);
+    if (async) {
+        background_task_manager->add_task([this, lnk, new_state]() {
+            db_manager->update_portal(lnk.uuid, new_state.offset_x, new_state.offset_y, new_state.zoom_level);
+            }, this);
+    }
+    else {
+        db_manager->update_portal(lnk.uuid, new_state.offset_x, new_state.offset_y, new_state.zoom_level);
+    }
     set_recently_updated_portal(lnk.uuid);
 
     portal_to_edit = {};
@@ -5234,7 +5257,7 @@ void MainWidget::handle_portal_overview_update() {
                 Portal link = link_.value();
                 OpenedBookState link_new_state = link.dst.book_state;
                 link_new_state.offset_y = current_state.absolute_offset_y;
-                update_link_with_opened_book_state(link, link_new_state);
+                schedule_update_link_with_opened_book_state(link, link_new_state);
             }
         }
     }
@@ -6220,6 +6243,7 @@ MainWidget* MainWidget::handle_new_window() {
         input_handler,
         checksummer,
         sioyek_network_manager,
+        background_task_manager,
         should_quit);
     new_widget->open_document(main_document_view->get_state());
     new_widget->show();
@@ -7396,9 +7420,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    char* str = nullptr;
-    //qDebug() << QString::fromUtf8(str);
-    //db_manager->debug();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){

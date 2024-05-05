@@ -78,6 +78,7 @@
 #include "checksum.h"
 #include "OpenWithApplication.h"
 #include "new_file_checker.h"
+#include "background_tasks.h"
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"
@@ -815,6 +816,8 @@ int main(int argc, char* args[]) {
     db_manager.ensure_schema_compatibility();
 
 
+    BackgroundTaskManager background_task_manager;
+
     fz_locks_context locks;
     locks.user = mupdf_mutexes;
     locks.lock = lock_mutex;
@@ -874,7 +877,18 @@ int main(int argc, char* args[]) {
 
     SioyekNetworkManager sioyek_network_manager(nullptr);
 
-    MainWidget* main_widget = new MainWidget(mupdf_context, &pdf_renderer, &db_manager, &document_manager, &config_manager, command_manager, &input_handler, &checksummer, &sioyek_network_manager, &quit);
+    MainWidget* main_widget = new MainWidget(
+        mupdf_context,
+        &pdf_renderer,
+        &db_manager,
+        &document_manager,
+        &config_manager,
+        command_manager,
+        &input_handler,
+        &checksummer,
+        &sioyek_network_manager,
+        &background_task_manager,
+        &quit);
     main_widget->auto_login();
     sioyek_network_manager.handle_one_time_network_operations();
     windows.push_back(main_widget);

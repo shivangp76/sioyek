@@ -24,6 +24,7 @@
 #include "book.h"
 #include "input.h"
 #include "path.h"
+#include "background_tasks.h"
 
 extern float VERTICAL_MOVE_AMOUNT;
 extern float HORIZONTAL_MOVE_AMOUNT;
@@ -87,6 +88,11 @@ struct PendingDownloadPortal {
     std::wstring source_document_path;
     // the pending portal is marked for deletion
     bool marked = false;
+};
+
+struct ScheduledPortalUpdate {
+    Portal portal;
+    OpenedBookState state;
 };
 
 
@@ -226,6 +232,7 @@ public:
     ConfigManager* config_manager = nullptr;
     QNetworkAccessManager network_manager;
     SioyekNetworkManager* sioyek_network_manager;
+    BackgroundTaskManager* background_task_manager;
     PdfRenderer* pdf_renderer = nullptr;
     InputHandler* input_handler = nullptr;
     CachedChecksummer* checksummer = nullptr;
@@ -463,6 +470,8 @@ public:
     // so that we don't update the rendering too fast
     QTime last_text_select_time = QTime::currentTime();
 
+    std::optional<ScheduledPortalUpdate> scheduled_portal_update = {};
+
     // last time we updated `smooth_scroll_speed` 
     QTime last_speed_update_time = QTime::currentTime();
 
@@ -591,6 +600,7 @@ public:
         InputHandler* input_handler,
         CachedChecksummer* checksummer,
         SioyekNetworkManager* sioyek_network_manager,
+        BackgroundTaskManager* task_manger,
         bool* should_quit_ptr,
         QWidget* parent = nullptr
     );
@@ -636,7 +646,8 @@ public:
     void toggle_custom_color_mode();
     void do_synctex_forward_search(const Path& pdf_file_path, const Path& latex_file_path, int line, int column);
     //void handle_args(const QStringList &arguments);
-    void update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
+    void update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state, bool async=false);
+    void schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
     void update_closest_link_with_opened_book_state(const OpenedBookState& new_state);
     void set_current_widget(QWidget* new_widget);
     void push_current_widget(QWidget* new_widget);
