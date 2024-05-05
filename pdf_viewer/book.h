@@ -16,6 +16,13 @@
 class DocumentView;
 class Document;
 
+enum OverviewSide {
+    bottom = 0,
+    top = 1,
+    left = 2,
+    right = 3
+};
+
 enum class ColorPalette {
     Normal,
     Dark,
@@ -186,6 +193,8 @@ struct BookMark : Annotation {
     std::optional<char> get_type() const;
 
     AbsoluteRect get_rectangle() const;
+    std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
+    void set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos);
 };
 
 struct Highlight : Annotation {
@@ -224,12 +233,6 @@ struct PdfLink {
     std::string uri;
 };
 
-enum OverviewSide {
-    bottom = 0,
-    top = 1,
-    left = 2,
-    right = 3
-};
 
 struct ParsedUri {
     int page;
@@ -303,6 +306,13 @@ struct PortalViewState {
 struct OverviewResizeData {
     fz_rect original_rect;
     NormalizedWindowPos original_normal_mouse_pos;
+    OverviewSide side_index;
+};
+
+struct BookmarkResizeData {
+    int bookmark_index;
+    AbsoluteRect original_rect;
+    AbsoluteDocumentPos original_mouse_pos;
     OverviewSide side_index;
 };
 

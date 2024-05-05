@@ -55,6 +55,9 @@ struct AbsoluteDocumentPos {
     DocumentPos to_document(Document* doc) const;
     NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;
     WindowPos to_window(DocumentView* document_view) const;
+
+    AbsoluteDocumentPos x_shift(float amount);
+    AbsoluteDocumentPos y_shift(float amount);
 };
 
 // normalized window coordinates. x and y are in the range [-1, 1]

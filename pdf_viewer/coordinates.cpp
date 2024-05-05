@@ -252,3 +252,14 @@ DocumentRect to_document(const WindowRect& window_rect, DocumentView* dv) {
     DocumentPos bottom_right = window_rect.bottom_right().to_document(dv);
     return DocumentRect(top_left, bottom_right, top_left.page);
 }
+AbsoluteDocumentPos AbsoluteDocumentPos::x_shift(float amount){
+    auto res = *this;
+    res.x += amount;
+    return res;
+}
+
+AbsoluteDocumentPos AbsoluteDocumentPos::y_shift(float amount) {
+    auto res = *this;
+    res.y += amount;
+    return res;
+}

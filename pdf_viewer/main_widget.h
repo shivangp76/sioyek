@@ -391,6 +391,8 @@ public:
     std::optional<OverviewTouchMoveData> overview_touch_move_data = {};
     std::optional<OverviewResizeData> overview_resize_data = {};
 
+    std::optional<BookmarkResizeData> bookmark_resize_data = {};
+
     std::vector<PendingDownloadPortal> pending_download_portals;
 
 
@@ -864,6 +866,7 @@ public:
     bool ensure_internet_permission();
     void handle_command_text_change(const QString& new_text);
     TextToSpeechHandler* get_tts();
+    void update_bookmark_with_index(int index);
     void handle_bookmark_move_finish();
     void handle_portal_move_finish();
 

@@ -417,6 +417,48 @@ bool Portal::is_visible() const {
     return src_offset_x.has_value();
 }
 
+std::optional<OverviewSide> BookMark::get_resize_side_containing_point(AbsoluteDocumentPos point) const {
+    if (is_freetext()) {
+
+        AbsoluteRect r = get_rectangle();
+        AbsoluteDocumentPos tl = r.top_left();
+        AbsoluteDocumentPos br = r.bottom_right();
+        AbsoluteDocumentPos tr = tl;
+        tr.x = br.x;
+        AbsoluteDocumentPos bl = br;
+        bl.x = tl.x;
+
+        AbsoluteRect top_resize_rect(tl.y_shift(-5), tr.y_shift(5));
+        AbsoluteRect left_resize_rect(tl.x_shift(-5), bl.x_shift(5));
+        AbsoluteRect right_resize_rect(tr.x_shift(-5), br.x_shift(5));
+        AbsoluteRect bottom_resize_rect(bl.y_shift(-5), br.y_shift(5));
+        if (top_resize_rect.contains(point)) return OverviewSide::top;
+        if (bottom_resize_rect.contains(point)) return OverviewSide::bottom;
+        if (left_resize_rect.contains(point)) return OverviewSide::left;
+        if (right_resize_rect.contains(point)) return OverviewSide::right;
+        return {};
+    }
+
+    return {};
+}
+
+void BookMark::set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos) {
+    if (is_freetext()) {
+        if (side == OverviewSide::left) {
+            begin_x = pos.x;
+        }
+        if (side == OverviewSide::right) {
+            end_x = pos.x;
+        }
+        if (side == OverviewSide::top) {
+            begin_y = pos.y;
+        }
+        if (side == OverviewSide::bottom) {
+            end_y = pos.y;
+        }
+    }
+}
+
 AbsoluteRect BookMark::get_rectangle() const{
     if (end_y > -1) {
 

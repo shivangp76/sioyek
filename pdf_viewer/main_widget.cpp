@@ -27,7 +27,6 @@
 // create a worker thread in SioyekNetworkManager to handle longer-lasting operations asynchronously
 // maybe change from_json methods in annotations into a static method
 // allow resizing bookmarks
-// network manager should have direct access to db_manager so it doesn't have to go through MainWidget
 
 #include <iostream>
 #include <vector>
@@ -705,6 +704,16 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
     std::optional<PdfLink> link = {};
 
+
+    if (bookmark_resize_data) {
+        int index = bookmark_resize_data->bookmark_index;
+        if (index < doc()->get_bookmarks().size()) {
+            auto& target_bookmark = doc()->get_bookmarks()[index];
+            target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
+            validate_render();
+            return;
+        }
+    }
 
     if (overview_resize_data) {
         // if we are resizing overview page, set the selected side of the overview window to the mosue position
@@ -2711,6 +2720,21 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         // be clicking on an object to select it rather than drag it, we start dragging
         // after the mouse has moved a certain amount in mouseMoveEvent
         if (visible_object) {
+            if (visible_object->object_type == VisibleObjectType::Bookmark) {
+                int index = visible_object->index;
+                auto bookmark = doc()->get_bookmarks()[index];
+                std::optional<OverviewSide> bookmark_resize_side = bookmark.get_resize_side_containing_point(abs_doc_pos);
+                if (bookmark_resize_side) {
+                    BookmarkResizeData brd;
+                    brd.bookmark_index = index;
+                    brd.side_index = bookmark_resize_side.value();
+                    brd.original_mouse_pos = abs_doc_pos;
+                    brd.original_rect = bookmark.rect();
+                    bookmark_resize_data = brd;
+                    return;
+                }
+            }
+
             last_mouse_down = abs_doc_pos;
             visible_object->handle_move_begin(this, abs_doc_pos);
             visible_object_move_data->is_moving = false;
@@ -2784,7 +2808,16 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         is_selecting = false;
         is_dragging = false;
 
-        bool was_overview_mode = overview_move_data.has_value() || overview_resize_data.has_value() || overview_touch_move_data.has_value();
+        if (bookmark_resize_data) {
+            update_bookmark_with_index(bookmark_resize_data->bookmark_index);
+            bookmark_resize_data = {};
+            return;
+        }
+
+        bool was_resizing_overview =
+            overview_move_data.has_value() ||
+            overview_resize_data.has_value() ||
+            overview_touch_move_data.has_value();
 
         overview_move_data = {};
         overview_touch_move_data = {};
@@ -2794,7 +2827,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         //    return;
         //}
 
-        if ((!was_overview_mode) && (!TOUCH_MODE) && (!mouse_drag_mode) && (manhattan_distance(fvec2(last_mouse_down), fvec2(abs_doc_pos)) > 5)) {
+        if ((!was_resizing_overview) && (!TOUCH_MODE) && (!mouse_drag_mode) && (manhattan_distance(fvec2(last_mouse_down), fvec2(abs_doc_pos)) > 5)) {
 
             //fz_point selection_begin = { last_mouse_down_x, last_mouse_down_y };
             //fz_point selection_end = { x_, y_ };
@@ -8738,11 +8771,17 @@ TextToSpeechHandler* MainWidget::get_tts() {
     return tts;
 }
 
+void MainWidget::update_bookmark_with_index(int index) {
+    if (index < doc()->get_bookmarks().size()) {
+        BookMark& bm = doc()->get_bookmarks()[index];
+        doc()->update_bookmark_position(index, { bm.begin_x, bm.begin_y }, { bm.end_x, bm.end_y });
+        on_bookmark_edited(bm.uuid);
+    }
+}
+
 void MainWidget::handle_bookmark_move_finish() {
     int index = visible_object_move_data->index.index;
-    BookMark& bm = doc()->get_bookmarks()[index];
-    doc()->update_bookmark_position(index, { bm.begin_x, bm.begin_y }, { bm.end_x, bm.end_y });
-    on_bookmark_edited(bm.uuid);
+    update_bookmark_with_index(index);
 }
 
 void MainWidget::handle_portal_move_finish() {
