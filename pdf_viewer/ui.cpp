@@ -153,7 +153,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     bool speaking = main_widget->is_reading;
     bool portaling = main_widget->is_pending_link_source_filled();
     bool fit_mode = main_widget->last_smart_fit_page.has_value();
-    bool is_logged_in = main_widget->sioyek_network_manager->status == ServerStatus::LoggedIn;
+    bool is_logged_in = main_widget->is_logged_in();
     bool is_current_document_synced = main_widget->is_current_document_available_on_server();
 
     main_menu = new TouchMainMenu(fit_mode,

@@ -29,12 +29,6 @@
 #define LL_ITER(name, start) for(auto name=start;(name);name=name->next)
 #define LOG(expr) if (VERBOSE) {(expr);};
 
-enum class PaperDownloadFinishedAction {
-    None,
-    OpenInSameWindow,
-    OpenInNewWindow,
-    Portal
-};
 
 struct JsCommandInfo {
     std::wstring pref_file_path;

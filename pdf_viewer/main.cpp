@@ -79,6 +79,7 @@
 #include "OpenWithApplication.h"
 #include "new_file_checker.h"
 #include "background_tasks.h"
+#include "network_manager.h"
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"

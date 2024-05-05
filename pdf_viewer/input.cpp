@@ -18,6 +18,7 @@
 #include "ui.h"
 #include "document.h"
 #include "document_view.h"
+#include "network_manager.h"
 
 extern bool SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE;
 extern bool USE_LEGACY_KEYBINDS;
