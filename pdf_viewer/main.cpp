@@ -875,7 +875,7 @@ int main(int argc, char* args[]) {
     pdf_renderer.start_threads();
 
 
-    SioyekNetworkManager sioyek_network_manager(nullptr);
+    SioyekNetworkManager sioyek_network_manager(&db_manager, &background_task_manager, &document_manager, nullptr);
 
     MainWidget* main_widget = new MainWidget(
         mupdf_context,

@@ -28,10 +28,6 @@
 // maybe change from_json methods in annotations into a static method
 // allow resizing bookmarks
 // network manager should have direct access to db_manager so it doesn't have to go through MainWidget
-// add a worker thread to db_manager to handle updates asynchronously
-// maybe we want to sync portal updates at a lower rate when user is scrolling the portal view (and thus constantly updating it)
-// the RESUME button should probably be hidden when jumping to another doucment
-// set the is_synced bit of a document in database when it is deleted from another machine
 
 #include <iostream>
 #include <vector>
@@ -2190,6 +2186,9 @@ void MainWidget::open_document_with_hash(const std::string& path, std::optional<
 
 void MainWidget::open_document(const Path& path, std::optional<float> offset_x, std::optional<float> offset_y, std::optional<float> zoom_level) {
     if (doc()) {
+        if (resume_to_server_position_button->isVisible()) {
+            resume_to_server_position_button->hide();
+        }
         sync_current_file_location_to_servers();
     }
 
@@ -12171,9 +12170,9 @@ void MainWidget::on_ios_resume(){
 #endif
 
 
-SioyekNetworkManager::SioyekNetworkManager(QObject* parent) : QObject(parent) {
+SioyekNetworkManager::SioyekNetworkManager(DatabaseManager* db_manager_, BackgroundTaskManager* task_manager, DocumentManager* doc_manager, QObject* parent) :
+    QObject(parent), db_manager(db_manager_), background_task_manager(task_manager) , document_manager(doc_manager) {
     last_document_location_upload_time = QDateTime::currentDateTime();
-
 }
 
 
@@ -12729,7 +12728,7 @@ void SioyekNetworkManager::set_last_server_location(std::string checksum, float 
     last_server_location[checksum] = offset_y;
 }
 
-void SioyekNetworkManager::download_opened_files_info(MainWidget* parent, std::function<void(QJsonObject)> fn) {
+void SioyekNetworkManager::download_opened_files_info(QObject* parent, std::function<void(QJsonObject)> fn) {
 
     //std::vector<std::string> local_checksums;
     //parent->db_manager->get_all_local_checksums(local_checksums);
@@ -12908,7 +12907,7 @@ void MainWidget::handle_server_actions_button_pressed() {
 }
 
 void SioyekNetworkManager::upload_annot(
-    MainWidget* parent,
+    QObject* parent,
     const QString& checksum,
     const Annotation& annot,
     std::function<void()> on_success,
@@ -13058,7 +13057,7 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
         });
 }
 
-void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* parent, const QString& checksum, std::function<void()> on_done) {
+void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent, const QString& checksum, std::function<void()> on_done) {
     std::vector<std::pair<std::wstring, std::wstring>> unsynced_deletes;
 
     //std::vector<std::string> unsynced_highlight_insert_uuids;
@@ -13102,11 +13101,14 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* pare
     //    }
     //}
 
-    parent->db_manager->get_all_unsynced_deletions(checksum.toStdString(), unsynced_deletes);
+    db_manager->get_all_unsynced_deletions(checksum.toStdString(), unsynced_deletes);
 
-    std::vector<Highlight> unsynced_highlights = parent->doc()->get_unsynced_annots<Highlight>();
-    std::vector<BookMark> unsynced_bookmarks = parent->doc()->get_unsynced_annots<BookMark>();
-    std::vector<Portal> unsynced_portals = parent->doc()->get_unsynced_annots<Portal>();
+    Document* doc = document_manager->get_document_with_checksum(checksum.toStdString());
+    if (doc == nullptr) return;
+
+    std::vector<Highlight> unsynced_highlights = doc->get_unsynced_annots<Highlight>();
+    std::vector<BookMark> unsynced_bookmarks = doc->get_unsynced_annots<BookMark>();
+    std::vector<Portal> unsynced_portals = doc->get_unsynced_annots<Portal>();
     std::vector<std::string> unsynced_highlight_uuids = get_uuids(unsynced_highlights);
     std::vector<std::string> unsynced_bookmark_uuids = get_uuids(unsynced_bookmarks);
     std::vector<std::string> unsynced_portal_uuids = get_uuids(unsynced_portals);
@@ -13170,10 +13172,13 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(MainWidget* pare
             qDebug() << reply->readAll();
             int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (status_code == 200) {
-                parent->db_manager->clear_unsynced_deletions(checksum.toStdString());
-                parent->doc()->set_annots_to_synced<Highlight>(unsynced_highlight_uuids);
-                parent->doc()->set_annots_to_synced<BookMark>(unsynced_bookmark_uuids);
-                parent->doc()->set_annots_to_synced<Portal>(unsynced_portal_uuids);
+                db_manager->clear_unsynced_deletions(checksum.toStdString());
+                Document* doc = document_manager->get_document_with_checksum(checksum.toStdString());
+                if (doc == nullptr) return;
+
+                doc->set_annots_to_synced<Highlight>(unsynced_highlight_uuids);
+                doc->set_annots_to_synced<BookMark>(unsynced_bookmark_uuids);
+                doc->set_annots_to_synced<Portal>(unsynced_portal_uuids);
                 //parent->db_manager->set_annot_uuids_to_synced("highlights", unsynced_highlight_uuids);
                 //parent->db_manager->set_annot_uuids_to_synced("bookmarks", unsynced_bookmark_uuids);
                 //parent->db_manager->

@@ -153,6 +153,9 @@ struct LastDocumentChecksum {
 class SioyekNetworkManager : public QObject {
     Q_OBJECT
 private:
+    DatabaseManager* db_manager = nullptr;
+    BackgroundTaskManager* background_task_manager = nullptr;
+    DocumentManager* document_manager = nullptr;
 public:
     QNetworkAccessManager network_manager;
     std::string ACCESS_TOKEN;
@@ -183,7 +186,7 @@ public:
 
     QDateTime last_document_location_upload_time;
 
-    SioyekNetworkManager(QObject* parent=nullptr);
+    SioyekNetworkManager(DatabaseManager* db_manager, BackgroundTaskManager* task_manager, DocumentManager* document_manager, QObject* parent=nullptr);
     void login(std::wstring username, std::wstring password);
     bool handle_network_reply_if_error(QNetworkReply* reply, bool show_message);
     void persist_access_token(std::string access_token);
@@ -202,17 +205,17 @@ public:
     QNetworkReply* get_opened_book_data_from_checksum(QObject* parent, QString checksum, std::function<void(QJsonObject)> fn);
     bool should_sync_location();
     void set_last_server_location(std::string checksum, float offset_y);
-    void download_opened_files_info(MainWidget* widget, std::function<void(QJsonObject)> fn);
+    void download_opened_files_info(QObject* widget, std::function<void(QJsonObject)> fn);
     std::vector<OpenedBookInfo> get_excluded_opened_files(std::vector<std::string>& excluded_checksums);
     void handle_one_time_network_operations();
     //void upload_bookmark(MainWidget* parent, const QString& checksum, const BookMark& highlight, std::function<void()> on_success, std::function<void()> on_fail);
     void delete_annot(QObject* parent, const QString& file_checksum, const QString& annot_type, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail);
     void get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime> last_access_time)> fn);
-    void perform_unsynced_inserts_and_deletes(MainWidget* parent, const QString& checksum, std::function<void()> on_done);
+    void perform_unsynced_inserts_and_deletes(QObject* parent, const QString& checksum, std::function<void()> on_done);
     const std::wstring& get_url_for_annot_upload(const Annotation* annot);
     //const std::wstring& get_url_for_annot_delete(const Annotation* annot);
 
-    void upload_annot(MainWidget* parent, const QString& checksum, const Annotation& annot, std::function<void()> on_success, std::function<void()> on_fail);
+    void upload_annot(QObject* parent, const QString& checksum, const Annotation& annot, std::function<void()> on_success, std::function<void()> on_fail);
     void delete_file_with_checksum(const QString& checksum);
 };
 
