@@ -165,15 +165,14 @@ public:
     const std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = SIOYEK_HOST + L"download_hash";
     const std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = SIOYEK_HOST + L"sync_opened_book";
     const std::wstring SIOYEK_GET_OPENED_BOOK_DATA_URL = SIOYEK_HOST + L"get_opened_book";
-    std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = SIOYEK_HOST + L"get_opened_books";
-    std::wstring SIOYEK_GET_DOCUMENT_ANNOTATIONS_URL = SIOYEK_HOST + L"get_annotations_for_document";
-    std::wstring SIOYEK_SYNC_DELETES_URL = SIOYEK_HOST + L"sync_deletes";
-    std::wstring SIOYEK_ADD_HIGHLIGHT_URL = SIOYEK_HOST + L"add_highlight";
-    std::wstring SIOYEK_DELETE_ANNOT_URL = SIOYEK_HOST + L"delete_annot";
-    std::wstring SIOYEK_ADD_BOOKMARK_URL = SIOYEK_HOST + L"add_bookmark";
-    std::wstring SIOYEK_ADD_PORTAL_URL = SIOYEK_HOST + L"add_portal";
-    std::wstring SIOYEK_DELETE_BOOKMARK_URL = SIOYEK_HOST + L"delete_bookmark";
-    std::wstring SIOYEK_DELETE_FILE_URL = SIOYEK_HOST + L"delete_file";
+    const std::wstring SIOYEK_GET_OPENED_BOOKS_DATA_URL = SIOYEK_HOST + L"get_opened_books";
+    const std::wstring SIOYEK_GET_DOCUMENT_ANNOTATIONS_URL = SIOYEK_HOST + L"get_annotations_for_document";
+    const std::wstring SIOYEK_SYNC_DELETES_URL = SIOYEK_HOST + L"sync_deletes";
+    const std::wstring SIOYEK_ADD_HIGHLIGHT_URL = SIOYEK_HOST + L"add_highlight";
+    const std::wstring SIOYEK_DELETE_ANNOT_URL = SIOYEK_HOST + L"delete_annot";
+    const std::wstring SIOYEK_ADD_BOOKMARK_URL = SIOYEK_HOST + L"add_bookmark";
+    const std::wstring SIOYEK_ADD_PORTAL_URL = SIOYEK_HOST + L"add_portal";
+    const std::wstring SIOYEK_DELETE_FILE_URL = SIOYEK_HOST + L"delete_file";
 
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_set<std::string> SERVER_DELETED_FILES = {};

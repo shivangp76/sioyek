@@ -32,7 +32,6 @@
 // maybe we want to sync portal updates at a lower rate when user is scrolling the portal view (and thus constantly updating it)
 // the RESUME button should probably be hidden when jumping to another doucment
 // set the is_synced bit of a document in database when it is deleted from another machine
-// only peform operation on network replies if status is OK 
 
 #include <iostream>
 #include <vector>
@@ -12435,6 +12434,9 @@ void SioyekNetworkManager::update_user_files_hash_set() {
             auto json_reply_ = get_network_json_reply(reply);
             if (json_reply_) {
                 QJsonObject json_object = json_reply_->object();
+
+                if (json_object["status"].toString() != "OK") return;
+
                 SERVER_HASHES.clear();
                 SERVER_DELETED_FILES.clear();
                 for (auto server_hash : json_object["results"].toArray()) {
@@ -12496,6 +12498,9 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
         std::string answer = reply->readAll().toStdString();
         QByteArray json_data = QByteArray::fromStdString(answer);
         QJsonDocument json_doc = QJsonDocument::fromJson(json_data);
+
+        if (json_doc["status"].toString() != "OK") return;
+
         std::wstring paper_name = reply->property("sioyek_paper_name").toString().toStdWString();
         PaperDownloadFinishedAction download_finish_action = get_paper_download_action_from_string(
             reply->property("sioyek_finish_action").toString());
@@ -12757,6 +12762,7 @@ void SioyekNetworkManager::download_opened_files_info(MainWidget* parent, std::f
             QJsonDocument doc = QJsonDocument::fromJson(data);
             if (!doc.isNull()) {
                 QJsonObject root = doc.object();
+                if (root["status"].toString() != "OK") return;
                 QJsonArray results = root["result"].toArray();
 
                 server_opened_files.clear();
@@ -12922,7 +12928,6 @@ void SioyekNetworkManager::upload_annot(
     QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_success=std::move(on_success), on_fail=std::move(on_fail)]() {
         reply->deleteLater();
-        qDebug() << "reply: " << reply->readAll();
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status_code == 200) {
             on_success();
@@ -13006,6 +13011,9 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
         if (status_code == 200) {
             auto data = reply->readAll();
             QJsonObject result_object = QJsonDocument::fromJson(data).object();
+
+            if (result_object["status"].toString() != "OK") return;
+
             std::optional<QDateTime> last_access_time = {};
             if (!result_object["last_access_time"].isNull()) {
                 last_access_time = QDateTime::fromString(result_object["last_access_time"].toString(), Qt::DateFormat::ISODate);
