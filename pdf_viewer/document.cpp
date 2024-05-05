@@ -4597,7 +4597,14 @@ void Document::update_annotation_with_server_annotation(const Annotation* server
         const Highlight* highlight_server_annotation = dynamic_cast<const Highlight*>(server_annotation);
         int highlight_index = get_highlight_index_with_uuid(server_annotation->uuid);
         if (highlight_index >= 0) {
+            // we don't want to lose the computed highlight rects when updating the highlight
+            // so we save and restore them
+            std::vector<AbsoluteRect>&& prev_rects = std::move(highlights[highlight_index].highlight_rects);
             highlights[highlight_index] = *highlight_server_annotation;
+            highlights[highlight_index].highlight_rects = std::move(prev_rects);
+            if (highlights[highlight_index].highlight_rects.size() == 0) {
+                fill_index_highlight_rects(highlight_index);
+            }
         }
     }
     else if (dynamic_cast<const Portal*>(server_annotation)) {
