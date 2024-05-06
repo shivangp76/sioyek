@@ -5733,6 +5733,28 @@ public:
 
 };
 
+class ShowTouchPageSelectCommand : public Command {
+public:
+    static inline const std::string cname = "show_touch_page_select";
+    static inline const std::string hname = "";
+    ShowTouchPageSelectCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->show_touch_page_select();
+    }
+};
+
+class ShowTouchHighlightTypeSelectCommand : public Command {
+public:
+    static inline const std::string cname = "show_touch_highlight_type_select";
+    static inline const std::string hname = "";
+    ShowTouchHighlightTypeSelectCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->show_touch_highlight_type_select();
+    }
+};
+
 class ShowTouchDrawingMenu : public Command {
 public:
     static inline const std::string cname = "show_touch_draw_controls";
@@ -7032,6 +7054,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SelectCurrentSearchMatchCommand>();
     register_command<SelectRulerTextCommand>();
     register_command<ShowTouchMainMenu>();
+    register_command<ShowTouchPageSelectCommand>();
+    register_command<ShowTouchHighlightTypeSelectCommand>();
     register_command<ShowTouchSettingsMenu>();
     register_command<ShowTouchDrawingMenu>();
     register_command<DebugCommand>();

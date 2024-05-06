@@ -144,6 +144,13 @@ struct LastDocumentChecksum {
     std::optional<std::string> checksum;
 };
 
+//struct StatusString {
+//    //std::unordered_map<QString>
+//    QString actual_status_string;
+//    QString role_string;
+//
+//};
+
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 #ifdef SIOYEK_MOBILE
@@ -195,6 +202,11 @@ public:
     std::unique_ptr<Command> pending_command_instance = nullptr;
     std::vector<Command*> commands_being_performed;
     std::unique_ptr<Command> last_performed_command;
+
+    std::vector<int> last_status_string_ids;
+
+    std::optional<std::function<std::pair<QString, std::vector<int>>()>> left_status_string_generator = {};
+    std::optional<std::function<std::pair<QString, std::vector<int>>()>> right_status_string_generator = {};
 
     DocumentView* main_document_view = nullptr;
     ScratchPad* scratchpad = nullptr;
@@ -346,7 +358,7 @@ public:
     QWidget* text_command_line_edit_container = nullptr;
     QLabel* text_command_line_edit_label = nullptr;
     QLineEdit* text_command_line_edit = nullptr;
-    QLabel* status_label_left = nullptr;
+    QLineEdit* status_label_left = nullptr;
     QLabel* status_label_right = nullptr;
     QWidget* status_label = nullptr;
     QPushButton* server_actions_button = nullptr;
@@ -949,6 +961,8 @@ public:
     std::wstring handle_synctex_to_ruler();
     void focus_on_line_with_index(int page, int index);
     void show_touch_main_menu();
+    void show_touch_page_select();
+    void show_touch_highlight_type_select();
     void show_touch_settings_menu();
     void free_document(Document* doc);
     bool is_helper_visible();
@@ -1107,11 +1121,11 @@ public:
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 
-#ifdef SIOYEK_IOS
-
 public slots:
+#ifdef SIOYEK_IOS
     void handle_ios_files(const QUrl& url);
 #endif
+    void highlight_type_color_clicked(int index);
 };
 
 MainWidget* get_window_with_window_id(int window_id);

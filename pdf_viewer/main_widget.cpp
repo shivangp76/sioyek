@@ -22,7 +22,7 @@
 // checksummer.get_path should use a hashmap instead of iterating over all paths
 // better handling of enum configs
 // maybe add ability to click on other status bar items. e.g. clicking on the chapter name could open the table of contents
-// when uploading the unsynced deletions, we should upload the unsynced deletions of all documents not just the current document
+// live reload statusbar format changes
 
 #include <iostream>
 #include <vector>
@@ -326,6 +326,363 @@ MainWidget* get_window_with_window_id(int window_id) {
 bool MainWidget::main_document_view_has_document()
 {
     return (main_document_view != nullptr) && (doc() != nullptr);
+}
+
+enum class StatusStringPart {
+    CURRENT_PAGE,
+    CURRENT_PAGE_LABEL,
+    NUM_PAGES,
+    CHAPTER_NAME,
+    DOCUMENT_NAME,
+    SEARCH_RESULTS,
+    LINK_STATUS,
+    WAITING_FOR_SYMBOL,
+    INDEXING,
+    PREVIEW_INDEX,
+    SYNCTEX,
+    DRAG,
+    PRESENTATION,
+    AUTO_NAME,
+    VISUAL_SCROLL,
+    LOCKED_SCROLL,
+    HIGHLIGHT,
+    FREEHAND_DRAWING,
+    MODE_STRING,
+    CLOSEST_BOOKMARK,
+    CLOSEST_PORTAL,
+    RECT_SELECT,
+    POINT_SELECT,
+    CUSTOM_MESSAGE,
+    CURRENT_REQUIREMENT_DESC,
+    DOWNLOAD
+};
+
+class StatusLabelLineEdit : public QLineEdit {
+public:
+    std::optional<std::function<void()>> on_click = {};
+
+    StatusLabelLineEdit(QWidget* parent=nullptr) : QLineEdit(parent) {
+        setCursor(Qt::ArrowCursor);
+        QObject::connect(this, &QLineEdit::selectionChanged, [this]() {
+            this->setSelection(0, 0);
+            });
+    }
+
+    void mousePressEvent(QMouseEvent* mevent) override{
+        if (on_click) {
+            on_click.value()();
+        }
+    }
+
+
+};
+
+std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QString status_string, MainWidget* widget) {
+
+    auto get_current_page_fn = [widget]() {return QString::number(widget->get_current_page_number() + 1);};
+    auto get_current_page_label_fn = [widget] {return QString::fromStdWString(widget->get_current_page_label()); };
+    auto get_num_pages_fn = [widget] {return QString::number(widget->doc()->num_pages()); };
+    auto get_chapter_name_fn = [widget] {return " [ " + QString::fromStdWString(widget->main_document_view->get_current_chapter_name()) + " ] "; };
+
+    auto get_document_name_fn = [widget] {
+        auto file_name = Path(widget->doc()->get_path()).filename();
+        if (file_name) {
+            return QString::fromStdWString(file_name.value());
+        }
+        return QString("");
+        };
+    auto get_search_fn = [widget]() {
+
+        int num_search_results = widget->main_document_view->get_num_search_results();
+        float progress = -1;
+        if (widget->main_document_view->get_is_searching(&progress)) {
+
+            int result_index = widget->main_document_view->get_num_search_results() > 0 ? widget->main_document_view->get_current_search_result_index() + 1 : 0;
+            auto res = " | showing result " + QString::number(result_index) + " / " + QString::number(num_search_results);
+            if (progress > 0) {
+                res = res + " (" + QString::number((int)(progress * 100)) + "%" + ")";
+            }
+            return res;
+        }
+        return QString("");
+        };
+    auto get_link_status_fn = [widget]() {
+        if (widget->is_pending_link_source_filled()) {
+            return QString(" | linking ...");
+        }
+        else if (widget->portal_to_edit) {
+            return QString(" | editing link ...");
+        }
+        else {
+            return QString("");
+        }
+        };
+    auto get_waiting_for_symbol_fn = [widget]() {
+
+        if (widget->is_waiting_for_symbol()) {
+            std::wstring wcommand_name = utf8_decode(widget->pending_command_instance->next_requirement(widget).value().name);
+            QString hint_name = QString::fromStdString(widget->pending_command_instance->get_name());
+
+            if (wcommand_name.size() > 0) {
+                hint_name += "(" + QString::fromStdWString(wcommand_name) + ")";
+            }
+
+            return " " + hint_name + " waiting for symbol";
+        }
+        return QString("");
+        };
+    auto indexing_fn = [widget]() {
+        
+        if (widget->main_document_view != nullptr && widget->main_document_view->get_document() != nullptr &&
+            widget->main_document_view->get_document()->get_is_indexing()) {
+            return QString(" | indexing ... ");
+        }
+        return QString("");
+        };
+    auto overview_fn = [widget]() {
+
+        if (widget->main_document_view && widget->main_document_view->get_overview_page()) {
+            if (widget->dv()->index_into_candidates >= 0 && widget->dv()->smart_view_candidates.size() > 1) {
+                QString preview_source_string = "";
+                if (widget->dv()->smart_view_candidates[widget->dv()->index_into_candidates].source_text.size() > 0) {
+                    preview_source_string = " (" + QString::fromStdWString(widget->dv()->smart_view_candidates[widget->dv()->index_into_candidates].source_text) + ")";
+                }
+                return " [ preview " + QString::number(widget->dv()->index_into_candidates + 1) + " / " + QString::number(widget->dv()->smart_view_candidates.size()) + preview_source_string + " ]";
+            }
+        }
+
+        return QString("");
+        };
+    auto synctex_fn = [widget]() {
+
+        if (widget->synctex_mode) {
+            return QString(" [ synctex ]");
+        }
+        return QString("");
+        };
+
+    auto drag_fn = [widget]() {
+        if (widget->mouse_drag_mode) {
+            return QString(" [ drag ]");
+        }
+        };
+    auto presentation_fn = [widget]() {
+
+        if (widget->main_document_view->is_presentation_mode()) {
+            return QString(" [ presentation ]");
+        }
+        return QString("");
+        };
+    auto auto_name_fn = [widget]() {
+        return QString::fromStdWString(widget->doc()->get_detected_paper_name_if_exists());
+        };
+    auto visual_scroll_fn = [widget]() {
+
+        if (widget->visual_scroll_mode) {
+            return QString(" [ visual scroll ]");
+        }
+        return QString("");
+        };
+    auto horizontal_scroll_fn = [widget]() {
+        if (widget->horizontal_scroll_locked) {
+            return QString(" [ locked horizontal scroll ]");
+        }
+        return QString("");
+        };
+
+    auto highlight_fn = [widget]() {
+
+        std::wstring highlight_select_char = L"";
+
+        if (widget->is_select_highlight_mode) {
+            highlight_select_char = L"s";
+        }
+
+        return " [ h" + QString::fromStdWString(highlight_select_char) + ":" + widget->select_highlight_type + " ]";
+        };
+
+    auto drawing_fn = [widget]() {
+
+        QString drawing_mode_string = "";
+        if (widget->freehand_drawing_mode == DrawingMode::Drawing) {
+            drawing_mode_string = QString(" [ freehand:") + widget->current_freehand_type + " ]";
+        }
+        if (widget->freehand_drawing_mode == DrawingMode::PenDrawing) {
+            drawing_mode_string = QString(" [ pen:") + widget->current_freehand_type + " ]";
+        }
+
+        return drawing_mode_string;
+        };
+    auto mode_fn = [widget]() {
+        return QString::fromStdString(widget->get_current_mode_string());
+        };
+    auto closest_bookmark_fn = [widget]() {
+
+        std::optional<BookMark> closest_bookmark = widget->main_document_view->find_closest_bookmark();
+        if (closest_bookmark) {
+            return " [ " + QString::fromStdWString(closest_bookmark.value().description) + " ]";
+        }
+        return QString("");
+        };
+    auto closest_portal_fn = [widget]() {
+
+        std::optional<Portal> close_portal = widget->get_target_portal(true);
+        if (close_portal) {
+            return QString(" [ PORTAL ]");
+        }
+        return QString("");
+        };
+    auto rect_select_fn = [widget]() {
+
+        if (widget->rect_select_mode) {
+            return QString(" [ select box ]");
+        }
+        return QString("");
+        };
+    
+    auto point_select_fn = [widget]() {
+        if (widget->point_select_mode) {
+            return QString(" [ select point ]");
+        }
+        };
+    auto custom_message_fn = [widget]() {
+
+        if (widget->custom_status_message.size() > 0) {
+            return " [ " + QString::fromStdWString(widget->custom_status_message) + " ]";
+        }
+        return QString("");
+        };
+    auto current_requirement_fn = [widget]() {
+
+        if (widget->pending_command_instance){
+            if (widget->pending_command_instance->next_requirement(widget)->type == RequirementType::Point) {
+                return " [ " + QString::fromStdString(widget->pending_command_instance->next_requirement(widget)->name) + " ] ";
+            }
+        }
+        return QString("");
+        };
+    auto download_fn = [widget]() {
+
+        bool is_downloading = false;
+        if (widget->is_network_manager_running(&is_downloading)) {
+            if (is_downloading) {
+                return QString(" [ downloading ]");
+            }
+        }
+        return QString("");
+        };
+    auto selected_highlight_fn = [widget]() {
+        if (widget->selected_highlight_index != -1) {
+            Highlight hl = widget->main_document_view->get_highlight_with_index(widget->selected_highlight_index);
+            return " [ " + QString::fromStdWString(hl.text_annot) + " ]";
+        }
+        return QString("");
+        };
+
+
+    std::unordered_map<QString, std::function<QString()>> name_to_generator = {
+        {"current_page", get_current_page_fn},
+        {"current_page_label", get_current_page_label_fn},
+        {"num_pages", get_num_pages_fn},
+        {"chapter_name", get_chapter_name_fn},
+        {"document_name", get_document_name_fn},
+        {"search_results", get_search_fn},
+        {"link_status", get_link_status_fn},
+        {"waiting_for_symbol", get_waiting_for_symbol_fn},
+        {"indexing", indexing_fn},
+        {"preview_index", overview_fn},
+        {"synctex", synctex_fn},
+        {"drag", drag_fn},
+        {"presentation", presentation_fn},
+        {"auto_name", auto_name_fn},
+        {"visual_scroll", visual_scroll_fn},
+        {"locked_scroll", horizontal_scroll_fn},
+        {"highlight", highlight_fn},
+        {"freehand_drawing", drawing_fn},
+        {"mode_string", mode_fn},
+        {"closest_bookmark", closest_bookmark_fn},
+        {"closest_portal", closest_portal_fn},
+        {"rect_select", rect_select_fn},
+        {"point_select", point_select_fn},
+        {"custom_message", custom_message_fn},
+        {"current_requirement_desc", current_requirement_fn},
+        {"download", download_fn},
+    };
+
+    std::unordered_map<QString, StatusStringPart> name_to_id = {
+        {"current_page", StatusStringPart::CURRENT_PAGE},
+        {"current_page_label", StatusStringPart::CURRENT_PAGE_LABEL},
+        {"num_pages", StatusStringPart::NUM_PAGES},
+        {"chapter_name", StatusStringPart::CHAPTER_NAME},
+        {"document_name", StatusStringPart::DOCUMENT_NAME},
+        {"search_results", StatusStringPart::SEARCH_RESULTS},
+        {"link_status", StatusStringPart::LINK_STATUS},
+        {"waiting_for_symbol", StatusStringPart::WAITING_FOR_SYMBOL},
+        {"indexing", StatusStringPart::INDEXING},
+        {"preview_index", StatusStringPart::PREVIEW_INDEX},
+        {"synctex", StatusStringPart::SYNCTEX},
+        {"drag", StatusStringPart::DRAG},
+        {"presentation", StatusStringPart::PRESENTATION},
+        {"auto_name", StatusStringPart::AUTO_NAME},
+        {"visual_scroll", StatusStringPart::VISUAL_SCROLL},
+        {"locked_scroll", StatusStringPart::LOCKED_SCROLL},
+        {"highlight", StatusStringPart::HIGHLIGHT},
+        {"freehand_drawing", StatusStringPart::FREEHAND_DRAWING},
+        {"mode_string", StatusStringPart::MODE_STRING},
+        {"closest_bookmark", StatusStringPart::CLOSEST_BOOKMARK},
+        {"closest_portal", StatusStringPart::CLOSEST_PORTAL},
+        {"rect_select", StatusStringPart::RECT_SELECT},
+        {"point_select", StatusStringPart::POINT_SELECT},
+        {"custom_message", StatusStringPart::CUSTOM_MESSAGE},
+        {"current_requirement_desc", StatusStringPart::CURRENT_REQUIREMENT_DESC},
+        {"download", StatusStringPart::DOWNLOAD},
+    };
+
+    QRegularExpression expr("%\\{[a-z_]+\\}");
+    QRegularExpressionMatchIterator matches = expr.globalMatch(status_string);
+    int prev_match_end_index = 0;
+
+    std::vector<std::variant<QString, std::pair<StatusStringPart, std::function<QString()>>>> parts;
+
+    while (matches.hasNext()) {
+        QRegularExpressionMatch match = matches.next();
+        QString intermatch = status_string.mid(prev_match_end_index, match.capturedStart() - prev_match_end_index);
+
+        parts.push_back(intermatch);
+
+        QString captured = match.captured();
+        QString captured_name = captured.mid(2, captured.size() - 3);
+
+        if (name_to_generator.find(captured_name) != name_to_generator.end()) {
+            parts.push_back(std::make_pair(name_to_id[captured_name], name_to_generator[captured_name]));
+        }
+
+        prev_match_end_index = match.capturedEnd();
+    }
+    if (prev_match_end_index < status_string.size() - 1) {
+        parts.push_back(status_string.right(status_string.size() - 1 - prev_match_end_index));
+    }
+
+    auto generator = [name_to_generator=std::move(name_to_generator), parts=std::move(parts)]() {
+        QString res = "";
+        std::vector<int> part_types;
+        for (auto& part : parts) {
+            if (std::holds_alternative<QString>(part)) {
+                QString p = std::get<QString>(part);
+                res += p;
+                std::fill_n(std::back_inserter(part_types), p.size(), -1);
+            }
+            else {
+                auto& [part_type, part_fn] = std::get <std::pair<StatusStringPart, std::function<QString()>>>(part);
+                QString p = part_fn();
+                res += part_fn();
+                std::fill_n(std::back_inserter(part_types), p.size(), static_cast<int>(part_type));
+            }
+        }
+        return std::make_pair(res, part_types);
+        };
+
+    return std::move(generator);
 }
 
 template<typename T>
@@ -954,9 +1311,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     status_label->setFont(label_font);
     status_label->setStyleSheet(get_status_stylesheet());
 
-    status_label_left = new QLabel();
+    status_label_left = new StatusLabelLineEdit();
+    status_label_left->setFocusPolicy(Qt::FocusPolicy::NoFocus);
     status_label_left->setStyleSheet(get_status_stylesheet());
     status_label_left->setFont(label_font);
+
 
     QHBoxLayout* right_status_container_layout = new QHBoxLayout();
 
@@ -1056,6 +1415,31 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect(resume_to_server_position_button, &QPushButton::clicked, [&]() {
         handle_resume_to_server_location();
         });
+
+    dynamic_cast<StatusLabelLineEdit*>(status_label_left)->on_click = [&]() {
+
+        QPoint mouse_pos = mapFromGlobal(QCursor::pos());
+        int cursor_pos = status_label_left->cursorPositionAt(mouse_pos);
+        QString text = status_label_left->text();
+        if (cursor_pos >= 0 && cursor_pos < last_status_string_ids.size()) {
+            //qDebug() << text.at(cursor_pos);
+            int type = last_status_string_ids[cursor_pos];
+            if (type >= 0) {
+                if ((type == static_cast<int>(StatusStringPart::CURRENT_PAGE)) || (type == static_cast<int>(StatusStringPart::NUM_PAGES))) {
+                    execute_macro_if_enabled(L"show_touch_page_select");
+                }
+                if ((type == static_cast<int>(StatusStringPart::CHAPTER_NAME))) {
+                    execute_macro_if_enabled(L"goto_toc");
+                }
+                if ((type == static_cast<int>(StatusStringPart::HIGHLIGHT))) {
+                    execute_macro_if_enabled(L"show_touch_highlight_type_select");
+                }
+            }
+        }
+        };
+    //QObject::connect(status_label_left, &QWidget::cursorPositionChanged, [&](int a, int b) {
+    //    qDebug() << "something";
+    //    });
 
     QObject::connect(server_actions_button, &QPushButton::clicked, [&]() {
         handle_server_actions_button_pressed();
@@ -1334,214 +1718,20 @@ bool MainWidget::is_pending_link_source_filled() {
 
 std::wstring MainWidget::get_status_string(bool is_right) {
 
-    QString status_string = QString::fromStdWString(STATUS_BAR_FORMAT);
-    if (DEBUG) {
-        status_string = status_string + " [DEBUG]";
-    }
-
     if (is_right) {
-        status_string = QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT);
-    }
-
-    if (status_string.size() == 0) return L"";
-    if (main_document_view->get_document() == nullptr) return L"";
-
-    std::wstring chapter_name = main_document_view->get_current_chapter_name();
-
-    status_string.replace("%{current_page}", QString::number(get_current_page_number() + 1));
-    status_string.replace("%{current_page_label}", QString::fromStdWString(get_current_page_label()));
-    status_string.replace("%{num_pages}", QString::number(main_document_view->get_document()->num_pages()));
-
-    if (chapter_name.size() > 0) {
-        status_string.replace("%{chapter_name}", " [ " + QString::fromStdWString(chapter_name) + " ] ");
-    }
-
-    if (SHOW_DOCUMENT_NAME_IN_STATUSBAR) {
-        std::optional<std::wstring> file_name = Path(main_document_view->get_document()->get_path()).filename();
-        if (file_name) {
-            status_string.replace("%{document_name}", " [ " + QString::fromStdWString(file_name.value()) + " ] ");
+        if (!right_status_string_generator.has_value()) {
+            right_status_string_generator = std::move(compile_status_string(QString::fromStdWString(RIGHT_STATUS_BAR_FORMAT), this));
         }
+        return (*right_status_string_generator)().first.toStdWString();
     }
-
-    int num_search_results = main_document_view->get_num_search_results();
-    float progress = -1;
-    if (should_show_status_label()) {
-        // Make sure statusbar is visible if we are searching
-        if (!status_label->isVisible()) {
-            status_label->show();
-        }
-
-        // show the 0th result if there are no results and the index + 1 otherwise
-        if (main_document_view->get_is_searching(&progress)) {
-
-            int result_index = main_document_view->get_num_search_results() > 0 ? main_document_view->get_current_search_result_index() + 1 : 0;
-            status_string.replace("%{search_results}", " | showing result " + QString::number(result_index) + " / " + QString::number(num_search_results));
-            if (progress > 0) {
-                status_string.replace("%{search_progress}", " (" + QString::number((int)(progress * 100)) + "%" + ")");
-            }
-        }
-    }
-
     else {
-        // Make sure statusbar is hidden if it should be
-        if (!should_show_status_label()) {
-            status_label->hide();
+        if (!left_status_string_generator.has_value()) {
+            left_status_string_generator = std::move(compile_status_string(QString::fromStdWString(STATUS_BAR_FORMAT), this));
         }
+        auto [str, ids] = (*left_status_string_generator)();
+        last_status_string_ids = ids;
+        return str.toStdWString();
     }
-
-    if (is_pending_link_source_filled()) {
-        status_string.replace("%{link_status}", " | linking ...");
-    }
-    if (portal_to_edit) {
-        status_string.replace("%{link_status}", " | editing link ...");
-    }
-    //if (current_pending_command && current_pending_command.value().requires_symbol) {
-    if (is_waiting_for_symbol()) {
-        std::wstring wcommand_name = utf8_decode(pending_command_instance->next_requirement(this).value().name);
-        QString hint_name = QString::fromStdString(pending_command_instance->get_name());
-
-        if (wcommand_name.size() > 0) {
-            hint_name += "(" + QString::fromStdWString(wcommand_name) + ")";
-        }
-
-        status_string.replace("%{waiting_for_symbol}", " " + hint_name+ " waiting for symbol");
-    }
-    if (main_document_view != nullptr && main_document_view->get_document() != nullptr &&
-        main_document_view->get_document()->get_is_indexing()) {
-        status_string.replace("%{indexing}", " | indexing ... ");
-    }
-    if (main_document_view && main_document_view->get_overview_page()) {
-        if (dv()->index_into_candidates >= 0 && dv()->smart_view_candidates.size() > 1) {
-            QString preview_source_string = "";
-            if (dv()->smart_view_candidates[dv()->index_into_candidates].source_text.size() > 0) {
-                preview_source_string = " (" + QString::fromStdWString(dv()->smart_view_candidates[dv()->index_into_candidates].source_text) + ")";
-            }
-            status_string.replace("%{preview_index}", " [ preview " + QString::number(dv()->index_into_candidates + 1) + " / " + QString::number(dv()->smart_view_candidates.size()) + preview_source_string + " ]");
-
-        }
-    }
-    if (this->synctex_mode) {
-        status_string.replace("%{synctex}", " [ synctex ]");
-    }
-    if (this->mouse_drag_mode) {
-        status_string.replace("%{drag}", " [ drag ]");
-    }
-    if (main_document_view->is_presentation_mode()) {
-        status_string.replace("%{presentation}", " [ presentation ]");
-    }
-
-    if (status_string.indexOf("%{auto_name}") != -1) {
-        status_string.replace("%{auto_name}", QString::fromStdWString(doc()->get_detected_paper_name_if_exists()));
-    }
-    if (visual_scroll_mode) {
-        status_string.replace("%{visual_scroll}", " [ visual scroll ]");
-    }
-
-    if (horizontal_scroll_locked) {
-        status_string.replace("%{locked_scroll}", " [ locked horizontal scroll ]");
-    }
-    std::wstring highlight_select_char = L"";
-
-    if (is_select_highlight_mode) {
-        highlight_select_char = L"s";
-    }
-
-    status_string.replace("%{highlight}", " [ h" + QString::fromStdWString(highlight_select_char) + ":" + select_highlight_type + " ]");
-    QString drawing_mode_string = "";
-    if (freehand_drawing_mode == DrawingMode::Drawing) {
-        drawing_mode_string = QString(" [ freehand:") + current_freehand_type + " ]";
-    }
-    if (freehand_drawing_mode == DrawingMode::PenDrawing) {
-        drawing_mode_string = QString(" [ pen:") + current_freehand_type + " ]";
-    }
-
-    status_string.replace("%{freehand_drawing}", drawing_mode_string);
-    if (status_string.indexOf("%{mode_string}") != -1) {
-        status_string.replace("%{mode_string}", QString::fromStdString(get_current_mode_string()));
-    }
-
-
-    if (SHOW_CLOSEST_BOOKMARK_IN_STATUSBAR) {
-        std::optional<BookMark> closest_bookmark = main_document_view->find_closest_bookmark();
-        if (closest_bookmark) {
-            status_string.replace("%{closest_bookmark}", " [ " + QString::fromStdWString(closest_bookmark.value().description) + " ]");
-        }
-    }
-
-
-    if (SHOW_CLOSE_PORTAL_IN_STATUSBAR) {
-        std::optional<Portal> close_portal = get_target_portal(true);
-        if (close_portal) {
-            status_string.replace("%{close_portal}", " [ PORTAL ]");
-        }
-    }
-
-
-    if (rect_select_mode) {
-        status_string.replace("%{rect_select}", " [ select box ]");
-    }
-
-    if (point_select_mode) {
-        status_string.replace("%{point_select}", " [ select point ]");
-    }
-
-
-    if (custom_status_message.size() > 0) {
-        status_string.replace("%{custom_message}", " [ " + QString::fromStdWString(custom_status_message) + " ]");
-    }
-
-    if (pending_command_instance && (status_string.indexOf("%{current_requirement_desc}") != -1)){
-        if (pending_command_instance->next_requirement(this)->type == RequirementType::Point){
-            status_string.replace("%{current_requirement_desc}", " [ " + QString::fromStdString(pending_command_instance->next_requirement(this)->name) + " ] ");
-        }
-    }
-
-    bool is_downloading = false;
-    if (is_network_manager_running(&is_downloading)) {
-        if (is_downloading) {
-            status_string.replace("%{download}", " [ downloading ]");
-        }
-        else {
-            status_string.replace("%{download}", " [ searching ]");
-        }
-    }
-    if (selected_highlight_index != -1) {
-        Highlight hl = main_document_view->get_highlight_with_index(selected_highlight_index);
-        status_string += " [ " + QString::fromStdWString(hl.text_annot) + " ]";
-    }
-
-    status_string.replace("%{current_page}", "");
-    status_string.replace("%{num_pages}", "");
-    status_string.replace("%{chapter_name}", "");
-    status_string.replace("%{search_results}", "");
-    status_string.replace("%{link_status}", "");
-    status_string.replace("%{waiting_for_symbol}", "");
-    status_string.replace("%{indexing}", "");
-    status_string.replace("%{preview_index}", "");
-    status_string.replace("%{synctex}", "");
-    status_string.replace("%{drag}", "");
-    status_string.replace("%{presentation}", "");
-    status_string.replace("%{visual_scroll}", "");
-    status_string.replace("%{locked_scroll}", "");
-    status_string.replace("%{highlight}", "");
-    status_string.replace("%{closest_bookmark}", "");
-    status_string.replace("%{close_portal}", "");
-    status_string.replace("%{rect_select}", "");
-    status_string.replace("%{custom_message}", "");
-    status_string.replace("%{search_progress}", "");
-    status_string.replace("%{download}", "");
-    status_string.replace("%{current_requirement_desc}", "");
-
-    //if (DEBUG) {
-    //    status_string += " [DEBUG MODE] ";
-    //    status_string += QString::number(network_manager.findChildren<QNetworkReply*>().size());
-    //}
-    if (opengl_widget->get_scratchpad()) {
-        status_string += QString("[ zoom: %1]").arg(QString::number(dv()->get_zoom_level()));
-    }
-
-    //return ss.str();
-    return status_string.toStdWString();
 }
 
 QString MainWidget::get_login_status_string() {
@@ -1814,6 +2004,14 @@ void MainWidget::validate_render() {
 }
 
 void MainWidget::validate_ui() {
+
+    if (should_show_status_label() && !status_label->isVisible()) {
+        status_label->show();
+    }
+    if ((!should_show_status_label()) && status_label->isVisible()) {
+        status_label->hide();
+    }
+
     status_label_left->setText(QString::fromStdWString(get_status_string(false)));
     status_label_right->setText(QString::fromStdWString(get_status_string(true)));
     server_actions_button->setText(get_login_status_string());
@@ -2877,6 +3075,10 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
 
+    if (!TOUCH_MODE && current_widget_stack.size() > 0) {
+        pop_current_widget();
+        return;
+    }
 
     if (is_drawing) {
         finish_drawing(mevent->pos());
@@ -3014,6 +3216,10 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     bool is_control_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
     bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
+
+    if (!TOUCH_MODE && current_widget_stack.size() > 0) {
+        return;
+    }
 
     if (should_draw(false) && (mevent->button() == Qt::MouseButton::LeftButton)) {
         start_drawing();
@@ -7279,6 +7485,12 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+    //qDebug() << current_widget_stack.back()->size();
+    //compile_status_string(QString::fromStdWString(STATUS_BAR_FORMAT), this);
+    //QPoint mouse_pos = mapFromGlobal(QCursor::pos());
+    //int cursor_pos = status_label_left->cursorPositionAt(mouse_pos);
+    //QString text = status_label_left->text();
+    //qDebug() << text.at(cursor_pos);
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -9783,6 +9995,49 @@ void MainWidget::show_touch_main_menu() {
     show_current_widget();
 }
 
+void MainWidget::show_touch_page_select() {
+
+    int current_page = dv()->get_center_page_number();
+    int num_pages = doc()->num_pages();
+    set_current_widget(new PageSelectorUI(this, current_page, num_pages));
+    show_current_widget();
+}
+
+void MainWidget::show_touch_highlight_type_select() {
+
+    QList<QColor> colors;
+    const int N_COLORS = 26;
+    for (int i = 0; i < N_COLORS; i++) {
+        colors.push_back(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * i]));
+    }
+
+    auto new_widget = new QQuickWidget(this);
+
+    new_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
+    new_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
+    new_widget->setClearColor(Qt::transparent);
+
+    new_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(colors));
+    new_widget->rootContext()->setContextProperty("_animate", QVariant::fromValue(false));
+    new_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchSymbolColorSelector.qml"));
+
+    //QObject::connect(new_widget, QQuickWidget::resize)
+    new_widget->resize(width(), height() / 5);
+    new_widget->move(0, height() / 2 - height() / 10);
+    //QObject::connect(new_widget, SIGNAL(colorClicked(int)), this, SLOT(highlight_type_color_clicked(int)));
+    QObject::connect(new_widget->rootObject(), SIGNAL(colorClicked(int)), this, SLOT(highlight_type_color_clicked(int)));
+
+    set_current_widget(new_widget);
+    show_current_widget();
+}
+
+void MainWidget::highlight_type_color_clicked(int index) {
+    this->select_highlight_type = 'a' + index;
+    pop_current_widget();
+    invalidate_ui();
+
+}
+
 void MainWidget::show_touch_settings_menu() {
 
     TouchSettings* config_menu = new TouchSettings(this);
@@ -12028,3 +12283,4 @@ void MainWidget::delete_current_file_from_server() {
 bool MainWidget::is_logged_in() {
     return sioyek_network_manager->status == ServerStatus::LoggedIn;
 }
+

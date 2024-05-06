@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.1
 
 Item{
     id: root
-    property list<color> colors;
+    property list<color> colors : _colors;
 
     signal colorClicked(int index)
     signal colorHeld(int index)
@@ -55,6 +55,7 @@ Item{
 
             Behavior on x {
 
+                enabled: false
                 NumberAnimation {
                     duration: 500
                     easing.type: Easing.OutExpo

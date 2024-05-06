@@ -85,7 +85,6 @@ Rectangle{
                         anchors.fill: parent
 //                        propagateComposedEvents: true
                         onClicked: {
-//                            console.log("somethiong");
 //                            mouse.accepted = false;
                             textid.text = "";
                             textid.focus = true;
@@ -114,7 +113,6 @@ Rectangle{
 
         onValueChanged: {
             if (prevValue != -1){
-                console.log("selected");
                 textid.text = Math.round(value);
                 /* emit */ pageSelected(Math.round(value));
             }
