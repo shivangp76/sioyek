@@ -697,7 +697,6 @@ public:
     void hande_turn_off_all_drawings();
     void handle_toggle_drawing_mask(char symbol);
     void show_command_palette();
-    void get_url_file_size(QString url);
     void auto_login();
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
@@ -988,7 +987,7 @@ public:
     void zoom_in_overview();
     void zoom_out_overview();
     Q_INVOKABLE QString run_macro_on_main_thread(QString macro_string, bool wait_for_result=true, int target_window_id=-1);
-    Q_INVOKABLE QString perform_network_request(QString url);
+    Q_INVOKABLE QByteArray perform_network_request(QString url, QString method = "get", QString json_data = "");
     Q_INVOKABLE QString read_text_file(QString path);
     Q_INVOKABLE void execute_macro_and_return_result(QString macro_string, bool* is_done, std::wstring* result);
     Q_INVOKABLE QString execute_macro_sync(QString macro);

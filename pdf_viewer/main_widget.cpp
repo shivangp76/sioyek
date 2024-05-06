@@ -24,7 +24,6 @@
 // maybe add ability to click on other status bar items. e.g. clicking on the chapter name could open the table of contents
 // make sure deleteLater is called on all network requests
 // when uploading the unsynced deletions, we should upload the unsynced deletions of all documents not just the current document
-// create a worker thread in SioyekNetworkManager to handle longer-lasting operations asynchronously
 
 #include <iostream>
 #include <vector>
@@ -1100,171 +1099,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     QObject::connect(&network_manager, &QNetworkAccessManager::finished, [this](QNetworkReply* reply) {
         reply->deleteLater();
-
-//        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-//        QString rep_url = reply->url().toString();
-//
-//        if (!reply->property("sioyek_network_request_type").isNull()) {
-//            // handled in a different place
-//            return;
-//        }
-//        if (!reply->property("sioyek_js_extension").isNull()) {
-//            return;
-//        }
-//        if (!reply->property("sioyek_handled").isNull()) {
-//            return;
-//        }
-//        if (status_code == 401) {
-//            show_error_message(L"This action requires login");
-//            return;
-//        }
-//
-//        std::wstring reply_url = reply->url().toString().toStdWString();
-//        QString reply_host = reply->url().host();
-//        //QString download_paper_host = QUrl(QString::fromStdWString(PAPER_SEARCH_URL)).host();
-//        QString download_paper_host = QUrl(QString::fromStdWString(sioyek_network_manager->SIOYEK_PAPER_URL_URL)).host();
-//
-//        // check if the result is from the paper search engine (and should be interpreted
-//        // as json) or is it a pdf file
-//        bool is_json = reply_host == download_paper_host;
-//
-//        if (!is_json) { // it's a pdf file
-//            QByteArray pdf_data = reply->readAll();
-//            QString header = reply->header(QNetworkRequest::ContentTypeHeader).toString();
-//
-//            if ((pdf_data.size() == 0) || (!header.startsWith("application/pdf"))) {
-//                return;
-//                //// by default we try to use the pdf's direct link instead of archived pdf link in order to
-//                //// reduce the load on archive.org servers, but if the direct link is not available we use
-//                //// the archived link instead
-//                //if (reply_url.find(L"web.archive.org") == -1) {
-//                //    PaperDownloadFinishedAction finish_action = get_paper_download_action_from_string(
-//                //        reply->property("sioyek_finish_action").toString());
-//
-//                //    download_paper_with_url(reply->property("sioyek_archive_url").toString().toStdWString(), true, finish_action)->setProperty(
-//                //        "sioyek_paper_name",
-//                //        reply->property("sioyek_paper_name")
-//                //    );
-//                //    return;
-//                //}
-//            }
-//
-//            QString file_name = reply->url().fileName();
-//
-//            if (AUTO_RENAME_DOWNLOADED_PAPERS && (!reply->property("sioyek_actual_paper_name").isNull())) {
-//                QString detected_file_name = get_file_name_from_paper_name(reply->property("sioyek_actual_paper_name").toString());
-//
-//                if (detected_file_name.size() > 0) {
-//                    QString extension = file_name.split(".").back();
-//                    file_name = detected_file_name + "." + extension;
-//                }
-//            }
-//            //reply->property("sioyek_paper_name").toString().replace("/", "_")
-//
-//            PaperDownloadFinishedAction finish_action = get_paper_download_action_from_string(reply->property("sioyek_finish_action").toString());
-//            QString path = QString::fromStdWString(downloaded_papers_path.slash(file_name.toStdWString()).get_path());
-//            QDir dir;
-//            dir.mkpath(QString::fromStdWString(downloaded_papers_path.get_path()));
-//
-//            QFile file(path);
-//            bool opened = file.open(QIODeviceBase::WriteOnly);
-//            if (opened) {
-//                file.write(pdf_data);
-//                file.close();
-//                if (finish_action == PaperDownloadFinishedAction::Portal) {
-//                    //std::string checksum = this->checksummer->get_checksum(path.toStdWString());
-//
-//                    this->finish_pending_download_portal(
-//                        reply->property("sioyek_paper_name").toString().toStdWString(),
-//                        path.toStdWString()
-//                    );
-//
-//                }
-//                else {
-//#ifdef SIOYEK_MOBILE
-//                    // todo: maybe show a dialog asking the user if they want to open the downloaded document
-//                    push_state();
-//                    open_document(path.toStdWString());
-//#else
-//                    MainWidget* new_window = handle_new_window();
-//                    new_window->open_document(path.toStdWString());
-//#endif
-//                }
-//            }
-//
-//
-//        }
-//        else {
-//            std::string answer;
-//            if (reply_host.startsWith("scholar.google")) {
-//                answer = QString::fromLatin1(reply->readAll()).toStdString();
-//            }
-//            else {
-//                answer = reply->readAll().toStdString();
-//            }
-//            QByteArray json_data = QByteArray::fromStdString(answer);
-//            QJsonDocument json_doc = QJsonDocument::fromJson(json_data);
-//            std::wstring paper_name = reply->property("sioyek_paper_name").toString().toStdWString();
-//            PaperDownloadFinishedAction download_finish_action = get_paper_download_action_from_string(
-//                reply->property("sioyek_finish_action").toString());
-//
-//            //auto get_url_file_size = [&](QString url) {
-//            //};
-//
-//            //QStringList paper_urls = extract_paper_string_from_json_response(json_doc.object(), PAPER_SEARCH_URL_PATH);
-//            //QStringList paper_titles = extract_paper_string_from_json_response(json_doc.object(), PAPER_SEARCH_TILE_PATH);
-//            //QStringList paper_contrib_names = extract_paper_string_from_json_response(json_doc.object(), PAPER_SEARCH_CONTRIB_PATH);
-//            QStringList paper_urls;
-//            QStringList paper_titles;
-//
-//            for (auto tuple : json_doc.object()["results"].toArray()) {
-//                auto title_url_tuple = tuple.toArray();
-//                paper_titles.append(title_url_tuple[0].toString());
-//                paper_urls.append(title_url_tuple[1].toString());
-//            }
-//
-//            for (auto u : paper_urls) {
-//                if (u.size() > 0) {
-//                    get_url_file_size(u);
-//                }
-//            }
-//
-//            QJsonArray hits = json_doc.object().value("hits").toObject().value("hits").toArray();
-//
-//            std::vector<std::wstring> hit_names;
-//            std::vector<std::wstring> hit_urls;
-//            std::vector<std::wstring> hit_raw_names;
-//            for (int i = 0; i < paper_urls.size(); i++) {
-//                if (paper_urls.at(i).size() > 0) {
-//                    hit_names.push_back(paper_titles.at(i).toStdWString());
-//                    hit_raw_names.push_back(paper_titles.at(i).toStdWString());
-//                    hit_urls.push_back(paper_urls.at(i).toStdWString());
-//                }
-//            }
-//
-//            int matching_index = -1;
-//
-//            if (AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME) {
-//                // if a paper matches the query (almost) exactly, then download it without showing
-//                // a paper list to the user
-//                for (int i = 0; i < hit_names.size(); i++) {
-//                    if (does_paper_name_match_query(paper_name, hit_raw_names[i])) {
-//                        matching_index = i;
-//                        break;
-//                    }
-//                }
-//            }
-//
-//            if (matching_index > -1) {
-//                auto download_reply = download_paper_with_url(hit_urls[matching_index], false, download_finish_action);
-//                download_reply->setProperty("sioyek_paper_name", QString::fromStdWString(paper_name));
-//                download_reply->setProperty("sioyek_actual_paper_name", QString::fromStdWString(hit_raw_names[matching_index]));
-//            }
-//            else {
-//                show_download_paper_menu(hit_names, hit_urls, paper_name, download_finish_action);
-//            }
-//        }
-//
         });
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
@@ -10447,19 +10281,32 @@ QString MainWidget::read_text_file(QString path) {
     return res;
 }
 
-QString MainWidget::perform_network_request(QString url) {
+QByteArray MainWidget::perform_network_request(QString url, QString method, QString json_data){
     bool is_done = false;
-    QString res;
+    QByteArray res;
 
     QMetaObject::invokeMethod(this, [&, url]() {
             QNetworkRequest req;
             req.setUrl(url);
-            auto reply = network_manager.get(req);
-            reply->setProperty("sioyek_js_extension", "true");
-            QObject::connect(reply, &QNetworkReply::finished, [&, reply]() {
-                res = QString::fromUtf8(reply->readAll());
-                is_done = true;
-                });
+            if (json_data.size() > 0) {
+                req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+            }
+            QNetworkReply* reply = nullptr;
+            if (method == "get") {
+                reply = network_manager.get(req);
+            }
+            else if (method == "post") {
+                reply = network_manager.post(req, json_data.toUtf8());
+            }
+
+            if (reply) {
+                reply->setProperty("sioyek_js_extension", "true");
+                QObject::connect(reply, &QNetworkReply::finished, [&, reply]() {
+                    //res = QString::fromUtf8(reply->readAll());
+                    res = reply->readAll();
+                    is_done = true;
+                    });
+            }
         });
     while (!is_done) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -12097,40 +11944,6 @@ void MainWidget::update_current_document_checksum(std::string checksum) {
     qDebug() << "update_current_document_checksum not implemented";
     assert(false);
 }
-
-
-void MainWidget::get_url_file_size(QString url) {
-
-    QNetworkRequest req;
-
-    //QString url_ = url.right(url.size() - url.lastIndexOf("http"));
-    //QString url_ = get_direct_pdf_url_from_archive_url(url);
-    QString url_ = get_original_url_from_archive_url(url);
-
-    req.setUrl(url_);
-    auto reply = network_manager.head(req);
-
-    reply->setProperty("sioyek_network_request_type", QString("paper_size"));
-
-    connect(reply, &QNetworkReply::finished, [reply, url, this]() {
-        reply->deleteLater();
-
-        if (current_widget_stack.size() == 0) return;
-
-        //todo: remove duplication here
-        if (dynamic_cast<FilteredSelectTableWindowClass<std::wstring>*>(current_widget_stack.back())) {
-            FilteredSelectTableWindowClass<std::wstring>* list_view = dynamic_cast<FilteredSelectTableWindowClass<std::wstring>*>(current_widget_stack.back());
-            list_view->set_value_second_item(url.toStdWString(),
-                file_size_to_human_readable_string(reply->header(QNetworkRequest::ContentLengthHeader).toUInt()));
-        }
-        if (dynamic_cast<TouchFilteredSelectWidget<std::wstring>*>(current_widget_stack.back())) {
-            TouchFilteredSelectWidget<std::wstring>* list_view = dynamic_cast<TouchFilteredSelectWidget<std::wstring>*>(current_widget_stack.back());
-            list_view->set_value_second_item(url.toStdWString(),
-                file_size_to_human_readable_string(reply->header(QNetworkRequest::ContentLengthHeader).toUInt()));
-        }
-        });
-
-}
  
 void MainWidget::auto_login() {
     if (AUTO_LOGIN_ON_STARTUP) {
@@ -12206,10 +12019,6 @@ void MainWidget::on_ios_resume(){
 }
 
 #endif
-
-
-
-
 
 
 QNetworkReply* MainWidget::download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action) {
