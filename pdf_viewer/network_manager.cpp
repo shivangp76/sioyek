@@ -21,6 +21,9 @@ extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
 SioyekNetworkManager::SioyekNetworkManager(DatabaseManager* db_manager_, BackgroundTaskManager* task_manager, DocumentManager* doc_manager, QObject* parent) :
    db_manager(db_manager_), background_task_manager(task_manager) , document_manager(doc_manager) {
     last_document_location_upload_time = QDateTime::currentDateTime();
+    QObject::connect(&network_manager, &QNetworkAccessManager::finished, [](QNetworkReply* reply) {
+        reply->deleteLater();
+        });
 }
 
 void SioyekNetworkManager::login(std::wstring username, std::wstring password) {
@@ -153,10 +156,6 @@ void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash
     reply->setProperty("sioyek_handled", true);
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, hash, fn=std::move(fn)]() {
-        //for (auto raw_header : reply->rawHeaderList()) {
-
-        //    qDebug() << QString::fromUtf8(raw_header) << " " << QString::fromUtf8(reply->rawHeader(raw_header));
-        //}
 
         QString filename = reply->header(QNetworkRequest::ContentDispositionHeader).toString().mid(22);
         filename = filename.left(filename.size() - 1);
@@ -331,7 +330,6 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
     reply->setProperty("sioyek_paper_name", QString::fromStdWString(name));
     reply->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, parent, fn=std::move(fn)]() {
-        reply->deleteLater();
 
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         QString rep_url = reply->url().toString();
@@ -396,7 +394,6 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
                         });
 
                 }
-                download_reply->deleteLater();
                 });
             download_reply->setParent(parent); // fn should not be called if parent is deleted
         }
@@ -672,7 +669,6 @@ void SioyekNetworkManager::upload_annot(
 
     QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_success=std::move(on_success), on_fail=std::move(on_fail)]() {
-        reply->deleteLater();
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status_code == 200) {
             on_success();
@@ -701,7 +697,6 @@ void SioyekNetworkManager::delete_annot(QObject* parent, const QString& file_che
     QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_fail=std::move(on_fail), on_success=std::move(on_success)]() {
-        reply->deleteLater();
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status_code != 200) {
             on_fail();
@@ -724,7 +719,6 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
     auto reply = network_manager.get(req);
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
-        reply->deleteLater();
 
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status_code == 200) {
@@ -885,7 +879,6 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent,
                 parent,
                 reply, on_done = std::move(on_done)
         ]() {
-            reply->deleteLater();
             qDebug() << reply->readAll();
             int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (status_code == 200) {

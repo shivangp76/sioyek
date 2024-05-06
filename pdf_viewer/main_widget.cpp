@@ -22,7 +22,6 @@
 // checksummer.get_path should use a hashmap instead of iterating over all paths
 // better handling of enum configs
 // maybe add ability to click on other status bar items. e.g. clicking on the chapter name could open the table of contents
-// make sure deleteLater is called on all network requests
 // when uploading the unsynced deletions, we should upload the unsynced deletions of all documents not just the current document
 
 #include <iostream>
@@ -1096,10 +1095,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     network_timer = new QTimer(this);
     network_timer->setInterval(10000);
-
-    QObject::connect(&network_manager, &QNetworkAccessManager::finished, [this](QNetworkReply* reply) {
-        reply->deleteLater();
-        });
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
 
@@ -7387,32 +7382,6 @@ void MainWidget::scan_new_files_from_scan_directory() {
     }
 }
 
-
-
-QNetworkReply* MainWidget::download_paper_with_name_old(const std::wstring& name, PaperDownloadFinishedAction action) {
-    std::wstring download_name = name;
-    if (name.size() > 0 && name[0] == ':') {
-        download_name = name.substr(1, name.size() - 1);
-    }
-
-    QUrl get_url = QString::fromStdWString(PAPER_SEARCH_URL).replace(
-        "%{query}",
-        QUrl::toPercentEncoding(QString::fromStdWString(download_name))
-    );
-
-    std::wstring get_url_string = get_url.toString().toStdWString();
-
-    QNetworkRequest req;
-    std::string user_agent_string = get_user_agent_string();
-    req.setRawHeader("User-Agent", user_agent_string.c_str());
-    req.setUrl(get_url);
-    auto reply = network_manager.get(req);
-    reply->setProperty("sioyek_paper_name", QString::fromStdWString(name));
-    reply->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
-    return reply;
-}
-
-
 void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
     if (is_scratchpad_mode()){
         return;
@@ -7813,68 +7782,6 @@ void MainWidget::handle_remove_marked_data() {
 
 
 void MainWidget::handle_export_marked_data() {
-    // fz_stext_page* stext_page = doc()->get_stext_with_page_number(get_current_page_number());
-    // std::vector<fz_stext_char*> flat_chars;
-    // get_flat_chars_from_stext_page(stext_page, flat_chars);
-    // auto export_path = qgetenv("SIOYEK_DATA_EXPORT").toStdString();
-    // QDir export_dir = QDir(QString::fromStdString(export_path));
-    // std::string checksum = checksummer->get_checksum_fast(doc()->get_path()).value();
-    // QString file_name = QString("%1_%2.json").arg(QString::fromStdString(checksum), QString::number(get_current_page_number()));
-    // auto file_path = export_dir.filePath(file_name);
-
-    // QJsonObject json;
-
-    // QJsonArray rects;
-    // for (auto [type, rect_objects] : main_document_view->get_marked_data_rect_map()) {
-    //     for (auto rect_object : rect_objects) {
-    //         QJsonArray rect;
-    //         rect.append(rect_object.type);
-    //         rect.append(rect_object.rect.rect.x0);
-    //         rect.append(rect_object.rect.rect.x1);
-    //         rect.append(rect_object.rect.rect.y0);
-    //         rect.append(rect_object.rect.rect.y1);
-    //         rects.append(rect);
-    //     }
-
-    // }
-    // //for (int i = 0; i < opengl_widget->marked_data_rects.size(); i++) {
-    // //    QJsonArray rect;
-    // //    rect.append(opengl_widget->marked_data_rects[i].first.x0);
-    // //    rect.append(opengl_widget->marked_data_rects[i].first.x1);
-    // //    rect.append(opengl_widget->marked_data_rects[i].first.y0);
-    // //    rect.append(opengl_widget->marked_data_rects[i].first.y1);
-    // //    rects.append(rect);
-    // //}
-
-    // json["selected_char_rects"] = rects;
-    // json["schema"] = 0;
-
-    // QJsonArray page_chars;
-
-    // for (auto chr : flat_chars) {
-    //     PagelessDocumentRect chr_rect = rect_from_quad(chr->quad);
-    //     QJsonArray chr_json;
-    //     chr_json.append(chr->c);
-    //     chr_json.append(chr_rect.x0);
-    //     chr_json.append(chr_rect.x1);
-    //     chr_json.append(chr_rect.y0);
-    //     chr_json.append(chr_rect.y1);
-    //     page_chars.append(chr_json);
-    // }
-    // json["page_characters"] = page_chars;
-
-    // QJsonDocument json_doc;
-    // json_doc.setObject(json);
-
-    // QFile json_file(file_path);
-    // json_file.open(QFile::WriteOnly);
-    // json_file.write(json_doc.toJson());
-    // json_file.close();
-
-    // opengl_widget->marked_data_rects.clear();
-    // invalidate_render();
-
-
 }
 
 void MainWidget::handle_goto_random_page() {
@@ -7899,26 +7806,12 @@ void MainWidget::show_download_paper_menu(
         values.push_back(std::make_pair(paper_names[i], download_urls[i]));
     }
 
-    //set_filtered_select_menu<std::pair<std::wstring, std::wstring>>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { paper_names, right_names }, values, -1,
-    //    [&, paper_name, action](std::pair<std::wstring, std::wstring>* values) {
-    //        std::wstring actual_paper_name = values->first;
-    //        std::wstring paper_url = values->second;
-
-    //        auto download_reply = download_paper_with_url(paper_url, false, action);
-    //        download_reply->setProperty("sioyek_paper_name", QString::fromStdWString(paper_name));
-    //        download_reply->setProperty("sioyek_actual_paper_name", QString::fromStdWString(actual_paper_name));
-    //        download_reply->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
-    //    },
-    //    nullptr);
-
     show_current_widget();
-
-
 }
 
 
 bool MainWidget::is_network_manager_running(bool* is_downloading) {
-    auto children = network_manager.findChildren<QNetworkReply*>();
+    auto children = sioyek_network_manager->network_manager.findChildren<QNetworkReply*>();
     for (int i = 0; i < children.size(); i++) {
         if (children.at(i)->isRunning()) {
             if (is_downloading) {
@@ -10293,16 +10186,17 @@ QByteArray MainWidget::perform_network_request(QString url, QString method, QStr
             }
             QNetworkReply* reply = nullptr;
             if (method == "get") {
-                reply = network_manager.get(req);
+                reply = sioyek_network_manager->network_manager.get(req);
             }
             else if (method == "post") {
-                reply = network_manager.post(req, json_data.toUtf8());
+                reply = sioyek_network_manager->network_manager.post(req, json_data.toUtf8());
             }
 
             if (reply) {
                 reply->setProperty("sioyek_js_extension", "true");
                 QObject::connect(reply, &QNetworkReply::finished, [&, reply]() {
                     //res = QString::fromUtf8(reply->readAll());
+                    reply->deleteLater();
                     res = reply->readAll();
                     is_done = true;
                     });

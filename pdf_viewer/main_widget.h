@@ -158,7 +158,6 @@ public:
     DocumentManager* document_manager = nullptr;
     CommandManager* command_manager = nullptr;
     ConfigManager* config_manager = nullptr;
-    QNetworkAccessManager network_manager;
     SioyekNetworkManager* sioyek_network_manager;
     BackgroundTaskManager* background_task_manager;
     PdfRenderer* pdf_renderer = nullptr;
@@ -686,7 +685,6 @@ public:
     void download_paper_under_cursor(bool use_last_touch_pos = false);
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
-    QNetworkReply* download_paper_with_name_old(const std::wstring& name, PaperDownloadFinishedAction action);
     void handle_debug_command();
     void handle_add_marked_data();
     void handle_undo_marked_data();
