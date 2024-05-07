@@ -265,7 +265,7 @@ bool ALPHABETIC_LINK_TAGS = false;
 bool VIMTEX_WSL_FIX = false;
 float RULER_AUTO_MOVE_SENSITIVITY = 40.0f;
 float TTS_RATE = 0.0f;
-bool VERBOSE = true;
+bool VERBOSE = false;
 bool FILL_TEXTBAR_WITH_SELECTED_TEXT = true;
 int NUM_PRERENDERED_NEXT_SLIDES = 1;
 int NUM_PRERENDERED_PREV_SLIDES = 0;
@@ -364,6 +364,7 @@ std::wstring MIDDLE_RIGHT_RECT_TAP_COMMAND = L"";
 #endif
 std::wstring MIDDLE_RIGHT_RECT_HOLD_COMMAND = L"";
 
+// these commands are peformed when the user clicks on the corresponding item's text on statusbar
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
     {L"current_page", L"show_touch_page_select"},
     {L"num_pages", L"show_touch_page_select"},
@@ -646,6 +647,14 @@ bool bool_validator(const std::wstring& str) {
     return false;
 }
 
+bool enum_validator(const std::wstring& str_, const EnumExtras& extras) {
+    std::wstring str = QString::fromStdWString(str_).trimmed().toStdWString();
+    if (std::find(extras.possible_values.begin(), extras.possible_values.end(), str) != extras.possible_values.end()) {
+        return true;
+    }
+    return false;
+}
+
 auto ivec2_serializer = vec_n_serializer<2, int>;
 auto ivec2_deserializer = vec_n_deserializer<2, int>;
 auto fvec2_serializer = vec_n_serializer<2, float>;
@@ -671,7 +680,7 @@ private:
     std::function<void(void*, std::wstringstream&)> serialize = nullptr;
     std::function<void*(std::wstringstream&, void* res, bool* changed)> deserialize = nullptr;
     std::function<bool(const std::wstring& value)> validator = nullptr;
-    std::variant<FloatExtras, IntExtras, EmptyExtras> extras = EmptyExtras{};
+    std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras = EmptyExtras{};
     bool is_auto = false;
 
     std::function<void(void*, std::wstringstream&)> get_serializer(){
@@ -690,6 +699,7 @@ private:
         case EnableRectangle: return rect_serializer;
         case Range: return fvec2_serializer;
         case Macro: return string_serializer;
+        case Enum: return string_serializer;
         default: assert(false);
         }
     }
@@ -710,6 +720,7 @@ private:
         case EnableRectangle: return rect_deserializer;
         case Range: return fvec2_deserializer;
         case Macro: return string_deserializer;
+        case Enum: return string_deserializer;
         default: assert(false);
         }
 
@@ -731,6 +742,7 @@ private:
         case EnableRectangle: return nullptr;
         case Range: return nullptr;
         case Macro: return nullptr;
+        case Enum: return [extras = extras](const std::wstring& value) {return enum_validator(value, std::get<EnumExtras>(extras)); };
         default: assert(false);
         }
 
@@ -771,6 +783,10 @@ public:
         return ConfigBuilder(config_name, ConfigType::Macro, val);
     }
 
+    static ConfigBuilder enumeration(std::wstring config_name, std::wstring* val, EnumExtras ex){
+        return ConfigBuilder(config_name, ConfigType::Enum, val).extra(ex);
+    }
+
     static ConfigBuilder ivec2(std::wstring config_name, int* val){
         return ConfigBuilder(config_name, ConfigType::IVec2, val);
     }
@@ -798,7 +814,7 @@ public:
         return *this;
     }
 
-    ConfigBuilder extra(std::variant<FloatExtras, IntExtras, EmptyExtras> extras_){
+    ConfigBuilder extra(std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras_){
         this->extras = extras_;
         return *this;
     }
@@ -882,6 +898,12 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
             );
     };
 
+    auto add_enum = [&](std::wstring name, std::wstring* location, EnumExtras extras){
+        configs.push_back(
+            ConfigBuilder::enumeration(name, location, extras).build()
+            );
+    };
+
     auto add_int = [&](std::wstring name, int* location, IntExtras extras){
         configs.push_back(
             ConfigBuilder::intc(name, location, extras).build()
@@ -909,12 +931,14 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"ui_background_color", UI_BACKGROUND_COLOR);
     add_color3(L"ui_selected_text_color", UI_SELECTED_TEXT_COLOR);
     add_color3(L"ui_background_color", STATUS_BAR_COLOR);
+
     add_color4(L"vertical_line_color",DEFAULT_VERTICAL_LINE_COLOR);
     add_color4(L"visual_mark_color",DEFAULT_VERTICAL_LINE_COLOR);
     add_color4(L"keyboard_select_background_color", KEYBOARD_SELECT_BACKGROUND_COLOR);
     add_color4(L"keyboard_select_text_color", KEYBOARD_SELECT_TEXT_COLOR);
     add_color4(L"keyboard_selected_tag_text_color", KEYBOARD_SELECTED_TAG_TEXT_COLOR);
     add_color4(L"keyboard_selected_tag_background_color", KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO);
+
     add_float(L"synctex_highlight_timeout", &HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT, FloatExtras{-1.0f, 100.0f});
     add_float(L"dark_mode_contrast", &DARK_MODE_CONTRAST, FloatExtras{0.0f, 1.0f});
     add_float(L"server_and_local_document_mismatch_threshold", &SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD, FloatExtras{0.0f, 100000.0f});
@@ -949,6 +973,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"epub_width", &EPUB_WIDTH, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_height", &EPUB_HEIGHT, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_font_size", &EPUB_FONT_SIZE, FloatExtras{0.0f, 100.0f});
+
     add_bool(L"default_dark_mode", &DEFAULT_DARK_MODE);
     add_bool(L"use_system_theme", &USE_SYSTEM_THEME);
     add_bool(L"use_custom_color_as_dark_system_theme", &USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME);
@@ -1028,12 +1053,12 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"auto_login_on_startup", &AUTO_LOGIN_ON_STARTUP);
     add_bool(L"automatically_upload_portal_destination_for_synced_documents", &AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
+
     add_string(L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
     add_string(L"libgen_address", &LIBGEN_ADDRESS);
     add_string(L"shared_database_path", &SHARED_DATABASE_PATH);
-    add_string(L"ruler_display_mode", &RULER_DISPLAY_MODE);
     add_string(L"ui_font", &UI_FONT_FACE_NAME);
     add_string(L"status_font", &STATUS_FONT_FACE_NAME);
     add_string(L"middle_click_search_engine", &MIDDLE_CLICK_SEARCH_ENGINE);
@@ -1054,11 +1079,11 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"paper_download_contrib_path", &PAPER_SEARCH_CONTRIB_PATH);
     add_string(L"default_open_file_path", &DEFAULT_OPEN_FILE_PATH);
     add_string(L"annotations_directory", &ANNOTATIONS_DIR_PATH);
-    add_string(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY);
     add_string(L"status_bar_format", &STATUS_BAR_FORMAT);
     add_string(L"right_status_bar_format", &RIGHT_STATUS_BAR_FORMAT);
     add_string(L"epub_css", &EPUB_CSS);
     add_string(L"tag_font_face", &TAG_FONT_FACE);
+
     add_macro(L"startup_commands", &STARTUP_COMMANDS);
     add_macro(L"shift_click_command", &SHIFT_CLICK_COMMAND);
     add_macro(L"resize_command", &RESIZE_COMMAND);
@@ -1088,6 +1113,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_macro(L"control_right_click_command", &CONTROL_RIGHT_CLICK_COMMAND);
     add_macro(L"alt_click_command", &ALT_CLICK_COMMAND);
     add_macro(L"alt_right_click_command", &ALT_RIGHT_CLICK_COMMAND);
+
     add_int(L"font_size", &FONT_SIZE, IntExtras{1, 100});
     add_int(L"ruler_pixel_width", &RULER_UNDERLINE_PIXEL_WIDTH, IntExtras{1, 100});
     add_int(L"num_prerendered_next_slides", &NUM_PRERENDERED_NEXT_SLIDES, IntExtras{0, 5});
@@ -1100,6 +1126,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"max_created_toc_size", &MAX_CREATED_TABLE_OF_CONTENTS_SIZE, IntExtras{1, 100000});
     add_int(L"prerendered_page_count", &PRERENDERED_PAGE_COUNT, IntExtras{0, 10});
     add_int(L"reload_interval_miliseconds", &RELOAD_INTERVAL_MILISECONDS, IntExtras{0, 10000});
+
     add_ivec2(L"main_window_size", MAIN_WINDOW_SIZE);
     add_ivec2(L"helper_window_size", HELPER_WINDOW_SIZE);
     add_ivec2(L"main_window_move", MAIN_WINDOW_MOVE);
@@ -1108,6 +1135,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_ivec2(L"single_main_window_move", SINGLE_MAIN_WINDOW_MOVE);
     add_fvec2(L"overview_size", OVERVIEW_SIZE);
     add_fvec2(L"overview_offset", OVERVIEW_OFFSET);
+
     add_rect(L"portrait_back_ui_rect", &PORTRAIT_BACK_UI_RECT);
     add_rect(L"portrait_forward_ui_rect", &PORTRAIT_FORWARD_UI_RECT);
     add_rect(L"landscape_back_ui_rect", &LANDSCAPE_BACK_UI_RECT);
@@ -1120,6 +1148,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_rect(L"portrait_visual_mark_prev", &PORTRAIT_VISUAL_MARK_PREV);
     add_rect(L"landscape_visual_mark_next", &LANDSCAPE_VISUAL_MARK_NEXT);
     add_rect(L"landscape_visual_mark_prev", &LANDSCAPE_VISUAL_MARK_PREV);
+
+    add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({ {L"local", L"server", L"ask", L"show_button"}}));
+    add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline"}}));
 
 #ifdef Q_OS_MACOS
     add_color3(L"macos_titlebar_color", MACOS_TITLEBAR_COLOR);
@@ -1427,6 +1458,21 @@ bool ConfigManager::deserialize_config(std::string config_name, std::wstring con
 
     std::wstringstream config_value_stream(config_value);
     Config* conf = get_mut_config_with_name(utf8_decode(config_name));
+
+    if (conf->validator) {
+        if (!conf->validator(config_value)) {
+            qDebug() << "Error: " << QString::fromStdWString(config_value) << " is not a valid " << QString::fromStdString(config_name) << " value";
+            if (conf->config_type == ConfigType::Enum) {
+                qDebug() << "possible values are:";
+                auto& possible_values = std::get<EnumExtras>(conf->extras).possible_values;
+                for (int i = 0; i < possible_values.size(); i++) {
+                    qDebug() << i << ": " << QString::fromStdWString(possible_values[i]);
+                }
+            }
+            return false;
+        }
+    }
+
     bool changed = false;
     auto deserialization_result = conf->deserialize(config_value_stream, conf->value, &changed);
     if (deserialization_result != nullptr) {
@@ -1486,7 +1532,7 @@ QVariant ConfigModel::data(const QModelIndex& index, int role) const {
                 return QVariant::fromValue(vals);
             }
 
-            if ((config_type == ConfigType::String) || (config_type == ConfigType::Macro) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
+            if ((config_type == ConfigType::String) || (config_type == ConfigType::Macro) || (config_type == ConfigType::Enum) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
                 //QColor::from
                 return QVariant::fromValue(QString::fromStdWString(*(std::wstring*)(conf->value)));
             }
@@ -1551,6 +1597,7 @@ std::wstring Config::get_type_string() const{
     if (config_type == ConfigType::FVec2) return L"fvec2";
     if (config_type == ConfigType::EnableRectangle) return L"enablerectangle";
     if (config_type == ConfigType::Range) return L"range";
+    if (config_type == ConfigType::Enum) return L"enum";
 }
 
 QRect UIRect::to_window(int window_width, int window_height) {
@@ -1583,7 +1630,7 @@ std::vector<std::wstring> ConfigManager::get_auto_config_names() {
 }
 
 bool Config::is_empty_string() {
-    if ((config_type == ConfigType::String) || (config_type == ConfigType::Macro) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
+    if ((config_type == ConfigType::String) || (config_type == ConfigType::Enum) || (config_type == ConfigType::Macro) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
         if (((std::wstring*)value)->size() == 0) {
             return true;
         }

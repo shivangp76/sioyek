@@ -6476,6 +6476,18 @@ public:
         }
     }
 
+    std::optional<std::wstring> get_text_suggestion(int index) {
+        const Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
+        if (config->config_type == ConfigType::Enum) {
+            const EnumExtras& extras = std::get<EnumExtras>(config->extras);
+            if (extras.possible_values.size() > 0) {
+                index = index % extras.possible_values.size();
+                return extras.possible_values[index];
+            }
+        }
+        return {};
+    }
+
     void perform() {
 
         if (TOUCH_MODE) {

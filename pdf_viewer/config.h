@@ -32,7 +32,8 @@ enum ConfigType {
     FVec2,
     EnableRectangle,
     Range,
-    Macro
+    Macro,
+    Enum
 };
 
 struct UIRange {
@@ -62,6 +63,10 @@ struct IntExtras {
     int max_val;
 };
 
+struct EnumExtras {
+    std::vector<std::wstring> possible_values;
+};
+
 struct EmptyExtras {
 };
 
@@ -84,7 +89,7 @@ struct Config {
     std::function<void(void*, std::wstringstream&)> serialize = nullptr;
     std::function<void*(std::wstringstream&, void* res, bool* changed)> deserialize = nullptr;
     std::function<bool(const std::wstring& value)> validator = nullptr;
-    std::variant<FloatExtras, IntExtras, EmptyExtras> extras = EmptyExtras{};
+    std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras = EmptyExtras{};
     std::wstring default_value_string;
     bool is_auto = false;
 

@@ -21,8 +21,8 @@
 // customized portal zoom levels should not be reset
 // checksummer.get_path should use a hashmap instead of iterating over all paths
 // better handling of enum configs
-// maybe add ability to click on other status bar items. e.g. clicking on the chapter name could open the table of contents
 // live reload statusbar format changes
+// enum config touch ui
 
 #include <iostream>
 #include <vector>
@@ -1075,15 +1075,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                 if (STATUS_BAR_COMMANDS.find(status_part) != STATUS_BAR_COMMANDS.end()) {
                     execute_macro_if_enabled(STATUS_BAR_COMMANDS[status_part]);
                 }
-                //if (STATUS_STRING_PARTS[type] == "current_page" || STATUS_STRING_PARTS[type] == "num_pages") {
-                //    execute_macro_if_enabled(L"show_touch_page_select");
-                //}
-                //if (STATUS_STRING_PARTS[type] == "chapter_name"){
-                //    execute_macro_if_enabled(L"goto_toc");
-                //}
-                //if (STATUS_STRING_PARTS[type] == "highlight") {
-                //    execute_macro_if_enabled(L"show_touch_highlight_type_select");
-                //}
             }
         }
         };
@@ -7135,12 +7126,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    //qDebug() << current_widget_stack.back()->size();
-    //compile_status_string(QString::fromStdWString(STATUS_BAR_FORMAT), this);
-    //QPoint mouse_pos = mapFromGlobal(QCursor::pos());
-    //int cursor_pos = status_label_left->cursorPositionAt(mouse_pos);
-    //QString text = status_label_left->text();
-    //qDebug() << text.at(cursor_pos);
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
