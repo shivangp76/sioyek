@@ -451,6 +451,7 @@ public:
     void on_config_changed(std::string config_name, bool should_save=false);
     void on_configs_changed(std::vector<std::string>* config_names);
 
+    void on_overview_move_end();
     void next_state();
     void prev_state();
     void update_current_history_index();
@@ -487,7 +488,7 @@ public:
     void execute_command(std::wstring command, std::wstring text = L"", bool wait = false);
     //QString get_status_stylesheet();
     void smart_jump_under_pos(WindowPos pos);
-    void open_overview_to_document(Document* document, float offset_y);
+    void open_overview_to_portal(Document* document, Portal portal);
     bool overview_under_pos(WindowPos pos);
     void visual_mark_under_pos(WindowPos pos);
     bool is_network_manager_running(bool* is_downloading = nullptr);

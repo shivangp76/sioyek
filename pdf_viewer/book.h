@@ -5,6 +5,7 @@
 #include <variant>
 #include <mupdf/fitz.h>
 //#include <gl/glew.h>
+#include <optional>
 #include <qopengl.h>
 #include <variant>
 #include <qjsonobject.h>
@@ -69,14 +70,6 @@ struct BookState {
     std::string uuid;
 };
 
-struct OverviewState {
-    float absolute_offset_y;
-    float absolute_offset_x = 0;
-    float zoom_level = -1;
-    Document* doc = nullptr;
-    std::optional<std::string> overview_type;
-    std::vector<DocumentRect> highlight_rects;
-};
 
 struct OpenedBookState {
     float zoom_level;
@@ -366,6 +359,15 @@ struct Portal : Annotation {
     void update_merged_rect(Document* doc) const;
 };
 
+struct OverviewState {
+    float absolute_offset_y;
+    float absolute_offset_x = 0;
+    float zoom_level = -1;
+    Document* doc = nullptr;
+    std::optional<std::string> overview_type;
+    std::vector<DocumentRect> highlight_rects;
+    std::optional<Portal> source_portal = {};
+};
 
 bool operator==(const DocumentViewState& lhs, const DocumentViewState& rhs);
 

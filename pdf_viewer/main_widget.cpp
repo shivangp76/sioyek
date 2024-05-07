@@ -18,8 +18,6 @@
 // add some commands like { } to text selection mode
 // fix interaction of macro and holdable commands
 // add a command to select a ruler using keyboard
-// customized portal zoom levels should not be reset
-// checksummer.get_path should use a hashmap instead of iterating over all paths
 
 #include <iostream>
 #include <vector>
@@ -745,11 +743,9 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         float new_absolute_y = overview_touch_move_data->overview_original_pos_absolute.y - absdiff_y;
         float new_absolute_x = overview_touch_move_data->overview_original_pos_absolute.x + absdiff_x;
 
-        OverviewState new_overview_state;
+        OverviewState new_overview_state = main_document_view->get_overview_page().value();
         new_overview_state.absolute_offset_y = new_absolute_y;
         new_overview_state.absolute_offset_x = new_absolute_x;
-        new_overview_state.doc = main_document_view->get_overview_page()->doc;
-        new_overview_state.zoom_level = main_document_view->get_overview_page()->zoom_level;
 
         set_overview_page(new_overview_state, false);
         validate_render();
@@ -2483,6 +2479,9 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             overview_resize_data.has_value() ||
             overview_touch_move_data.has_value();
 
+        if (overview_touch_move_data) {
+            on_overview_move_end();
+        }
         overview_move_data = {};
         overview_touch_move_data = {};
         overview_resize_data = {};
@@ -2789,6 +2788,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
 
 
         if (overview_touch_move_data.has_value()) {
+            on_overview_move_end();
             overview_touch_move_data = {};
             return;
         }
@@ -3067,10 +3067,10 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     if (is_control_pressed) {
         if (main_document_view->get_overview_page() && main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
             if (wevent->angleDelta().y() > 0) {
-                main_document_view->zoom_in_overview();
+                zoom_in_overview();
             }
             else if (wevent->angleDelta().y() < 0) {
-                main_document_view->zoom_out_overview();
+                zoom_out_overview();
             }
             validate_render();
             return;
@@ -3366,13 +3366,19 @@ void MainWidget::visual_mark_under_pos(WindowPos pos) {
     }
 }
 
-void MainWidget::open_overview_to_document(Document* dst_doc, float offset_y) {
+void MainWidget::open_overview_to_portal(Document* dst_doc, Portal portal){
     dst_doc->open(&is_render_invalidated, true);
     dst_doc->load_page_dimensions(true);
     OverviewState overview;
     overview.doc = dst_doc;
-    overview.absolute_offset_y = offset_y;
+    overview.absolute_offset_y = portal.dst.book_state.offset_y;
+    overview.absolute_offset_x = portal.dst.book_state.offset_x;
     overview.overview_type = "portal";
+    overview.source_portal = portal;
+    if (portal.dst.book_state.zoom_level > 0) {
+        overview.zoom_level = portal.dst.book_state.zoom_level;
+    }
+
     set_overview_page(overview, true);
 }
 
@@ -3389,7 +3395,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         if (dst_doc) {
             selected_portal_index = portal_index;
 
-            open_overview_to_document(dst_doc, portal.value().dst.book_state.offset_y);
+            open_overview_to_portal(dst_doc, portal.value());
 
             invalidate_render();
             return true;
@@ -3400,7 +3406,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
                 Document* downloaded_dst_doc = document_manager->get_document(path.toStdWString());
                 if (downloaded_dst_doc) {
                     selected_portal_index = portal_index;
-                    open_overview_to_document(downloaded_dst_doc, portal_v.dst.book_state.offset_y);
+                    open_overview_to_portal(downloaded_dst_doc, portal_v);
                     invalidate_render();
                 }
                 });
@@ -4955,14 +4961,12 @@ void MainWidget::handle_portal_overview_update() {
     std::optional<OverviewState> current_state_ = main_document_view->get_overview_page();
     if (current_state_) {
         OverviewState current_state = current_state_.value();
-        if (current_state.doc != nullptr) {
-            std::optional<Portal> link_ = get_target_portal(false);
-            if (link_) {
-                Portal link = link_.value();
-                OpenedBookState link_new_state = link.dst.book_state;
-                link_new_state.offset_y = current_state.absolute_offset_y;
-                schedule_update_link_with_opened_book_state(link, link_new_state);
-            }
+        if (current_state.source_portal.has_value()) {
+            OpenedBookState link_new_state = current_state.source_portal->dst.book_state;
+            link_new_state.offset_y = current_state.absolute_offset_y;
+            link_new_state.offset_x = current_state.absolute_offset_x;
+            link_new_state.zoom_level = current_state.zoom_level;
+            schedule_update_link_with_opened_book_state(current_state.source_portal.value(), link_new_state);
         }
     }
 }
@@ -9993,10 +9997,12 @@ void MainWidget::deselect_document_indices(){
 
 void MainWidget::zoom_in_overview(){
     main_document_view->zoom_in_overview();
+    handle_portal_overview_update();
 }
 
 void MainWidget::zoom_out_overview(){
     main_document_view->zoom_out_overview();
+    handle_portal_overview_update();
 }
 
 QString MainWidget::run_macro_on_main_thread(QString macro_string, bool wait_for_result, int target_window_id) {
@@ -11906,3 +11912,6 @@ bool MainWidget::is_logged_in() {
     return sioyek_network_manager->status == ServerStatus::LoggedIn;
 }
 
+void MainWidget::on_overview_move_end() {
+    handle_portal_overview_update();
+}
