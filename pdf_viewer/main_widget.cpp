@@ -7920,6 +7920,9 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
         if (confname == "gamma") {
             should_invalidate_render = true;
         }
+        if (confname == "status_bar_format") {
+            left_status_string_generator = std::move(compile_status_string(QString::fromStdWString(STATUS_BAR_FORMAT), this));
+        }
         if (confname == "highlight_links") {
             main_document_view->set_highlight_links(SHOULD_HIGHLIGHT_LINKS, false);
         }
