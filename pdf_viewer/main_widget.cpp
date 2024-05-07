@@ -7126,6 +7126,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -8976,6 +8977,12 @@ void MainWidget::show_text_prompt(std::wstring initial_value, std::function<void
         });
     set_current_widget(new_widget);
     show_current_widget();
+}
+
+void MainWidget::on_set_enum_config_value(std::string config_name, std::wstring config_value) {
+    config_manager->deserialize_config(config_name, config_value);
+    pop_current_widget();
+    invalidate_render();
 }
 
 void MainWidget::show_touch_buttons_for_overview_type(std::string type) {

@@ -1118,6 +1118,7 @@ public:
     void sync_newly_added_annot(const std::string& annot_type, const std::string& uuid);
     void delete_current_file_from_server();
     bool is_logged_in();
+    void on_set_enum_config_value(std::string config_name, std::wstring config_value);
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

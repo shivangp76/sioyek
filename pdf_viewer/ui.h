@@ -893,6 +893,18 @@ private:
     TouchSlider* slider = nullptr;
 };
 
+class EnumConfigUI : public ConfigUI {
+    Q_OBJECT
+public:
+    EnumConfigUI(std::string name, MainWidget* parent, std::vector<std::wstring>& possible_values, int selected_index);
+    void resizeEvent(QResizeEvent* resize_event) override;
+private:
+    QQuickWidget* quick_widget = nullptr;
+
+public slots:
+    void on_select(QString name, int index);
+};
+
 class MacroConfigUI : public ConfigUI {
 public:
     MacroConfigUI(std::string name, MainWidget* parent, std::wstring* config_location, std::wstring initial_macro);

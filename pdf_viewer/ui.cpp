@@ -1904,3 +1904,39 @@ void SelectHighlightTypeUI::resizeEvent(QResizeEvent* resize_event) {
     new_widget->resize(size());
     new_widget->move(0, 0);
 }
+
+EnumConfigUI::EnumConfigUI(std::string name, MainWidget* parent, std::vector<std::wstring>& possible_values, int selected_index) : ConfigUI(name, parent) {
+
+    quick_widget = new QQuickWidget(this);
+
+    quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
+    quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
+    quick_widget->setClearColor(Qt::transparent);
+
+    QStringList items;
+    for (auto& val : possible_values) {
+        items.append(QString::fromStdWString(val));
+    }
+
+    QStringListModel* model = new QStringListModel(items);
+    model->setParent(this);
+
+    quick_widget->rootContext()->setContextProperty("_model", QVariant::fromValue(model));
+    quick_widget->rootContext()->setContextProperty("_selected_index", QVariant::fromValue(selected_index));
+    quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchEnumSelector.qml"));
+
+    QObject::connect(quick_widget->rootObject(), SIGNAL(itemSelected(QString, int)), this, SLOT(on_select(QString,int)));
+}
+
+void EnumConfigUI::on_select(QString name, int index) {
+    main_widget->on_set_enum_config_value(config_name, name.toStdWString());
+}
+
+void EnumConfigUI::resizeEvent(QResizeEvent* resize_event) {
+    int parent_width = parentWidget()->width();
+    int parent_height = parentWidget()->height();
+    this->resize(parent_width * 3 / 4, parent_height * 2 / 3);
+    this->move(parent_width / 8, parent_height / 6);
+    quick_widget->resize(size());
+    quick_widget->move(0, 0);
+}
