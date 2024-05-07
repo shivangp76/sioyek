@@ -139,6 +139,7 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/OpenWithApplication.h \
            pdf_viewer/background_tasks.h \
            pdf_viewer/network_manager.h \
+           pdf_viewer/status_string.h \
            fzf/fzf.h
 
 
@@ -164,6 +165,7 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/OpenWithApplication.cpp \
            pdf_viewer/background_tasks.cpp \
            pdf_viewer/network_manager.cpp \
+           pdf_viewer/status_string.cpp \
            fzf/fzf.c
 
 !android{
