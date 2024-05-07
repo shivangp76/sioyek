@@ -10004,28 +10004,7 @@ void MainWidget::show_touch_page_select() {
 }
 
 void MainWidget::show_touch_highlight_type_select() {
-
-    QList<QColor> colors;
-    const int N_COLORS = 26;
-    for (int i = 0; i < N_COLORS; i++) {
-        colors.push_back(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * i]));
-    }
-
-    auto new_widget = new QQuickWidget(this);
-
-    new_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
-    new_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
-    new_widget->setClearColor(Qt::transparent);
-
-    new_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(colors));
-    new_widget->rootContext()->setContextProperty("_animate", QVariant::fromValue(false));
-    new_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchSymbolColorSelector.qml"));
-
-    //QObject::connect(new_widget, QQuickWidget::resize)
-    new_widget->resize(width(), height() / 5);
-    new_widget->move(0, height() / 2 - height() / 10);
-    //QObject::connect(new_widget, SIGNAL(colorClicked(int)), this, SLOT(highlight_type_color_clicked(int)));
-    QObject::connect(new_widget->rootObject(), SIGNAL(colorClicked(int)), this, SLOT(highlight_type_color_clicked(int)));
+    SelectHighlightTypeUI* new_widget = new SelectHighlightTypeUI(this);
 
     set_current_widget(new_widget);
     show_current_widget();

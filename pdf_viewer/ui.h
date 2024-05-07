@@ -950,6 +950,17 @@ private:
     TouchRangeSelectUI* range_select_ui = nullptr;
 };
 
+class SelectHighlightTypeUI : public QWidget {
+public:
+    SelectHighlightTypeUI(MainWidget* parent);
+
+    void resizeEvent(QResizeEvent* resize_event) override;
+
+private:
+    MainWidget* main_widget;
+    QQuickWidget* new_widget;
+
+};
 
 std::wstring select_document_file_name();
 std::wstring select_json_file_name();

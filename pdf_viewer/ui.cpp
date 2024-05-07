@@ -1871,3 +1871,36 @@ void MyLineEdit::keyPressEvent(QKeyEvent* event) {
     return QLineEdit::keyPressEvent(event);
 
 }
+
+
+SelectHighlightTypeUI::SelectHighlightTypeUI(MainWidget* parent) :QWidget(parent), main_widget(parent) {
+
+    QList<QColor> colors;
+    const int N_COLORS = 26;
+    for (int i = 0; i < N_COLORS; i++) {
+        colors.push_back(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * i]));
+    }
+
+    new_widget = new QQuickWidget(this);
+
+    new_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
+    new_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
+    new_widget->setClearColor(Qt::transparent);
+
+    new_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(colors));
+    new_widget->rootContext()->setContextProperty("_animate", QVariant::fromValue(false));
+    new_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchSymbolColorSelector.qml"));
+
+    new_widget->resize(width(), height() / 5);
+    new_widget->move(0, height() / 2 - height() / 10);
+    QObject::connect(new_widget->rootObject(), SIGNAL(colorClicked(int)), main_widget, SLOT(highlight_type_color_clicked(int)));
+}
+
+void SelectHighlightTypeUI::resizeEvent(QResizeEvent* resize_event) {
+    int parent_width = parentWidget()->width();
+    int parent_height = parentWidget()->height();
+    this->resize(parent_width, parent_height / 5);
+    this->move(0, parent_height / 2 - parent_height / 10);
+    new_widget->resize(size());
+    new_widget->move(0, 0);
+}
