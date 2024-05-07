@@ -1,5 +1,6 @@
 #include "config.h"
 #include "utils.h"
+#include "status_string.h"
 #include <cassert>
 #include <map>
 #include <qdir.h>
@@ -362,6 +363,13 @@ std::wstring MIDDLE_RIGHT_RECT_TAP_COMMAND = L"overview_definition";
 std::wstring MIDDLE_RIGHT_RECT_TAP_COMMAND = L"";
 #endif
 std::wstring MIDDLE_RIGHT_RECT_HOLD_COMMAND = L"";
+
+std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
+    {L"current_page", L"show_touch_page_select"},
+    {L"num_pages", L"show_touch_page_select"},
+    {L"chapter_name", L"goto_toc"},
+    {L"highlight", L"show_touch_highlight_type_select"},
+};
 
 
 bool UIRect::contains(NormalizedWindowPos window_pos) {
@@ -1131,6 +1139,15 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         configs.push_back({ search_url_config_string, ConfigType::String, &SEARCH_URLS[letter - 'a'], string_serializer, string_deserializer, nullptr });
         configs.push_back({ execute_command_config_string, ConfigType::String, &EXECUTE_COMMANDS[letter - 'a'], string_serializer, string_deserializer, nullptr });
     }
+
+    for (int i = 0; i < STATUS_STRING_PARTS.size(); i++) {
+        std::wstring config_name = L"status_" + STATUS_STRING_PARTS[i].toStdWString() + L"_command";
+        if (STATUS_BAR_COMMANDS.find(config_name) == STATUS_BAR_COMMANDS.end()) {
+            STATUS_BAR_COMMANDS[config_name] = L"";
+        }
+        configs.push_back({ config_name, ConfigType::Macro, &STATUS_BAR_COMMANDS[STATUS_STRING_PARTS[i].toStdWString()], string_serializer, string_deserializer, nullptr});
+    }
+
 
     // for (auto& config : configs) {
     //     config.save_value_into_default();

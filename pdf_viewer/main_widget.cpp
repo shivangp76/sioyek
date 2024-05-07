@@ -305,6 +305,7 @@ extern bool USE_KEYBOARD_POINT_SELECTION;
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;
 extern bool TOUCH_MODE;
+extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS;
 
 const int MAX_SCROLLBAR = 10000;
 
@@ -1069,16 +1070,20 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         if (cursor_pos >= 0 && cursor_pos < last_status_string_ids.size()) {
             //qDebug() << text.at(cursor_pos);
             int type = last_status_string_ids[cursor_pos];
-            if (type >= 0) {
-                if ((type == static_cast<int>(StatusStringPart::CURRENT_PAGE)) || (type == static_cast<int>(StatusStringPart::NUM_PAGES))) {
-                    execute_macro_if_enabled(L"show_touch_page_select");
+            if (type >= 0 && type < STATUS_STRING_PARTS.size()) {
+                std::wstring status_part = STATUS_STRING_PARTS[type].toStdWString();
+                if (STATUS_BAR_COMMANDS.find(status_part) != STATUS_BAR_COMMANDS.end()) {
+                    execute_macro_if_enabled(STATUS_BAR_COMMANDS[status_part]);
                 }
-                if ((type == static_cast<int>(StatusStringPart::CHAPTER_NAME))) {
-                    execute_macro_if_enabled(L"goto_toc");
-                }
-                if ((type == static_cast<int>(StatusStringPart::HIGHLIGHT))) {
-                    execute_macro_if_enabled(L"show_touch_highlight_type_select");
-                }
+                //if (STATUS_STRING_PARTS[type] == "current_page" || STATUS_STRING_PARTS[type] == "num_pages") {
+                //    execute_macro_if_enabled(L"show_touch_page_select");
+                //}
+                //if (STATUS_STRING_PARTS[type] == "chapter_name"){
+                //    execute_macro_if_enabled(L"goto_toc");
+                //}
+                //if (STATUS_STRING_PARTS[type] == "highlight") {
+                //    execute_macro_if_enabled(L"show_touch_highlight_type_select");
+                //}
             }
         }
         };

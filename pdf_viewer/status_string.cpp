@@ -1,7 +1,7 @@
 #include "status_string.h"
 #include "document.h"
 #include "document_view.h"
-
+#include "main_widget.h"
 
 StatusLabelLineEdit::StatusLabelLineEdit(QWidget* parent ) : QLineEdit(parent) {
     setCursor(Qt::ArrowCursor);
@@ -248,40 +248,45 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         {"download", download_fn},
     };
 
-    std::unordered_map<QString, StatusStringPart> name_to_id = {
-        {"current_page", StatusStringPart::CURRENT_PAGE},
-        {"current_page_label", StatusStringPart::CURRENT_PAGE_LABEL},
-        {"num_pages", StatusStringPart::NUM_PAGES},
-        {"chapter_name", StatusStringPart::CHAPTER_NAME},
-        {"document_name", StatusStringPart::DOCUMENT_NAME},
-        {"search_results", StatusStringPart::SEARCH_RESULTS},
-        {"link_status", StatusStringPart::LINK_STATUS},
-        {"waiting_for_symbol", StatusStringPart::WAITING_FOR_SYMBOL},
-        {"indexing", StatusStringPart::INDEXING},
-        {"preview_index", StatusStringPart::PREVIEW_INDEX},
-        {"synctex", StatusStringPart::SYNCTEX},
-        {"drag", StatusStringPart::DRAG},
-        {"presentation", StatusStringPart::PRESENTATION},
-        {"auto_name", StatusStringPart::AUTO_NAME},
-        {"visual_scroll", StatusStringPart::VISUAL_SCROLL},
-        {"locked_scroll", StatusStringPart::LOCKED_SCROLL},
-        {"highlight", StatusStringPart::HIGHLIGHT},
-        {"freehand_drawing", StatusStringPart::FREEHAND_DRAWING},
-        {"mode_string", StatusStringPart::MODE_STRING},
-        {"closest_bookmark", StatusStringPart::CLOSEST_BOOKMARK},
-        {"closest_portal", StatusStringPart::CLOSEST_PORTAL},
-        {"rect_select", StatusStringPart::RECT_SELECT},
-        {"point_select", StatusStringPart::POINT_SELECT},
-        {"custom_message", StatusStringPart::CUSTOM_MESSAGE},
-        {"current_requirement_desc", StatusStringPart::CURRENT_REQUIREMENT_DESC},
-        {"download", StatusStringPart::DOWNLOAD},
-    };
+    std::unordered_map<QString, int> name_to_id;
+    for (int i = 0; i < STATUS_STRING_PARTS.size(); i++) {
+        name_to_id[STATUS_STRING_PARTS[i]] = i;
+    }
+
+    //std::unordered_map<QString, StatusStringPart> name_to_id = {
+    //    {"current_page", StatusStringPart::CURRENT_PAGE},
+    //    {"current_page_label", StatusStringPart::CURRENT_PAGE_LABEL},
+    //    {"num_pages", StatusStringPart::NUM_PAGES},
+    //    {"chapter_name", StatusStringPart::CHAPTER_NAME},
+    //    {"document_name", StatusStringPart::DOCUMENT_NAME},
+    //    {"search_results", StatusStringPart::SEARCH_RESULTS},
+    //    {"link_status", StatusStringPart::LINK_STATUS},
+    //    {"waiting_for_symbol", StatusStringPart::WAITING_FOR_SYMBOL},
+    //    {"indexing", StatusStringPart::INDEXING},
+    //    {"preview_index", StatusStringPart::PREVIEW_INDEX},
+    //    {"synctex", StatusStringPart::SYNCTEX},
+    //    {"drag", StatusStringPart::DRAG},
+    //    {"presentation", StatusStringPart::PRESENTATION},
+    //    {"auto_name", StatusStringPart::AUTO_NAME},
+    //    {"visual_scroll", StatusStringPart::VISUAL_SCROLL},
+    //    {"locked_scroll", StatusStringPart::LOCKED_SCROLL},
+    //    {"highlight", StatusStringPart::HIGHLIGHT},
+    //    {"freehand_drawing", StatusStringPart::FREEHAND_DRAWING},
+    //    {"mode_string", StatusStringPart::MODE_STRING},
+    //    {"closest_bookmark", StatusStringPart::CLOSEST_BOOKMARK},
+    //    {"closest_portal", StatusStringPart::CLOSEST_PORTAL},
+    //    {"rect_select", StatusStringPart::RECT_SELECT},
+    //    {"point_select", StatusStringPart::POINT_SELECT},
+    //    {"custom_message", StatusStringPart::CUSTOM_MESSAGE},
+    //    {"current_requirement_desc", StatusStringPart::CURRENT_REQUIREMENT_DESC},
+    //    {"download", StatusStringPart::DOWNLOAD},
+    //};
 
     QRegularExpression expr("%\\{[a-z_]+\\}");
     QRegularExpressionMatchIterator matches = expr.globalMatch(status_string);
     int prev_match_end_index = 0;
 
-    std::vector<std::variant<QString, std::pair<StatusStringPart, std::function<QString()>>>> parts;
+    std::vector<std::variant<QString, std::pair<int, std::function<QString()>>>> parts;
 
     while (matches.hasNext()) {
         QRegularExpressionMatch match = matches.next();
@@ -312,7 +317,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                 std::fill_n(std::back_inserter(part_types), p.size(), -1);
             }
             else {
-                auto& [part_type, part_fn] = std::get <std::pair<StatusStringPart, std::function<QString()>>>(part);
+                auto& [part_type, part_fn] = std::get <std::pair<int, std::function<QString()>>>(part);
                 QString p = part_fn();
                 res += part_fn();
                 std::fill_n(std::back_inserter(part_types), p.size(), static_cast<int>(part_type));

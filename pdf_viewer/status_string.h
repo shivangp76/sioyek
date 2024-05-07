@@ -1,35 +1,36 @@
 #pragma once
 
 #include <qlineedit.h>
-#include "main_widget.h"
 
-enum class StatusStringPart {
-    CURRENT_PAGE,
-    CURRENT_PAGE_LABEL,
-    NUM_PAGES,
-    CHAPTER_NAME,
-    DOCUMENT_NAME,
-    SEARCH_RESULTS,
-    LINK_STATUS,
-    WAITING_FOR_SYMBOL,
-    INDEXING,
-    PREVIEW_INDEX,
-    SYNCTEX,
-    DRAG,
-    PRESENTATION,
-    AUTO_NAME,
-    VISUAL_SCROLL,
-    LOCKED_SCROLL,
-    HIGHLIGHT,
-    FREEHAND_DRAWING,
-    MODE_STRING,
-    CLOSEST_BOOKMARK,
-    CLOSEST_PORTAL,
-    RECT_SELECT,
-    POINT_SELECT,
-    CUSTOM_MESSAGE,
-    CURRENT_REQUIREMENT_DESC,
-    DOWNLOAD
+class MainWidget;
+
+const std::vector<QString> STATUS_STRING_PARTS = {
+    "current_page",
+    "current_page_label",
+    "num_pages",
+    "chapter_name",
+    "document_name",
+    "search_results",
+    "link_status",
+    "waiting_for_symbol",
+    "indexing",
+    "preview_index",
+    "synctex",
+    "drag",
+    "presentation",
+    "auto_name",
+    "visual_scroll",
+    "locked_scroll",
+    "highlight",
+    "freehand_drawing",
+    "mode_string",
+    "closest_bookmark",
+    "closest_portal",
+    "rect_select",
+    "point_select",
+    "custom_message",
+    "current_requirement_desc",
+    "download"
 };
 
 class StatusLabelLineEdit : public QLineEdit {
