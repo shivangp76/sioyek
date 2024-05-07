@@ -20,9 +20,6 @@
 // add a command to select a ruler using keyboard
 // customized portal zoom levels should not be reset
 // checksummer.get_path should use a hashmap instead of iterating over all paths
-// better handling of enum configs
-// live reload statusbar format changes
-// enum config touch ui
 
 #include <iostream>
 #include <vector>
@@ -301,6 +298,7 @@ extern UIRect LANDSCAPE_MIDDLE_RIGHT_UI_RECT;
 extern bool PAPER_DOWNLOAD_CREATE_PORTAL;
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool USE_KEYBOARD_POINT_SELECTION;
+
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;

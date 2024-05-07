@@ -30,7 +30,11 @@ const std::vector<QString> STATUS_STRING_PARTS = {
     "point_select",
     "custom_message",
     "current_requirement_desc",
-    "download"
+    "download",
+    "custom_message_a",
+    "custom_message_b",
+    "custom_message_c",
+    "custom_message_d",
 };
 
 class StatusLabelLineEdit : public QLineEdit {

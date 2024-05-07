@@ -3,6 +3,11 @@
 #include "document_view.h"
 #include "main_widget.h"
 
+extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_A_STR;
+extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_B_STR;
+extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_C_STR;
+extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR;
+
 StatusLabelLineEdit::StatusLabelLineEdit(QWidget* parent ) : QLineEdit(parent) {
     setCursor(Qt::ArrowCursor);
     QObject::connect(this, &QLineEdit::selectionChanged, [this]() {
@@ -17,6 +22,11 @@ void StatusLabelLineEdit::mousePressEvent(QMouseEvent* mevent) {
 }
 
 std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QString status_string, MainWidget* widget) {
+
+    auto custom_message_a_fn = [widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_A_STR); };
+    auto custom_message_b_fn = [widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_B_STR); };
+    auto custom_message_c_fn = [widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_C_STR); };
+    auto custom_message_d_fn = [widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_D_STR); };
 
     auto get_current_page_fn = [widget]() {return QString::number(widget->get_current_page_number() + 1);};
     auto get_current_page_label_fn = [widget] {return QString::fromStdWString(widget->get_current_page_label()); };
@@ -246,6 +256,10 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         {"custom_message", custom_message_fn},
         {"current_requirement_desc", current_requirement_fn},
         {"download", download_fn},
+        {"custom_message_a", custom_message_a_fn},
+        {"custom_message_b", custom_message_b_fn},
+        {"custom_message_c", custom_message_c_fn},
+        {"custom_message_d", custom_message_d_fn},
     };
 
     std::unordered_map<QString, int> name_to_id;

@@ -364,6 +364,11 @@ std::wstring MIDDLE_RIGHT_RECT_TAP_COMMAND = L"";
 #endif
 std::wstring MIDDLE_RIGHT_RECT_HOLD_COMMAND = L"";
 
+std::wstring STATUS_STRING_CUSTOM_MESSAGE_A_STR = L"";
+std::wstring STATUS_STRING_CUSTOM_MESSAGE_B_STR = L"";
+std::wstring STATUS_STRING_CUSTOM_MESSAGE_C_STR = L"";
+std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR = L"";
+
 // these commands are peformed when the user clicks on the corresponding item's text on statusbar
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
     {L"current_page", L"show_touch_page_select"},
@@ -1083,6 +1088,10 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"right_status_bar_format", &RIGHT_STATUS_BAR_FORMAT);
     add_string(L"epub_css", &EPUB_CSS);
     add_string(L"tag_font_face", &TAG_FONT_FACE);
+    add_string(L"status_custom_message_a", &STATUS_STRING_CUSTOM_MESSAGE_A_STR);
+    add_string(L"status_custom_message_b", &STATUS_STRING_CUSTOM_MESSAGE_B_STR);
+    add_string(L"status_custom_message_c", &STATUS_STRING_CUSTOM_MESSAGE_C_STR);
+    add_string(L"status_custom_message_d", &STATUS_STRING_CUSTOM_MESSAGE_D_STR);
 
     add_macro(L"startup_commands", &STARTUP_COMMANDS);
     add_macro(L"shift_click_command", &SHIFT_CLICK_COMMAND);
