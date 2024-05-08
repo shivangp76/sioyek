@@ -4468,6 +4468,89 @@ public:
     }
 };
 
+class KeyboardSelectLineCommand : public Command {
+public:
+    static inline const std::string cname = "keyboard_select_line";
+    static inline const std::string hname = "Select a line using keyboard";
+    std::vector<DocumentRect> highlight_rects;
+    int rects_size = 0;
+    int page;
+
+    KeyboardSelectLineCommand(MainWidget* w) : Command(cname, w) {
+        const std::vector<AbsoluteRect> rects = widget->doc()->get_page_lines(widget->get_current_page_number());
+        page = widget->get_current_page_number();
+        for (auto& rect : rects) {
+            highlight_rects.push_back(rect.to_document(widget->doc()));
+        }
+        rects_size = highlight_rects.size();
+    };
+protected:
+    std::optional<std::wstring> text = {};
+    bool already_pre_performed = false;
+public:
+
+    virtual std::string text_requirement_name() {
+        return "Label";
+    }
+
+    bool is_done() {
+        int num_tag_digits = get_num_tag_digits(rects_size);
+        if (text.has_value() && (text->size() == num_tag_digits)) {
+            return true;
+        }
+        return false;
+    }
+
+    virtual std::optional<Requirement> next_requirement(MainWidget* widget) {
+        bool done = is_done();
+
+        if (done) {
+            return {};
+        }
+        else {
+            return Requirement{ RequirementType::Symbol, "Label" };
+        }
+    }
+
+    virtual void perform() {
+        int index = get_index_from_tag(utf8_encode(text.value()));
+        widget->main_document_view->set_line_index(index, page);
+        //widget->handle_open_link(text.value());
+        widget->set_highlighted_tags({});
+        widget->main_document_view->set_should_highlight_words(false);
+    }
+
+    void pre_perform() {
+        if (already_pre_performed) return;
+
+        widget->clear_tag_prefix();
+        widget->main_document_view->set_highlight_words(highlight_rects);
+        widget->main_document_view->set_should_highlight_words(true);
+        //widget->set_highlight_links(true, true);
+        widget->invalidate_render();
+        already_pre_performed = true;
+    }
+
+    virtual void set_text_requirement(std::wstring value) {
+        this->text = value;
+    }
+
+    virtual void set_symbol_requirement(char value) {
+        if (text.has_value()) {
+            text.value().push_back(value);
+        }
+        else {
+            std::wstring val;
+            val.push_back(value);
+            this->text = val;
+        }
+
+        if (!is_done()) {
+            widget->set_tag_prefix(text.value());
+        }
+    }
+};
+
 
 KeyboardSelectPointCommand::KeyboardSelectPointCommand(MainWidget* w, std::unique_ptr<Command> original_command) : Command("keyboard_point_select", w) {
     origin = std::move(original_command);
@@ -6964,6 +7047,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<CloseWindowCommand>();
     register_command<OpenLinkCommand>();
     register_command<OverviewLinkCommand>();
+    register_command<KeyboardSelectLineCommand>();
     register_command<PortalToLinkCommand>();
     register_command<CopyLinkCommand>();
     register_command<KeyboardSelectCommand>();

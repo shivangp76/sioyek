@@ -12,7 +12,6 @@
 // better tablet button handling, the current method is setting dependent
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
-// use left click to drag annotations
 // delete command should be generic and target visible objects
 // the download icon is not displayed when we move to the next possible overview
 // add some commands like { } to text selection mode
@@ -7128,7 +7127,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
