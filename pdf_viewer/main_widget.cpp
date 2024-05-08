@@ -15,7 +15,6 @@
 // delete command should be generic and target visible objects
 // the download icon is not displayed when we move to the next possible overview
 // fix interaction of macro and holdable commands
-// add some commands like { } to text selection mode
 
 #include <iostream>
 #include <vector>
@@ -5158,7 +5157,7 @@ void MainWidget::clear_selected_text() {
     main_document_view->should_show_text_selection_marker = false;
     dv()->selected_text.clear();
     if (dv()->is_line_select_mode()) {
-        dv()->line_select_begin = {};
+        dv()->line_select_begin_data = {};
         dv()->line_select_mode = false;
     }
     selected_text_is_dirty = false;
@@ -7130,7 +7129,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
-    handle_goto_prev_block();
+    main_document_view->swap_line_select_cursor();
 }
 
 void MainWidget::handle_goto_next_block() {

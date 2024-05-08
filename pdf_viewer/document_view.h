@@ -31,6 +31,11 @@ struct MarkedDataRect {
     int type;
 };
 
+struct LineSelectBeginData {
+    AbsoluteDocumentPos pos;
+    AbsoluteDocumentPos end_pos;
+    RulerLineIndexInfo index_info;
+};
 
 class DocumentView {
 protected:
@@ -94,7 +99,7 @@ public:
     ColorPalette color_mode = ColorPalette::Normal;
 
     bool line_select_mode = false;
-    std::optional<AbsoluteDocumentPos> line_select_begin = {};
+    std::optional<LineSelectBeginData> line_select_begin_data = {};
 
     // begin/end position of the current text selection
     AbsoluteDocumentPos selection_begin;
@@ -251,6 +256,7 @@ public:
 
     ColorPalette get_current_color_mode();
 
+    void swap_line_select_cursor();
     void fill_cached_virtual_rects(bool force=false);
     NormalizedWindowRect absolute_to_window_rect(AbsoluteRect doc_rect);
     NormalizedWindowPos document_to_window_pos(DocumentPos pos);

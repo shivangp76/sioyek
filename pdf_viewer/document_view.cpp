@@ -3474,18 +3474,47 @@ void DocumentView::select_ruler_text() {
 
         AbsoluteDocumentPos abspos_begin = ruler_rect.center_left();
         AbsoluteDocumentPos abspos_end = ruler_rect.center_right();
-        if (line_select_mode && line_select_begin.has_value()) {
-            abspos_begin = line_select_begin.value();
+        if (line_select_mode && line_select_begin_data.has_value()) {
+            abspos_begin = line_select_begin_data->pos;
             selection_end = abspos_end;
         }
         else {
-            line_select_begin = abspos_begin;
+            LineSelectBeginData data;
+            data.pos = abspos_begin;
+            data.end_pos = abspos_end;
+            data.index_info = ruler_line_index.value();
+            line_select_begin_data = data;
             selection_begin = abspos_begin;
             selection_end = abspos_end;
         }
 
         selected_character_rects.clear();
+        if (line_select_begin_data) {
+            if (line_select_begin_data->index_info.merged_index > ruler_line_index->merged_index) {
+                abspos_end = line_select_begin_data->end_pos;
+                abspos_begin = ruler_rect.center_left();
+                //abspos_end = line_sele
+                //std::swap(abspos_begin, abspos_end);
+            }
+
+        }
         current_document->get_text_selection(abspos_begin, abspos_end, false, selected_character_rects, selected_text);
+    }
+}
+
+void DocumentView::swap_line_select_cursor() {
+    std::optional<AbsoluteRect> ruler_rect_ = get_ruler_rect();
+    if (ruler_rect_) {
+        int ruler_page = get_vertical_line_page();
+        LineSelectBeginData new_begin;
+        auto ruler_rect = ruler_rect_.value();
+        new_begin.pos = ruler_rect.center_left();
+        new_begin.end_pos = ruler_rect.center_right();
+        new_begin.index_info = ruler_line_index.value();
+        int old_ruler_index = line_select_begin_data->index_info.merged_index;
+
+        line_select_begin_data = new_begin;
+        set_line_index(old_ruler_index, ruler_page);
     }
 }
 
@@ -3497,7 +3526,7 @@ void DocumentView::toggle_line_select_mode() {
     }
     else {
         line_select_mode = false;
-        line_select_begin = {};
+        line_select_begin_data = {};
     }
 }
 
