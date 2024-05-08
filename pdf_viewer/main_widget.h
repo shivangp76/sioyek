@@ -718,6 +718,9 @@ public:
     void show_audio_buttons();
     void set_freehand_thickness(float val);
 
+    void handle_goto_next_block();
+    void handle_goto_prev_block();
+
     // Text selection indicators in touch mode
     SelectionIndicator* selection_begin_indicator = nullptr;
     SelectionIndicator* selection_end_indicator = nullptr;

@@ -172,11 +172,12 @@ void get_text_from_flat_chars(const std::vector<fz_stext_char*>& flat_chars, std
 bool is_string_titlish(const std::wstring& str);
 bool is_title_parent_of(const std::wstring& parent_title, const std::wstring& child_title, bool* are_same);
 std::wstring find_first_regex_match(const std::wstring& haystack, const std::wstring& regex_string);
-void merge_lines(
-    std::vector<fz_stext_line*> lines,
-    std::vector<PagelessDocumentRect>& out_rects,
-    std::vector<std::wstring>& out_texts,
-    std::vector<std::vector<PagelessDocumentRect>>* out_line_characters);
+//void merge_lines(
+//    std::vector<fz_stext_line*> lines,
+//    std::vector<PagelessDocumentRect>& out_rects,
+//    std::vector<std::wstring>& out_texts,
+//    std::vector<std::vector<PagelessDocumentRect>>* out_line_characters,
+//    std::vector<PagelessDocumentRect>* out_next_rects);
 
 int lcs(const char* X, const char* Y, int m, int n);
 bool has_arg(int argc, char** argv, std::string key);
@@ -611,3 +612,19 @@ std::vector<std::string> get_uuids(const std::vector<T>& annots) {
     }
     return res;
 }
+
+struct PageMergedLinesInfo {
+    std::vector<PagelessDocumentRect> merged_line_rects;
+    std::vector<std::wstring> merged_line_texts;
+    std::vector<std::vector<PagelessDocumentRect>> merged_line_chars;
+    std::vector<std::vector<int>> merged_line_indices;
+};
+
+struct PageMergedLinesInfoAbsolute {
+    std::vector<AbsoluteRect> merged_line_rects;
+    std::vector<std::wstring> merged_line_texts;
+    std::vector<std::vector<PagelessDocumentRect>> merged_line_chars;
+    std::vector<std::vector<int>> merged_line_indices;
+};
+
+PageMergedLinesInfo merge_lines2(const std::vector<fz_stext_line*>& lines);

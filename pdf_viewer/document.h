@@ -32,10 +32,11 @@ class CharacterIterator {
     fz_stext_block* block = nullptr;
     fz_stext_line* line = nullptr;
     fz_stext_char* chr = nullptr;
+    bool is_line_only = false;
 
 public:
-    CharacterIterator(fz_stext_page* page);
-    CharacterIterator(fz_stext_block* b, fz_stext_line* l, fz_stext_char* c);
+    CharacterIterator(fz_stext_page* page, bool line_only=false);
+    CharacterIterator(fz_stext_block* b, fz_stext_line* l, fz_stext_char* c, bool line_only=false);
     CharacterIterator& operator++();
     CharacterIterator operator++(int);
     bool operator==(const CharacterIterator& other) const;
@@ -51,8 +52,9 @@ public:
 
 class PageIterator {
     fz_stext_page* page;
+    bool is_line_only = false;
 public:
-    PageIterator(fz_stext_page* page);
+    PageIterator(fz_stext_page* page, bool line_only=false);
     CharacterIterator begin() const;
     CharacterIterator end() const;
 };
@@ -90,8 +92,12 @@ private:
     // show a tree view (e.g. due to performance reasons on PC and lack of availablity on mobile)
     std::vector<std::wstring> flat_toc_names;
     std::vector<int> flat_toc_pages;
-    std::map<int, std::vector<AbsoluteRect>> cached_page_line_rects;
-    std::map<int, std::vector<std::wstring>> cached_line_texts;
+
+    std::map<int, PageMergedLinesInfoAbsolute> cached_page_line_info;
+    //std::map<int, std::vector<AbsoluteRect>> cached_page_line_rects;
+    //std::map<int, std::vector<std::wstring>> cached_line_texts;
+    //std::map<int, std::vector<PagelessDocumentRect>> cached_page_next_line_rects;
+
     std::deque<std::pair<int, CachedPageIndex>> cached_page_index;
 
     bool super_fast_search_index_ready = false;
@@ -179,7 +185,7 @@ public:
     bool annotations_are_freshly_loaded = false;
     std::optional<bool> cached_is_synced;
 
-    PageIterator page_iterator(int page_number);
+    PageIterator page_iterator(int page_number, bool line_only=false);
     int get_page_text_and_line_rects_after_rect(int page_number,
         AbsoluteRect after,
         std::wstring& text,
@@ -404,10 +410,7 @@ public:
 
     //void get_ith_next_line_from_absolute_y(float absolute_y, int i, bool cont, float* out_begin, float* out_end);
     AbsoluteRect get_ith_next_line_from_absolute_y(int page, int line_index, int i, bool continue_to_next_page, int* out_index, int* out_page);
-    const std::vector<AbsoluteRect>& get_page_lines(
-        int page,
-        std::vector<std::wstring>* line_texts = nullptr,
-        std::vector<std::vector<PagelessDocumentRect>>* out_line_rects = nullptr);
+    const PageMergedLinesInfoAbsolute& get_page_lines(int page);
 
     std::wstring get_addtional_sioyek_file_path(QString type);
     std::wstring get_drawings_file_path();
@@ -443,10 +446,15 @@ public:
     AbsoluteRect to_absolute(int page, fz_quad quad);
     AbsoluteRect to_absolute(int page, PagelessDocumentRect rect);
 
+    int get_first_line_index_after_block(int page, int after_index);
+    int get_first_line_before_block(int page, int before_index);
+
     bool get_should_reload_annotations();
     void reload_annotations_on_new_checksum();
     int find_reference_page_with_reference_text(std::wstring query);
     std::optional<DocumentPos> find_abbreviation(std::wstring abbr, std::vector<DocumentRect>& overview_highlight_rects);
+
+    int get_page_merged_line_index_from_unmerged_index(int page, int unmerged_index);
 
     QJsonArray get_bookmarks_json();
     QJsonArray get_highlights_json();

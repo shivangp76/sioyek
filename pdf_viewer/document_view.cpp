@@ -59,7 +59,7 @@ DocumentViewState DocumentView::get_state() {
         res.book_state.ruler_mode = is_ruler_mode_;
         res.book_state.ruler_pos = ruler_pos;
         res.book_state.ruler_rect = ruler_rect;
-        res.book_state.line_index = line_index;
+        res.book_state.ruler_info = ruler_line_index;
         res.book_state.presentation_page = presentation_page_number;
     }
     return res;
@@ -113,7 +113,7 @@ void DocumentView::set_book_state(OpenedBookState state) {
     is_ruler_mode_ = state.ruler_mode;
     ruler_pos = state.ruler_pos;
     ruler_rect = state.ruler_rect;
-    line_index = state.line_index;
+    ruler_line_index = state.ruler_info;
 }
 
 bool DocumentView::set_pos(AbsoluteDocumentPos pos) {
@@ -1267,21 +1267,50 @@ void DocumentView::goto_bottom_of_page() {
 }
 
 int DocumentView::get_line_index() {
-    if (line_index == -1) {
+    if (!ruler_line_index.has_value()) {
         return get_line_index_of_vertical_pos();
     }
     else {
-        return line_index;
+        return ruler_line_index->merged_index;
     }
 }
 
+//void DocumentView::set_ruler_rect(AbsoluteRect rect, bool after){
+//    int last_index = line_index;
+//    ruler_rect = rect;
+//    int page = rect.to_document(current_document).page;
+//    auto lines = get_document()->get_page_lines(page).merged_line_rects;
+//    float min_distance = 100000;
+//    int min_index = -1;
+//
+//    for (int i = 0; i < lines.size(); i++) {
+//        if (after && i <= last_index) continue;
+//        if (!after && i >= last_index) continue;
+//
+//        //float distance = lines[i].distance(rect);
+//        float distance = rect.distance(lines[i]);
+//        if (distance < min_distance) {
+//            min_distance = distance;
+//            min_index = i;
+//        }
+//    }
+//    if (min_index >= 0) {
+//        line_index = min_index;
+//        set_line_index(line_index, page);
+//    }
+//
+//}
+
 void DocumentView::set_line_index(int index, int page) {
-    line_index = index;
+    RulerLineIndexInfo index_info;
+    index_info.merged_index = index;
     is_ruler_mode_ = true;
     if (page >= 0) {
-        auto lines = get_document()->get_page_lines(page);
-        if (index >= 0 && index < lines.size()) {
-            ruler_rect = lines[index];
+        PageMergedLinesInfoAbsolute lines = get_document()->get_page_lines(page);
+        if (index >= 0 && index < lines.merged_line_rects.size()) {
+            ruler_rect = lines.merged_line_rects[index];
+            index_info.unmerged_indices = lines.merged_line_indices[index];
+            ruler_line_index = index_info;
         }
     }
 
@@ -1293,7 +1322,7 @@ void DocumentView::set_line_index(int index, int page) {
 
 int DocumentView::get_line_index_of_vertical_pos() {
     DocumentPos line_doc_pos = current_document->absolute_to_page_pos_uncentered({ 0, get_ruler_pos() });
-    auto rects = current_document->get_page_lines(line_doc_pos.page);
+    auto rects = current_document->get_page_lines(line_doc_pos.page).merged_line_rects;
     int index = 0;
     while ((size_t)index < rects.size() && rects[index].y0 < get_ruler_pos()) {
         index++;
@@ -1303,7 +1332,7 @@ int DocumentView::get_line_index_of_vertical_pos() {
 
 int DocumentView::get_line_index_of_pos(DocumentPos line_doc_pos) {
     AbsoluteDocumentPos line_abs_pos = line_doc_pos.to_absolute(current_document);
-    auto rects = current_document->get_page_lines(line_doc_pos.page, nullptr);
+    auto rects = current_document->get_page_lines(line_doc_pos.page).merged_line_rects;
     int page_width = current_document->get_page_width(line_doc_pos.page);
 
     for (int i = 0; i < rects.size(); i++) {
@@ -1317,9 +1346,13 @@ int DocumentView::get_vertical_line_page() {
 }
 
 std::optional<std::wstring> DocumentView::get_selected_line_text() {
-    if (line_index >= 0) {
-        std::vector<std::wstring> lines;
-        std::vector<AbsoluteRect> line_rects = current_document->get_page_lines(get_vertical_line_page(), &lines);
+    if (ruler_line_index.has_value()) {
+        const int line_index = ruler_line_index->merged_index;
+        //std::vector<std::wstring> lines;
+        const PageMergedLinesInfoAbsolute& line_info = current_document->get_page_lines(get_vertical_line_page());
+        auto line_rects = line_info.merged_line_rects;
+        auto lines = line_info.merged_line_texts;
+        //std::vector<AbsoluteRect> line_rects = current_document->get_page_lines(get_vertical_line_page(), &lines);
         if ((size_t)line_index < lines.size()) {
             std::wstring content = lines[line_index];
             return content;
@@ -1346,13 +1379,18 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
 
     std::vector<SmartViewCandidate> result;
 
-    if (line_index > 0) {
-        std::vector<std::wstring> lines;
-        std::vector<std::vector<PagelessDocumentRect>> line_char_rects;
+    if (ruler_line_index.has_value()) {
+        const int line_index = ruler_line_index->merged_index;
+        //std::vector<std::wstring> lines;
+        //std::vector<std::vector<PagelessDocumentRect>> line_char_rects;
 
         int line_page_number = get_vertical_line_page();
 
-        std::vector<AbsoluteRect> line_rects = current_document->get_page_lines(line_page_number, &lines, &line_char_rects);
+        const PageMergedLinesInfoAbsolute& line_info = current_document->get_page_lines(line_page_number);
+        auto lines = line_info.merged_line_texts;
+        auto line_char_rects = line_info.merged_line_chars;
+        auto line_rects = line_info.merged_line_rects;
+        //std::vector<AbsoluteRect> line_rects = current_document->get_page_lines(line_page_number, &lines, &line_char_rects);
         for (int i = 0; i < lines.size(); i++) {
             assert(lines[i].size() == line_char_rects[i].size());
         }
@@ -2817,6 +2855,38 @@ void DocumentView::set_highlight_words(std::vector<DocumentRect>& rects) {
     word_rects = std::move(rects);
 }
 
+std::vector<int> DocumentView::get_ruler_unmerged_line_indices() {
+
+    if (ruler_line_index.has_value()){
+        return ruler_line_index->unmerged_indices;
+    }
+    return {};
+}
+
+//std::pair<fz_stext_line*, fz_stext_block*> DocumentView::get_ruler_line_and_block() {
+//    if (ruler_rect.has_value()) {
+//        AbsoluteRect rect = ruler_rect.value();
+//        float ruler_area = rect.area();
+//        int ruler_page = get_vertical_line_page();
+//        fz_stext_line* min_line = nullptr;
+//        fz_stext_block* min_block = nullptr;
+//        float min_distance = 100000;
+//
+//        for (auto [block, line, _] : current_document->page_iterator(ruler_page, true)) {
+//            DocumentRect doc_rect(line->bbox, ruler_page);
+//            float distance = doc_rect.to_absolute(current_document).distance(rect);
+//
+//            if (distance < min_distance) {
+//                min_distance = distance;
+//                min_block = block;
+//                min_line = line;
+//            }
+//        }
+//        return std::make_pair(min_line, min_block);
+//    }
+//    return std::make_pair(nullptr, nullptr);
+//}
+
 void DocumentView::set_should_highlight_words(bool should_highlight) {
     this->should_highlight_words = should_highlight;
 }
@@ -3435,3 +3505,8 @@ bool DocumentView::is_line_select_mode() {
     return line_select_mode;
 }
 
+void DocumentView::debug() {
+    qDebug() << "_______";
+    qDebug() << ruler_line_index->merged_index;
+    qDebug() << ruler_line_index->unmerged_indices;
+}

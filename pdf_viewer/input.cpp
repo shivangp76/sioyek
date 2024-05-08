@@ -3234,6 +3234,28 @@ public:
 
 };
 
+class MoveRulerToNextBlockCommand : public Command {
+public:
+    static inline const std::string cname = "move_ruler_to_next_block";
+    static inline const std::string hname = "Move the ruler to the start of next text block";
+    MoveRulerToNextBlockCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_goto_next_block();
+    }
+};
+
+class MoveRulerToPrevBlockCommand : public Command {
+public:
+    static inline const std::string cname = "move_ruler_to_prev_block";
+    static inline const std::string hname = "Move the ruler to the start of previous text block";
+    MoveRulerToPrevBlockCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_goto_prev_block();
+    }
+};
+
 class MoveVisualMarkDownCommand : public Command {
 public:
     static inline const std::string cname = "move_visual_mark_down";
@@ -4477,7 +4499,7 @@ public:
     int page;
 
     KeyboardSelectLineCommand(MainWidget* w) : Command(cname, w) {
-        const std::vector<AbsoluteRect> rects = widget->doc()->get_page_lines(widget->get_current_page_number());
+        const std::vector<AbsoluteRect> rects = widget->doc()->get_page_lines(widget->get_current_page_number()).merged_line_rects;
         page = widget->get_current_page_number();
         for (auto& rect : rects) {
             highlight_rects.push_back(rect.to_document(widget->doc()));
@@ -7058,6 +7080,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<PrefsCommand>();
     register_command<PrefsUserCommand>();
     register_command<MoveVisualMarkDownCommand>();
+    register_command<MoveRulerToNextBlockCommand>();
+    register_command<MoveRulerToPrevBlockCommand>();
     register_command<MoveVisualMarkUpCommand>();
     register_command<MoveVisualMarkNextCommand>();
     register_command<MoveVisualMarkPrevCommand>();

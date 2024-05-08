@@ -68,7 +68,7 @@ int Document::get_mark_index(char symbol) {
     return -1;
 }
 
-CharacterIterator::CharacterIterator(fz_stext_page* page) {
+CharacterIterator::CharacterIterator(fz_stext_page* page, bool line_only): is_line_only(line_only) {
     block = page->first_block;
     while (block != nullptr && (block->type == FZ_STEXT_BLOCK_IMAGE)) block = block->next;
     if (block != nullptr) {
@@ -81,14 +81,14 @@ CharacterIterator::CharacterIterator(fz_stext_page* page) {
     }
 }
 
-CharacterIterator::CharacterIterator(fz_stext_block* b, fz_stext_line* l, fz_stext_char* c) {
+CharacterIterator::CharacterIterator(fz_stext_block* b, fz_stext_line* l, fz_stext_char* c, bool line_only): is_line_only(line_only) {
     block = b;
     line = l;
     chr = c;
 }
 
 CharacterIterator& CharacterIterator::operator++() {
-    if (chr->next != nullptr) {
+    if ((!is_line_only) && chr->next != nullptr) {
         chr = chr->next;
         return *this;
     }
@@ -137,16 +137,16 @@ std::tuple<fz_stext_block*, fz_stext_line*, fz_stext_char*> CharacterIterator::o
 }
 
 
-PageIterator::PageIterator(fz_stext_page* page) : page(page) {
+PageIterator::PageIterator(fz_stext_page* page, bool line_only) : page(page), is_line_only(line_only) {
 
 }
 
 CharacterIterator PageIterator::begin() const {
-    return CharacterIterator(page);
+    return CharacterIterator(page, is_line_only);
 }
 
 CharacterIterator PageIterator::end() const {
-    return CharacterIterator(nullptr, nullptr, nullptr);
+    return CharacterIterator(nullptr, nullptr, nullptr, is_line_only);
 }
 
 void Document::load_document_metadata_from_db() {
@@ -2766,7 +2766,7 @@ AbsoluteRect Document::document_to_absolute_rect(DocumentRect doc_rect){
 
 
 AbsoluteRect Document::get_ith_next_line_from_absolute_y(int page, int line_index, int i, bool continue_to_next_page, int* out_index, int* out_page) {
-    auto line_rects = get_page_lines(page);
+    auto line_rects = get_page_lines(page).merged_line_rects;
 
     if (line_index < 0) {
         line_index = line_index + line_rects.size();
@@ -2801,7 +2801,7 @@ AbsoluteRect Document::get_ith_next_line_from_absolute_y(int page, int line_inde
             int next_page = i > 0 ? page + j : page - j;
             int next_line_index = i > 0 ? 0 : -1;
             if (next_page < 0 || (next_page >= n_pages)) break;
-            if (get_page_lines(next_page).size() > 0) {
+            if (get_page_lines(next_page).merged_line_rects.size() > 0) {
                 return get_ith_next_line_from_absolute_y(next_page, next_line_index, 0, false, out_index, out_page);
             }
         }
@@ -2812,64 +2812,60 @@ AbsoluteRect Document::get_ith_next_line_from_absolute_y(int page, int line_inde
     }
 }
 
-const std::vector<AbsoluteRect>& Document::get_page_lines(
-    int page,
-    std::vector<std::wstring>* out_line_texts,
-    std::vector<std::vector<PagelessDocumentRect>>* out_line_rects){
+//const std::vector<AbsoluteRect>& Document::get_page_lines(
+//    int page,
+//    std::vector<std::wstring>* out_line_texts,
+//    std::vector<std::vector<PagelessDocumentRect>>* out_line_rects,
+//    std::vector<PagelessDocumentRect>* out_next_line_rects
+//    ){
 
+const PageMergedLinesInfoAbsolute& Document::get_page_lines(int page) {
 
-    if ((out_line_rects == nullptr) && (cached_page_line_rects.find(page) != cached_page_line_rects.end())) {
-        if (out_line_texts) {
-            *out_line_texts = cached_line_texts[page];
-        }
-        return cached_page_line_rects[page];
+    if (cached_page_line_info.find(page) != cached_page_line_info.end()) {
+        return cached_page_line_info[page];
     }
     else {
+
         fz_stext_page* stext_page = get_stext_with_page_number(page);
         if (stext_page && stext_page->first_block && (!FORCE_CUSTOM_LINE_ALGORITHM)) {
 
             PagelessDocumentRect bound = get_page_absolute_rect(page);
 
-            std::vector<PagelessDocumentRect> line_rects;
-            std::vector<std::wstring> line_texts;
+            //std::vector<PagelessDocumentRect> line_rects;
+            //std::vector<std::wstring> line_texts;
             std::vector<fz_stext_line*> flat_lines;
 
-            LL_ITER(block, stext_page->first_block) {
-                if (block->type == FZ_STEXT_BLOCK_TEXT) {
-                    LL_ITER(line, block->u.t.first_line) {
-                        flat_lines.push_back(line);
-                    }
-                }
+            for (auto [block, line, _] : page_iterator(page, true)) {
+                flat_lines.push_back(line);
             }
 
             std::vector<std::vector<PagelessDocumentRect>> line_char_rects_;
+            std::vector<PagelessDocumentRect> next_line_rects_;
 
-            merge_lines(flat_lines, line_rects, line_texts, &line_char_rects_);
+            PageMergedLinesInfo merged_info = merge_lines2(flat_lines);
+            PageMergedLinesInfoAbsolute res;
 
-            std::vector<AbsoluteRect> line_rects_;
-            std::vector<std::wstring> line_texts_;
+            //std::vector<AbsoluteRect> line_rects_;
+            //std::vector<std::wstring> line_texts_;
 
-            for (size_t i = 0; i < line_rects.size(); i++) {
+            for (size_t i = 0; i < merged_info.merged_line_rects.size(); i++) {
                 //line_rects[i] = DocumentRect(line_rects[i], page).to_absolute(this);
-                AbsoluteRect line_rect_absolute = DocumentRect(line_rects[i], page).to_absolute(this);
+                AbsoluteRect line_rect_absolute = DocumentRect(merged_info.merged_line_rects[i], page).to_absolute(this);
                 if (fz_contains_rect(bound, line_rect_absolute)) {
-                    line_rects_.push_back(line_rect_absolute);
-                    line_texts_.push_back(line_texts[i]);
-                    if (out_line_rects) {
-                        out_line_rects->push_back(line_char_rects_[i]);
-                    }
+                    res.merged_line_rects.push_back(line_rect_absolute);
+                    res.merged_line_texts.push_back(merged_info.merged_line_texts[i]);
+                    res.merged_line_chars.push_back(merged_info.merged_line_chars[i]);
+                    res.merged_line_indices.push_back(merged_info.merged_line_indices[i]);
                 }
             }
 
-            cached_page_line_rects[page] = line_rects_;
-            cached_line_texts[page] = line_texts_;
-
-            if (out_line_texts != nullptr) {
-                *out_line_texts = line_texts_;
-            }
+            cached_page_line_info[page] = res;
+            return cached_page_line_info[page];
 
         }
         else {
+            PageMergedLinesInfoAbsolute res;
+
             fz_pixmap* pixmap = get_small_pixmap(page);
             if (pixmap == nullptr) return {};
             std::vector<unsigned int> hist = get_max_width_histogram_from_pixmap(pixmap);
@@ -2877,18 +2873,19 @@ const std::vector<AbsoluteRect>& Document::get_page_lines(
             std::vector<unsigned int> line_locations_begins;
             get_line_begins_and_ends_from_histogram(hist, line_locations_begins, line_locations);
 
-            std::vector<AbsoluteRect> line_rects;
+            //std::vector<AbsoluteRect> line_rects;
             for (size_t i = 0; i < line_locations_begins.size(); i++) {
                 AbsoluteRect line_rect;
                 line_rect.x0 = 0 - page_widths[page] / 2;
                 line_rect.x1 = static_cast<float>(pixmap->w) / SMALL_PIXMAP_SCALE - page_widths[page] / 2;
                 line_rect.y0 = document_to_absolute_y(page, static_cast<float>(line_locations_begins[i]) / SMALL_PIXMAP_SCALE);
                 line_rect.y1 = document_to_absolute_y(page, static_cast<float>(line_locations[i]) / SMALL_PIXMAP_SCALE);
-                line_rects.push_back(line_rect);
+                res.merged_line_rects.push_back(line_rect);
             }
-            cached_page_line_rects[page] = line_rects;
+            cached_page_line_info[page] = res;
+            //cached_page_line_rects[page] = line_rects;
+            return res;
         }
-        return cached_page_line_rects[page];
     }
 }
 void Document::clear_toc_nodes() {
@@ -2983,9 +2980,8 @@ bool Document::is_reflowable() {
 void Document::clear_document_caches() {
     cached_num_pages = {};
     cached_fastread_highlights.clear();
-    cached_line_texts.clear();
-    cached_page_line_rects.clear();
     cached_page_index.clear();
+    cached_page_line_info.clear();
 
 
     for (auto [_, cached_small_pixmap] : cached_small_pixmaps) {
@@ -4355,9 +4351,9 @@ std::wstring Document::detect_paper_name(fz_context* context, fz_document* doc) 
     return L"";
 }
 
-PageIterator Document::page_iterator(int page_number) {
+PageIterator Document::page_iterator(int page_number, bool line_only) {
     fz_stext_page* page = get_stext_with_page_number(page_number);
-    return PageIterator(page);
+    return PageIterator(page, line_only);
 }
 
 int Document::get_page_text_and_line_rects_after_rect(int page_number,
@@ -4644,4 +4640,65 @@ void Document::set_is_synced(bool synced) {
             db_manager->set_document_to_unsynced(get_checksum_fast().value());
         }
     }
+}
+
+int Document::get_page_merged_line_index_from_unmerged_index(int page, int unmerged_index) {
+    const PageMergedLinesInfoAbsolute& page_lines = get_page_lines(page);
+    for (int i = 0; i < page_lines.merged_line_indices.size(); i++) {
+        if (page_lines.merged_line_indices[i].size() > 0 && page_lines.merged_line_indices[i].back() > unmerged_index) {
+            return i;
+        }
+        if (std::find(page_lines.merged_line_indices[i].begin(), page_lines.merged_line_indices[i].end(), unmerged_index) != page_lines.merged_line_indices[i].end()) {
+            return i;
+        }
+    }
+    return page_lines.merged_line_indices.size()-1;
+}
+
+int Document::get_first_line_index_after_block(int page, int after_index) {
+    int index = 0;
+    fz_stext_line* last_line = nullptr;
+    fz_stext_block* last_block = nullptr;
+    for (auto [block, line, _] : page_iterator(page, true)) {
+        if (index > after_index) {
+            if (block != last_block) {
+                return index;
+            }
+        }
+        index++;
+        last_line = line;
+        last_block = block;
+    }
+    return -1;
+}
+
+int Document::get_first_line_before_block(int page, int before_index) {
+    int index = 0;
+    fz_stext_line* last_line = nullptr;
+    fz_stext_block* block_before_last_block = nullptr;
+    int block_before_last_block_start_index = -1;
+    fz_stext_block* last_block = nullptr;
+    int last_block_start_index = -1;
+    for (auto [block, line, _] : page_iterator(page, true)) {
+        if (index < before_index) {
+            if (block != last_block) {
+                last_line = line;
+                block_before_last_block = last_block;
+                last_block = block;
+                block_before_last_block_start_index = last_block_start_index;
+                last_block_start_index = index;
+            }
+                //return index;
+        }
+        if (index >= before_index) {
+            if (block_before_last_block_start_index <= 0) {
+                return 0;
+            }
+            return last_block_start_index;
+        }
+        index++;
+        last_line = line;
+        last_block = block;
+    }
+    return -1;
 }

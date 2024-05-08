@@ -167,6 +167,35 @@ struct EnhancedRect : public R {
         return rects_intersect(*this, other);
     }
 
+    float distance(const EnhancedRect<R, T>& other) const {
+        float this_area = area();
+        float intersection_area = intersect_rect(other).area();
+        if (intersection_area > (3 * this_area / 4)) {
+            return 0;
+        }
+        T c1 = center();
+        T c2 = other.center();
+        return std::abs(c1.x - c2.x) + std::abs(c1.y - c2.y);
+    }
+
+    EnhancedRect<R, T>& intersect_rect(const EnhancedRect<R, T>& other) const {
+        EnhancedRect<R, T> res;
+        res.x0 = std::max(R::x0, other.x0);
+        res.x1 = std::min(R::x1, other.x1);
+        res.y0 = std::max(R::y0, other.y0);
+        res.y1 = std::min(R::y1, other.y1);
+
+        if (res.x0 > res.x1) {
+            res.x0 = res.x1;
+        }
+
+        if (res.y0 > res.y1) {
+            res.y0 = res.y1;
+        }
+
+        return res;
+    }
+
     EnhancedRect<R, T> union_rect(const EnhancedRect<R, T>& other) {
         EnhancedRect<R, T> res;
         res.x0 = std::min(R::x0, other.x0);

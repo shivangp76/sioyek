@@ -2406,11 +2406,16 @@ int line_num_chars(fz_stext_line* line) {
 }
 
 
-void merge_lines(
-    std::vector<fz_stext_line*> lines,
-    std::vector<PagelessDocumentRect>& out_rects,
-    std::vector<std::wstring>& out_texts,
-    std::vector<std::vector<PagelessDocumentRect>>* out_line_chars) {
+//struct PageMergedLinesInfo {
+//    std::vector<PagelessDocumentRect> merged_line_rects;
+//    std::vector<std::wstring> merged_line_texts;
+//    std::vector<std::vector<PagelessDocumentRect>> merged_line_chars;
+//    std::vector<std::vector<int>> merged_line_indices;
+//};
+
+PageMergedLinesInfo merge_lines2(const std::vector<fz_stext_line*>& lines) {
+
+    PageMergedLinesInfo res;
 
     std::vector<PagelessDocumentRect> temp_rects;
     std::vector<std::wstring> temp_texts;
@@ -2426,9 +2431,9 @@ void merge_lines(
         }
     }
 
-    for (int i = indices_to_delete.size() - 1; i >= 0; i--) {
-        lines.erase(lines.begin() + indices_to_delete[i]);
-    }
+    //for (int i = indices_to_delete.size() - 1; i >= 0; i--) {
+    //    lines.erase(lines.begin() + indices_to_delete[i]);
+    //}
 
     for (auto line : lines) {
         custom_line_rects.push_back(get_line_rect(line));
@@ -2439,51 +2444,146 @@ void merge_lines(
         PagelessDocumentRect rect = custom_line_rects[i];
         int best_index = find_best_merge_index_for_line_index(lines, custom_line_rects, char_counts, i);
         std::wstring text = get_string_from_stext_line(lines[i]);
-        std::vector<PagelessDocumentRect> line_chars;
-        if (out_line_chars) {
-            line_chars = get_char_rects_from_stext_line(lines[i]);
-        }
+        std::vector<PagelessDocumentRect> line_chars = get_char_rects_from_stext_line(lines[i]);
 
         for (int j = i + 1; j <= best_index; j++) {
             rect = fz_union_rect(rect, lines[j]->bbox);
             text = text + get_string_from_stext_line(lines[j]);
-            if (out_line_chars) {
-                std::vector<PagelessDocumentRect> merged_line_chars = get_char_rects_from_stext_line(lines[j]);
-                line_chars.insert(line_chars.end(), merged_line_chars.begin(), merged_line_chars.end());
-            }
+            std::vector<PagelessDocumentRect> merged_line_chars = get_char_rects_from_stext_line(lines[j]);
+            line_chars.insert(line_chars.end(), merged_line_chars.begin(), merged_line_chars.end());
         }
 
         temp_rects.push_back(rect);
         temp_texts.push_back(text);
-        if (out_line_chars) {
-            temp_line_chars.push_back(line_chars);
-        }
+        temp_line_chars.push_back(line_chars);
         i = best_index;
     }
+
     for (size_t i = 0; i < temp_rects.size(); i++) {
-        if (i > 0 && out_rects.size() > 0) {
-            fz_rect prev_rect = out_rects[out_rects.size() - 1];
+
+        if (std::binary_search(indices_to_delete.begin(), indices_to_delete.end(), i)) {
+            continue;
+        }
+
+        if (i > 0 && res.merged_line_rects.size() > 0) {
+            fz_rect prev_rect = res.merged_line_rects.back();
             fz_rect current_rect = temp_rects[i];
             if ((std::abs(prev_rect.y0 - current_rect.y0) < 1.0f) || (std::abs(prev_rect.y1 - current_rect.y1) < 1.0f)) {
-                out_rects[out_rects.size() - 1].x0 = std::min(prev_rect.x0, current_rect.x0);
-                out_rects[out_rects.size() - 1].x1 = std::max(prev_rect.x1, current_rect.x1);
+                res.merged_line_rects.back().x0 = std::min(prev_rect.x0, current_rect.x0);
+                res.merged_line_rects.back().x1 = std::max(prev_rect.x1, current_rect.x1);
 
-                out_rects[out_rects.size() - 1].y0 = std::min(prev_rect.y0, current_rect.y0);
-                out_rects[out_rects.size() - 1].y1 = std::max(prev_rect.y1, current_rect.y1);
-                out_texts[out_texts.size() - 1] = out_texts[out_texts.size() - 1] + temp_texts[i];
-                if (out_line_chars) {
-                    (*out_line_chars)[out_line_chars->size()-1].insert((*out_line_chars)[out_line_chars->size()-1].end(), temp_line_chars[i].begin(), temp_line_chars[i].end());
-                }
+                res.merged_line_rects.back().y0 = std::min(prev_rect.y0, current_rect.y0);
+                res.merged_line_rects.back().y1 = std::max(prev_rect.y1, current_rect.y1);
+                res.merged_line_texts.back() = res.merged_line_texts.back() + temp_texts[i];
+                res.merged_line_chars.back().insert(
+                    res.merged_line_chars.back().end(), temp_line_chars[i].begin(), temp_line_chars[i].end()
+                );
+                res.merged_line_indices.back().push_back(i);
                 continue;
             }
         }
-        out_rects.push_back(temp_rects[i]);
-        out_texts.push_back(temp_texts[i]);
-        if (out_line_chars) {
-            out_line_chars->push_back(temp_line_chars[i]);
-        }
+        res.merged_line_rects.push_back(temp_rects[i]);
+        res.merged_line_texts.push_back(temp_texts[i]);
+        res.merged_line_indices.push_back({(int)i});
+
+        res.merged_line_chars.push_back(temp_line_chars[i]);
     }
+
+    return res;
 }
+//void merge_lines(
+//    std::vector<fz_stext_line*> lines,
+//    std::vector<PagelessDocumentRect>& out_rects,
+//    std::vector<std::wstring>& out_texts,
+//    std::vector<std::vector<PagelessDocumentRect>>* out_line_chars,
+//    std::vector<PagelessDocumentRect>* out_next_rects) {
+//
+//    std::vector<PagelessDocumentRect> temp_rects;
+//    std::vector<std::wstring> temp_texts;
+//    std::vector<std::vector<PagelessDocumentRect>> temp_line_chars;
+//
+//    std::vector<PagelessDocumentRect> custom_line_rects;
+//    std::vector<int> char_counts;
+//
+//    std::vector<int> indices_to_delete;
+//    for (size_t i = 0; i < lines.size(); i++) {
+//        if (line_num_chars(lines[i]) < 5) {
+//            indices_to_delete.push_back(i);
+//        }
+//    }
+//
+//    for (int i = indices_to_delete.size() - 1; i >= 0; i--) {
+//        lines.erase(lines.begin() + indices_to_delete[i]);
+//    }
+//
+//    for (auto line : lines) {
+//        custom_line_rects.push_back(get_line_rect(line));
+//        char_counts.push_back(line_num_chars(line));
+//    }
+//
+//    for (size_t i = 0; i < lines.size(); i++) {
+//        PagelessDocumentRect rect = custom_line_rects[i];
+//        int best_index = find_best_merge_index_for_line_index(lines, custom_line_rects, char_counts, i);
+//        std::wstring text = get_string_from_stext_line(lines[i]);
+//        std::vector<PagelessDocumentRect> line_chars;
+//        if (out_line_chars) {
+//            line_chars = get_char_rects_from_stext_line(lines[i]);
+//        }
+//
+//        for (int j = i + 1; j <= best_index; j++) {
+//            rect = fz_union_rect(rect, lines[j]->bbox);
+//            text = text + get_string_from_stext_line(lines[j]);
+//            if (out_line_chars) {
+//                std::vector<PagelessDocumentRect> merged_line_chars = get_char_rects_from_stext_line(lines[j]);
+//                line_chars.insert(line_chars.end(), merged_line_chars.begin(), merged_line_chars.end());
+//            }
+//        }
+//
+//        temp_rects.push_back(rect);
+//        temp_texts.push_back(text);
+//        if (out_line_chars) {
+//            temp_line_chars.push_back(line_chars);
+//        }
+//        i = best_index;
+//    }
+//    for (size_t i = 0; i < temp_rects.size(); i++) {
+//        if (i > 0 && out_rects.size() > 0) {
+//            fz_rect prev_rect = out_rects[out_rects.size() - 1];
+//            fz_rect current_rect = temp_rects[i];
+//            if ((std::abs(prev_rect.y0 - current_rect.y0) < 1.0f) || (std::abs(prev_rect.y1 - current_rect.y1) < 1.0f)) {
+//                out_rects[out_rects.size() - 1].x0 = std::min(prev_rect.x0, current_rect.x0);
+//                out_rects[out_rects.size() - 1].x1 = std::max(prev_rect.x1, current_rect.x1);
+//
+//                out_rects[out_rects.size() - 1].y0 = std::min(prev_rect.y0, current_rect.y0);
+//                out_rects[out_rects.size() - 1].y1 = std::max(prev_rect.y1, current_rect.y1);
+//                out_texts[out_texts.size() - 1] = out_texts[out_texts.size() - 1] + temp_texts[i];
+//                if (out_line_chars) {
+//                    (*out_line_chars)[out_line_chars->size()-1].insert((*out_line_chars)[out_line_chars->size()-1].end(), temp_line_chars[i].begin(), temp_line_chars[i].end());
+//                }
+//                continue;
+//            }
+//        }
+//        out_rects.push_back(temp_rects[i]);
+//        out_texts.push_back(temp_texts[i]);
+//
+//        if (out_rects.size() > 1) {
+//            if (out_next_rects != nullptr) {
+//                out_next_rects->push_back(out_rects[out_rects.size()-2]);
+//            }
+//        }
+//
+//        if (out_line_chars) {
+//            out_line_chars->push_back(temp_line_chars[i]);
+//        }
+//    }
+//
+//    if (out_rects.size() > 0) {
+//        if (out_next_rects) {
+//            out_next_rects->push_back(out_rects.back());
+//            out_next_rects->push_back(out_rects.back());
+//        }
+//    }
+//}
 
 
 int lcs(const char* X, const char* Y, int m, int n)

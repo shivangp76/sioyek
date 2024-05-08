@@ -14,9 +14,8 @@
 // smartviewcandidates are not filled when right clicking on a link?
 // delete command should be generic and target visible objects
 // the download icon is not displayed when we move to the next possible overview
-// add some commands like { } to text selection mode
 // fix interaction of macro and holdable commands
-// add a command to select a ruler using keyboard
+// add some commands like { } to text selection mode
 
 #include <iostream>
 #include <vector>
@@ -3336,25 +3335,25 @@ void MainWidget::visual_mark_under_pos(WindowPos pos) {
     DocumentPos document_pos = main_document_view->window_to_document_pos(pos);
     if (document_pos.page != -1) {
         //opengl_widget->set_should_draw_vertical_line(true);
-        fz_pixmap* pixmap = main_document_view->get_document()->get_small_pixmap(document_pos.page);
-        std::vector<unsigned int> hist = get_max_width_histogram_from_pixmap(pixmap);
-        std::vector<unsigned int> line_locations;
-        std::vector<unsigned int> _;
-        get_line_begins_and_ends_from_histogram(hist, _, line_locations);
-        int small_doc_x = static_cast<int>(document_pos.x * SMALL_PIXMAP_SCALE);
-        int small_doc_y = static_cast<int>(document_pos.y * SMALL_PIXMAP_SCALE);
-        int best_vertical_loc = find_best_vertical_line_location(pixmap, small_doc_x, small_doc_y);
-        //int best_vertical_loc = line_locations[find_nth_larger_element_in_sorted_list(line_locations, static_cast<unsigned int>(small_doc_y), 2)];
-        float best_vertical_loc_doc_pos = best_vertical_loc / SMALL_PIXMAP_SCALE;
-        WindowPos window_pos = main_document_view->document_to_window_pos_in_pixels_uncentered(DocumentPos{ document_pos.page, 0, best_vertical_loc_doc_pos });
-        auto [abs_doc_x, abs_doc_y] = main_document_view->window_to_absolute_document_pos(window_pos);
-        main_document_view->set_vertical_line_pos(abs_doc_y);
         int container_line_index = main_document_view->get_line_index_of_pos(document_pos);
 
         if (container_line_index == -1) {
             main_document_view->set_line_index(main_document_view->get_line_index_of_vertical_pos(), -1);
         }
         else {
+            fz_pixmap* pixmap = main_document_view->get_document()->get_small_pixmap(document_pos.page);
+            std::vector<unsigned int> hist = get_max_width_histogram_from_pixmap(pixmap);
+            std::vector<unsigned int> line_locations;
+            std::vector<unsigned int> _;
+            get_line_begins_and_ends_from_histogram(hist, _, line_locations);
+            int small_doc_x = static_cast<int>(document_pos.x * SMALL_PIXMAP_SCALE);
+            int small_doc_y = static_cast<int>(document_pos.y * SMALL_PIXMAP_SCALE);
+            int best_vertical_loc = find_best_vertical_line_location(pixmap, small_doc_x, small_doc_y);
+            //int best_vertical_loc = line_locations[find_nth_larger_element_in_sorted_list(line_locations, static_cast<unsigned int>(small_doc_y), 2)];
+            float best_vertical_loc_doc_pos = best_vertical_loc / SMALL_PIXMAP_SCALE;
+            WindowPos window_pos = main_document_view->document_to_window_pos_in_pixels_uncentered(DocumentPos{ document_pos.page, 0, best_vertical_loc_doc_pos });
+            auto [abs_doc_x, abs_doc_y] = main_document_view->window_to_absolute_document_pos(window_pos);
+            main_document_view->set_vertical_line_pos(abs_doc_y);
             main_document_view->set_line_index(container_line_index, document_pos.page);
         }
         validate_render();
@@ -4620,14 +4619,14 @@ void MainWidget::toggle_titlebar() {
 std::optional<AbsoluteRect> MainWidget::get_page_intersecting_rect(DocumentRect rect) {
     int index = get_page_intersecting_rect_index(rect);
     if (index >= 0) {
-        std::vector<AbsoluteRect> line_rects = main_document_view->get_document()->get_page_lines(rect.page, nullptr);
+        std::vector<AbsoluteRect> line_rects = main_document_view->get_document()->get_page_lines(rect.page).merged_line_rects;
         return line_rects[index];
     }
     return {};
 }
 
 int MainWidget::get_page_intersecting_rect_index(DocumentRect r) {
-    std::vector<AbsoluteRect> line_rects  = main_document_view->get_document()->get_page_lines(r.page, nullptr);
+    std::vector<AbsoluteRect> line_rects = main_document_view->get_document()->get_page_lines(r.page).merged_line_rects;
     AbsoluteRect abs_rect = r.to_absolute(doc());
     //rect = doc()->document_to_absolute_rect(page, rect);
 
@@ -4660,9 +4659,11 @@ void MainWidget::focus_rect(DocumentRect rect) {
 }
 
 void MainWidget::focus_text(int page, const std::wstring& text) {
-    std::vector<std::wstring> line_texts;
-    std::vector<AbsoluteRect> line_rects;
-    line_rects = main_document_view->get_document()->get_page_lines(page, &line_texts);
+    //std::vector<std::wstring> line_texts;
+    //std::vector<AbsoluteRect> line_rects;
+    const PageMergedLinesInfoAbsolute& line_info = main_document_view->get_document()->get_page_lines(page);
+    auto line_texts = line_info.merged_line_texts;
+    auto line_rects = line_info.merged_line_rects;
 
     std::string encoded_text = utf8_encode(text);
 
@@ -7126,7 +7127,40 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
     delete context_menu;
 }
 
+
+
 void MainWidget::handle_debug_command() {
+    handle_goto_prev_block();
+}
+
+void MainWidget::handle_goto_next_block() {
+    int ruler_page = main_document_view->get_vertical_line_page();
+    //auto [line, block] = main_document_view->get_ruler_line_and_block();
+    std::vector<int> unmerged_line_indices = main_document_view->get_ruler_unmerged_line_indices();
+    if (unmerged_line_indices.size() > 0) {
+        int after_index = unmerged_line_indices.front();
+        int next_line_unmerged_index = doc()->get_first_line_index_after_block(ruler_page, after_index);
+        int merged_index = doc()->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
+        main_document_view->set_line_index(merged_index, ruler_page);
+
+        if (merged_index >= 0) {
+            focus_on_visual_mark_pos(true);
+        }
+    }
+}
+
+void MainWidget::handle_goto_prev_block() {
+    int ruler_page = main_document_view->get_vertical_line_page();
+    std::vector<int> unmerged_line_indices = main_document_view->get_ruler_unmerged_line_indices();
+    if (unmerged_line_indices.size() > 0) {
+        int after_index = unmerged_line_indices.front();
+        int next_line_unmerged_index = doc()->get_first_line_before_block(ruler_page, after_index);
+        int merged_index = doc()->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
+        main_document_view->set_line_index(merged_index, ruler_page);
+        if (merged_index >= 0) {
+            focus_on_visual_mark_pos(false);
+        }
+    }
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -10675,8 +10709,9 @@ void MainWidget::focus_on_character_offset_into_document(int character_offset_in
 
     int remaining_line_offset = character_offset_into_page;
 
-    std::vector<std::wstring> page_lines;
-    doc()->get_page_lines(page, &page_lines);
+    //std::vector<std::wstring> page_lines;
+
+    const std::vector<std::wstring>& page_lines = doc()->get_page_lines(page).merged_line_texts;
     int line_index = 0;
 
     while ((line_index < page_lines.size()) && (remaining_line_offset > page_lines[line_index].size())) {

@@ -70,6 +70,10 @@ struct BookState {
     std::string uuid;
 };
 
+struct RulerLineIndexInfo {
+    int merged_index;
+    std::vector<int> unmerged_indices;
+};
 
 struct OpenedBookState {
     float zoom_level;
@@ -79,7 +83,7 @@ struct OpenedBookState {
     std::optional<int> presentation_page = {};
     std::optional<AbsoluteRect> ruler_rect = {};
     float ruler_pos = 0;
-    int line_index = -1;
+    std::optional<RulerLineIndexInfo> ruler_info = {};
 };
 
 struct Annotation {

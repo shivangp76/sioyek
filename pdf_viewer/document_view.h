@@ -31,6 +31,7 @@ struct MarkedDataRect {
     int type;
 };
 
+
 class DocumentView {
 protected:
 
@@ -51,7 +52,7 @@ protected:
     float ruler_pos = 0;
 
     // index of the current highlighted line in ruler mode
-    int line_index = -1;
+    std::optional<RulerLineIndexInfo> ruler_line_index = {};
 
     int view_width = 0;
     int view_height = 0;
@@ -353,6 +354,8 @@ public:
     void set_vertical_line_pos(float pos);
     bool has_ruler_rect();
     std::optional<AbsoluteRect> get_ruler_rect();
+    std::vector<int> get_ruler_unmerged_line_indices();
+    //std::pair<fz_stext_line*, fz_stext_block*> get_ruler_line_and_block();
     //float get_vertical_line_pos();
     float get_ruler_pos();
 
@@ -382,6 +385,7 @@ public:
     int get_line_index_of_pos(DocumentPos docpos);
     int get_line_index();
     void set_line_index(int index, int page);
+    //void set_ruler_rect(AbsoluteRect rect, bool after);
     int get_vertical_line_page();
     bool goto_definition();
     std::vector<SmartViewCandidate> find_line_definitions();
@@ -422,6 +426,7 @@ public:
     void select_ruler_text();
     void toggle_line_select_mode();
     bool is_line_select_mode();
+    void debug();
 
 };
 
