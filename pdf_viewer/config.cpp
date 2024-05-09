@@ -80,6 +80,15 @@ std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_resu
 std::wstring RIGHT_STATUS_BAR_FORMAT = L"%{auto_name}";
 #endif
 
+// these commands are peformed when the user clicks on the corresponding item's text on statusbar
+std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
+    {L"current_page", L"show_touch_page_select"},
+    {L"num_pages", L"show_touch_page_select"},
+    {L"chapter_name", L"goto_toc"},
+    {L"highlight", L"show_touch_highlight_type_select"},
+    {L"preview_index", L"next_overview"},
+};
+
 float BLACK_COLOR[3] = { 0.0f, 0.0f, 0.0f };
 float HIGHLIGHT_COLORS[26 * 3] = { \
 0.94, 0.64, 1.00, \
@@ -369,13 +378,6 @@ std::wstring STATUS_STRING_CUSTOM_MESSAGE_B_STR = L"";
 std::wstring STATUS_STRING_CUSTOM_MESSAGE_C_STR = L"";
 std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR = L"";
 
-// these commands are peformed when the user clicks on the corresponding item's text on statusbar
-std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
-    {L"current_page", L"show_touch_page_select"},
-    {L"num_pages", L"show_touch_page_select"},
-    {L"chapter_name", L"goto_toc"},
-    {L"highlight", L"show_touch_highlight_type_select"},
-};
 
 
 bool UIRect::contains(NormalizedWindowPos window_pos) {

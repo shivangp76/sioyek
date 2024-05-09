@@ -15,6 +15,7 @@
 // delete command should be generic and target visible objects
 // the download icon is not displayed when we move to the next possible overview
 // fix interaction of macro and holdable commands
+// preview status bar should go to the next overview when clicked (also would be nice if we could download the papers by clicking on something on the statusbar)
 
 #include <iostream>
 #include <vector>
