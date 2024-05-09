@@ -31,6 +31,7 @@ const std::vector<QString> STATUS_STRING_PARTS = {
     "custom_message",
     "current_requirement_desc",
     "download",
+    "download_button",
     "custom_message_a",
     "custom_message_b",
     "custom_message_c",

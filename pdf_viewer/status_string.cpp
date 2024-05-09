@@ -227,6 +227,14 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         }
         return QString("");
         };
+    auto download_button_fn = [widget]() {
+        if (widget->dv() && widget->dv()->overview_page) {
+            if ((widget->dv()->overview_page->overview_type == "reference") || (widget->dv()->overview_page->overview_type == "reflink")) {
+                return " [ download ]";
+            }
+        }
+        return "";
+        };
 
 
     std::unordered_map<QString, std::function<QString()>> name_to_generator = {
@@ -256,6 +264,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         {"custom_message", custom_message_fn},
         {"current_requirement_desc", current_requirement_fn},
         {"download", download_fn},
+        {"download_button", download_button_fn},
         {"custom_message_a", custom_message_a_fn},
         {"custom_message_b", custom_message_b_fn},
         {"custom_message_c", custom_message_c_fn},

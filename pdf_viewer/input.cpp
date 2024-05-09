@@ -5748,6 +5748,18 @@ public:
     }
 };
 
+class DownloadOverviewPaperNoPrompt : public Command {
+public:
+    static inline const std::string cname = "download_overview_paper_no_prompt";
+    static inline const std::string hname = "Download and portal to the current highlighted overview paper";
+    DownloadOverviewPaperNoPrompt(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->download_and_portal_to_highlighted_overview_paper();
+        widget->close_overview();
+    }
+};
+
 class GotoWindowCommand : public Command {
 public:
     static inline const std::string cname = "goto_window";
@@ -7140,6 +7152,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<GotoSelectedTextCommand>();
     register_command<FocusTextCommand>();
     register_command<DownloadOverviewPaperCommand>();
+    register_command<DownloadOverviewPaperNoPrompt>();
     register_command<GotoWindowCommand>();
     register_command<ToggleSmoothScrollModeCommand>();
     register_command<ToggleScrollbarCommand>();
