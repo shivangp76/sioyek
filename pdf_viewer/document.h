@@ -208,6 +208,7 @@ public:
     std::string delete_highlight_with_index(int index);
     bool delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     std::string delete_bookmark_with_index(int index);
+    std::string delete_portal_with_index(int index);
     bool delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     void delete_highlight(Highlight hl);
     int get_bookmark_index_at_pos(AbsoluteDocumentPos abspos);
@@ -455,6 +456,10 @@ public:
     std::optional<DocumentPos> find_abbreviation(std::wstring abbr, std::vector<DocumentRect>& overview_highlight_rects);
 
     int get_page_merged_line_index_from_unmerged_index(int page, int unmerged_index);
+
+    std::vector<DocumentRect> get_rects_for_highlight_indices(const std::vector<int>& indices);
+    std::vector <DocumentRect> get_rects_for_bookmark_indices(const std::vector<int>& indices);
+    std::vector <DocumentRect> get_rects_for_portal_indices(const std::vector<int>& indices);
 
     QJsonArray get_bookmarks_json();
     QJsonArray get_highlights_json();

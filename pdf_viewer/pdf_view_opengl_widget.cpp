@@ -1084,7 +1084,7 @@ void PdfViewOpenGLWidget::my_render() {
 
                         fz_irect window_rect = dv()->normalized_to_window_rect(bookmark_normalized_window_rect);
                         QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        bool is_highlighted = i == document_view->selected_bookmark_index;
+                        bool is_highlighted = i == document_view->get_selected_bookmark_index();
 
                         render_ui_icon_for_current_color_mode(bookmark_icon, bookmark_icon_white, window_qrect, is_highlighted);
 
@@ -1131,7 +1131,7 @@ void PdfViewOpenGLWidget::my_render() {
                         }
                     }
                     else {
-                        if (i == document_view->selected_bookmark_index) {
+                        if (i == document_view->get_selected_bookmark_index()) {
                             painter.save();
                             float temp_color[3] = {0.5f, 0.5f, 0.5f};
                             painter.setPen(convert_float3_to_qcolor(&temp_color[0]));
@@ -1191,6 +1191,7 @@ void PdfViewOpenGLWidget::my_render() {
         for (size_t i = 0; i < document_view->word_rects.size(); i++) {
             //auto [rect, page] = word_rects[i];
             DocumentRect current_word_rect = document_view->word_rects[i];
+            if (current_word_rect.page == -1) continue;
 
 
             NormalizedWindowRect window_rect = current_word_rect.to_window_normalized(dv());
@@ -2299,7 +2300,8 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                     }
                     if (flags == 0) {
                         flags |= HRF_FILL;
-                        if (i == document_view->selected_highlight_index) {
+
+                        if (i == document_view->get_selected_highlight_index()) {
                             flags |= HRF_BORDER;
                         }
                     }

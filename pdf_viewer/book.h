@@ -16,6 +16,21 @@
 
 class DocumentView;
 class Document;
+class MainWidget;
+
+enum class VisibleObjectType {
+    Portal,
+    PendingPortal,
+    Bookmark,
+    Highlight
+};
+
+struct VisibleObjectIndex {
+    VisibleObjectType object_type;
+    int index;
+
+    void handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos);
+};
 
 enum OverviewSide {
     bottom = 0,

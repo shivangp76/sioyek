@@ -97,19 +97,6 @@ struct ScheduledPortalUpdate {
 };
 
 
-enum class VisibleObjectType {
-    Portal,
-    PendingPortal,
-    Bookmark,
-    Highlight
-};
-
-struct VisibleObjectIndex {
-    VisibleObjectType object_type;
-    int index;
-
-    void handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos);
-};
 
 struct VisibleObjectMoveData {
     VisibleObjectIndex index;
@@ -307,9 +294,7 @@ public:
 
     // the index of highlight in doc()->get_highlights() that is selected. This is used to
     // delete/edit highlights e.g. by selecting a highlight by clicking on it and then executing `delete_highlight`
-    int selected_highlight_index = -1;
-    int selected_bookmark_index = -1;
-    int selected_portal_index = -1;
+    std::optional<VisibleObjectIndex> selected_object_index = {};
 
     std::optional<SelectedDrawings> selected_freehand_drawings = {};
     std::optional<FreehandDrawingMoveData> freehand_drawing_move_data = {};
@@ -688,6 +673,7 @@ public:
     void handle_delete_highlight_under_cursor();
     void handle_delete_selected_highlight();
     void handle_delete_selected_bookmark();
+    void handle_delete_selected_portal();
     void handle_start_reading();
     void handle_toggle_reading();
     void handle_stop_reading();
@@ -1040,8 +1026,17 @@ public:
     QPoint cursor_pos();
     void clear_current_page_drawings();
     void clear_current_document_drawings();
+
     void set_selected_highlight_index(int index);
     void set_selected_bookmark_index(int index);
+    void set_selected_portal_index(int index);
+    void clear_selected_object();
+
+    int get_selected_highlight_index();
+    int get_selected_portal_index();
+    int get_selected_bookmark_index();
+
+    void handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects);
     void handle_highlight_tags_pre_perform(const std::vector<int>& visible_highlight_indices);
     void handle_visible_bookmark_tags_pre_perform(const std::vector<int>& visible_bookmark_indices);
     void clear_keyboard_select_highlights();

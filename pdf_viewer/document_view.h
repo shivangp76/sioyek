@@ -31,6 +31,7 @@ struct MarkedDataRect {
     int type;
 };
 
+
 struct LineSelectBeginData {
     AbsoluteDocumentPos pos;
     AbsoluteDocumentPos end_pos;
@@ -134,8 +135,10 @@ public:
 
     int rotation_index = 0;
     bool fastread_mode = false;
-    int selected_highlight_index = -1;
-    int selected_bookmark_index = -1;
+
+    //int selected_highlight_index = -1;
+    //int selected_bookmark_index = -1;
+    std::optional<VisibleObjectIndex> selected_object_index = {};
 
     bool visible_drawing_mask[26];
     FreehandDrawing current_drawing;
@@ -208,8 +211,14 @@ public:
     void set_typing_rect(DocumentRect highlight_rect, std::optional<DocumentRect> wrong_rect);
     void set_underline(AbsoluteDocumentPos abspos);
     void clear_underline();
-    void set_selected_highlight_index(int index);
-    void set_selected_bookmark_index(int index);
+
+    int get_selected_highlight_index();
+    int get_selected_bookmark_index();
+    int get_selected_portal_index();
+
+    void set_selected_object_index(VisibleObjectIndex index);
+    //void set_selected_bookmark_index(int index);
+
     void set_overview_highlights(const std::vector<DocumentRect>& rects);
 
     void set_selected_rectangle(AbsoluteRect selected);
@@ -227,6 +236,7 @@ public:
     Highlight get_highlight_with_index(int index);
     std::string delete_highlight_with_index(int index);
     std::string delete_bookmark_with_index(int index);
+    std::string delete_portal_with_index(int index);
     void delete_highlight(Highlight hl);
     std::string delete_closest_bookmark_to_offset(float offset);
     float get_offset_x();
@@ -409,8 +419,10 @@ public:
     std::optional<AbsoluteRect> shrink_selection(bool is_begin, bool word);
     std::deque<AbsoluteRect>* get_selected_character_rects();
 
+    std::vector<VisibleObjectIndex> get_generic_visible_item_indices();
     std::vector<int> get_visible_highlight_indices();
     std::vector<int> get_visible_bookmark_indices();
+    std::vector<int> get_visible_portal_indices();
     void set_presentation_page_number(std::optional<int> page);
     std::optional<int> get_presentation_page_number();
     bool is_presentation_mode();

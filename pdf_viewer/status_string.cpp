@@ -221,8 +221,9 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         return QString("");
         };
     auto selected_highlight_fn = [widget]() {
-        if (widget->selected_highlight_index != -1) {
-            Highlight hl = widget->main_document_view->get_highlight_with_index(widget->selected_highlight_index);
+        int selected_highlight_index = widget->get_selected_highlight_index();
+        if (selected_highlight_index != -1) {
+            Highlight hl = widget->main_document_view->get_highlight_with_index(selected_highlight_index);
             return " [ " + QString::fromStdWString(hl.text_annot) + " ]";
         }
         return QString("");

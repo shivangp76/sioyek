@@ -1437,9 +1437,7 @@ void MainWidget::handle_escape() {
 
 
     pending_command_instance = nullptr;
-    set_selected_highlight_index(-1);
-    set_selected_bookmark_index(-1);
-    selected_portal_index = -1;
+    clear_selected_object();
     //current_pending_command = {};
 
     pop_current_widget();
@@ -2655,12 +2653,23 @@ void MainWidget::handle_click(WindowPos click_pos) {
     }
 
     auto link = main_document_view->get_link_in_pos(click_pos);
-    set_selected_highlight_index(main_document_view->get_highlight_index_in_pos(click_pos));
-    set_selected_bookmark_index(doc()->get_bookmark_index_at_pos(mouse_abspos));
-    selected_portal_index = doc()->get_portal_index_at_pos(mouse_abspos);
 
-    if (selected_portal_index >= 0) {
-        Portal portal = doc()->get_portals()[selected_portal_index];
+    int selected_index = -1;
+    if ((selected_index = main_document_view->get_highlight_index_in_pos(click_pos)) >= 0) {
+        set_selected_highlight_index(selected_index);
+    }
+    else if ((selected_index = doc()->get_bookmark_index_at_pos(mouse_abspos)) >= 0) {
+        set_selected_bookmark_index(selected_index);
+    }
+    else if ((selected_index = doc()->get_portal_index_at_pos(mouse_abspos)) >= 0) {
+        set_selected_portal_index(selected_index);
+    }
+    else {
+        clear_selected_object();
+    }
+
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Portal) {
+        Portal portal = doc()->get_portals()[selected_object_index->index];
 
         push_state();
         if (document_manager->get_document_with_checksum(portal.dst.document_checksum)) {
@@ -2678,7 +2687,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
     }
 
 
-    if (TOUCH_MODE && (selected_highlight_index != -1)) {
+    if (TOUCH_MODE && (get_selected_highlight_index() != -1)) {
         show_highlight_buttons();
     }
 
@@ -3388,7 +3397,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
     if (portal) {
         Document* dst_doc = document_manager->get_document_with_checksum(portal.value().dst.document_checksum);
         if (dst_doc) {
-            selected_portal_index = portal_index;
+            set_selected_portal_index(portal_index);
 
             open_overview_to_portal(dst_doc, portal.value());
 
@@ -3400,7 +3409,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
                 [this, portal_index, portal_v=portal.value()](QString path) {
                 Document* downloaded_dst_doc = document_manager->get_document(path.toStdWString());
                 if (downloaded_dst_doc) {
-                    selected_portal_index = portal_index;
+                    set_selected_portal_index(portal_index);
                     open_overview_to_portal(downloaded_dst_doc, portal_v);
                     invalidate_render();
                 }
@@ -5584,11 +5593,12 @@ std::wstring MainWidget::handle_add_highlight(char symbol) {
     }
     else {
         change_selected_highlight_type(symbol);
-        return utf8_decode(doc()->get_highlight_index_uuid(selected_highlight_index));
+        return utf8_decode(doc()->get_highlight_index_uuid(get_selected_highlight_index()));
     }
 }
 
 void MainWidget::change_selected_highlight_type(char new_type) {
+    int selected_highlight_index = get_selected_highlight_index();
     if (selected_highlight_index != -1) {
         doc()->update_highlight_type(selected_highlight_index, new_type);
         on_highlight_type_edited(doc()->get_highlights()[selected_highlight_index].uuid);
@@ -5596,7 +5606,7 @@ void MainWidget::change_selected_highlight_type(char new_type) {
 }
 
 char MainWidget::get_current_selected_highlight_type() {
-
+    int selected_highlight_index = get_selected_highlight_index();
     if (selected_highlight_index != -1) {
         return main_document_view->get_highlight_with_index(selected_highlight_index).type;
     }
@@ -6281,14 +6291,15 @@ void MainWidget::handle_delete_highlight_under_cursor() {
     WindowPos window_pos = WindowPos{ mouse_pos.x(), mouse_pos.y() };
     int sel_highlight = main_document_view->get_highlight_index_in_pos(window_pos);
     if (sel_highlight != -1) {
-        if (selected_highlight_index == sel_highlight) {
-            selected_highlight_index = -1;
+        if (get_selected_highlight_index() == sel_highlight) {
+            clear_selected_object();
         }
         delete_current_document_highlight_with_index(sel_highlight);
     }
 }
 
 void MainWidget::handle_delete_selected_highlight() {
+    int selected_highlight_index = get_selected_highlight_index();
     if (selected_highlight_index != -1) {
         int sel_index = selected_highlight_index;
         set_selected_highlight_index(-1);
@@ -6298,10 +6309,22 @@ void MainWidget::handle_delete_selected_highlight() {
 }
 
 void MainWidget::handle_delete_selected_bookmark() {
+    int selected_bookmark_index = get_selected_bookmark_index();
     if (selected_bookmark_index != -1) {
         int sel_index = selected_bookmark_index;
         set_selected_bookmark_index(-1);
         delete_current_document_bookmark(sel_index);
+    }
+    validate_render();
+}
+
+void MainWidget::handle_delete_selected_portal() {
+    int selected_portal_index = get_selected_portal_index();
+    if (selected_portal_index != -1) {
+        int sel_index = selected_portal_index;
+        clear_selected_object();
+        std::string uuid = main_document_view->delete_portal_with_index(sel_index);
+        on_portal_deleted(uuid);
     }
     validate_render();
 }
@@ -6408,6 +6431,7 @@ bool MainWidget::event(QEvent* event) {
                         set_selected_bookmark_index(bookmark_index);
                         show_touch_buttons({ L"Delete", L"Edit" }, {}, [this](int index, std::wstring name) {
 
+                            int selected_bookmark_index = get_selected_bookmark_index();
                             if (selected_bookmark_index > -1) {
                                 if (name == L"Delete") {
                                     delete_current_document_bookmark(selected_bookmark_index);
@@ -6429,11 +6453,11 @@ bool MainWidget::event(QEvent* event) {
                     int portal_index = doc()->get_portal_index_at_pos(hold_abspos);
                     if (portal_index >= 0) {
                         begin_portal_move(portal_index, hold_abspos, false);
-                        selected_portal_index = portal_index;
+                        set_selected_portal_index(portal_index);
                         show_touch_buttons({ L"Delete" }, {}, [this](int index, std::wstring name) {
-                            if (selected_portal_index > -1) {
-                                int del_index = selected_portal_index;
-                                selected_portal_index = -1;
+                            if (get_selected_portal_index() > -1) {
+                                int del_index = get_selected_portal_index();
+                                clear_selected_object();
                                 std::string uuid = doc()->get_portals()[del_index].uuid;
                                 doc()->delete_portal_with_uuid(uuid);
                                 on_portal_deleted(uuid);
@@ -6709,9 +6733,7 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
 
     clear_selected_text();
     clear_selection_indicators();
-    set_selected_highlight_index(-1);
-    set_selected_bookmark_index(-1);
-    selected_portal_index = -1;
+    clear_selected_object();
     clear_highlight_buttons();
     clear_search_buttons();
     main_document_view->cancel_search();
@@ -6955,6 +6977,7 @@ void MainWidget::set_color_mode_to_system_theme() {
 }
 
 void MainWidget::update_highlight_buttons_position() {
+    int selected_highlight_index = get_selected_highlight_index();
     if (selected_highlight_index != -1) {
         Highlight hl = main_document_view->get_highlight_with_index(selected_highlight_index);
         AbsoluteDocumentPos hlpos;
@@ -8150,6 +8173,7 @@ bool MainWidget::ensure_internet_permission() {
 }
 
 void MainWidget::add_text_annotation_to_selected_highlight(const std::wstring& annot_text) {
+    int selected_highlight_index = get_selected_highlight_index();
     if (selected_highlight_index > -1) {
         Highlight hl = main_document_view->get_highlight_with_index(selected_highlight_index);
         update_highlight_annot_with_uuid(hl.uuid, annot_text);
@@ -8157,6 +8181,7 @@ void MainWidget::add_text_annotation_to_selected_highlight(const std::wstring& a
 }
 
 void MainWidget::change_selected_bookmark_text(const std::wstring& new_text) {
+    int selected_bookmark_index = get_selected_bookmark_index();
     if (selected_bookmark_index != -1) {
         if (new_text.size() > 0) {
             float new_font_size = doc()->get_bookmarks()[selected_bookmark_index].font_size;
@@ -8185,7 +8210,7 @@ void MainWidget::delete_global_bookmark(const std::string& uuid) {
 }
 
 void MainWidget::change_selected_highlight_text_annot(const std::wstring& new_text) {
-
+    int selected_highlight_index = get_selected_highlight_index();
     if (selected_highlight_index != -1) {
         update_highlight_annot_with_uuid(doc()->get_highlight_index_uuid(selected_highlight_index), new_text);
     }
@@ -8227,7 +8252,7 @@ void MainWidget::handle_command_text_change(const QString& new_text) {
 }
 
 void MainWidget::update_selected_bookmark_font_size() {
-
+    int selected_bookmark_index = get_selected_bookmark_index();
     if (selected_bookmark_index != -1) {
         BookMark& selected_bookmark = doc()->get_bookmarks()[selected_bookmark_index];
         if (selected_bookmark.font_size != -1) {
@@ -8776,6 +8801,7 @@ AbsoluteDocumentPos MainWidget::get_cursor_abspos() {
 }
 
 std::optional<Portal> MainWidget::get_target_portal(bool limit) {
+    int selected_portal_index = get_selected_portal_index();
     if ((selected_portal_index >= 0) && (main_document_view->get_overview_page().has_value())) {
         std::vector<Portal>& portals = doc()->get_portals();
         if (portals.size() > selected_portal_index) {
@@ -10020,7 +10046,7 @@ void MainWidget::hide_command_line_edit(){
 void MainWidget::deselect_document_indices(){
     set_selected_highlight_index(-1);
     set_selected_bookmark_index(-1);
-    selected_portal_index = -1;
+    clear_selected_object();
 }
 
 void MainWidget::zoom_in_overview(){
@@ -10542,26 +10568,75 @@ void MainWidget::clear_current_document_drawings() {
     doc()->delete_all_drawings();
 }
 
+void MainWidget::set_selected_portal_index(int index) {
+    selected_object_index = VisibleObjectIndex{VisibleObjectType::Portal, index};
+    dv()->set_selected_object_index(selected_object_index.value());
+}
+
+void MainWidget::clear_selected_object() {
+    selected_object_index = {};
+    dv()->set_selected_object_index({});
+}
+
 void MainWidget::set_selected_highlight_index(int index) {
-    selected_highlight_index = index;
-    main_document_view->set_selected_highlight_index(index);
+    selected_object_index = VisibleObjectIndex{VisibleObjectType::Highlight, index};
+    dv()->set_selected_object_index(selected_object_index.value());
 }
 
 void MainWidget::set_selected_bookmark_index(int index) {
-    selected_bookmark_index = index;
-    main_document_view->set_selected_bookmark_index(index);
+    selected_object_index = VisibleObjectIndex{VisibleObjectType::Bookmark, index};
+    dv()->set_selected_object_index(selected_object_index.value());
+}
+
+int MainWidget::get_selected_highlight_index() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Highlight) {
+        return selected_object_index->index;
+    }
+    return -1;
+}
+
+int MainWidget::get_selected_portal_index() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Portal) {
+        return selected_object_index->index;
+    }
+    return -1;
+}
+
+int MainWidget::get_selected_bookmark_index() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Bookmark) {
+        return selected_object_index->index;
+    }
+    return -1;
+}
+
+void MainWidget::handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects){
+    std::vector<int> highlight_indices;
+    std::vector<int> bookmark_indices;
+    std::vector<int> portal_indices;
+
+    for (const VisibleObjectIndex& obj : visible_objects) {
+        if (obj.object_type == VisibleObjectType::Highlight) highlight_indices.push_back(obj.index);
+        if (obj.object_type == VisibleObjectType::Bookmark) bookmark_indices.push_back(obj.index);
+        if (obj.object_type == VisibleObjectType::Portal) portal_indices.push_back(obj.index);
+    }
+    std::vector<DocumentRect> highlight_rects = doc()->get_rects_for_highlight_indices(highlight_indices);
+    std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(bookmark_indices);
+    std::vector<DocumentRect> portal_rects = doc()->get_rects_for_portal_indices(portal_indices);
+
+    std::vector<DocumentRect> merged_rects;
+    merged_rects.insert(merged_rects.end(), highlight_rects.begin(), highlight_rects.end());
+    merged_rects.insert(merged_rects.end(), bookmark_rects.begin(), bookmark_rects.end());
+    merged_rects.insert(merged_rects.end(), portal_rects.begin(), portal_rects.end());
+
+    main_document_view->set_highlight_words(merged_rects);
+    main_document_view->set_should_highlight_words(true);
+
 }
 
 void MainWidget::handle_highlight_tags_pre_perform(const std::vector<int>& visible_highlight_indices) {
     const std::vector<Highlight>& highlights = doc()->get_highlights();
 
-    std::vector<DocumentRect> highlight_rects;
-    for (auto ind : visible_highlight_indices) {
-        const Highlight& highlight = highlights[ind];
-        if (highlight.highlight_rects.size() > 0) {
-            highlight_rects.push_back(highlight.highlight_rects[0].to_document(doc()));
-        }
-    }
+    std::vector<DocumentRect> highlight_rects = doc()->get_rects_for_highlight_indices(visible_highlight_indices);
 
     main_document_view->set_highlight_words(highlight_rects);
     main_document_view->set_should_highlight_words(true);
@@ -10571,12 +10646,7 @@ void MainWidget::handle_highlight_tags_pre_perform(const std::vector<int>& visib
 void MainWidget::handle_visible_bookmark_tags_pre_perform(const std::vector<int>& visible_bookmark_indices){
     const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
 
-    std::vector<DocumentRect> bookmark_rects;
-    for (auto ind : visible_bookmark_indices) {
-        const BookMark& bookmark = bookmarks[ind];
-        AbsoluteRect bookmark_rect = bookmark.get_rectangle();
-        bookmark_rects.push_back(bookmark_rect.to_document(doc()));
-    }
+    std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(visible_bookmark_indices);
 
     main_document_view->set_highlight_words(bookmark_rects);
     main_document_view->set_should_highlight_words(true);
@@ -10825,6 +10895,7 @@ AbsoluteDocumentPos MainWidget::get_mouse_abspos() {
 }
 
 void MainWidget::move_selected_bookmark_to_mouse_cursor() {
+    int selected_bookmark_index = get_selected_bookmark_index();
     if ((selected_bookmark_index != -1) && (selected_bookmark_index < doc()->get_bookmarks().size())) {
 
         AbsoluteDocumentPos mouse_abspos = get_mouse_abspos();

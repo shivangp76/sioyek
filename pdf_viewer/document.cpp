@@ -543,6 +543,15 @@ std::string Document::delete_bookmark_with_index(int index) {
     return bookmark_to_delete.uuid;
 }
 
+std::string Document::delete_portal_with_index(int index) {
+    Portal portal_to_delete = portals[index];
+
+    db_manager->delete_portal(portal_to_delete.uuid);
+    portals.erase(portals.begin() + index);
+    is_annotations_dirty = true;
+    return portal_to_delete.uuid;
+}
+
 void Document::delete_highlight(Highlight hl) {
     for (size_t i = (highlights.size() - 1); i >= 0; i--) {
         if (highlights[i] == hl) {
@@ -4701,4 +4710,44 @@ int Document::get_first_line_before_block(int page, int before_index) {
         last_block = block;
     }
     return -1;
+}
+
+std::vector<DocumentRect> Document::get_rects_for_highlight_indices(const std::vector<int>& indices) {
+    std::vector<DocumentRect> res;
+    for (auto index : indices) {
+        if (index < highlights.size() && highlights[index].highlight_rects.size() > 0) {
+            res.push_back(highlights[index].highlight_rects[0].to_document(this));
+        }
+        else {
+            res.push_back(DocumentRect(fz_empty_rect, -1));
+        }
+    }
+    return res;
+}
+
+std::vector<DocumentRect> Document::get_rects_for_bookmark_indices(const std::vector<int>& indices) {
+    std::vector<DocumentRect> res;
+    for (auto index : indices) {
+        if (index < bookmarks.size() && (bookmarks[index].is_marked() || bookmarks[index].is_freetext())) {
+            DocumentRect rect = bookmarks[index].get_rectangle().to_document(this);
+            res.push_back(rect);
+        }
+        else {
+            res.push_back(DocumentRect(fz_empty_rect, -1));
+        }
+    }
+    return res;
+}
+
+std::vector <DocumentRect> Document::get_rects_for_portal_indices(const std::vector<int>& indices) {
+    std::vector<DocumentRect> res;
+    for (auto index : indices) {
+        if (index < portals.size() && portals[index].is_visible()) {
+            res.push_back(portals[index].get_rectangle().to_document(this));
+        }
+        else {
+            res.push_back(DocumentRect(fz_empty_rect, -1));
+        }
+    }
+    return res;
 }

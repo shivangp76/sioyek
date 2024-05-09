@@ -261,6 +261,10 @@ std::string DocumentView::delete_bookmark_with_index(int index) {
     return current_document->delete_bookmark_with_index(index);
 }
 
+std::string DocumentView::delete_portal_with_index(int index) {
+    return current_document->delete_portal_with_index(index);
+}
+
 void DocumentView::delete_highlight(Highlight hl) {
     current_document->delete_highlight(hl);
 }
@@ -2008,6 +2012,39 @@ std::vector<int> DocumentView::get_visible_bookmark_indices() {
     return res;
 }
 
+std::vector<int> DocumentView::get_visible_portal_indices() {
+    const std::vector<Portal>& portals = get_document()->get_portals();
+    std::vector<int> res;
+    for (int i = 0; i < portals.size(); i++) {
+        if (portals[i].is_visible() && portals[i].get_rectangle().to_window_normalized(this).is_visible()) {
+            res.push_back(i);
+        }
+    }
+    return res;
+}
+
+std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices() {
+    std::vector<int> visible_highlight_indices = get_visible_highlight_indices();
+    std::vector<int> visible_bookmark_indices = get_visible_bookmark_indices();
+    std::vector<int> visible_portal_indices = get_visible_portal_indices();
+
+    std::vector<VisibleObjectIndex> res;
+    for (auto index : visible_highlight_indices) {
+        res.push_back(VisibleObjectIndex{ VisibleObjectType::Highlight, index });
+    }
+
+    for (auto index : visible_bookmark_indices) {
+        res.push_back(VisibleObjectIndex{ VisibleObjectType::Bookmark, index });
+    }
+
+    for (auto index : visible_portal_indices) {
+        res.push_back(VisibleObjectIndex{ VisibleObjectType::Portal, index });
+    }
+
+    return res;
+
+}
+
 std::vector<int> DocumentView::get_visible_highlight_indices() {
 
     const std::vector<Highlight>& highlights = get_document()->get_highlights();
@@ -2987,13 +3024,17 @@ void DocumentView::clear_underline() {
     underline = {};
 }
 
-void DocumentView::set_selected_highlight_index(int index) {
-    selected_highlight_index = index;
+void DocumentView::set_selected_object_index(VisibleObjectIndex index) {
+    selected_object_index = index;
 }
 
-void DocumentView::set_selected_bookmark_index(int index) {
-    selected_bookmark_index = index;
-}
+//void DocumentView::set_selected_highlight_index(int index) {
+//    selected_highlight_index = index;
+//}
+//
+//void DocumentView::set_selected_bookmark_index(int index) {
+//    selected_bookmark_index = index;
+//}
 
 void DocumentView::set_overview_highlights(const std::vector<DocumentRect>& rects){
     if (overview_page) {
@@ -3541,4 +3582,25 @@ void DocumentView::debug() {
     qDebug() << "_______";
     qDebug() << ruler_line_index->merged_index;
     qDebug() << ruler_line_index->unmerged_indices;
+}
+
+int DocumentView::get_selected_highlight_index() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Highlight) {
+        return selected_object_index->index;
+    }
+    return -1;
+}
+
+int DocumentView::get_selected_bookmark_index() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Bookmark) {
+        return selected_object_index->index;
+    }
+    return -1;
+}
+
+int DocumentView::get_selected_portal_index() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Portal) {
+        return selected_object_index->index;
+    }
+    return -1;
 }

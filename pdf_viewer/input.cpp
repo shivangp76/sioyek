@@ -1840,9 +1840,11 @@ public:
     }
 
     void pre_perform() {
-        if (widget->selected_highlight_index >= 0){
+
+        int selected_highlight_index = widget->get_selected_highlight_index();
+        if (selected_highlight_index >= 0){
             widget->text_command_line_edit->setText(
-                    QString::fromStdWString(widget->doc()->get_highlights()[widget->selected_highlight_index].text_annot)
+                    QString::fromStdWString(widget->doc()->get_highlights()[selected_highlight_index].text_annot)
                     );
         }
     }
@@ -2235,7 +2237,8 @@ public:
     AddBookmarkFreetextCommand(MainWidget* w) : Command(cname, w) {};
 
     void on_text_change(const QString& new_text) override {
-        widget->doc()->get_bookmarks()[widget->selected_bookmark_index].description = new_text.toStdWString();
+        int selected_bookmark_index = widget->get_selected_bookmark_index();
+        widget->doc()->get_bookmarks()[selected_bookmark_index].description = new_text.toStdWString();
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
@@ -3363,11 +3366,12 @@ public:
     MoveSelectedBookmarkCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        if (widget->selected_bookmark_index != -1) {
+        int selected_bookmark_index = widget->get_selected_bookmark_index();
+        if (selected_bookmark_index != -1) {
 
             AbsoluteDocumentPos mouse_abspos = widget->get_mouse_abspos();
             widget->move_selected_bookmark_to_mouse_cursor();
-            widget->begin_bookmark_move(widget->selected_bookmark_index, mouse_abspos);
+            widget->begin_bookmark_move(selected_bookmark_index, mouse_abspos);
         }
 
     }
@@ -3385,27 +3389,29 @@ public:
     EditSelectedBookmarkCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void on_text_change(const QString& new_text) override {
-        widget->doc()->get_bookmarks()[widget->selected_bookmark_index].description = new_text.toStdWString();
+        int selected_bookmark_index = widget->get_selected_bookmark_index();
+        widget->doc()->get_bookmarks()[selected_bookmark_index].description = new_text.toStdWString();
     }
 
     void pre_perform() {
 
-        if (widget->selected_bookmark_index > -1) {
-            initial_text = widget->doc()->get_bookmarks()[widget->selected_bookmark_index].description;
-            initial_font_size = widget->doc()->get_bookmarks()[widget->selected_bookmark_index].font_size;
-            index = widget->selected_bookmark_index;
+        int selected_bookmark_index = widget->get_selected_bookmark_index();
+        if (selected_bookmark_index > -1) {
+            initial_text = widget->doc()->get_bookmarks()[selected_bookmark_index].description;
+            initial_font_size = widget->doc()->get_bookmarks()[selected_bookmark_index].font_size;
+            index = selected_bookmark_index;
 
             if (TOUCH_MODE) {
                 if (widget->current_widget_stack.size() > 0) {
                     TouchTextEdit* stack_top = dynamic_cast<TouchTextEdit*>(widget->current_widget_stack.back());
                     if (stack_top) {
-                        stack_top->set_text(widget->doc()->get_bookmarks()[widget->selected_bookmark_index].description);
+                        stack_top->set_text(widget->doc()->get_bookmarks()[selected_bookmark_index].description);
                     }
                 }
             }
             else {
                 widget->text_command_line_edit->setText(
-                    QString::fromStdWString(widget->doc()->get_bookmarks()[widget->selected_bookmark_index].description)
+                    QString::fromStdWString(widget->doc()->get_bookmarks()[selected_bookmark_index].description)
                 );
             }
         }
@@ -3419,12 +3425,14 @@ public:
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
-        if (widget->selected_bookmark_index == -1) return {};
+        int selected_bookmark_index = widget->get_selected_bookmark_index();
+        if (selected_bookmark_index == -1) return {};
         return TextCommand::next_requirement(widget);
     }
 
     void perform() {
-        if (widget->selected_bookmark_index != -1) {
+        int selected_bookmark_index = widget->get_selected_bookmark_index();
+        if (selected_bookmark_index != -1) {
             std::wstring text_ = text.value();
             widget->change_selected_bookmark_text(text_);
             widget->invalidate_render();
@@ -3449,7 +3457,7 @@ public:
     EditSelectedHighlightCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void pre_perform() {
-        index = widget->selected_highlight_index;
+        index = widget->get_selected_highlight_index();
 
         if (index != -1) {
             widget->set_text_prompt_text(
@@ -3565,13 +3573,69 @@ public:
 };
 
 
+class DeteteVisibleItem : public GenericVisibleSelectCommand {
+
+    std::vector<VisibleObjectIndex> visible_objects;
+public:
+    static inline const std::string cname = "generic_delete";
+    static inline const std::string hname = "Delete visible items";
+    DeteteVisibleItem(MainWidget* w) : GenericVisibleSelectCommand(cname, w) {
+        visible_objects = widget->dv()->get_generic_visible_item_indices();
+    };
+
+    int get_selected_item_index() override{
+        return -1;
+        //return widget->selected_highlight_index;
+    }
+
+    std::vector<int> get_visible_item_indices() override {
+        std::vector<int> res;
+        for (int i = 0; i < visible_objects.size(); i++) {
+            res.push_back(i);
+        }
+        return res;
+        //return widget->main_document_view->get_visible_highlight_indices();
+    }
+
+    void handle_indices_pre_perform() override {
+        widget->handle_generic_tags_pre_perform(visible_objects);
+
+    }
+
+    void perform_with_selected_index(std::optional<int> index) override {
+        if (index && index.value() < visible_objects.size()) {
+            VisibleObjectIndex object_index = visible_objects[index.value()];
+            if (object_index.object_type == VisibleObjectType::Highlight) {
+                widget->set_selected_highlight_index(object_index.index);
+                widget->handle_delete_selected_highlight();
+            }
+            if (object_index.object_type == VisibleObjectType::Bookmark) {
+                widget->set_selected_bookmark_index(object_index.index);
+                widget->handle_delete_selected_bookmark();
+            }
+            if (object_index.object_type == VisibleObjectType::Portal) {
+                widget->set_selected_portal_index(object_index.index);
+                widget->handle_delete_selected_portal();
+            }
+
+        }
+        //if (index) {
+        //    if (index < visible_item_indices.size()) {
+        //        widget->set_selected_highlight_index(visible_item_indices[index.value()]);
+        //    }
+        //}
+
+    }
+
+};
+
 class GenericHighlightCommand : public GenericVisibleSelectCommand {
 
 public:
     GenericHighlightCommand(std::string name, MainWidget* w) : GenericVisibleSelectCommand(name, w) {};
 
     int get_selected_item_index() override{
-        return widget->selected_highlight_index;
+        return widget->get_selected_highlight_index();
     }
 
     std::vector<int> get_visible_item_indices() override {
@@ -3603,7 +3667,7 @@ public:
     GenericVisibleBookmarkCommand(std::string name, MainWidget* w) : GenericVisibleSelectCommand(name, w) {};
 
     int get_selected_item_index() override{
-        return widget->selected_bookmark_index;
+        return widget->get_selected_bookmark_index();
     }
 
     std::vector<int> get_visible_item_indices() override {
@@ -7004,6 +7068,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<AddAnnotationToSelectedHighlightCommand>();
     register_command<AddAnnotationToHighlightCommand>();
     register_command<ChangeHighlightTypeCommand>();
+    register_command<DeteteVisibleItem>();
     register_command<RenameCommand>();
     register_command<SetFreehandThickness>();
     register_command<GotoPageWithLabel>();
