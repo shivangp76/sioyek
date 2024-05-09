@@ -676,6 +676,37 @@ public:
 
     }
 
+    bool is_holdable() {
+        if (!is_modal) {
+            return false;
+        }
+        else {
+            int mode_index = get_current_mode_index();
+            if (mode_index >= 0) {
+                return commands[mode_index]->is_holdable();
+            }
+            return false;
+        }
+    }
+
+    void perform_up() {
+        if (is_holdable()) {
+            int mode_index = get_current_mode_index();
+            if (mode_index >= 0) {
+                commands[mode_index]->perform_up();
+            }
+        }
+    }
+
+    void on_key_hold() {
+        if (is_holdable()) {
+            int mode_index = get_current_mode_index();
+            if (mode_index >= 0) {
+                commands[mode_index]->on_key_hold();
+            }
+        }
+    }
+
     void perform() {
         if (!is_modal) {
             for (int i = 0; i < commands.size(); i++) {

@@ -69,8 +69,8 @@ public:
     virtual void set_result_mutex(bool* res_mut, std::wstring* result_location);
     virtual std::optional<std::wstring> get_text_suggestion(int index);
     virtual bool is_menu_command();
-    virtual void perform_up();
     virtual bool is_holdable();
+    virtual void perform_up();
     virtual void on_key_hold();
     virtual void on_text_change(const QString& new_text);
 
