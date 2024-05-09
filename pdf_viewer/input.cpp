@@ -694,8 +694,7 @@ public:
 
             for (int i = 0; i < commands.size(); i++) {
                 if (mode_matches(mode_string, modes[i])) {
-                    widget->handle_command_types(std::move(commands[i]), 1);
-                    //commands[i]->run(widget);
+                    perform_subcommand(i);
                     return;
                 }
             }
