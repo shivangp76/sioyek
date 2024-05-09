@@ -2996,6 +2996,9 @@ void DocumentView::set_selected_bookmark_index(int index) {
 }
 
 void DocumentView::set_overview_highlights(const std::vector<DocumentRect>& rects){
+    if (overview_page) {
+        overview_page->highlight_rects = rects;
+    }
     overview_highlights = rects;
 }
 

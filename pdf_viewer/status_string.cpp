@@ -229,7 +229,8 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         };
     auto download_button_fn = [widget]() {
         if (widget->dv() && widget->dv()->overview_page) {
-            if ((widget->dv()->overview_page->overview_type == "reference") || (widget->dv()->overview_page->overview_type == "reflink")) {
+            if (((widget->dv()->overview_page->overview_type == "reference") || (widget->dv()->overview_page->overview_type == "reflink"))
+                && (widget->dv()->overview_page->highlight_rects.size() > 0)) {
                 return " [ download ]";
             }
         }

@@ -13,8 +13,6 @@
 // name of command in statusbar is not correct when key is overloaded 
 // smartviewcandidates are not filled when right clicking on a link?
 // delete command should be generic and target visible objects
-// the download icon is not displayed when we move to the next possible overview
-// fix interaction of macro and holdable commands
 
 #include <iostream>
 #include <vector>
@@ -7129,7 +7127,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
-    main_document_view->swap_line_select_cursor();
 }
 
 void MainWidget::handle_goto_next_block() {
