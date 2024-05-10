@@ -5,14 +5,9 @@
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
 // do the todo for link clicks when the document is zoomed in (focus on x too)
 // fix the issue where executing non-existant command blocks the python api
-// handle mobile text selection case where the character is not in the current page
 // make sure database migrations goes smoothly. Test with database files from previous sioyek versions.
-// portals are not correctly saved in an updated database
 // touch epub controls
 // better tablet button handling, the current method is setting dependent
-// name of command in statusbar is not correct when key is overloaded 
-// smartviewcandidates are not filled when right clicking on a link?
-// delete command should be generic and target visible objects
 
 #include <iostream>
 #include <vector>

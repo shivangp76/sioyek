@@ -260,6 +260,7 @@ private:
     }
 
     void set_result_socket(QLocalSocket* socket) {
+        noop.set_result_socket(socket);
         result_socket = socket;
         if (actual_command) {
             actual_command->set_result_socket(socket);
