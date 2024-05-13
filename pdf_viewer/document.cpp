@@ -4376,7 +4376,7 @@ int Document::get_page_text_and_line_rects_after_rect(int page_number,
     DocumentRect after = after_.to_document(this);
     after.rect.y0 = after.rect.y1 = (after.rect.y0 + after.rect.y1) / 2;
 
-    if (after.rect == fz_empty_rect) {
+    if (after.rect == fz_empty_rect || after_ == fz_empty_rect) {
         begun = true;
     }
 
@@ -4507,6 +4507,19 @@ int Document::get_page_offset_into_super_fast_index(int from){
 
 QString Document::get_all_document_text(){
     return QString::fromStdWString(super_fast_search_index);
+}
+
+
+QString Document::get_page_text(int page){
+    if (super_fast_page_begin_indices.size() > 0 && page < super_fast_page_begin_indices.size()) {
+        int begin_index = super_fast_page_begin_indices[page];
+        int end_index = super_fast_search_index.size() - 1;
+        if (page < super_fast_page_begin_indices.size() - 1) {
+            end_index = super_fast_page_begin_indices[page + 1];
+        }
+        return QString::fromStdWString(super_fast_search_index.substr(begin_index, end_index - begin_index));
+    }
+    return "";
 }
 
 QString Document::get_rest_of_document_pages_text(int from) {

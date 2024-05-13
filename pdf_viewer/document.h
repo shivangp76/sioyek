@@ -220,6 +220,7 @@ public:
     CachedPageIndex& get_page_index(int page);
     void fill_search_result(SearchResult* result);
     QString get_all_document_text();
+    QString get_page_text(int page);
     QString get_rest_of_document_pages_text(int from);
     int get_page_offset_into_super_fast_index(int from);
     int get_page_from_character_offset(int offset);

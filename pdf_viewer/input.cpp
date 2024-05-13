@@ -1294,11 +1294,22 @@ public:
 class StartReadingCommand : public Command {
 public:
     static inline const std::string cname = "start_reading";
-    static inline const std::string hname = "Read using text to speech";
+    static inline const std::string hname = "Read using local text to speech";
     StartReadingCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
         widget->handle_start_reading();
+    }
+};
+
+class StartReadingHighQualityCommand : public Command {
+public:
+    static inline const std::string cname = "start_reading_high_quality";
+    static inline const std::string hname = "Read using sioyek servers' text to speech";
+    StartReadingHighQualityCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_start_reading_high_quality(true);
     }
 };
 
@@ -7279,6 +7290,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<OpenLastDocumentCommand>();
     register_command<ToggleStatusbarCommand>();
     register_command<StartReadingCommand>();
+    register_command<StartReadingHighQualityCommand>();
     register_command<StopReadingCommand>();
     register_command<ToggleReadingCommand>();
     register_command<AddKeybindCommand>();

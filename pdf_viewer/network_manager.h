@@ -37,6 +37,8 @@ public:
     const std::wstring SIOYEK_ADD_BOOKMARK_URL = SIOYEK_HOST + L"add_bookmark";
     const std::wstring SIOYEK_ADD_PORTAL_URL = SIOYEK_HOST + L"add_portal";
     const std::wstring SIOYEK_DELETE_FILE_URL = SIOYEK_HOST + L"delete_file";
+    const std::wstring SIOYEK_TTS_URL = SIOYEK_HOST + L"tts";
+    const std::wstring SIOYEK_DEBUG_URL = SIOYEK_HOST + L"debug";
 
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_set<std::string> SERVER_DELETED_FILES = {};
@@ -48,6 +50,7 @@ public:
     QDateTime last_document_location_upload_time;
 
     SioyekNetworkManager(DatabaseManager* db_manager, BackgroundTaskManager* task_manager, DocumentManager* document_manager, QObject* parent=nullptr);
+    void tts(QObject* parent, const std::wstring& text, const std::string& document_checksum, int page, float rate, std::function<void(QString file_path, std::vector<float>)> on_done);
     void login(std::wstring username, std::wstring password);
     bool handle_network_reply_if_error(QNetworkReply* reply, bool show_message);
     void persist_access_token(std::string access_token);
@@ -78,4 +81,5 @@ public:
 
     void upload_annot(QObject* parent, const QString& checksum, const Annotation& annot, std::function<void()> on_success, std::function<void()> on_fail);
     void delete_file_with_checksum(const QString& checksum);
+    void debug(QObject* parent, std::function<void()> on_done);
 };

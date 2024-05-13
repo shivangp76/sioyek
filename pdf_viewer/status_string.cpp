@@ -237,6 +237,9 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         }
         return "";
         };
+    auto network_status_fn = [widget]() {
+        return widget->get_network_status_string();
+        };
 
 
     std::unordered_map<QString, std::function<QString()>> name_to_generator = {
@@ -267,6 +270,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         {"current_requirement_desc", current_requirement_fn},
         {"download", download_fn},
         {"download_button", download_button_fn},
+        {"network_status", network_status_fn},
         {"custom_message_a", custom_message_a_fn},
         {"custom_message_b", custom_message_b_fn},
         {"custom_message_c", custom_message_c_fn},

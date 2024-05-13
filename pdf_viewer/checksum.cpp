@@ -2,6 +2,13 @@
 
 #include "checksum.h"
 
+std::string compute_md5_from_data(const QByteArray& data) {
+
+    QCryptographicHash hash(QCryptographicHash::Md5);
+    hash.addData(data);
+    return QString(hash.result().toHex()).toStdString();
+}
+
 std::string compute_checksum(const QString& file_name, QCryptographicHash::Algorithm hash_algorithm)
 {
     QFile infile(file_name);

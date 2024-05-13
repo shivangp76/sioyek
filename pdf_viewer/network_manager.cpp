@@ -6,6 +6,7 @@
 #include <qfile.h>
 #include <qdir.h>
 #include <qhttpmultipart.h>
+#include <qtimer.h>
 
 #include "utils.h"
 #include "path.h"
@@ -15,6 +16,8 @@
 
 extern std::string APPLICATION_VERSION;
 extern Path sioyek_access_token_path;
+extern Path cached_tts_path;
+extern Path standard_data_path;
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
 
@@ -931,4 +934,110 @@ void SioyekNetworkManager::delete_file_with_checksum(const QString& checksum) {
     authorize_request(&req);
 
     QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+}
+
+void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const std::string& document_checksum, int page, float rate, std::function<void(QString, std::vector<float>)> on_done) {
+    QString text_checksum = QString::fromStdString(compute_md5_from_data(QString::fromStdWString(text).toUtf8()));
+    QString file_path = QString::fromStdWString(cached_tts_path.slash( text_checksum.toStdWString() + L".mp3").get_path());
+    QString timestamps_file_path = QString::fromStdWString(cached_tts_path.slash(text_checksum.toStdWString() + L".json").get_path());
+    if (rate != 1) {
+        file_path  =  QString::fromStdWString(cached_tts_path.slash( text_checksum.toStdWString() + L"_" + QString::number(rate).toStdWString() + L".mp3").get_path());
+        timestamps_file_path =  QString::fromStdWString(cached_tts_path.slash(text_checksum.toStdWString() + L"_" + QString::number(rate).toStdWString() + L".json").get_path());
+    }
+    QFileInfo timestamps_file_info(timestamps_file_path);
+    QFileInfo audio_file_info(file_path);
+
+    if (timestamps_file_info.exists() && audio_file_info.exists()){
+        QFile timestamps_file(timestamps_file_path);
+        if (timestamps_file.open(QIODeviceBase::ReadOnly)) {
+            QJsonDocument json_doc = QJsonDocument::fromJson(timestamps_file.readAll());
+            timestamps_file.close();
+
+            QJsonArray items = json_doc.array();
+            std::vector<float> timestamps;
+            for (int i = 0; i < items.size(); i++) {
+                timestamps.push_back(items[i].toDouble());
+            }
+            on_done(file_path, timestamps);
+        }
+
+    }
+    else {
+        QNetworkRequest req;
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_TTS_URL)));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+        QJsonObject obj;
+        obj["text"] = QString::fromStdWString(text);
+        obj["text_checksum"] = text_checksum;
+        obj["document_checksum"] = QString::fromStdString(document_checksum);
+        obj["page"] = page;
+        obj["rate"] = rate;
+
+        QJsonDocument json_doc(obj);
+        authorize_request(&req);
+
+        QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+        reply->setParent(parent);
+        reply->setProperty("sioyek_network_status_string", "Creating audio");
+        QObject::connect(reply, &QNetworkReply::finished, [reply, file_path, timestamps_file_path, on_done = std::move(on_done)]() {
+            reply->deleteLater();
+
+            int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (status_code == 200) {
+                QJsonDocument json_doc = QJsonDocument::fromJson(reply->rawHeader("timestamps"));
+                QJsonArray items = json_doc.array();
+                std::vector<float> timestamps;
+                for (int i = 0; i < items.size(); i++) {
+                    timestamps.push_back(items[i].toDouble());
+                }
+
+                QByteArray audio_data = reply->readAll();
+
+                if (!cached_tts_path.dir_exists()) {
+                    QDir dir = QDir(QString::fromStdWString(standard_data_path.get_path()));
+                    dir.mkdir("tts");
+                }
+
+                QFile file(file_path);
+                if (file.open(QIODeviceBase::WriteOnly)) {
+                    file.write(audio_data);
+                }
+                file.close();
+
+                QFile timestamps_file(timestamps_file_path);
+                if (timestamps_file.open(QIODeviceBase::WriteOnly)) {
+                    int written = timestamps_file.write(json_doc.toJson());
+                    qDebug() << "write " << written;
+                }
+                timestamps_file.close();
+                on_done(file_path, timestamps);
+            }
+            else {
+                //qDebug() << "something bad happened";
+                //QFile access_token_file(QString::fromStdWString(sioyek_access_token_path.get_path()));
+            }
+            });
+
+    }
+
+}
+
+void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done) {
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DEBUG_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["secs"] = 4;
+
+    QJsonDocument json_doc(obj);
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    reply->setParent(parent);
+    reply->setProperty("sioyek_network_status_string", "debug netowkr erquest");
+    QObject::connect(reply, &QNetworkReply::finished, [on_done=std::move(on_done)]() {
+        on_done();
+        });
 }

@@ -8,6 +8,7 @@
 #include <optional>
 
 std::string compute_checksum(const QString& file_name, QCryptographicHash::Algorithm hash_algorithm);
+std::string compute_md5_from_data(const QByteArray& data);
 
 class CachedChecksummer {
 private:

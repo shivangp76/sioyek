@@ -46,6 +46,7 @@ class DrawControlsUI;
 class SearchButtons;
 class HighlightButtons;
 class SioyekNetworkManager;
+class QMediaPlayer;
 
 struct fz_context;
 struct fz_stext_char;
@@ -137,6 +138,15 @@ struct LastDocumentChecksum {
 //    QString role_string;
 //
 //};
+struct HighQualityPlayState {
+    bool is_playing = false;
+    int page_number = -1;
+    int start_line = -1;
+    std::vector<PagelessDocumentRect> line_rects;
+    std::vector<float> timestamps;
+    Document* doc = nullptr;
+    std::optional<PagelessDocumentRect> last_focused_rect = {};
+};
 
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -180,6 +190,7 @@ public:
     PdfViewOpenGLWidget* opengl_widget = nullptr;
     PdfViewOpenGLWidget* helper_opengl_widget_ = nullptr;
     QScrollBar* scroll_bar = nullptr;
+    QMediaPlayer* media_player = nullptr;
 
     QJsonDocument commands_doc_json_document;
     QJsonDocument config_doc_json_document;
@@ -244,6 +255,8 @@ public:
     // for example `delete_freehand_drawings`)
     bool rect_select_mode = false;
     bool point_select_mode = false;
+
+    std::optional<HighQualityPlayState> high_quality_play_state = {};
 
     // begin/end of current selected rectangle
     std::optional<AbsoluteDocumentPos> rect_select_begin = {};
@@ -477,6 +490,7 @@ public:
     bool overview_under_pos(WindowPos pos);
     void visual_mark_under_pos(WindowPos pos);
     bool is_network_manager_running(bool* is_downloading = nullptr);
+    QString get_network_status_string();
     void show_download_paper_menu(
         const std::vector<std::wstring>& paper_names,
         const std::vector<std::wstring>& download_urls,
@@ -675,6 +689,7 @@ public:
     void handle_delete_selected_bookmark();
     void handle_delete_selected_portal();
     void handle_start_reading();
+    void handle_start_reading_high_quality(bool should_preload=false);
     void handle_toggle_reading();
     void handle_stop_reading();
     void handle_play();
@@ -1118,6 +1133,8 @@ public:
     void delete_current_file_from_server();
     bool is_logged_in();
     void on_set_enum_config_value(std::string config_name, std::wstring config_value);
+    void focus_on_high_quality_text_being_read();
+    QMediaPlayer* get_media_player();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 

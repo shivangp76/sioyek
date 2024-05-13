@@ -215,6 +215,11 @@ struct EnhancedRect : public R {
 using PagelessDocumentRect = EnhancedRect<fz_rect, PagelessDocumentPos>;
 using WindowRect = EnhancedRect<fz_irect, WindowPos>;
 
+template<typename R, typename T>
+bool operator ==(const EnhancedRect<R, T>& lhs, const EnhancedRect<R, T>& rhs) {
+    return (lhs.x0 == rhs.x0) && (lhs.x1 == rhs.x1) && (lhs.y0 == rhs.y0) && (lhs.y1 == rhs.y1);
+}
+
 struct DocumentRect {
     EnhancedRect<fz_rect, PagelessDocumentPos> rect;
     int page;

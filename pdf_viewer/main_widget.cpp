@@ -1,13 +1,11 @@
 ﻿// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
-// maybe: use a better method to handle deletion of canceled download portals
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
-// do the todo for link clicks when the document is zoomed in (focus on x too)
-// fix the issue where executing non-existant command blocks the python api
 // make sure database migrations goes smoothly. Test with database files from previous sioyek versions.
 // touch epub controls
 // better tablet button handling, the current method is setting dependent
+// when playing audio there should be a pause button in statusbar
 
 #include <iostream>
 #include <vector>
@@ -65,6 +63,8 @@
 #include <qstylehints.h>
 #include <qhttpmultipart.h>
 #include <qstringconverter.h>
+#include <qmediaplayer.h>
+#include <qaudiooutput.h>
 
 #include <mupdf/fitz.h>
 
@@ -147,6 +147,7 @@ extern Path default_config_path;
 extern Path default_keys_path;
 extern Path sioyek_js_path;
 extern Path sioyek_access_token_path;
+extern Path cached_tts_path;
 extern std::vector<Path> user_config_paths;
 extern std::vector<Path> user_keys_paths;
 extern Path database_file_path;
@@ -1106,6 +1107,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     network_timer->setInterval(10000);
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
+        focus_on_high_quality_text_being_read();
 
         if (scheduled_portal_update) {
             update_link_with_opened_book_state(scheduled_portal_update->portal, scheduled_portal_update->state, true);
@@ -4527,7 +4529,7 @@ AbsoluteRect MainWidget::move_visual_mark(int offset) {
             main_document_view->move_absolute(0, distance);
         }
     }
-    if (is_reading) {
+    if (is_reading || high_quality_play_state.has_value()) {
         read_current_line();
     }
     main_document_view->clear_underline();
@@ -7142,11 +7144,31 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
     delete context_menu;
 }
 
-
-
 void MainWidget::handle_debug_command() {
+    qDebug() << TTS_RATE;
 }
 
+void MainWidget::focus_on_high_quality_text_being_read() {
+    if ((media_player != nullptr) && (media_player->isPlaying()) && high_quality_play_state.has_value()) {
+        float current_time = static_cast<float>(media_player->position()) / 1000.0f;
+        int index = -1;
+        for (int i = 0; i < high_quality_play_state->timestamps.size(); i++) {
+            if (high_quality_play_state->timestamps[i] > current_time) {
+                index = i;
+                break;
+            }
+        }
+        if (index >= 0) {
+            PagelessDocumentRect rect_to_focus = high_quality_play_state->line_rects[index];
+            if (!(rect_to_focus == high_quality_play_state->last_focused_rect)) {
+                focus_rect(DocumentRect(rect_to_focus, high_quality_play_state->page_number));
+                high_quality_play_state->last_focused_rect = rect_to_focus;
+                invalidate_render();
+            }
+        }
+
+    }
+}
 void MainWidget::handle_goto_next_block() {
     int ruler_page = main_document_view->get_vertical_line_page();
     //auto [line, block] = main_document_view->get_ruler_line_and_block();
@@ -7383,40 +7405,48 @@ void MainWidget::on_paper_downloaded(QNetworkReply* reply) {
 }
 
 void MainWidget::read_current_line() {
-    std::wstring selected_line_text = main_document_view->get_selected_line_text().value_or(L"");
-    //std::wstring text = main_document_view->get_selected_line_text().value_or(L"");
-    tts_text.clear();
-    tts_corresponding_line_rects.clear();
-    tts_corresponding_char_rects.clear();
 
-    int page_number  = main_document_view->get_vertical_line_page();
-    AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
-    int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
-        page_number,
-        ruler_rect,
-        tts_text,
-        tts_corresponding_line_rects,
-        tts_corresponding_char_rects);
-
-    //fz_stext_page* stext_page = doc()->get_stext_with_page_number(page_number);
-    //std::vector<fz_stext_char*> flat_chars;
-    //get_flat_chars_from_stext_page(stext_page, flat_chars, true);
-
-    get_tts()->set_rate(TTS_RATE);
-    if (word_by_word_reading) {
-        if (tts_text.size() > 0) {
-            get_tts()->say(QString::fromStdWString(tts_text));
-        }
+    if (high_quality_play_state.has_value()) {
+        handle_stop_reading();
+        handle_start_reading_high_quality();
     }
     else {
-        get_tts()->say(QString::fromStdWString(selected_line_text));
-        tts_is_about_to_finish = true;
+
+        std::wstring selected_line_text = main_document_view->get_selected_line_text().value_or(L"");
+        //std::wstring text = main_document_view->get_selected_line_text().value_or(L"");
+        tts_text.clear();
+        tts_corresponding_line_rects.clear();
+        tts_corresponding_char_rects.clear();
+
+        int page_number = main_document_view->get_vertical_line_page();
+        AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
+        int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
+            page_number,
+            ruler_rect,
+            tts_text,
+            tts_corresponding_line_rects,
+            tts_corresponding_char_rects);
+
+        //fz_stext_page* stext_page = doc()->get_stext_with_page_number(page_number);
+        //std::vector<fz_stext_char*> flat_chars;
+        //get_flat_chars_from_stext_page(stext_page, flat_chars, true);
+
+        get_tts()->set_rate(TTS_RATE);
+        if (word_by_word_reading) {
+            if (tts_text.size() > 0) {
+                get_tts()->say(QString::fromStdWString(tts_text));
+            }
+        }
+        else {
+            get_tts()->say(QString::fromStdWString(selected_line_text));
+            tts_is_about_to_finish = true;
+        }
+
+        last_page_read = page_number;
+        last_index_into_page_read = index_into_page;
+
+        is_reading = true;
     }
-
-    last_page_read = page_number;
-    last_index_into_page_read = index_into_page;
-
-    is_reading = true;
 }
 
 void MainWidget::handle_start_reading() {
@@ -7437,12 +7467,18 @@ void MainWidget::handle_start_reading() {
 }
 
 void MainWidget::handle_stop_reading() {
-    is_reading = false;
+    if (high_quality_play_state.has_value()) {
+        media_player->stop();
+        high_quality_play_state = {};
+    }
+    else {
+        is_reading = false;
 
-    get_tts()->stop();
+        get_tts()->stop();
 
-    if (TOUCH_MODE) {
-        pop_current_widget();
+        if (TOUCH_MODE) {
+            pop_current_widget();
+        }
     }
 }
 
@@ -7720,6 +7756,19 @@ bool MainWidget::is_network_manager_running(bool* is_downloading) {
         }
     }
     return false;
+}
+
+QString MainWidget::get_network_status_string() {
+    auto children = findChildren<QNetworkReply*>();
+    for (int i = 0; i < children.size(); i++) {
+        if (children.at(i)->isRunning()) {
+            QVariant status_message = children.at(i)->property("sioyek_network_status_string");
+            if (!status_message.isNull()) {
+                return status_message.toString();
+            }
+        }
+    }
+    return "";
 }
 
 void MainWidget::exit_freehand_drawing_mode() {
@@ -12009,4 +12058,95 @@ bool MainWidget::is_logged_in() {
 
 void MainWidget::on_overview_move_end() {
     handle_portal_overview_update();
+}
+
+QMediaPlayer* MainWidget::get_media_player(){
+    if (media_player == nullptr) {
+        QAudioOutput* audio_output = new QAudioOutput(this);
+        audio_output->setVolume(10);
+        media_player = new QMediaPlayer(this);
+        media_player->setAudioOutput(audio_output);
+        QObject::connect(media_player, &QMediaPlayer::mediaStatusChanged, [this](QMediaPlayer::MediaStatus status) {
+            if (status == QMediaPlayer::MediaStatus::EndOfMedia) {
+                //qDebug() << "end of media reached";
+                high_quality_play_state = {};
+                move_visual_mark(1);
+                handle_start_reading_high_quality(true);
+            }
+            });
+    }
+    return media_player;
+}
+
+void MainWidget::handle_start_reading_high_quality(bool should_preload) {
+    std::vector<PagelessDocumentRect> line_rects;
+    std::vector<PagelessDocumentRect> char_rects;
+    int current_page_number = get_current_page_number();
+    int line_number = main_document_view->get_line_index();
+    HighQualityPlayState play_state;
+    play_state.doc = doc();
+    play_state.page_number = current_page_number;
+    play_state.start_line = line_number;
+    high_quality_play_state = play_state;
+    float rate = 2;
+
+    AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
+    std::wstring dummy_text;
+    std::vector<PagelessDocumentRect> rect1, rect2;
+    int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
+        current_page_number,
+        ruler_rect,
+        dummy_text,
+        rect1,
+        rect2);
+
+    std::wstring text;
+
+    doc()->get_page_text_and_line_rects_after_rect(current_page_number, fz_empty_rect, text, line_rects, char_rects);
+    high_quality_play_state->line_rects = line_rects;
+    //qDebug() << "page text size : " << text.size();
+    index_into_page = text.size() - dummy_text.size();
+    //doc()->get_page_text_and_line_rects_after_rect
+
+    sioyek_network_manager->tts(this, text, doc()->get_checksum(), get_current_page_number(), rate, [&, index_into_page](QString file_path, std::vector<float> timestamps) {
+        QMediaPlayer* mp = get_media_player();
+        mp->setSource(QUrl::fromLocalFile(file_path));
+        high_quality_play_state->timestamps = timestamps;
+        //media_player->audioTracks().at(0).
+
+        auto seek_to_location = [&, mp, index_into_page, timestamps](bool seekable) {
+            if (seekable) {
+                QTimer::singleShot(0, [&, mp, timestamps, index_into_page]() {
+                    //media_player->setPosition(20 * 1000);
+                    float time = timestamps[index_into_page];
+                    media_player->setPosition(static_cast<int>(time * 1000));
+                    media_player->play();
+                    if (high_quality_play_state) {
+                        high_quality_play_state->is_playing = true;
+                    }
+                    });
+            }
+            };
+        if (mp->isSeekable()) {
+            seek_to_location(true);
+        }
+        else {
+            QObject::connect(mp, &QMediaPlayer::seekableChanged, seek_to_location);
+        }
+
+        });
+
+    if (should_preload) {
+        int next_page_number = get_current_page_number() + 1;
+        if (next_page_number < doc()->num_pages()) {
+            std::vector<PagelessDocumentRect> dummy_next_lines;
+            std::vector<PagelessDocumentRect> dummy_next_chars;
+            std::wstring next_page_text;
+            doc()->get_page_text_and_line_rects_after_rect(next_page_number, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
+            sioyek_network_manager->tts(this, next_page_text, doc()->get_checksum(), next_page_number, rate, [](QString path, std::vector<float> timestamps) {});
+        }
+
+
+        //sioyek_network_manager->tts(this, )
+    }
 }
