@@ -6,6 +6,7 @@
 // touch epub controls
 // better tablet button handling, the current method is setting dependent
 // when playing audio there should be a pause button in statusbar
+// continue high quality tts on ios and android when the app is minimized
 
 #include <iostream>
 #include <vector>
@@ -7468,7 +7469,9 @@ void MainWidget::handle_start_reading() {
 
 void MainWidget::handle_stop_reading() {
     if (high_quality_play_state.has_value()) {
-        media_player->stop();
+        if (media_player) {
+            media_player->stop();
+        }
         high_quality_play_state = {};
     }
     else {
@@ -12088,7 +12091,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     play_state.page_number = current_page_number;
     play_state.start_line = line_number;
     high_quality_play_state = play_state;
-    float rate = 2;
+    float rate = (TTS_RATE + 2) / 2; // todo: platform-specific conversion
 
     AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
     std::wstring dummy_text;

@@ -33,6 +33,8 @@ const std::vector<QString> STATUS_STRING_PARTS = {
     "download",
     "download_button",
     "network_status",
+    "tts_status",
+    "tts_rate",
     "custom_message_a",
     "custom_message_b",
     "custom_message_c",

@@ -7,6 +7,7 @@ extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_A_STR;
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_B_STR;
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_C_STR;
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR;
+extern float TTS_RATE;
 
 StatusLabelLineEdit::StatusLabelLineEdit(QWidget* parent ) : QLineEdit(parent) {
     setCursor(Qt::ArrowCursor);
@@ -241,6 +242,23 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         return widget->get_network_status_string();
         };
 
+    auto tts_status_fn = [widget]() {
+        if (widget->is_reading) {
+            return " [ stop reading ]";
+        }
+        else if (widget->high_quality_play_state) {
+            return " [ stop reading ]";
+        }
+        };
+    auto tts_rate_fn = [widget]() {
+        if (widget->is_reading) {
+            return " [ rate " + QString::number(TTS_RATE) + " ]";
+        }
+        else if (widget->high_quality_play_state) {
+            return " [ rate " + QString::number(TTS_RATE) + " ]";
+        }
+        };
+
 
     std::unordered_map<QString, std::function<QString()>> name_to_generator = {
         {"current_page", get_current_page_fn},
@@ -271,6 +289,8 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         {"download", download_fn},
         {"download_button", download_button_fn},
         {"network_status", network_status_fn},
+        {"tts_status", tts_status_fn},
+        {"tts_rate", tts_rate_fn},
         {"custom_message_a", custom_message_a_fn},
         {"custom_message_b", custom_message_b_fn},
         {"custom_message_c", custom_message_c_fn},
