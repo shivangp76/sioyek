@@ -4764,3 +4764,26 @@ std::vector <DocumentRect> Document::get_rects_for_portal_indices(const std::vec
     }
     return res;
 }
+
+const std::wstring& Document::get_super_fast_index() {
+    return super_fast_search_index;
+}
+
+int Document::absolute_to_page_index(int absolute_index, int& p){
+    if (super_fast_page_begin_indices.size() == 0) {
+        return -1;
+    }
+
+    int page = 0;
+    while (page < super_fast_page_begin_indices.size() - 1) {
+        if (super_fast_page_begin_indices[page + 1] < absolute_index) {
+            page++;
+        }
+        else {
+            break;
+        }
+    }
+    p = page;
+    return absolute_index - super_fast_page_begin_indices[page];
+}
+

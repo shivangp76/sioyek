@@ -39,6 +39,8 @@ public:
     const std::wstring SIOYEK_DELETE_FILE_URL = SIOYEK_HOST + L"delete_file";
     const std::wstring SIOYEK_TTS_URL = SIOYEK_HOST + L"tts";
     const std::wstring SIOYEK_DEBUG_URL = SIOYEK_HOST + L"debug";
+    const std::wstring SIOYEK_SEMANTIC_SEARCH_URL = SIOYEK_HOST + L"semantic_search";
+    const std::wstring SIOYEK_UPLOAD_INDEX_URL = SIOYEK_HOST + L"upload_index";
 
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_set<std::string> SERVER_DELETED_FILES = {};
@@ -82,4 +84,6 @@ public:
     void upload_annot(QObject* parent, const QString& checksum, const Annotation& annot, std::function<void()> on_success, std::function<void()> on_fail);
     void delete_file_with_checksum(const QString& checksum);
     void debug(QObject* parent, std::function<void()> on_done);
+    void semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done);
+    void upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done);
 };

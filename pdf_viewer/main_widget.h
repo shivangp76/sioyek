@@ -695,6 +695,7 @@ public:
     void handle_play();
     void handle_undo_drawing();
     void handle_pause();
+    void handle_semantic_search(const std::wstring& query, int depth=0);
     void read_current_line();
     void download_paper_under_cursor(bool use_last_touch_pos = false);
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);

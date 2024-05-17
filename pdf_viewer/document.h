@@ -224,6 +224,7 @@ public:
     QString get_rest_of_document_pages_text(int from);
     int get_page_offset_into_super_fast_index(int from);
     int get_page_from_character_offset(int offset);
+    const std::wstring& get_super_fast_index();
 
     void update_last_local_edit_time();
     std::optional<QDateTime> last_server_update_time();
@@ -468,6 +469,7 @@ public:
     QJsonArray get_marks_json();
 
     std::wstring get_detected_paper_name_if_exists();
+    int absolute_to_page_index(int absolute_index, int& page);
 
     template <typename T>
     const std::vector<T>& get_annots() = delete;

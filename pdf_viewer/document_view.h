@@ -320,6 +320,7 @@ public:
     std::optional<SearchResult> set_search_result_offset(int offset);
     void goto_search_result(int offset, bool overview);
     bool get_is_searching(float* prog);
+    void set_search_results(std::vector<SearchResult>&& results);
     void search_text(PdfRenderer* background_searcher, const std::wstring& text, SearchCaseSensitivity case_sensitive, bool regex, std::optional<std::pair<int, int>> range);
 
     void set_overview_page(std::optional<OverviewState> overview);

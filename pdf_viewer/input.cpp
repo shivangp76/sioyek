@@ -1450,6 +1450,24 @@ public:
 
 };
 
+class SemanticSearchCommand : public TextCommand {
+public:
+    static inline const std::string cname = "semantic_search";
+    static inline const std::string hname = "";
+
+    SemanticSearchCommand(MainWidget* w) : TextCommand(cname, w) {
+    };
+
+    void perform() {
+        widget->handle_semantic_search(text.value());
+    }
+
+    std::string text_requirement_name() {
+        return "Search text";
+    }
+
+};
+
 class ControlMenuCommand : public TextCommand {
 public:
     static inline const std::string cname = "control_menu";
@@ -7062,6 +7080,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<EditSelectedBookmarkCommand>();
     register_command<EditSelectedHighlightCommand>();
     register_command<SearchCommand>();
+    register_command<SemanticSearchCommand>();
     register_command<DownloadPaperWithUrlCommand>();
     register_command<DownloadClipboardUrlCommand>();
     register_command<ExecuteMacroCommand>();

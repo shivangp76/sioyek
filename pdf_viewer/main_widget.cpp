@@ -7146,7 +7146,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << TTS_RATE;
 }
 
 void MainWidget::focus_on_high_quality_text_being_read() {
@@ -9938,6 +9937,46 @@ void MainWidget::toggle_rect_hints() {
     else {
         main_document_view->show_rect_hints();
     }
+}
+
+void MainWidget::handle_semantic_search(const std::wstring& query, int depth) {
+
+    const std::wstring& index = doc()->get_super_fast_index();
+
+    sioyek_network_manager->semantic_search(this, QString::fromStdWString(query), index, [&,depth, query](QJsonObject resp) {
+        QString status = resp["status"].toString();
+
+        if (status == "NO_INDEX") {
+            const std::wstring& local_index = doc()->get_super_fast_index();
+            if (depth == 0) {
+                sioyek_network_manager->upload_document_index(this, local_index, [this, depth, query](QJsonObject res) {
+                    handle_semantic_search(query, depth + 1);
+                    });
+            }
+        }
+        else {
+            std::vector<SearchResult> search_results;
+
+            QJsonArray highlights_json = resp["highlights"].toArray();
+            for (int i = highlights_json.size()-1; i >= 0; i--) {
+                SearchResult current_result;
+
+                QJsonArray range_tuple_json = highlights_json.at(i).toArray();
+                float range_begin = range_tuple_json.at(0).toDouble();
+                float range_end = range_tuple_json.at(1).toDouble();
+
+                int page = -1;
+                current_result.begin_index_in_page = doc()->absolute_to_page_index(range_begin, page);
+                current_result.end_index_in_page = doc()->absolute_to_page_index(range_end, page);
+                current_result.page = page;
+
+                search_results.push_back(current_result);
+
+            }
+            main_document_view->set_search_results(std::move(search_results));
+            invalidate_render();
+        }
+        });
 }
 
 void MainWidget::run_command_with_name(std::string command_name, bool should_pop_current_widget) {

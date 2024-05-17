@@ -2496,6 +2496,11 @@ bool DocumentView::get_is_searching(float* prog) {
     return true;
 }
 
+void DocumentView::set_search_results(std::vector<SearchResult>&& results) {
+    is_search_cancelled = false;
+    search_results = std::move(results);
+}
+
 void DocumentView::search_text(PdfRenderer* background_searcher, const std::wstring& text, SearchCaseSensitivity case_sensitive, bool regex, std::optional<std::pair<int, int>> range) {
     search_results_mutex.lock();
     search_results.clear();
