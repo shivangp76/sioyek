@@ -1141,6 +1141,13 @@ void PdfViewOpenGLWidget::my_render() {
                             painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                             painter.restore();
                         }
+                        static int count = 0;
+                        if (bookmarks[i].is_question()) {
+
+                            QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                            painter.fillRect(fill_rect, QColor(255, 0, 255, 128));
+
+                        }
                         if (desc_qstring.startsWith("#markdown")) {
 
                             painter.save();
@@ -1171,7 +1178,12 @@ void PdfViewOpenGLWidget::my_render() {
                             painter.restore();
                         }
                         else {
-                            painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
+                            if (bookmarks[i].is_question()) {
+                                painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
+                            }
+                            else {
+                                painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
+                            }
                         }
 
                     }

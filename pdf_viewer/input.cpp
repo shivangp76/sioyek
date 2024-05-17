@@ -2317,19 +2317,7 @@ public:
 
     void perform() {
         //widget->doc()->add_freetext_bookmark(text_.value(), rect_.value());
-        if (text_.value().size() > 0) {
-            std::string uuid = widget->doc()->add_pending_bookmark(pending_index, text_.value());
-            widget->on_new_bookmark_added(uuid);
-            result = utf8_decode(uuid);
-            widget->set_selected_bookmark_index(-1);
-        }
-        else {
-            widget->doc()->undo_pending_bookmark(pending_index);
-            result = L"";
-        }
-
-        widget->clear_selected_rect();
-        widget->invalidate_render();
+        result = widget->handle_freetext_bookmark_perform(text_.value(), pending_index);
     }
 };
 

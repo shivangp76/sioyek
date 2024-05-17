@@ -7148,6 +7148,46 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 void MainWidget::handle_debug_command() {
 }
 
+void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
+    const std::wstring& index = doc()->get_super_fast_index();
+    std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
+    int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
+    doc()->get_bookmarks()[ind].description += L"\n\n";
+    sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, [this, bookmark_uuid](QString chunk) {
+        int bookmark_index = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
+        //doc()->get_bookmarks()[bookmark_index]
+        BookMark& bm = doc()->get_bookmarks()[bookmark_index];
+        bm.description += chunk.toStdWString();
+        invalidate_render();
+        },
+        [this, bookmark_uuid]() {
+            int bookmark_index = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
+            BookMark& bm = doc()->get_bookmarks()[bookmark_index];
+            doc()->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
+        });
+}
+
+std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& text, int pending_index) {
+    std::wstring result = L"";
+    if (text.size() > 0) {
+        std::string uuid = doc()->add_pending_bookmark(pending_index, text);
+        on_new_bookmark_added(uuid);
+        result = utf8_decode(uuid);
+        set_selected_bookmark_index(-1);
+        if (text.size() > 2 && text.substr(0, 2) == L"? ") {
+            handle_bookmark_ask_query(text.substr(2, text.size()-2), result);
+        }
+    }
+    else {
+        doc()->undo_pending_bookmark(pending_index);
+        result = L"";
+    }
+
+    clear_selected_rect();
+    invalidate_render();
+    return result;
+}
+
 void MainWidget::focus_on_high_quality_text_being_read() {
     if ((media_player != nullptr) && (media_player->isPlaying()) && high_quality_play_state.has_value()) {
         float current_time = static_cast<float>(media_player->position()) / 1000.0f;

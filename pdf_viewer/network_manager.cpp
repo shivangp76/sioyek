@@ -1040,6 +1040,7 @@ void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done)
     QObject::connect(reply, &QNetworkReply::finished, [on_done=std::move(on_done)]() {
         on_done();
         });
+
 }
 
 void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
@@ -1070,6 +1071,36 @@ void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query
         //on_done();
         });
 
+}
+
+void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
+    QString index_qstring = QString::fromStdWString(index); // todo: performance: we should prevent this as much as possible
+    std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_ASK_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["content_checksum"] = QString::fromStdString(content_checksum);
+    obj["query"] = query;
+
+    QJsonDocument json_doc(obj);
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    reply->setParent(parent);
+    reply->setProperty("sioyek_network_status_string", "performing semantic search");
+    QObject::connect(reply, &QNetworkReply::downloadProgress, [reply, on_chunk=std::move(on_chunk)]() {
+        QString chunk = QString::fromUtf8(reply->readAll());
+        on_chunk(chunk);
+        });
+    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code == 200) {
+            on_done();
+        }
+        });
 }
 
 void SioyekNetworkManager::upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done) {

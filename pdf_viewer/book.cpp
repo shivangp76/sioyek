@@ -228,6 +228,10 @@ bool BookMark::is_marked() const {
     return (begin_y > -1) && (end_y == -1);
 }
 
+bool BookMark::is_question() const {
+    return description.size() >= 2 && description.substr(0, 2) == L"? ";
+}
+
 QJsonObject Highlight::to_json(std::string doc_checksum) const
 {
     QJsonObject res;
