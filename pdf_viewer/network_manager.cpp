@@ -7,6 +7,7 @@
 #include <qdir.h>
 #include <qhttpmultipart.h>
 #include <qtimer.h>
+#include <QtCore/qbuffer.h>
 
 #include "utils.h"
 #include "path.h"
@@ -20,6 +21,7 @@ extern Path cached_tts_path;
 extern Path standard_data_path;
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
+extern std::wstring EXTRACT_TABLE_PROMPT;
 
 SioyekNetworkManager::SioyekNetworkManager(DatabaseManager* db_manager_, BackgroundTaskManager* task_manager, DocumentManager* doc_manager, QObject* parent) :
    db_manager(db_manager_), background_task_manager(task_manager) , document_manager(doc_manager) {
@@ -680,6 +682,53 @@ void SioyekNetworkManager::upload_annot(
             on_fail();
         }
         });
+}
+
+
+void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done) {
+    QByteArray image_data;
+    QBuffer image_buffer(&image_data);
+    image_buffer.open(QIODevice::WriteOnly);
+    pixmap.save(&image_buffer, "PNG");
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_EXTRACT_TABLE_URL)));
+    authorize_request(&req);
+
+    QHttpMultiPart* multipart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+    QHttpPart image_part;
+    image_part.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("image/png"));
+    image_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"image\"; filename=\"image.png\""));
+    image_part.setBody(image_data);
+
+    QJsonDocument json_doc;
+    QJsonObject root_object;
+    root_object["prompt"] = QString::fromStdWString(EXTRACT_TABLE_PROMPT);
+    json_doc.setObject(root_object);
+
+
+    QHttpPart data_part;
+    data_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"sioyek_data\""));
+    data_part.setBody(json_doc.toJson(QJsonDocument::JsonFormat::Compact));
+    multipart->append(data_part);
+
+    multipart->append(image_part);
+
+    QNetworkReply* reply = network_manager.post(req, multipart);
+    reply->setParent(parent);
+    reply->setProperty("sioyek_network_status_string", "extracting data from image");
+
+    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+        auto data = reply->readAll();
+        QJsonObject result_object = QJsonDocument::fromJson(data).object();
+        QString status = result_object["status"].toString();
+        if (status == "OK") {
+            on_done(result_object["result"].toString());
+        }
+        });
+
+
 }
 
 void SioyekNetworkManager::delete_annot(QObject* parent, const QString& file_checksum, const QString& annot_type, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail) {

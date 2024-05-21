@@ -63,6 +63,7 @@ std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
 //std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
 //std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 
+std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a csv table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns.";
 std::wstring PAPER_SEARCH_URL = L"https://scholar.google.com/scholar?oi=gsr-r&output=gsb&q=%{query}";
 
 std::wstring PAPER_SEARCH_URL_PATH = L"r[].u";
@@ -1074,6 +1075,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"middle_click_search_engine", &MIDDLE_CLICK_SEARCH_ENGINE);
     add_string(L"shift_middle_click_search_engine", &SHIFT_MIDDLE_CLICK_SEARCH_ENGINE);
     add_string(L"text_summary_url", &TEXT_HIGHLIGHT_URL);
+    add_string(L"extract_table_prompt", &EXTRACT_TABLE_PROMPT);
     add_string(L"paper_search_url", &PAPER_SEARCH_URL);
     add_string(L"papers_folder_path", &PAPERS_FOLDER_PATH);
     add_string(L"scan_path", &BOOK_SCAN_PATH);

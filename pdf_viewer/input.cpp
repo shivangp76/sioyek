@@ -2272,6 +2272,54 @@ public:
     }
 };
 
+class ExtractTableCommand : public Command {
+
+public:
+    static inline const std::string cname = "extract_table";
+    static inline const std::string hname = "Extract the selected table's data";
+
+    std::optional<AbsoluteRect> rect_;
+
+    ExtractTableCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+
+        if (!rect_.has_value()) {
+            Requirement req = { RequirementType::Rect, "table rect" };
+            return req;
+        }
+        return {};
+    }
+
+    void set_rect_requirement(AbsoluteRect value) {
+        rect_ = value;
+    }
+
+    void perform() {
+        widget->clear_selected_rect();
+
+        WindowRect window_rect = rect_->to_window(widget->main_document_view);
+        window_rect.y0 += 1;
+        QRect window_qrect = QRect(window_rect.x0, window_rect.y0, window_rect.width(), window_rect.height());
+
+        float ratio = QGuiApplication::primaryScreen()->devicePixelRatio();
+        QPixmap pixmap(static_cast<int>(window_qrect.width() * ratio), static_cast<int>(window_qrect.height() * ratio));
+        pixmap.setDevicePixelRatio(ratio);
+
+        //widget->render(&pixmap, QPoint(), QRegion(widget->rect()));
+        widget->render(&pixmap, QPoint(), QRegion(window_qrect));
+
+        widget->set_rect_select_mode(false);
+        widget->invalidate_render();
+
+        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [this](QString data) {
+            copy_to_clipboard(data.toStdWString());
+            show_error_message(L"The result was copied to your clipboard");
+            });
+
+    }
+};
+
 class AddBookmarkFreetextCommand : public Command {
 
 public:
@@ -7149,6 +7197,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<AddBookmarkFreetextCommand>();
     register_command<CopyDrawingsFromScratchpadCommand>();
     register_command<CopyScreenshotToScratchpad>();
+    register_command<ExtractTableCommand>();
     register_command<CopyScreenshotToClipboard>();
     register_command<AddHighlightCommand>();
     register_command<GotoTableOfContentsCommand>();

@@ -44,6 +44,7 @@ public:
     const std::wstring SIOYEK_SEMANTIC_ASK_URL = SIOYEK_HOST + L"semantic_ask";
     const std::wstring SIOYEK_UPLOAD_INDEX_URL = SIOYEK_HOST + L"upload_index";
     const std::wstring SIOYEK_STREAM_TEST_URL = SIOYEK_HOST + L"stream";
+    const std::wstring SIOYEK_EXTRACT_TABLE_URL = SIOYEK_HOST + L"extract_table";
 
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_set<std::string> SERVER_DELETED_FILES = {};
@@ -91,4 +92,5 @@ public:
     void semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done);
     void semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
     void upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done);
+    void extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done);
 };
