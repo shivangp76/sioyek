@@ -9979,6 +9979,38 @@ void MainWidget::toggle_rect_hints() {
     }
 }
 
+void MainWidget::handle_semantic_search_extractive(const std::wstring& query, int depth) {
+
+    const std::wstring& index = doc()->get_super_fast_index();
+
+    sioyek_network_manager->semantic_search_extractive(this, QString::fromStdWString(query), index, [&,depth, query](QJsonObject resp) {
+        QString status = resp["status"].toString();
+
+        if (status == "NO_INDEX") {
+            const std::wstring& local_index = doc()->get_super_fast_index();
+            if (depth == 0) {
+                sioyek_network_manager->upload_document_index(this, local_index, [this, depth, query](QJsonObject res) {
+                    handle_semantic_search(query, depth + 1);
+                    });
+            }
+        }
+        else {
+            int range_begin = resp["start_index_in_document"].toInt();
+            int range_end = resp["end_index_in_document"].toInt();
+
+            if (range_begin >= 0 && range_end >= 0) {
+                int page = -1;
+                SearchResult current_result;
+                current_result.begin_index_in_page = doc()->absolute_to_page_index(range_begin, page);
+                current_result.end_index_in_page = doc()->absolute_to_page_index(range_end, page);
+                current_result.page = page;
+
+                main_document_view->set_search_results({ current_result });
+                invalidate_render();
+            }
+        }
+        });
+}
 void MainWidget::handle_semantic_search(const std::wstring& query, int depth) {
 
     const std::wstring& index = doc()->get_super_fast_index();
@@ -10002,8 +10034,8 @@ void MainWidget::handle_semantic_search(const std::wstring& query, int depth) {
                 SearchResult current_result;
 
                 QJsonArray range_tuple_json = highlights_json.at(i).toArray();
-                float range_begin = range_tuple_json.at(0).toDouble();
-                float range_end = range_tuple_json.at(1).toDouble();
+                float range_begin = range_tuple_json.at(0).toInt();
+                float range_end = range_tuple_json.at(1).toInt();
 
                 int page = -1;
                 current_result.begin_index_in_page = doc()->absolute_to_page_index(range_begin, page);
@@ -11571,7 +11603,7 @@ void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::st
     else {
         auto checksum = doc()->get_checksum_fast();
         if (checksum && should_sync_current_document_to_server()) {
-            db_manager->insert_unsynced_deletion("highlight", uuid, checksum.value());
+            db_manager->insert_unsynced_deletion(annot_type, uuid, checksum.value());
         }
     }
     doc()->update_last_local_edit_time();

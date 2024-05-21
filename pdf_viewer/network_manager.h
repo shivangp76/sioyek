@@ -40,6 +40,7 @@ public:
     const std::wstring SIOYEK_TTS_URL = SIOYEK_HOST + L"tts";
     const std::wstring SIOYEK_DEBUG_URL = SIOYEK_HOST + L"debug";
     const std::wstring SIOYEK_SEMANTIC_SEARCH_URL = SIOYEK_HOST + L"semantic_search";
+    const std::wstring SIOYEK_SEMANTIC_ASK_GEMINI_URL = SIOYEK_HOST + L"semantic_ask_gemini";
     const std::wstring SIOYEK_SEMANTIC_ASK_URL = SIOYEK_HOST + L"semantic_ask";
     const std::wstring SIOYEK_UPLOAD_INDEX_URL = SIOYEK_HOST + L"upload_index";
     const std::wstring SIOYEK_STREAM_TEST_URL = SIOYEK_HOST + L"stream";
@@ -87,6 +88,7 @@ public:
     void delete_file_with_checksum(const QString& checksum);
     void debug(QObject* parent, std::function<void()> on_done);
     void semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done);
+    void semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done);
     void semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
     void upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done);
 };
