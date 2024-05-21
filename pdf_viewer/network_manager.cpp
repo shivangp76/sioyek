@@ -685,7 +685,7 @@ void SioyekNetworkManager::upload_annot(
 }
 
 
-void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done) {
+void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt) {
     QByteArray image_data;
     QBuffer image_buffer(&image_data);
     image_buffer.open(QIODevice::WriteOnly);
@@ -704,7 +704,7 @@ void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pi
 
     QJsonDocument json_doc;
     QJsonObject root_object;
-    root_object["prompt"] = QString::fromStdWString(EXTRACT_TABLE_PROMPT);
+    root_object["prompt"] = prompt.value_or(QString::fromStdWString(EXTRACT_TABLE_PROMPT));
     json_doc.setObject(root_object);
 
 
