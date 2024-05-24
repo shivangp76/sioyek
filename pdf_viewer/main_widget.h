@@ -1012,7 +1012,7 @@ public:
     Q_INVOKABLE QByteArray perform_network_request(QString url, QString method = "get", QString json_data = "");
     Q_INVOKABLE QString read_text_file(QString path);
     Q_INVOKABLE void execute_macro_and_return_result(QString macro_string, bool* is_done, std::wstring* result, std::optional<QStringList> args = {});
-    Q_INVOKABLE QString execute_macro_sync(QString macro, QStringList args);
+    Q_INVOKABLE QString execute_macro_sync(QString macro, QStringList args = {});
     Q_INVOKABLE void set_variable(QString name, QVariant var);
     Q_INVOKABLE QVariant get_variable(QString name);
     Q_INVOKABLE bool register_function_keybind(QString keybind, QString name, QString file_name, int line_number);

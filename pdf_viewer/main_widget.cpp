@@ -5,7 +5,6 @@
 // make sure database migrations goes smoothly. Test with database files from previous sioyek versions.
 // touch epub controls
 // better tablet button handling, the current method is setting dependent
-// when playing audio there should be a pause button in statusbar
 // continue high quality tts on ios and android when the app is minimized
 
 #include <iostream>
@@ -9291,15 +9290,11 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                 let cname = __all_command_names[i];\
                 sioyek[cname] = (...args)=>{\
                     let arg_strings = args.map((arg) => {return '' + arg;});\
-                    let args_string = arg_strings.join(',');\
-                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname, arg_strings);}\
-                    else {return sioyek_api.run_macro_on_main_thread(cname);}\
+                    return sioyek_api.run_macro_on_main_thread(cname, arg_strings);\
                 };\
                 sioyek['$' + cname] = (...args)=>{\
                     let arg_strings = args.map((arg) => {return '' + arg;});\
-                    let args_string = arg_strings.join(',');\
-                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname, arg_strings, false);}\
-                    else {return sioyek_api.run_macro_on_main_thread(cname, false);}\
+                    return sioyek_api.run_macro_on_main_thread(cname, arg_strings, false);\
                 };\
             }\
         ");
@@ -9325,6 +9320,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                         }\
                         function addKeybindAsync(keybind, callable){\
                             let backtrace = __get_stacktrace();\
+                            if (typeof(callable) !== 'string'){console.log('Error in ' + backtrace[0] + ':' + backtrace[1] + ': async function should be a string, if you are passing a raw function, you can convert it to a string by surrounding it with `.'); return;}\
                             sioyek_api.register_function_keybind_async(keybind, callable, backtrace[0], backtrace[1]);\
                         }\
                         ");
@@ -9336,6 +9332,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                     let args_string = arg_strings.join(',');\
                     if (args_string.length > 0) {return sioyek_api.execute_macro_sync(cname, arg_strings);}\
                     else {return sioyek_api.execute_macro_sync(cname);}\
+                    console.log('happened');\
                 }\
             }\
         ");
