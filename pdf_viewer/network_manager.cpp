@@ -1013,7 +1013,8 @@ void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const 
     }
     else {
         QNetworkRequest req;
-        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_TTS_URL)));
+        //req.setUrl(QUrl(QString::fromStdWString(SIOYEK_TTS_URL)));
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_GOOGLE_TTS_URL)));
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
         QJsonObject obj;

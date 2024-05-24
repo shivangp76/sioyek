@@ -6076,6 +6076,7 @@ void MainWidget::handle_keys_user_all() {
 void MainWidget::sync_annotations_with_server() {
     if (!doc()) return;
     if (!doc()->get_checksum_fast()) return;
+    if (!is_logged_in()) return;
 
     QString document_checksum = QString::fromStdString(doc()->get_checksum_fast().value());
 
@@ -7146,6 +7147,10 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+    if (media_player) {
+        qDebug() << media_player->position();
+        qDebug() << media_player->duration();
+    }
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
@@ -9287,13 +9292,13 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                 sioyek[cname] = (...args)=>{\
                     let arg_strings = args.map((arg) => {return '' + arg;});\
                     let args_string = arg_strings.join(',');\
-                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname + '(' + args_string + ')');}\
+                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname, arg_strings);}\
                     else {return sioyek_api.run_macro_on_main_thread(cname);}\
                 };\
                 sioyek['$' + cname] = (...args)=>{\
                     let arg_strings = args.map((arg) => {return '' + arg;});\
                     let args_string = arg_strings.join(',');\
-                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname + '(' + args_string + ')', false);}\
+                    if (args_string.length > 0) {return sioyek_api.run_macro_on_main_thread(cname, arg_strings, false);}\
                     else {return sioyek_api.run_macro_on_main_thread(cname, false);}\
                 };\
             }\
@@ -9329,7 +9334,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                 sioyek[cname] = (...args)=>{\
                     let arg_strings = args.map((arg) => {return '' + arg;});\
                     let args_string = arg_strings.join(',');\
-                    if (args_string.length > 0) {return sioyek_api.execute_macro_sync(cname + '(' + args_string + ')');}\
+                    if (args_string.length > 0) {return sioyek_api.execute_macro_sync(cname, arg_strings);}\
                     else {return sioyek_api.execute_macro_sync(cname);}\
                 }\
             }\
@@ -10217,7 +10222,7 @@ void MainWidget::zoom_out_overview(){
     handle_portal_overview_update();
 }
 
-QString MainWidget::run_macro_on_main_thread(QString macro_string, bool wait_for_result, int target_window_id) {
+QString MainWidget::run_macro_on_main_thread(QString macro_string, QStringList args, bool wait_for_result, int target_window_id) {
     MainWidget* target = this;
     if (target_window_id != -1) {
         target = get_window_with_window_id(target_window_id);
@@ -10232,7 +10237,8 @@ QString MainWidget::run_macro_on_main_thread(QString macro_string, bool wait_for
             Qt::QueuedConnection,
             Q_ARG(QString, macro_string),
             Q_ARG(bool*, &is_done),
-            Q_ARG(std::wstring*, &result)
+            Q_ARG(std::wstring*, &result),
+            Q_ARG(std::optional<QStringList>, args)
         );
         while (!is_done) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -10245,7 +10251,8 @@ QString MainWidget::run_macro_on_main_thread(QString macro_string, bool wait_for
             Qt::QueuedConnection,
             Q_ARG(QString, macro_string),
             Q_ARG(bool*, nullptr),
-            Q_ARG(std::wstring*, nullptr)
+            Q_ARG(std::wstring*, nullptr),
+            Q_ARG(std::optional<QStringList>, args)
         );
         return "";
     }
@@ -10303,8 +10310,14 @@ QByteArray MainWidget::perform_network_request(QString url, QString method, QStr
     return res;
 }
 
-void MainWidget::execute_macro_and_return_result(QString macro_string, bool* is_done, std::wstring* result) {
-    std::unique_ptr<Command> command = command_manager->create_macro_command(this, "", macro_string.toStdWString());
+void MainWidget::execute_macro_and_return_result(QString macro_string, bool* is_done, std::wstring* result, std::optional<QStringList> args) {
+    std::unique_ptr<Command> command;
+    if (args.has_value()) {
+        command = command_manager->create_macro_command_with_args(this, "", macro_string, args.value());
+    }
+    else {
+        command = command_manager->create_macro_command(this, "", macro_string.toStdWString());
+    }
     if (is_done != nullptr) {
         command->set_result_mutex(is_done, result);
     }
@@ -10822,8 +10835,8 @@ void MainWidget::handle_goto_link_with_page_and_offset(int page, float y_offset)
     }
 }
 
-QString MainWidget::execute_macro_sync(QString macro) {
-    std::unique_ptr<Command> command = command_manager->create_macro_command(this, "", macro.toStdWString());
+QString MainWidget::execute_macro_sync(QString macro, QStringList args) {
+    std::unique_ptr<Command> command = command_manager->create_macro_command_with_args(this, "", macro, args);
     std::wstring result;
 
     if (is_macro_command_enabled(command.get())) {
@@ -12232,11 +12245,13 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
             if (seekable) {
                 QTimer::singleShot(0, [&, mp, timestamps, index_into_page]() {
                     //media_player->setPosition(20 * 1000);
-                    float time = timestamps[index_into_page];
-                    media_player->setPosition(static_cast<int>(time * 1000));
-                    media_player->play();
-                    if (high_quality_play_state) {
-                        high_quality_play_state->is_playing = true;
+                    if (index_into_page < timestamps.size()) {
+                        float time = timestamps[index_into_page];
+                        media_player->setPosition(static_cast<int>(time * 1000));
+                        media_player->play();
+                        if (high_quality_play_state) {
+                            high_quality_play_state->is_playing = true;
+                        }
                     }
                     });
             }
@@ -12251,16 +12266,19 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
         });
 
     if (should_preload) {
-        int next_page_number = get_current_page_number() + 1;
-        if (next_page_number < doc()->num_pages()) {
-            std::vector<PagelessDocumentRect> dummy_next_lines;
-            std::vector<PagelessDocumentRect> dummy_next_chars;
-            std::wstring next_page_text;
-            doc()->get_page_text_and_line_rects_after_rect(next_page_number, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
-            sioyek_network_manager->tts(this, next_page_text, doc()->get_checksum(), next_page_number, rate, [](QString path, std::vector<float> timestamps) {});
-        }
-
+        preload_next_page_for_tts(rate);
 
         //sioyek_network_manager->tts(this, )
+    }
+}
+
+void MainWidget::preload_next_page_for_tts(float rate) {
+    int next_page_number = get_current_page_number() + 1;
+    if (next_page_number < doc()->num_pages()) {
+        std::vector<PagelessDocumentRect> dummy_next_lines;
+        std::vector<PagelessDocumentRect> dummy_next_chars;
+        std::wstring next_page_text;
+        doc()->get_page_text_and_line_rects_after_rect(next_page_number, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
+        sioyek_network_manager->tts(this, next_page_text, doc()->get_checksum(), next_page_number, rate, [](QString path, std::vector<float> timestamps) {});
     }
 }

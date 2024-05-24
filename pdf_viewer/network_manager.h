@@ -38,6 +38,7 @@ public:
     const std::wstring SIOYEK_ADD_PORTAL_URL = SIOYEK_HOST + L"add_portal";
     const std::wstring SIOYEK_DELETE_FILE_URL = SIOYEK_HOST + L"delete_file";
     const std::wstring SIOYEK_TTS_URL = SIOYEK_HOST + L"tts";
+    const std::wstring SIOYEK_GOOGLE_TTS_URL = SIOYEK_HOST + L"google_tts";
     const std::wstring SIOYEK_DEBUG_URL = SIOYEK_HOST + L"debug";
     const std::wstring SIOYEK_SEMANTIC_SEARCH_URL = SIOYEK_HOST + L"semantic_search";
     const std::wstring SIOYEK_SEMANTIC_ASK_GEMINI_URL = SIOYEK_HOST + L"semantic_ask_gemini";

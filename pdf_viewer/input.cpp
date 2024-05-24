@@ -416,6 +416,16 @@ public:
         initialize_from_invocations(command_invocations);
     }
 
+    MacroCommand(MainWidget* widget_, CommandManager* manager, std::string name_, QString command_name, QStringList args) : Command(name_, widget_) {
+        command_manager = manager;
+        name = name_;
+        CommandInvocation invocation;
+        invocation.command_name = command_name;
+        invocation.command_args = args;
+        initialize_from_invocations({ invocation });
+
+    }
+
     MacroCommand(MainWidget* widget_, CommandManager* manager, std::string name_, std::wstring commands_) : Command(name_, widget_) {
         //commands = std::move(commands_);
         command_manager = manager;
@@ -8459,6 +8469,10 @@ bool is_macro_command_enabled(Command* command) {
 
 std::unique_ptr<Command> CommandManager::create_macro_command(MainWidget* w, std::string name, std::wstring macro_string) {
     return std::make_unique<MacroCommand>(w, this, name, macro_string);
+}
+
+std::unique_ptr<Command> CommandManager::create_macro_command_with_args(MainWidget* w, std::string name, QString command, QStringList args){
+    return std::make_unique<MacroCommand>(w, this, name, command, args);
 }
 
 void Command::on_result_computed() {
