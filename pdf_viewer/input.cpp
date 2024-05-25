@@ -29,6 +29,7 @@ extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 extern std::wstring SEARCH_URLS[26];
 extern bool ALPHABETIC_LINK_TAGS;
 extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
+extern std::wstring TABLE_EXTRACT_BEHAVIOUR;
 
 extern float EPUB_WIDTH;
 extern float EPUB_HEIGHT;
@@ -2332,9 +2333,19 @@ public:
         widget->set_rect_select_mode(false);
         widget->invalidate_render();
 
-        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [this](QString data) {
-            copy_to_clipboard(data.toStdWString());
-            show_error_message(L"The result was copied to your clipboard");
+        MainWidget* w = widget;
+        AbsoluteRect r = rect_.value();
+        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, this](QString data) {
+            if (TABLE_EXTRACT_BEHAVIOUR == L"copy") {
+
+                copy_to_clipboard(data.toStdWString());
+                show_error_message(L"The result was copied to your clipboard");
+            }
+            else if (TABLE_EXTRACT_BEHAVIOUR == L"bookmark") {
+                std::wstring desc = ("#markdown\n" + data).toStdWString();
+                w->doc()->add_freetext_bookmark(desc, r);
+                w->invalidate_render();
+            }
             }, prompt_.value());
 
     }

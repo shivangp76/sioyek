@@ -65,7 +65,7 @@ std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
 //std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
 //std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 
-std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a csv table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns.";
+std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a markdown table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns.";
 std::wstring PAPER_SEARCH_URL = L"https://scholar.google.com/scholar?oi=gsr-r&output=gsb&q=%{query}";
 
 std::wstring PAPER_SEARCH_URL_PATH = L"r[].u";
@@ -323,6 +323,8 @@ std::wstring EPUB_CSS = L"";
 QString EPUB_TEMPLATE = "p {\
 line-height: %{line_spacing}em!important;\
 }";
+
+std::wstring TABLE_EXTRACT_BEHAVIOUR = L"bookmark";
 
 UIRect PORTRAIT_EDIT_PORTAL_UI_RECT = { true, -0.2f, 0.2f, -1.0f, -0.7f };
 UIRect LANDSCAPE_EDIT_PORTAL_UI_RECT = { true, -0.2f, 0.2f, -1.0f, -0.7f };
@@ -1171,6 +1173,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
     add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({ {L"local", L"server", L"ask", L"show_button"}}));
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline"}}));
+    add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
 
 #ifdef Q_OS_MACOS
     add_color3(L"macos_titlebar_color", MACOS_TITLEBAR_COLOR);

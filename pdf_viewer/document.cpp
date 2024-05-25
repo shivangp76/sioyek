@@ -1371,7 +1371,18 @@ void Document::set_page_offset(int new_offset) {
 DocumentRect Document::absolute_to_page_rect(AbsoluteRect abs_rect) {
     DocumentPos top_left = abs_rect.top_left().to_document(this);
     DocumentPos bottom_right = abs_rect.bottom_right().to_document(this);
-    return DocumentRect(top_left, bottom_right, top_left.page);
+    if (top_left.page == bottom_right.page) {
+        return DocumentRect(top_left, bottom_right, top_left.page);
+    }
+    else {
+        //float diff = page_heights[]
+        float diff = 0;
+        for (int p = top_left.page; p < bottom_right.page; p++) {
+            diff += get_page_height(p);
+        }
+        bottom_right.y += diff;
+        return DocumentRect(top_left, bottom_right, top_left.page);
+    }
 }
 
 DocumentPos Document::absolute_to_page_pos(AbsoluteDocumentPos absp) {
