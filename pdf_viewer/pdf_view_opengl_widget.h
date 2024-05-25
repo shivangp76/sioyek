@@ -252,6 +252,7 @@ public:
     bool needs_stencil_buffer();
     void draw_overview_background();
     void draw_overview_border();
+    void draw_markdown_text(QString text, QRect window_rect, const QFont& font);
 
     void render_selected_rectangle();
     void set_scratchpad(ScratchPad* pad);

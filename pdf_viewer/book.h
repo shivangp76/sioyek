@@ -193,6 +193,7 @@ struct BookMark : Annotation {
     static inline const QString FONT_FACE_COLUMN_NAME = "font_face";
     std::wstring font_face;
 
+    QString get_question_markdown() const;
     AbsoluteDocumentPos begin_pos();
     AbsoluteDocumentPos end_pos();
     AbsoluteRect rect();

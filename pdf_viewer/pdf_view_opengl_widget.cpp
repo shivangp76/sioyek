@@ -86,6 +86,8 @@ extern float DEFAULT_TEXT_HIGHLIGHT_COLOR[3];
 extern float DEFAULT_VERTICAL_LINE_COLOR[4];
 extern float KEYBOARD_SELECTED_TAG_TEXT_COLOR[4];
 extern float KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO[4];
+extern float QUESTION_BOOKMARK_BACKGROUND_COLOR[3];
+extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
 
 extern int RULER_UNDERLINE_PIXEL_WIDTH;
 extern UIRect PORTRAIT_EDIT_PORTAL_UI_RECT;
@@ -1092,6 +1094,11 @@ void PdfViewOpenGLWidget::my_render() {
                 }
                 else {
                     WindowRect window_rect = bookmarks[i].get_rectangle().to_window(dv());
+                    NormalizedWindowRect window_rect_normalized = bookmarks[i].get_rectangle().to_window_normalized(dv());
+                    if (!window_rect_normalized.is_visible()) {
+                        continue;
+                    }
+
                     QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
 
                     QFont font = painter.font();
@@ -1144,42 +1151,21 @@ void PdfViewOpenGLWidget::my_render() {
                         static int count = 0;
                         if (bookmarks[i].is_question()) {
 
+                            QColor question_background_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_BACKGROUND_COLOR);
                             QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                            painter.fillRect(fill_rect, QColor(255, 0, 255, 128));
+                            painter.fillRect(fill_rect, question_background_color);
 
                         }
                         if (desc_qstring.startsWith("#markdown")) {
 
-                            painter.save();
-                            painter.setClipRect(window_qrect);
-                            painter.translate(window_qrect.topLeft());
-
-                            //painter.setBrush(QBrush(Qt::black));
-                            QTextDocument td;
-                            //td.setDefaultStyleSheet("*{font-size: 24 !important; color: rgb(255, 0, 0)}");
-
-                            auto formats = td.allFormats();
-                            QTextCharFormat old_format = formats[0].toCharFormat();
-
-                            td.setMarkdown(desc_qstring.mid(9).trimmed(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
-
-                            td.setTextWidth(window_qrect.width());
-                            td.setDefaultFont(font);
-
-                            QTextCursor cursor(&td);
-                            QTextCharFormat format;
-                            cursor.select(QTextCursor::Document);
-                            QAbstractTextDocumentLayout::PaintContext ctx;
-                            window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
-                            ctx.clip = window_qrect;
-                            ctx.palette.setColor(QPalette::ColorRole::Text, painter.pen().color());
-                            td.documentLayout()->draw(&painter, ctx);
-
-                            painter.restore();
+                            draw_markdown_text(desc_qstring.mid(9).trimmed(), window_qrect, font);
                         }
                         else {
                             if (bookmarks[i].is_question()) {
-                                painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
+                                QColor question_text_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_TEXT_COLOR);
+                                painter.setPen(question_text_color);
+                                //painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
+                                draw_markdown_text(bookmarks[i].get_question_markdown(), window_qrect, font);
                             }
                             else {
                                 painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
@@ -1340,6 +1326,35 @@ void PdfViewOpenGLWidget::my_render() {
 }
 
 PdfViewOpenGLWidget::~PdfViewOpenGLWidget() {
+}
+
+void PdfViewOpenGLWidget::draw_markdown_text(QString text, QRect window_qrect, const QFont& font) {
+    painter.save();
+    painter.setClipRect(window_qrect);
+    painter.translate(window_qrect.topLeft());
+
+    //painter.setBrush(QBrush(Qt::black));
+    QTextDocument td;
+    //td.setDefaultStyleSheet("*{font-size: 24 !important; color: rgb(255, 0, 0)}");
+
+    auto formats = td.allFormats();
+    QTextCharFormat old_format = formats[0].toCharFormat();
+
+    td.setMarkdown(text, QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
+
+    td.setTextWidth(window_qrect.width());
+    td.setDefaultFont(font);
+
+    QTextCursor cursor(&td);
+    QTextCharFormat format;
+    cursor.select(QTextCursor::Document);
+    QAbstractTextDocumentLayout::PaintContext ctx;
+    window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
+    ctx.clip = window_qrect;
+    ctx.palette.setColor(QPalette::ColorRole::Text, painter.pen().color());
+    td.documentLayout()->draw(&painter, ctx);
+
+    painter.restore();
 }
 
 void PdfViewOpenGLWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
