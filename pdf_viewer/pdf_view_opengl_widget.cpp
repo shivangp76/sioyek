@@ -1353,6 +1353,7 @@ void PdfViewOpenGLWidget::draw_markdown_text(QString text, QRect window_qrect, c
     ctx.clip = window_qrect;
     ctx.palette.setColor(QPalette::ColorRole::Text, painter.pen().color());
     td.documentLayout()->draw(&painter, ctx);
+    QSizeF size = td.documentLayout()->documentSize();
 
     painter.restore();
 }
@@ -3371,4 +3372,8 @@ void PdfViewOpenGLWidget::do_paint(){
 ColorPalette PdfViewOpenGLWidget::get_actual_color_palette(ColorPalette forced_color_palette){
     return forced_color_palette == ColorPalette::None ? document_view->color_mode : forced_color_palette;
 
+}
+
+const QPainter& PdfViewOpenGLWidget::get_painter() {
+    return painter;
 }

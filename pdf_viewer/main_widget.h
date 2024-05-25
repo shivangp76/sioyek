@@ -1019,6 +1019,7 @@ public:
     Q_INVOKABLE void register_hook_function(QString type, QString name);
     Q_INVOKABLE void register_function_keybind_async(QString keybind, QString code, QString file_name, int line_number);
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
+    QSizeF get_bookmark_text_size(const BookMark& bookmark);
     void run_startup_js(bool first_run=false);
     void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);
     void set_text_prompt_text(QString text);

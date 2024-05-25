@@ -65,6 +65,10 @@
 #include <qstringconverter.h>
 #include <qmediaplayer.h>
 #include <qaudiooutput.h>
+#include <qregion.h>>
+#include <qtextdocument.h>
+#include <qabstracttextdocumentlayout.h>
+#include <qtextcursor.h>
 
 #include <mupdf/fitz.h>
 
@@ -7159,10 +7163,19 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
     doc()->get_bookmarks()[ind].description += L"\n\n";
     sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, [this, bookmark_uuid](QString chunk) {
         int bookmark_index = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
-        //doc()->get_bookmarks()[bookmark_index]
-        BookMark& bm = doc()->get_bookmarks()[bookmark_index];
-        bm.description += chunk.toStdWString();
-        invalidate_render();
+        if (bookmark_index > 0) {
+            BookMark& bm = doc()->get_bookmarks()[bookmark_index];
+            bm.description += chunk.toStdWString();
+            // if the new description doesn't fit, increase the height of the bookmark
+            QSizeF new_size = get_bookmark_text_size(bm);
+            QRect current_window_rect = bm.get_rectangle().to_window(dv()).to_qrect();
+            if (current_window_rect.height() < new_size.height()) {
+                float diff = new_size.height() - current_window_rect.height();
+                float absolute_diff = diff / dv()->get_zoom_level();
+                bm.end_y += absolute_diff;
+            }
+            invalidate_render();
+        }
         },
         [this, bookmark_uuid]() {
             int bookmark_index = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
@@ -7170,6 +7183,35 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
             doc()->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
         });
 }
+
+QSizeF MainWidget::get_bookmark_text_size(const BookMark& bookmark) {
+    //const QPainter& painter = opengl_widget->get_painter();
+    QFont some_font;
+    float font_size = bookmark.font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmark.font_size;
+    some_font.setPointSizeF(font_size * dv()->get_zoom_level() * 0.75);
+
+    QFont font;
+    QTextDocument td;
+
+    auto formats = td.allFormats();
+    QTextCharFormat old_format = formats[0].toCharFormat();
+
+    td.setMarkdown(bookmark.get_question_markdown(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
+
+    QRect window_qrect = bookmark.get_rectangle().to_window(dv()).to_qrect();
+    td.setTextWidth(window_qrect.width());
+    td.setDefaultFont(some_font);
+
+    QTextCursor cursor(&td);
+    QTextCharFormat format;
+    cursor.select(QTextCursor::Document);
+    QAbstractTextDocumentLayout::PaintContext ctx;
+    window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
+    ctx.clip = window_qrect;
+    QSizeF size = td.documentLayout()->documentSize();
+    return size;
+}
+
 
 std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& text, int pending_index) {
     std::wstring result = L"";

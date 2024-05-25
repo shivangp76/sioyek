@@ -261,4 +261,5 @@ public:
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
     void clear_background_color();
     ColorPalette get_actual_color_palette(ColorPalette forced_color_palette);
+    const QPainter& get_painter();
 };
