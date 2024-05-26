@@ -1180,7 +1180,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
                     if (is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
                         doc->reload();
-                        pdf_renderer->clear_cache();
+                        this->pdf_renderer->clear_cache();
                         invalidate_render();
                     }
                 }
@@ -7150,10 +7150,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    if (media_player) {
-        qDebug() << media_player->position();
-        qDebug() << media_player->duration();
-    }
+    qDebug() << pdf_renderer->no_rerender;
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
