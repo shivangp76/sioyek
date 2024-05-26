@@ -1140,6 +1140,7 @@ public:
     bool is_logged_in();
     void on_set_enum_config_value(std::string config_name, std::wstring config_value);
     void focus_on_high_quality_text_being_read();
+    void on_document_changed();
     QMediaPlayer* get_media_player();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);

@@ -125,7 +125,7 @@ public:
     void ensure_schema_compatibility();
     int get_version();
     int set_version();
-    bool run_schema_query(const char* query);
+    bool run_schema_query(sqlite3* db, const char* query);
     void migrate_version_0_to_1();
     void migrate_version_1_to_2();
     bool select_all_mark_ids(std::vector<int>& mark_ids);
@@ -174,6 +174,7 @@ public:
     bool set_document_to_synced(const std::string& checksum);
     bool set_document_to_unsynced(const std::string& checksum);
     bool is_document_synced(const std::string& checksum);
+    bool update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     std::string get_table_name_for_annot_type(const std::string& annot_type);
     void debug();
 

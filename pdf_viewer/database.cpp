@@ -2104,9 +2104,9 @@ void DatabaseManager::ensure_schema_compatibility() {
     }
 }
 
-bool DatabaseManager::run_schema_query(const char* query) {
+bool DatabaseManager::run_schema_query(sqlite3* db, const char* query) {
     char* error_message = nullptr;
-    int error_code = sqlite3_exec(global_db, query, null_callback, 0, &error_message);
+    int error_code = sqlite3_exec(db, query, null_callback, 0, &error_message);
     return handle_error("run_schema_query", error_code, error_message);
 }
 
@@ -2132,9 +2132,9 @@ void DatabaseManager::migrate_version_1_to_2() {
 
     transaction += "COMMIT;";
 
-    if (!run_schema_query(transaction.c_str())) {
+    if (!run_schema_query(global_db, transaction.c_str())) {
         qDebug() << "Error: Could not migrate database from version 1 to version 2, rolling back ...";
-        run_schema_query("ROLLBACK;");
+        run_schema_query(global_db, "ROLLBACK;");
     }
 }
 
@@ -2218,9 +2218,9 @@ void DatabaseManager::migrate_version_0_to_1() {
 
     transaction += "COMMIT;";
 
-    if (!run_schema_query(transaction.c_str())) {
+    if (!run_schema_query(global_db, transaction.c_str())) {
         qDebug() << "Error: Could not migrate database from version 0 to version 1, rolling back ...";
-        run_schema_query("ROLLBACK;");
+        run_schema_query(global_db, "ROLLBACK;");
     }
 
     //for (int i = 0; i < queries_to_run.size(); i++) {
@@ -2697,4 +2697,46 @@ void DatabaseManager::debug() {
         }
     }
 
+}
+
+
+bool DatabaseManager::update_checksum(const std::string& old_checksum, const std::string& new_checksum) {
+
+    std::string global_transaction = "BEGIN TRANSACTION;\n";
+    std::string local_transaction = "BEGIN TRANSACTION;\n";
+    std::vector<std::string> shared_queries_to_run = {
+        "UPDATE opened_books SET path='" + new_checksum + "' WHERE path='" + old_checksum + "';",
+        "UPDATE highlights SET document_path='" + new_checksum + "' WHERE document_path='" + old_checksum + "';",
+        "UPDATE bookmarks SET document_path='" + new_checksum + "' WHERE document_path='" + old_checksum + "';",
+        "UPDATE links SET src_document='" + new_checksum + "' WHERE src_document='" + old_checksum + "';",
+        "UPDATE links SET dst_document='" + new_checksum + "' WHERE dst_document='" + old_checksum + "';",
+        "UPDATE marks SET document_path='" + new_checksum + "' WHERE document_path='" + old_checksum + "';",
+    };
+    std::vector<std::string> local_queries_to_run = {
+        "UPDATE document_hash SET hash='" + new_checksum + "' WHERE hash='" + old_checksum + "';"
+    };
+
+    for (auto q : shared_queries_to_run) {
+        global_transaction += q + "\n";
+    }
+
+    for (auto q : local_queries_to_run) {
+        local_transaction += q + "\n";
+    }
+
+    global_transaction += "COMMIT;";
+    local_transaction += "COMMIT;";
+
+    std::cout << global_transaction;
+
+    if (!run_schema_query(local_db, local_transaction.c_str())) {
+        run_schema_query(local_db, "ROLLBACK;");
+        return false;
+    }
+
+    if (!run_schema_query(global_db, global_transaction.c_str())) {
+        run_schema_query(global_db, "ROLLBACK;");
+        return false;
+    }
+    return true;
 }

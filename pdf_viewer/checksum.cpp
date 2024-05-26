@@ -53,7 +53,7 @@ std::optional<std::string> CachedChecksummer::get_checksum_fast(std::wstring fil
     return {};
 }
 
-std::string CachedChecksummer::get_checksum(std::wstring file_path) {
+std::string CachedChecksummer::get_checksum(std::wstring file_path){
 
     auto cached_checksum = get_checksum_fast(file_path);
 
@@ -82,4 +82,17 @@ int CachedChecksummer::num_docs_with_checksum(std::string checksum) {
         return cached_paths[checksum].size();
     }
     return 0;
+}
+
+void CachedChecksummer::update_checksum(std::string old_checksum, std::string new_checksum) {
+    for (auto [path, checksum] : cached_checksums) {
+        if (checksum == old_checksum) {
+            cached_checksums[path] = new_checksum;
+        }
+    }
+
+    if (cached_paths.find(old_checksum) != cached_paths.end()) {
+        cached_paths[new_checksum] = cached_paths[old_checksum];
+        cached_paths.erase(old_checksum);
+    }
 }

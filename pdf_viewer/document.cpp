@@ -1280,22 +1280,28 @@ DocumentManager::DocumentManager(fz_context* mupdf_context, DatabaseManager* db,
 
 
 Document* DocumentManager::get_document(const std::wstring& path) {
+    cached_hash_mutex.lock_shared();
     if (cached_documents.find(path) != cached_documents.end()) {
-        return cached_documents.at(path);
+        Document* res = cached_documents.at(path);
+        cached_hash_mutex.unlock_shared();
+        return res;
     }
+    cached_hash_mutex.unlock_shared();
+
     Document* new_doc = new Document(mupdf_context, path, db_manager, checksummer);
+
+    cached_hash_mutex.lock();
     cached_documents[path] = new_doc;
+    cached_hash_mutex.unlock();
     return new_doc;
 }
 
-const std::unordered_map<std::wstring, Document*>& DocumentManager::get_cached_documents() {
-    return cached_documents;
-}
-
 void DocumentManager::delete_global_mark(char symbol) {
+    cached_hash_mutex.lock_shared();
     for (auto [path, doc] : cached_documents) {
         doc->remove_mark(symbol);
     }
+    cached_hash_mutex.unlock_shared();
 }
 
 
@@ -2602,7 +2608,9 @@ void DocumentManager::free_document(Document* document) {
         }
     }
     if (found) {
+        cached_hash_mutex.lock();
         cached_documents.erase(path_to_erase);
+        cached_hash_mutex.unlock();
     }
 
     delete document;
@@ -3753,6 +3761,7 @@ void Document::persist_drawings(bool force) {
 
 std::vector<std::wstring> DocumentManager::get_loaded_document_paths() {
     std::vector<std::wstring> res;
+    std::shared_lock<std::shared_mutex> lock(cached_hash_mutex);
 
     for (auto& [path, doc] : cached_documents) {
         res.push_back(path);
@@ -3761,6 +3770,7 @@ std::vector<std::wstring> DocumentManager::get_loaded_document_paths() {
 }
 
 std::optional<Document*> DocumentManager::get_cached_document(const std::wstring& path) {
+    std::shared_lock<std::shared_mutex> lock(cached_hash_mutex);
     if (cached_documents.find(path) != cached_documents.end()) {
         return cached_documents[path];
     }
@@ -4041,15 +4051,23 @@ std::vector<Portal>& Document::get_portals() {
 }
 
 std::optional<std::wstring> DocumentManager::get_path_from_hash(const std::string& checksum) {
+    cached_hash_mutex.lock_shared();
     if (hash_to_path.find(checksum) != hash_to_path.end()) {
-        return hash_to_path[checksum];
+        std::wstring res = hash_to_path[checksum];
+        cached_hash_mutex.unlock_shared();
+        return res;
     }
+    cached_hash_mutex.unlock_shared();
+
     std::vector<std::wstring> paths;
 
     db_manager->get_path_from_hash(checksum, paths);
 
     if (paths.size() > 0) {
+        cached_hash_mutex.lock();
         hash_to_path[checksum] = paths[0];
+        cached_hash_mutex.unlock();
+
         return paths[0];
     }
 
@@ -4798,3 +4816,16 @@ int Document::absolute_to_page_index(int absolute_index, int& p){
     return absolute_index - super_fast_page_begin_indices[page];
 }
 
+void DocumentManager::update_checksum(const std::string& old_checksum, const std::string& new_checksum) {
+
+    if (db_manager->update_checksum(old_checksum, new_checksum)) {
+        checksummer->update_checksum(old_checksum, new_checksum);
+
+        if (hash_to_path.find(old_checksum) != hash_to_path.end()) {
+            cached_hash_mutex.lock();
+            hash_to_path[new_checksum] = hash_to_path[old_checksum];
+            hash_to_path.erase(old_checksum);
+            cached_hash_mutex.unlock();
+        }
+    }
+}

@@ -243,6 +243,7 @@ extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 extern std::wstring DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 
+extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern std::wstring RIGHT_CLICK_COMMAND;
@@ -1181,6 +1182,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                     if (is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
                         doc->reload();
                         this->pdf_renderer->clear_cache();
+                        this->on_document_changed();
                         invalidate_render();
                     }
                 }
@@ -4817,13 +4819,10 @@ void MainWidget::add_portal(std::wstring source_path, Portal new_link) {
         on_new_portal_added(uuid);
     }
     else {
-        const std::unordered_map<std::wstring, Document*> cached_documents = document_manager->get_cached_documents();
-        for (auto [doc_path, doc] : cached_documents) {
-            if (source_path == doc_path) {
-                std::string uuid = doc->add_portal(new_link, false);
-                on_new_portal_added(uuid);
-            }
-        }
+        //const std::unordered_map<std::wstring, Document*> cached_documents = document_manager->get_cached_documents();
+        Document* doc = document_manager->get_document(source_path);
+        std::string uuid = doc->add_portal(new_link, false);
+        on_new_portal_added(uuid);
 
         if (new_link.is_visible()) {
             std::string uuid = utf8_encode(new_uuid());
@@ -7150,7 +7149,9 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << pdf_renderer->no_rerender;
+    std::string doc_checksum = doc()->get_checksum();
+    std::string correct_checksum = compute_checksum(QString::fromStdWString(doc()->get_path()), QCryptographicHash::Md5);
+    qDebug() << (doc_checksum == correct_checksum);
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
@@ -12316,5 +12317,15 @@ void MainWidget::preload_next_page_for_tts(float rate) {
         std::wstring next_page_text;
         doc()->get_page_text_and_line_rects_after_rect(next_page_number, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
         sioyek_network_manager->tts(this, next_page_text, doc()->get_checksum(), next_page_number, rate, [](QString path, std::vector<float> timestamps) {});
+    }
+}
+
+void MainWidget::on_document_changed() {
+    if (AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED) {
+        background_task_manager->add_task([this]() {
+            std::string old_checksum = doc()->get_checksum();
+            std::string new_checksum = compute_checksum(QString::fromStdWString(doc()->get_path()), QCryptographicHash::Md5);
+            this->document_manager->update_checksum(old_checksum, new_checksum);
+            }, this);
     }
 }

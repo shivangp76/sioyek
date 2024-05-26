@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <deque>
 #include <regex>
+#include <shared_mutex>
 
 //#include <Windows.h>
 #include <qstandarditemmodel.h>
@@ -548,6 +549,7 @@ private:
     fz_context* mupdf_context = nullptr;
     DatabaseManager* db_manager = nullptr;
     CachedChecksummer* checksummer;
+    std::shared_mutex cached_hash_mutex;
     std::unordered_map<std::wstring, Document*> cached_documents;
     std::unordered_map<std::string, std::wstring> hash_to_path;
     std::vector<std::wstring> tabs;
@@ -566,8 +568,8 @@ public:
     Document* get_document_with_checksum(const std::string& checksum);
     std::optional<Document*> get_cached_document(const std::wstring& path);
     void free_document(Document* document);
-    const std::unordered_map<std::wstring, Document*>& get_cached_documents();
     std::vector<std::wstring> get_loaded_document_paths();
     void delete_global_mark(char symbol);
+    void update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     ~DocumentManager();
 };

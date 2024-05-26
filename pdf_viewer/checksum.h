@@ -21,4 +21,5 @@ public:
     std::optional<std::string> get_checksum_fast(std::wstring file_path);
     std::optional<std::wstring> get_path(std::string checksum);
     int num_docs_with_checksum(std::string checksum);
+    void update_checksum(std::string old_checksum, std::string new_checksum);
 };

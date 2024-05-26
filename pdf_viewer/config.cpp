@@ -242,6 +242,7 @@ std::wstring CONTEXT_MENU_ITEMS_FOR_BOOKMARKS = L"delete_visible_bookmark|edit_s
 std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW = L"";
 std::wstring EXTERNAL_TEXT_EDITOR_COMMAND = L"";
 bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS = false;
+bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED = true;
 
 bool RIGHT_CLICK_CONTEXT_MENU = false;
 #ifdef SIOYEK_MOBILE
@@ -1070,6 +1071,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"auto_login_on_startup", &AUTO_LOGIN_ON_STARTUP);
     add_bool(L"automatically_upload_portal_destination_for_synced_documents", &AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
+    add_bool(L"automatically_update_checksum_when_document_is_changed", &AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED);
 
     add_string(L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
