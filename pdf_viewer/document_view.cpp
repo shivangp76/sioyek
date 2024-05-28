@@ -761,7 +761,8 @@ void DocumentView::open_document(const std::wstring& doc_path,
     bool* invalid_flag,
     bool load_prev_state,
     std::optional<OpenedBookState> prev_state,
-    bool force_load_dimensions) {
+    bool force_load_dimensions,
+    std::string downloaded_checksum) {
 
     std::wstring canonical_path = get_canonical_path(doc_path);
 
@@ -780,7 +781,7 @@ void DocumentView::open_document(const std::wstring& doc_path,
 
     //current_document = new Document(mupdf_context, doc_path, database);
     //current_document = document_manager->get_document(doc_path);
-    current_document = document_manager->get_document(canonical_path);
+    current_document = document_manager->get_document(canonical_path, downloaded_checksum);
     //current_document->open();
     if (!current_document->open(invalid_flag, force_load_dimensions)) {
         current_document = nullptr;

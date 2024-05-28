@@ -159,6 +159,7 @@ private:
     bool are_highlights_loaded = false;
     bool should_render_annotations = true;
     bool should_reload_annotations = false;
+    std::string dl_checksum = "";
 
     QDateTime last_update_time;
     CachedChecksummer* checksummer;
@@ -176,7 +177,7 @@ private:
     // convetr the fz_outline structure to our own TocNode structure
     void create_toc_tree(std::vector<TocNode*>& toc);
 
-    Document(fz_context* context, std::wstring file_name, DatabaseManager* db_manager, CachedChecksummer* checksummer);
+    Document(fz_context* context, std::wstring file_name, DatabaseManager* db_manager, CachedChecksummer* checksummer, std::string downloaded_checksum="");
     void clear_toc_nodes();
     void clear_toc_node(TocNode* node);
     int find_highlight_index_with_uuid(const std::string& uuid);
@@ -563,7 +564,7 @@ public:
     void remove_tab(const std::wstring& path);
     std::vector<std::wstring> get_tabs();
 
-    Document* get_document(const std::wstring& path);
+    Document* get_document(const std::wstring& path, std::string downloaded_checksum="");
     std::optional<std::wstring> get_path_from_hash(const std::string& checksum);
 
     Document* get_document_with_checksum(const std::string& checksum);

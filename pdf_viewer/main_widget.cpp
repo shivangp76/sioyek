@@ -9,6 +9,8 @@
 // problem: start with a local document, then open a server document. the annotations are not loaded, when sioyek is restarted, the annotations are still not loaded but we move to the top of document, the third time the annotations are loaded
 // allow deleting server files
 // sync drawings
+// server document is not saved immediately
+// mouse events not working when document is newly focused
 
 #include <iostream>
 #include <vector>
@@ -1858,7 +1860,7 @@ void MainWidget::open_document_with_hash(const std::string& path, std::optional<
     }
 }
 
-void MainWidget::open_document(const Path& path, std::optional<float> offset_x, std::optional<float> offset_y, std::optional<float> zoom_level) {
+void MainWidget::open_document(const Path& path, std::optional<float> offset_x, std::optional<float> offset_y, std::optional<float> zoom_level, std::string downloaded_checksum) {
     if (doc()) {
         if (resume_to_server_position_button->isVisible()) {
             resume_to_server_position_button->hide();
@@ -1878,7 +1880,12 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     }
 
     main_document_view->on_view_size_change(main_window_width, main_window_height);
-    main_document_view->open_document(path.get_path(), &this->is_render_invalidated);
+    main_document_view->open_document(path.get_path(), &this->is_render_invalidated, true, {}, false, downloaded_checksum);
+
+    if (downloaded_checksum.size() > 0) {
+        // if this documents is downloaded from the server, it must be synced
+        doc()->set_is_synced(true);
+    }
 
     on_open_document(path.get_path());
 
@@ -12028,6 +12035,7 @@ void MainWidget::upload_current_file() {
         QString::fromStdWString(doc()->get_path()),
         QString::fromStdString(doc()->get_checksum()),
         [&]() {
+            sync_annotations_with_server();
             sync_current_file_location_to_servers();
         }
     );
@@ -12171,8 +12179,7 @@ void MainWidget::download_and_open(std::string checksum, QString file_name, floa
 
         std::optional<float> offset_x = {};
         push_state();
-        open_document(file_path.toStdWString(), offset_x, offset_y);
-        doc()->set_is_synced(true);
+        open_document(file_path.toStdWString(), offset_x, offset_y, {}, checksum);
         //doc()->annotations_are_freshly_loaded = true;
         invalidate_render();
         });

@@ -166,6 +166,12 @@ void Document::load_document_metadata_from_db() {
         db_manager->select_links(checksum, portals);
         should_reload_annotations = false;
         annotations_are_freshly_loaded = true;
+        if (dl_checksum.size() > 0) {
+            // if the document is downloaded we need to insert it into the database
+            // because the checksum computed from get_checksum_fast comes from the server
+            // not from the local database
+            db_manager->insert_document_hash(get_path(), checksum);
+        }
     }
     else {
         auto checksum_thread = std::thread([&]() {
@@ -710,11 +716,12 @@ std::optional<Mark> Document::get_mark_if_exists(char symbol){
     return marks[mark_index];
 }
 
-Document::Document(fz_context* context, std::wstring file_name, DatabaseManager* db, CachedChecksummer* checksummer) :
+Document::Document(fz_context* context, std::wstring file_name, DatabaseManager* db, CachedChecksummer* checksummer, std::string downloaded_checksum) :
     db_manager(db),
     context(context),
     file_name(file_name),
     checksummer(checksummer),
+    dl_checksum(downloaded_checksum),
     doc(nullptr) {
     last_update_time = QDateTime::currentDateTime();
     should_render_annotations = SHOULD_RENDER_PDF_ANNOTATIONS;
@@ -1280,7 +1287,7 @@ DocumentManager::DocumentManager(fz_context* mupdf_context, DatabaseManager* db,
 }
 
 
-Document* DocumentManager::get_document(const std::wstring& path) {
+Document* DocumentManager::get_document(const std::wstring& path, std::string downloaded_checksum) {
     cached_hash_mutex.lock_shared();
     if (cached_documents.find(path) != cached_documents.end()) {
         Document* res = cached_documents.at(path);
@@ -1289,7 +1296,7 @@ Document* DocumentManager::get_document(const std::wstring& path) {
     }
     cached_hash_mutex.unlock_shared();
 
-    Document* new_doc = new Document(mupdf_context, path, db_manager, checksummer);
+    Document* new_doc = new Document(mupdf_context, path, db_manager, checksummer, downloaded_checksum);
 
     cached_hash_mutex.lock();
     cached_documents[path] = new_doc;
