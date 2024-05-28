@@ -5946,7 +5946,13 @@ void MainWidget::handle_open_prev_doc() {
             pop_current_widget();
         },
         [&](OpenedBookInfo* info) {
-            db_manager->delete_opened_book(info->checksum);
+            QString doc_hash_qstring = QString::fromStdString(info->checksum);
+            if (doc_hash_qstring.startsWith("SERVER://")) {
+                sioyek_network_manager->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
+            }
+            else {
+                db_manager->delete_opened_book(info->checksum);
+            }
         }
         );
 

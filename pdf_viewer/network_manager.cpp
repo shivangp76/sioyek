@@ -1282,3 +1282,32 @@ void SioyekNetworkManager::upload_document_index(QObject* parent, const std::wst
         //on_done();
         });
 }
+
+void SioyekNetworkManager::delete_file_from_server(QObject* parent, std::string checksum, std::function<void()> on_done) {
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DELETE_FILE_CHECKSUM_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["file_checksum"] = QString::fromStdString(checksum);
+
+    QJsonDocument json_doc(obj);
+
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    reply->setParent(parent);
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, checksum, on_done=std::move(on_done)]() {
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code != 200) {
+        }
+        else {
+            if (SERVER_HASHES.find(checksum) != SERVER_HASHES.end()) {
+                SERVER_HASHES.erase(checksum);
+            }
+            on_done();
+        }
+        });
+}
+
