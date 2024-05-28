@@ -6,6 +6,9 @@
 // touch epub controls
 // better tablet button handling, the current method is setting dependent
 // continue high quality tts on ios and android when the app is minimized
+// problem: start with a local document, then open a server document. the annotations are not loaded, when sioyek is restarted, the annotations are still not loaded but we move to the top of document, the third time the annotations are loaded
+// allow deleting server files
+// sync drawings
 
 #include <iostream>
 #include <vector>
@@ -1179,7 +1182,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                 if ((doc->get_milies_since_last_document_update_time() > (doc->get_milies_since_last_edit_time())) &&
                     (doc->get_milies_since_last_edit_time() > RELOAD_INTERVAL_MILISECONDS)) {
 
-                    if (is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
+                    if (true || is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
                         doc->reload();
                         this->pdf_renderer->clear_cache();
                         this->on_document_changed();
@@ -1374,7 +1377,12 @@ QString MainWidget::get_login_status_string() {
 
     if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
         if (is_current_document_available_on_server()) {
-            server_status_string = "SYNCED";
+            if (doc()->get_is_synced()) {
+                server_status_string = "SYNCED";
+            }
+            else {
+                server_status_string = "DESYNCHRONIZED";
+            }
         }
         else {
             if (should_sync_current_document_to_server()) {
@@ -6079,10 +6087,11 @@ void MainWidget::sync_annotations_with_server() {
     if (!doc()) return;
     if (!doc()->get_checksum_fast()) return;
     if (!is_logged_in()) return;
+    if ((!doc()->get_is_synced())) return;
 
     QString document_checksum = QString::fromStdString(doc()->get_checksum_fast().value());
 
-    sioyek_network_manager->perform_unsynced_inserts_and_deletes(this, document_checksum, [&, document_checksum, this]() {
+    sioyek_network_manager->perform_unsynced_inserts_and_deletes(this, doc(), document_checksum, [&, document_checksum, this]() {
         sioyek_network_manager->get_document_annotations(this, document_checksum,
         [&, document_checksum](std::vector<Highlight>&& server_highlights, std::vector<BookMark>&& server_bookmarks, std::vector<Portal>&& server_portals, std::optional<QDateTime> server_access_time) {
 
@@ -7151,7 +7160,8 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 void MainWidget::handle_debug_command() {
     std::string doc_checksum = doc()->get_checksum();
     std::string correct_checksum = compute_checksum(QString::fromStdWString(doc()->get_path()), QCryptographicHash::Md5);
-    qDebug() << (doc_checksum == correct_checksum);
+    qDebug() << doc_checksum;
+    qDebug() << correct_checksum;
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
@@ -12036,6 +12046,10 @@ void MainWidget::auto_login() {
     }
 }
 
+void MainWidget::on_server_hashes_loaded() {
+
+}
+
 #ifdef SIOYEK_IOS
 void MainWidget::handle_ios_files(const QUrl& url){
     qDebug() << "handle_ios_files called with: " << url;
@@ -12152,34 +12166,49 @@ void MainWidget::handle_open_server_only_file() {
 
 void MainWidget::download_and_open(std::string checksum, QString file_name, float offset_y) {
 
-    sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(checksum), [&, offset_y](QString file_path) {
+    sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(checksum), [&, checksum, offset_y](QString file_path) {
+        checksummer->set_checksum(checksum, file_path.toStdWString());
+
         std::optional<float> offset_x = {};
         push_state();
         open_document(file_path.toStdWString(), offset_x, offset_y);
+        doc()->set_is_synced(true);
+        //doc()->annotations_are_freshly_loaded = true;
         invalidate_render();
         });
 }
 
 void MainWidget::manage_last_document_checksum() {
     if (doc()) {
-        if (last_document_checksum.doc != doc()) {
-            last_document_checksum.checksum = doc()->get_checksum_fast();
-            last_document_checksum.doc = doc();
+        if (doc()->checksum_is_new && sioyek_network_manager->server_hashes_loaded) {
+            doc()->checksum_is_new = false;
+            on_checksum_computed();
         }
-        else {
-            if (!last_document_checksum.checksum.has_value()) {
-                last_document_checksum.checksum = doc()->get_checksum_fast();
-                if (last_document_checksum.checksum.has_value()) {
-                    on_checksum_computed();
-                }
-            }
-        }
+        //if (last_document_checksum.doc != doc()) {
+        //    last_document_checksum.checksum = doc()->get_checksum_fast();
+        //    last_document_checksum.doc = doc();
+        //}
+        //else {
+        //    if (!last_document_checksum.checksum.has_value()) {
+        //        last_document_checksum.checksum = doc()->get_checksum_fast();
+        //        if (last_document_checksum.checksum.has_value()) {
+        //            on_checksum_computed();
+        //        }
+        //    }
+        //}
     }
 
 }
 
 void MainWidget::on_checksum_computed() {
-    handle_sync_open_document();
+    //std::optional<std::string> checksum = doc()->get_checksum_fast();
+    //if (checksum) {
+    //    if (sioyek_network_manager->is_checksum_available_on_server(checksum.value())) {
+    //        doc()->set_is_synced(true);
+    //    }
+    //    handle_sync_open_document();
+    //    sync_annotations_with_server();
+    //}
 }
 
 
@@ -12222,6 +12251,22 @@ bool MainWidget::is_logged_in() {
 
 void MainWidget::on_overview_move_end() {
     handle_portal_overview_update();
+}
+
+void MainWidget::do_synchronize() {
+    doc()->set_is_synced(true);
+    handle_sync_open_document();
+    sync_annotations_with_server();
+}
+
+void MainWidget::synchronize_if_desynchronized() {
+    if (doc()) {
+        if (is_current_document_available_on_server()) {
+            if (!doc()->get_is_synced()) {
+                do_synchronize();
+            }
+        }
+    }
 }
 
 QMediaPlayer* MainWidget::get_media_player(){
@@ -12320,12 +12365,32 @@ void MainWidget::preload_next_page_for_tts(float rate) {
     }
 }
 
+Q_INVOKABLE void MainWidget::update_checksum_impl(std::string old_checksum, std::string new_checksum) {
+    this->sioyek_network_manager->update_checksum(this, QString::fromStdWString(doc()->get_path()), QString::fromStdString(old_checksum), QString::fromStdString(new_checksum), [this, old_checksum, new_checksum]() {
+        this->sioyek_network_manager->update_user_files_hash_set();
+        doc()->reload_annotations_on_new_checksum();
+
+        this->background_task_manager->add_task([this, old_checksum, new_checksum]() {
+            this->document_manager->update_checksum(old_checksum, new_checksum);
+            }, this);
+        });
+}
+
 void MainWidget::on_document_changed() {
+    //return;
     if (AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED) {
         background_task_manager->add_task([this]() {
             std::string old_checksum = doc()->get_checksum();
             std::string new_checksum = compute_checksum(QString::fromStdWString(doc()->get_path()), QCryptographicHash::Md5);
             this->document_manager->update_checksum(old_checksum, new_checksum);
             }, this);
+
+            //QMetaObject::invokeMethod(this,
+            //    "update_checksum_impl",
+            //    Qt::QueuedConnection,
+            //    Q_ARG(std::string, old_checksum),
+            //    Q_ARG(std::string, new_checksum)
+            //);
+            //}, this);
     }
 }

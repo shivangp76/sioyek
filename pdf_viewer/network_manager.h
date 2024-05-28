@@ -10,6 +10,7 @@
 class DatabaseManager;
 class BackgroundTaskManager;
 class DocumentManager;
+class Document;
 
 
 class SioyekNetworkManager{
@@ -25,6 +26,7 @@ public:
     const std::wstring SIOYEK_PAPER_URL_URL = SIOYEK_HOST + L"get_paper_url";
     const std::wstring SIOYEK_ECHO_URL = SIOYEK_HOST + L"echo_user";
     const std::wstring SIOYEK_UPLOAD_URL = SIOYEK_HOST + L"upload_file";
+    const std::wstring SIOYEK_UPDATE_CHECKSUM_URL = SIOYEK_HOST + L"checksum_updated";
     const std::wstring SIOYEK_USER_FILE_HASH_SET_URL = SIOYEK_HOST + L"user_hash_set";
     const std::wstring SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH = SIOYEK_HOST + L"download_hash";
     const std::wstring SIOYEK_SYNC_OPENED_BOOK_URL = SIOYEK_HOST + L"sync_opened_book";
@@ -47,6 +49,7 @@ public:
     const std::wstring SIOYEK_STREAM_TEST_URL = SIOYEK_HOST + L"stream";
     const std::wstring SIOYEK_EXTRACT_TABLE_URL = SIOYEK_HOST + L"extract_table";
 
+    bool server_hashes_loaded = false;
     std::unordered_set<std::string> SERVER_HASHES = {};
     std::unordered_set<std::string> SERVER_DELETED_FILES = {};
     std::unordered_map<std::string, OpenedBookInfo> server_opened_files;
@@ -65,6 +68,7 @@ public:
     void authorize_request(QNetworkRequest* req);
     void download_file_with_hash(QObject* parent, QString hash, std::function<void(QString)> fn);
     void upload_file(QObject* parent, QString path, QString hash, std::function<void()> fn);
+    void update_checksum(QObject* parent, QString path, QString old_checksum, QString new_checksum, std::function<void()> fn);
     QNetworkReply* get_user_file_hash_set_reply();
     void update_user_files_hash_set();
     std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
@@ -82,7 +86,7 @@ public:
     //void upload_bookmark(MainWidget* parent, const QString& checksum, const BookMark& highlight, std::function<void()> on_success, std::function<void()> on_fail);
     void delete_annot(QObject* parent, const QString& file_checksum, const QString& annot_type, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail);
     void get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime> last_access_time)> fn);
-    void perform_unsynced_inserts_and_deletes(QObject* parent, const QString& checksum, std::function<void()> on_done);
+    void perform_unsynced_inserts_and_deletes(QObject* parent, Document* doc, const QString& checksum, std::function<void()> on_done);
     const std::wstring& get_url_for_annot_upload(const Annotation* annot);
     //const std::wstring& get_url_for_annot_delete(const Annotation* annot);
 

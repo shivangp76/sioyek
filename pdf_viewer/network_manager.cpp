@@ -206,6 +206,7 @@ void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash
                 }
             }
         }
+
         });
 
 }
@@ -277,6 +278,72 @@ void SioyekNetworkManager::upload_file(QObject * parent, QString path, QString h
     }
 }
 
+void SioyekNetworkManager::update_checksum(QObject* parent, QString path, QString old_checksum, QString new_checksum, std::function<void()> fn) {
+    QFile* file = new QFile(path);
+    if (file->open(QIODevice::ReadOnly)) {
+        QHttpMultiPart* parts = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+        QByteArray data = file->readAll();
+
+        QJsonDocument json_doc;
+        QJsonObject root_object;
+        root_object["sioyek_version"] = QString::fromStdString(APPLICATION_VERSION);
+        root_object["old_checksum"] = old_checksum;
+        root_object["new_checksum"] = new_checksum;
+        json_doc.setObject(root_object);
+
+
+        QHttpPart data_part;
+        data_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"sioyek_data\""));
+        data_part.setBody(json_doc.toJson(QJsonDocument::JsonFormat::Compact));
+        parts->append(data_part);
+
+        QHttpPart file_part;
+        file_part.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"file\"; filename=\"" + file->fileName() + "\"");
+
+        // ideally we should just be able to use setBodyDevice(file) which should use less memory, however,
+        // this sometimes causes a crash when latex software puts the file in an invalid state so we just read
+        // the entire file here
+        file_part.setBody(data);
+
+        parts->append(file_part);
+
+
+        QNetworkRequest req;
+        authorize_request(&req);
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_UPDATE_CHECKSUM_URL)));
+        //qDebug() << "boundary is:" << parts->boundary();
+        //qDebug() << "file size  is:" << file->size();
+
+        // DO NOT use the Qt's default boundary, it does not work
+        parts->setBoundary(create_random_string().toUtf8());
+        req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
+
+        QNetworkReply* reply = network_manager.post(req, parts);
+        reply->setProperty("sioyek_handled", true);
+        reply->setParent(parent);
+
+        QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
+            reply->deleteLater();
+
+            if (handle_network_reply_if_error(reply, true)) {
+                fn();
+                //update_user_files_hash_set();
+                //auto json_resp = QJsonDocument::fromJson(reply->readAll());
+                //if (json_resp["status"] != "OK" && json_resp["type"] == "incorrect_file_hash") {
+                //    //todo: update_current_document_checksum()
+
+                //    show_error_message(L"the file hash was incorrect");
+                //}
+                //else {
+                //    fn();
+                //}
+            }
+            });
+
+        parts->setParent(reply);
+    }
+}
+
 void SioyekNetworkManager::update_user_files_hash_set() {
     if (ACCESS_TOKEN.size() > 0) {
         QNetworkReply* reply = get_user_file_hash_set_reply();
@@ -295,6 +362,7 @@ void SioyekNetworkManager::update_user_files_hash_set() {
                 for (auto server_deleted_file : json_object["deleted_files"].toArray()) {
                     SERVER_DELETED_FILES.insert(server_deleted_file.toString().toStdString());
                 }
+                server_hashes_loaded = true;
             }
             });
     }
@@ -820,7 +888,7 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
         });
 }
 
-void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent, const QString& checksum, std::function<void()> on_done) {
+void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent, Document* doc, const QString& checksum, std::function<void()> on_done) {
     std::vector<std::pair<std::wstring, std::wstring>> unsynced_deletes;
 
     //std::vector<std::string> unsynced_highlight_insert_uuids;
@@ -866,7 +934,7 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent,
 
     db_manager->get_all_unsynced_deletions(checksum.toStdString(), unsynced_deletes);
 
-    Document* doc = document_manager->get_document_with_checksum(checksum.toStdString());
+    //Document* doc = document_manager->get_document_with_checksum(checksum.toStdString());
     if (doc == nullptr) return;
 
     std::vector<Highlight> unsynced_highlights = doc->get_unsynced_annots<Highlight>();

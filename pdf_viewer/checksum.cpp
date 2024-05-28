@@ -96,3 +96,13 @@ void CachedChecksummer::update_checksum(std::string old_checksum, std::string ne
         cached_paths.erase(old_checksum);
     }
 }
+
+void CachedChecksummer::set_checksum(std::string checksum, std::wstring path) {
+    if (cached_paths.find(checksum) != cached_paths.end()) {
+        cached_paths[checksum].push_back(path);
+    }
+    else {
+        cached_paths[checksum] = { path };
+    }
+    cached_checksums[path] = checksum;
+}

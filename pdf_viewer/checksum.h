@@ -16,10 +16,12 @@ private:
     std::unordered_map<std::string, std::vector<std::wstring>> cached_paths;
 
 public:
+
     CachedChecksummer(const std::vector<std::pair<std::wstring, std::wstring>>* loaded_checksums);
     std::string get_checksum(std::wstring file_path);
     std::optional<std::string> get_checksum_fast(std::wstring file_path);
     std::optional<std::wstring> get_path(std::string checksum);
+    void set_checksum(std::string checksum, std::wstring path);
     int num_docs_with_checksum(std::string checksum);
     void update_checksum(std::string old_checksum, std::string new_checksum);
 };

@@ -184,6 +184,7 @@ public:
     fz_document* doc = nullptr;
     std::wstring detected_paper_name = L"";
     bool annotations_are_freshly_loaded = false;
+    bool checksum_is_new = false;
     std::optional<bool> cached_is_synced;
 
     PageIterator page_iterator(int page_number, bool line_only=false);

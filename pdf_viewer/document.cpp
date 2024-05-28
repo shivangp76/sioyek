@@ -170,6 +170,7 @@ void Document::load_document_metadata_from_db() {
     else {
         auto checksum_thread = std::thread([&]() {
             std::string checksum = get_checksum();
+            checksum_is_new = true;
             if ((checksummer->num_docs_with_checksum(checksum) > 1) || annotations_file_exists()) {
                 if (marks.size() == 0 && bookmarks.size() == 0 && highlights.size() == 0 && portals.size() == 0) {
                     db_manager->select_mark(checksum, marks);
@@ -4826,6 +4827,23 @@ void DocumentManager::update_checksum(const std::string& old_checksum, const std
             hash_to_path[new_checksum] = hash_to_path[old_checksum];
             hash_to_path.erase(old_checksum);
             cached_hash_mutex.unlock();
+
+            Document* doc = get_document_with_checksum(new_checksum);
+            if (doc) {
+                doc->set_is_synced(false);
+                for (auto& hl : doc->highlights) {
+                    hl.is_synced = false;
+                }
+                for (auto& bm : doc->bookmarks) {
+                    bm.is_synced = false;
+                }
+                for (auto& portal : doc->portals) {
+                    portal.is_synced = false;
+                }
+                for (auto& mark : doc->marks) {
+                    mark.is_synced = false;
+                }
+            }
         }
     }
 }

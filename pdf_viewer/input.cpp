@@ -5859,6 +5859,18 @@ public:
 
 };
 
+class SynchronizeCommand : public Command {
+public:
+    static inline const std::string cname = "synchronize";
+    static inline const std::string hname = "Synchronize a desyncronized file with server";
+    SynchronizeCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->synchronize_if_desynchronized();
+    }
+
+};
+
 class UploadCurrentFileCommand : public Command {
 public:
     static inline const std::string cname = "upload_current_file";
@@ -7464,6 +7476,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<LogoutCommand>();
     register_command<ResumeToServerLocationCommand>();
     register_command<LoginUsingAccessTokenCommand>();
+    register_command<SynchronizeCommand>();
     register_command<UploadCurrentFileCommand>();
     register_command<DeleteCurrentFileFromServer>();
     register_command<ResyncDocumentCommand>();

@@ -2705,12 +2705,12 @@ bool DatabaseManager::update_checksum(const std::string& old_checksum, const std
     std::string global_transaction = "BEGIN TRANSACTION;\n";
     std::string local_transaction = "BEGIN TRANSACTION;\n";
     std::vector<std::string> shared_queries_to_run = {
-        "UPDATE opened_books SET path='" + new_checksum + "' WHERE path='" + old_checksum + "';",
-        "UPDATE highlights SET document_path='" + new_checksum + "' WHERE document_path='" + old_checksum + "';",
-        "UPDATE bookmarks SET document_path='" + new_checksum + "' WHERE document_path='" + old_checksum + "';",
-        "UPDATE links SET src_document='" + new_checksum + "' WHERE src_document='" + old_checksum + "';",
+        "UPDATE opened_books SET path='" + new_checksum + "', is_synced=0 WHERE path='" + old_checksum + "';",
+        "UPDATE highlights SET document_path='" + new_checksum + "', is_synced=0 WHERE document_path='" + old_checksum + "';",
+        "UPDATE bookmarks SET document_path='" + new_checksum + "', is_synced=0 WHERE document_path='" + old_checksum + "';",
+        "UPDATE links SET src_document='" + new_checksum + "', is_synced=0 WHERE src_document='" + old_checksum + "';",
         "UPDATE links SET dst_document='" + new_checksum + "' WHERE dst_document='" + old_checksum + "';",
-        "UPDATE marks SET document_path='" + new_checksum + "' WHERE document_path='" + old_checksum + "';",
+        "UPDATE marks SET document_path='" + new_checksum + "', is_synced=0 WHERE document_path='" + old_checksum + "';",
     };
     std::vector<std::string> local_queries_to_run = {
         "UPDATE document_hash SET hash='" + new_checksum + "' WHERE hash='" + old_checksum + "';"

@@ -127,10 +127,10 @@ struct AVSpeechSynthesizer;
 
 
 
-struct LastDocumentChecksum {
-    Document* doc = nullptr;
-    std::optional<std::string> checksum;
-};
+//struct LastDocumentChecksum {
+//    Document* doc = nullptr;
+//    std::optional<std::string> checksum;
+//};
 
 //struct StatusString {
 //    //std::unordered_map<QString>
@@ -171,7 +171,7 @@ public:
     QMenuBar* menu_bar = nullptr;
     int window_id;
 
-    LastDocumentChecksum last_document_checksum;
+    //LastDocumentChecksum last_document_checksum;
 
     QFileSystemWatcher external_command_edit_watcher;
     bool is_external_file_edited = false;
@@ -1141,6 +1141,10 @@ public:
     void on_set_enum_config_value(std::string config_name, std::wstring config_value);
     void focus_on_high_quality_text_being_read();
     void on_document_changed();
+    void do_synchronize();
+    void synchronize_if_desynchronized();
+    void on_server_hashes_loaded();
+    Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
     QMediaPlayer* get_media_player();
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
