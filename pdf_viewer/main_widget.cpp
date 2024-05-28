@@ -9,8 +9,7 @@
 // problem: start with a local document, then open a server document. the annotations are not loaded, when sioyek is restarted, the annotations are still not loaded but we move to the top of document, the third time the annotations are loaded
 // allow deleting server files
 // sync drawings
-// server document is not saved immediately
-// mouse events not working when document is newly focused
+// make sure pop_current_widget is called on all show_filtered_select_menus
 
 #include <iostream>
 #include <vector>
@@ -5944,6 +5943,7 @@ void MainWidget::handle_open_prev_doc() {
                     advance_command(std::move(pending_command_instance));
                 }
             }
+            pop_current_widget();
         },
         [&](OpenedBookInfo* info) {
             db_manager->delete_opened_book(info->checksum);
