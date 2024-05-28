@@ -49,6 +49,9 @@ public:
     const std::wstring SIOYEK_STREAM_TEST_URL = SIOYEK_HOST + L"stream";
     const std::wstring SIOYEK_EXTRACT_TABLE_URL = SIOYEK_HOST + L"extract_table";
     const std::wstring SIOYEK_DELETE_FILE_CHECKSUM_URL = SIOYEK_HOST + L"delete_checksum";
+    const std::wstring SIOYEK_UPLOAD_DRAWINGS_URL = SIOYEK_HOST + L"upload_drawings";
+    const std::wstring SIOYEK_DOWNLOAD_DRAWINGS_URL = SIOYEK_HOST + L"download_drawings";
+    const std::wstring SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL = SIOYEK_HOST + L"last_drawing_modification_time";
 
     bool server_hashes_loaded = false;
     std::unordered_set<std::string> SERVER_HASHES = {};
@@ -101,4 +104,7 @@ public:
     void extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt = {});
 
     void delete_file_from_server(QObject* parent, std::string checksum, std::function<void()> on_done);
+    void upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done);
+    void get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done);
+    void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
 };

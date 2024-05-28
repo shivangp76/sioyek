@@ -7,7 +7,6 @@
 // better tablet button handling, the current method is setting dependent
 // continue high quality tts on ios and android when the app is minimized
 // problem: start with a local document, then open a server document. the annotations are not loaded, when sioyek is restarted, the annotations are still not loaded but we move to the top of document, the third time the annotations are loaded
-// allow deleting server files
 // sync drawings
 // make sure pop_current_widget is called on all show_filtered_select_menus
 
@@ -7171,10 +7170,12 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    std::string doc_checksum = doc()->get_checksum();
-    std::string correct_checksum = compute_checksum(QString::fromStdWString(doc()->get_path()), QCryptographicHash::Md5);
-    qDebug() << doc_checksum;
-    qDebug() << correct_checksum;
+    std::wstring drawings_file_path = doc()->get_drawings_file_path();
+    std::string pdf_file_checksum = doc()->get_checksum();
+    sioyek_network_manager->download_drawings(this, pdf_file_checksum, drawings_file_path, [&]() {
+        this->doc()->reload();
+        });
+
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {

@@ -250,6 +250,7 @@ void SioyekNetworkManager::upload_file(QObject * parent, QString path, QString h
         //qDebug() << "boundary is:" << parts->boundary();
         //qDebug() << "file size  is:" << file->size();
 
+        file->setParent(parts);
         // DO NOT use the Qt's default boundary, it does not work
         parts->setBoundary(create_random_string().toUtf8());
         req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
@@ -314,6 +315,7 @@ void SioyekNetworkManager::update_checksum(QObject* parent, QString path, QStrin
         //qDebug() << "boundary is:" << parts->boundary();
         //qDebug() << "file size  is:" << file->size();
 
+        file->setParent(parts);
         // DO NOT use the Qt's default boundary, it does not work
         parts->setBoundary(create_random_string().toUtf8());
         req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
@@ -1311,3 +1313,123 @@ void SioyekNetworkManager::delete_file_from_server(QObject* parent, std::string 
         });
 }
 
+
+void SioyekNetworkManager::upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done) {
+
+    QFile* file = new QFile(QString::fromStdWString(drawing_file_path));
+    if (file->open(QIODevice::ReadOnly)) {
+        QHttpMultiPart* parts = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+        QJsonDocument json_doc;
+        QJsonObject root_object;
+        root_object["sioyek_version"] = QString::fromStdString(APPLICATION_VERSION);
+        root_object["file_checksum"] = QString::fromStdString(pdf_file_checksum);
+        json_doc.setObject(root_object);
+
+        QHttpPart data_part;
+        data_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"sioyek_data\""));
+        data_part.setBody(json_doc.toJson(QJsonDocument::JsonFormat::Compact));
+        parts->append(data_part);
+
+        QHttpPart file_part;
+        file_part.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"file\"; filename=\"" + file->fileName() + "\"");
+        file_part.setBodyDevice(file);
+        parts->append(file_part);
+
+
+        QNetworkRequest req;
+        authorize_request(&req);
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_UPLOAD_DRAWINGS_URL)));
+
+        file->setParent(parts);
+        // DO NOT use the Qt's default boundary, it does not work
+        parts->setBoundary(create_random_string().toUtf8());
+        req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
+
+        QNetworkReply* reply = network_manager.post(req, parts);
+        reply->setProperty("sioyek_handled", true);
+        reply->setParent(parent);
+
+        QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_done=std::move(on_done)]() {
+
+            if (handle_network_reply_if_error(reply, true)) {
+                //update_user_files_hash_set();
+                auto json_resp = QJsonDocument::fromJson(reply->readAll());
+                if (json_resp["status"] != "OK" && json_resp["type"] == "incorrect_file_hash") {
+                    //todo: update_current_document_checksum()
+
+                    show_error_message(L"the file hash was incorrect");
+                }
+                else {
+                    on_done();
+                }
+            }
+            });
+
+        parts->setParent(reply);
+    }
+}
+
+void SioyekNetworkManager::get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done) {
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["file_checksum"] = QString::fromStdString(pdf_file_checksum);
+
+    QJsonDocument json_doc(obj);
+
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    reply->setParent(parent);
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, pdf_file_checksum, on_done=std::move(on_done)]() {
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code != 200) {
+        }
+        else {
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+            QJsonObject root = doc.object();
+            if (root["status"].toString() == "OK") {
+                on_done(QDateTime::fromString(root["last_modification_time"].toString(), Qt::ISODate));
+            }
+            else {
+                // not found
+                on_done({});
+            }
+        }
+        });
+}
+
+void SioyekNetworkManager::download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done) {
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DOWNLOAD_DRAWINGS_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["file_checksum"] = QString::fromStdString(checksum);
+
+    QJsonDocument json_doc(obj);
+
+    authorize_request(&req);
+
+    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    reply->setParent(parent);
+    QObject::connect(reply, &QNetworkReply::finished, [reply, target_path, on_done=std::move(on_done)]() {
+        int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status != 200) {
+        }
+        else {
+            QFile file(QString::fromStdWString(target_path));
+            if (file.open(QIODevice::WriteOnly)) {
+                file.write(reply->readAll());
+                file.close();
+            }
+            on_done();
+        }
+        });
+
+}
