@@ -93,6 +93,7 @@ private:
     // show a tree view (e.g. due to performance reasons on PC and lack of availablity on mobile)
     std::vector<std::wstring> flat_toc_names;
     std::vector<int> flat_toc_pages;
+    std::optional<QDateTime> drawings_last_server_mofication_time = {};
 
     std::map<int, PageMergedLinesInfoAbsolute> cached_page_line_info;
     //std::map<int, std::vector<AbsoluteRect>> cached_page_line_rects;
@@ -234,6 +235,7 @@ public:
 
     bool get_is_synced();
     void set_is_synced(bool synced);
+    bool get_drawings_are_dirty();
 
     void fill_highlight_rects(fz_context* ctx, fz_document* doc);
     void fill_index_highlight_rects(int highlight_index, fz_context* thread_context = nullptr, fz_document* thread_document = nullptr);
@@ -319,6 +321,9 @@ public:
     void delete_all_page_drawings(int page);
     void delete_all_drawings();
     std::vector<SelectedObjectIndex> get_page_intersecting_drawing_indices(int page, AbsoluteRect absolute_rect, bool mask[26]);
+    std::optional<QDateTime> get_local_drawings_modification_time();
+    void set_server_drawings_modification_time(QDateTime datetime);
+    std::optional<QDateTime> get_server_drawings_modification_time();
 
     std::vector<IndexedData> find_reference_with_string(std::wstring reference_name, int page_number);
     std::vector<IndexedData> find_equation_with_string(std::wstring equation_name, int page_number);

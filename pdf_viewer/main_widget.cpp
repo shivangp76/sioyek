@@ -9,6 +9,9 @@
 // problem: start with a local document, then open a server document. the annotations are not loaded, when sioyek is restarted, the annotations are still not loaded but we move to the top of document, the third time the annotations are loaded
 // sync drawings
 // make sure pop_current_widget is called on all show_filtered_select_menus
+// capture doc() in server reply lambdas because it might have changed since the request was sent
+// make overview to definition faster when there are a lot of links it the line
+// the drawings of all documents should be synced on closeEvent (not just the current document)
 
 #include <iostream>
 #include <vector>
@@ -4372,13 +4375,32 @@ std::wstring MainWidget::get_window_configuration_string() {
     }
 }
 
+void MainWidget::upload_drawings(bool wait_for_send) {
+    std::optional<std::string> checksum = doc()->get_checksum_fast();
+    if (checksum) {
+        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), doc()->get_drawings_file_path(), []() {
+
+            });
+        if (reply && wait_for_send) {
+            block_for_send(reply);
+        }
+    }
+}
+
 void MainWidget::handle_close_event() {
+
+    bool should_sync_drawings = doc()->get_drawings_are_dirty();
+
     save_auto_config();
 #ifndef SIOYEK_ANDROID
     persist(true);
 #endif
+
     if (is_logged_in() && doc() && doc()->get_is_synced()) {
         sync_current_file_location_to_servers(true);
+        if (should_sync_drawings) {
+            upload_drawings(true);
+        }
     }
 
     // we need to delete this here (instead of destructor) to ensure that application
@@ -6105,6 +6127,21 @@ void MainWidget::sync_annotations_with_server() {
     if ((!doc()->get_is_synced())) return;
 
     QString document_checksum = QString::fromStdString(doc()->get_checksum_fast().value());
+    sioyek_network_manager->get_last_drawing_modification_time(this, doc()->get_checksum_fast().value(), [this](std::optional<QDateTime> server_modification_time) {
+        std::optional<QDateTime> local_modification_time = doc()->get_local_drawings_modification_time();
+        // if the server file is newer, update the local file
+        if (server_modification_time.has_value() && local_modification_time.has_value()) {
+            qDebug() << local_modification_time.value().secsTo(server_modification_time.value());
+        }
+        if (server_modification_time.has_value() &&
+            (!local_modification_time.has_value() ||
+                (local_modification_time.value().secsTo(server_modification_time.value()) > 10)
+                )) {
+            sioyek_network_manager->download_drawings(this, doc()->get_checksum_fast().value(), doc()->get_drawings_file_path(), [this]() {
+                doc()->load_drawings();
+                });
+        }
+        });
 
     sioyek_network_manager->perform_unsynced_inserts_and_deletes(this, doc(), document_checksum, [&, document_checksum, this]() {
         sioyek_network_manager->get_document_annotations(this, document_checksum,

@@ -1315,7 +1315,7 @@ void SioyekNetworkManager::delete_file_from_server(QObject* parent, std::string 
 }
 
 
-void SioyekNetworkManager::upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done) {
+QNetworkReply* SioyekNetworkManager::upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done) {
 
     QFile* file = new QFile(QString::fromStdWString(drawing_file_path));
     if (file->open(QIODevice::ReadOnly)) {
@@ -1368,7 +1368,9 @@ void SioyekNetworkManager::upload_drawings(QObject* parent, std::string pdf_file
             });
 
         parts->setParent(reply);
+        return reply;
     }
+    return nullptr;
 }
 
 void SioyekNetworkManager::get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done) {
@@ -1439,4 +1441,15 @@ void block_for_send(QNetworkReply* reply) {
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::requestSent, &loop, &QEventLoop::quit);
     loop.exec();
+}
+
+void block_for_sends(std::vector<QNetworkReply*> reply) {
+    std::vector<QEventLoop> loops(reply.size());
+    for (int i = 0; i < reply.size(); ++i) {
+        QObject::connect(reply[i], &QNetworkReply::requestSent, &loops[i], &QEventLoop::quit);
+    }
+    for (auto& l : loops) {
+        l.exec();
+    }
+
 }

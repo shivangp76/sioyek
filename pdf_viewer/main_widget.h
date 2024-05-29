@@ -618,6 +618,7 @@ public:
     bool helper_window_overlaps_main_window();
     void highlight_words();
     void highlight_ruler_portals();
+    void upload_drawings(bool wait_for_send = false);
 
     std::vector<PagelessDocumentRect> get_flat_words(std::vector<std::vector<PagelessDocumentRect>>* flat_word_chars = nullptr);
 

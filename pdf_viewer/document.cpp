@@ -4854,3 +4854,27 @@ void DocumentManager::update_checksum(const std::string& old_checksum, const std
         }
     }
 }
+
+std::optional<QDateTime> Document::get_local_drawings_modification_time() {
+    QString drawing_file_path = QString::fromStdWString(get_drawings_file_path());
+    QFileInfo info(drawing_file_path);
+    if (info.exists()) {
+        return info.lastModified().toUTC();
+    }
+    return {};
+}
+
+void Document::set_server_drawings_modification_time(QDateTime datetime) {
+    drawings_last_server_mofication_time = datetime;
+}
+
+std::optional<QDateTime> Document::get_server_drawings_modification_time() {
+    if (drawings_last_server_mofication_time.has_value()) {
+        return drawings_last_server_mofication_time.value().toUTC();
+    }
+    return {};
+}
+
+bool Document::get_drawings_are_dirty() {
+    return is_drawings_dirty;
+}

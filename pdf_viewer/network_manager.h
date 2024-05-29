@@ -104,9 +104,10 @@ public:
     void extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt = {});
 
     void delete_file_from_server(QObject* parent, std::string checksum, std::function<void()> on_done);
-    void upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done);
+    QNetworkReply* upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done);
     void get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done);
     void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
 };
 
 void block_for_send(QNetworkReply* reply);
+void block_for_sends(std::vector<QNetworkReply*> reply);
