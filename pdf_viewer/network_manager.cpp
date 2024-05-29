@@ -568,7 +568,7 @@ bool SioyekNetworkManager::should_sync_location(){
     return last_document_location_upload_time.msecsTo(QDateTime::currentDateTime()) > 1000 * 60;
 }
 
-void SioyekNetworkManager::sync_file_location(QString hash, QString document_title, QString timestamp, float offset_y) {
+QNetworkReply* SioyekNetworkManager::sync_file_location(QString hash, QString document_title, QString timestamp, float offset_y) {
     last_document_location_upload_time = QDateTime::currentDateTime();
 
     QNetworkRequest req;
@@ -595,6 +595,7 @@ void SioyekNetworkManager::sync_file_location(QString hash, QString document_tit
             qDebug() << reply->readAll();
         }
         });
+    return reply;
 }
 
 QNetworkReply* SioyekNetworkManager::get_opened_book_data_from_checksum(QObject* parent, QString checksum, std::function<void(QJsonObject)> fn) {
@@ -1432,4 +1433,10 @@ void SioyekNetworkManager::download_drawings(QObject* parent, std::string checks
         }
         });
 
+}
+
+void block_for_send(QNetworkReply* reply) {
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::requestSent, &loop, &QEventLoop::quit);
+    loop.exec();
 }

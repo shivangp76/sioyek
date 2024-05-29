@@ -1129,7 +1129,7 @@ public:
     bool is_current_document_available_on_server();
     void handle_login(std::wstring username, std::wstring password);
     void handle_logout();
-    void sync_current_file_location_to_servers();
+    void sync_current_file_location_to_servers(bool wait_for_send=false);
     void handle_open_server_only_file();
     void download_and_open(std::string checksum, QString file_name, float offset_y);
     void handle_resume_to_server_location();

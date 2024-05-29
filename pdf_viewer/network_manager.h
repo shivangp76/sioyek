@@ -80,7 +80,7 @@ public:
     void download_unsynced_files(QObject* parent, DatabaseManager* db_manager);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
     bool is_checksum_available_on_server(const std::string& checksum);
-    void sync_file_location(QString hash, QString document_title, QString timestamp, float offset_y);
+    QNetworkReply* sync_file_location(QString hash, QString document_title, QString timestamp, float offset_y);
     QNetworkReply* get_opened_book_data_from_checksum(QObject* parent, QString checksum, std::function<void(QJsonObject)> fn);
     bool should_sync_location();
     void set_last_server_location(std::string checksum, float offset_y);
@@ -108,3 +108,5 @@ public:
     void get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done);
     void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
 };
+
+void block_for_send(QNetworkReply* reply);

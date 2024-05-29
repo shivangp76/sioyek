@@ -1112,7 +1112,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     validation_interval_timer->setInterval(INTERVAL_TIME);
 
     network_timer = new QTimer(this);
-    network_timer->setInterval(10000);
+    network_timer->setInterval(60000);
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
         focus_on_high_quality_text_being_read();
@@ -1291,9 +1291,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 }
 
 void MainWidget::handle_periodic_network_operations() {
-    if (sioyek_network_manager->should_sync_location()) {
-        sync_current_file_location_to_servers();
-    }
+    //if (sioyek_network_manager->should_sync_location()) {
+    //    sync_current_file_location_to_servers();
+    //}
 }
 
 MainWidget::~MainWidget() {
@@ -4377,6 +4377,9 @@ void MainWidget::handle_close_event() {
 #ifndef SIOYEK_ANDROID
     persist(true);
 #endif
+    if (is_logged_in() && doc() && doc()->get_is_synced()) {
+        sync_current_file_location_to_servers(true);
+    }
 
     // we need to delete this here (instead of destructor) to ensure that application
     // closes immediately after the main window is closed
@@ -12139,16 +12142,20 @@ QNetworkReply* MainWidget::download_paper_with_url(std::wstring paper_url, bool 
     return sioyek_network_manager->download_paper_with_url(paper_url, use_archive_url, action);
 }
 
-void MainWidget::sync_current_file_location_to_servers() {
+void MainWidget::sync_current_file_location_to_servers(bool wait_for_send) {
     QDateTime current_datetime = QDateTime::currentDateTime();
 
     if (doc() && doc()->get_checksum_fast()) {
-        sioyek_network_manager->sync_file_location(
+        QNetworkReply* reply = sioyek_network_manager->sync_file_location(
             QString::fromStdString(doc()->get_checksum_fast().value()),
             QString::fromStdWString(doc()->detect_paper_name()),
             current_datetime.toString(Qt::DateFormat::ISODate),
             main_document_view->get_offset_y()
         );
+
+        if (wait_for_send) {
+            block_for_send(reply);
+        }
     }
 }
 
