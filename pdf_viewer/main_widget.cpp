@@ -11,7 +11,6 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // capture doc() in server reply lambdas because it might have changed since the request was sent
 // make overview to definition faster when there are a lot of links it the line
-// the drawings of all documents should be synced on closeEvent (not just the current document)
 
 #include <iostream>
 #include <vector>
@@ -1872,8 +1871,10 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     opengl_widget->clear_all_selections();
 
     //save the previous document state
-    if (main_document_view) {
+    if (main_document_view && doc()) {
+        bool should_sync_drawings = doc()->get_drawings_are_dirty();
         main_document_view->persist(true);
+        perform_sync_operations_when_document_is_closed(false, should_sync_drawings);
     }
 
     if (main_document_view->get_view_width() > main_window_width) {
@@ -4387,6 +4388,15 @@ void MainWidget::upload_drawings(bool wait_for_send) {
     }
 }
 
+void MainWidget::perform_sync_operations_when_document_is_closed(bool wait_for_send, bool sync_drawings) {
+    if (is_logged_in() && doc() && doc()->get_is_synced()) {
+        sync_current_file_location_to_servers(wait_for_send);
+        if (sync_drawings) {
+            upload_drawings(wait_for_send);
+        }
+    }
+}
+
 void MainWidget::handle_close_event() {
 
     bool should_sync_drawings = doc()->get_drawings_are_dirty();
@@ -4396,12 +4406,8 @@ void MainWidget::handle_close_event() {
     persist(true);
 #endif
 
-    if (is_logged_in() && doc() && doc()->get_is_synced()) {
-        sync_current_file_location_to_servers(true);
-        if (should_sync_drawings) {
-            upload_drawings(true);
-        }
-    }
+    perform_sync_operations_when_document_is_closed(true, should_sync_drawings);
+
 
     // we need to delete this here (instead of destructor) to ensure that application
     // closes immediately after the main window is closed
@@ -12179,15 +12185,20 @@ QNetworkReply* MainWidget::download_paper_with_url(std::wstring paper_url, bool 
     return sioyek_network_manager->download_paper_with_url(paper_url, use_archive_url, action);
 }
 
+
 void MainWidget::sync_current_file_location_to_servers(bool wait_for_send) {
+    return sync_document_location_to_servers(doc(), main_document_view->get_offset_y(), wait_for_send);
+}
+
+void MainWidget::sync_document_location_to_servers(Document* document, float offset_y, bool wait_for_send) {
     QDateTime current_datetime = QDateTime::currentDateTime();
 
-    if (doc() && doc()->get_checksum_fast()) {
+    if (document && document->get_checksum_fast()) {
         QNetworkReply* reply = sioyek_network_manager->sync_file_location(
-            QString::fromStdString(doc()->get_checksum_fast().value()),
-            QString::fromStdWString(doc()->detect_paper_name()),
+            QString::fromStdString(document->get_checksum_fast().value()),
+            QString::fromStdWString(document->detect_paper_name()),
             current_datetime.toString(Qt::DateFormat::ISODate),
-            main_document_view->get_offset_y()
+            offset_y
         );
 
         if (wait_for_send) {

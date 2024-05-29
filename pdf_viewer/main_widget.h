@@ -619,6 +619,7 @@ public:
     void highlight_words();
     void highlight_ruler_portals();
     void upload_drawings(bool wait_for_send = false);
+    void perform_sync_operations_when_document_is_closed(bool wait_for_send, bool sync_drawings);
 
     std::vector<PagelessDocumentRect> get_flat_words(std::vector<std::vector<PagelessDocumentRect>>* flat_word_chars = nullptr);
 
@@ -1131,6 +1132,7 @@ public:
     void handle_login(std::wstring username, std::wstring password);
     void handle_logout();
     void sync_current_file_location_to_servers(bool wait_for_send=false);
+    void sync_document_location_to_servers(Document* doc, float offset_y, bool wait_for_send=false);
     void handle_open_server_only_file();
     void download_and_open(std::string checksum, QString file_name, float offset_y);
     void handle_resume_to_server_location();
