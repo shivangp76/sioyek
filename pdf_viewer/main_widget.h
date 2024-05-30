@@ -1154,6 +1154,7 @@ public:
     void do_synchronize();
     void synchronize_if_desynchronized();
     void on_server_hashes_loaded();
+    void download_annotations_since_last_sync();
     Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
     QMediaPlayer* get_media_player();
 

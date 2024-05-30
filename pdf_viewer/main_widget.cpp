@@ -12,7 +12,6 @@
 // capture doc() in server reply lambdas because it might have changed since the request was sent
 // make overview to definition faster when there are a lot of links it the line
 // use a new file for databases so we don't crash the previous sioyek versions when users upgrade
-// download of other document annotations only happens on a synchronized file
 
 #include <iostream>
 #include <vector>
@@ -6156,7 +6155,10 @@ void MainWidget::sync_annotations_with_server() {
     if (!doc()) return;
     if (!doc()->get_checksum_fast()) return;
     if (!is_logged_in()) return;
-    if ((!doc()->get_is_synced())) return;
+    if ((!doc()->get_is_synced())) {
+        download_annotations_since_last_sync();
+        return;
+    }
 
     QString document_checksum = QString::fromStdString(doc()->get_checksum_fast().value());
     sioyek_network_manager->get_last_drawing_modification_time(this, doc()->get_checksum_fast().value(), [this](std::optional<QDateTime> server_modification_time) {
@@ -6248,11 +6250,8 @@ void MainWidget::sync_annotations_with_server() {
                 for (const auto& server_portal : server_only_portals) {
                     doc()->add_portal_with_existing_uuid(server_portal);
                 }
+                download_annotations_since_last_sync();
 
-                QDateTime last_annotation_update_time = get_last_server_sync_time().value_or(QDateTime::currentDateTimeUtc().addYears(-100));
-                qDebug() << "last update time =" << last_annotation_update_time;
-                save_last_server_sync_time();
-                sioyek_network_manager->download_new_annotations(this, last_annotation_update_time);
 
                 invalidate_render();
             });
@@ -6260,6 +6259,12 @@ void MainWidget::sync_annotations_with_server() {
         });
 
 
+}
+
+void MainWidget::download_annotations_since_last_sync() {
+    QDateTime last_annotation_update_time = get_last_server_sync_time().value_or(QDateTime::currentDateTimeUtc().addYears(-100));
+    save_last_server_sync_time();
+    sioyek_network_manager->download_new_annotations(this, last_annotation_update_time);
 }
 
 std::optional<QJsonObject> MainWidget::get_sioyek_json_data() {
