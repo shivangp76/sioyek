@@ -18,6 +18,7 @@ private:
     DatabaseManager* db_manager = nullptr;
     BackgroundTaskManager* background_task_manager = nullptr;
     DocumentManager* document_manager = nullptr;
+    bool already_downloaded_new_annotations = false;
 public:
     QNetworkAccessManager network_manager;
     std::string ACCESS_TOKEN;
@@ -52,6 +53,7 @@ public:
     const std::wstring SIOYEK_UPLOAD_DRAWINGS_URL = SIOYEK_HOST + L"upload_drawings";
     const std::wstring SIOYEK_DOWNLOAD_DRAWINGS_URL = SIOYEK_HOST + L"download_drawings";
     const std::wstring SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL = SIOYEK_HOST + L"last_drawing_modification_time";
+    const std::wstring SIOYEK_GET_NEW_ANNOTATIONS_URL = SIOYEK_HOST + L"get_annotations_after";
 
     bool server_hashes_loaded = false;
     std::unordered_set<std::string> SERVER_HASHES = {};
@@ -90,6 +92,7 @@ public:
     //void upload_bookmark(MainWidget* parent, const QString& checksum, const BookMark& highlight, std::function<void()> on_success, std::function<void()> on_fail);
     void delete_annot(QObject* parent, const QString& file_checksum, const QString& annot_type, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail);
     void get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime> last_access_time)> fn);
+    void get_annotations_after(QObject* parent, QDateTime last_update_date, std::function<void(std::vector<std::pair<std::string, Highlight>>&&, std::vector<std::pair<std::string, BookMark>>&&, std::vector<std::pair<std::string, Portal>>&&)> fn);
     void perform_unsynced_inserts_and_deletes(QObject* parent, Document* doc, const QString& checksum, std::function<void()> on_done);
     const std::wstring& get_url_for_annot_upload(const Annotation* annot);
     //const std::wstring& get_url_for_annot_delete(const Annotation* annot);
@@ -107,6 +110,7 @@ public:
     QNetworkReply* upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done);
     void get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done);
     void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
+    void download_new_annotations(QObject* parent, QDateTime last_update_time);
 };
 
 void block_for_send(QNetworkReply* reply);

@@ -11,6 +11,7 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // capture doc() in server reply lambdas because it might have changed since the request was sent
 // make overview to definition faster when there are a lot of links it the line
+// use a new file for databases so we don't crash the previous sioyek versions when users upgrade
 
 #include <iostream>
 #include <vector>
@@ -162,6 +163,7 @@ extern std::vector<Path> user_keys_paths;
 extern Path database_file_path;
 extern Path tutorial_path;
 extern Path last_opened_file_address_path;
+extern Path sioyek_json_data_path;
 extern Path auto_config_path;
 extern std::wstring ITEM_LIST_PREFIX;
 extern std::wstring SEARCH_URLS[26];
@@ -5716,11 +5718,16 @@ void MainWidget::handle_goto_highlight_global() {
 
     for (const auto& desc_hl_pair : global_highlights) {
         std::string checksum = desc_hl_pair.first;
+        bool is_remote = false;
         std::optional<std::wstring> path = checksummer->get_path(checksum);
+        if (!path.has_value() && sioyek_network_manager->is_checksum_available_on_server(checksum)) {
+            is_remote = true;
+            path = L"SERVER://" + utf8_decode(checksum);
+        }
         if (path) {
             Highlight hl = desc_hl_pair.second;
 
-            std::wstring file_name = Path(path.value()).filename().value_or(L"");
+            std::wstring file_name = is_remote ? L"🌐" : Path(path.value()).filename().value_or(L"");
 
             std::wstring highlight_type_string = L"a";
             highlight_type_string[0] = hl.type;
@@ -5738,6 +5745,8 @@ void MainWidget::handle_goto_highlight_global() {
             book_states.push_back({ path.value(), hl.selection_begin.y, hl.uuid });
 
         }
+        else {
+        } 
     }
 
     std::vector<std::vector<std::wstring>> table;
@@ -5752,13 +5761,17 @@ void MainWidget::handle_goto_highlight_global() {
 
         [&](BookState* book_state) {
             if (book_state) {
-                if (pending_command_instance) {
-                    pending_command_instance->set_generic_requirement(
-                        QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
+                if (QString::fromStdWString(book_state->document_path).startsWith("SERVER://")) {
+                    download_and_open(QString::fromStdWString(book_state->document_path).mid(9).toStdString(), book_state->offset_y);
+
                 }
-                advance_command(std::move(pending_command_instance));
-                //validate_render();
-                //open_document(book_state->document_path, 0.0f, book_state->offset_y);
+                else {
+                    if (pending_command_instance) {
+                        pending_command_instance->set_generic_requirement(
+                            QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
+                    }
+                    advance_command(std::move(pending_command_instance));
+                }
             }
         }, [&](BookState* state) {
             delete_highlight_with_uuid(state->uuid);
@@ -5966,7 +5979,7 @@ void MainWidget::handle_open_prev_doc() {
                 QString doc_hash_qstring = QString::fromStdString(info->checksum);
                 if (doc_hash_qstring.startsWith("SERVER://")) {
                     doc_hash_qstring = doc_hash_qstring.mid(9);
-                    download_and_open(doc_hash_qstring.toStdString(), info->document_title, info->offset_y);
+                    download_and_open(doc_hash_qstring.toStdString(), info->offset_y);
                 }
                 else {
                     pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(info->checksum));
@@ -6223,12 +6236,51 @@ void MainWidget::sync_annotations_with_server() {
                     doc()->add_portal_with_existing_uuid(server_portal);
                 }
 
+                QDateTime last_annotation_update_time = get_last_server_sync_time().value_or(QDateTime::currentDateTimeUtc().addYears(-100));
+                qDebug() << "last update time =" << last_annotation_update_time;
+                save_last_server_sync_time();
+                sioyek_network_manager->download_new_annotations(this, last_annotation_update_time);
+
                 invalidate_render();
             });
 
         });
 
 
+}
+
+std::optional<QJsonObject> MainWidget::get_sioyek_json_data() {
+    if (!sioyek_json_data.has_value()) {
+        QFile file(QString::fromStdWString(sioyek_json_data_path.get_path()));
+        if (file.exists() && file.open(QIODeviceBase::ReadOnly)) {
+            QJsonDocument json_document = QJsonDocument::fromJson(file.readAll());
+            sioyek_json_data = json_document.object();
+            file.close();
+        }
+    }
+    return sioyek_json_data;
+}
+
+std::optional<QDateTime> MainWidget::get_last_server_sync_time() {
+    if (!last_server_sync_time.has_value()) {
+        std::optional<QJsonObject> obj = get_sioyek_json_data();
+        if (obj) {
+            last_server_sync_time = QDateTime::fromString(obj.value()["sync_time"].toString(), Qt::ISODate);
+        }
+    }
+    return last_server_sync_time;
+}
+
+void MainWidget::save_last_server_sync_time() {
+    QDateTime current_time = QDateTime::currentDateTime().toUTC();
+    QJsonObject root;
+    root["sync_time"] = current_time.toString(Qt::ISODate);
+    QJsonDocument json_doc(root);
+
+    QFile json_file(QString::fromStdWString(sioyek_json_data_path.get_path()));
+    json_file.open(QFile::WriteOnly);
+    json_file.write(json_doc.toJson());
+    json_file.close();
 }
 
 void MainWidget::handle_prefs_user_all() {
@@ -7216,12 +7268,14 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    std::wstring drawings_file_path = doc()->get_drawings_file_path();
-    std::string pdf_file_checksum = doc()->get_checksum();
-    sioyek_network_manager->download_drawings(this, pdf_file_checksum, drawings_file_path, [&]() {
-        this->doc()->reload();
-        });
+    //QDateTime start = QDateTime::currentDateTimeUtc().addDays(-1);
+    //sioyek_network_manager->get_annotations_after(this, start, [this](std::vector<std::pair<std::string, Highlight>>&& highlights, std::vector<std::pair<std::string, BookMark>>&& bookmarks, std::vector<std::pair<std::string, Portal>>&& portals) {
+    //    db_manager->insert_or_update_bookmark_synced(true, bookmarks[0].first, bookmarks[0].second);
+    //    qDebug() << highlights.size();
+    //    qDebug() << bookmarks.size();
+    //    qDebug() << portals.size();
 
+    //    });
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
@@ -12226,7 +12280,7 @@ void MainWidget::handle_open_server_only_file() {
 
     set_filtered_select_menu<OpenedBookInfo>(this, false, true, values, keys, -1, [this](OpenedBookInfo* val) {
 
-        download_and_open(val->checksum, val->file_name, val->offset_y);
+        download_and_open(val->checksum, val->offset_y);
         },
         [](OpenedBookInfo* val) {
 
@@ -12234,7 +12288,7 @@ void MainWidget::handle_open_server_only_file() {
     show_current_widget();
 }
 
-void MainWidget::download_and_open(std::string checksum, QString file_name, float offset_y) {
+void MainWidget::download_and_open(std::string checksum, float offset_y) {
 
     sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(checksum), [&, checksum, offset_y](QString file_path) {
         checksummer->set_checksum(checksum, file_path.toStdWString());

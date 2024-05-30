@@ -122,6 +122,7 @@ extern Path android_config_path;
 #endif
 
 Path last_opened_file_address_path(L"");
+Path sioyek_json_data_path(L"");
 Path shader_path(L"");
 Path auto_config_path(L"");
 Path downloaded_papers_path(L"");
@@ -240,6 +241,7 @@ void configure_paths_ios() {
 
     database_file_path = standard_data_path.slash(L"test.db");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
+    sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
     local_database_file_path = standard_data_path.slash(L"local.db");
     global_database_file_path = standard_data_path.slash(L"shared.db");
     android_config_path = standard_data_path.slash(L"saved.config");
@@ -292,6 +294,7 @@ void configure_paths() {
     global_database_file_path = standard_data_path.slash(L"shared.db");
     tutorial_path = read_only_data_path.slash(L"tutorial.pdf");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
+    sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
     shader_path = read_only_data_path.slash(L"shaders");
 #else
     char* APPDIR = std::getenv("XDG_CONFIG_HOME");
@@ -315,6 +318,7 @@ void configure_paths() {
     global_database_file_path = standard_data_path.slash(L"shared.db");
     tutorial_path = standard_data_path.slash(L"tutorial.pdf");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
+    sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
 
     Path linux_standard_config_path = linux_home_path.slash(L".config").slash(L"sioyek");
     //user_keys_paths.push_back(mac_standard_config_path.slash(L"keys_user.config"));
@@ -350,6 +354,7 @@ void configure_paths() {
     local_database_file_path = standard_data_path.slash(L"local.db");
     global_database_file_path = standard_data_path.slash(L"shared.db");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
+    sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
 #else
     user_config_paths.push_back(parent_path.slash(L"prefs_user.config"));
     user_keys_paths.push_back(parent_path.slash(L"keys_user.config"));
@@ -357,6 +362,7 @@ void configure_paths() {
     local_database_file_path = parent_path.slash(L"local.db");
     global_database_file_path = parent_path.slash(L"shared.db");
     last_opened_file_address_path = parent_path.slash(L"last_document_path.txt");
+    sioyek_json_data_path = parent_path.slash(L"sioyek_data.json");
 #endif
 
 #endif

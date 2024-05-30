@@ -45,7 +45,9 @@ public:
     //bool insert_bookmark_freetext(const std::string& checksum, const std::wstring& desc, float begin_x, float begin_y, float end_x, float end_y, float color_red, float color_green, float color_blue, float font_size, std::string font_face, std::wstring uuid);
     bool insert_bookmark_freetext(const std::string& checksum, const BookMark& bm);
     bool insert_bookmark_synced(const std::string& checksum, const BookMark& bm);
+    bool insert_or_update_bookmark_synced(bool or_update, const std::string& checksum, const BookMark& bm);
     bool insert_portal_synced(const std::string& checksum, const Portal& portal);
+    bool insert_or_update_portal_synced(bool or_udpate, const std::string& checksum, const Portal& portal);
     bool select_bookmark(const std::string& checksum, std::vector<BookMark>& out_result);
     bool insert_portal(const std::string& src_checksum,
         const std::string& dst_checksum,
@@ -111,6 +113,7 @@ public:
         std::wstring uuid);
 
     bool insert_highlight_synced(const std::string& checksum, const Highlight& hl);
+    bool insert_or_update_highlight_synced(bool or_update, const std::string& checksum, const Highlight& hl);
 
     bool get_path_from_hash(const std::string& checksum, std::vector<std::wstring>& out_paths);
     bool get_hash_from_path(const std::string& path, std::vector<std::wstring>& out_checksum);

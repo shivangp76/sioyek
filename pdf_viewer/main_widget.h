@@ -171,6 +171,9 @@ public:
     QMenuBar* menu_bar = nullptr;
     int window_id;
 
+    std::optional<QJsonObject> sioyek_json_data = {};
+    std::optional<QDateTime> last_server_sync_time;
+
     //LastDocumentChecksum last_document_checksum;
 
     QFileSystemWatcher external_command_edit_watcher;
@@ -570,6 +573,10 @@ public:
     std::optional<AbsoluteRect> get_page_intersecting_rect(DocumentRect rect);
     void focus_rect(DocumentRect rect);
     std::optional<float> move_visual_mark_next_get_offset();
+
+    std::optional<QJsonObject> get_sioyek_json_data();
+    std::optional<QDateTime> get_last_server_sync_time();
+    void save_last_server_sync_time();
 
     void move_visual_mark_next();
     void move_visual_mark_prev();
@@ -1134,7 +1141,7 @@ public:
     void sync_current_file_location_to_servers(bool wait_for_send=false);
     void sync_document_location_to_servers(Document* doc, float offset_y, bool wait_for_send=false);
     void handle_open_server_only_file();
-    void download_and_open(std::string checksum, QString file_name, float offset_y);
+    void download_and_open(std::string checksum, float offset_y);
     void handle_resume_to_server_location();
     void handle_server_actions_button_pressed();
     void sync_annotations_with_server();

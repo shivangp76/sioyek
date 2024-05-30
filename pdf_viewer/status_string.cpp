@@ -31,8 +31,18 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
 
     auto get_current_page_fn = [widget]() {return QString::number(widget->get_current_page_number() + 1);};
     auto get_current_page_label_fn = [widget] {return QString::fromStdWString(widget->get_current_page_label()); };
-    auto get_num_pages_fn = [widget] {return QString::number(widget->doc()->num_pages()); };
-    auto get_chapter_name_fn = [widget] {return " [ " + QString::fromStdWString(widget->main_document_view->get_current_chapter_name()) + " ] "; };
+    auto get_num_pages_fn = [widget] {
+        if (widget->doc()) {
+            return QString::number(widget->doc()->num_pages());
+        }
+        return QString("");
+        };
+    auto get_chapter_name_fn = [widget] {
+        if (widget->doc()) {
+            return " [ " + QString::fromStdWString(widget->main_document_view->get_current_chapter_name()) + " ] ";
+        }
+        return QString("");
+        };
 
     auto get_document_name_fn = [widget] {
         auto file_name = Path(widget->doc()->get_path()).filename();

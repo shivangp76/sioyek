@@ -627,7 +627,7 @@ bool DatabaseManager::create_marks_table() {
         "zoom_level real,"\
         "creation_time timestamp,"\
         "modification_time timestamp,"\
-        "uuid TEXT,"\
+        "uuid TEXT UNIQUE,"\
         "is_synced BOOLEAN DEFAULT 0,"\
         "UNIQUE(document_path, symbol));";
 
@@ -646,7 +646,7 @@ bool DatabaseManager::create_bookmarks_table() {
         "desc TEXT,"\
         "creation_time timestamp,"\
         "modification_time timestamp,"\
-        "uuid TEXT,"\
+        "uuid TEXT UNIQUE,"\
         "is_synced BOOLEAN DEFAULT 0,"\
         "font_size integer DEFAULT -1,"\
         "color_red real DEFAULT 0,"\
@@ -676,7 +676,7 @@ bool DatabaseManager::create_highlights_table() {
         "type char,"\
         "creation_time timestamp,"\
         "modification_time timestamp,"\
-        "uuid TEXT,"\
+        "uuid TEXT UNIQUE,"\
         "is_synced BOOLEAN DEFAULT 0,"\
         "begin_x real,"\
         "begin_y real,"\
@@ -711,7 +711,7 @@ bool DatabaseManager::create_links_table() {
         "id INTEGER PRIMARY KEY AUTOINCREMENT," \
         "creation_time timestamp,"\
         "modification_time timestamp,"\
-        "uuid TEXT,"\
+        "uuid TEXT UNIQUE,"\
         "is_synced BOOLEAN DEFAULT 0,"\
         "src_document TEXT,"\
         "dst_document TEXT,"\
@@ -878,10 +878,11 @@ bool DatabaseManager::insert_bookmark_freetext(const std::string& document_path,
         error_message);
 }
 
-bool DatabaseManager::insert_bookmark_synced(const std::string& document_path, const BookMark& bm) {
+bool DatabaseManager::insert_or_update_bookmark_synced(bool or_update, const std::string& document_path, const BookMark& bm) {
 
+    std::wstring or_update_string = or_update ? L"OR REPLACE " : L"";
     std::wstringstream ss;
-    ss << "INSERT INTO bookmarks (document_path, desc, begin_x, begin_y, end_x, end_y, color_red, color_green, color_blue, font_size, font_face, uuid, creation_time, modification_time, is_synced) VALUES ('"
+    ss << "INSERT " << or_update_string << "INTO bookmarks (document_path, desc, begin_x, begin_y, end_x, end_y, color_red, color_green, color_blue, font_size, font_face, uuid, creation_time, modification_time, is_synced) VALUES ('"
         << esc(document_path) << "', '"
         << esc(bm.description) << "', "
         << bm.begin_x << " , "
@@ -899,6 +900,34 @@ bool DatabaseManager::insert_bookmark_synced(const std::string& document_path, c
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
     return handle_error(
         "insert_bookmark_synced",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::insert_bookmark_synced(const std::string& document_path, const BookMark& bm) {
+
+    return insert_or_update_bookmark_synced(false, document_path, bm);
+}
+
+bool DatabaseManager::insert_or_update_portal_synced(bool or_update, const std::string& document_path, const Portal& portal) {
+
+    std::wstring or_update_string = or_update ? L"OR REPLACE " : L"";
+    std::wstring src_offset_x_string = portal.src_offset_x ? QString::number(portal.src_offset_x.value()).toStdWString() : L"NULL";
+    std::wstringstream ss;
+    ss << "INSERT " << or_update_string << "INTO links (src_document, dst_document, src_offset_x, src_offset_y, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced) VALUES ('"
+        << esc(document_path) << "', '"
+        << esc(portal.dst.document_checksum) << "', "
+        << src_offset_x_string << " , "
+        << portal.src_offset_y << " , "
+        << portal.dst.book_state.offset_x << " , "
+        << portal.dst.book_state.offset_y << ", "
+        << portal.dst.book_state.zoom_level << ", '"
+        << esc(portal.uuid) << "', '" << esc(portal.creation_time) << "', '" << esc(portal.modification_time) << "', 1);";
+    char* error_message = nullptr;
+
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    return handle_error(
+        "insert_bookmark_freetext",
         error_code,
         error_message);
 }
@@ -981,11 +1010,10 @@ bool DatabaseManager::insert_highlight_with_annotation(const std::string& docume
         error_message);
 }
 
-bool DatabaseManager::insert_highlight_synced(const std::string& document_path,
-    const Highlight& hl) {
-
+bool DatabaseManager::insert_or_update_highlight_synced(bool or_update, const std::string& document_path, const Highlight& hl) {
+    std::wstring or_update_string = or_update ? L"OR REPLACE " : L"";
     std::wstringstream ss;
-    ss << "INSERT INTO highlights (document_path, desc, text_annot, type, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced) VALUES ('" <<
+    ss << "INSERT " << or_update_string << "INTO highlights (document_path, desc, text_annot, type, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced) VALUES ('" <<
         esc(document_path) << "', '" <<
         esc(hl.description) << "', '" <<
         esc(hl.text_annot) << "', '" <<
@@ -1002,6 +1030,30 @@ bool DatabaseManager::insert_highlight_synced(const std::string& document_path,
         "insert_highlight_with_annotation_synced",
         error_code,
         error_message);
+}
+
+bool DatabaseManager::insert_highlight_synced(const std::string& document_path,
+    const Highlight& hl) {
+
+    return insert_or_update_highlight_synced(false, document_path, hl);
+    //std::wstringstream ss;
+    //ss << "INSERT INTO highlights (document_path, desc, text_annot, type, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced) VALUES ('" <<
+    //    esc(document_path) << "', '" <<
+    //    esc(hl.description) << "', '" <<
+    //    esc(hl.text_annot) << "', '" <<
+    //    hl.type << "' , " <<
+    //    hl.selection_begin.x << " , " <<
+    //    hl.selection_begin.y << " , " <<
+    //    hl.selection_end.x << " , " <<
+    //    hl.selection_end.y << ", '" <<
+    //    esc(hl.uuid) << "', '" << esc(hl.creation_time) << "', '" << esc(hl.modification_time) << "', 1);";
+    //char* error_message = nullptr;
+
+    //int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    //return handle_error(
+    //    "insert_highlight_with_annotation_synced",
+    //    error_code,
+    //    error_message);
 }
 
 
