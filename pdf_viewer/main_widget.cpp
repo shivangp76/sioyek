@@ -12,6 +12,7 @@
 // capture doc() in server reply lambdas because it might have changed since the request was sent
 // make overview to definition faster when there are a lot of links it the line
 // use a new file for databases so we don't crash the previous sioyek versions when users upgrade
+// download of other document annotations only happens on a synchronized file
 
 #include <iostream>
 #include <vector>
@@ -127,6 +128,7 @@ extern "C" int iosStopReading();
 
 extern std::string APPLICATION_VERSION;
 
+const std::wstring SERVER_SYMBOL = L"🌐";
 
 extern int next_window_id;
 
@@ -5601,10 +5603,15 @@ void MainWidget::handle_goto_bookmark_global() {
 
     for (const auto& desc_bm_pair : global_bookmarks) {
         std::string checksum = desc_bm_pair.first;
+        bool is_remote = false;
         std::optional<std::wstring> path = checksummer->get_path(checksum);
+        if (!path.has_value() && sioyek_network_manager->is_checksum_available_on_server(checksum)) {
+            is_remote = true;
+            path = L"SERVER://" + utf8_decode(checksum);
+        }
         if (path) {
             BookMark bm = desc_bm_pair.second;
-            std::wstring file_name = Path(path.value()).filename().value_or(L"");
+            std::wstring file_name = is_remote ? SERVER_SYMBOL  : Path(path.value()).filename().value_or(L"");
             descs.push_back(ITEM_LIST_PREFIX + L" " + bm.description);
             file_names.push_back(truncate_string(file_name, 50));
             book_states.push_back({ path.value(), bm.get_y_offset(), bm.uuid});
@@ -5613,10 +5620,16 @@ void MainWidget::handle_goto_bookmark_global() {
 
     set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names }, book_states, -1,
         [&](BookState* book_state) {
-            if (pending_command_instance) {
-                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
+            QString path = QString::fromStdWString(book_state->document_path);
+            if (path.startsWith("SERVER://")) {
+                download_and_open(path.mid(9).toStdString(), book_state->offset_y);
             }
-            advance_command(std::move(pending_command_instance));
+            else {
+                if (pending_command_instance) {
+                    pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
+                }
+                advance_command(std::move(pending_command_instance));
+            }
         },
         [&](BookState* book_state) {
             delete_global_bookmark(book_state->uuid);
@@ -5727,7 +5740,7 @@ void MainWidget::handle_goto_highlight_global() {
         if (path) {
             Highlight hl = desc_hl_pair.second;
 
-            std::wstring file_name = is_remote ? L"🌐" : Path(path.value()).filename().value_or(L"");
+            std::wstring file_name = is_remote ? SERVER_SYMBOL : Path(path.value()).filename().value_or(L"");
 
             std::wstring highlight_type_string = L"a";
             highlight_type_string[0] = hl.type;
@@ -5941,7 +5954,7 @@ void MainWidget::handle_open_prev_doc() {
 
     for (const auto& opened_doc : opened_docs) {
         if (QString::fromStdString(opened_doc.checksum).startsWith("SERVER://")) {
-            opened_docs_names.push_back(L"[🌐] " + opened_doc.file_name.toStdWString());
+            opened_docs_names.push_back(L"[" + SERVER_SYMBOL + L"] " + opened_doc.file_name.toStdWString());
             //opened_docs_hashes.push_back(opened_doc.checksum);
             opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
             opened_docs_instances.push_back(opened_doc);
