@@ -2717,37 +2717,154 @@ std::string DatabaseManager::get_table_name_for_annot_type(const std::string& an
 
 }
 
-void DatabaseManager::debug() {
-    std::string query = "SELECT document_name FROM opened_books WHERE id=:id;";
+DatabaseTableMetadata get_table_metadata(sqlite3* db, std::string table_name) {
+    std::string query = "SELECT \"cid\", \"name\", \"type\", \"notnull\", \"dflt_value\", \"pk\" FROM pragma_table_info('"+ table_name + "');";
+
     sqlite3_stmt* statement;
-    auto is_ok = sqlite3_prepare_v2(global_db, query.c_str(), query.size(), &statement, nullptr);
-    int id_index = sqlite3_bind_parameter_index(statement, ":id");
-
+    int is_ok = sqlite3_prepare_v2(db, query.c_str(), query.size(), &statement, nullptr);
+    DatabaseTableMetadata res;
+    res.table_name = QString::fromStdString(table_name);
     if (is_ok == SQLITE_OK) {
-        sqlite3_bind_int(statement, id_index, 92);
         while (true) {
-            auto state = sqlite3_step(statement);
+            int state = sqlite3_step(statement);
             if (state != SQLITE_ROW) {
                 break;
             }
-            const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
-            qDebug() << QString::fromUtf8(document_name_utf8);
 
-        }
-
-        sqlite3_reset(statement);
-
-        sqlite3_bind_int(statement, id_index, 270);
-        while (true) {
-            auto state = sqlite3_step(statement);
-            if (state != SQLITE_ROW) {
-                break;
-            }
-            const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
-            qDebug() << QString::fromUtf8(document_name_utf8);
+            DatabaseColumnMetadata current_column;
+            current_column.cid = sqlite3_column_int(statement, 0);
+            current_column.name = QString::fromUtf8(sqlite3_column_text(statement, 1));
+            current_column.type = QString::fromUtf8(sqlite3_column_text(statement, 2));
+            current_column.notnull = sqlite3_column_int(statement, 3);
+            current_column.dflt_value = QString::fromUtf8(sqlite3_column_text(statement, 4));
+            current_column.pk = sqlite3_column_int(statement, 5);
+            res.columns.push_back(current_column);
 
         }
     }
+    sqlite3_finalize(statement);
+    return res;
+}
+
+void migrate_table(sqlite3* src_db, sqlite3* dst_db, std::string table_name) {
+    DatabaseTableMetadata src_metadata = get_table_metadata(src_db, table_name);
+    DatabaseTableMetadata dst_metadata = get_table_metadata(dst_db, table_name);
+    std::vector<std::string> src_column_names = src_metadata.get_column_names();
+    std::vector<std::string> dst_column_names = dst_metadata.get_column_names();
+
+    std::vector<std::string> common_columns;
+    std::vector<std::string> new_columns;
+    for (auto dst_column : dst_column_names) {
+        if (std::find(src_column_names.begin(), src_column_names.end(), dst_column) != src_column_names.end()) {
+            common_columns.push_back(dst_column);
+        }
+        else {
+            new_columns.push_back(dst_column);
+        }
+    }
+
+    std::string select_common_values_query = "SELECT ";
+    for (int i = 0; i < common_columns.size(); i++) {
+        select_common_values_query += common_columns[i];
+        if (i < common_columns.size() - 1) {
+            select_common_values_query += ", ";
+        }
+    }
+    select_common_values_query += " FROM " + table_name + ";";
+    std::vector<std::vector<QString>> old_values;
+    sqlite3_stmt* select_common_values_statement = nullptr;
+    int is_ok = sqlite3_prepare_v2(src_db, select_common_values_query.c_str(), select_common_values_query.size(), &select_common_values_statement, nullptr);
+    if (is_ok == SQLITE_OK) {
+        while (true) {
+            int state = sqlite3_step(select_common_values_statement);
+            if (state != SQLITE_ROW) {
+                break;
+            }
+            std::vector<QString> values;
+            for (int i = 0; i < common_columns.size(); i++) {
+                values.push_back(QString::fromUtf8(sqlite3_column_text(select_common_values_statement, i)));
+            }
+            old_values.push_back(values);
+        }
+    }
+    sqlite3_finalize(select_common_values_statement);
+
+    std::string insert_values_query = "INSERT INTO " + table_name + " (";
+    for (int i = 0; i < common_columns.size(); i++) {
+        insert_values_query += common_columns[i];
+        if (i < common_columns.size() - 1 || (new_columns.size() > 0)) {
+            insert_values_query += ", ";
+        }
+    }
+    for (int i = 0; i < new_columns.size(); i++) {
+        insert_values_query += new_columns[i];
+        if (i < new_columns.size() - 1) {
+            insert_values_query += ", ";
+        }
+    }
+    insert_values_query += ") VALUES (";
+    for (int i = 0; i < common_columns.size() + new_columns.size(); i++) {
+        insert_values_query += "?";
+        if (i < common_columns.size() + new_columns.size() - 1) {
+            insert_values_query += ", ";
+        }
+    }
+    insert_values_query += ");";
+
+    std::map<std::string, std::function<std::string()>> default_value_generator;
+    //default_value_generator["uuid"] = []() { return QUuid::createUuid().toString(); };
+
+    sqlite3_stmt* insert_values_statement = nullptr;
+    is_ok = sqlite3_prepare_v2(dst_db, insert_values_query.c_str(), insert_values_query.size(), &insert_values_statement, nullptr);
+    if (is_ok == SQLITE_OK) {
+        for (int i = 0; i < old_values.size(); i++) {
+            for (int j = 0; j < common_columns.size(); j++) {
+                sqlite3_bind_text(insert_values_statement, j + 1, old_values[i][j].toUtf8().data(), old_values[i][j].size(), SQLITE_STATIC);
+            }
+            for (int j = 0; j < new_columns.size(); j++) {
+                sqlite3_bind_null(insert_values_statement, common_columns.size() + j + 1);
+            }
+        }
+    }
+
+    sqlite3_finalize(insert_values_statement);
+
+}
+
+void DatabaseManager::debug() {
+    DatabaseTableMetadata highlight_table_info = get_table_metadata(global_db, "highlights");
+    highlight_table_info.print();
+
+    //std::string query = "SELECT document_name FROM opened_books WHERE id=:id;";
+    //sqlite3_stmt* statement;
+    //auto is_ok = sqlite3_prepare_v2(global_db, query.c_str(), query.size(), &statement, nullptr);
+    //int id_index = sqlite3_bind_parameter_index(statement, ":id");
+
+    //if (is_ok == SQLITE_OK) {
+    //    sqlite3_bind_int(statement, id_index, 92);
+    //    while (true) {
+    //        auto state = sqlite3_step(statement);
+    //        if (state != SQLITE_ROW) {
+    //            break;
+    //        }
+    //        const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
+    //        qDebug() << QString::fromUtf8(document_name_utf8);
+
+    //    }
+
+    //    sqlite3_reset(statement);
+
+    //    sqlite3_bind_int(statement, id_index, 270);
+    //    while (true) {
+    //        auto state = sqlite3_step(statement);
+    //        if (state != SQLITE_ROW) {
+    //            break;
+    //        }
+    //        const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
+    //        qDebug() << QString::fromUtf8(document_name_utf8);
+
+    //    }
+    //}
 
 }
 
@@ -2791,4 +2908,34 @@ bool DatabaseManager::update_checksum(const std::string& old_checksum, const std
         return false;
     }
     return true;
+}
+
+void DatabaseColumnMetadata::print() {
+    qDebug() << cid << " " << name << " " << type << " " << notnull << " " << dflt_value << " " << pk;
+}
+
+void DatabaseTableMetadata::print() {
+    // print column titles
+    qDebug() << "cid" << " " << "name" << " " << "type" << " " << "notnull" << " " << "dflt_value" << " " << "pk";
+    for (auto col : columns) {
+        col.print();
+    }
+}
+
+std::vector<std::string> DatabaseTableMetadata::get_column_names() {
+    std::vector<std::string> res;
+    for (auto col : columns) {
+        res.push_back(col.name.toStdString());
+    }
+    return res;
+}
+
+DatabaseColumnMetadata DatabaseTableMetadata::get_column_with_name(QString name) {
+    for (auto col : columns) {
+        if (col.name == name) {
+            return col;
+        }
+    }
+    DatabaseColumnMetadata empty;
+    return empty;
 }

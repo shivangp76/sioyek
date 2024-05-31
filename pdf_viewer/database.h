@@ -9,6 +9,27 @@
 
 class CachedChecksummer;
 
+struct DatabaseColumnMetadata {
+    int cid;
+    QString name;
+    QString type;
+    bool notnull;
+    QString dflt_value;
+    bool pk;
+
+    void print();
+};
+
+struct DatabaseTableMetadata {
+    QString table_name;
+    std::vector<DatabaseColumnMetadata> columns;
+
+    void print();
+    std::vector<std::string> get_column_names();
+    DatabaseColumnMetadata get_column_with_name(QString name);
+};
+
+
 class DatabaseManager {
 private:
     sqlite3_stmt* select_opened_books_stmt = nullptr;

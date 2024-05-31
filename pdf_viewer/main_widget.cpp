@@ -6073,8 +6073,9 @@ void MainWidget::handle_overview_link(const std::wstring& text) {
     auto selected_link_ = get_selected_link(text);
     if (selected_link_) {
         PdfLink pdf_link;
-        pdf_link.rects = selected_link_.value().rects;
-        pdf_link.uri = selected_link_.value().uri;
+        pdf_link.rects = selected_link_->rects;
+        pdf_link.uri = selected_link_->uri;
+        pdf_link.source_page = selected_link_->source_page;
         dv()->set_overview_link(pdf_link);
     }
     reset_highlight_links();
@@ -7286,6 +7287,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+    db_manager->debug();
     //QDateTime start = QDateTime::currentDateTimeUtc().addDays(-1);
     //sioyek_network_manager->get_annotations_after(this, start, [this](std::vector<std::pair<std::string, Highlight>>&& highlights, std::vector<std::pair<std::string, BookMark>>&& bookmarks, std::vector<std::pair<std::string, Portal>>&& portals) {
     //    db_manager->insert_or_update_bookmark_synced(true, bookmarks[0].first, bookmarks[0].second);
