@@ -617,7 +617,7 @@ bool DatabaseManager::create_opened_books_table() {
         "offset_x REAL,"\
         "offset_y REAL,"\
         "last_access_time TEXT,"\
-        "is_synced BOOLEAN DEFAULT 0); ";
+        "is_synced BOOLEAN NOT NULL DEFAULT 0); ";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, create_opened_books_sql, null_callback, 0, &error_message);
@@ -668,7 +668,7 @@ bool DatabaseManager::create_marks_table() {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT UNIQUE,"\
-        "is_synced BOOLEAN DEFAULT 0,"\
+        "is_synced BOOLEAN NOT NULL DEFAULT 0,"\
         "UNIQUE(document_path, symbol));";
 
     char* error_message = nullptr;
@@ -687,7 +687,7 @@ bool DatabaseManager::create_bookmarks_table() {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT UNIQUE,"\
-        "is_synced BOOLEAN DEFAULT 0,"\
+        "is_synced BOOLEAN NOT NULL DEFAULT 0,"\
         "font_size integer DEFAULT -1,"\
         "color_red real DEFAULT 0,"\
         "color_green real DEFAULT 0,"\
@@ -717,7 +717,7 @@ bool DatabaseManager::create_highlights_table(sqlite3* db) {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT UNIQUE,"\
-        "is_synced BOOLEAN DEFAULT 0,"\
+        "is_synced BOOLEAN NOT NULL DEFAULT 0,"\
         "begin_x real,"\
         "begin_y real,"\
         "end_x real,"\
@@ -752,7 +752,7 @@ bool DatabaseManager::create_links_table() {
         "creation_time timestamp,"\
         "modification_time timestamp,"\
         "uuid TEXT UNIQUE,"\
-        "is_synced BOOLEAN DEFAULT 0,"\
+        "is_synced BOOLEAN NOT NULL DEFAULT 0,"\
         "src_document TEXT,"\
         "dst_document TEXT,"\
         "src_offset_y REAL,"\
@@ -2857,6 +2857,7 @@ void migrate_table(sqlite3* src_db, sqlite3* dst_db, std::string table_name) {
     default_value_generator["uuid"] = []() { return new_uuid_utf8(); };
     default_value_generator["creation_time"] = []() { return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd hh:mm:ss").toStdString(); };
     default_value_generator["modification_time"] = []() { return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd hh:mm:ss").toStdString(); };
+    default_value_generator["is_synced"] = []() { return "0"; };
 
     sqlite3_stmt* insert_values_statement = nullptr;
     is_ok = sqlite3_prepare_v2(dst_db, insert_values_query.c_str(), insert_values_query.size(), &insert_values_statement, nullptr);
