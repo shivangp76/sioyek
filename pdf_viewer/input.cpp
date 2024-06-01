@@ -6261,6 +6261,39 @@ public:
 
 };
 
+class ImportLocalDatabaseCommand : public Command {
+public:
+    static inline const std::string cname = "import_local_database";
+    static inline const std::string hname = "Import the data from a local.db file";
+    ImportLocalDatabaseCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        std::wstring file_path = select_any_existing_file_name();
+        bool success = widget->import_local_database(file_path);
+        if (success) {
+            show_error_message(L"Import successful");
+        }
+    }
+
+    bool requires_document() { return false; }
+};
+
+class ImportSharedDatabaseCommand : public Command {
+public:
+    static inline const std::string cname = "import_shared_database";
+    static inline const std::string hname = "Import the data from a shared.db file";
+    ImportSharedDatabaseCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        std::wstring file_path = select_any_existing_file_name();
+        bool success = widget->import_shared_database(file_path);
+        if (success) {
+            show_error_message(L"Import successful");
+        }
+    }
+
+    bool requires_document() { return false; }
+};
 
 class ImportCommand : public Command {
 public:
@@ -7424,6 +7457,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DeleteHighlightUnderCursorCommand>();
     register_command<NoopCommand>();
     register_command<ImportCommand>();
+    register_command<ImportLocalDatabaseCommand>();
+    register_command<ImportSharedDatabaseCommand>();
     register_command<ExportCommand>();
     register_command<WriteAnnotationsFileCommand>();
     register_command<LoadAnnotationsFileCommand>();

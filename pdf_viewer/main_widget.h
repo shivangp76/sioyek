@@ -1158,6 +1158,10 @@ public:
     Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
     QMediaPlayer* get_media_player();
 
+    bool import_local_database(std::wstring path);
+    bool import_shared_database(std::wstring path);
+
+
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 
 public slots:

@@ -75,6 +75,11 @@ std::wstring select_any_file_name() {
     return file_name.toStdWString();
 }
 
+std::wstring select_any_existing_file_name() {
+    QString file_name = QFileDialog::getOpenFileName(nullptr, "Select File", "", "Any (*)");
+    return file_name.toStdWString();
+}
+
 std::wstring select_new_json_file_name() {
     QString file_name = QFileDialog::getSaveFileName(nullptr, "Select Document", "", "Documents (*.json )");
     return file_name.toStdWString();

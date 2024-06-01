@@ -38,18 +38,19 @@ private:
     int select_document_portals_stmt_src_document_index = -1;
 
     sqlite3* local_db;
-    sqlite3* global_db;
     bool create_opened_books_table();
     bool create_marks_table();
     bool create_bookmarks_table();
     bool create_links_table();
     void create_tables();
     bool create_document_hash_table();
-    bool create_highlights_table();
     bool create_server_update_time_table();
     bool create_unsynced_deletions_table();
     //bool create_unsynced_additions_table();
 public:
+    sqlite3* global_db;
+    bool create_highlights_table(sqlite3* db);
+
     bool open(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path);
     bool select_opened_book(const std::string& book_path, std::vector<OpenedBookState>& out_result);
     bool insert_mark(const std::string& checksum,
@@ -145,8 +146,8 @@ public:
     void split_database(const std::wstring& local_database_path, const std::wstring& global_database_path, bool was_using_hashes);
     void export_json(std::wstring json_file_path, CachedChecksummer* checksummer);
     void import_json(std::wstring json_file_path, CachedChecksummer* checksummer);
-    void ensure_database_compatibility(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path);
-    void ensure_schema_compatibility();
+    //void ensure_database_compatibility(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path);
+    //void ensure_schema_compatibility();
     int get_version();
     int set_version();
     bool run_schema_query(sqlite3* db, const char* query);
@@ -202,7 +203,12 @@ public:
     std::string get_table_name_for_annot_type(const std::string& annot_type);
     void debug();
 
+    bool import_local(QString local_database_file_path);
+    bool import_shared(QString shared_database_file_path);
+
     bool generic_prepared_statement_run(sqlite3* db, sqlite3_stmt** stmt, const std::string& query, std::function<void()> on_init,std::function<void()> bind_params, std::function<void()> on_row);
 };
 
 
+void migrate_table(sqlite3* src_db, sqlite3* dst_db, std::string table_name);
+void migrate_database(sqlite3* old_local, sqlite3* old_shared, sqlite3* new_local, sqlite3* new_shared);

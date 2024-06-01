@@ -93,7 +93,11 @@
 
 
 std::string APPLICATION_VERSION = "2.0.0";
-int DATABASE_VERSION = 2;
+int DATABASE_VERSION = 3;
+
+std::wstring LOCAL_DATABASE_FILE_NAME = L"local_v" + std::to_wstring(DATABASE_VERSION) + L".db";
+std::wstring SHARED_DATABASE_FILE_NAME = L"shared_v" + std::to_wstring(DATABASE_VERSION) + L".db";
+
 std::wstring APPLICATION_NAME = L"sioyek";
 std::string LOG_FILE_NAME = "sioyek_log.txt";
 std::ofstream LOG_FILE;
@@ -107,6 +111,8 @@ Path default_keys_path(L"");
 std::vector<Path> user_config_paths = {};
 std::vector<Path> user_keys_paths = {};
 Path database_file_path(L"");
+Path old_local_database_file_path(L"");
+Path old_global_database_file_path(L"");
 Path local_database_file_path(L"");
 Path global_database_file_path(L"");
 
@@ -216,8 +222,10 @@ void configure_paths_android() {
     database_file_path = standard_data_path.slash(L"test.db");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
     sioyek_access_token_path = standard_data_path.slash(L"access_token.sioyek");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
+    old_local_database_file_path = standard_data_path.slash(L"local.db");
+    old_global_database_file_path = standard_data_path.slash(L"shared.db");
+    local_database_file_path = standard_data_path.slash(LOCAL_DATABASE_FILE_NAME);
+    global_database_file_path = standard_data_path.slash(SHARED_DATABASE_FILE_NAME);
     android_config_path = standard_data_path.slash(L"saved.config");
     tutorial_path = Path(L":/tutorial.pdf");
     downloaded_papers_path = standard_data_path.slash(L"downloads");
@@ -242,8 +250,10 @@ void configure_paths_ios() {
     database_file_path = standard_data_path.slash(L"test.db");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
     sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
+    old_local_database_file_path = standard_data_path.slash(L"local.db");
+    old_global_database_file_path = standard_data_path.slash(L"shared.db");
+    local_database_file_path = standard_data_path.slash(LOCAL_DATABASE_FILE_NAME);
+    global_database_file_path = standard_data_path.slash(SHARED_DATABASE_FILE_NAME);
     android_config_path = standard_data_path.slash(L"saved.config");
     tutorial_path = Path(L":/tutorial.pdf");
     downloaded_papers_path = standard_data_path.slash(L"downloads");
@@ -290,8 +300,10 @@ void configure_paths() {
     default_keys_path = standard_config_path.slash(L"keys.config");
 
     database_file_path = standard_data_path.slash(L"test.db");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
+    old_local_database_file_path = standard_data_path.slash(L"local.db");
+    old_global_database_file_path = standard_data_path.slash(L"shared.db");
+    local_database_file_path = standard_data_path.slash(LOCAL_DATABASE_FILE_NAME);
+    global_database_file_path = standard_data_path.slash(SHARED_DATABASE_FILE_NAME);
     tutorial_path = read_only_data_path.slash(L"tutorial.pdf");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
     sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
@@ -314,8 +326,10 @@ void configure_paths() {
     default_keys_path = parent_path.slash(L"keys.config");
     user_keys_paths.push_back(standard_data_path.slash(L"keys_user.config"));
     database_file_path = standard_data_path.slash(L"test.db");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
+    old_local_database_file_path = standard_data_path.slash(L"local.db");
+    old_global_database_file_path = standard_data_path.slash(L"shared.db");
+    local_database_file_path = standard_data_path.slash(LOCAL_DATABASE_FILE_NAME);
+    global_database_file_path = standard_data_path.slash(SHARED_DATABASE_FILE_NAME);
     tutorial_path = standard_data_path.slash(L"tutorial.pdf");
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
     sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
@@ -351,16 +365,20 @@ void configure_paths() {
         user_keys_paths.push_back(Path(all_config_paths.at(i).toStdWString()).slash(L"keys_user.config"));
     }
     database_file_path = standard_data_path.slash(L"test.db");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
+    old_local_database_file_path = standard_data_path.slash(L"local.db");
+    old_global_database_file_path = standard_data_path.slash(L"shared.db");
+    local_database_file_path = standard_data_path.slash(LOCAL_DATABASE_FILE_NAME);
+    global_database_file_path = standard_data_path.slash(SHARED_DATABASE_FILE_NAME);
     last_opened_file_address_path = standard_data_path.slash(L"last_document_path.txt");
     sioyek_json_data_path = standard_data_path.slash(L"sioyek_data.json");
 #else
     user_config_paths.push_back(parent_path.slash(L"prefs_user.config"));
     user_keys_paths.push_back(parent_path.slash(L"keys_user.config"));
     database_file_path = parent_path.slash(L"test.db");
-    local_database_file_path = parent_path.slash(L"local.db");
-    global_database_file_path = parent_path.slash(L"shared.db");
+    old_local_database_file_path = parent_path.slash(L"local.db");
+    old_global_database_file_path = parent_path.slash(L"shared.db");
+    local_database_file_path = parent_path.slash(LOCAL_DATABASE_FILE_NAME);
+    global_database_file_path = parent_path.slash(SHARED_DATABASE_FILE_NAME);
     last_opened_file_address_path = parent_path.slash(L"last_document_path.txt");
     sioyek_json_data_path = parent_path.slash(L"sioyek_data.json");
 #endif
@@ -768,7 +786,7 @@ int main(int argc, char* args[]) {
     }
 
     if (SHARED_DATABASE_PATH.size() > 0) {
-        global_database_file_path = SHARED_DATABASE_PATH;
+        old_global_database_file_path = SHARED_DATABASE_PATH;
     }
     char* shared_database_path_arg = get_argv_value(argc, args, "--shared-database-path");
     char* local_database_path_arg = get_argv_value(argc, args, "--local-database-path");
@@ -817,14 +835,16 @@ int main(int argc, char* args[]) {
     delete parser;
 
     DatabaseManager db_manager;
-    if (local_database_file_path.file_exists() && global_database_file_path.file_exists()) {
-        db_manager.open(local_database_file_path.get_path(), global_database_file_path.get_path());
-    }
-    else {
-        db_manager.open(database_file_path.get_path(), database_file_path.get_path());
-    }
-    db_manager.ensure_database_compatibility(local_database_file_path.get_path(), global_database_file_path.get_path());
-    db_manager.ensure_schema_compatibility();
+
+    db_manager.open(local_database_file_path.get_path(), global_database_file_path.get_path());
+    //if (old_local_database_file_path.file_exists() && old_global_database_file_path.file_exists()) {
+    //    db_manager.open(old_local_database_file_path.get_path(), old_global_database_file_path.get_path());
+    //}
+    //else {
+    //    db_manager.open(database_file_path.get_path(), database_file_path.get_path());
+    //}
+    //db_manager.ensure_database_compatibility(old_local_database_file_path.get_path(), old_global_database_file_path.get_path());
+    //db_manager.ensure_schema_compatibility();
 
 
     BackgroundTaskManager background_task_manager;

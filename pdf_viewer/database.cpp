@@ -9,6 +9,8 @@
 #include <iomanip>
 
 #include <QDebug>
+#include <qfileinfo.h>
+#include <qdir.h>
 #include <qfile.h>
 #include <qjsonarray.h>
 #include <qjsondocument.h>
@@ -18,10 +20,13 @@
 
 #include "checksum.h"
 #include "utils.h"
+#include "path.h"
 
 extern bool DEBUG;
 extern float HIGHLIGHT_DELETE_THRESHOLD;
 extern int DATABASE_VERSION;
+//extern Path old_local_database_file_path;
+//extern Path old_global_database_file_path;
 
 std::string column_std_string(sqlite3_stmt* stmt, int index) {
     const unsigned char* text = sqlite3_column_text(stmt, index);
@@ -539,8 +544,19 @@ bool DatabaseManager::open(const std::wstring& local_db_file_path, const std::ws
 
     sqlite3_config(SQLITE_CONFIG_SERIALIZED);
 
+    QFileInfo local_db_file_info(QString::fromStdWString(local_db_file_path));
+    QFileInfo global_db_file_info(QString::fromStdWString(global_db_file_path));
+
+    QString old_local_file_path = local_db_file_info.dir().filePath("local.db");
+    QString old_global_file_path = global_db_file_info.dir().filePath("shared.db");
+
+    bool db_exists = local_db_file_info.exists() && global_db_file_info.exists();
+
     std::string local_database_file_path_utf8 = utf8_encode(local_db_file_path);
+    std::string global_database_file_path_utf8 = utf8_encode(global_db_file_path);
+
     int local_rc = sqlite3_open(local_database_file_path_utf8.c_str(), &local_db);
+    int global_rc = sqlite3_open(global_database_file_path_utf8.c_str(), &global_db);
 
     if (local_rc) {
         std::cerr << "could not create local database" << sqlite3_errmsg(local_db) << std::endl;
@@ -549,19 +565,43 @@ bool DatabaseManager::open(const std::wstring& local_db_file_path, const std::ws
         return false;
     }
 
-    if (local_db_file_path != global_db_file_path) {
-        std::string global_database_file_path_utf8 = utf8_encode(global_db_file_path);
-        int global_rc = sqlite3_open(global_database_file_path_utf8.c_str(), &global_db);
+    if (global_rc) {
+        std::cerr << "could not create global database" << sqlite3_errmsg(global_db) << std::endl;
+        local_db = nullptr;
+        global_db = nullptr;
+        return false;
+    }
 
-        if (global_rc) {
-            std::cerr << "could not create global database" << sqlite3_errmsg(global_db) << std::endl;
-            local_db = nullptr;
-            global_db = nullptr;
+    create_tables();
+    if (db_exists) {
+        int db_version = get_version();
+        if (db_version != DATABASE_VERSION) {
+            QString error_messgae = "The database files version (" + QString::number(db_version) + ") is not compatible with the current version (" + QString::number(DATABASE_VERSION) + "). Please move the database file located at " + QString::fromStdWString(local_db_file_path) + " and " + QString::fromStdWString(global_db_file_path) + " to a different location and restart the application. You can later import these databases using import_local_database and import_shared_database commands.";
+            show_error_message(error_messgae.toStdWString());
             return false;
+            //show_error_message(L"The database files version (" + );
         }
     }
-    else {
-        global_db = local_db;
+    if (!db_exists) {
+        set_version();
+
+        QFileInfo old_local_db_file_info(old_local_file_path);
+        QFileInfo old_global_db_file_info(old_global_file_path);
+
+        std::string old_local_database_file_path_utf8 = old_local_file_path.toStdString();
+        std::string old_global_database_file_path_utf8 = old_global_file_path.toStdString();
+
+        if (old_local_db_file_info.exists() && old_global_db_file_info.exists()){
+            sqlite3* old_local_db, *old_global_db;
+            int old_local_rc = sqlite3_open(old_local_database_file_path_utf8.c_str(), &old_local_db);
+            int old_global_rc = sqlite3_open(old_global_database_file_path_utf8.c_str(), &old_global_db);
+            if (!old_local_rc && !old_global_rc) {
+                migrate_database(old_local_db, old_global_db, local_db, global_db);
+                sqlite3_close(old_local_db);
+                sqlite3_close(old_global_db);
+            }
+            //migrate_database()
+        }
     }
 
     return true;
@@ -667,7 +707,7 @@ bool DatabaseManager::create_bookmarks_table() {
         error_message);
 }
 
-bool DatabaseManager::create_highlights_table() {
+bool DatabaseManager::create_highlights_table(sqlite3* db) {
     const char* create_highlights_sql = "CREATE TABLE IF NOT EXISTS highlights ("\
         "id INTEGER PRIMARY KEY AUTOINCREMENT," \
         "document_path TEXT,"\
@@ -684,7 +724,7 @@ bool DatabaseManager::create_highlights_table() {
         "end_y real);";
 
     char* error_message = nullptr;
-    int error_code = sqlite3_exec(global_db, create_highlights_sql, null_callback, 0, &error_message);
+    int error_code = sqlite3_exec(db, create_highlights_sql, null_callback, 0, &error_message);
     return handle_error(
         "create_highlights_table",
         error_code,
@@ -1662,19 +1702,19 @@ void DatabaseManager::create_tables() {
     create_opened_books_table();
     create_marks_table();
     create_bookmarks_table();
-    create_highlights_table();
+    create_highlights_table(global_db);
     create_links_table();
     create_document_hash_table();
     create_server_update_time_table();
     create_unsynced_deletions_table();
     //create_unsynced_additions_table();
-    if (!has_column("highlights", "is_synced")) {
-        add_synced_columns();
-    }
+    //if (!has_column("highlights", "is_synced")) {
+    //    add_synced_columns();
+    //}
 
-    if (!has_column("opened_books", "is_synced")) {
-        add_document_sync_columns();
-    }
+    //if (!has_column("opened_books", "is_synced")) {
+    //    add_document_sync_columns();
+    //}
 }
 
 void DatabaseManager::add_synced_columns() {
@@ -2098,24 +2138,24 @@ std::string create_select_query(std::string table_name,
     return utf8_encode(ss.str());
 }
 
-void DatabaseManager::ensure_database_compatibility(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path) {
-    create_tables();
-
-    // if the database is still using absolute paths instead of checksums, update all paths to checksums
-    std::vector<std::pair<std::wstring, std::wstring>> prev_path_hash_pairs;
-    get_prev_path_hash_pairs(prev_path_hash_pairs);
-    bool was_using_hashes = true;
-
-    if (prev_path_hash_pairs.size() == 0) {
-        was_using_hashes = false;
-        upgrade_database_hashes();
-    }
-
-    //if we are still using a single database file instead of separate local and global database files, split the database.
-    if (local_db == global_db) {
-        split_database(local_db_file_path, global_db_file_path, was_using_hashes);
-    }
-}
+//void DatabaseManager::ensure_database_compatibility(const std::wstring& local_db_file_path, const std::wstring& global_db_file_path) {
+//    create_tables();
+//
+//    // if the database is still using absolute paths instead of checksums, update all paths to checksums
+//    std::vector<std::pair<std::wstring, std::wstring>> prev_path_hash_pairs;
+//    get_prev_path_hash_pairs(prev_path_hash_pairs);
+//    bool was_using_hashes = true;
+//
+//    if (prev_path_hash_pairs.size() == 0) {
+//        was_using_hashes = false;
+//        upgrade_database_hashes();
+//    }
+//
+//    //if we are still using a single database file instead of separate local and global database files, split the database.
+//    if (local_db == global_db) {
+//        split_database(local_db_file_path, global_db_file_path, was_using_hashes);
+//    }
+//}
 
 int DatabaseManager::get_version() {
     char* error_message = nullptr;
@@ -2134,27 +2174,27 @@ int DatabaseManager::set_version() {
     return handle_error("set_version", error_code, error_message);
 }
 
-void DatabaseManager::ensure_schema_compatibility() {
-    int database_file_version = get_version();
-    std::vector<std::function<void()>> migrations;
-    migrations.push_back([this]() { migrate_version_0_to_1(); });
-    migrations.push_back([this]() { migrate_version_1_to_2(); });
-
-    assert(migrations.size() == DATABASE_VERSION);
-
-    if (database_file_version != DATABASE_VERSION) {
-        if (database_file_version >= migrations.size()) {
-            qDebug() << "Error: Invalid database version";
-            return;
-        }
-
-        for (int i = database_file_version; i < DATABASE_VERSION; i++) {
-            migrations[i]();
-        }
-
-        set_version();
-    }
-}
+//void DatabaseManager::ensure_schema_compatibility() {
+//    int database_file_version = get_version();
+//    std::vector<std::function<void()>> migrations;
+//    migrations.push_back([this]() { migrate_version_0_to_1(); });
+//    migrations.push_back([this]() { migrate_version_1_to_2(); });
+//
+//    assert(migrations.size() == DATABASE_VERSION);
+//
+//    if (database_file_version != DATABASE_VERSION) {
+//        if (database_file_version >= migrations.size()) {
+//            qDebug() << "Error: Invalid database version";
+//            return;
+//        }
+//
+//        for (int i = database_file_version; i < DATABASE_VERSION; i++) {
+//            migrations[i]();
+//        }
+//
+//        set_version();
+//    }
+//}
 
 bool DatabaseManager::run_schema_query(sqlite3* db, const char* query) {
     char* error_message = nullptr;
@@ -2755,6 +2795,7 @@ void migrate_table(sqlite3* src_db, sqlite3* dst_db, std::string table_name) {
     std::vector<std::string> common_columns;
     std::vector<std::string> new_columns;
     for (auto dst_column : dst_column_names) {
+        if (dst_column == "id") continue;
         if (std::find(src_column_names.begin(), src_column_names.end(), dst_column) != src_column_names.end()) {
             common_columns.push_back(dst_column);
         }
@@ -2812,23 +2853,60 @@ void migrate_table(sqlite3* src_db, sqlite3* dst_db, std::string table_name) {
     insert_values_query += ");";
 
     std::map<std::string, std::function<std::string()>> default_value_generator;
-    //default_value_generator["uuid"] = []() { return QUuid::createUuid().toString(); };
+
+    default_value_generator["uuid"] = []() { return new_uuid_utf8(); };
+    default_value_generator["creation_time"] = []() { return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd hh:mm:ss").toStdString(); };
+    default_value_generator["modification_time"] = []() { return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd hh:mm:ss").toStdString(); };
 
     sqlite3_stmt* insert_values_statement = nullptr;
     is_ok = sqlite3_prepare_v2(dst_db, insert_values_query.c_str(), insert_values_query.size(), &insert_values_statement, nullptr);
     if (is_ok == SQLITE_OK) {
         for (int i = 0; i < old_values.size(); i++) {
+            sqlite3_reset(insert_values_statement);
             for (int j = 0; j < common_columns.size(); j++) {
-                sqlite3_bind_text(insert_values_statement, j + 1, old_values[i][j].toUtf8().data(), old_values[i][j].size(), SQLITE_STATIC);
+                DatabaseColumnMetadata column_data = src_metadata.get_column_with_name(QString::fromStdString(common_columns[j]));
+                if (column_data.type.toLower() == "real") {
+                    sqlite3_bind_double(insert_values_statement, j + 1, old_values[i][j].toDouble());
+                }
+                else if (column_data.type.toLower() == "integer" || column_data.type.toLower() == "boolean") {
+                    sqlite3_bind_int(insert_values_statement, j + 1, old_values[i][j].toInt());
+                }
+                else {
+                    QByteArray utf8_value = old_values[i][j].toUtf8();
+                    sqlite3_bind_text(insert_values_statement, j + 1, utf8_value.data(), utf8_value.size(), SQLITE_TRANSIENT);
+                }
             }
             for (int j = 0; j < new_columns.size(); j++) {
-                sqlite3_bind_null(insert_values_statement, common_columns.size() + j + 1);
+                if (default_value_generator.find(new_columns[j]) != default_value_generator.end()) {
+                    std::string default_value = default_value_generator[new_columns[j]]();
+                    sqlite3_bind_text(insert_values_statement, common_columns.size() + j + 1, default_value.c_str(), default_value.size(), SQLITE_STATIC);
+                }
+                else {
+                    sqlite3_bind_null(insert_values_statement, common_columns.size() + j + 1);
+                }
             }
+
+            int res = sqlite3_step(insert_values_statement);
         }
     }
-
     sqlite3_finalize(insert_values_statement);
+}
 
+void migrate_database(sqlite3* old_local, sqlite3* old_shared, sqlite3* new_local, sqlite3* new_shared) {
+
+    if (old_shared != nullptr) {
+        migrate_table(old_shared, new_shared, "bookmarks");
+        migrate_table(old_shared, new_shared, "highlights");
+        migrate_table(old_shared, new_shared, "links");
+        migrate_table(old_shared, new_shared, "marks");
+        migrate_table(old_shared, new_shared, "opened_books");
+    }
+
+    if (old_local != nullptr) {
+        migrate_table(old_local, new_local, "document_hash");
+        migrate_table(old_local, new_local, "local_unsynced_deletions");
+        migrate_table(old_local, new_local, "update_times");
+    }
 }
 
 void DatabaseManager::debug() {
@@ -2938,4 +3016,34 @@ DatabaseColumnMetadata DatabaseTableMetadata::get_column_with_name(QString name)
     }
     DatabaseColumnMetadata empty;
     return empty;
+}
+
+bool DatabaseManager::import_local(QString local_database_file_path) {
+    QFileInfo file_info(local_database_file_path);
+    QByteArray file_name_encoded = local_database_file_path.toUtf8();
+    if (file_info.exists()) {
+        sqlite3* old_local;
+        int local_rc = sqlite3_open(file_name_encoded.data(), &old_local);
+        if (local_rc == SQLITE_OK) {
+            migrate_database(old_local, nullptr, local_db, nullptr);
+        }
+        sqlite3_close(old_local);
+        return true;
+    }
+    return false;
+}
+
+bool DatabaseManager::import_shared(QString shared_database_file_path) {
+    QFileInfo file_info(shared_database_file_path);
+    QByteArray file_name_encoded = shared_database_file_path.toUtf8();
+    if (file_info.exists()) {
+        sqlite3* old_shared;
+        int local_rc = sqlite3_open(file_name_encoded.data(), &old_shared);
+        if (local_rc == SQLITE_OK) {
+            migrate_database(nullptr, old_shared, nullptr, global_db);
+        }
+        sqlite3_close(old_shared);
+        return true;
+    }
+    return false;
 }
