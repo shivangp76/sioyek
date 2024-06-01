@@ -10,6 +10,7 @@
 #include "ui.h"
 #include "pdf_renderer.h"
 
+
 extern float MOVE_SCREEN_PERCENTAGE;
 extern float FIT_TO_PAGE_WIDTH_RATIO;
 extern float RULER_PADDING;
@@ -1413,6 +1414,7 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
 
                 for (auto link : pdf_links) {
                     auto parsed_uri = parse_uri(get_document()->get_mupdf_context(), get_document()->doc, link.uri);
+
                     PdfLinkTextInfo link_info = get_document()->get_pdf_link_text(link);
 
                     SmartViewCandidate candid;
@@ -3437,15 +3439,18 @@ bool DocumentView::is_text_source_referncish_at_position(const std::wstring& tex
 
 bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInfo& link_info) {
 
-    PagelessDocumentPos pageless_pos = PagelessDocumentRect{ fz_rect_from_quad(link_info.chr->quad) }.center();
-    DocumentPos link_pos = { link.source_page, pageless_pos.x, pageless_pos.y };
-    TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(link_pos, true);
-    bool is_reference = reference_info.reference_type == ReferenceType::None || reference_info.reference_type == ReferenceType::Reference;
-    if (is_reference) {
-        std::wstring block_string = get_string_from_stext_block(link_info.block, false, false);
-        is_reference = is_reference && is_text_source_referncish_at_position(block_string, link_info.position_in_block);
+    if (link_info.chr) {
+        PagelessDocumentPos pageless_pos = PagelessDocumentRect{ fz_rect_from_quad(link_info.chr->quad) }.center();
+        DocumentPos link_pos = { link.source_page, pageless_pos.x, pageless_pos.y };
+        TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(link_pos, true);
+        bool is_reference = reference_info.reference_type == ReferenceType::None || reference_info.reference_type == ReferenceType::Reference;
+        if (is_reference) {
+            std::wstring block_string = get_string_from_stext_block(link_info.block, false, false);
+            is_reference = is_reference && is_text_source_referncish_at_position(block_string, link_info.position_in_block);
+        }
+        return is_reference;
     }
-    return is_reference;
+    return false;
 }
 
 std::vector<DocumentRect> DocumentView::get_reference_link_highlights(int dest_page, const PdfLink& link, const PdfLinkTextInfo& link_info) {

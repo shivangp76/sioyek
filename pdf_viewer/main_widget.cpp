@@ -5391,7 +5391,10 @@ void MainWidget::perform_search(std::wstring text, bool is_regex, bool is_increm
 
 void MainWidget::overview_to_definition() {
     if (!main_document_view->get_overview_page()) {
+        QDateTime before = QDateTime::currentDateTime();
         std::vector<SmartViewCandidate> candidates = main_document_view->find_line_definitions();
+        QDateTime after = QDateTime::currentDateTime();
+        qDebug() << "took  " << before.msecsTo(after) << "ms to find definitions";
         //std::vector<SmartViewCandidate> candidates;
 
         //for (auto [pos, rect] : defpos) {

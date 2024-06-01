@@ -1632,11 +1632,22 @@ std::optional<std::wstring> Document::get_equation_text_at_position(
     }
 }
 
+int get_sum_of_sizes(const std::vector<std::wstring>& strs) {
+    int res = 0;
+    for (auto& s : strs) {
+        res += s.size();
+    }
+    return res;
+}
+
 std::optional<std::wstring> Document::get_regex_match_at_position(const std::wregex& regex, const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos pos, std::pair<int, int>* out_range) {
     std::vector<std::pair<int, int>> match_ranges;
     std::vector<std::wstring> match_texts;
 
+    TIME_BEGIN;
     find_regex_matches_in_stext_page(flat_chars, regex, match_ranges, match_texts);
+    TIME_END;
+    int a = 2;
 
     for (size_t i = 0; i < match_ranges.size(); i++) {
         auto [start_index, end_index] = match_ranges[i];
@@ -1721,7 +1732,6 @@ std::optional<std::pair<std::wstring, std::wstring>> Document::get_generic_link_
             return std::make_pair(type, name);
         }
     }
-
     else {
         return {};
     }

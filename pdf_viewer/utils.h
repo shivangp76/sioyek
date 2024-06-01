@@ -628,3 +628,6 @@ struct PageMergedLinesInfoAbsolute {
 };
 
 PageMergedLinesInfo merge_lines2(const std::vector<fz_stext_line*>& lines);
+
+#define TIME_BEGIN QDateTime time_begin=QDateTime::currentDateTime();
+#define TIME_END QDateTime time_end=QDateTime::currentDateTime();qDebug() << time_begin.msecsTo(time_end);
