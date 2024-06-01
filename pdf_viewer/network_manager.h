@@ -110,7 +110,7 @@ public:
     QNetworkReply* upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done);
     void get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done);
     void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
-    void download_new_annotations(QObject* parent, QDateTime last_update_time);
+    void download_new_annotations(QObject* parent, QDateTime last_update_time, bool force=false);
 };
 
 void block_for_send(QNetworkReply* reply);

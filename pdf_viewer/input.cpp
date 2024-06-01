@@ -5871,6 +5871,18 @@ public:
 
 };
 
+class ForceDownloadAnnotations : public Command {
+public:
+    static inline const std::string cname = "force_download_annotations";
+    static inline const std::string hname = "Download all annotations from the server into local database";
+    ForceDownloadAnnotations(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->download_annotations_since_last_sync(true);
+    }
+
+};
+
 class UploadCurrentFileCommand : public Command {
 public:
     static inline const std::string cname = "upload_current_file";
@@ -7512,6 +7524,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ResumeToServerLocationCommand>();
     register_command<LoginUsingAccessTokenCommand>();
     register_command<SynchronizeCommand>();
+    register_command<ForceDownloadAnnotations>();
     register_command<UploadCurrentFileCommand>();
     register_command<DeleteCurrentFileFromServer>();
     register_command<ResyncDocumentCommand>();

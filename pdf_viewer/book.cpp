@@ -45,12 +45,18 @@ void Annotation::add_metadata_to_json(QJsonObject& obj) const {
     obj[Annotation::UUID_COLUMN_NAME] = QString::fromStdString(uuid);
 }
 
+std::string normalize_date_string(QString date_string) {
+    QDateTime datetime = QDateTime::fromString(date_string, Qt::ISODate);
+    datetime.setTimeSpec(Qt::UTC);
+    return datetime.toString("yyyy-MM-dd hh:mm:ss").toStdString();
+}
+
 void Annotation::load_metadata_from_json(const QJsonObject& obj) {
     if (obj.contains(Annotation::CREATION_TIME_COLUMN_NAME)) {
-        creation_time = obj[Annotation::CREATION_TIME_COLUMN_NAME].toString().toStdString();
+        creation_time = normalize_date_string(obj[Annotation::CREATION_TIME_COLUMN_NAME].toString());
     }
     if (obj.contains(Annotation::MODIFICATION_TIME_COLUMN_NAME)) {
-        modification_time = obj[Annotation::MODIFICATION_TIME_COLUMN_NAME].toString().toStdString();
+        modification_time = normalize_date_string(obj[Annotation::MODIFICATION_TIME_COLUMN_NAME].toString());
     }
     if (obj.contains(Annotation::UUID_COLUMN_NAME)) {
         uuid = obj[Annotation::UUID_COLUMN_NAME].toString().toStdString();

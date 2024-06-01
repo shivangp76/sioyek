@@ -1397,8 +1397,8 @@ void SioyekNetworkManager::download_drawings(QObject* parent, std::string checks
 
 }
 
-void SioyekNetworkManager::download_new_annotations(QObject* parent, QDateTime last_update_time) {
-    if (!already_downloaded_new_annotations) {
+void SioyekNetworkManager::download_new_annotations(QObject* parent, QDateTime last_update_time, bool force) {
+    if (force || !already_downloaded_new_annotations) {
         already_downloaded_new_annotations = true;
         get_annotations_after(parent, last_update_time, [this, parent](std::vector<std::pair<std::string, Highlight>>&& highlights, std::vector<std::pair<std::string, BookMark>>&& bookmarks, std::vector<std::pair<std::string, Portal>>&& portals) {
             background_task_manager->add_task([this, highlights = std::move(highlights), bookmarks = std::move(bookmarks), portals = std::move(portals)]() {

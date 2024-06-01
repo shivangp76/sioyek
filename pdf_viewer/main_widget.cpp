@@ -11,8 +11,6 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // capture doc() in server reply lambdas because it might have changed since the request was sent
 // make overview to definition faster when there are a lot of links it the line
-// use a new file for databases so we don't crash the previous sioyek versions when users upgrade
-// server-downloaded annotations have incorrect date format in database
 
 #include <iostream>
 #include <vector>
@@ -6263,10 +6261,13 @@ void MainWidget::sync_annotations_with_server() {
 
 }
 
-void MainWidget::download_annotations_since_last_sync() {
+void MainWidget::download_annotations_since_last_sync(bool force_all) {
     QDateTime last_annotation_update_time = get_last_server_sync_time().value_or(QDateTime::currentDateTimeUtc().addYears(-100));
     save_last_server_sync_time();
-    sioyek_network_manager->download_new_annotations(this, last_annotation_update_time);
+    if (force_all) {
+        last_annotation_update_time = last_annotation_update_time.addYears(-100);
+    }
+    sioyek_network_manager->download_new_annotations(this, last_annotation_update_time, force_all);
 }
 
 std::optional<QJsonObject> MainWidget::get_sioyek_json_data() {
@@ -7288,23 +7289,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
-    sqlite3* test_db = nullptr;
-    int res = sqlite3_open("test.db", &test_db);
-    if (res == SQLITE_OK) {
-        qDebug() << "database opened";
-    }
-    db_manager->create_highlights_table(test_db);
-    migrate_table(db_manager->global_db, test_db, "highlights");
-    //db_manager->debug();
-
-    //QDateTime start = QDateTime::currentDateTimeUtc().addDays(-1);
-    //sioyek_network_manager->get_annotations_after(this, start, [this](std::vector<std::pair<std::string, Highlight>>&& highlights, std::vector<std::pair<std::string, BookMark>>&& bookmarks, std::vector<std::pair<std::string, Portal>>&& portals) {
-    //    db_manager->insert_or_update_bookmark_synced(true, bookmarks[0].first, bookmarks[0].second);
-    //    qDebug() << highlights.size();
-    //    qDebug() << bookmarks.size();
-    //    qDebug() << portals.size();
-
-    //    });
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
