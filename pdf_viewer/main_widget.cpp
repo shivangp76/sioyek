@@ -2411,6 +2411,9 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             }
 
             last_mouse_down = abs_doc_pos;
+            last_mouse_down_window_pos = click_pos;
+            last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
+
             visible_object->handle_move_begin(this, abs_doc_pos);
             visible_object_move_data->is_moving = false;
             return;
@@ -2452,8 +2455,6 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         //selection_begin_y = y_;
 
         last_mouse_down = abs_doc_pos;
-        //last_mouse_down_x = x_;
-        //last_mouse_down_y = y_;
         last_mouse_down_window_pos = click_pos;
         last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
 
@@ -5528,6 +5529,7 @@ void MainWidget::handle_goto_portal_list() {
         [&](Portal* portal) {
             pending_command_instance->set_generic_requirement(portal->src_offset_y);
             advance_command(std::move(pending_command_instance));
+            pop_current_widget();
 
         },
         [&](Portal* portal) {
