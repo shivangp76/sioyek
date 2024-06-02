@@ -88,6 +88,7 @@ extern float KEYBOARD_SELECTED_TAG_TEXT_COLOR[4];
 extern float KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO[4];
 extern float QUESTION_BOOKMARK_BACKGROUND_COLOR[3];
 extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
+extern float OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[3];
 
 extern int RULER_UNDERLINE_PIXEL_WIDTH;
 extern UIRect PORTRAIT_EDIT_PORTAL_UI_RECT;
@@ -3030,11 +3031,11 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
     if (document_view->overview_highlights.size() > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
         glUseProgram(shared_gl_objects.highlight_program);
-        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &DEFAULT_SEARCH_HIGHLIGHT_COLOR[0]);
+        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0]);
         //glUniform3fv(g_shared_resources.highlight_color_uniform_location, 1, highlight_color_temp);
         for (auto rect : document_view->overview_highlights) {
             NormalizedWindowRect target = document_view->document_to_overview_rect(rect);
-            render_highlight_window(target, HRF_FILL | HRF_BORDER);
+            render_highlight_window(target, HRF_FILL);
         }
     }
 
@@ -3333,10 +3334,10 @@ void PdfViewOpenGLWidget::render_overview_qpainter_backend(NormalizedWindowRect 
         }
     }
     if (document_view->overview_highlights.size() > 0) {
-        set_highlight_color(&DEFAULT_SEARCH_HIGHLIGHT_COLOR[0], 0.3f);
+        set_highlight_color(&OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0], 0.3f);
         for (auto rect : document_view->overview_highlights) {
             NormalizedWindowRect target = document_view->document_to_overview_rect(rect);
-            render_highlight_window(target, HRF_FILL | HRF_BORDER);
+            render_highlight_window(target, HRF_FILL);
         }
     }
     painter.setClipRect(rect());

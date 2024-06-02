@@ -301,6 +301,7 @@ float DEFAULT_VERTICAL_LINE_COLOR[4] = { 0.0f, 0.0f, 0.0f, 0.1f };
 float DEFAULT_SEARCH_HIGHLIGHT_COLOR[3] = { 0.0f, 1.0f, 0.0f };
 float DEFAULT_LINK_HIGHLIGHT_COLOR[3] = { 0.0f, 0.0f, 1.0f };
 float DEFAULT_SYNCTEX_HIGHLIGHT_COLOR[3] = { 1.0f, 0.0f, 0.0f };
+float OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[3] = { 0.0f, 1.0f, 0.0f };
 float HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT = 1.0f;
 
 float FREETEXT_BOOKMARK_COLOR[3] = { 0.0f, 0.0f, 0.0f };
@@ -933,6 +934,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"freetext_bookmark_color", FREETEXT_BOOKMARK_COLOR);
     add_color3(L"link_highlight_color", DEFAULT_LINK_HIGHLIGHT_COLOR);
     add_color3(L"synctex_highlight_color", DEFAULT_SYNCTEX_HIGHLIGHT_COLOR);
+    add_color3(L"overview_reference_highlight_color", OVERVIEW_REFERENCE_HIGHLIGHT_COLOR);
     add_color3(L"ruler_color", RULER_COLOR);
     add_color3(L"ruler_marker_color", RULER_MARKER_COLOR);
     add_color3(L"background_color", BACKGROUND_COLOR);
