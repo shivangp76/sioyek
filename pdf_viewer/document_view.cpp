@@ -3230,10 +3230,10 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
     std::pair<int, int> reference_range = std::make_pair(-1, -1);
 
     std::optional<std::pair<std::wstring, std::wstring>> generic_pair = \
-        current_document->get_generic_link_name_at_position(flat_chars, docpos.pageless(), &reference_range);
+        current_document->get_generic_link_name_at_position(flat_chars, docpos, &reference_range);
 
-    std::optional<std::wstring> reference_text_on_pointer = current_document->get_reference_text_at_position(flat_chars, docpos.pageless(), &reference_range);
-    std::optional<std::wstring> equation_text_on_pointer = current_document->get_equation_text_at_position(flat_chars, docpos.pageless(), &reference_range);
+    std::optional<std::wstring> reference_text_on_pointer = current_document->get_reference_text_at_position(flat_chars, docpos, &reference_range);
+    std::optional<std::wstring> equation_text_on_pointer = current_document->get_equation_text_at_position(flat_chars, docpos, &reference_range);
 
     DocumentRect source_rect_document = DocumentRect{ fz_empty_rect, docpos.page };
     AbsoluteRect source_rect_absolute = { fz_empty_rect };
@@ -3320,8 +3320,8 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
         }
     }
     else{
-        std::wregex abbr_regex(L"[A-Z]+s?");
-        std::optional<std::wstring> abbr_under_pointer = current_document->get_regex_match_at_position(abbr_regex, flat_chars, docpos.pageless(), &reference_range);
+        std::wstring abbr_regex(L"[A-Z]+s?");
+        std::optional<std::wstring> abbr_under_pointer = current_document->get_regex_match_at_position(abbr_regex, flat_chars, docpos, &reference_range);
         if (abbr_under_pointer){
             std::optional<DocumentPos> abbr_definition_location = current_document->find_abbreviation(abbr_under_pointer.value(), res.overview_highlight_rects);
             if (abbr_definition_location){

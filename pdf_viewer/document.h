@@ -29,6 +29,11 @@
 class CachedChecksummer;
 class DatabaseManager;
 
+struct RegexMatchInfo {
+    std::wstring match_text;
+    std::pair<int, int> match_range;
+};
+
 class CharacterIterator {
     fz_stext_block* block = nullptr;
     fz_stext_line* line = nullptr;
@@ -95,6 +100,7 @@ private:
     std::vector<int> flat_toc_pages;
     std::optional<QDateTime> drawings_last_server_mofication_time = {};
 
+    std::deque<std::pair<std::pair<int, std::wstring>, std::vector<RegexMatchInfo>>> cached_regex_matches;
     std::map<int, PageMergedLinesInfoAbsolute> cached_page_line_info;
     //std::map<int, std::vector<AbsoluteRect>> cached_page_line_rects;
     //std::map<int, std::vector<std::wstring>> cached_line_texts;
@@ -171,6 +177,8 @@ private:
     bool* invalid_flag_pointer = nullptr;
 
     int get_mark_index(char symbol);
+    std::optional<std::vector<RegexMatchInfo>> get_cached_regex_info(int page, std::wstring regex_string);
+    void add_cached_regex_info(int page, std::wstring regex_string, std::vector<RegexMatchInfo> infos);
     fz_outline* get_toc_outline();
 
     // load marks, bookmarks, links, etc.
@@ -329,18 +337,18 @@ public:
     std::vector<IndexedData> find_equation_with_string(std::wstring equation_name, int page_number);
     std::vector<IndexedData> find_generic_with_string(std::wstring equation_name, int page_number);
 
-    std::optional<std::wstring> get_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position);
-    std::optional<std::wstring> get_reference_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
-    std::optional<QString> get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position);
-    std::optional<std::wstring> get_equation_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
-    std::optional<std::pair<std::wstring, std::wstring>> get_generic_link_name_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
-    std::optional<std::wstring> get_regex_match_at_position(const std::wregex& regex, const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range);
+    std::optional<std::wstring> get_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position);
+    std::optional<std::wstring> get_reference_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
+    std::optional<QString> get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position);
+    std::optional<std::wstring> get_equation_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
+    std::optional<std::pair<std::wstring, std::wstring>> get_generic_link_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
+    std::optional<std::wstring> get_regex_match_at_position(const std::wstring& regex, const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::wstring> get_text_at_position(DocumentPos position);
     std::optional<std::wstring> get_reference_text_at_position(DocumentPos position, std::pair<int, int>* out_range);
     std::optional<QString> get_paper_name_at_position(DocumentPos position);
     std::optional<std::wstring> get_equation_text_at_position(DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::pair<std::wstring, std::wstring>> get_generic_link_name_at_position(DocumentPos position, std::pair<int, int>* out_range);
-    std::optional<std::wstring> get_regex_match_at_position(const std::wregex& regex, DocumentPos position, std::pair<int, int>* out_range);
+    std::optional<std::wstring> get_regex_match_at_position(const std::wstring& regex, DocumentPos position, std::pair<int, int>* out_range);
     std::vector<DocumentPos> find_generic_locations(const std::wstring& type, const std::wstring& name);
     bool can_use_highlights();
 

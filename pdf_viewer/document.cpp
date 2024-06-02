@@ -1618,12 +1618,12 @@ std::vector<IndexedData> Document::find_generic_with_string(std::wstring equatio
 
 std::optional<std::wstring> Document::get_equation_text_at_position(
     const std::vector<fz_stext_char*>& flat_chars,
-    PagelessDocumentPos position,
+    DocumentPos position,
     std::pair<int,
     int>* out_range) {
 
 
-    std::wregex regex(L"\\([0-9]+(\\.[0-9]+)*\\)");
+    std::wstring regex(L"\\([0-9]+(\\.[0-9]+)*\\)");
     std::optional<std::wstring> match = get_regex_match_at_position(regex, flat_chars, position, out_range);
 
     if (match) {
@@ -1642,19 +1642,58 @@ int get_sum_of_sizes(const std::vector<std::wstring>& strs) {
     return res;
 }
 
-std::optional<std::wstring> Document::get_regex_match_at_position(const std::wregex& regex, const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos pos, std::pair<int, int>* out_range) {
+std::optional<std::vector<RegexMatchInfo>> Document::get_cached_regex_info(int page, std::wstring regex_string) {
+
+
+    auto key = std::make_pair(page, regex_string);
+    for (auto& [cached_key, values] : cached_regex_matches) {
+        if (cached_key == key) {
+            return values;
+        }
+    }
+    return {};
+}
+
+void Document::add_cached_regex_info(int page, std::wstring regex_string, std::vector<RegexMatchInfo> infos) {
+    auto key = std::make_pair(page, regex_string);
+    cached_regex_matches.push_back({ key, infos });
+    if (cached_regex_matches.size() > 50) {
+        cached_regex_matches.pop_front();
+    }
+}
+
+std::optional<std::wstring> Document::get_regex_match_at_position(const std::wstring& regex_string, const std::vector<fz_stext_char*>& flat_chars, DocumentPos pos, std::pair<int, int>* out_range) {
     std::vector<std::pair<int, int>> match_ranges;
     std::vector<std::wstring> match_texts;
 
-    TIME_BEGIN;
-    find_regex_matches_in_stext_page(flat_chars, regex, match_ranges, match_texts);
-    TIME_END;
-    int a = 2;
+
+    std::wregex regex(regex_string);
+
+    std::optional<std::vector<RegexMatchInfo>> cached_matches = get_cached_regex_info(pos.page, regex_string);
+
+    if (cached_matches) {
+        for (auto& info : cached_matches.value()) {
+            match_ranges.push_back(info.match_range);
+            match_texts.push_back(info.match_text);
+        }
+    }
+    else {
+        find_regex_matches_in_stext_page(flat_chars, regex, match_ranges, match_texts);
+        std::vector<RegexMatchInfo> match_infos;
+
+        for (int i = 0; i < match_texts.size(); i++) {
+            RegexMatchInfo info;
+            info.match_text = match_texts[i];
+            info.match_range = match_ranges[i];
+            match_infos.push_back(info);
+        }
+        add_cached_regex_info(pos.page, regex_string, match_infos);
+    }
 
     for (size_t i = 0; i < match_ranges.size(); i++) {
         auto [start_index, end_index] = match_ranges[i];
         for (int index = start_index; index <= end_index; index++) {
-            if (rect_from_quad(flat_chars[index]->quad).contains(pos)) {
+            if (rect_from_quad(flat_chars[index]->quad).contains(pos.pageless())) {
                 if (out_range) {
                     *out_range = std::make_pair(start_index, end_index);
                 }
@@ -1717,11 +1756,10 @@ bool Document::can_use_highlights() {
 
 std::optional<std::pair<std::wstring, std::wstring>> Document::get_generic_link_name_at_position(
     const std::vector<fz_stext_char*>& flat_chars,
-    PagelessDocumentPos position,
-    std::pair<int,
-    int>* out_range) {
+    DocumentPos position,
+    std::pair<int, int>* out_range) {
 
-    std::wregex regex(L"[a-zA-Z]{3,}(\.){0,1}[ \t]+[0-9]+(\\.[0-9]+)*");
+    std::wstring regex(L"[a-zA-Z]{3,}(\.){0,1}[ \t]+[0-9]+(\\.[0-9]+)*");
     std::optional<std::wstring> match_string = get_regex_match_at_position(regex, flat_chars, position, out_range);
     if (match_string) {
         std::vector<std::wstring> parts = split_whitespace(match_string.value());
@@ -1741,7 +1779,7 @@ std::optional<std::pair<std::wstring, std::wstring>> Document::get_generic_link_
     return {};
 }
 
-std::optional<std::wstring> Document::get_reference_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position, std::pair<int, int>* out_range) {
+std::optional<std::wstring> Document::get_reference_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range) {
 
     char start_char = '[';
     char end_char = ']';
@@ -1763,7 +1801,7 @@ std::optional<std::wstring> Document::get_reference_text_at_position(const std::
     for (auto ch : flat_chars) {
         index++;
 
-        if (rect_from_quad(ch->quad).contains(position)) {
+        if (rect_from_quad(ch->quad).contains(position.pageless())) {
             if (started) {
                 reached = true;
             }
@@ -1826,7 +1864,7 @@ void get_matches(std::wstring haystack, const std::wregex& reg, std::vector<std:
     }
 }
 
-std::optional<std::wstring> Document::get_text_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position){
+std::optional<std::wstring> Document::get_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position){
 
     std::wstring selected_string;
     bool reached = false;
@@ -1841,7 +1879,7 @@ std::optional<std::wstring> Document::get_text_at_position(const std::vector<fz_
         else {
             selected_string.push_back(ch->c);
         }
-        if (rect_from_quad(ch->quad).contains(position)) {
+        if (rect_from_quad(ch->quad).contains(position.pageless())) {
             reached = true;
         }
     }
@@ -1861,7 +1899,7 @@ QString clean_bib_string_quotations(QString bib_string){
     return bib_string;
 }
 
-std::optional<QString> Document::get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, PagelessDocumentPos position) {
+std::optional<QString> Document::get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position) {
     QString selected_string = "";
     bool reached = false;
 
@@ -1875,7 +1913,7 @@ std::optional<QString> Document::get_paper_name_at_position(const std::vector<fz
             }
         }
 
-        if (rect_from_quad(ch->quad).contains(position)) {
+        if (rect_from_quad(ch->quad).contains(position.pageless())) {
             reached = true;
         }
         if ((ch->c == '-') && (ch->next == nullptr)) continue;
@@ -2437,42 +2475,42 @@ std::optional<std::wstring> Document::get_text_at_position(DocumentPos position)
     fz_stext_page* stext_page = get_stext_with_page_number(position.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
-    return get_text_at_position(flat_chars, position.pageless());
+    return get_text_at_position(flat_chars, position);
 }
 
 std::optional<QString> Document::get_paper_name_at_position(DocumentPos position) {
     fz_stext_page* stext_page = get_stext_with_page_number(position.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
-    return get_paper_name_at_position(flat_chars, position.pageless());
+    return get_paper_name_at_position(flat_chars, position);
 }
 
 std::optional<std::wstring> Document::get_reference_text_at_position(DocumentPos pos, std::pair<int, int>* out_range) {
     fz_stext_page* stext_page = get_stext_with_page_number(pos.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
-    return get_reference_text_at_position(flat_chars, pos.pageless(), out_range);
+    return get_reference_text_at_position(flat_chars, pos, out_range);
 }
 
 std::optional<std::wstring> Document::get_equation_text_at_position(DocumentPos pos, std::pair<int, int>* out_range) {
     fz_stext_page* stext_page = get_stext_with_page_number(pos.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
-    return get_equation_text_at_position(flat_chars, pos.pageless(), out_range);
+    return get_equation_text_at_position(flat_chars, pos, out_range);
 }
 
 std::optional<std::pair<std::wstring, std::wstring>>  Document::get_generic_link_name_at_position(DocumentPos pos, std::pair<int, int>* out_range) {
     fz_stext_page* stext_page = get_stext_with_page_number(pos.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
-    return get_generic_link_name_at_position(flat_chars,  pos.pageless(), out_range);
+    return get_generic_link_name_at_position(flat_chars,  pos, out_range);
 }
 
-std::optional<std::wstring> Document::get_regex_match_at_position(const std::wregex& regex, DocumentPos position, std::pair<int, int>* out_range) {
+std::optional<std::wstring> Document::get_regex_match_at_position(const std::wstring& regex, DocumentPos position, std::pair<int, int>* out_range) {
     fz_stext_page* stext_page = get_stext_with_page_number(position.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
-    return get_regex_match_at_position(regex, flat_chars, position.pageless(), out_range);
+    return get_regex_match_at_position(regex, flat_chars, position, out_range);
 }
 
 std::vector<std::vector<PagelessDocumentRect>> Document::get_page_flat_word_chars(int page) {
@@ -3030,6 +3068,7 @@ void Document::clear_document_caches() {
     cached_fastread_highlights.clear();
     cached_page_index.clear();
     cached_page_line_info.clear();
+    cached_regex_matches.clear();
 
 
     for (auto [_, cached_small_pixmap] : cached_small_pixmaps) {

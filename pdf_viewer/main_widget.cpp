@@ -3350,7 +3350,7 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
         long_jump_to_destination(text_under_pos_info.targets[0].page, text_under_pos_info.targets[0].y);
     }
     else {
-        std::optional<QString> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos.pageless());
+        std::optional<QString> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos);
         if (paper_name_on_pointer) {
             handle_search_paper_name(paper_name_on_pointer.value(), is_shift_pressed);
         }
