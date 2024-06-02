@@ -1426,10 +1426,12 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
 
                     //is_reference
                     bool is_reference = is_link_a_reference(link, link_info);
+                    //TIME_BEGIN;
                     if (is_reference) {
                         candid.highlight_rects = get_reference_link_highlights(parsed_uri.page - 1, link, link_info);
                         candid.reference_type = ReferenceType::RefLink;
                     }
+                    //TIME_END;
 
                     result.push_back(candid);
                 }
@@ -3215,17 +3217,10 @@ std::optional<QString> DocumentView::get_direct_paper_name_under_pos(DocumentPos
     return current_document->get_paper_name_at_position(docpos);
 }
 
-TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentPos docpos,  bool update_candidates) {
-
-    //auto [page, offset_x, offset_y] = main_document_view->window_to_document_pos(pointer_pos);
-    //auto [page, offset_x, offset_y] = docpos;
+TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentPos docpos,  bool update_candidates, int max_size) {
     TextUnderPointerInfo res;
 
-    int current_page_number = get_current_page_number();
-
-    fz_stext_page* stext_page = current_document->get_stext_with_page_number(docpos.page);
-    std::vector<fz_stext_char*> flat_chars;
-    get_flat_chars_from_stext_page(stext_page, flat_chars);
+    std::vector<fz_stext_char*> flat_chars = current_document->get_flat_chars_around_pos(docpos, max_size);
 
     std::pair<int, int> reference_range = std::make_pair(-1, -1);
 
@@ -3278,7 +3273,7 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
         }
     }
     if (equation_text_on_pointer) {
-        std::vector<IndexedData> eqdata_ = current_document->find_equation_with_string(equation_text_on_pointer.value(), current_page_number);
+        std::vector<IndexedData> eqdata_ = current_document->find_equation_with_string(equation_text_on_pointer.value(), docpos.page);
         if (eqdata_.size() > 0) {
             IndexedData refdata = eqdata_[0];
             res.source_text = refdata.text;
@@ -3292,7 +3287,7 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
     }
 
     if (reference_text_on_pointer) {
-        std::vector<IndexedData> refdata_ = current_document->find_reference_with_string(reference_text_on_pointer.value(), current_page_number);
+        std::vector<IndexedData> refdata_ = current_document->find_reference_with_string(reference_text_on_pointer.value(), docpos.page);
         if (refdata_.size() > 0) {
             res.reference_type = ReferenceType::Reference;
 
@@ -3442,7 +3437,7 @@ bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInf
     if (link_info.chr) {
         PagelessDocumentPos pageless_pos = PagelessDocumentRect{ fz_rect_from_quad(link_info.chr->quad) }.center();
         DocumentPos link_pos = { link.source_page, pageless_pos.x, pageless_pos.y };
-        TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(link_pos, true);
+        TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(link_pos, true, std::max((int)link_info.link_text.size(), 50));
         bool is_reference = reference_info.reference_type == ReferenceType::None || reference_info.reference_type == ReferenceType::Reference;
         if (is_reference) {
             std::wstring block_string = get_string_from_stext_block(link_info.block, false, false);

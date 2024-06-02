@@ -181,6 +181,7 @@ private:
     void add_cached_regex_info(int page, std::wstring regex_string, std::vector<RegexMatchInfo> infos);
     fz_outline* get_toc_outline();
 
+
     // load marks, bookmarks, links, etc.
 
     // convetr the fz_outline structure to our own TocNode structure
@@ -245,6 +246,7 @@ public:
     void set_is_synced(bool synced);
     bool get_drawings_are_dirty();
 
+    std::vector<fz_stext_char*> get_flat_chars_around_pos(DocumentPos docpos, int count=-1);
     void fill_highlight_rects(fz_context* ctx, fz_document* doc);
     void fill_index_highlight_rects(int highlight_index, fz_context* thread_context = nullptr, fz_document* thread_document = nullptr);
     void count_chapter_pages(std::vector<int>& page_counts);

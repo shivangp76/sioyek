@@ -4929,3 +4929,28 @@ std::optional<QDateTime> Document::get_server_drawings_modification_time() {
 bool Document::get_drawings_are_dirty() {
     return is_drawings_dirty;
 }
+
+std::vector<fz_stext_char*> Document::get_flat_chars_around_pos(DocumentPos docpos, int count) {
+    fz_stext_page* stext_page = get_stext_with_page_number(docpos.page);
+    std::vector<fz_stext_char*> flat_chars;
+    get_flat_chars_from_stext_page(stext_page, flat_chars);
+
+    if (count > 0) {
+        int char_index = -1;
+        find_closest_char_to_document_point(flat_chars, { docpos.pageless().x, docpos.pageless().y}, &char_index);
+        if (char_index >= 0) {
+
+            int begin_index = std::max(0, char_index - count);
+            int end_index = std::min((int)flat_chars.size(), char_index + count);
+            std::vector<fz_stext_char*> range_chars;
+            for (int i = begin_index; i < end_index; i++) {
+                range_chars.push_back(flat_chars[i]);
+            }
+            return range_chars;
+        }
+
+    }
+    else {
+        return flat_chars;
+    }
+}
