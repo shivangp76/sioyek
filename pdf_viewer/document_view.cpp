@@ -25,6 +25,7 @@ extern float OVERVIEW_OFFSET[2];
 extern bool SHOULD_HIGHLIGHT_LINKS;
 extern float HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT;
 extern int PAGE_PADDINGS;
+extern bool SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -1425,11 +1426,13 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
                     candid.reference_type = ReferenceType::Link;
 
                     //is_reference
-                    bool is_reference = is_link_a_reference(link, link_info);
                     //TIME_BEGIN;
-                    if (is_reference) {
-                        candid.highlight_rects = get_reference_link_highlights(parsed_uri.page - 1, link, link_info);
-                        candid.reference_type = ReferenceType::RefLink;
+                    if (SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS) {
+                        bool is_reference = is_link_a_reference(link, link_info);
+                        if (is_reference) {
+                            candid.highlight_rects = get_reference_link_highlights(parsed_uri.page - 1, link, link_info);
+                            candid.reference_type = ReferenceType::RefLink;
+                        }
                     }
                     //TIME_END;
 

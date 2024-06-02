@@ -27,6 +27,7 @@ float QUESTION_BOOKMARK_BACKGROUND_COLOR[3] = { 0.0f, 0.0f, 0.0f };
 float QUESTION_BOOKMARK_TEXT_COLOR[3] = { 1.0f, 1.0f, 1.0f };
 float GAMMA = 1.0f;
 bool DEBUG_DISPLAY_FREEHAND_POINTS = false;
+bool SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS = true;
 bool DEBUG_SMOOTH_FREEHAND_DRAWINGS = true;
 bool DEBUG = false;
 #ifdef SIOYEK_MOBILE
@@ -1073,6 +1074,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_bool(L"automatically_update_checksum_when_document_is_changed", &AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
+    add_bool(L"show_reference_overview_highlights", &SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS);
 
     add_string(L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
