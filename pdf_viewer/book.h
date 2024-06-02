@@ -438,11 +438,18 @@ struct SmartViewCandidate {
     std::wstring source_text;
     std::variant<DocumentPos, AbsoluteDocumentPos> target_pos;
     ReferenceType reference_type = ReferenceType::None;
-    std::vector<DocumentRect> highlight_rects;
 
+    // this function lazily computes highlight_rects_ when they are needed
+    std::optional<std::function<std::vector<DocumentRect>()>> highlight_rects_func = {};
+    bool are_highlights_computed = false;
+
+    const std::vector<DocumentRect> get_highlight_rects();
     Document* get_document(DocumentView* view);
     DocumentPos get_docpos(DocumentView* view);
     AbsoluteDocumentPos get_abspos(DocumentView* view);
+
+private:
+    std::vector<DocumentRect> highlight_rects_;
 };
 
 /*

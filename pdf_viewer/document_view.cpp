@@ -1425,16 +1425,13 @@ std::vector<SmartViewCandidate> DocumentView::find_line_definitions() {
                     candid.target_pos = DocumentPos{ parsed_uri.page - 1, parsed_uri.x, parsed_uri.y };
                     candid.reference_type = ReferenceType::Link;
 
-                    //is_reference
-                    //TIME_BEGIN;
                     if (SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS) {
                         bool is_reference = is_link_a_reference(link, link_info);
                         if (is_reference) {
-                            candid.highlight_rects = get_reference_link_highlights(parsed_uri.page - 1, link, link_info);
+                            candid.highlight_rects_func = [this, parsed_uri, link, link_info]() {return get_reference_link_highlights(parsed_uri.page - 1, link, link_info); };
                             candid.reference_type = ReferenceType::RefLink;
                         }
                     }
-                    //TIME_END;
 
                     result.push_back(candid);
                 }
@@ -3142,9 +3139,13 @@ void DocumentView::fill_text_under_pointer_info_reference_highlight_rects(TextUn
 }
 
 void DocumentView::fill_smart_view_candidate_reference_highlight_rects(SmartViewCandidate& candidate) {
-    candidate.highlight_rects = get_paper_name_rects_from_page_and_source_text(
-        candidate.get_docpos(this).page, candidate.source_text
-    );
+    int page = candidate.get_docpos(this).page;
+    std::wstring source_text = candidate.source_text;
+    candidate.highlight_rects_func = [this, page, source_text]() {
+        return get_paper_name_rects_from_page_and_source_text(
+            page, source_text
+        );
+        };
 
 }
 

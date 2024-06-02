@@ -5391,18 +5391,7 @@ void MainWidget::perform_search(std::wstring text, bool is_regex, bool is_increm
 
 void MainWidget::overview_to_definition() {
     if (!main_document_view->get_overview_page()) {
-        QDateTime before = QDateTime::currentDateTime();
         std::vector<SmartViewCandidate> candidates = main_document_view->find_line_definitions();
-        QDateTime after = QDateTime::currentDateTime();
-        qDebug() << "took  " << before.msecsTo(after) << "ms to find definitions";
-        //std::vector<SmartViewCandidate> candidates;
-
-        //for (auto [pos, rect] : defpos) {
-        //    SmartViewCandidate c;
-        //    c.source_rect = rect;
-        //    c.target_pos = pos;
-        //    candidates.push_back(c);
-        //}
 
         if (candidates.size() > 0) {
             DocumentPos first_docpos = candidates[0].get_docpos(main_document_view);
@@ -5414,7 +5403,7 @@ void MainWidget::overview_to_definition() {
             overview_state.absolute_offset_x = 0;
             overview_state.absolute_offset_y = first_abspos.y;
             overview_state.doc = doc();
-            overview_state.highlight_rects = candidates[0].highlight_rects;
+            overview_state.highlight_rects = candidates[0].get_highlight_rects();
             overview_state.overview_type = reference_type_string(candidates[0].reference_type);
 
             set_overview_page(overview_state, true);
@@ -8948,7 +8937,7 @@ bool MainWidget::goto_ith_next_overview(int i) {
             set_overview_page(state, true);
             invalidate_render();
         }
-        dv()->set_overview_highlights(dv()->smart_view_candidates[dv()->index_into_candidates].highlight_rects);
+        dv()->set_overview_highlights(dv()->smart_view_candidates[dv()->index_into_candidates].get_highlight_rects());
         on_overview_source_updated();
         return true;
     }
