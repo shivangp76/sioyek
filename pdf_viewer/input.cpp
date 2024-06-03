@@ -4319,7 +4319,13 @@ public:
                     search_custom_engine(selected_text, SEARCH_URLS[symbol - 'a']);
                 }
                 else {
-                    search_custom_engine(widget->doc()->detect_paper_name(), SEARCH_URLS[symbol - 'a']);
+                    std::optional<QString> overview_paper_name = widget->get_overview_paper_name();
+                    if (overview_paper_name.has_value()) {
+                        search_custom_engine(overview_paper_name->toStdWString(), SEARCH_URLS[symbol - 'a']);
+                    }
+                    else {
+                        search_custom_engine(widget->doc()->detect_paper_name(), SEARCH_URLS[symbol - 'a']);
+                    }
                 }
             }
             else {
