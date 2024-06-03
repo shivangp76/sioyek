@@ -7,7 +7,6 @@
 // better tablet button handling, the current method is setting dependent
 // continue high quality tts on ios and android when the app is minimized
 // make sure pop_current_widget is called on all show_filtered_select_menus
-// capture doc() in server reply lambdas because it might have changed since the request was sent
 // batch the todos
 // see if we can use QApplication::instance as the parent instead of passing parents to network_manager
 
@@ -11958,14 +11957,16 @@ void MainWidget::upload_current_file() {
     if (!doc()) return;
 
     doc()->set_is_synced(true);
+    float offset_y = main_document_view->get_offset_y();
+
     sioyek_network_manager->upload_file(
         this,
         QString::fromStdWString(doc()->get_path()),
         QString::fromStdString(doc()->get_checksum()),
-        [&, document=doc()]() {
+        [&, offset_y, document=doc()]() {
             sioyek_network_manager->sync_document_annotations_to_server(this, document, [this]() {invalidate_render(); });
             //sync_annotations_with_server();
-            sync_document_location_to_servers(document, main_document_view->get_offset_y(), false);
+            sync_document_location_to_servers(document, offset_y, false);
         }
     );
 }
