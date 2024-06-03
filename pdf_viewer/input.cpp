@@ -4031,7 +4031,18 @@ public:
     static inline const std::string hname = "Copy";
     CopyCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        copy_to_clipboard(widget->get_selected_text());
+        auto selected_text = widget->get_selected_text();
+        if (selected_text.size() == 0) {
+            if (widget->main_document_view->get_overview_page()) {
+                std::optional<QString> overview_paper_name = widget->get_overview_paper_name();
+                if (overview_paper_name) {
+                    copy_to_clipboard(overview_paper_name->toStdWString());
+                }
+            }
+        }
+        else {
+            copy_to_clipboard(selected_text);
+        }
     }
 
 };
