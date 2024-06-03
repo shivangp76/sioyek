@@ -7,6 +7,7 @@
 #include <qdir.h>
 #include <qhttpmultipart.h>
 #include <qtimer.h>
+#include <qapplication.h>
 #include <QtCore/qbuffer.h>
 
 #include "utils.h"
@@ -1654,4 +1655,46 @@ std::optional<QJsonObject> SioyekNetworkManager::get_sioyek_json_data() {
         }
     }
     return sioyek_json_data;
+}
+
+void SioyekNetworkManager::sync_deleted_annot(QObject* parent, Document* doc, const std::string& annot_type, const std::string& uuid) {
+    if (is_document_available_on_server(doc)) {
+        auto checksum = doc->get_checksum_fast();
+        if (checksum) {
+            delete_annot(
+                parent,
+                QString::fromStdString(checksum.value()),
+                QString::fromStdString(annot_type),
+                QString::fromStdString(uuid),
+                [this, uuid, checksum]() { // on success
+                    //db_manager->set_highlight_uuid_to_synced(uuid);
+
+                },
+                [this, uuid, checksum, annot_type]() { // on fail
+                    db_manager->insert_unsynced_deletion(annot_type, uuid, checksum.value());
+                }
+            );
+        }
+    }
+    else {
+        auto checksum = doc->get_checksum_fast();
+        if (checksum && doc->get_is_synced()) {
+            db_manager->insert_unsynced_deletion(annot_type, uuid, checksum.value());
+        }
+    }
+    doc->update_last_local_edit_time();
+}
+
+bool SioyekNetworkManager::is_document_available_on_server(Document* doc) {
+    if (!doc) {
+        return false;
+    }
+    
+    std::optional<std::string> maybe_checksum = doc->get_checksum_fast();
+    if (maybe_checksum.has_value()) {
+        return is_checksum_available_on_server(maybe_checksum.value());
+    }
+    else {
+        return false;
+    }
 }

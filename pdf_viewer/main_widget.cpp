@@ -9,6 +9,7 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // capture doc() in server reply lambdas because it might have changed since the request was sent
 // batch the todos
+// see if we can use QApplication::instance as the parent instead of passing parents to network_manager
 
 #include <iostream>
 #include <vector>
@@ -501,17 +502,7 @@ public:
 };
 
 bool MainWidget::is_current_document_available_on_server() {
-    if (!doc()) {
-        return false;
-    }
-    
-    std::optional<std::string> maybe_checksum = doc()->get_checksum_fast();
-    if (maybe_checksum.has_value()) {
-        return sioyek_network_manager->is_checksum_available_on_server(maybe_checksum.value());
-    }
-    else {
-        return false;
-    }
+    return sioyek_network_manager->is_document_available_on_server(doc());
 }
 
 
@@ -10049,7 +10040,8 @@ void MainWidget::handle_semantic_search(const std::wstring& query, bool has_trie
         if (status == "NO_INDEX") {
             const std::wstring& local_index = doc()->get_super_fast_index();
             if (has_tried_already == false) {
-                sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, query](QJsonObject res) {
+                sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, document, query](QJsonObject res) {
+                    if (doc() != document) return;
                     handle_semantic_search(query, true);
                     });
             }
@@ -11618,31 +11610,7 @@ void MainWidget::on_highlight_deleted(const std::string& uuid){
 }
 
 void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::string& uuid) {
-    if (is_current_document_available_on_server()) {
-        auto checksum = doc()->get_checksum_fast();
-        if (checksum) {
-            sioyek_network_manager->delete_annot(
-                this,
-                QString::fromStdString(checksum.value()),
-                QString::fromStdString(annot_type),
-                QString::fromStdString(uuid),
-                [this, uuid, checksum]() { // on success
-                    //db_manager->set_highlight_uuid_to_synced(uuid);
-
-                },
-                [this, uuid, checksum, annot_type]() { // on fail
-                    db_manager->insert_unsynced_deletion(annot_type, uuid, checksum.value());
-                }
-            );
-        }
-    }
-    else {
-        auto checksum = doc()->get_checksum_fast();
-        if (checksum && should_sync_current_document_to_server()) {
-            db_manager->insert_unsynced_deletion(annot_type, uuid, checksum.value());
-        }
-    }
-    doc()->update_last_local_edit_time();
+    sioyek_network_manager->sync_deleted_annot(this, doc(), annot_type, uuid);
 }
 
 

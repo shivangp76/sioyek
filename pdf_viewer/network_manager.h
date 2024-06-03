@@ -98,6 +98,8 @@ public:
     void perform_unsynced_inserts_and_deletes(QObject* parent, Document* doc, const QString& checksum, std::function<void()> on_done);
     const std::wstring& get_url_for_annot_upload(const Annotation* annot);
     //const std::wstring& get_url_for_annot_delete(const Annotation* annot);
+    void sync_deleted_annot(QObject* parent, Document* doc, const std::string& annot_type, const std::string& uuid);
+    bool is_document_available_on_server(Document* doc);
 
     void upload_annot(QObject* parent, const QString& checksum, const Annotation& annot, std::function<void()> on_success, std::function<void()> on_fail);
     void delete_file_with_checksum(const QString& checksum);
