@@ -11773,19 +11773,8 @@ void MainWidget::sync_newly_added_annot(const std::string& annot_type, const std
                 *annot,
                 [&, uuid, this, annot_type, document=doc()]() { // on success
                     if (document != doc()) return;
-                    //db_manager->set_highlight_uuid_to_synced(uuid);
-                    std::string table_name = db_manager->get_table_name_for_annot_type(annot_type);
                     std::vector<std::string> uuids = { uuid };
-                    if (annot_type == "highlight") {
-                        doc()->set_annots_to_synced<Highlight>(uuids);
-                    }
-                    else if (annot_type == "bookmark") {
-                        doc()->set_annots_to_synced<BookMark>(uuids);
-                    }
-                    else if (annot_type == "portal") {
-                        doc()->set_annots_to_synced<Portal>(uuids);
-                    }
-                    //db_manager->set_annot_uuids_to_synced(table_name, {uuid});
+                    doc()->set_annots_to_synced_with_type(annot_type, uuids);
                 },
                 [&, uuid, this]() { // on failure
                 }

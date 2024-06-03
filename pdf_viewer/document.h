@@ -558,6 +558,8 @@ public:
 
     }
 
+    void set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids);
+
     friend class DocumentManager;
 };
 

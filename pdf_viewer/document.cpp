@@ -4954,3 +4954,16 @@ std::vector<fz_stext_char*> Document::get_flat_chars_around_pos(DocumentPos docp
         return flat_chars;
     }
 }
+
+void Document::set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids) {
+
+    if (annot_type == "highlight") {
+        set_annots_to_synced<Highlight>(uuids);
+    }
+    else if (annot_type == "bookmark") {
+        set_annots_to_synced<BookMark>(uuids);
+    }
+    else if (annot_type == "portal") {
+        set_annots_to_synced<Portal>(uuids);
+    }
+}
