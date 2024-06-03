@@ -23,6 +23,7 @@ extern Path standard_data_path;
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
 extern std::wstring EXTRACT_TABLE_PROMPT;
+extern Path sioyek_json_data_path;
 
 SioyekNetworkManager::SioyekNetworkManager(DatabaseManager* db_manager_, BackgroundTaskManager* task_manager, DocumentManager* doc_manager, QObject* parent) :
    db_manager(db_manager_), background_task_manager(task_manager) , document_manager(doc_manager) {
@@ -1499,4 +1500,158 @@ void block_for_sends(std::vector<QNetworkReply*> reply) {
         l.exec();
     }
 
+}
+
+void SioyekNetworkManager::sync_document_annotations_to_server(QObject* parent, Document* doc, std::function<void()> on_done) {
+    if (!doc) return;
+    if (!doc->get_checksum_fast()) return;
+    if (!(status == ServerStatus::LoggedIn)) return;
+    if ((!doc->get_is_synced())) {
+        download_annotations_since_last_sync();
+        return;
+    }
+
+    QString document_checksum = QString::fromStdString(doc->get_checksum_fast().value());
+    get_last_drawing_modification_time(parent, doc->get_checksum_fast().value(), [this, parent, document=doc](std::optional<QDateTime> server_modification_time) {
+        std::optional<QDateTime> local_modification_time = document->get_local_drawings_modification_time();
+        // if the server file is newer, update the local file
+        if (server_modification_time.has_value() && local_modification_time.has_value()) {
+            qDebug() << local_modification_time.value().secsTo(server_modification_time.value());
+        }
+        if (server_modification_time.has_value() &&
+            (!local_modification_time.has_value() ||
+                (local_modification_time.value().secsTo(server_modification_time.value()) > 10)
+                )) {
+            download_drawings(parent, document->get_checksum_fast().value(), document->get_drawings_file_path(), [this, document]() {
+                document->load_drawings();
+                });
+        }
+        });
+
+    perform_unsynced_inserts_and_deletes(parent, doc, document_checksum, [this, document_checksum, parent, document=doc, on_done=std::move(on_done)]() {
+        get_document_annotations(parent, document_checksum,
+        [&, document_checksum, document, on_done=std::move(on_done)](std::vector<Highlight>&& server_highlights, std::vector<BookMark>&& server_bookmarks, std::vector<Portal>&& server_portals, std::optional<QDateTime> server_access_time) {
+
+                const std::vector<Highlight>& local_highlights = document->get_highlights();
+                const std::vector<BookMark>& local_bookmarks = document->get_bookmarks();
+                const std::vector<Portal>& local_portals = document->get_portals();
+
+                auto [local_only_highlights, server_only_highlights, intersection_highlights] = decompose_sets(local_highlights, server_highlights);
+                auto [local_only_bookmarks, server_only_bookmarks, intersection_bookmarks] = decompose_sets(local_bookmarks, server_bookmarks);
+                auto [local_only_portals, server_only_portals, intersection_portals] = decompose_sets(local_portals, server_portals);
+
+                auto sync_annot_intersection = [&, this, document_checksum=document->get_checksum_fast()](auto intersection) {
+                    Document* synced_doc = document_manager->get_document_with_checksum(document_checksum.value());
+                    for (const auto& [local_annot, server_annot] : intersection) {
+                        // sync only if the annotation has changed
+                        if (has_changed(local_annot, server_annot)) {
+                            QDateTime local_modification_time = QDateTime::fromString(QString::fromStdString(local_annot.modification_time), Qt::ISODate);
+                            QDateTime server_modification_time = QDateTime::fromString(QString::fromStdString(server_annot.modification_time), Qt::ISODate);
+                            local_modification_time.setTimeSpec(Qt::UTC);
+                            server_modification_time.setTimeSpec(Qt::UTC);
+                            if (server_modification_time > local_modification_time) {
+                                // server is the authority
+                                //db_manager->update_annot_with_server_annot(&server_annot);
+                                synced_doc->update_annotation_with_server_annotation(&server_annot);
+                            }
+                            else {
+                                // todo: this should be batched
+                                upload_annot(parent,
+                                    QString::fromStdString(document->get_checksum_fast().value()),
+                                    local_annot,
+                                    []() {
+                                    },
+                                    []() {
+                                    }
+                                );
+                            }
+                        }
+                    }
+                    };
+
+                sync_annot_intersection(intersection_highlights);
+                sync_annot_intersection(intersection_bookmarks);
+                sync_annot_intersection(intersection_portals);
+
+
+                //// todo: this should be batched
+                document->lock_highlights_mutex();
+                for (const auto& local_highlight : local_only_highlights) {
+                    document->delete_highlight_with_uuid(local_highlight.uuid, true);
+                }
+                document->unlock_highlights_mutex();
+
+                for (const auto& local_bookmark : local_only_bookmarks) {
+                    document->delete_bookmark_with_uuid(local_bookmark.uuid, true);
+                }
+
+                for (const auto& local_portal : local_only_portals) {
+                    document->delete_portal_with_uuid(local_portal.uuid, true);
+                }
+
+                // todo: this should be batched
+                for (const auto& server_highlight : server_only_highlights) {
+                    document->add_highlight_with_existing_uuid(server_highlight);
+                }
+
+                for (const auto& server_bookmark : server_only_bookmarks) {
+                    document->add_bookmark_with_existing_uuid(server_bookmark);
+                }
+
+                for (const auto& server_portal : server_only_portals) {
+                    document->add_portal_with_existing_uuid(server_portal);
+                }
+                download_annotations_since_last_sync();
+
+
+                on_done();
+                //invalidate_render();
+            });
+
+        });
+
+
+}
+
+void SioyekNetworkManager::download_annotations_since_last_sync(bool force_all) {
+    QDateTime last_annotation_update_time = get_last_server_sync_time().value_or(QDateTime::currentDateTimeUtc().addYears(-100));
+    save_last_server_sync_time();
+    if (force_all) {
+        last_annotation_update_time = last_annotation_update_time.addYears(-100);
+    }
+    download_new_annotations(nullptr, last_annotation_update_time, force_all);
+}
+
+std::optional<QDateTime> SioyekNetworkManager::get_last_server_sync_time() {
+    if (!last_server_sync_time.has_value()) {
+        std::optional<QJsonObject> obj = get_sioyek_json_data();
+        if (obj) {
+            last_server_sync_time = QDateTime::fromString(obj.value()["sync_time"].toString(), Qt::ISODate);
+        }
+    }
+    return last_server_sync_time;
+}
+
+void SioyekNetworkManager::save_last_server_sync_time() {
+    QDateTime current_time = QDateTime::currentDateTime().toUTC();
+    QJsonObject root;
+    root["sync_time"] = current_time.toString(Qt::ISODate);
+    QJsonDocument json_doc(root);
+
+    QFile json_file(QString::fromStdWString(sioyek_json_data_path.get_path()));
+    json_file.open(QFile::WriteOnly);
+    json_file.write(json_doc.toJson());
+    json_file.close();
+}
+
+std::optional<QJsonObject> SioyekNetworkManager::get_sioyek_json_data() {
+    if (!sioyek_json_data.has_value()) {
+        QFile file(QString::fromStdWString(sioyek_json_data_path.get_path()));
+        if (file.exists() && file.open(QIODeviceBase::ReadOnly)) {
+            QJsonDocument json_document = QJsonDocument::fromJson(file.readAll());
+            sioyek_json_data = json_document.object();
+            file.close();
+        }
+    }
+    return sioyek_json_data;
 }

@@ -6,11 +6,9 @@
 // touch epub controls
 // better tablet button handling, the current method is setting dependent
 // continue high quality tts on ios and android when the app is minimized
-// problem: start with a local document, then open a server document. the annotations are not loaded, when sioyek is restarted, the annotations are still not loaded but we move to the top of document, the third time the annotations are loaded
-// sync drawings
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // capture doc() in server reply lambdas because it might have changed since the request was sent
-// make overview to definition faster when there are a lot of links it the line
+// batch the todos
 
 #include <iostream>
 #include <vector>
@@ -6146,157 +6144,9 @@ void MainWidget::handle_keys_user_all() {
 }
 
 void MainWidget::sync_annotations_with_server() {
-    if (!doc()) return;
-    if (!doc()->get_checksum_fast()) return;
-    if (!is_logged_in()) return;
-    if ((!doc()->get_is_synced())) {
-        download_annotations_since_last_sync();
-        return;
-    }
-
-    QString document_checksum = QString::fromStdString(doc()->get_checksum_fast().value());
-    sioyek_network_manager->get_last_drawing_modification_time(this, doc()->get_checksum_fast().value(), [this](std::optional<QDateTime> server_modification_time) {
-        std::optional<QDateTime> local_modification_time = doc()->get_local_drawings_modification_time();
-        // if the server file is newer, update the local file
-        if (server_modification_time.has_value() && local_modification_time.has_value()) {
-            qDebug() << local_modification_time.value().secsTo(server_modification_time.value());
-        }
-        if (server_modification_time.has_value() &&
-            (!local_modification_time.has_value() ||
-                (local_modification_time.value().secsTo(server_modification_time.value()) > 10)
-                )) {
-            sioyek_network_manager->download_drawings(this, doc()->get_checksum_fast().value(), doc()->get_drawings_file_path(), [this]() {
-                doc()->load_drawings();
-                });
-        }
-        });
-
-    sioyek_network_manager->perform_unsynced_inserts_and_deletes(this, doc(), document_checksum, [&, document_checksum, this]() {
-        sioyek_network_manager->get_document_annotations(this, document_checksum,
-        [&, document_checksum](std::vector<Highlight>&& server_highlights, std::vector<BookMark>&& server_bookmarks, std::vector<Portal>&& server_portals, std::optional<QDateTime> server_access_time) {
-
-                const std::vector<Highlight>& local_highlights = doc()->get_highlights();
-                const std::vector<BookMark>& local_bookmarks = doc()->get_bookmarks();
-                const std::vector<Portal>& local_portals = doc()->get_portals();
-
-                auto [local_only_highlights, server_only_highlights, intersection_highlights] = decompose_sets(local_highlights, server_highlights);
-                auto [local_only_bookmarks, server_only_bookmarks, intersection_bookmarks] = decompose_sets(local_bookmarks, server_bookmarks);
-                auto [local_only_portals, server_only_portals, intersection_portals] = decompose_sets(local_portals, server_portals);
-
-                auto sync_annot_intersection = [&, this, document_checksum=doc()->get_checksum_fast()](auto intersection) {
-                    Document* synced_doc = document_manager->get_document_with_checksum(document_checksum.value());
-                    for (const auto& [local_annot, server_annot] : intersection) {
-                        // sync only if the annotation has changed
-                        if (has_changed(local_annot, server_annot)) {
-                            QDateTime local_modification_time = QDateTime::fromString(QString::fromStdString(local_annot.modification_time), Qt::ISODate);
-                            QDateTime server_modification_time = QDateTime::fromString(QString::fromStdString(server_annot.modification_time), Qt::ISODate);
-                            local_modification_time.setTimeSpec(Qt::UTC);
-                            server_modification_time.setTimeSpec(Qt::UTC);
-                            if (server_modification_time > local_modification_time) {
-                                // server is the authority
-                                //db_manager->update_annot_with_server_annot(&server_annot);
-                                synced_doc->update_annotation_with_server_annotation(&server_annot);
-                            }
-                            else {
-                                // todo: this should be batched
-                                sioyek_network_manager->upload_annot(this,
-                                    QString::fromStdString(doc()->get_checksum_fast().value()),
-                                    local_annot,
-                                    []() {
-                                    },
-                                    []() {
-                                    }
-                                );
-                            }
-                        }
-                    }
-                    };
-
-                sync_annot_intersection(intersection_highlights);
-                sync_annot_intersection(intersection_bookmarks);
-                sync_annot_intersection(intersection_portals);
-
-
-                //// todo: this should be batched
-                doc()->lock_highlights_mutex();
-                for (const auto& local_highlight : local_only_highlights) {
-                    doc()->delete_highlight_with_uuid(local_highlight.uuid, true);
-                }
-                doc()->unlock_highlights_mutex();
-
-                for (const auto& local_bookmark : local_only_bookmarks) {
-                    doc()->delete_bookmark_with_uuid(local_bookmark.uuid, true);
-                }
-
-                for (const auto& local_portal : local_only_portals) {
-                    doc()->delete_portal_with_uuid(local_portal.uuid, true);
-                }
-
-                // todo: this should be batched
-                for (const auto& server_highlight : server_only_highlights) {
-                    doc()->add_highlight_with_existing_uuid(server_highlight);
-                }
-
-                for (const auto& server_bookmark : server_only_bookmarks) {
-                    doc()->add_bookmark_with_existing_uuid(server_bookmark);
-                }
-
-                for (const auto& server_portal : server_only_portals) {
-                    doc()->add_portal_with_existing_uuid(server_portal);
-                }
-                download_annotations_since_last_sync();
-
-
-                invalidate_render();
-            });
-
-        });
-
-
+    sioyek_network_manager->sync_document_annotations_to_server(this, doc(), [this]() {invalidate_render(); });
 }
 
-void MainWidget::download_annotations_since_last_sync(bool force_all) {
-    QDateTime last_annotation_update_time = get_last_server_sync_time().value_or(QDateTime::currentDateTimeUtc().addYears(-100));
-    save_last_server_sync_time();
-    if (force_all) {
-        last_annotation_update_time = last_annotation_update_time.addYears(-100);
-    }
-    sioyek_network_manager->download_new_annotations(this, last_annotation_update_time, force_all);
-}
-
-std::optional<QJsonObject> MainWidget::get_sioyek_json_data() {
-    if (!sioyek_json_data.has_value()) {
-        QFile file(QString::fromStdWString(sioyek_json_data_path.get_path()));
-        if (file.exists() && file.open(QIODeviceBase::ReadOnly)) {
-            QJsonDocument json_document = QJsonDocument::fromJson(file.readAll());
-            sioyek_json_data = json_document.object();
-            file.close();
-        }
-    }
-    return sioyek_json_data;
-}
-
-std::optional<QDateTime> MainWidget::get_last_server_sync_time() {
-    if (!last_server_sync_time.has_value()) {
-        std::optional<QJsonObject> obj = get_sioyek_json_data();
-        if (obj) {
-            last_server_sync_time = QDateTime::fromString(obj.value()["sync_time"].toString(), Qt::ISODate);
-        }
-    }
-    return last_server_sync_time;
-}
-
-void MainWidget::save_last_server_sync_time() {
-    QDateTime current_time = QDateTime::currentDateTime().toUTC();
-    QJsonObject root;
-    root["sync_time"] = current_time.toString(Qt::ISODate);
-    QJsonDocument json_doc(root);
-
-    QFile json_file(QString::fromStdWString(sioyek_json_data_path.get_path()));
-    json_file.open(QFile::WriteOnly);
-    json_file.write(json_doc.toJson());
-    json_file.close();
-}
 
 void MainWidget::handle_prefs_user_all() {
     std::vector<Path> prefs_paths = config_manager->get_all_user_config_files();
@@ -7290,10 +7140,10 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
     int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
     doc()->get_bookmarks()[ind].description += L"\n\n";
-    sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, [this, bookmark_uuid](QString chunk) {
-        int bookmark_index = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
+    sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, [this, bookmark_uuid, document=doc()](QString chunk) {
+        int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
         if (bookmark_index > 0) {
-            BookMark& bm = doc()->get_bookmarks()[bookmark_index];
+            BookMark& bm = document->get_bookmarks()[bookmark_index];
             bm.description += chunk.toStdWString();
             // if the new description doesn't fit, increase the height of the bookmark
             QSizeF new_size = get_bookmark_text_size(bm);
@@ -7306,10 +7156,10 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
             invalidate_render();
         }
         },
-        [this, bookmark_uuid]() {
-            int bookmark_index = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
-            BookMark& bm = doc()->get_bookmarks()[bookmark_index];
-            doc()->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
+        [this, bookmark_uuid, document=doc()]() {
+            int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+            BookMark& bm = document->get_bookmarks()[bookmark_index];
+            document->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
         });
 }
 
@@ -10152,18 +10002,20 @@ void MainWidget::toggle_rect_hints() {
     }
 }
 
-void MainWidget::handle_semantic_search_extractive(const std::wstring& query, int depth) {
+void MainWidget::handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already) {
 
     const std::wstring& index = doc()->get_super_fast_index();
 
-    sioyek_network_manager->semantic_search_extractive(this, QString::fromStdWString(query), index, [&,depth, query](QJsonObject resp) {
+    sioyek_network_manager->semantic_search_extractive(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
+        if (document != doc()) return;
+
         QString status = resp["status"].toString();
 
         if (status == "NO_INDEX") {
-            const std::wstring& local_index = doc()->get_super_fast_index();
-            if (depth == 0) {
-                sioyek_network_manager->upload_document_index(this, local_index, [this, depth, query](QJsonObject res) {
-                    handle_semantic_search(query, depth + 1);
+            const std::wstring& local_index = document->get_super_fast_index();
+            if (has_tried_already == false) {
+                sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, query](QJsonObject res) {
+                    handle_semantic_search(query, true);
                     });
             }
         }
@@ -10174,8 +10026,8 @@ void MainWidget::handle_semantic_search_extractive(const std::wstring& query, in
             if (range_begin >= 0 && range_end >= 0) {
                 int page = -1;
                 SearchResult current_result;
-                current_result.begin_index_in_page = doc()->absolute_to_page_index(range_begin, page);
-                current_result.end_index_in_page = doc()->absolute_to_page_index(range_end, page);
+                current_result.begin_index_in_page = document->absolute_to_page_index(range_begin, page);
+                current_result.end_index_in_page = document->absolute_to_page_index(range_end, page);
                 current_result.page = page;
 
                 main_document_view->set_search_results({ current_result });
@@ -10184,18 +10036,21 @@ void MainWidget::handle_semantic_search_extractive(const std::wstring& query, in
         }
         });
 }
-void MainWidget::handle_semantic_search(const std::wstring& query, int depth) {
+
+void MainWidget::handle_semantic_search(const std::wstring& query, bool has_tried_already) {
 
     const std::wstring& index = doc()->get_super_fast_index();
 
-    sioyek_network_manager->semantic_search(this, QString::fromStdWString(query), index, [&,depth, query](QJsonObject resp) {
+    sioyek_network_manager->semantic_search(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
+        if (document != doc()) return;
+
         QString status = resp["status"].toString();
 
         if (status == "NO_INDEX") {
             const std::wstring& local_index = doc()->get_super_fast_index();
-            if (depth == 0) {
-                sioyek_network_manager->upload_document_index(this, local_index, [this, depth, query](QJsonObject res) {
-                    handle_semantic_search(query, depth + 1);
+            if (has_tried_already == false) {
+                sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, query](QJsonObject res) {
+                    handle_semantic_search(query, true);
                     });
             }
         }
@@ -11948,7 +11803,8 @@ void MainWidget::sync_newly_added_annot(const std::string& annot_type, const std
             sioyek_network_manager->upload_annot(this,
                 QString::fromStdString(checksum.value()),
                 *annot,
-                [&, uuid, this, annot_type]() { // on success
+                [&, uuid, this, annot_type, document=doc()]() { // on success
+                    if (document != doc()) return;
                     //db_manager->set_highlight_uuid_to_synced(uuid);
                     std::string table_name = db_manager->get_table_name_for_annot_type(annot_type);
                     std::vector<std::string> uuids = { uuid };
@@ -12030,7 +11886,8 @@ void MainWidget::handle_sync_open_document() {
     if (sioyek_network_manager->ACCESS_TOKEN.size() > 0) {
         // check if the server's document location is different from the local location
         if (doc() && doc()->get_checksum_fast()) {
-            sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&](QJsonObject obj) {
+            sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&, document=doc()](QJsonObject obj) {
+                if (document != doc()) return;
 
                 if (obj["status"] == "OK") {
                     float server_offset_y = obj["result"].toObject()["offset_y"].toDouble();
@@ -12148,9 +12005,10 @@ void MainWidget::upload_current_file() {
         this,
         QString::fromStdWString(doc()->get_path()),
         QString::fromStdString(doc()->get_checksum()),
-        [&]() {
-            sync_annotations_with_server();
-            sync_current_file_location_to_servers();
+        [&, document=doc()]() {
+            sioyek_network_manager->sync_document_annotations_to_server(this, document, [this]() {invalidate_render(); });
+            //sync_annotations_with_server();
+            sync_document_location_to_servers(document, main_document_view->get_offset_y(), false);
         }
     );
 }

@@ -171,9 +171,6 @@ public:
     QMenuBar* menu_bar = nullptr;
     int window_id;
 
-    std::optional<QJsonObject> sioyek_json_data = {};
-    std::optional<QDateTime> last_server_sync_time;
-
     //LastDocumentChecksum last_document_checksum;
 
     QFileSystemWatcher external_command_edit_watcher;
@@ -574,10 +571,6 @@ public:
     void focus_rect(DocumentRect rect);
     std::optional<float> move_visual_mark_next_get_offset();
 
-    std::optional<QJsonObject> get_sioyek_json_data();
-    std::optional<QDateTime> get_last_server_sync_time();
-    void save_last_server_sync_time();
-
     void move_visual_mark_next();
     void move_visual_mark_prev();
     AbsoluteRect move_visual_mark(int offset);
@@ -705,8 +698,8 @@ public:
     void handle_play();
     void handle_undo_drawing();
     void handle_pause();
-    void handle_semantic_search(const std::wstring& query, int depth=0);
-    void handle_semantic_search_extractive(const std::wstring& query, int depth=0);
+    void handle_semantic_search(const std::wstring& query, bool has_tried_already=false);
+    void handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already=false);
     std::wstring handle_freetext_bookmark_perform(const std::wstring& text, int pending_index);
     void handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid);
     void read_current_line();
@@ -1154,7 +1147,6 @@ public:
     void do_synchronize();
     void synchronize_if_desynchronized();
     void on_server_hashes_loaded();
-    void download_annotations_since_last_sync(bool force_all=false);
     Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
     QMediaPlayer* get_media_player();
 

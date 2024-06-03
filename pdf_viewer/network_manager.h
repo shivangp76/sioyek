@@ -19,6 +19,8 @@ private:
     BackgroundTaskManager* background_task_manager = nullptr;
     DocumentManager* document_manager = nullptr;
     bool already_downloaded_new_annotations = false;
+    std::optional<QDateTime> last_server_sync_time;
+    std::optional<QJsonObject> sioyek_json_data = {};
 public:
     QNetworkAccessManager network_manager;
     std::string ACCESS_TOKEN;
@@ -105,6 +107,11 @@ public:
     void semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
     void upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done);
     void extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt = {});
+    void sync_document_annotations_to_server(QObject* parent, Document* doc, std::function<void()> on_done);
+    void download_annotations_since_last_sync(bool force_all=false);
+    std::optional<QDateTime> get_last_server_sync_time();
+    void save_last_server_sync_time();
+    std::optional<QJsonObject> get_sioyek_json_data();
 
     void delete_file_from_server(QObject* parent, std::string checksum, std::function<void()> on_done);
     QNetworkReply* upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done);

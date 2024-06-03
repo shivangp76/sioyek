@@ -5895,7 +5895,7 @@ public:
     ForceDownloadAnnotations(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->download_annotations_since_last_sync(true);
+        widget->sioyek_network_manager->download_annotations_since_last_sync(true);
     }
 
 };
