@@ -8,7 +8,9 @@
 // continue high quality tts on ios and android when the app is minimized
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
-// see if we can use QApplication::instance as the parent instead of passing parents to network_manager
+// make overview_link use multiple symbols if there are many links
+// pending download portals should probably be moved to DocumentView
+// better handle link selection when assigning a link to an overlapping portal
 
 #include <iostream>
 #include <vector>
@@ -7375,6 +7377,7 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
 
     if (paper_name) {
         QString bib_text = clean_bib_item(paper_name.value());
+        std::string pending_portal_handle = "";
 
         if (get_default_paper_download_finish_action() == PaperDownloadFinishedAction::Portal) {
             AbsoluteDocumentPos source_position;
@@ -7385,23 +7388,15 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
                 source_position = doc_pos.to_absolute(doc());
             }
 
-            create_pending_download_portal(source_position, bib_text.toStdWString());
+            pending_portal_handle = create_pending_download_portal(source_position, bib_text.toStdWString());
         }
         if (TOUCH_MODE) {
-            show_text_prompt(bib_text.toStdWString(), [this](std::wstring text) {
-                QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, text,
-                get_default_paper_download_finish_action(),
-                [this](QNetworkReply* reply) {
-                        on_paper_downloaded(reply);
-                    });
+            show_text_prompt(bib_text.toStdWString(), [this, pending_portal_handle](std::wstring text) {
+                download_paper_with_name(text, {}, pending_portal_handle);
                 });
         }
         else {
-            sioyek_network_manager->download_paper_with_name(this, bib_text.toStdWString(),
-                get_default_paper_download_finish_action(),
-                [this](QNetworkReply* reply) {
-                    on_paper_downloaded(reply);
-                });
+            download_paper_with_name(bib_text.toStdWString(), {}, pending_portal_handle);
         }
     }
 }
@@ -8913,16 +8908,16 @@ std::optional<Portal> MainWidget::get_target_portal(bool limit) {
 }
 
 void MainWidget::update_opengl_pending_download_portals() {
-    std::vector<AbsoluteRect> pending_rects;
+    std::vector<std::pair<AbsoluteRect, float>> pending_rects_and_completion_ratio;
     for (auto pending_portal : pending_download_portals) {
 
         if (pending_portal.source_document_path == doc()->get_path()) {
             AbsoluteRect rect = pending_portal.pending_portal.get_rectangle();
-            pending_rects.push_back(rect);
+            pending_rects_and_completion_ratio.push_back(std::make_pair(rect, pending_portal.downloaded_fraction));
         }
 
     }
-    main_document_view->set_pending_download_portals(std::move(pending_rects));
+    main_document_view->set_pending_download_portals(std::move(pending_rects_and_completion_ratio));
     invalidate_render();
 }
 
@@ -9099,13 +9094,11 @@ void MainWidget::download_selected_text() {
 void MainWidget::download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos) {
 
     std::wstring cleaned_paper_name = clean_bib_item(QString::fromStdWString(unclean_paper_name)).toStdWString();
-    create_pending_download_portal(source_pos, cleaned_paper_name);
-    sioyek_network_manager->download_paper_with_name(this, cleaned_paper_name, PaperDownloadFinishedAction::Portal, [&](QNetworkReply* reply) {
-        on_paper_downloaded(reply);
-        });
+    std::string pending_portal_handle = create_pending_download_portal(source_pos, cleaned_paper_name);
+    download_paper_with_name(cleaned_paper_name, PaperDownloadFinishedAction::Portal, pending_portal_handle);
 }
 
-void MainWidget::create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name) {
+std::string MainWidget::create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name) {
     Portal pending_portal;
     pending_portal.src_offset_x = source_position.x;
     pending_portal.src_offset_y = source_position.y;
@@ -9117,8 +9110,10 @@ void MainWidget::create_pending_download_portal(AbsoluteDocumentPos source_posit
     pending_download_portal.pending_portal = pending_portal;
     pending_download_portal.source_document_path = doc()->get_path();
     pending_download_portal.paper_name = paper_name;
+    pending_download_portal.handle = new_uuid_utf8();
     pending_download_portals.push_back(pending_download_portal);
     update_opengl_pending_download_portals();
+    return pending_download_portal.handle;
 }
 
 void MainWidget::show_text_prompt(std::wstring initial_value, std::function<void(std::wstring)> on_select) {
@@ -11717,10 +11712,10 @@ void MainWidget::on_new_portal_added(const std::string& uuid) {
                 std::optional<std::wstring> document_path = document_manager->get_path_from_hash(portal.dst.document_checksum);
                 if (document_path) {
                     sioyek_network_manager->upload_file(
-                        this,
+                        QApplication::instance(),
                         QString::fromStdWString(document_path.value()),
-                        QString::fromStdString(portal.dst.document_checksum), [this]() {
-                            sioyek_network_manager->update_user_files_hash_set();
+                        QString::fromStdString(portal.dst.document_checksum), [network_manager=sioyek_network_manager]() {
+                            network_manager->update_user_files_hash_set();
                         });
                 }
             }
@@ -12312,9 +12307,9 @@ void MainWidget::preload_next_page_for_tts(float rate) {
 }
 
 Q_INVOKABLE void MainWidget::update_checksum_impl(std::string old_checksum, std::string new_checksum) {
-    this->sioyek_network_manager->update_checksum(this, QString::fromStdWString(doc()->get_path()), QString::fromStdString(old_checksum), QString::fromStdString(new_checksum), [this, old_checksum, new_checksum]() {
+    this->sioyek_network_manager->update_checksum(this, QString::fromStdWString(doc()->get_path()), QString::fromStdString(old_checksum), QString::fromStdString(new_checksum), [this, document=doc(), old_checksum, new_checksum]() {
         this->sioyek_network_manager->update_user_files_hash_set();
-        doc()->reload_annotations_on_new_checksum();
+        document->reload_annotations_on_new_checksum();
 
         this->background_task_manager->add_task([this, old_checksum, new_checksum]() {
             this->document_manager->update_checksum(old_checksum, new_checksum);
@@ -12347,4 +12342,41 @@ bool MainWidget::import_local_database(std::wstring path) {
 
 bool MainWidget::import_shared_database(std::wstring path) {
     return db_manager->import_shared(QString::fromStdWString(path));
+}
+
+void MainWidget::on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle) {
+
+    QObject::connect(reply, &QNetworkReply::downloadProgress, [this, pending_portal_handle](qint64 received, qint64 total) {
+        int pending_index = get_pending_portal_index_with_handle(pending_portal_handle);
+        if (received > 0) {
+            float ratio = static_cast<float>(received) / total;
+            pending_download_portals[pending_index].downloaded_fraction = ratio;
+            update_opengl_pending_download_portals();
+            invalidate_render();
+        }
+        });
+}
+
+int MainWidget::get_pending_portal_index_with_handle(const std::string& handle) {
+    if (handle.size() == 0) return -1;
+
+    for (int i = 0; i < pending_download_portals.size(); i++) {
+        if (pending_download_portals[i].handle == handle) {
+            return i;
+        }
+    }
+    return -1;
+
+}
+
+QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action, std::string pending_portal_handle) {
+    QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, name,
+        action.value_or(get_default_paper_download_finish_action()),
+        [this, pending_portal_handle](QNetworkReply* reply) {
+            on_paper_download_begin(reply, pending_portal_handle);
+        },
+        [this](QNetworkReply* reply) {
+            on_paper_downloaded(reply);
+        });
+    return reply;
 }

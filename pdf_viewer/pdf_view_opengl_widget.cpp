@@ -410,7 +410,6 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
 
     //bookmark_pixmap = QPixmap(":/icons/B.svg");
     //portal_pixmap = QPixmap(":/end.png");
-    bookmark_icon = QIcon(":/icons/B.svg");
     portal_icon = QIcon(":/icons/P.svg");
     bookmark_icon_white = QIcon(":/icons/B_white.svg");
     portal_icon_white = QIcon(":/icons/P_white.svg");
@@ -1058,18 +1057,18 @@ void PdfViewOpenGLWidget::my_render() {
     if (doc()->can_use_highlights()) {
 
         for (int i = 0; i < document_view->pending_download_portals.size(); i++) {
-            render_portal_rect(document_view->pending_download_portals[i], true);
+            render_portal_rect(document_view->pending_download_portals[i].first, true, document_view->pending_download_portals[i].second);
         }
         for (int i = 0; i < portals.size(); i++) {
             if (portals[i].is_visible()) {
                 if (!portals[i].merged_rect) {
-                    render_portal_rect(portals[i].get_rectangle(), false);
+                    render_portal_rect(portals[i].get_rectangle(), false, {});
                 }
             }
         }
 
         if (document_view->pending_portal_rect) {
-            render_portal_rect(document_view->pending_portal_rect.value(), true);
+            render_portal_rect(document_view->pending_portal_rect.value(), true, {});
         }
 
         for (int i = 0; i < bookmarks.size(); i++) {
@@ -2115,19 +2114,34 @@ bool PdfViewOpenGLWidget::is_normalized_y_range_in_window(float y0, float y1) {
     return is_normalized_y_in_window(y0) || is_normalized_y_in_window(y1);
 }
 
-void PdfViewOpenGLWidget::render_portal_rect(AbsoluteRect portal_rect, bool is_pending) {
+void PdfViewOpenGLWidget::render_portal_rect(AbsoluteRect portal_rect, bool is_pending, std::optional<float> completion_ratio) {
     NormalizedWindowRect window_rect = portal_rect.to_window_normalized(dv());
 
     if (is_normalized_y_range_in_window(window_rect.y0, window_rect.y1)) {
         fz_irect portal_window_rect = dv()->normalized_to_window_rect(window_rect);
         QRect window_qrect = QRect(portal_window_rect.x0, portal_window_rect.y0, fz_irect_width(portal_window_rect), fz_irect_height(portal_window_rect));
-        QColor fill_color = QColor(255, 0, 0);
-        if (is_pending) {
-            fill_color = QColor(255, 255, 0);
-        }
+        QColor fill_color = QColor(0, 178, 255);
+        QColor complete_color = QColor(255, 132, 0);
+
+        //if (is_pending) {
+        //    fill_color = QColor(255, 255, 0);
+        //}
+        //if (completion_ratio.has_value()) {
+        //    fill_color = QColor(255, 255, 0);
+        //    fill_color.setAlphaF(completion_ratio.value());
+        //    painter.fillRect(window_qrect, fill_color);
+        //}
 
         if (is_pending) {
-            draw_icon(hourglass_icon, window_qrect);
+            //draw_icon(hourglass_icon, window_qrect);
+            float adjust_factor = document_view->get_zoom_level();
+            QRect adjust_rect = window_qrect.adjusted(adjust_factor * 1.5, adjust_factor, -adjust_factor * 1.5, -adjust_factor);
+            painter.fillRect(adjust_rect, fill_color);
+            if (completion_ratio) {
+                float completed_height = adjust_rect.height() * completion_ratio.value();
+                painter.fillRect(adjust_rect.x(), adjust_rect.y() + adjust_rect.height() - completed_height, adjust_rect.width(), completed_height, complete_color);
+            }
+            draw_icon(portal_icon, window_qrect);
         }
         else{
             render_ui_icon_for_current_color_mode(portal_icon, portal_icon_white, window_qrect);

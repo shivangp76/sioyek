@@ -120,7 +120,7 @@ public:
     std::optional<AbsoluteDocumentPos> underline = {};
     std::vector<DocumentRect> overview_highlights;
 
-    std::vector<AbsoluteRect> pending_download_portals;
+    std::vector<std::pair<AbsoluteRect, float>> pending_download_portals;
     std::optional<AbsoluteRect> selected_rectangle = {};
 
     // selected text (using mouse cursor or other methods) which is used e.g. for copying or highlighting
@@ -224,7 +224,7 @@ public:
     void set_selected_rectangle(AbsoluteRect selected);
     void clear_selected_rectangle();
     std::optional<AbsoluteRect> get_selected_rectangle();
-    void set_pending_download_portals(std::vector<AbsoluteRect>&& portal_rects);
+    void set_pending_download_portals(std::vector<std::pair<AbsoluteRect, float>>&& portal_rects);
 
     // find the closest portal to the current position
     // if limit is true, we only search for portals near the current location and not all portals

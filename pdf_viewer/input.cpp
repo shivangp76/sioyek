@@ -1877,9 +1877,7 @@ public:
     DownloadPaperWithNameCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->download_paper_with_name(widget, text.value(), PaperDownloadFinishedAction::OpenInNewWindow, [&](QNetworkReply* reply) {
-            widget->on_paper_downloaded(reply);
-            });
+        widget->download_paper_with_name(text.value(), PaperDownloadFinishedAction::OpenInNewWindow);
 
     }
 
@@ -5993,9 +5991,7 @@ public:
             widget->download_and_portal(text_, source_rect->center());
         }
         else {
-            widget->sioyek_network_manager->download_paper_with_name(widget, text_, widget->get_default_paper_download_finish_action(), [&](QNetworkReply* reply) {
-                widget->on_paper_downloaded(reply);
-                });
+            widget->download_paper_with_name(text_);
         }
 
     }

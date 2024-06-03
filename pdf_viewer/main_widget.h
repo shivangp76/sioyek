@@ -88,6 +88,8 @@ struct PendingDownloadPortal {
     Portal pending_portal;
     std::wstring paper_name;
     std::wstring source_document_path;
+    std::string handle;
+    float downloaded_fraction = 0.0f;
     // the pending portal is marked for deletion
     bool marked = false;
 };
@@ -926,7 +928,7 @@ public:
         std::vector<std::wstring> buttons,
         std::vector<std::wstring> tips,
         std::function<void(int, std::wstring)> on_select, bool top=true);
-    void create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name);
+    std::string create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name);
     void download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos);
     void download_selected_text();
     void smart_jump_to_selected_text();
@@ -1152,6 +1154,9 @@ public:
 
     bool import_local_database(std::wstring path);
     bool import_shared_database(std::wstring path);
+    void on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle);
+    QNetworkReply* download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action = {}, std::string pending_portal_handle="");
+    int get_pending_portal_index_with_handle(const std::string& handle);
 
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);

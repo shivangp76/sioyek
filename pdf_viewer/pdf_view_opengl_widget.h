@@ -240,7 +240,7 @@ public:
     void get_background_color(float out_background[3]);
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
-    void render_portal_rect(AbsoluteRect portal_absolute_rect, bool is_pending);
+    void render_portal_rect(AbsoluteRect portal_absolute_rect, bool is_pending, std::optional<float> completion_ratio);
     void get_color_for_current_mode(const float* input_color, float* output_color);
     void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
     void render_text_highlights();

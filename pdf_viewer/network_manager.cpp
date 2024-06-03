@@ -382,7 +382,7 @@ std::optional<QJsonDocument> SioyekNetworkManager::get_network_json_reply(QNetwo
     return {};
 }
 
-QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn) {
+QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> begin_function, std::function<void(QNetworkReply*)> fn) {
     std::wstring download_name = name;
     if (name.size() > 0 && name[0] == ':') {
         download_name = name.substr(1, name.size() - 1);
@@ -407,7 +407,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
     auto reply = network_manager.get(req);
     reply->setProperty("sioyek_paper_name", QString::fromStdWString(name));
     reply->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
-    QObject::connect(reply, &QNetworkReply::finished, [this, reply, parent, fn=std::move(fn)]() {
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, parent, fn=std::move(fn), begin_function=std::move(begin_function)]() {
 
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         QString rep_url = reply->url().toString();
@@ -456,7 +456,13 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
             download_reply->setProperty("sioyek_paper_name", sioyek_paper_name);
             download_reply->setProperty("sioyek_actual_paper_name", sioyek_actual_paper_name);
 
-            QObject::connect(download_reply, &QNetworkReply::finished, [this, download_reply, sioyek_paper_name, sioyek_actual_paper_name, download_finish_action, fn=std::move(fn)]() {
+            //qDebug() << "downlaod_reply: " << download_reply;
+            //QObject::connect(download_reply, &QNetworkReply::downloadProgress, [](qint64 r, qint64 t) {
+            //    qDebug() << r;
+            //    });
+            begin_function(download_reply);
+
+            QObject::connect(download_reply, &QNetworkReply::finished, [this, download_reply, sioyek_paper_name, sioyek_actual_paper_name, download_finish_action, begin_function=std::move(begin_function), fn=std::move(fn)]() {
                 int status_code = download_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
                 if (status_code == 200) {
                     fn(download_reply);
@@ -467,6 +473,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
                     auto redirect_download_reply = download_paper_with_url(redirect_url.toStdWString(), false, download_finish_action);
                     redirect_download_reply->setProperty("sioyek_paper_name", sioyek_paper_name);
                     redirect_download_reply->setProperty("sioyek_actual_paper_name", sioyek_actual_paper_name);
+                    begin_function(redirect_download_reply);
                     QObject::connect(redirect_download_reply, &QNetworkReply::finished, [this, redirect_download_reply, fn=std::move(fn)]() {
                         fn(redirect_download_reply);
                         });
@@ -558,6 +565,10 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_url(std::wstring paper_
     auto res = network_manager.get(req);
     res->setProperty("sioyek_archive_url", QString::fromStdWString(paper_url_));
     res->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
+    //qDebug() <<  "res:" << res;
+    //QObject::connect(res, &QNetworkReply::downloadProgress, [](qint64 total, qint64 received) {
+    //    qDebug() << "received " << received << " total " << total;
+    //    });
     //res->setParent(&network_manager);
     //res->setParent(network_manager);
     return res;

@@ -3064,7 +3064,7 @@ std::optional<AbsoluteRect> DocumentView::get_selected_rectangle() {
     return selected_rectangle;
 }
 
-void DocumentView::set_pending_download_portals(std::vector<AbsoluteRect>&& portal_rects){
+void DocumentView::set_pending_download_portals(std::vector<std::pair<AbsoluteRect, float>>&& portal_rects){
     pending_download_portals = std::move(portal_rects);
 }
 

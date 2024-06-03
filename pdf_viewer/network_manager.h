@@ -80,7 +80,7 @@ public:
     QNetworkReply* get_user_file_hash_set_reply();
     void update_user_files_hash_set();
     std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
-    QNetworkReply* download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> fn);
+    QNetworkReply* download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> begin_function, std::function<void(QNetworkReply*)> fn);
     void download_unsynced_files(QObject* parent, DatabaseManager* db_manager);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
     bool is_checksum_available_on_server(const std::string& checksum);
