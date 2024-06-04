@@ -12348,12 +12348,10 @@ void MainWidget::on_paper_download_begin(QNetworkReply* reply, std::string pendi
 
     QObject::connect(reply, &QNetworkReply::downloadProgress, [this, pending_portal_handle](qint64 received, qint64 total) {
         int pending_index = get_pending_portal_index_with_handle(pending_portal_handle);
-        if (received > 0) {
-            float ratio = static_cast<float>(received) / total;
-            pending_download_portals[pending_index].downloaded_fraction = ratio;
-            update_opengl_pending_download_portals();
-            invalidate_render();
-        }
+        float ratio = static_cast<float>(received) / total;
+        pending_download_portals[pending_index].downloaded_fraction = ratio;
+        update_opengl_pending_download_portals();
+        invalidate_render();
         });
 }
 

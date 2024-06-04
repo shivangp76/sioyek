@@ -2122,24 +2122,26 @@ void PdfViewOpenGLWidget::render_portal_rect(AbsoluteRect portal_rect, bool is_p
         QRect window_qrect = QRect(portal_window_rect.x0, portal_window_rect.y0, fz_irect_width(portal_window_rect), fz_irect_height(portal_window_rect));
         QColor fill_color = QColor(0, 178, 255);
         QColor complete_color = QColor(255, 132, 0);
-
-        //if (is_pending) {
-        //    fill_color = QColor(255, 255, 0);
-        //}
-        //if (completion_ratio.has_value()) {
-        //    fill_color = QColor(255, 255, 0);
-        //    fill_color.setAlphaF(completion_ratio.value());
-        //    painter.fillRect(window_qrect, fill_color);
-        //}
+        QColor not_started_color = QColor(255, 0, 0);
 
         if (is_pending) {
             //draw_icon(hourglass_icon, window_qrect);
             float adjust_factor = document_view->get_zoom_level();
             QRect adjust_rect = window_qrect.adjusted(adjust_factor * 1.5, adjust_factor, -adjust_factor * 1.5, -adjust_factor);
-            painter.fillRect(adjust_rect, fill_color);
+
             if (completion_ratio) {
-                float completed_height = adjust_rect.height() * completion_ratio.value();
-                painter.fillRect(adjust_rect.x(), adjust_rect.y() + adjust_rect.height() - completed_height, adjust_rect.width(), completed_height, complete_color);
+
+                if (completion_ratio.value() < 0) {
+                    painter.fillRect(adjust_rect, not_started_color);
+                }
+                else {
+                    painter.fillRect(adjust_rect, fill_color);
+                }
+
+                if (completion_ratio.value() >= 0) {
+                    float completed_height = adjust_rect.height() * completion_ratio.value();
+                    painter.fillRect(adjust_rect.x(), adjust_rect.y() + adjust_rect.height() - completed_height, adjust_rect.width(), completed_height, complete_color);
+                }
             }
             draw_icon(portal_icon, window_qrect);
         }

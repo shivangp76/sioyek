@@ -89,7 +89,7 @@ struct PendingDownloadPortal {
     std::wstring paper_name;
     std::wstring source_document_path;
     std::string handle;
-    float downloaded_fraction = 0.0f;
+    float downloaded_fraction = -1.0f;
     // the pending portal is marked for deletion
     bool marked = false;
 };
