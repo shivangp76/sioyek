@@ -187,6 +187,10 @@ extern std::wstring CONTROL_CLICK_COMMAND;
 extern std::wstring COMMAND_CLICK_COMMAND;
 extern std::wstring COMMAND_RIGHT_CLICK_COMMAND;
 extern std::wstring SHIFT_RIGHT_CLICK_COMMAND;
+extern std::wstring SHIFT_MIDDLE_CLICK_COMMAND;
+extern std::wstring CONTROL_MIDDLE_CLICK_COMMAND;
+extern std::wstring COMMAND_MIDDLE_CLICK_COMMAND;
+extern std::wstring ALT_MIDDLE_CLICK_COMMAND;
 extern std::wstring CONTROL_RIGHT_CLICK_COMMAND;
 extern std::wstring ALT_CLICK_COMMAND;
 extern std::wstring ALT_RIGHT_CLICK_COMMAND;
@@ -2820,7 +2824,23 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
                 if (last_middle_down_time.msecsTo(QTime::currentTime()) > 200) {
                 }
                 else {
-                    smart_jump_under_pos({ mevent->pos().x(), mevent->pos().y() });
+                    if (is_shift_pressed) {
+                        execute_macro_if_enabled(SHIFT_MIDDLE_CLICK_COMMAND);
+                    }
+                    else if (is_control_pressed) {
+                        execute_macro_if_enabled(CONTROL_MIDDLE_CLICK_COMMAND);
+                    }
+                    else if (is_command_pressed) {
+                        execute_macro_if_enabled(COMMAND_MIDDLE_CLICK_COMMAND);
+                    }
+                    else if (is_alt_pressed) {
+                        execute_macro_if_enabled(ALT_MIDDLE_CLICK_COMMAND);
+                    }
+                    else {
+                        execute_macro_if_enabled(MIDDLE_CLICK_COMMAND);
+                        //smart_jump_under_pos({ mevent->pos().x(), mevent->pos().y() });
+                        //handle_right_click({ mevent->pos().x(), mevent->pos().y() }, false, is_shift_pressed, is_control_pressed, is_command_pressed, is_alt_pressed);
+                    }
                 }
             }
         }
@@ -2887,10 +2907,10 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     }
 
     if (mevent->button() == Qt::MouseButton::MiddleButton) {
-        if (MIDDLE_CLICK_COMMAND.size() > 0) {
-            execute_macro_if_enabled(MIDDLE_CLICK_COMMAND);
-            return;
-        }
+        //if (MIDDLE_CLICK_COMMAND.size() > 0) {
+        //    execute_macro_if_enabled(MIDDLE_CLICK_COMMAND);
+        //    return;
+        //}
         last_middle_down_time = QTime::currentTime();
         middle_click_hold_command_already_executed = false;
         last_mouse_down_window_pos = WindowPos{ mevent->pos().x(), mevent->pos().y() };

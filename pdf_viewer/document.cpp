@@ -1642,26 +1642,6 @@ int get_sum_of_sizes(const std::vector<std::wstring>& strs) {
     return res;
 }
 
-std::optional<std::vector<RegexMatchInfo>> Document::get_cached_regex_info(int page, std::wstring regex_string) {
-
-
-    auto key = std::make_pair(page, regex_string);
-    for (auto& [cached_key, values] : cached_regex_matches) {
-        if (cached_key == key) {
-            return values;
-        }
-    }
-    return {};
-}
-
-void Document::add_cached_regex_info(int page, std::wstring regex_string, std::vector<RegexMatchInfo> infos) {
-    auto key = std::make_pair(page, regex_string);
-    cached_regex_matches.push_back({ key, infos });
-    if (cached_regex_matches.size() > 50) {
-        cached_regex_matches.pop_front();
-    }
-}
-
 std::optional<std::wstring> Document::get_regex_match_at_position(const std::wstring& regex_string, const std::vector<fz_stext_char*>& flat_chars, DocumentPos pos, std::pair<int, int>* out_range) {
     std::vector<std::pair<int, int>> match_ranges;
     std::vector<std::wstring> match_texts;
@@ -1669,25 +1649,14 @@ std::optional<std::wstring> Document::get_regex_match_at_position(const std::wst
 
     std::wregex regex(regex_string);
 
-    std::optional<std::vector<RegexMatchInfo>> cached_matches = get_cached_regex_info(pos.page, regex_string);
+    find_regex_matches_in_stext_page(flat_chars, regex, match_ranges, match_texts);
+    std::vector<RegexMatchInfo> match_infos;
 
-    if (cached_matches) {
-        for (auto& info : cached_matches.value()) {
-            match_ranges.push_back(info.match_range);
-            match_texts.push_back(info.match_text);
-        }
-    }
-    else {
-        find_regex_matches_in_stext_page(flat_chars, regex, match_ranges, match_texts);
-        std::vector<RegexMatchInfo> match_infos;
-
-        for (int i = 0; i < match_texts.size(); i++) {
-            RegexMatchInfo info;
-            info.match_text = match_texts[i];
-            info.match_range = match_ranges[i];
-            match_infos.push_back(info);
-        }
-        add_cached_regex_info(pos.page, regex_string, match_infos);
+    for (int i = 0; i < match_texts.size(); i++) {
+        RegexMatchInfo info;
+        info.match_text = match_texts[i];
+        info.match_range = match_ranges[i];
+        match_infos.push_back(info);
     }
 
     for (size_t i = 0; i < match_ranges.size(); i++) {
@@ -3068,7 +3037,6 @@ void Document::clear_document_caches() {
     cached_fastread_highlights.clear();
     cached_page_index.clear();
     cached_page_line_info.clear();
-    cached_regex_matches.clear();
 
 
     for (auto [_, cached_small_pixmap] : cached_small_pixmaps) {

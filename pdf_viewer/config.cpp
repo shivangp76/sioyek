@@ -351,14 +351,21 @@ float BOOKMARK_RECT_SIZE = 8.0f;
 std::wstring RESIZE_COMMAND = L"";
 std::wstring SHIFT_CLICK_COMMAND = L"overview_under_cursor";
 std::wstring CONTROL_CLICK_COMMAND = L"smart_jump_under_cursor";
+std::wstring COMMAND_CLICK_COMMAND = L"";
+
 std::wstring RIGHT_CLICK_COMMAND = L"";
-std::wstring MIDDLE_CLICK_COMMAND = L"";
 std::wstring SHIFT_RIGHT_CLICK_COMMAND = L"";
 std::wstring CONTROL_RIGHT_CLICK_COMMAND = L"";
-std::wstring COMMAND_CLICK_COMMAND = L"toggle_dark_mode";
-std::wstring COMMAND_RIGHT_CLICK_COMMAND = L"toggle_custom_color";
-std::wstring ALT_CLICK_COMMAND = L"";
+std::wstring COMMAND_RIGHT_CLICK_COMMAND = L"";
 std::wstring ALT_RIGHT_CLICK_COMMAND = L"";
+
+std::wstring MIDDLE_CLICK_COMMAND = L"smart_jump_under_cursor";
+std::wstring SHIFT_MIDDLE_CLICK_COMMAND = L"";
+std::wstring CONTROL_MIDDLE_CLICK_COMMAND = L"";
+std::wstring COMMAND_MIDDLE_CLICK_COMMAND = L"";
+std::wstring ALT_MIDDLE_CLICK_COMMAND = L"";
+
+std::wstring ALT_CLICK_COMMAND = L"";
 std::wstring HOLD_MIDDLE_CLICK_COMMAND = L"download_paper_under_cursor";
 std::wstring TABLET_PEN_CLICK_COMMAND = L"[s]show_touch_draw_controls;[r]move_visual_mark_next";
 //std::wstring TABLET_PEN_CLICK_COMMAND = L"[s]show_touch_main_menu;[r]move_visual_mark_next";
@@ -1141,6 +1148,10 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_macro(L"visual_mark_prev_hold_command", &VISUAL_MARK_PREV_HOLD_COMMAND);
     add_macro(L"right_click_command", &RIGHT_CLICK_COMMAND);
     add_macro(L"middle_click_command", &MIDDLE_CLICK_COMMAND);
+    add_macro(L"shift_middle_click_command", &SHIFT_MIDDLE_CLICK_COMMAND);
+    add_macro(L"control_middle_click_command", &CONTROL_MIDDLE_CLICK_COMMAND);
+    add_macro(L"command_middle_click_command", &COMMAND_MIDDLE_CLICK_COMMAND);
+    add_macro(L"alt_middle_click_command", &ALT_MIDDLE_CLICK_COMMAND);
     add_macro(L"shift_right_click_command", &SHIFT_RIGHT_CLICK_COMMAND);
     add_macro(L"control_right_click_command", &CONTROL_RIGHT_CLICK_COMMAND);
     add_macro(L"command_right_click_command", &COMMAND_RIGHT_CLICK_COMMAND);

@@ -100,11 +100,7 @@ private:
     std::vector<int> flat_toc_pages;
     std::optional<QDateTime> drawings_last_server_mofication_time = {};
 
-    std::deque<std::pair<std::pair<int, std::wstring>, std::vector<RegexMatchInfo>>> cached_regex_matches;
     std::map<int, PageMergedLinesInfoAbsolute> cached_page_line_info;
-    //std::map<int, std::vector<AbsoluteRect>> cached_page_line_rects;
-    //std::map<int, std::vector<std::wstring>> cached_line_texts;
-    //std::map<int, std::vector<PagelessDocumentRect>> cached_page_next_line_rects;
 
     std::deque<std::pair<int, CachedPageIndex>> cached_page_index;
 
@@ -177,8 +173,8 @@ private:
     bool* invalid_flag_pointer = nullptr;
 
     int get_mark_index(char symbol);
-    std::optional<std::vector<RegexMatchInfo>> get_cached_regex_info(int page, std::wstring regex_string);
-    void add_cached_regex_info(int page, std::wstring regex_string, std::vector<RegexMatchInfo> infos);
+    //std::optional<std::vector<RegexMatchInfo>> get_cached_regex_info(int page, std::wstring regex_string);
+    //void add_cached_regex_info(int page, std::wstring regex_string, std::vector<RegexMatchInfo> infos);
     fz_outline* get_toc_outline();
 
 
