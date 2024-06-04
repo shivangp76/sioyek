@@ -11,6 +11,7 @@
 #include <qlocalsocket.h>
 #include <qfileinfo.h>
 #include <qclipboard.h>
+#include <qdesktopservices.h>
 
 #include "utils.h"
 #include "input.h"
@@ -5232,6 +5233,20 @@ public:
     }
 };
 
+class OpenContainingFolderCommand : public Command {
+public:
+    static inline const std::string cname = "open_containing_folder";
+    static inline const std::string hname = "Open the folder that contains the current file in the default file explorer";
+    OpenContainingFolderCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        std::wstring path = widget->doc()->get_path();
+        QFileInfo file_info(QString::fromStdWString(path));
+        QDir directory = file_info.dir();
+        QDesktopServices::openUrl(directory.absolutePath());
+    }
+};
+
 class DownloadPaperUnderCursorCommand : public Command {
 public:
     static inline const std::string cname = "download_paper_under_cursor";
@@ -7462,6 +7477,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<FitToPageWidthRatioCommand>();
     register_command<SmartJumpUnderCursorCommand>();
     register_command<DownloadPaperUnderCursorCommand>();
+    register_command<OpenContainingFolderCommand>();
     register_command<DownloadPaperWithNameCommand>();
     register_command<OverviewUnderCursorCommand>();
     register_command<CloseOverviewCommand>();
