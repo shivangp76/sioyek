@@ -588,10 +588,13 @@ void Portal::update_merged_rect(Document* doc) const{
     }
     if (!merged_rect.has_value()) {
         int source_page = doc->absolute_to_page_pos(AbsoluteDocumentPos{ 0, src_offset_y }).page;
+        float max_intersection_area = 0;
         for (const auto& link : doc->get_page_merged_pdf_links(source_page)) {
             if (link.rects.size() > 0) {
                 AbsoluteRect link_rect = DocumentRect{ link.rects[0], source_page }.to_absolute(doc);
-                if (link_rect.intersects(get_actual_rectangle())) {
+                float interseciton_area = link_rect.intersect_rect(get_actual_rectangle()).area();
+                if (interseciton_area > max_intersection_area) {
+                    max_intersection_area = interseciton_area;
                     merged_rect = link_rect;
                 }
             }
