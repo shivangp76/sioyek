@@ -355,6 +355,8 @@ std::wstring RIGHT_CLICK_COMMAND = L"";
 std::wstring MIDDLE_CLICK_COMMAND = L"";
 std::wstring SHIFT_RIGHT_CLICK_COMMAND = L"";
 std::wstring CONTROL_RIGHT_CLICK_COMMAND = L"";
+std::wstring COMMAND_CLICK_COMMAND = L"toggle_dark_mode";
+std::wstring COMMAND_RIGHT_CLICK_COMMAND = L"toggle_custom_color";
 std::wstring ALT_CLICK_COMMAND = L"";
 std::wstring ALT_RIGHT_CLICK_COMMAND = L"";
 std::wstring HOLD_MIDDLE_CLICK_COMMAND = L"download_paper_under_cursor";
@@ -1117,6 +1119,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_macro(L"shift_click_command", &SHIFT_CLICK_COMMAND);
     add_macro(L"resize_command", &RESIZE_COMMAND);
     add_macro(L"control_click_command", &CONTROL_CLICK_COMMAND);
+    add_macro(L"command_click_command", &COMMAND_CLICK_COMMAND);
     add_macro(L"hold_middle_click_command", &HOLD_MIDDLE_CLICK_COMMAND);
     add_macro(L"back_rect_tap_command", &BACK_RECT_TAP_COMMAND);
     add_macro(L"tablet_pen_click_command", &TABLET_PEN_CLICK_COMMAND);
@@ -1140,6 +1143,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_macro(L"middle_click_command", &MIDDLE_CLICK_COMMAND);
     add_macro(L"shift_right_click_command", &SHIFT_RIGHT_CLICK_COMMAND);
     add_macro(L"control_right_click_command", &CONTROL_RIGHT_CLICK_COMMAND);
+    add_macro(L"command_right_click_command", &COMMAND_RIGHT_CLICK_COMMAND);
     add_macro(L"alt_click_command", &ALT_CLICK_COMMAND);
     add_macro(L"alt_right_click_command", &ALT_RIGHT_CLICK_COMMAND);
 

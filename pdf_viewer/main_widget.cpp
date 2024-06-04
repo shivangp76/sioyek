@@ -8,8 +8,6 @@
 // continue high quality tts on ios and android when the app is minimized
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
-// make overview_link use multiple symbols if there are many links
-// pending download portals should probably be moved to DocumentView
 
 #include <iostream>
 #include <vector>
@@ -186,6 +184,8 @@ extern bool SHOW_DOC_PATH;
 extern bool SINGLE_CLICK_SELECTS_WORDS;
 extern std::wstring SHIFT_CLICK_COMMAND;
 extern std::wstring CONTROL_CLICK_COMMAND;
+extern std::wstring COMMAND_CLICK_COMMAND;
+extern std::wstring COMMAND_RIGHT_CLICK_COMMAND;
 extern std::wstring SHIFT_RIGHT_CLICK_COMMAND;
 extern std::wstring CONTROL_RIGHT_CLICK_COMMAND;
 extern std::wstring ALT_CLICK_COMMAND;
@@ -1784,7 +1784,6 @@ void MainWidget::update_link_with_opened_book_state(Portal lnk, const OpenedBook
     lnk.dst.book_state = new_state;
 
     if (link_owner) {
-        // todo: this is slow, we should make db_manager updates asyncronous to speed this up
         link_owner->update_portal(lnk);
     }
 
@@ -2762,8 +2761,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
             execute_macro_if_enabled(CONTROL_CLICK_COMMAND);
         }
         else if (is_command_pressed) {
-            //todo: replace with command click commadn
-            execute_macro_if_enabled(CONTROL_CLICK_COMMAND);
+            execute_macro_if_enabled(COMMAND_CLICK_COMMAND);
         }
         else if (is_alt_pressed) {
             execute_macro_if_enabled(ALT_CLICK_COMMAND);
@@ -2789,8 +2787,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
             execute_macro_if_enabled(CONTROL_RIGHT_CLICK_COMMAND);
         }
         else if (is_command_pressed) {
-            //todo: replace with command right click command
-            execute_macro_if_enabled(CONTROL_RIGHT_CLICK_COMMAND);
+            execute_macro_if_enabled(COMMAND_RIGHT_CLICK_COMMAND);
         }
         else if (is_alt_pressed) {
             execute_macro_if_enabled(ALT_RIGHT_CLICK_COMMAND);
