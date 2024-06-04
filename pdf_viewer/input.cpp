@@ -4967,6 +4967,35 @@ public:
     }
 };
 
+class DownloadLinkCommand : public OpenLinkCommand {
+public:
+    static inline const std::string cname = "download_link";
+    static inline const std::string hname = "Download the destination reference of a PDF link";
+    DownloadLinkCommand(MainWidget* w) : OpenLinkCommand(w) {};
+
+    void perform() {
+        std::optional<PdfLink> link = widget->get_selected_link(text.value());
+
+        if (link) {
+            ParsedUri uri = widget->doc()->parse_link(link.value());
+            PdfLinkTextInfo link_info = widget->doc()->get_pdf_link_text(link.value());
+            AbsoluteRect link_source_rect = DocumentRect{ link->rects[0], link->source_page }.to_absolute(widget->doc());
+
+            std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> reftext = widget->doc()->get_page_bib_with_reference(uri.page-1, link_info.link_text);
+            if (reftext.has_value()) {
+                QString paper_name = get_paper_name_from_reference_text(reftext->first);
+                widget->download_and_portal(paper_name.toStdWString(), link_source_rect.center());
+            }
+        }
+        widget->reset_highlight_links();
+        widget->clear_tag_prefix();
+    }
+
+    std::string get_name() {
+        return cname;
+    }
+};
+
 class PortalToLinkCommand : public OpenLinkCommand {
 public:
     static inline const std::string cname = "portal_to_link";
@@ -7402,6 +7431,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<CloseWindowCommand>();
     register_command<OpenLinkCommand>();
     register_command<OverviewLinkCommand>();
+    register_command<DownloadLinkCommand>();
     register_command<KeyboardSelectLineCommand>();
     register_command<PortalToLinkCommand>();
     register_command<CopyLinkCommand>();

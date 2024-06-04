@@ -559,6 +559,7 @@ public:
     }
 
     void set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids);
+    ParsedUri parse_link(const PdfLink& link);
 
     friend class DocumentManager;
 };

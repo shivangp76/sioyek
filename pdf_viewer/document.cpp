@@ -4967,3 +4967,8 @@ void Document::set_annots_to_synced_with_type(std::string annot_type, std::vecto
         set_annots_to_synced<Portal>(uuids);
     }
 }
+
+ParsedUri Document::parse_link(const PdfLink& link) {
+    ParsedUri res = parse_uri(context, doc, link.uri);
+    return res;
+}
