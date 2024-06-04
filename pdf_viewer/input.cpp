@@ -3732,6 +3732,10 @@ public:
         //return widget->selected_highlight_index;
     }
 
+    //void pre_perform() {
+    //    widget->clear_tag_prefix();
+    //}
+
     std::vector<int> get_visible_item_indices() override {
         std::vector<int> res;
         for (int i = 0; i < visible_objects.size(); i++) {
@@ -3742,6 +3746,7 @@ public:
     }
 
     void handle_indices_pre_perform() override {
+        widget->clear_tag_prefix();
         widget->handle_generic_tags_pre_perform(visible_objects);
 
     }
@@ -5026,6 +5031,7 @@ public:
 
     void pre_perform() {
         widget->highlight_words();
+        widget->clear_tag_prefix();
 
     }
 

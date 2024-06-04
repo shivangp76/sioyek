@@ -10,7 +10,6 @@
 // batch the todos
 // make overview_link use multiple symbols if there are many links
 // pending download portals should probably be moved to DocumentView
-// better handle link selection when assigning a link to an overlapping portal
 
 #include <iostream>
 #include <vector>
