@@ -130,6 +130,7 @@ private:
     int last_mouse_down_window_y = 0;
     float last_mouse_down_document_offset_x = 0;
     float last_mouse_down_document_offset_y = 0;
+    //bool is_latex_initialized = false;
 
     std::optional<std::function<void(const OpenedBookState&)>> on_link_edit = {};
 
@@ -252,7 +253,7 @@ public:
     bool needs_stencil_buffer();
     void draw_overview_background();
     void draw_overview_border();
-    void draw_markdown_text(QString text, QRect window_rect, const QFont& font);
+    //void draw_markdown_text(QString text, QRect window_rect, const QFont& font);
 
     void render_selected_rectangle();
     void set_scratchpad(ScratchPad* pad);
@@ -262,4 +263,5 @@ public:
     void clear_background_color();
     ColorPalette get_actual_color_palette(ColorPalette forced_color_palette);
     const QPainter& get_painter();
+    //void initialize_latex();
 };

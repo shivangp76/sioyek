@@ -1,5 +1,7 @@
 #include "pdf_renderer.h"
 #include "utils.h"
+//#include "background_tasks.h"
+
 #include <qdatetime.h>
 
 extern bool LINEAR_TEXTURE_FILTERING;
@@ -17,7 +19,8 @@ extern float CUSTOM_COLOR_CONTRAST;
 extern int MAX_PENDING_REQUESTS;
 extern unsigned int CACHE_INVALID_MILIES;
 
-PdfRenderer::PdfRenderer(int num_threads, bool* should_quit_pointer, fz_context* context_to_clone) : context_to_clone(context_to_clone),
+PdfRenderer::PdfRenderer(BackgroundBookmarkRenderer* bm_renderer, int num_threads, bool* should_quit_pointer, fz_context* context_to_clone) : context_to_clone(context_to_clone),
+bookmark_renderer(bm_renderer),
 pixmaps_to_drop(num_threads),
 pixmap_drop_mutex(num_threads),
 thread_rendering_mutex(num_threads),
@@ -54,17 +57,6 @@ void convert_pixel_to_dark_mode(unsigned char* pixel){
     pixel[2] = (unsigned char)new_color.blue();
 }
 
-void get_custom_color_transform_matrix(float matrix_data[16]) {
-    float inputs_inverse[16] = { 0, 1, 0, 0, -1, 1, -1, 1, 1, -1, 0, 0, 0, -1, 1, 0 };
-    float outputs[16] = {
-        CUSTOM_BACKGROUND_COLOR[0], CUSTOM_TEXT_COLOR[0], 1, 0,
-        CUSTOM_BACKGROUND_COLOR[1], CUSTOM_TEXT_COLOR[1], CUSTOM_COLOR_CONTRAST * (1 - CUSTOM_BACKGROUND_COLOR[1]), CUSTOM_COLOR_CONTRAST * (1 - CUSTOM_BACKGROUND_COLOR[1]),
-        CUSTOM_BACKGROUND_COLOR[2], CUSTOM_TEXT_COLOR[2], 0, 1,
-        1, 1, 1, 1,
-    };
-
-    matmul<4, 4, 4>(outputs, inputs_inverse, matrix_data);
-}
 
 void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[16]){
     float colorf[4];
@@ -863,6 +855,10 @@ SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap){
 
     return result;
 #endif
+}
+
+BackgroundBookmarkRenderer* PdfRenderer::get_bookmark_renderer() {
+    return bookmark_renderer;
 }
 
 void PdfRenderer::release_texture(SioyekTextureType texture){

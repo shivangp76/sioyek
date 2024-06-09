@@ -20,6 +20,7 @@
 
 #include "book.h"
 
+class BackgroundBookmarkRenderer;
 #define SIOYEK_OPENGL_BACKEND
 #ifdef SIOYEK_OPENGL_BACKEND
 using SioyekTextureType = GLuint;
@@ -98,6 +99,8 @@ class PdfRenderer : public QObject {
     std::mutex searching_mutex;
     std::vector<std::mutex> thread_rendering_mutex;
 
+    BackgroundBookmarkRenderer* bookmark_renderer;
+
     QTimer garbage_collect_timer;
 
     bool* should_quit_pointer = nullptr;
@@ -120,13 +123,14 @@ class PdfRenderer : public QObject {
 public:
     bool no_rerender = false;
 
-    PdfRenderer(int num_threads, bool* should_quit_pointer, fz_context* context_to_clone);
+    PdfRenderer(BackgroundBookmarkRenderer* bookmak_renderer, int num_threads, bool* should_quit_pointer, fz_context* context_to_clone);
     ~PdfRenderer();
     void clear_cache();
 
     void start_threads();
     void join_threads();
     void free_all_resources_for_document(std::wstring doc_path);
+    BackgroundBookmarkRenderer* get_bookmark_renderer();
 
     bool is_busy();
     bool is_search_busy();

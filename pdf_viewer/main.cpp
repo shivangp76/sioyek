@@ -901,7 +901,8 @@ int main(int argc, char* args[]) {
 #endif
 
 
-    PdfRenderer pdf_renderer(4, &quit, mupdf_context);
+    BackgroundBookmarkRenderer bookmark_renderer(&background_task_manager);
+    PdfRenderer pdf_renderer(&bookmark_renderer, 4, &quit, mupdf_context);
     pdf_renderer.set_num_cached_pages(NUM_CACHED_PAGES);
     pdf_renderer.start_threads();
 

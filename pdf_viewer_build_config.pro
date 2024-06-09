@@ -54,7 +54,7 @@ else{
 
 
 CONFIG += c++17
-DEFINES += QT_3DINPUT_LIB QT_OPENGL_LIB QT_OPENGLEXTENSIONS_LIB QT_WIDGETS_LIB
+DEFINES += QT_3DINPUT_LIB QT_OPENGL_LIB QT_OPENGLEXTENSIONS_LIB QT_WIDGETS_LIB BUILD_QT
 
 RESOURCES += resources.qrc
 
@@ -99,6 +99,9 @@ HEADERS += \
     pdf_viewer/touchui/TouchMacroEditor.h \
     pdf_viewer/touchui/TouchGenericButtons.h \
     pdf_viewer/touchui/TouchMainMenu.h
+
+include($$PWD/microtex/microtex_build.pri)
+
 
 android{
     DEFINES += SIOYEK_ANDROID

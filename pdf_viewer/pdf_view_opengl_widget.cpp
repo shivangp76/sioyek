@@ -1,4 +1,5 @@
-﻿#include <cmath>
+﻿
+#include <cmath>
 
 #include <qcolor.h>
 #include <qmouseevent.h>
@@ -11,6 +12,7 @@
 #include <qabstracttextdocumentlayout.h>
 #include <qtextcursor.h>
 
+
 #include "pdf_view_opengl_widget.h"
 #include "path.h"
 #include "book.h"
@@ -19,6 +21,7 @@
 #include "pdf_renderer.h"
 #include "config.h"
 #include "utils.h"
+#include "background_tasks.h"
 
 #ifndef GL_MULTISAMPLE
 #define GL_MULTISAMPLE  0x809D
@@ -304,6 +307,8 @@ void PdfViewOpenGLWidget::render_highlight_document(DocumentRect doc_rect, int f
     NormalizedWindowRect window_rect = doc_rect.to_window_normalized(dv());
     render_highlight_window(window_rect, flags);
 }
+
+void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, const QFont& font);
 
 void PdfViewOpenGLWidget::render_scratchpad() {
 
@@ -761,6 +766,7 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
 
 }
 
+
 void PdfViewOpenGLWidget::my_render() {
 
     begin_native_painting();
@@ -1101,27 +1107,26 @@ void PdfViewOpenGLWidget::my_render() {
 
                     QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
 
-                    QFont font = painter.font();
-                    float font_size = bookmarks[i].font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmarks[i].font_size;
-                    font.setPointSizeF(font_size * dv()->get_zoom_level() * 0.75);
-                    painter.setFont(font);
 
-                    std::array<float, 3> bookmark_color = cc3(bookmarks[i].color);
-                    painter.setPen(convert_float3_to_qcolor(&bookmark_color[0]));
                     if (RENDER_FREETEXT_BORDERS) {
                         painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                     }
 
-                    int flags = Qt::TextWordWrap;
-                    if (is_text_rtl(bookmarks[i].description)) {
-                        flags |= Qt::AlignRight;
-                    }
-                    else {
-                        flags |= Qt::AlignLeft;
-                    }
 
                     QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
-                    if (bookmarks[i].description[0] == '#' && (!desc_qstring.startsWith("#markdown"))) {
+
+                    if (i == document_view->get_selected_bookmark_index()) {
+                        painter.save();
+                        float temp_color[3] = { 0.5f, 0.5f, 0.5f };
+                        painter.setPen(convert_float3_to_qcolor(&temp_color[0]));
+                        painter.setPen(Qt::DashLine);
+                        QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
+                        painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        painter.restore();
+                    }
+
+                    if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#markdown") || desc_qstring.startsWith("#latex"))) {
 
                         QString box_text = desc_qstring.split(' ')[0];
                         std::optional<char> bm_type = bookmarks[i].get_type();
@@ -1138,16 +1143,6 @@ void PdfViewOpenGLWidget::my_render() {
                         }
                     }
                     else {
-                        if (i == document_view->get_selected_bookmark_index()) {
-                            painter.save();
-                            float temp_color[3] = {0.5f, 0.5f, 0.5f};
-                            painter.setPen(convert_float3_to_qcolor(&temp_color[0]));
-                            painter.setPen(Qt::DashLine);
-                            QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                            painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
-                            painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                            painter.restore();
-                        }
                         static int count = 0;
                         if (bookmarks[i].is_question()) {
 
@@ -1156,22 +1151,20 @@ void PdfViewOpenGLWidget::my_render() {
                             painter.fillRect(fill_rect, question_background_color);
 
                         }
-                        if (desc_qstring.startsWith("#markdown")) {
 
-                            draw_markdown_text(desc_qstring.mid(9).trimmed(), window_qrect, font);
+                        QPixmap* pixmap = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), dv()->color_mode != ColorPalette::Normal);
+                        if (pixmap) {
+                            painter.drawPixmap(window_qrect, *pixmap);
                         }
                         else {
-                            if (bookmarks[i].is_question()) {
-                                QColor question_text_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_TEXT_COLOR);
-                                painter.setPen(question_text_color);
-                                //painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
-                                draw_markdown_text(bookmarks[i].get_question_markdown(), window_qrect, font);
-                            }
-                            else {
-                                painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description));
-                            }
+                            pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
+                                bookmarks[i],
+                                &painter,
+                                dv()->get_zoom_level(),
+                                dv()->color_mode != ColorPalette::Normal,
+                                window_qrect,
+                                true);
                         }
-
                     }
 
                 }
@@ -1326,36 +1319,6 @@ void PdfViewOpenGLWidget::my_render() {
 }
 
 PdfViewOpenGLWidget::~PdfViewOpenGLWidget() {
-}
-
-void PdfViewOpenGLWidget::draw_markdown_text(QString text, QRect window_qrect, const QFont& font) {
-    painter.save();
-    painter.setClipRect(window_qrect);
-    painter.translate(window_qrect.topLeft());
-
-    //painter.setBrush(QBrush(Qt::black));
-    QTextDocument td;
-    //td.setDefaultStyleSheet("*{font-size: 24 !important; color: rgb(255, 0, 0)}");
-
-    auto formats = td.allFormats();
-    QTextCharFormat old_format = formats[0].toCharFormat();
-
-    td.setMarkdown(text, QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
-
-    td.setTextWidth(window_qrect.width());
-    td.setDefaultFont(font);
-
-    QTextCursor cursor(&td);
-    QTextCharFormat format;
-    cursor.select(QTextCursor::Document);
-    QAbstractTextDocumentLayout::PaintContext ctx;
-    window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
-    ctx.clip = window_qrect;
-    ctx.palette.setColor(QPalette::ColorRole::Text, painter.pen().color());
-    td.documentLayout()->draw(&painter, ctx);
-    QSizeF size = td.documentLayout()->documentSize();
-
-    painter.restore();
 }
 
 void PdfViewOpenGLWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
@@ -2208,46 +2171,9 @@ std::vector<std::pair<QRect, QString>> PdfViewOpenGLWidget::get_hint_rect_and_te
     return res;
 } 
 
+
 void PdfViewOpenGLWidget::get_color_for_current_mode(const float* input_color, float* output_color) {
-    if (!ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE) {
-        output_color[0] = input_color[0];
-        output_color[1] = input_color[1];
-        output_color[2] = input_color[2];
-        return;
-    }
-
-    if (document_view->color_mode == ColorPalette::Dark) {
-        float inverted_color[3];
-        inverted_color[0] = (0.5f - input_color[0]) * DARK_MODE_CONTRAST + 0.5f;
-        inverted_color[1] = (0.5f - input_color[1]) * DARK_MODE_CONTRAST + 0.5f;
-        inverted_color[2] = (0.5f - input_color[2]) * DARK_MODE_CONTRAST + 0.5f;
-        float hsv_color[3];
-        rgb2hsv(inverted_color, hsv_color);
-        float new_hue = fmod(hsv_color[0] + 0.5f, 1.0f);
-        hsv_color[0] = new_hue;
-        hsv2rgb(hsv_color, output_color);
-    }
-    else if (document_view->color_mode == ColorPalette::Custom) {
-        float transform_matrix[16];
-        float input_vector[4];
-        float output_vector[4];
-        input_vector[0] = input_color[0];
-        input_vector[1] = input_color[1];
-        input_vector[2] = input_color[2];
-        input_vector[3] = 1.0f;
-
-        get_custom_color_transform_matrix(transform_matrix);
-        matmul<4, 4, 1>(transform_matrix, input_vector, output_vector);
-        output_color[0] = fz_clamp(output_vector[0], 0, 1);
-        output_color[1] = fz_clamp(output_vector[1], 0, 1);
-        output_color[2] = fz_clamp(output_vector[2], 0, 1);
-        return;
-    }
-    else {
-        output_color[0] = input_color[0];
-        output_color[1] = input_color[1];
-        output_color[2] = input_color[2];
-    }
+    return get_color_for_mode(document_view->color_mode, input_color, output_color);
 }
 
 std::array<float, 3> PdfViewOpenGLWidget::cc3(const float* input_color) {
@@ -3394,3 +3320,11 @@ ColorPalette PdfViewOpenGLWidget::get_actual_color_palette(ColorPalette forced_c
 const QPainter& PdfViewOpenGLWidget::get_painter() {
     return painter;
 }
+
+//void PdfViewOpenGLWidget::initialize_latex() {
+//    if (!is_latex_initialized) {
+//
+//        tex::LaTeX::init("C:\\sioyek\\sioyek-new\\sioyek\\microtex_resources");
+//        is_latex_initialized = true;
+//    }
+//}

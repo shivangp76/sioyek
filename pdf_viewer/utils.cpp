@@ -51,6 +51,12 @@ extern float STATUS_BAR_TEXT_COLOR[3];
 extern float UI_SELECTED_TEXT_COLOR[3];
 extern float UI_SELECTED_BACKGROUND_COLOR[3];
 extern bool NUMERIC_TAGS;
+extern float DARK_MODE_CONTRAST;
+extern float CUSTOM_BACKGROUND_COLOR[3];
+extern float CUSTOM_TEXT_COLOR[3];
+extern float CUSTOM_COLOR_CONTRAST;
+
+extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
 
 extern QString EPUB_TEMPLATE;
 extern float EPUB_LINE_SPACING;
@@ -4594,4 +4600,58 @@ PaperDownloadFinishedAction get_paper_download_action_from_string(QString str) {
 
 std::string get_user_agent_string() {
     return "Sioyek/3.0";
+}
+
+void get_color_for_mode(ColorPalette color_mode, const float* input_color, float* output_color) {
+    if (!ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE) {
+        output_color[0] = input_color[0];
+        output_color[1] = input_color[1];
+        output_color[2] = input_color[2];
+        return;
+    }
+
+    if (color_mode == ColorPalette::Dark) {
+        float inverted_color[3];
+        inverted_color[0] = (0.5f - input_color[0]) * DARK_MODE_CONTRAST + 0.5f;
+        inverted_color[1] = (0.5f - input_color[1]) * DARK_MODE_CONTRAST + 0.5f;
+        inverted_color[2] = (0.5f - input_color[2]) * DARK_MODE_CONTRAST + 0.5f;
+        float hsv_color[3];
+        rgb2hsv(inverted_color, hsv_color);
+        float new_hue = fmod(hsv_color[0] + 0.5f, 1.0f);
+        hsv_color[0] = new_hue;
+        hsv2rgb(hsv_color, output_color);
+    }
+    else if (color_mode == ColorPalette::Custom) {
+        float transform_matrix[16];
+        float input_vector[4];
+        float output_vector[4];
+        input_vector[0] = input_color[0];
+        input_vector[1] = input_color[1];
+        input_vector[2] = input_color[2];
+        input_vector[3] = 1.0f;
+
+        get_custom_color_transform_matrix(transform_matrix);
+        matmul<4, 4, 1>(transform_matrix, input_vector, output_vector);
+        output_color[0] = fz_clamp(output_vector[0], 0, 1);
+        output_color[1] = fz_clamp(output_vector[1], 0, 1);
+        output_color[2] = fz_clamp(output_vector[2], 0, 1);
+        return;
+    }
+    else {
+        output_color[0] = input_color[0];
+        output_color[1] = input_color[1];
+        output_color[2] = input_color[2];
+    }
+}
+
+void get_custom_color_transform_matrix(float matrix_data[16]) {
+    float inputs_inverse[16] = { 0, 1, 0, 0, -1, 1, -1, 1, 1, -1, 0, 0, 0, -1, 1, 0 };
+    float outputs[16] = {
+        CUSTOM_BACKGROUND_COLOR[0], CUSTOM_TEXT_COLOR[0], 1, 0,
+        CUSTOM_BACKGROUND_COLOR[1], CUSTOM_TEXT_COLOR[1], CUSTOM_COLOR_CONTRAST * (1 - CUSTOM_BACKGROUND_COLOR[1]), CUSTOM_COLOR_CONTRAST * (1 - CUSTOM_BACKGROUND_COLOR[1]),
+        CUSTOM_BACKGROUND_COLOR[2], CUSTOM_TEXT_COLOR[2], 0, 1,
+        1, 1, 1, 1,
+    };
+
+    matmul<4, 4, 4>(outputs, inputs_inverse, matrix_data);
 }

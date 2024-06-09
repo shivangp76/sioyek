@@ -9,6 +9,10 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 
+#include "latex.h"
+#include "platform/qt/graphic_qt.h"
+#include "core/formula.h"
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -28,6 +32,7 @@
 #include <qdrag.h>
 #include <qmenu.h>
 #include <qdesktopservices.h>
+#include <qtemporarydir.h>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
@@ -100,6 +105,7 @@
 #include <QtCore/private/qandroidextras_p.h>
 #endif
 
+
 extern "C" {
     #include <fzf/fzf.h>
 }
@@ -150,6 +156,8 @@ extern float SMALL_PIXMAP_SCALE;
 extern std::wstring EXECUTE_COMMANDS[26];
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
+
+extern Path standard_data_path;
 extern Path default_config_path;
 extern Path default_keys_path;
 extern Path sioyek_js_path;
@@ -7141,6 +7149,8 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 void MainWidget::handle_debug_command() {
+
+
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
