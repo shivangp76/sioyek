@@ -63,7 +63,7 @@ void BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString t
     painter.restore();
 }
 
-void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, bool dark_mode, QRect window_qrect, bool is_from_main_thread) {
+void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, bool dark_mode, QRect window_qrect, bool is_from_main_thread) {
     QString desc_qstring = QString::fromStdWString(bookmark.description);
     
     float bookmark_color[3];
@@ -83,8 +83,8 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
     }
     else if (desc_qstring.startsWith("#latex")) {
 
-        // initializing latex can take a while, so we never do it from the main thread
-        if (is_from_main_thread && (!is_latex_initialized)) {
+        // rendering latex can take a while, so we never do it from the main thread
+        if (is_from_main_thread){
             return;
         }
 
@@ -99,11 +99,13 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
             tex::Formula formula;
             tex::TeXRenderBuilder builder;
             formula.setLaTeX(code);
+            formula.PIXELS_PER_POINT = pixel_ratio;
 
+            float text_size = 10 * zoom_level;
             int width_in_pixels = window_qrect.width();
             auto r = builder
                 .setStyle(tex::TexStyle::display)
-                .setTextSize(10 * zoom_level)
+                .setTextSize(text_size)
                 .setWidth(tex::UnitType::pixel, width_in_pixels, tex::Alignment::left)
                 .setIsMaxWidth(false)
                 .setLineSpace(tex::UnitType::pixel, 10)
@@ -241,14 +243,14 @@ QPixmap* BackgroundBookmarkRenderer::get_rendered_bookmark(const BookMark& bm, f
     return nullptr;
 }
 
-BackgroundBookmarkRenderer::BackgroundBookmarkRenderer(BackgroundTaskManager* background_task_manager) : task_manager(background_task_manager) {
+BackgroundBookmarkRenderer::BackgroundBookmarkRenderer(BackgroundTaskManager* background_task_manager) : QObject(nullptr), task_manager(background_task_manager) {
 
 }
 
-QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& bm, float zoom_level, bool dark_mode) {
+QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& bm, float zoom_level, float pixel_ratio, bool dark_mode) {
     float bm_width = bm.get_rectangle().width();
     float bm_height = bm.get_rectangle().height();
-    float area = bm_width * bm_height * zoom_level * zoom_level;
+    float area = bm_width * bm_height * zoom_level * zoom_level * pixel_ratio * pixel_ratio;
     while (area > total_pixel_budget) {
         zoom_level /= 2;
         area /= 4;
@@ -274,21 +276,22 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
             req.bookmark = bm;
             req.zoom_level = zoom_level;
             req.dark_mode = dark_mode;
+            req.pixel_ratio = pixel_ratio;
             req.pixmap = nullptr;
             req.last_access_time = QDateTime::currentDateTime();
             rendered_bookmarks.push_back(req);
 
             task_manager->add_task([this, req]() {
                 //req.bookmark.get_rectangle().to_window()
-                int width = req.bookmark.get_rectangle().width() * req.zoom_level;
-                int height = req.bookmark.get_rectangle().height() * req.zoom_level;
+                int width = req.bookmark.get_rectangle().width() * req.zoom_level * req.pixel_ratio;
+                int height = req.bookmark.get_rectangle().height() * req.zoom_level * req.pixel_ratio;
                 QRect rect = QRect(0, 0, width, height);
 
                 QPixmap* rendered_pixmap = new QPixmap(width, height);
                 rendered_pixmap->fill(Qt::transparent);
                 QPainter painter(rendered_pixmap);
 
-                render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.dark_mode, rendered_pixmap->rect());
+                render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.pixel_ratio, req.dark_mode, rendered_pixmap->rect());
                 //int flags = Qt::TextWordWrap;
                 //if (is_text_rtl(req.bookmark.description)) {
                 //    flags |= Qt::AlignRight;
@@ -312,6 +315,7 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
                     rendered_bookmarks[pending_indices[0]].pixmap = rendered_pixmap;
                 }
                 rendered_bookmarks_mutex.unlock();
+                emit bookmark_rendered();
                 }, nullptr);
 
             //pending_render_bookmarks.push_back(req);
@@ -325,12 +329,11 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
         // if we can't find the pixmap with exact zoom level, we can return one with different zoom level
         rendered_bookmarks_mutex.lock_shared();
         std::vector<int> indices = get_request_indices(rendered_bookmarks, bm, zoom_level, dark_mode, false);
-        for (auto index : indices) {
-            if (rendered_bookmarks[index].pixmap != nullptr) {
-                QPixmap* res = rendered_bookmarks[index].pixmap;
+        for (int i = rendered_bookmarks.size() - 1; i >= 0; i--) {
+            if (rendered_bookmarks[i].pixmap != nullptr && (rendered_bookmarks[i].bookmark.uuid == bm.uuid)) {
+                QPixmap* res = rendered_bookmarks[i].pixmap;
                 rendered_bookmarks_mutex.unlock_shared();
                 return res;
-
             }
         }
         rendered_bookmarks_mutex.unlock_shared();
@@ -359,17 +362,20 @@ void BackgroundBookmarkRenderer::cleanup_bookmarks() {
         //std::unordered_set<int> indices_to_keep;
         int keep_size = current_pixel_size;
         std::sort(rendered_bookmarks.begin(), rendered_bookmarks.end(), [](const RenderedBookmark& a, const RenderedBookmark& b) {
-            return a.last_access_time > b.last_access_time;
+            return a.last_access_time < b.last_access_time;
         });
 
-        while (keep_size > total_pixel_budget) {
-            RenderedBookmark& last = rendered_bookmarks.back();
+        int index = 0;
+        while ((keep_size > total_pixel_budget) && (index < rendered_bookmarks.size())) {
+            RenderedBookmark& last = rendered_bookmarks[index];
             if (last.pixmap) {
                 keep_size -= last.pixmap->size().width() * last.pixmap->size().height();
                 delete last.pixmap;
             }
-            rendered_bookmarks.pop_back();
+            index++;
+            //rendered_bookmarks.pop_back();
         }
+        rendered_bookmarks.erase(rendered_bookmarks.begin(), rendered_bookmarks.begin() + index);
 
         rendered_bookmarks_mutex.unlock();
     }

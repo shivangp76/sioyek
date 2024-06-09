@@ -19,7 +19,7 @@
 
 
 
-enum ConfigType {
+enum class ConfigType {
     Int,
     Float,
     Color3,

@@ -713,20 +713,20 @@ private:
     std::function<void(void*, std::wstringstream&)> get_serializer(){
         if (serialize) return serialize;
         switch(config_type){
-        case Int: return int_serializer;
-        case Float: return float_serializer;
-        case Color3: return vec3_serializer;
-        case Color4: return vec4_serializer;
-        case Bool: return bool_serializer;
-        case String: return string_serializer;
-        case FilePath: return string_serializer;
-        case FolderPath: return string_serializer;
-        case IVec2: return ivec2_serializer;
-        case FVec2: return fvec2_serializer;
-        case EnableRectangle: return rect_serializer;
-        case Range: return fvec2_serializer;
-        case Macro: return string_serializer;
-        case Enum: return string_serializer;
+        case ConfigType::Int: return int_serializer;
+        case ConfigType::Float: return float_serializer;
+        case ConfigType::Color3: return vec3_serializer;
+        case ConfigType::Color4: return vec4_serializer;
+        case ConfigType::Bool: return bool_serializer;
+        case ConfigType::String: return string_serializer;
+        case ConfigType::FilePath: return string_serializer;
+        case ConfigType::FolderPath: return string_serializer;
+        case ConfigType::IVec2: return ivec2_serializer;
+        case ConfigType::FVec2: return fvec2_serializer;
+        case ConfigType::EnableRectangle: return rect_serializer;
+        case ConfigType::Range: return fvec2_serializer;
+        case ConfigType::Macro: return string_serializer;
+        case ConfigType::Enum: return string_serializer;
         default: assert(false);
         }
     }
@@ -734,20 +734,20 @@ private:
     std::function<void*(std::wstringstream&, void* res, bool* changed)> get_deserializer(){
         if (deserialize) return deserialize;
         switch(config_type){
-        case Int: return int_deserializer;
-        case Float: return float_deserializer;
-        case Color3: return color3_deserializer;
-        case Color4: return color4_deserializer;
-        case Bool: return bool_deserializer;
-        case String: return string_deserializer;
-        case FilePath: return string_deserializer;
-        case FolderPath: return string_deserializer;
-        case IVec2: return ivec2_deserializer;
-        case FVec2: return fvec2_deserializer;
-        case EnableRectangle: return rect_deserializer;
-        case Range: return fvec2_deserializer;
-        case Macro: return string_deserializer;
-        case Enum: return string_deserializer;
+        case ConfigType::Int: return int_deserializer;
+        case ConfigType::Float: return float_deserializer;
+        case ConfigType::Color3: return color3_deserializer;
+        case ConfigType::Color4: return color4_deserializer;
+        case ConfigType::Bool: return bool_deserializer;
+        case ConfigType::String: return string_deserializer;
+        case ConfigType::FilePath: return string_deserializer;
+        case ConfigType::FolderPath: return string_deserializer;
+        case ConfigType::IVec2: return ivec2_deserializer;
+        case ConfigType::FVec2: return fvec2_deserializer;
+        case ConfigType::EnableRectangle: return rect_deserializer;
+        case ConfigType::Range: return fvec2_deserializer;
+        case ConfigType::Macro: return string_deserializer;
+        case ConfigType::Enum: return string_deserializer;
         default: assert(false);
         }
 
@@ -756,20 +756,20 @@ private:
     std::function<bool(const std::wstring& value)> get_validator(){
         if (validator) return validator;
         switch(config_type){
-        case Int: return nullptr;
-        case Float: return nullptr;
-        case Color3: return color_3_validator;
-        case Color4: return color_4_validator;
-        case Bool: return bool_validator;
-        case String: return nullptr;
-        case FilePath: return nullptr;
-        case FolderPath: return nullptr;
-        case IVec2: return nullptr;
-        case FVec2: return nullptr;
-        case EnableRectangle: return nullptr;
-        case Range: return nullptr;
-        case Macro: return nullptr;
-        case Enum: return [extras = extras](const std::wstring& value) {return enum_validator(value, std::get<EnumExtras>(extras)); };
+        case ConfigType::Int: return nullptr;
+        case ConfigType::Float: return nullptr;
+        case ConfigType::Color3: return color_3_validator;
+        case ConfigType::Color4: return color_4_validator;
+        case ConfigType::Bool: return bool_validator;
+        case ConfigType::String: return nullptr;
+        case ConfigType::FilePath: return nullptr;
+        case ConfigType::FolderPath: return nullptr;
+        case ConfigType::IVec2: return nullptr;
+        case ConfigType::FVec2: return nullptr;
+        case ConfigType::EnableRectangle: return nullptr;
+        case ConfigType::Range: return nullptr;
+        case ConfigType::Macro: return nullptr;
+        case ConfigType::Enum: return [extras = extras](const std::wstring& value) {return enum_validator(value, std::get<EnumExtras>(extras)); };
         default: assert(false);
         }
 

@@ -1056,6 +1056,8 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect(pdf_renderer, &PdfRenderer::render_advance, this, &MainWidget::invalidate_render);
     QObject::connect(pdf_renderer, &PdfRenderer::search_advance, this, &MainWidget::invalidate_ui);
 
+    QObject::connect(pdf_renderer->get_bookmark_renderer(), &BackgroundBookmarkRenderer::bookmark_rendered, this, &MainWidget::invalidate_render);
+
     QObject::connect(resume_to_server_position_button, &QPushButton::clicked, [&]() {
         handle_resume_to_server_location();
         });

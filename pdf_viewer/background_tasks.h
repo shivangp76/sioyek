@@ -33,12 +33,14 @@ public:
 struct RenderedBookmark {
     BookMark bookmark;
     float zoom_level;
+    float pixel_ratio;
     bool dark_mode = false;
     QPixmap* pixmap = nullptr;
     QDateTime last_access_time;
 };
 
-class BackgroundBookmarkRenderer {
+class BackgroundBookmarkRenderer : public QObject{
+    Q_OBJECT
 private:
     std::shared_mutex rendered_bookmarks_mutex;
     std::vector<RenderedBookmark> rendered_bookmarks;
@@ -58,7 +60,10 @@ private:
 public:
     BackgroundBookmarkRenderer(BackgroundTaskManager* background_task_manager);
 
-    QPixmap* request_rendered_bookmark(const BookMark& bm, float zoom_level, bool dark_mode);
+    QPixmap* request_rendered_bookmark(const BookMark& bm, float zoom_level, float pixel_ratio, bool dark_mode);
     void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, const QFont& font);
-    void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, bool dark_mode, QRect window_qrect, bool is_from_main_thread=false);
+    void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, bool dark_mode, QRect window_qrect, bool is_from_main_thread=false);
+
+signals:
+    void bookmark_rendered();
 };
