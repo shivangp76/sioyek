@@ -273,6 +273,11 @@ std::pair<QPixmap*, bool> BackgroundBookmarkRenderer::request_rendered_bookmark(
         }
 
         if (should_add_request) {
+            for (int i = 0; i < rendered_bookmarks.size(); i++) {
+                if (rendered_bookmarks[i].bookmark.uuid == bm.uuid) {
+                    rendered_bookmarks[i].canceled = true;
+                }
+            }
 
             RenderedBookmark req;
             req.bookmark = bm;
@@ -281,74 +286,65 @@ std::pair<QPixmap*, bool> BackgroundBookmarkRenderer::request_rendered_bookmark(
             req.pixel_ratio = pixel_ratio;
             req.pixmap = nullptr;
             req.last_access_time = QDateTime::currentDateTime();
+            req.request_id = next_request_id++;
             rendered_bookmarks.push_back(req);
 
-            task_manager->add_task([this, req]() {
+            task_manager->add_task([this, id=req.request_id]() {
+                std::optional<RenderedBookmark> req_ = get_request_with_id(id);
                 //req.bookmark.get_rectangle().to_window()
-                int width = req.bookmark.get_rectangle().width() * req.zoom_level * req.pixel_ratio;
-                int height = req.bookmark.get_rectangle().height() * req.zoom_level * req.pixel_ratio;
-                QRect rect = QRect(0, 0, width, height);
-
-                QPixmap* rendered_pixmap = new QPixmap(width, height);
-                rendered_pixmap->fill(QColor(255, 255, 255, 0));
-                { // we want the QPainter to be destroyed before we manually delete the pixmap later
-                    QPainter painter(rendered_pixmap);
-                    render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.pixel_ratio, rendered_pixmap->rect(), req.color_palette);
+                if (req_ && req_->canceled) {
+                    erase_request_with_id(id);
                 }
+                if (req_ && (!req_->canceled)) {
+                    RenderedBookmark req = req_.value();
 
-                if (req.color_palette != ColorPalette::Normal) {
+                    int width = req.bookmark.get_rectangle().width() * req.zoom_level * req.pixel_ratio;
+                    int height = req.bookmark.get_rectangle().height() * req.zoom_level * req.pixel_ratio;
+                    QRect rect = QRect(0, 0, width, height);
 
-
-                    QImage image = rendered_pixmap->toImage();
-                    image = image.convertToFormat(QImage::Format_RGBA8888);
-                    delete rendered_pixmap;
-
-                    unsigned char* image_data = image.bits();
-                    int stride = image.bytesPerLine();
-                    int channels = image.depth() / 8;
-                    if (req.color_palette == ColorPalette::Dark) {
-                        convert_pixels_with_converter(image_data, image.width(), image.height(), stride, channels, [](unsigned char* pixel) {
-                            convert_pixel_to_dark_mode(pixel);
-                            });
-                    }
-                    else if (req.color_palette == ColorPalette::Custom) {
-
-                        float transform_matrix[16];
-                        get_custom_color_transform_matrix(transform_matrix);
-                        convert_pixels_with_converter(image_data, image.width(), image.height(), stride, channels, [&](unsigned char* pixel) {
-                            convert_pixel_to_custom_color(pixel, transform_matrix);
-                            });
+                    QPixmap* rendered_pixmap = new QPixmap(width, height);
+                    rendered_pixmap->fill(QColor(255, 255, 255, 0));
+                    { // we want the QPainter to be destroyed before we manually delete the pixmap later
+                        QPainter painter(rendered_pixmap);
+                        render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.pixel_ratio, rendered_pixmap->rect(), req.color_palette);
                     }
 
-                    rendered_pixmap = new QPixmap(QPixmap::fromImage(image));
+                    if (req.color_palette != ColorPalette::Normal) {
+
+
+                        QImage image = rendered_pixmap->toImage();
+                        image = image.convertToFormat(QImage::Format_RGBA8888);
+                        delete rendered_pixmap;
+
+                        unsigned char* image_data = image.bits();
+                        int stride = image.bytesPerLine();
+                        int channels = image.depth() / 8;
+                        if (req.color_palette == ColorPalette::Dark) {
+                            convert_pixels_with_converter(image_data, image.width(), image.height(), stride, channels, [](unsigned char* pixel) {
+                                convert_pixel_to_dark_mode(pixel);
+                                });
+                        }
+                        else if (req.color_palette == ColorPalette::Custom) {
+
+                            float transform_matrix[16];
+                            get_custom_color_transform_matrix(transform_matrix);
+                            convert_pixels_with_converter(image_data, image.width(), image.height(), stride, channels, [&](unsigned char* pixel) {
+                                convert_pixel_to_custom_color(pixel, transform_matrix);
+                                });
+                        }
+
+                        rendered_pixmap = new QPixmap(QPixmap::fromImage(image));
+                    }
+
+                    rendered_bookmarks_mutex.lock();
+                    std::vector<int> pending_indices = get_request_indices(rendered_bookmarks, req.bookmark, req.zoom_level, req.color_palette);
+                    assert(pending_indices.size() <= 1);
+                    if (pending_indices.size() == 1) {
+                        rendered_bookmarks[pending_indices[0]].pixmap = rendered_pixmap;
+                    }
+                    rendered_bookmarks_mutex.unlock();
+                    emit bookmark_rendered();
                 }
-
-                //rendered_pixmap->toImage().pixel
-                //rendered_pixmap->to
-                //int flags = Qt::TextWordWrap;
-                //if (is_text_rtl(req.bookmark.description)) {
-                //    flags |= Qt::AlignRight;
-                //}
-                //else {
-                //    flags |= Qt::AlignLeft;
-                //}
-
-                //QFont font = painter.font();
-                //float font_size = req.bookmark.font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : req.bookmark.font_size;
-                //font.setPointSizeF(font_size * req.zoom_level * 0.75);
-                //painter.setFont(font);
-
-                //painter.drawText(rect, flags, QString::fromStdWString(req.bookmark.description));
-                //painter.fillRect(rendered_pixmap->rect(), Qt::red);
-
-                rendered_bookmarks_mutex.lock();
-                std::vector<int> pending_indices = get_request_indices(rendered_bookmarks, req.bookmark, req.zoom_level, req.color_palette);
-                assert(pending_indices.size() <= 1);
-                if (pending_indices.size() == 1) {
-                    rendered_bookmarks[pending_indices[0]].pixmap = rendered_pixmap;
-                }
-                rendered_bookmarks_mutex.unlock();
-                emit bookmark_rendered();
                 }, nullptr);
 
             //pending_render_bookmarks.push_back(req);
@@ -521,5 +517,36 @@ void BackgroundBookmarkRenderer::release_cache() {
         }
     }
     rendered_bookmarks.clear();
+    rendered_bookmarks_mutex.unlock();
+}
+
+std::optional<RenderedBookmark> BackgroundBookmarkRenderer::get_request_with_id(int id) {
+    rendered_bookmarks_mutex.lock_shared();
+    for (auto bookmark : rendered_bookmarks) {
+        if (bookmark.request_id == id) {
+            rendered_bookmarks_mutex.unlock_shared();
+            return bookmark;
+        }
+    }
+
+    rendered_bookmarks_mutex.unlock_shared();
+    return {};
+}
+
+void BackgroundBookmarkRenderer::erase_request_with_id(int id) {
+    rendered_bookmarks_mutex.lock();
+
+    int index = -1;
+
+    for (int i = 0; i < rendered_bookmarks.size(); i++) {
+        if (rendered_bookmarks[i].request_id == id) {
+            index = i;
+            break;
+        }
+
+    }
+    if (index >= 0) {
+        rendered_bookmarks.erase(rendered_bookmarks.begin() + index);
+    }
     rendered_bookmarks_mutex.unlock();
 }

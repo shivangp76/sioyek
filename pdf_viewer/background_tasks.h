@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <qobject.h>
 #include <qdatetime.h>
+#include <atomic>
 
 #include "book.h"
 
@@ -37,6 +38,8 @@ struct RenderedBookmark {
     ColorPalette color_palette = ColorPalette::Normal;
     QPixmap* pixmap = nullptr;
     QDateTime last_access_time;
+    bool canceled = false;
+    int request_id;
 };
 
 class BackgroundBookmarkRenderer : public QObject{
@@ -48,6 +51,7 @@ private:
     BackgroundTaskManager* task_manager;
     bool is_latex_initialized = false;
     std::mutex latex_lock;
+    std::atomic<int> next_request_id = 0;
 
     bool are_bookmarks_the_same_for_render(const BookMark& bm1, const BookMark& bm2);
     std::vector<int> get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, ColorPalette palette, bool compare_zoom_level=true);
@@ -64,6 +68,8 @@ public:
     void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, const QFont& font);
     void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread=false);
     void release_cache();
+    std::optional<RenderedBookmark> get_request_with_id(int id);
+    void erase_request_with_id(int id);
 
 signals:
     void bookmark_rendered();
