@@ -20,7 +20,7 @@ extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
 extern bool VERBOSE;
 extern Path standard_data_path;
 
-const int total_pixel_budget = 10000000;
+extern int BACKGROUND_BOOKMARKS_PIXEL_BUDGET;
 
 
 void BackgroundBookmarkRenderer::initialize_latex() {
@@ -253,7 +253,7 @@ std::pair<QPixmap*, bool> BackgroundBookmarkRenderer::request_rendered_bookmark(
     float bm_width = bm.get_rectangle().width();
     float bm_height = bm.get_rectangle().height();
     float area = bm_width * bm_height * zoom_level * zoom_level * pixel_ratio * pixel_ratio;
-    while (area > total_pixel_budget) {
+    while (area > BACKGROUND_BOOKMARKS_PIXEL_BUDGET) {
         zoom_level /= 2;
         area /= 4;
     }
@@ -386,7 +386,7 @@ void BackgroundBookmarkRenderer::cleanup_bookmarks() {
 
     rendered_bookmarks_mutex.unlock_shared();
 
-    if (current_pixel_size > 2 * total_pixel_budget) {
+    if (current_pixel_size > 2 * BACKGROUND_BOOKMARKS_PIXEL_BUDGET) {
         rendered_bookmarks_mutex.lock();
         //std::unordered_set<int> indices_to_keep;
         int keep_size = current_pixel_size;
@@ -395,7 +395,7 @@ void BackgroundBookmarkRenderer::cleanup_bookmarks() {
         });
 
         int index = 0;
-        while ((keep_size > total_pixel_budget) && (index < rendered_bookmarks.size())) {
+        while ((keep_size > BACKGROUND_BOOKMARKS_PIXEL_BUDGET) && (index < rendered_bookmarks.size())) {
             RenderedBookmark& last = rendered_bookmarks[index];
             if (last.pixmap) {
                 keep_size -= last.pixmap->size().width() * last.pixmap->size().height();

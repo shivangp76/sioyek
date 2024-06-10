@@ -189,6 +189,7 @@ std::wstring STARTUP_COMMANDS = L"toggle_mouse_drag_mode;toggle_fullscreen";
 std::wstring STARTUP_COMMANDS = L"";
 #endif
 
+int BACKGROUND_BOOKMARKS_PIXEL_BUDGET = 10000000;
 bool ALIGN_LINK_DEST_TO_TOP = false;
 int MAX_TAB_COUNT = 100;
 float SMALL_PIXMAP_SCALE = 0.75f;
@@ -1168,6 +1169,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"status_bar_font_size", &STATUS_BAR_FONT_SIZE, IntExtras{1, 100});
     add_int(L"text_summary_context_size", &TEXT_SUMMARY_CONTEXT_SIZE, IntExtras{1, 100});
     add_int(L"max_created_toc_size", &MAX_CREATED_TABLE_OF_CONTENTS_SIZE, IntExtras{1, 100000});
+    add_int(L"background_bookmarks_pixel_budget", &BACKGROUND_BOOKMARKS_PIXEL_BUDGET, IntExtras{1, 1000000000});
     add_int(L"prerendered_page_count", &PRERENDERED_PAGE_COUNT, IntExtras{0, 10});
     add_int(L"reload_interval_miliseconds", &RELOAD_INTERVAL_MILISECONDS, IntExtras{0, 10000});
 
