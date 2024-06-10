@@ -614,3 +614,7 @@ const std::vector<DocumentRect> SmartViewCandidate::get_highlight_rects() {
         }
     }
 }
+
+bool BookMark::is_latex() const {
+    return QString::fromStdWString(description).startsWith("#latex");
+}

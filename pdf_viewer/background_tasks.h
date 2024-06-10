@@ -34,7 +34,7 @@ struct RenderedBookmark {
     BookMark bookmark;
     float zoom_level;
     float pixel_ratio;
-    bool dark_mode = false;
+    ColorPalette color_palette = ColorPalette::Normal;
     QPixmap* pixmap = nullptr;
     QDateTime last_access_time;
 };
@@ -50,9 +50,9 @@ private:
     std::mutex latex_lock;
 
     bool are_bookmarks_the_same_for_render(const BookMark& bm1, const BookMark& bm2);
-    std::vector<int> get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, bool dark_mode, bool compare_zoom_level=true);
-    bool does_request_exist(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, bool dark_mode);
-    QPixmap* get_rendered_bookmark(const BookMark& bm, float zoom_level, bool dark_mode);
+    std::vector<int> get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, ColorPalette palette, bool compare_zoom_level=true);
+    bool does_request_exist(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, ColorPalette palette);
+    QPixmap* get_rendered_bookmark(const BookMark& bm, float zoom_level, ColorPalette palette);
     void cleanup_bookmarks();
     void initialize_latex();
     void copy_microtex_files();
@@ -60,9 +60,10 @@ private:
 public:
     BackgroundBookmarkRenderer(BackgroundTaskManager* background_task_manager);
 
-    QPixmap* request_rendered_bookmark(const BookMark& bm, float zoom_level, float pixel_ratio, bool dark_mode);
+    std::pair<QPixmap*, bool> request_rendered_bookmark(const BookMark& bm, float zoom_level, float pixel_ratio, ColorPalette palette);
     void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, const QFont& font);
-    void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, bool dark_mode, QRect window_qrect, bool is_from_main_thread=false);
+    void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread=false);
+    void release_cache();
 
 signals:
     void bookmark_rendered();

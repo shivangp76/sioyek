@@ -1152,8 +1152,8 @@ void PdfViewOpenGLWidget::my_render() {
 
                         }
 
-                        QPixmap* pixmap = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), devicePixelRatioF(), dv()->color_mode != ColorPalette::Normal);
-                        if (pixmap) {
+                        auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), devicePixelRatioF(), dv()->color_mode);
+                        if (pixmap && (was_exact || bookmarks[i].is_latex())) {
                             painter.drawPixmap(window_qrect, *pixmap);
                         }
                         else {
@@ -1162,8 +1162,8 @@ void PdfViewOpenGLWidget::my_render() {
                                 &painter,
                                 dv()->get_zoom_level(),
                                 devicePixelRatioF(),
-                                dv()->color_mode != ColorPalette::Normal,
                                 window_qrect,
+                                dv()->color_mode,
                                 true);
                         }
                     }

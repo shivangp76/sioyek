@@ -7708,6 +7708,10 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             set_color_mode_to_system_theme();
         }
 
+        if ((confname == "custom_background_color") || (confname == "custom_text_color")) {
+            pdf_renderer->get_bookmark_renderer()->release_cache();
+        }
+
         if (confname == "tts_rate") {
             if (is_reading) {
                 handle_stop_reading();

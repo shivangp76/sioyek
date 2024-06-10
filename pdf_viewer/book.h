@@ -205,6 +205,7 @@ struct BookMark : Annotation {
     bool is_box() const;
     bool is_marked() const;
     bool is_question() const;
+    bool is_latex() const;
     std::optional<char> get_type() const;
 
     AbsoluteRect get_rectangle() const;

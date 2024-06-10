@@ -4655,3 +4655,72 @@ void get_custom_color_transform_matrix(float matrix_data[16]) {
 
     matmul<4, 4, 4>(outputs, inputs_inverse, matrix_data);
 }
+
+// With qpainter backend we need to manually convert pixels to
+// the current colorscheme. The following code basically does this
+// conversion for every pixel. For performance reasons we cache the previous result
+// so we don't have to recompute it when successive pixels are the same
+// (which happens a lot)
+void convert_pixels_with_converter(unsigned char* pixels, int width, int height, int stride, int n_channels, std::function<void(unsigned char*)> converter) {
+    unsigned char* first_pixel = pixels;
+    unsigned char last_r = first_pixel[0], last_g = first_pixel[1], last_b = first_pixel[2];
+    converter(first_pixel);
+    unsigned char res_r = first_pixel[0], res_g = first_pixel[1], res_b = first_pixel[2];
+
+    for (int row = 0; row < height; row++) {
+        unsigned char* row_samples = pixels + row * stride;
+        for (int col = 0; col < width; col++) {
+            unsigned char* pixel = row_samples + col * n_channels;
+            if (pixel[0] == last_r && pixel[1] == last_g && pixel[2] == last_b) {
+                pixel[0] = res_r;
+                pixel[1] = res_g;
+                pixel[2] = res_b;
+                continue;
+            }
+            last_r = pixel[0];
+            last_g = pixel[1];
+            last_b = pixel[2];
+
+            converter(pixel);
+
+            res_r = pixel[0];
+            res_g = pixel[1];
+            res_b = pixel[2];
+        }
+    }
+};
+
+void convert_pixel_to_dark_mode(unsigned char* pixel){
+    QColor inv(
+        static_cast<unsigned char>((127 - pixel[0]) * DARK_MODE_CONTRAST + 127),
+        static_cast<unsigned char>((127 - pixel[1]) * DARK_MODE_CONTRAST + 127),
+        static_cast<unsigned char>((127 - pixel[2]) * DARK_MODE_CONTRAST + 127)
+        );
+
+    QColor hsv_color = inv.toHsv();
+    int new_hue = (hsv_color.hue() + 180) % 360;
+    QColor new_color = QColor::fromHsv(new_hue, hsv_color.saturation(), hsv_color.value());
+
+    pixel[0] = (unsigned char)new_color.red();
+    pixel[1] = (unsigned char)new_color.green();
+    pixel[2] = (unsigned char)new_color.blue();
+}
+
+
+void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[16]){
+    float colorf[4];
+    colorf[0] = static_cast<float>(pixel[0]) / 255.0f;
+    colorf[1] = static_cast<float>(pixel[1]) / 255.0f;
+    colorf[2] = static_cast<float>(pixel[2]) / 255.0f;
+    colorf[3] = 1.0f;
+    float transformed_color[4];
+
+    matmul<4, 4, 1>(transform_matrix, colorf, transformed_color);
+    transformed_color[0] = std::clamp(transformed_color[0], 0.0f, 1.0f);
+    transformed_color[1] = std::clamp(transformed_color[1], 0.0f, 1.0f);
+    transformed_color[2] = std::clamp(transformed_color[2], 0.0f, 1.0f);
+
+    pixel[0] = static_cast<unsigned char>(transformed_color[0] * 255);
+    pixel[1] = static_cast<unsigned char>(transformed_color[1] * 255);
+    pixel[2] = static_cast<unsigned char>(transformed_color[2] * 255);
+}

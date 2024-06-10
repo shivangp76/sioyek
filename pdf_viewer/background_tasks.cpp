@@ -63,14 +63,16 @@ void BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString t
     painter.restore();
 }
 
-void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, bool dark_mode, QRect window_qrect, bool is_from_main_thread) {
+void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread) {
     QString desc_qstring = QString::fromStdWString(bookmark.description);
-    
-    float bookmark_color[3];
 
-    get_color_for_mode(dark_mode ? ColorPalette::Dark : ColorPalette::Normal, bookmark.color, bookmark_color);
+    painter->setPen(convert_float3_to_qcolor(&bookmark.color[0]));
 
-    painter->setPen(convert_float3_to_qcolor(&bookmark_color[0]));
+    if (is_from_main_thread) {
+        float bookmark_color[3];
+        get_color_for_mode(palette, bookmark.color, bookmark_color);
+        painter->setPen(convert_float3_to_qcolor(&bookmark_color[0]));
+    }
 
     QFont font = painter->font();
     float font_size = bookmark.font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmark.font_size;
@@ -207,10 +209,10 @@ bool BackgroundBookmarkRenderer::are_bookmarks_the_same_for_render(const BookMar
         (bm1.get_rectangle().height() == bm2.get_rectangle().height());
 }
 
-std::vector<int> BackgroundBookmarkRenderer::get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, bool dark_mode, bool compare_zoom_level) {
+std::vector<int> BackgroundBookmarkRenderer::get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, ColorPalette palette, bool compare_zoom_level) {
     std::vector<int> res;
     for (int i = 0; i < list.size(); i++) {
-        if (are_bookmarks_the_same_for_render(list[i].bookmark, bm) && (list[i].dark_mode == dark_mode)) {
+        if (are_bookmarks_the_same_for_render(list[i].bookmark, bm) && (list[i].color_palette == palette)) {
             if (!compare_zoom_level || (compare_zoom_level && (list[i].zoom_level == zoom_level))) {
                 res.push_back(i);
             }
@@ -219,21 +221,21 @@ std::vector<int> BackgroundBookmarkRenderer::get_request_indices(const std::vect
     return res;
 }
 
-bool BackgroundBookmarkRenderer::does_request_exist(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, bool dark_mode) {
+bool BackgroundBookmarkRenderer::does_request_exist(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, ColorPalette palette) {
     for (auto& l : list) {
-        if (are_bookmarks_the_same_for_render(l.bookmark, bm) && (l.dark_mode == dark_mode) && (l.zoom_level == zoom_level)) {
+        if (are_bookmarks_the_same_for_render(l.bookmark, bm) && (l.color_palette == palette) && (l.zoom_level == zoom_level)) {
             return true;
         }
     }
     return false;
 }
 
-QPixmap* BackgroundBookmarkRenderer::get_rendered_bookmark(const BookMark& bm, float zoom_level, bool dark_mode) {
+QPixmap* BackgroundBookmarkRenderer::get_rendered_bookmark(const BookMark& bm, float zoom_level, ColorPalette palette) {
     for (int i = 0; i < rendered_bookmarks.size(); i++) {
         if (
             are_bookmarks_the_same_for_render(bm, rendered_bookmarks[i].bookmark) &&
             (rendered_bookmarks[i].zoom_level == zoom_level) &&
-            (rendered_bookmarks[i].dark_mode == dark_mode)
+            (rendered_bookmarks[i].color_palette == palette)
             ) {
             rendered_bookmarks[i].last_access_time = QDateTime::currentDateTime();
             return rendered_bookmarks[i].pixmap;
@@ -247,7 +249,7 @@ BackgroundBookmarkRenderer::BackgroundBookmarkRenderer(BackgroundTaskManager* ba
 
 }
 
-QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& bm, float zoom_level, float pixel_ratio, bool dark_mode) {
+std::pair<QPixmap*, bool> BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& bm, float zoom_level, float pixel_ratio, ColorPalette palette) {
     float bm_width = bm.get_rectangle().width();
     float bm_height = bm.get_rectangle().height();
     float area = bm_width * bm_height * zoom_level * zoom_level * pixel_ratio * pixel_ratio;
@@ -257,16 +259,16 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
     }
 
     rendered_bookmarks_mutex.lock_shared();
-    QPixmap* res = get_rendered_bookmark(bm, zoom_level, dark_mode);
+    QPixmap* res = get_rendered_bookmark(bm, zoom_level, palette);
     rendered_bookmarks_mutex.unlock_shared();
 
     if (res != nullptr) {
-        return res;
+        return std::make_pair(res, true);
     }
     else {
         rendered_bookmarks_mutex.lock();
         bool should_add_request = true;
-        if (does_request_exist(rendered_bookmarks, bm, zoom_level, dark_mode)) {
+        if (does_request_exist(rendered_bookmarks, bm, zoom_level, palette)) {
             should_add_request = false;
         }
 
@@ -275,7 +277,7 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
             RenderedBookmark req;
             req.bookmark = bm;
             req.zoom_level = zoom_level;
-            req.dark_mode = dark_mode;
+            req.color_palette = palette;
             req.pixel_ratio = pixel_ratio;
             req.pixmap = nullptr;
             req.last_access_time = QDateTime::currentDateTime();
@@ -288,10 +290,41 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
                 QRect rect = QRect(0, 0, width, height);
 
                 QPixmap* rendered_pixmap = new QPixmap(width, height);
-                rendered_pixmap->fill(Qt::transparent);
-                QPainter painter(rendered_pixmap);
+                rendered_pixmap->fill(QColor(255, 255, 255, 0));
+                { // we want the QPainter to be destroyed before we manually delete the pixmap later
+                    QPainter painter(rendered_pixmap);
+                    render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.pixel_ratio, rendered_pixmap->rect(), req.color_palette);
+                }
 
-                render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.pixel_ratio, req.dark_mode, rendered_pixmap->rect());
+                if (req.color_palette != ColorPalette::Normal) {
+
+
+                    QImage image = rendered_pixmap->toImage();
+                    image = image.convertToFormat(QImage::Format_RGBA8888);
+                    delete rendered_pixmap;
+
+                    unsigned char* image_data = image.bits();
+                    int stride = image.bytesPerLine();
+                    int channels = image.depth() / 8;
+                    if (req.color_palette == ColorPalette::Dark) {
+                        convert_pixels_with_converter(image_data, image.width(), image.height(), stride, channels, [](unsigned char* pixel) {
+                            convert_pixel_to_dark_mode(pixel);
+                            });
+                    }
+                    else if (req.color_palette == ColorPalette::Custom) {
+
+                        float transform_matrix[16];
+                        get_custom_color_transform_matrix(transform_matrix);
+                        convert_pixels_with_converter(image_data, image.width(), image.height(), stride, channels, [&](unsigned char* pixel) {
+                            convert_pixel_to_custom_color(pixel, transform_matrix);
+                            });
+                    }
+
+                    rendered_pixmap = new QPixmap(QPixmap::fromImage(image));
+                }
+
+                //rendered_pixmap->toImage().pixel
+                //rendered_pixmap->to
                 //int flags = Qt::TextWordWrap;
                 //if (is_text_rtl(req.bookmark.description)) {
                 //    flags |= Qt::AlignRight;
@@ -309,7 +342,7 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
                 //painter.fillRect(rendered_pixmap->rect(), Qt::red);
 
                 rendered_bookmarks_mutex.lock();
-                std::vector<int> pending_indices = get_request_indices(rendered_bookmarks, req.bookmark, req.zoom_level, req.dark_mode);
+                std::vector<int> pending_indices = get_request_indices(rendered_bookmarks, req.bookmark, req.zoom_level, req.color_palette);
                 assert(pending_indices.size() <= 1);
                 if (pending_indices.size() == 1) {
                     rendered_bookmarks[pending_indices[0]].pixmap = rendered_pixmap;
@@ -328,16 +361,16 @@ QPixmap* BackgroundBookmarkRenderer::request_rendered_bookmark(const BookMark& b
 
         // if we can't find the pixmap with exact zoom level, we can return one with different zoom level
         rendered_bookmarks_mutex.lock_shared();
-        std::vector<int> indices = get_request_indices(rendered_bookmarks, bm, zoom_level, dark_mode, false);
+        std::vector<int> indices = get_request_indices(rendered_bookmarks, bm, zoom_level, palette, false);
         for (int i = rendered_bookmarks.size() - 1; i >= 0; i--) {
             if (rendered_bookmarks[i].pixmap != nullptr && (rendered_bookmarks[i].bookmark.uuid == bm.uuid)) {
                 QPixmap* res = rendered_bookmarks[i].pixmap;
                 rendered_bookmarks_mutex.unlock_shared();
-                return res;
+                return std::make_pair(res, false);
             }
         }
         rendered_bookmarks_mutex.unlock_shared();
-        return nullptr;
+        return std::make_pair(nullptr, false);
 
     }
 
@@ -477,4 +510,16 @@ void BackgroundBookmarkRenderer::copy_microtex_files() {
         QFile::copy(":/microtex_resources/greek/symbols_greek.xml", root_dir + "greek/symbols_greek.xml");
     }
 
+}
+
+void BackgroundBookmarkRenderer::release_cache() {
+    rendered_bookmarks_mutex.lock();
+    for (auto bookmark : rendered_bookmarks) {
+        if (bookmark.pixmap) {
+            delete bookmark.pixmap;
+            bookmark.pixmap = nullptr;
+        }
+    }
+    rendered_bookmarks.clear();
+    rendered_bookmarks_mutex.unlock();
 }
