@@ -12,6 +12,7 @@
 #include <qfileinfo.h>
 #include <qclipboard.h>
 #include <qdesktopservices.h>
+#include <qsettings.h>
 
 #include "utils.h"
 #include "input.h"
@@ -2679,6 +2680,100 @@ public:
 
     bool requires_document() { return false; }
 };
+
+bool CreateRegistryKey(HKEY hKeyRoot, LPCSTR subKey, LPCSTR valueName, LPCSTR value) {
+    HKEY hKey;
+    LONG lResult;
+    DWORD dwDisposition;
+
+    // Create the key
+    lResult = RegCreateKeyExA(
+        hKeyRoot,      // Root key
+        subKey,        // Subkey
+        0,             // Reserved
+        NULL,          // Class
+        REG_OPTION_NON_VOLATILE, // Options
+        KEY_WRITE,     // Desired access
+        NULL,          // Security attributes
+        &hKey,         // Handle to newly created key
+        &dwDisposition // Disposition value buffer
+    );
+
+    if (lResult != ERROR_SUCCESS) {
+        std::cerr << "Error creating registry key: " << lResult << std::endl;
+        return false;
+    }
+
+    // Set the value if provided
+    if (value != NULL) {
+        lResult = RegSetValueExA(
+            hKey,        // Handle to key
+            valueName,   // Value name
+            0,           // Reserved
+            REG_SZ,      // Value type
+            (const BYTE*)value, // Value data
+            strlen(value) + 1  // Value size including null terminator
+        );
+
+        if (lResult != ERROR_SUCCESS) {
+            std::cerr << "Error setting registry value: " << lResult << std::endl;
+        }
+    }
+
+    // Close the key handle
+    RegCloseKey(hKey);
+    return true;
+}
+
+class RegisterUrlHandler : public Command {
+public:
+    static inline const std::string cname = "register_url_handler";
+    static inline const std::string hname = "";
+    RegisterUrlHandler(MainWidget* w) : Command(cname, w) {};
+
+
+    void perform() {
+        // register the application to handle sioyek:// urls from windows
+        std::string path = QApplication::applicationFilePath().toStdString();
+        std::replace(path.begin(), path.end(), '/', '\\');
+
+#ifdef Q_OS_WIN
+        CreateRegistryKey(HKEY_CLASSES_ROOT, "sioyek", "URL Protocol", "");
+        CreateRegistryKey(HKEY_CLASSES_ROOT, "sioyek\\shell", NULL, NULL);
+
+        // Create [HKEY_CLASSES_ROOT\duck\shell\open]
+        CreateRegistryKey(HKEY_CLASSES_ROOT, "sioyek\\shell\\open", NULL, NULL);
+
+        std::string val = path + " %1";
+        // Create [HKEY_CLASSES_ROOT\duck\shell\open\command]
+        CreateRegistryKey(HKEY_CLASSES_ROOT, "sioyek\\shell\\open\\command", NULL, val.c_str());
+#endif
+        
+    }
+
+    bool requires_document() { return false; }
+};
+
+class UnregisterUrlHandler : public Command {
+public:
+    static inline const std::string cname = "unregister_url_handler";
+    static inline const std::string hname = "";
+    UnregisterUrlHandler(MainWidget* w) : Command(cname, w) {};
+
+
+    void perform() {
+        // unregister sioyek:// handler
+#ifdef Q_OS_WIN
+        RegDeleteKeyA(HKEY_CLASSES_ROOT, "sioyek\\shell\\open\\command");
+        RegDeleteKeyA(HKEY_CLASSES_ROOT, "sioyek\\shell\\open");
+        RegDeleteKeyA(HKEY_CLASSES_ROOT, "sioyek\\shell");
+        RegDeleteKeyA(HKEY_CLASSES_ROOT, "sioyek");
+#endif
+    }
+
+    bool requires_document() { return false; }
+};
+
 
 class CommandCommand : public Command {
 public:
@@ -7423,6 +7518,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ForwardSearchCommand>();
     register_command<CommandCommand>();
     register_command<CommandPaletteCommand>();
+    register_command<RegisterUrlHandler>();
+    register_command<UnregisterUrlHandler>();
     register_command<ExternalSearchCommand>();
     register_command<OpenSelectedUrlCommand>();
     register_command<ScreenDownCommand>();
