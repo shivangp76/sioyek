@@ -119,7 +119,7 @@ public:
 class BaseSelectorWidget : public QWidget {
 
 protected:
-    BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QStandardItemModel* item_model, MainWidget* parent);
+    BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent);
 
     void on_text_changed(const QString& text);
 
@@ -189,7 +189,7 @@ public:
         return "QTreeView";
     }
 
-    FilteredTreeSelect(bool fuzzy, QStandardItemModel* item_model,
+    FilteredTreeSelect(bool fuzzy, QAbstractItemModel* item_model,
         std::function<void(const std::vector<int>&)> on_done,
         MainWidget* parent,
         std::vector<int> selected_index) : BaseSelectorWidget(new QTreeView(), fuzzy, item_model, parent),
@@ -267,7 +267,7 @@ public:
         }
 
 
-        QStandardItemModel* model = create_table_model(table);
+        QAbstractItemModel* model = create_table_model(table);
         //model->setItem(selected_index, 0, new QStandardItem(QString::fromStdWString(std_string_list[selected_index])));
         //QStandardItemModel* model = new QStandardItemModel();
 
@@ -574,15 +574,15 @@ class CommandSelector : public BaseSelectorWidget {
 private:
     QStringList string_elements;
     MainWidget* main_widget;
-    QStandardItemModel* standard_item_model = nullptr;
+    QAbstractItemModel* standard_item_model = nullptr;
     std::unordered_map<std::string, std::vector<std::string>> key_map;
     std::unordered_map<QString, QString> prefixes;
     std::function<void(std::string, std::string)>* on_done = nullptr;
     fzf_slab_t* slab;
 
     QList<QStandardItem*> get_item(std::string command_name);
-    QStandardItemModel* get_standard_item_model(std::vector<std::string> command_names);
-    QStandardItemModel* get_standard_item_model(QStringList command_names);
+    QAbstractItemModel* get_standard_item_model(std::vector<std::string> command_names);
+    QAbstractItemModel* get_standard_item_model(QStringList command_names);
     QStringList get_elements_matching_prefix(QString prefix);
 
 protected:

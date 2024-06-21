@@ -1304,7 +1304,7 @@ QList<QStandardItem*> CommandSelector::get_item(std::string command_name) {
     return (QList<QStandardItem*>() << name_item << key_item);
 }
 
-QStandardItemModel* CommandSelector::get_standard_item_model(std::vector<std::string> command_names) {
+QAbstractItemModel* CommandSelector::get_standard_item_model(std::vector<std::string> command_names) {
 
     QStandardItemModel* res = new QStandardItemModel();
 
@@ -1314,7 +1314,7 @@ QStandardItemModel* CommandSelector::get_standard_item_model(std::vector<std::st
     return res;
 }
 
-QStandardItemModel* CommandSelector::get_standard_item_model(QStringList command_names) {
+QAbstractItemModel* CommandSelector::get_standard_item_model(QStringList command_names) {
 
     std::vector<std::string> std_command_names;
 
@@ -1476,7 +1476,7 @@ bool CommandSelector::on_text_change(const QString& text) {
 
     fzf_free_pattern(pattern);
 
-    QStandardItemModel* new_standard_item_model = get_standard_item_model(matching_element_names);
+    QAbstractItemModel* new_standard_item_model = get_standard_item_model(matching_element_names);
     dynamic_cast<QTableView*>(get_view())->setModel(new_standard_item_model);
     delete standard_item_model;
     standard_item_model = new_standard_item_model;
@@ -1485,7 +1485,7 @@ bool CommandSelector::on_text_change(const QString& text) {
     return true;
 }
 
-BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QStandardItemModel* item_model, MainWidget* parent) : QWidget(parent) {
+BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent) : QWidget(parent) {
 
     bool is_tree = dynamic_cast<QTreeView*>(item_view) != nullptr;
     is_fuzzy = fuzzy;
