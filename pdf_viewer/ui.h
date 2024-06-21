@@ -39,6 +39,9 @@
 #include <qslider.h>
 #include <qlabel.h>
 #include <qcheckbox.h>
+#include <qstyleditemdelegate.h>
+#include <qabstractitemmodel.h>
+#include <qtextdocument.h>
 #include <QQuickWidget>
 #include "touchui/TouchSlider.h"
 #include "touchui/TouchCheckbox.h"
@@ -79,6 +82,7 @@ const int max_select_size = 100;
 extern bool SMALL_TOC;
 extern bool MULTILINE_MENUS;
 extern bool TOUCH_MODE;
+
 
 
 class HierarchialSortFilterProxyModel : public QSortFilterProxyModel {
@@ -995,3 +999,38 @@ std::wstring select_any_existing_file_name();
 //QWidget* bool_configurator_ui(MainWidget* main_widget, void* location){
 //    return new BoolConfigUI(main_widget, (float*)location, name);
 //}
+
+class HighlightModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    std::vector<Highlight> highlights;
+    std::vector<QString> documents;
+
+
+    HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& documents = {}, QObject* parent = nullptr);
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+};
+
+class HighlightSearchItemDelegate : public QStyledItemDelegate {
+    Q_OBJECT
+public:
+    QString pattern;
+
+    mutable QTextDocument highlight_document;
+    mutable QTextDocument file_name_document;
+    mutable QTextDocument comment_document;
+
+    HighlightSearchItemDelegate();
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void set_pattern(QString p);
+};
+

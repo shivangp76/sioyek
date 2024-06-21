@@ -1709,3 +1709,29 @@ bool SioyekNetworkManager::is_document_available_on_server(Document* doc) {
         return false;
     }
 }
+
+void SioyekNetworkManager::search_all_documents(QObject* parent, QString q, std::function<void(std::vector<QString>)> on_done){
+    QUrl url(QString::fromStdWString(SIOYEK_API_SEARCH_URL));
+    QUrlQuery query;
+    query.addQueryItem("query", "a " + q);
+    url.setQuery(query);
+
+
+    QNetworkRequest req;
+    authorize_request(&req);
+    req.setUrl(url);
+    QNetworkReply* reply = network_manager.get(req);
+    reply->setProperty("sioyek_handled", true);
+    reply->setParent(parent);
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, q, on_done = std::move(on_done)]() {
+        auto json_doc = QJsonDocument::fromJson(reply->readAll());
+        QJsonArray results = json_doc.object()["results"].toArray();
+        std::vector<QString> matches;
+
+        for (int i = 0; i < results.size(); i++) {
+            QString match = results[i].toObject()["obj"].toObject()["match"].toString();
+            matches.push_back(match);
+        }
+        on_done(matches);
+        });
+}

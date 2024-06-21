@@ -4,6 +4,8 @@
 #include <QItemSelectionModel>
 #include <QTapGesture>
 #include <main_widget.h>
+#include <qpainter.h>
+#include <qabstracttextdocumentlayout.h>
 
 #include <QQuickView>
 #include <QQmlComponent>
@@ -1945,3 +1947,241 @@ void EnumConfigUI::resizeEvent(QResizeEvent* resize_event) {
     quick_widget->resize(size());
     quick_widget->move(0, 0);
 }
+
+
+
+HighlightModel::HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& docs, QObject* parent) : QAbstractTableModel(parent) {
+    highlights = std::move(data);
+    documents = docs;
+}
+
+int HighlightModel::rowCount(const QModelIndex& parent) const {
+    return highlights.size();
+}
+
+int HighlightModel::columnCount(const QModelIndex& parent) const {
+    if (documents.size() == 0) {
+        return 3;
+    }
+    else {
+        return 4;
+    }
+}
+
+QVariant HighlightModel::data(const QModelIndex& index, int role) const {
+    if (role == Qt::DisplayRole) {
+        if (index.column() == 0) {
+            return QString::fromStdWString(highlights[index.row()].description);
+        }
+        if (index.column() == 1) {
+            return highlights[index.row()].type;
+        }
+        if (index.column() == 2) {
+            return QString::fromStdWString(highlights[index.row()].text_annot);
+        }
+        if (index.column() == 3) {
+            return documents[index.row()];
+        }
+    }
+
+    return QVariant();
+}
+
+QVariant HighlightModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+        return "Highlight";
+    }
+    return QVariant();
+}
+
+void HighlightSearchItemDelegate::set_pattern(QString p) {
+    pattern = p;
+}
+
+HighlightSearchItemDelegate::HighlightSearchItemDelegate() {
+    QFont highlight_font;
+    QFont file_name_font;
+    QFont comment_font;
+
+    highlight_font.setPixelSize(20);
+    file_name_font.setPixelSize(15);
+    comment_font.setPixelSize(18);
+
+    highlight_document.setDefaultFont(highlight_font);
+    file_name_document.setDefaultFont(file_name_font);
+    comment_document.setDefaultFont(comment_font);
+
+}
+
+void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
+    const QModelIndex& index) const {
+
+    QString text = index.data().toString();
+    QString comment_text = index.siblingAtColumn(2).data().toString();
+    int highlight_type = index.siblingAtColumn(1).data().toInt();
+
+    float* hc = &HIGHLIGHT_COLORS[highlight_type - 'a'];
+
+    QColor highlight_color = QColor::fromRgbF(hc[0], hc[1], hc[2], 1);
+
+    QColor text_color_hsl = highlight_color.toHsl();
+    text_color_hsl.setHslF(text_color_hsl.hueF(), text_color_hsl.saturationF(), 0.9);
+    QColor text_color = text_color_hsl.toRgb();
+
+    QColor selected_text_color = QColor::fromRgbF(0, 0, 0, 1);
+    QColor background_color = QColor::fromRgbF(0, 0, 0, 1);
+    QColor comment_text_color = QColor::fromRgbF(1, 1, 1, 0.7);
+    QColor selected_comment_text_color = QColor::fromRgbF(0, 0, 0, 0.7);
+
+    QColor selected_background_color_hsl = highlight_color.toHsl();
+    selected_background_color_hsl.setHslF(selected_background_color_hsl.hueF(), selected_background_color_hsl.saturationF(), 0.9);
+    QColor selected_background_color = selected_background_color_hsl.toRgb();
+
+
+
+    const QSortFilterProxyModel* proxy_model = dynamic_cast<const QSortFilterProxyModel*>(index.model());
+
+    int match_index = -1;
+    if (proxy_model && (pattern.size() > 0)) {
+        text = text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
+        comment_text = comment_text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
+    }
+
+    painter->save();
+    float* highlight_type_color = &HIGHLIGHT_COLORS[highlight_type - 'a'];
+    //QColor hl_color = QColor::fromRgbF(highlight_type_color[0], highlight_type_color[1], highlight_type_color[2]);
+    //QColor hl_color_highlight = hl_color;
+    //hl_color_highlight.setAlphaF(0.5);
+
+    QAbstractTextDocumentLayout::PaintContext ctx;
+
+    bool selected = option.state & QStyle::State_Selected;
+    bool is_global = index.model()->columnCount() == 4;
+    bool is_color_dark = (highlight_type_color[0] + highlight_type_color[1] + highlight_type_color[2]) < 1.5;
+    bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
+
+    if (selected) {
+        painter->fillRect(option.rect, selected_background_color);
+        ctx.palette.setColor(QPalette::Text, selected_text_color);
+    }
+    else {
+        painter->fillRect(option.rect, background_color);
+        ctx.palette.setColor(QPalette::Text, text_color);
+    }
+
+    highlight_document.setHtml(text);
+    highlight_document.setTextWidth(option.rect.width());
+    painter->translate(option.rect.topLeft());
+    painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
+    highlight_document.documentLayout()->draw(painter, ctx);
+    float translate_amount = highlight_document.size().toSize().height();
+
+    if (has_comment) {
+        // draw vertical separator
+        QColor separator_color;
+        if (selected) {
+            separator_color = QColor::fromRgbF(0, 0, 0, 0.2);
+        }
+        else {
+            separator_color = QColor::fromRgbF(1, 1, 1, 0.2);
+        }
+        painter->setPen(separator_color);
+
+        float offset = option.rect.width() / 10;
+        painter->drawLine(offset, translate_amount, option.rect.width() - offset, translate_amount);
+
+
+
+        //QColor current_text_color = ctx.palette.color(QPalette::Text);
+        //current_text_color.setAlphaF(0.7);
+        if (selected) {
+            ctx.palette.setColor(QPalette::Text, selected_comment_text_color);
+        }
+        else {
+            ctx.palette.setColor(QPalette::Text, comment_text_color);
+        }
+        comment_document.setTextWidth(option.rect.width());
+        QSize highlight_size = highlight_document.size().toSize();
+        painter->translate(0, translate_amount);
+        translate_amount = comment_document.size().toSize().height();
+
+        comment_document.setHtml(comment_text);
+        comment_document.documentLayout()->draw(painter, ctx);
+    }
+    if (is_global) {
+        file_name_document.setTextWidth(option.rect.width());
+
+        //QSize comment_size =  comment_document.size().toSize();
+        painter->translate(0, translate_amount);
+
+        if (is_color_dark && !selected) {
+            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
+        }
+        else {
+            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
+        }
+
+        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(3).data().toString() + "</div>");
+        file_name_document.documentLayout()->draw(painter, ctx);
+    }
+    painter->restore();
+}
+
+QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
+    const QModelIndex& index) const {
+    bool is_global = index.model()->columnCount() == 4;
+    bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
+
+    QString text = index.data().toString();
+    //QTextDocument d;
+    QFont somefont;
+    somefont.setPixelSize(20);
+    //.setDefaultFont(somefont);
+    highlight_document.setHtml(text);
+    highlight_document.setTextWidth(option.rect.width());
+    comment_document.setTextWidth(option.rect.width());
+    file_name_document.setTextWidth(option.rect.width());
+    QSizeF res = highlight_document.size();
+
+
+    if (is_global) {
+        QString doc_text = index.siblingAtColumn(3).data().toString();
+        file_name_document.setPlainText(doc_text);
+        QSizeF footer_size = file_name_document.size();
+        res.setHeight(res.height() + footer_size.height());
+    }
+
+    if (has_comment) {
+        QString comment_text = index.siblingAtColumn(2).data().toString();
+        comment_document.setHtml(comment_text);
+        QSizeF comment_size = comment_document.size();
+        res.setHeight(res.height() + comment_size.height());
+    }
+    return res.toSize();
+
+}
+
+//class HighlightSelectorWidget : public BaseSelectorWidget {
+//public:
+//    //HighlightSelectorWidget(QAbstractItemView* highlights_view, QStandardItemModel* highlights_model, MainWidget* parent)
+//    //    : BaseSelectorWidget(highlights_view, true, highlights_model, parent) {
+//
+//    //}
+//
+//    HighlightSelectorWidget(std::vector<Highlight> highlights, MainWidget* parent)
+//        : BaseSelectorWidget(new QListView(this), true, new HighlightModel(std::move(highlights), {}, this), parent) {
+//
+//    }
+//
+//    //static HighlightSelectorWidget* from_highlights(std::vector<Highlight> highlights) {
+//    //    HighlightModel* highlight_model = new HighlightModel()
+//    //}
+//
+//    void on_select(const QModelIndex& value) {
+//
+//    }
+//
+//    QString get_view_stylesheet_type_name() {
+//        return "QListView";
+//    }
+//};

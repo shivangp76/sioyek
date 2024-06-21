@@ -56,6 +56,7 @@ public:
     const std::wstring SIOYEK_DOWNLOAD_DRAWINGS_URL = SIOYEK_HOST + L"download_drawings";
     const std::wstring SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL = SIOYEK_HOST + L"last_drawing_modification_time";
     const std::wstring SIOYEK_GET_NEW_ANNOTATIONS_URL = SIOYEK_HOST + L"get_annotations_after";
+    const std::wstring SIOYEK_API_SEARCH_URL = SIOYEK_HOST + L"/api/search";
 
     bool server_hashes_loaded = false;
     std::unordered_set<std::string> SERVER_HASHES = {};
@@ -120,6 +121,7 @@ public:
     void get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done);
     void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
     void download_new_annotations(QObject* parent, QDateTime last_update_time, bool force=false);
+    void search_all_documents(QObject* parentm, QString query, std::function<void(std::vector<QString>)> on_done);
 };
 
 void block_for_send(QNetworkReply* reply);

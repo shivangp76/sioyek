@@ -17,6 +17,7 @@
 #include <qjsondocument.h>
 #include <qmainwindow.h>
 #include <qfilesystemwatcher.h>
+
 #ifdef SIOYEK_IOS
 #include <QApplicationStateChangeEvent>
 #endif
