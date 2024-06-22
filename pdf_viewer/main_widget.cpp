@@ -7154,29 +7154,28 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 
-
 void MainWidget::handle_debug_command() {
 
-    std::vector<Highlight> highlights = doc()->get_highlights();
 
-    for (int i = 0; i < 100; i++) {
-        for (auto x : doc()->get_highlights()) {
-            highlights.push_back(x);
-        }
-    }
+    qDebug() << similarity_score<std::wstring>(L"toggle_dark_mode", L"toggle custom color");
+    //std::vector<Highlight> highlights = doc()->get_highlights();
 
-    HighlightModel* highlight_model = new HighlightModel(std::move(highlights));
-    QListView* list_view = new QListView();
-    //list_view->setBatchSize(10);
-    //list_view->setLayoutMode(QListView::Batched);
+    //for (int i = 0; i < 100; i++) {
+    //    for (auto x : doc()->get_highlights()) {
+    //        highlights.push_back(x);
+    //    }
+    //}
 
-    HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, this);
-    highlight_selector_widget->set_filter_column_index(-1);
+    //HighlightModel* highlight_model = new HighlightModel(std::move(highlights));
+    //QListView* list_view = new QListView();
+
+    //HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, this);
+    //highlight_selector_widget->set_filter_column_index(-1);
 
 
-    set_current_widget(highlight_selector_widget);
-    show_current_widget();
-    highlight_selector_widget->update_render();
+    //set_current_widget(highlight_selector_widget);
+    //show_current_widget();
+    //highlight_selector_widget->update_render();
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {

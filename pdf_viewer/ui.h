@@ -1027,8 +1027,9 @@ public:
     mutable QTextDocument highlight_document;
     mutable QTextDocument file_name_document;
     mutable QTextDocument comment_document;
+    mutable std::unordered_map<int, float> cached_sizes;
 
-    HighlightSearchItemDelegate();
+    HighlightSearchItemDelegate(QAbstractItemModel* highlight_model);
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;

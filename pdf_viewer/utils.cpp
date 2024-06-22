@@ -4725,3 +4725,5 @@ void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[
     pixel[1] = static_cast<unsigned char>(transformed_color[1] * 255);
     pixel[2] = static_cast<unsigned char>(transformed_color[2] * 255);
 }
+
+

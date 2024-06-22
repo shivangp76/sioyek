@@ -2,6 +2,7 @@
 #include <string>
 
 #include "rapidfuzz_amalgamated.hpp"
+#include "utils.h"
 
 bool MySortFilterProxyModel::filter_accepts_row_column(int row, int col, const QModelIndex& source_parent) const {
     if (filterString.size() == 0 || filterString == "<NULL>") return true;
@@ -87,7 +88,8 @@ MySortFilterProxyModel::~MySortFilterProxyModel() {
 }
 
 int MySortFilterProxyModel::compute_score(QString filter_string, QString item_string) const{
-    return static_cast<int>(rapidfuzz::fuzz::partial_ratio(filter_string.toStdWString(), item_string.toStdWString()));
+    return similarity_score(filter_string.toStdWString(), item_string.toStdWString());
+    //return static_cast<int>(rapidfuzz::fuzz::partial_ratio(filter_string.toStdWString(), item_string.toStdWString()));
 }
 
 int MySortFilterProxyModel::compute_score(fzf_pattern_t* pattern, QString item_string) const{

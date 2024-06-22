@@ -179,7 +179,37 @@ std::wstring find_first_regex_match(const std::wstring& haystack, const std::wst
 //    std::vector<std::vector<PagelessDocumentRect>>* out_line_characters,
 //    std::vector<PagelessDocumentRect>* out_next_rects);
 
-int lcs(const char* X, const char* Y, int m, int n);
+template<typename T>
+int lcs(T X, T Y, int m, int n)
+{
+    //int L[m + 1][n + 1];
+    std::vector<std::vector<int>> L;
+    for (int i = 0; i < m + 1; i++) {
+        L.push_back(std::vector<int>(n + 1));
+    }
+
+    int i, j;
+
+    /* Following steps build L[m+1][n+1] in bottom up fashion. Note
+      that L[i][j] contains length of LCS of X[0..i-1] and Y[0..j-1] */
+    for (i = 0; i <= m; i++) {
+        for (j = 0; j <= n; j++) {
+            if (i == 0 || j == 0)
+                L[i][j] = 0;
+
+            else if (X[i - 1] == Y[j - 1])
+                L[i][j] = L[i - 1][j - 1] + 1;
+
+            else
+                L[i][j] = std::max(L[i - 1][j], L[i][j - 1]);
+        }
+    }
+
+    /* L[m][n] contains length of LCS for X[0..n-1] and Y[0..m-1] */
+    return L[m][n];
+}
+//int lcs(const char* X, const char* Y, int m, int n);
+
 bool has_arg(int argc, char** argv, std::string key);
 std::vector<std::wstring> find_all_regex_matches(std::wstring haystack, const std::wstring& regex_string, std::vector<std::pair<int, int>>* match_ranges = nullptr);
 bool command_requires_text(const std::wstring& command);
@@ -636,3 +666,114 @@ void get_custom_color_transform_matrix(float matrix_data[16]);
 void convert_pixels_with_converter(unsigned char* pixels, int width, int height, int stride, int n_channels, std::function<void(unsigned char*)> converter);
 void convert_pixel_to_dark_mode(unsigned char* pixel);
 void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[16]);
+//std::pair<int, int> find_smallest_containing_substring(const std::wstring& haystack, const std::wstring needle, wchar_t delimeter = ' ');
+//int similarity_score(const std::wstring& haystack, const std::wstring& needle);
+
+template<typename T>
+std::pair<int, int> find_smallest_containing_substring(const T& haystack, const T& needle, wchar_t delimeter=' ') {
+    std::unordered_map<int, int> chars_left;
+    for (auto ch : needle) {
+        if (ch == delimeter) continue;
+
+        auto it = chars_left.find(ch);
+        if (it == chars_left.end()) {
+            chars_left[ch] = 1;
+        }
+        else {
+            it->second++;
+        }
+    }
+    int positive_count = chars_left.size();
+
+    int start = 0;
+    int end = -1;
+
+    auto move_start_keeping_match = [&]() {
+        while (start < end) {
+            auto it = chars_left.find(haystack[start]);
+            if (it != chars_left.end()) {
+                if (it->second < 0) {
+                    it->second++;
+                }
+                else {
+                    break;
+                }
+            }
+            start++;
+        }
+        };
+
+    auto move_end_until_match = [&]() {
+        while (end < static_cast<int>(haystack.size()) && positive_count > 0) {
+            end++;
+            auto it = chars_left.find(haystack[end]);
+            if (it != chars_left.end()) {
+                it->second--;
+                if (it->second == 0) {
+                    positive_count--;
+                }
+            }
+        }
+        move_start_keeping_match();
+        };
+
+    auto increment_start = [&]() {
+        chars_left[haystack[start]]++;
+        if (chars_left[haystack[start]] == 1) {
+            positive_count++;
+            start++;
+        }
+        else {
+            assert(false);
+        }
+        };
+
+    move_end_until_match();
+    if (positive_count > 0) {
+        return std::make_pair(-1, -1);
+    }
+
+    int min_length = end - start + 1;
+    int min_start = start;
+    int min_end = end;
+
+    while (true) {
+        increment_start();
+        move_end_until_match();
+        if (positive_count > 0) break;
+        int length = end - start + 1;
+        if (length < min_length) {
+            min_length = length;
+            min_start = start;
+            min_end = end;
+        }
+
+    }
+    return std::make_pair(min_start, min_end+1);
+
+}
+
+template<typename T>
+int similarity_score(const T& haystack, const T& needle) {
+    if (needle.size() == 0) {
+        return 100;
+    }
+    auto [begin, end] = find_smallest_containing_substring<T>(haystack, needle);
+
+    if (begin == -1) {
+        int lcs_length = lcs(&haystack[0], &needle[0], haystack.length(), needle.size());
+        if (lcs_length < needle.size() / 2) {
+            return 0;
+        }
+        return lcs_length * 20 / needle.size();
+    }
+    
+    int length = end - begin;
+
+    if (length > 2 * needle.size()) {
+        return 0;
+    }
+
+    int lcs_length = lcs(&haystack[begin], &needle[0], length, needle.size());
+    return lcs_length * 100 / needle.size();
+}

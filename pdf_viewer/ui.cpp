@@ -1452,7 +1452,8 @@ bool CommandSelector::on_text_change(const QString& text) {
             score = fzf_get_score(encoded.c_str(), pattern, slab);
         }
         else {
-            fts::fuzzy_match(search_text_string.c_str(), encoded.c_str(), score);
+            score = similarity_score(encoded, search_text_string);
+            //fts::fuzzy_match(search_text_string.c_str(), encoded.c_str(), score);
         }
         match_score_pairs.push_back(std::make_pair(encoded, score));
     }
@@ -2006,7 +2007,7 @@ void HighlightSearchItemDelegate::set_pattern(QString p) {
     pattern = p;
 }
 
-HighlightSearchItemDelegate::HighlightSearchItemDelegate() {
+HighlightSearchItemDelegate::HighlightSearchItemDelegate(QAbstractItemModel* highlight_model) {
     QFont highlight_font;
     QFont file_name_font;
     QFont comment_font;
@@ -2018,6 +2019,20 @@ HighlightSearchItemDelegate::HighlightSearchItemDelegate() {
     highlight_document.setDefaultFont(highlight_font);
     file_name_document.setDefaultFont(file_name_font);
     comment_document.setDefaultFont(comment_font);
+
+
+    //std::vector<float> local_cached_heights;
+    //for (int i = 0; i < highlight_model->rowCount(); i++) {
+    //    local_cached_heights.push_back(compute_size_hint(500, highlight_model, i).height());
+    //}
+    //cached_heights = local_cached_heights;
+    //std::thread([this, highlight_model]() {
+    //    std::vector<float> local_cached_heights;
+    //    for (int i = 0; i < highlight_model->rowCount(); i++) {
+    //        local_cached_heights.push_back(compute_size_hint(500, highlight_model, i).height());
+    //    }
+    //    cached_heights = local_cached_heights;
+    //    }).detach();
 
 }
 
@@ -2052,8 +2067,12 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
 
     int match_index = -1;
     if (proxy_model && (pattern.size() > 0)) {
-        text = text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
-        comment_text = comment_text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
+        auto [text_highlight_begin, text_highlight_end] = find_smallest_containing_substring(text.toLower().toStdWString(), pattern.toStdWString());
+        auto [comment_highlight_begin, comment_highlight_end] = find_smallest_containing_substring(comment_text.toLower().toStdWString(), pattern.toStdWString());
+        //text = text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
+        //comment_text = comment_text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
+        text = text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + text.mid(text_highlight_end);
+        comment_text = comment_text.left(comment_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + comment_text.mid(comment_highlight_begin, comment_highlight_end - comment_highlight_begin) + "</span>" + comment_text.mid(comment_highlight_end);
     }
 
     painter->save();
@@ -2138,7 +2157,12 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
 
 QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
     const QModelIndex& index) const {
-    return QSize(100, 100);
+    const QSortFilterProxyModel *proxy_model = dynamic_cast<const QSortFilterProxyModel*>(index.model());
+    auto source_index = proxy_model->mapToSource(index);
+    if (cached_sizes.find(source_index.row()) != cached_sizes.end()) {
+        return QSize(option.rect.width(), cached_sizes[source_index.row()]);
+    }
+
     bool is_global = index.model()->columnCount() == 4;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
@@ -2167,6 +2191,7 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
         QSizeF comment_size = comment_document.size();
         res.setHeight(res.height() + comment_size.height());
     }
+    cached_sizes[source_index.row()] = res.height();
     return res.toSize();
 
 }
@@ -2174,15 +2199,17 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
 HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent)
     : BaseSelectorWidget(view, true, model, parent) {
 
-    lv = dynamic_cast<QListView*>(get_view());
+    lv = dynamic_cast<decltype(lv)>(get_view());
     if (lv) {
-        lv->setItemDelegate(new HighlightSearchItemDelegate());
+        lv->setItemDelegate(new HighlightSearchItemDelegate(model));
     }
     //    emit list_view->model()->dataChanged(list_view->model()->index(0, 0), list_view->model()->index(list_view->model()->rowCount() - 1, 0));
 
 }
 
 void HighlightSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
+    dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate())->cached_sizes.clear();
+
     BaseSelectorWidget::resizeEvent(resize_event);
     //QWidget::resizeEvent(resize_event);
     update_render();
