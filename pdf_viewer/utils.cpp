@@ -2734,6 +2734,7 @@ QString get_color_stylesheet(float* bg_color, float* text_color, bool nofont, in
             get_color_qml_string(text_color[0], text_color[1], text_color[2])
         );
     }
+
 }
 
 QString get_ui_stylesheet(bool nofont, int font_size) {

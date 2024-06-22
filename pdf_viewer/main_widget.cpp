@@ -7156,61 +7156,27 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
-    //sioyek_network_manager->search_all_documents(this, "something", [](std::vector<QString> matches) {
-    //    qDebug() << matches;
-    //    });
+
     std::vector<Highlight> highlights = doc()->get_highlights();
-    std::vector<QString> documents;
-    for (auto& _ : highlights) {
-        documents.push_back(QString::fromStdWString(doc()->get_path()));
+
+    for (int i = 0; i < 100; i++) {
+        for (auto x : doc()->get_highlights()) {
+            highlights.push_back(x);
+        }
     }
-    //QStringList string_list;
-    //for (int i = 0; i < 1; i++) {
-    //    for (auto highlight : highlights) {
-    //        string_list.append(QString::fromStdWString(highlight.description));
-    //    }
-    //}
 
-    //HighlightModel* highlight_model = new HighlightModel(std::move(highlights), std::move(documents));
     HighlightModel* highlight_model = new HighlightModel(std::move(highlights));
+    QListView* list_view = new QListView();
+    //list_view->setBatchSize(10);
+    //list_view->setLayoutMode(QListView::Batched);
 
-    QWidget* container = new QWidget(this);
+    HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, this);
+    highlight_selector_widget->set_filter_column_index(-1);
 
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    QLineEdit* line_edit = new QLineEdit(this);
 
-    QSortFilterProxyModel* proxy_model = new QSortFilterProxyModel(this);
-    proxy_model->setFilterKeyColumn(-1);
-    proxy_model->setSourceModel(highlight_model);
-
-    QListView* list_view = new QListView(this);
-    //list_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    //list_view->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    //list_view->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-
-    auto my_delegate = new HighlightSearchItemDelegate();
-    list_view->setItemDelegate(my_delegate);
-
-    layout->addWidget(line_edit);
-    layout->addWidget(list_view);
-
-    container->setLayout(layout);
-
-    container->resize(width() / 2, height());
-    container->move(width() / 4, 0);
-
-    list_view->setModel(proxy_model);
-    list_view->setSpacing(1);
-    container->show();
-
-    QObject::connect(line_edit, &QLineEdit::textChanged, [proxy_model, list_view, my_delegate](const QString& text) {
-        proxy_model->setFilterFixedString(text);
-
-        my_delegate->set_pattern(text);
-        // force update the model so that we update the higlighted selection, otherwise Qt would use the cached rendered item
-        emit list_view->model()->dataChanged(list_view->model()->index(0, 0), list_view->model()->index(list_view->model()->rowCount() - 1, 0));
-        });
-
+    set_current_widget(highlight_selector_widget);
+    show_current_widget();
+    highlight_selector_widget->update_render();
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {

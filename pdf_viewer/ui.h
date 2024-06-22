@@ -116,6 +116,8 @@ public:
     int get_prev_word_position();
 };
 
+QString get_view_stylesheet_type_name(QAbstractItemView* view);
+
 class BaseSelectorWidget : public QWidget {
 
 protected:
@@ -146,7 +148,6 @@ protected:
     // should return true when we want to manually handle text change events
     virtual bool on_text_change(const QString& text);
 
-    virtual QString get_view_stylesheet_type_name() = 0;
 
 public:
 
@@ -1034,3 +1035,18 @@ public:
     void set_pattern(QString p);
 };
 
+
+class HighlightSelectorWidget : public BaseSelectorWidget {
+public:
+
+    //HighlightSelectorWidget(std::vector<Highlight> highlights, MainWidget* parent);
+    QListView* lv = nullptr;
+    HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent);
+
+    void on_select(const QModelIndex& value);
+    void resizeEvent(QResizeEvent* resize_event) override;
+    void update_render();
+
+    QString get_view_stylesheet_type_name();
+    bool on_text_change(const QString& text);
+};

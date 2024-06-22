@@ -1325,9 +1325,9 @@ QAbstractItemModel* CommandSelector::get_standard_item_model(QStringList command
 }
 
 
-QString CommandSelector::get_view_stylesheet_type_name() {
-    return "QTableView";
-}
+//QString CommandSelector::get_view_stylesheet_type_name() {
+//    return "QTableView";
+//}
 
 void CommandSelector::on_select(const QModelIndex& index) {
     bool is_numeric = false;
@@ -1564,12 +1564,14 @@ BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy,
         abstract_item_view->setFont(get_ui_font_face_name());
         line_edit->setFont(get_ui_font_face_name());
     }
+
 }
 
 void BaseSelectorWidget::on_text_changed(const QString& text) {
     if (!on_text_change(text)) {
         // generic text change handling when we don't explicitly handle text change events
         //proxy_model->setFilterFixedString(text);
+
         proxy_model->setFilterCustom(text);
         QTreeView* t_view = dynamic_cast<QTreeView*>(get_view());
         if (t_view) {
@@ -1807,7 +1809,9 @@ void BaseSelectorWidget::on_config_file_changed() {
     }
 
     setStyleSheet(get_ui_stylesheet(true) + font_size_stylesheet);
-    get_view()->setStyleSheet(get_view_stylesheet_type_name() + "::item::selected{" + get_selected_stylesheet() + "}");
+    QAbstractItemView* view = get_view();
+    QString style = get_view_stylesheet_type_name(view) + "::item::selected{" + get_selected_stylesheet() + "}";
+    view->setStyleSheet(style);
 }
 
 void BaseSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
@@ -1816,6 +1820,7 @@ void BaseSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
     int parent_height = parentWidget()->height();
     setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
     move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, 0);
+
     if (!is_initialized) {
         is_initialized = true;
         on_config_file_changed();
@@ -1956,7 +1961,10 @@ HighlightModel::HighlightModel(std::vector<Highlight>&& data, std::vector<QStrin
 }
 
 int HighlightModel::rowCount(const QModelIndex& parent) const {
-    return highlights.size();
+    if (parent == QModelIndex()) {
+        return highlights.size();
+    }
+    return 0;
 }
 
 int HighlightModel::columnCount(const QModelIndex& parent) const {
@@ -2029,7 +2037,8 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     QColor text_color = text_color_hsl.toRgb();
 
     QColor selected_text_color = QColor::fromRgbF(0, 0, 0, 1);
-    QColor background_color = QColor::fromRgbF(0, 0, 0, 1);
+    //QColor background_color = QColor::fromRgbF(0, 0, 0, 1);
+    QColor background_color = option.palette.color(QPalette::Base);
     QColor comment_text_color = QColor::fromRgbF(1, 1, 1, 0.7);
     QColor selected_comment_text_color = QColor::fromRgbF(0, 0, 0, 0.7);
 
@@ -2129,6 +2138,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
 
 QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
     const QModelIndex& index) const {
+    return QSize(100, 100);
     bool is_global = index.model()->columnCount() == 4;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
@@ -2161,27 +2171,51 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
 
 }
 
-//class HighlightSelectorWidget : public BaseSelectorWidget {
-//public:
-//    //HighlightSelectorWidget(QAbstractItemView* highlights_view, QStandardItemModel* highlights_model, MainWidget* parent)
-//    //    : BaseSelectorWidget(highlights_view, true, highlights_model, parent) {
-//
-//    //}
-//
-//    HighlightSelectorWidget(std::vector<Highlight> highlights, MainWidget* parent)
-//        : BaseSelectorWidget(new QListView(this), true, new HighlightModel(std::move(highlights), {}, this), parent) {
-//
-//    }
-//
-//    //static HighlightSelectorWidget* from_highlights(std::vector<Highlight> highlights) {
-//    //    HighlightModel* highlight_model = new HighlightModel()
-//    //}
-//
-//    void on_select(const QModelIndex& value) {
-//
-//    }
-//
-//    QString get_view_stylesheet_type_name() {
-//        return "QListView";
-//    }
-//};
+HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent)
+    : BaseSelectorWidget(view, true, model, parent) {
+
+    lv = dynamic_cast<QListView*>(get_view());
+    if (lv) {
+        lv->setItemDelegate(new HighlightSearchItemDelegate());
+    }
+    //    emit list_view->model()->dataChanged(list_view->model()->index(0, 0), list_view->model()->index(list_view->model()->rowCount() - 1, 0));
+
+}
+
+void HighlightSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
+    BaseSelectorWidget::resizeEvent(resize_event);
+    //QWidget::resizeEvent(resize_event);
+    update_render();
+}
+
+void HighlightSelectorWidget::update_render() {
+    emit lv->model()->dataChanged(lv->model()->index(0, 0), lv->model()->index(lv->model()->rowCount() - 1, 0));
+}
+
+void HighlightSelectorWidget::on_select(const QModelIndex& value) {
+
+}
+
+
+bool HighlightSelectorWidget::on_text_change(const QString& text) {
+
+    auto highlight_item_delegate = dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate());
+    highlight_item_delegate->set_pattern(text);
+    return false;
+}
+
+//QString HighlightSelectorWidget::get_view_stylesheet_type_name() {
+//    return "QListView";
+//}
+
+QString get_view_stylesheet_type_name(QAbstractItemView* view) {
+    if (dynamic_cast<QTableView*>(view)) {
+        return "QTableView";
+    }
+    if (dynamic_cast<QListView*>(view)) {
+        return "QListView";
+    }
+    return "";
+}
+
+
