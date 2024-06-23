@@ -1030,6 +1030,7 @@ public:
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    QString get_index_text(const QModelIndex& index, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
     void set_pattern(QString p);
 };
 

@@ -2026,17 +2026,28 @@ HighlightSearchItemDelegate::HighlightSearchItemDelegate(QAbstractItemModel* hig
 void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
     const QModelIndex& index) const {
 
-    QString text = index.data().toString();
-    QString comment_text = index.siblingAtColumn(2).data().toString();
     int highlight_type = index.siblingAtColumn(1).data().toInt();
 
-    float* hc = &HIGHLIGHT_COLORS[highlight_type - 'a'];
 
-    QColor highlight_color = QColor::fromRgbF(hc[0], hc[1], hc[2], 1);
+    float* hc = nullptr;
+
+    QColor highlight_color;
+    if (highlight_type >= 'a' && highlight_type <= 'z') {
+        hc = &HIGHLIGHT_COLORS[(highlight_type - 'a') * 3];
+        highlight_color = QColor::fromRgbF(hc[0], hc[1], hc[2], 1);
+    }
+    else if (highlight_type >= 'A' && highlight_type <= 'Z') {
+        hc = &HIGHLIGHT_COLORS[(highlight_type - 'A') * 3];
+        highlight_color = QColor::fromRgbF(hc[0], hc[1], hc[2], 1);
+    }
+    else {
+        hc = &HIGHLIGHT_COLORS[0];
+    }
 
     QColor text_color_hsl = highlight_color.toHsl();
     text_color_hsl.setHslF(text_color_hsl.hueF(), text_color_hsl.saturationF(), 0.9);
-    QColor text_color = text_color_hsl.toRgb();
+    //QColor text_color = text_color_hsl.toRgb();
+    QColor text_color = QColor::fromRgbF(1, 1, 1, 1);
 
     QColor selected_text_color = QColor::fromRgbF(0, 0, 0, 1);
     //QColor background_color = QColor::fromRgbF(0, 0, 0, 1);
@@ -2047,6 +2058,12 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     QColor selected_background_color_hsl = highlight_color.toHsl();
     selected_background_color_hsl.setHslF(selected_background_color_hsl.hueF(), selected_background_color_hsl.saturationF(), 0.9);
     QColor selected_background_color = selected_background_color_hsl.toRgb();
+
+    //qDebug() << (char)highlight_type << " " << highlight_color.name();
+    bool is_color_light = (hc[0] + hc[1] + hc[2]) > 1.5;
+    QString label_text_color = is_color_light ? "black" : "white";
+    QString text = get_index_text(index, label_text_color, highlight_color.name());
+    QString comment_text = index.siblingAtColumn(2).data().toString();
 
 
 
@@ -2075,7 +2092,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     }
 
     painter->save();
-    float* highlight_type_color = &HIGHLIGHT_COLORS[highlight_type - 'a'];
+    //float* highlight_type_color = &HIGHLIGHT_COLORS[highlight_type - 'a'];
     //QColor hl_color = QColor::fromRgbF(highlight_type_color[0], highlight_type_color[1], highlight_type_color[2]);
     //QColor hl_color_highlight = hl_color;
     //hl_color_highlight.setAlphaF(0.5);
@@ -2084,9 +2101,14 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
 
     bool selected = option.state & QStyle::State_Selected;
     bool is_global = index.model()->columnCount() == 4;
-    bool is_color_dark = (highlight_type_color[0] + highlight_type_color[1] + highlight_type_color[2]) < 1.5;
+    //bool is_color_dark = (hc[0] + highlight_type_color[1] + highlight_type_color[2]) < 1.5;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
+    bool is_focused = option.state & QStyle::State_MouseOver;
+    if (is_focused) {
+        selected_background_color = selected_background_color.lighter();
+        background_color = background_color.lighter();
+    }
     if (selected) {
         painter->fillRect(option.rect, selected_background_color);
         ctx.palette.setColor(QPalette::Text, selected_text_color);
@@ -2141,7 +2163,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         //QSize comment_size =  comment_document.size().toSize();
         painter->translate(0, translate_amount);
 
-        if (is_color_dark && !selected) {
+        if ((!is_color_light) && !selected) {
             ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
         }
         else {
@@ -2152,6 +2174,15 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         file_name_document.documentLayout()->draw(painter, ctx);
     }
     painter->restore();
+}
+
+QString HighlightSearchItemDelegate::get_index_text(const QModelIndex& index, QString type_text_color, QString type_label_bg) const {
+    QString txt = index.data().toString();
+    char type_string[2] = { 0 };
+    type_string[0] = index.siblingAtColumn(1).data().toInt();
+    std::string type_std_string = std::string(type_string);
+
+    return "<code style=\"background-color: " + type_label_bg + "; color: " + type_text_color + ";\">&nbsp;" + QString::fromStdString(type_std_string) + "&nbsp;</code> " + txt;
 }
 
 QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
@@ -2165,7 +2196,7 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
     bool is_global = index.model()->columnCount() == 4;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
-    QString text = index.data().toString();
+    QString text = get_index_text(index);
     //QTextDocument d;
     QFont somefont;
     somefont.setPixelSize(20);
@@ -2247,7 +2278,6 @@ void HighlightSelectorWidget::on_delete(const QModelIndex& source_index, const Q
 
 bool HighlightSelectorWidget::on_text_change(const QString& text) {
 
-    qDebug() << "proxy row count: " << proxy_model->rowCount() << " " << " base row count: " << highlight_model->rowCount();
     auto highlight_item_delegate = dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate());
     highlight_item_delegate->set_pattern(text);
     return false;
