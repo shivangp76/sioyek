@@ -71,10 +71,6 @@
 #include "utils.h"
 #include "config.h"
 
-extern "C" {
-    #include <fzf/fzf.h>
-}
-
 class MainWidget;
 extern std::wstring UI_FONT_FACE_NAME;
 extern int FONT_SIZE;
@@ -579,7 +575,6 @@ private:
     std::unordered_map<std::string, std::vector<std::string>> key_map;
     std::unordered_map<QString, QString> prefixes;
     std::function<void(std::string, std::string)>* on_done = nullptr;
-    fzf_slab_t* slab;
 
     QList<QStandardItem*> get_item(std::string command_name);
     QAbstractItemModel* get_standard_item_model(std::vector<std::string> command_names);
@@ -1017,6 +1012,8 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
 
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
+
 };
 
 class HighlightSearchItemDelegate : public QStyledItemDelegate {
@@ -1038,15 +1035,32 @@ public:
 
 
 class HighlightSelectorWidget : public BaseSelectorWidget {
+private:
+    HighlightSelectorWidget(
+        QAbstractItemView* view,
+        QAbstractItemModel* model,
+        MainWidget* parent,
+        std::function<void(Highlight)> on_select,
+        std::function<void(Highlight)> on_delete
+    );
+    std::optional<std::function<void(Highlight)>> select_fn = {};
+    std::optional<std::function<void(Highlight)>> delete_fn = {};
 public:
+
+    static HighlightSelectorWidget* from_highlights(std::vector<Highlight>&& highlights, MainWidget* parent);
 
     //HighlightSelectorWidget(std::vector<Highlight> highlights, MainWidget* parent);
     QListView* lv = nullptr;
-    HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent);
+    HighlightModel* highlight_model = nullptr;
+
+    void set_select_fn(std::function<void(Highlight)>&& fn);
+    void set_delete_fn(std::function<void(Highlight)>&& fn);
 
     void on_select(const QModelIndex& value);
+    void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
     void resizeEvent(QResizeEvent* resize_event) override;
     void update_render();
+    void set_selected_index(int index);
 
     QString get_view_stylesheet_type_name();
     bool on_text_change(const QString& text);

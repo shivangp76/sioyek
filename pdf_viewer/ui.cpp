@@ -1346,7 +1346,6 @@ void CommandSelector::on_select(const QModelIndex& index) {
 }
 
 CommandSelector::~CommandSelector() {
-    fzf_free_slab(slab);
 }
 
 QStringList CommandSelector::get_elements_matching_prefix(QString text) {
@@ -1373,7 +1372,6 @@ CommandSelector::CommandSelector(bool is_fuzzy, std::function<void(std::string, 
     on_done(on_done),
     main_widget(parent)
 {
-    slab = fzf_make_default_slab();
     string_elements = elements;
 
     standard_item_model = get_standard_item_model(get_elements_matching_prefix(""));
@@ -1440,21 +1438,13 @@ bool CommandSelector::on_text_change(const QString& text) {
     }
 
     std::string pattern_str = actual_text.toStdString();
-    fzf_pattern_t* pattern = fzf_parse_pattern(CaseSmart, false, (char*)pattern_str.c_str(), true);
 
     QStringList elements_matching_prefix = get_elements_matching_prefix(actual_text);
 
     for (int i = 0; i < elements_matching_prefix.size(); i++) {
         std::string encoded = utf8_encode(elements_matching_prefix.at(i).toStdWString());
         int score = 0;
-        if (is_fuzzy) {
-            //score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(search_text_string, encoded));
-            score = fzf_get_score(encoded.c_str(), pattern, slab);
-        }
-        else {
-            score = similarity_score(encoded, search_text_string);
-            //fts::fuzzy_match(search_text_string.c_str(), encoded.c_str(), score);
-        }
+        score = similarity_score(encoded, search_text_string);
         match_score_pairs.push_back(std::make_pair(encoded, score));
     }
     std::sort(match_score_pairs.begin(), match_score_pairs.end(), [](std::pair<std::string, int> lhs, std::pair<std::string, int> rhs) {
@@ -1473,9 +1463,6 @@ bool CommandSelector::on_text_change(const QString& text) {
             matching_element_names.push_back(command);
         }
     }
-    //}
-
-    fzf_free_pattern(pattern);
 
     QAbstractItemModel* new_standard_item_model = get_standard_item_model(matching_element_names);
     dynamic_cast<QTableView*>(get_view())->setModel(new_standard_item_model);
@@ -2004,7 +1991,7 @@ QVariant HighlightModel::headerData(int section, Qt::Orientation orientation, in
 }
 
 void HighlightSearchItemDelegate::set_pattern(QString p) {
-    pattern = p;
+    pattern = p.toLower();
 }
 
 HighlightSearchItemDelegate::HighlightSearchItemDelegate(QAbstractItemModel* highlight_model) {
@@ -2067,12 +2054,24 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
 
     int match_index = -1;
     if (proxy_model && (pattern.size() > 0)) {
-        auto [text_highlight_begin, text_highlight_end] = find_smallest_containing_substring(text.toLower().toStdWString(), pattern.toStdWString());
-        auto [comment_highlight_begin, comment_highlight_end] = find_smallest_containing_substring(comment_text.toLower().toStdWString(), pattern.toStdWString());
+        int text_highlight_begin = -1, text_highlight_end = -1;
+        int comment_highlight_begin = -1, comment_highlight_end = -1;
+
+        int text_similarity = similarity_score(text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
+        int comment_similarity = similarity_score(comment_text.toLower().toStdWString(), pattern.toStdWString(), &comment_highlight_begin, &comment_highlight_end);
+
+        //auto [text_highlight_begin, text_highlight_end] = find_smallest_containing_substring(text.toLower().toStdWString(), pattern.toStdWString());
+        //auto [comment_highlight_begin, comment_highlight_end] = find_smallest_containing_substring(comment_text.toLower().toStdWString(), pattern.toStdWString());
+
         //text = text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
         //comment_text = comment_text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
-        text = text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + text.mid(text_highlight_end);
-        comment_text = comment_text.left(comment_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + comment_text.mid(comment_highlight_begin, comment_highlight_end - comment_highlight_begin) + "</span>" + comment_text.mid(comment_highlight_end);
+        const int similarity_threshold = 70;
+        if (text_similarity > similarity_threshold) {
+            text = text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + text.mid(text_highlight_end);
+        }
+        if (comment_similarity > similarity_threshold) {
+            comment_text = comment_text.left(comment_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + comment_text.mid(comment_highlight_begin, comment_highlight_end - comment_highlight_begin) + "</span>" + comment_text.mid(comment_highlight_end);
+        }
     }
 
     painter->save();
@@ -2196,10 +2195,13 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
 
 }
 
-HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent)
-    : BaseSelectorWidget(view, true, model, parent) {
+HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent, std::function<void(Highlight)> on_select, std::function<void(Highlight)> on_delete)
+    : BaseSelectorWidget(view, true, model, parent), select_fn(on_select), delete_fn(on_delete) {
 
     lv = dynamic_cast<decltype(lv)>(get_view());
+    highlight_model = dynamic_cast<HighlightModel*>(model);
+    auto something = dynamic_cast<HighlightModel*>(proxy_model);
+
     if (lv) {
         lv->setItemDelegate(new HighlightSearchItemDelegate(model));
     }
@@ -2220,12 +2222,32 @@ void HighlightSelectorWidget::update_render() {
 }
 
 void HighlightSelectorWidget::on_select(const QModelIndex& value) {
+    QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
+    int source_row = source_index.row();
+    if (select_fn.has_value()) {
 
+        select_fn.value()(highlight_model->highlights[source_row]);
+    }
+}
+
+void HighlightSelectorWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
+    int source_row = source_index.row();
+    //qDebug() << source_row;
+    if (delete_fn.has_value()) {
+        delete_fn.value()(highlight_model->highlights[source_row]);
+    }
+
+    //highlight_model->removeRow(source_row);
+    bool result = proxy_model->removeRow(selected_index.row());
+    //proxy_model->removeRow(selected_index.row());
+    //highlight_model->highlights.erase(highlight_model->highlights.begin() + source_row);
+    update_render();
 }
 
 
 bool HighlightSelectorWidget::on_text_change(const QString& text) {
 
+    qDebug() << "proxy row count: " << proxy_model->rowCount() << " " << " base row count: " << highlight_model->rowCount();
     auto highlight_item_delegate = dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate());
     highlight_item_delegate->set_pattern(text);
     return false;
@@ -2246,3 +2268,53 @@ QString get_view_stylesheet_type_name(QAbstractItemView* view) {
 }
 
 
+HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Highlight>&& highlights, MainWidget* parent) {
+
+    HighlightModel* highlight_model = new HighlightModel(std::move(highlights));
+
+    QListView* list_view = new QListView();
+
+    HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, parent,
+        [](Highlight hl) {
+        },
+        [](Highlight hl) {
+        });
+
+    highlight_model->setParent(highlight_selector_widget);
+    list_view->setParent(highlight_selector_widget);
+
+    //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
+    highlight_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    highlight_selector_widget->set_filter_column_index(-1);
+
+    highlight_selector_widget->update_render();
+    return highlight_selector_widget;
+}
+
+void HighlightSelectorWidget::set_select_fn(std::function<void(Highlight)>&& fn) {
+    select_fn = std::move(fn);
+}
+
+void HighlightSelectorWidget::set_delete_fn(std::function<void(Highlight)>&& fn) {
+    delete_fn = std::move(fn);
+}
+
+void HighlightSelectorWidget::set_selected_index(int index) {
+
+    if (index != -1) {
+        lv->selectionModel()->setCurrentIndex(highlight_model->index(index, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
+        lv->scrollTo(this->proxy_model->mapFromSource(lv->currentIndex()), QAbstractItemView::EnsureVisible);
+
+        //lv->scrollTo(lv->currentIndex(), QAbstractItemView::PositionAtCenter);
+    }
+    else{
+        lv->selectionModel()->setCurrentIndex(highlight_model->index(0, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
+    }
+}
+
+bool HighlightModel::removeRows(int row, int count, const QModelIndex& parent) {
+    beginRemoveRows(parent, row, row + count - 1);
+    highlights.erase(highlights.begin() + row, highlights.begin() + row + count);
+    endRemoveRows();
+    return true;
+}

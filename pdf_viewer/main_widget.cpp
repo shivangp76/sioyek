@@ -5684,50 +5684,30 @@ char MainWidget::get_current_selected_highlight_type() {
 }
 
 void MainWidget::handle_goto_highlight() {
-    std::vector<std::wstring> option_names;
-    std::vector<std::wstring> option_text_annotations;
-    std::vector<std::wstring> option_location_strings;
-    bool has_text_annotations = false;
     std::vector<Highlight> highlights = doc()->get_highlights_sorted();
-
     int closest_highlight_index = doc()->find_closest_highlight_index(highlights, main_document_view->get_offset_y());
 
-    for (auto highlight : highlights) {
-        std::wstring type_name = L"a";
-        type_name[0] = highlight.type;
-        option_names.push_back(L"[" + type_name + L"] " + highlight.description);
-        option_text_annotations.push_back(highlight.text_annot);
-        if (highlight.text_annot.size() > 0) {
-            has_text_annotations = true;
-        }
-        auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos(highlight.selection_begin);
-        option_location_strings.push_back(get_page_formatted_string(page + 1));
-    }
 
-    std::vector<std::vector<std::wstring>> table;
-    if (has_text_annotations) {
-        table = { option_names, option_text_annotations, option_location_strings };
-    }
-    else {
-        table = { option_names, option_location_strings };
-    }
+    HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights),  this);
+    highlight_selector_widget->set_selected_index(closest_highlight_index);
 
-    set_filtered_select_menu<Highlight>(this, FUZZY_SEARCHING, MULTILINE_MENUS, table, highlights, closest_highlight_index,
-        [&](Highlight* hl) {
+    highlight_selector_widget->set_select_fn(
+        [&](Highlight hl) {
             if (pending_command_instance) {
-                pending_command_instance->set_generic_requirement(hl->selection_begin.y);
+                pending_command_instance->set_generic_requirement(hl.selection_begin.y);
             }
             advance_command(std::move(pending_command_instance));
-        },
-        [&](Highlight* hl) {
-            delete_current_document_highlight(hl);
-        },
-            [&](Highlight* hl) {
-            set_selected_highlight_index(doc()->get_highlight_index_with_uuid(hl->uuid));
             pop_current_widget();
-            handle_command_types(command_manager->get_command_with_name(this, "edit_selected_highlight"), 0);
-        });
+        }
+    );
 
+    highlight_selector_widget->set_delete_fn(
+        [&](Highlight hl) {
+            delete_current_document_highlight(&hl);
+        }
+    );
+
+    set_current_widget(highlight_selector_widget);
     show_current_widget();
 }
 
@@ -7155,27 +7135,6 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
-
-
-    qDebug() << similarity_score<std::wstring>(L"toggle_dark_mode", L"toggle custom color");
-    //std::vector<Highlight> highlights = doc()->get_highlights();
-
-    //for (int i = 0; i < 100; i++) {
-    //    for (auto x : doc()->get_highlights()) {
-    //        highlights.push_back(x);
-    //    }
-    //}
-
-    //HighlightModel* highlight_model = new HighlightModel(std::move(highlights));
-    //QListView* list_view = new QListView();
-
-    //HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, this);
-    //highlight_selector_widget->set_filter_column_index(-1);
-
-
-    //set_current_widget(highlight_selector_widget);
-    //show_current_widget();
-    //highlight_selector_widget->update_render();
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
