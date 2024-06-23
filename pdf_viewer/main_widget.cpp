@@ -5685,14 +5685,15 @@ char MainWidget::get_current_selected_highlight_type() {
 
 void MainWidget::handle_goto_highlight() {
     std::vector<Highlight> highlights = doc()->get_highlights_sorted();
+
     int closest_highlight_index = doc()->find_closest_highlight_index(highlights, main_document_view->get_offset_y());
 
 
-    HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights),  this);
+    HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this);
     highlight_selector_widget->set_selected_index(closest_highlight_index);
 
     highlight_selector_widget->set_select_fn(
-        [&](Highlight hl) {
+        [&](Highlight hl, std::string checksum) {
             if (pending_command_instance) {
                 pending_command_instance->set_generic_requirement(hl.selection_begin.y);
             }
@@ -5702,7 +5703,7 @@ void MainWidget::handle_goto_highlight() {
     );
 
     highlight_selector_widget->set_delete_fn(
-        [&](Highlight hl) {
+        [&](Highlight hl, std::string checksum) {
             delete_current_document_highlight(&hl);
         }
     );
@@ -5714,73 +5715,56 @@ void MainWidget::handle_goto_highlight() {
 void MainWidget::handle_goto_highlight_global() {
     std::vector<std::pair<std::string, Highlight>> global_highlights;
     db_manager->global_select_highlight(global_highlights);
-    std::vector<std::wstring> descs;
-    std::vector<std::wstring> text_annotations;
-    std::vector<std::wstring> file_names;
-    std::vector<BookState> book_states;
-    bool has_annots = false;
 
-    for (const auto& desc_hl_pair : global_highlights) {
-        std::string checksum = desc_hl_pair.first;
-        bool is_remote = false;
-        std::optional<std::wstring> path = checksummer->get_path(checksum);
-        if (!path.has_value() && sioyek_network_manager->is_checksum_available_on_server(checksum)) {
-            is_remote = true;
-            path = L"SERVER://" + utf8_decode(checksum);
-        }
-        if (path) {
-            Highlight hl = desc_hl_pair.second;
+    std::vector<QString> file_names;
+    std::vector<QString> file_checksums;
+    std::vector<Highlight> highlights;
 
-            std::wstring file_name = is_remote ? SERVER_SYMBOL : Path(path.value()).filename().value_or(L"");
+    for (auto [checksum, hl] : global_highlights) {
 
-            std::wstring highlight_type_string = L"a";
-            highlight_type_string[0] = hl.type;
-
-            //descs.push_back(L"[" + highlight_type_string + L"]" + hl.description + L" {" + file_name + L"}");
-            descs.push_back(L"[" + highlight_type_string + L"]" + hl.description);
-            text_annotations.push_back(hl.text_annot);
-
-            if (hl.text_annot.size() > 0) {
-                has_annots = true;
+        QString file_name = QString::fromStdWString(checksummer->get_path(checksum).value_or(L""));
+        if (file_name.size() == 0) {
+            if (sioyek_network_manager->is_checksum_available_on_server(checksum)) {
+                file_name = QString::fromStdWString(SERVER_SYMBOL);
+                checksum = "SERVER://" + checksum;
             }
-
-            file_names.push_back(truncate_string(file_name, 50));
-
-            book_states.push_back({ path.value(), hl.selection_begin.y, hl.uuid });
-
+            else {
+                continue;
+                //file_name = QString::fromStdString(checksum);
+            }
         }
-        else {
-        } 
+
+        highlights.push_back(hl);
+        file_checksums.push_back(QString::fromStdString(checksum));
+        file_names.push_back(file_name);
     }
 
-    std::vector<std::vector<std::wstring>> table;
-    if (has_annots) {
-        table = { descs, text_annotations, file_names };
-    }
-    else {
-        table = { descs, file_names };
-    }
+    HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(file_names), std::move(file_checksums));
 
-    set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, table, book_states, -1,
-
-        [&](BookState* book_state) {
-            if (book_state) {
-                if (QString::fromStdWString(book_state->document_path).startsWith("SERVER://")) {
-                    download_and_open(QString::fromStdWString(book_state->document_path).mid(9).toStdString(), book_state->offset_y);
+    highlight_selector_widget->set_select_fn(
+        [&](Highlight hl, std::string checksum) {
+            if (checksum.size() > 0) {
+                if (QString::fromStdString(checksum).startsWith("SERVER://")) {
+                    download_and_open(QString::fromStdString(checksum).mid(9).toStdString(), hl.selection_begin.y);
 
                 }
                 else {
                     if (pending_command_instance) {
+                        QString file_path = QString::fromStdWString(checksummer->get_path(checksum).value_or(L""));
                         pending_command_instance->set_generic_requirement(
-                            QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
+                            QList<QVariant>() << file_path << hl.selection_begin.y);
                     }
                     advance_command(std::move(pending_command_instance));
                 }
+                pop_current_widget();
             }
-        }, [&](BookState* state) {
-            delete_highlight_with_uuid(state->uuid);
         });
 
+    highlight_selector_widget->set_delete_fn([&](Highlight hl, std::string checksum) {
+            delete_highlight_with_uuid(hl.uuid);
+        });
+
+    set_current_widget(highlight_selector_widget);
     show_current_widget();
 }
 
@@ -11623,7 +11607,8 @@ void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::st
 
 
 void MainWidget::delete_highlight_with_uuid(const std::string& uuid) {
-    db_manager->delete_highlight(uuid);
+    //db_manager->delete_highlight(uuid);
+    document_manager->delete_highlight_with_uuid(uuid);
     on_highlight_deleted(uuid);
 }
 

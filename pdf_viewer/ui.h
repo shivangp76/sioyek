@@ -1003,14 +1003,17 @@ public:
         text = 0,
         type = 1,
         description = 2,
-        file_name = 3
+        file_name = 3,
+        checksum = 4,
+        max_columns = 5,
     };
 
     std::vector<Highlight> highlights;
     std::vector<QString> documents;
+    std::vector<QString> checksums;
 
 
-    HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& documents = {}, QObject* parent = nullptr);
+    HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& documents = {}, std::vector<QString>&& checksums = {}, QObject * parent = nullptr);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
 
@@ -1048,21 +1051,21 @@ private:
         QAbstractItemView* view,
         QAbstractItemModel* model,
         MainWidget* parent,
-        std::function<void(Highlight)> on_select,
-        std::function<void(Highlight)> on_delete
+        std::function<void(Highlight, std::string)> on_select,
+        std::function<void(Highlight, std::string)> on_delete
     );
-    std::optional<std::function<void(Highlight)>> select_fn = {};
-    std::optional<std::function<void(Highlight)>> delete_fn = {};
+    std::optional<std::function<void(Highlight, std::string)>> select_fn = {};
+    std::optional<std::function<void(Highlight, std::string)>> delete_fn = {};
 public:
 
-    static HighlightSelectorWidget* from_highlights(std::vector<Highlight>&& highlights, MainWidget* parent);
+    static HighlightSelectorWidget* from_highlights(std::vector<Highlight>&& highlights, MainWidget* parent, std::vector<QString>&& doc_names = {}, std::vector<QString>&& doc_checksums = {});
 
     //HighlightSelectorWidget(std::vector<Highlight> highlights, MainWidget* parent);
     QListView* lv = nullptr;
     HighlightModel* highlight_model = nullptr;
 
-    void set_select_fn(std::function<void(Highlight)>&& fn);
-    void set_delete_fn(std::function<void(Highlight)>&& fn);
+    void set_select_fn(std::function<void(Highlight, std::string)>&& fn);
+    void set_delete_fn(std::function<void(Highlight, std::string)>&& fn);
 
     void on_select(const QModelIndex& value);
     void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;

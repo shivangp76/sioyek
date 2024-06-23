@@ -586,6 +586,7 @@ public:
     void free_document(Document* document);
     std::vector<std::wstring> get_loaded_document_paths();
     void delete_global_mark(char symbol);
+    void delete_highlight_with_uuid(const std::string& uuid);
     void update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     ~DocumentManager();
 };

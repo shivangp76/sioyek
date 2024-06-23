@@ -4940,3 +4940,10 @@ ParsedUri Document::parse_link(const PdfLink& link) {
     ParsedUri res = parse_uri(context, doc, link.uri);
     return res;
 }
+
+void DocumentManager::delete_highlight_with_uuid(const std::string& uuid) {
+    for (auto [path, doc] : cached_documents) {
+        doc->delete_highlight_with_uuid(uuid);
+    }
+    //db_manager->delete_highlight(uuid);
+}

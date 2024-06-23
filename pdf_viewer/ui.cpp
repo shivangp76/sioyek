@@ -1943,9 +1943,10 @@ void EnumConfigUI::resizeEvent(QResizeEvent* resize_event) {
 
 
 
-HighlightModel::HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& docs, QObject* parent) : QAbstractTableModel(parent) {
-    highlights = std::move(data);
+HighlightModel::HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& docs, std::vector<QString>&& doc_checksums, QObject* parent) : QAbstractTableModel(parent) {
+    highlights = data;
     documents = docs;
+    checksums = doc_checksums;
 }
 
 int HighlightModel::rowCount(const QModelIndex& parent) const {
@@ -1959,8 +1960,11 @@ int HighlightModel::columnCount(const QModelIndex& parent) const {
     if (documents.size() == 0) {
         return 3;
     }
-    else {
+    else if (checksums.size() == 0) {
         return 4;
+    }
+    else {
+        return 5;
     }
 }
 
@@ -1977,6 +1981,9 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const {
         }
         if (index.column() == HighlightModelColumn::file_name) {
             return documents[index.row()];
+        }
+        if (index.column() == HighlightModelColumn::checksum) {
+            return checksums[index.row()];
         }
     }
 
@@ -2108,7 +2115,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     QAbstractTextDocumentLayout::PaintContext ctx;
 
     bool selected = option.state & QStyle::State_Selected;
-    bool is_global = index.model()->columnCount() == 4;
+    bool is_global = index.model()->columnCount() == HighlightModel::max_columns;
     //bool is_color_dark = (hc[0] + highlight_type_color[1] + highlight_type_color[2]) < 1.5;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
@@ -2166,14 +2173,14 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         //QSize comment_size =  comment_document.size().toSize();
         painter->translate(0, translate_amount);
 
-        if ((!is_color_light) && !selected) {
+        if (!selected) {
             ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
         }
         else {
             ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
         }
 
-        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(3).data().toString() + "</div>");
+        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(HighlightModel::file_name).data().toString() + "</div>");
         file_name_document.documentLayout()->draw(painter, ctx);
     }
     painter->restore();
@@ -2195,7 +2202,7 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
         return QSize(option.rect.width(), cached_sizes[source_index.row()]);
     }
 
-    bool is_global = index.model()->columnCount() == 4;
+    bool is_global = index.model()->columnCount() == HighlightModel::max_columns;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
     QString text = get_display_text(index.data().toString(), index.siblingAtColumn(HighlightModel::type).data().toInt());
@@ -2228,7 +2235,7 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
 
 }
 
-HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent, std::function<void(Highlight)> on_select, std::function<void(Highlight)> on_delete)
+HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent, std::function<void(Highlight, std::string)> on_select, std::function<void(Highlight, std::string)> on_delete)
     : BaseSelectorWidget(view, true, model, parent), select_fn(on_select), delete_fn(on_delete) {
 
     lv = dynamic_cast<decltype(lv)>(get_view());
@@ -2258,17 +2265,29 @@ void HighlightSelectorWidget::update_render() {
 void HighlightSelectorWidget::on_select(const QModelIndex& value) {
     QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
     int source_row = source_index.row();
+    std::string checksum = "";
+
+    if (value.model()->columnCount() == HighlightModel::max_columns) {
+        checksum = value.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
+    }
+
     if (select_fn.has_value()) {
 
-        select_fn.value()(highlight_model->highlights[source_row]);
+        select_fn.value()(highlight_model->highlights[source_row], checksum);
     }
 }
 
 void HighlightSelectorWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
     int source_row = source_index.row();
+
+    std::string checksum = "";
+    if (source_index.model()->columnCount() == HighlightModel::max_columns) {
+        checksum = source_index.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
+    }
+
     //qDebug() << source_row;
     if (delete_fn.has_value()) {
-        delete_fn.value()(highlight_model->highlights[source_row]);
+        delete_fn.value()(highlight_model->highlights[source_row], checksum);
     }
 
     //highlight_model->removeRow(source_row);
@@ -2301,16 +2320,16 @@ QString get_view_stylesheet_type_name(QAbstractItemView* view) {
 }
 
 
-HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Highlight>&& highlights, MainWidget* parent) {
+HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Highlight>&& highlights, MainWidget* parent, std::vector<QString>&& doc_names, std::vector<QString>&& doc_checksums) {
 
-    HighlightModel* highlight_model = new HighlightModel(std::move(highlights));
+    HighlightModel* highlight_model = new HighlightModel(std::move(highlights), std::move(doc_names), std::move(doc_checksums));
 
     QListView* list_view = new QListView();
 
     HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, parent,
-        [](Highlight hl) {
+        [](Highlight hl, std::string checksum) {
         },
-        [](Highlight hl) {
+        [](Highlight hl, std::string checksum) {
         });
 
     highlight_model->setParent(highlight_selector_widget);
@@ -2324,11 +2343,11 @@ HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Hi
     return highlight_selector_widget;
 }
 
-void HighlightSelectorWidget::set_select_fn(std::function<void(Highlight)>&& fn) {
+void HighlightSelectorWidget::set_select_fn(std::function<void(Highlight, std::string)>&& fn) {
     select_fn = std::move(fn);
 }
 
-void HighlightSelectorWidget::set_delete_fn(std::function<void(Highlight)>&& fn) {
+void HighlightSelectorWidget::set_delete_fn(std::function<void(Highlight, std::string)>&& fn) {
     delete_fn = std::move(fn);
 }
 
