@@ -5693,7 +5693,8 @@ void MainWidget::handle_goto_highlight() {
     highlight_selector_widget->set_selected_index(closest_highlight_index);
 
     highlight_selector_widget->set_select_fn(
-        [&](Highlight hl, std::string checksum) {
+        [&, highlight_selector_widget](int index) {
+            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
             if (pending_command_instance) {
                 pending_command_instance->set_generic_requirement(hl.selection_begin.y);
             }
@@ -5703,7 +5704,8 @@ void MainWidget::handle_goto_highlight() {
     );
 
     highlight_selector_widget->set_delete_fn(
-        [&](Highlight hl, std::string checksum) {
+        [&, highlight_selector_widget](int index) {
+            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
             delete_current_document_highlight(&hl);
         }
     );
@@ -5742,7 +5744,9 @@ void MainWidget::handle_goto_highlight_global() {
     HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(file_names), std::move(file_checksums));
 
     highlight_selector_widget->set_select_fn(
-        [&](Highlight hl, std::string checksum) {
+        [&, highlight_selector_widget](int index) {
+            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+            std::string checksum = highlight_selector_widget->highlight_model->checksums[index].toStdString();
             if (checksum.size() > 0) {
                 if (QString::fromStdString(checksum).startsWith("SERVER://")) {
                     download_and_open(QString::fromStdString(checksum).mid(9).toStdString(), hl.selection_begin.y);
@@ -5760,7 +5764,8 @@ void MainWidget::handle_goto_highlight_global() {
             }
         });
 
-    highlight_selector_widget->set_delete_fn([&](Highlight hl, std::string checksum) {
+    highlight_selector_widget->set_delete_fn([&, highlight_selector_widget](int index) {
+            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
             delete_highlight_with_uuid(hl.uuid);
         });
 

@@ -2235,10 +2235,9 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
 
 }
 
-HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent, std::function<void(Highlight, std::string)> on_select, std::function<void(Highlight, std::string)> on_delete)
-    : BaseSelectorWidget(view, true, model, parent), select_fn(on_select), delete_fn(on_delete) {
+HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent) 
+    : BaseCustomSelectorWidget(view, model, parent) {
 
-    lv = dynamic_cast<decltype(lv)>(get_view());
     highlight_model = dynamic_cast<HighlightModel*>(model);
     auto something = dynamic_cast<HighlightModel*>(proxy_model);
 
@@ -2250,51 +2249,8 @@ HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstr
 
 }
 
-void HighlightSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
-    dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate())->cached_sizes.clear();
-
-    BaseSelectorWidget::resizeEvent(resize_event);
-    //QWidget::resizeEvent(resize_event);
-    update_render();
-}
-
 void HighlightSelectorWidget::update_render() {
     emit lv->model()->dataChanged(lv->model()->index(0, 0), lv->model()->index(lv->model()->rowCount() - 1, 0));
-}
-
-void HighlightSelectorWidget::on_select(const QModelIndex& value) {
-    QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
-    int source_row = source_index.row();
-    std::string checksum = "";
-
-    if (value.model()->columnCount() == HighlightModel::max_columns) {
-        checksum = value.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
-    }
-
-    if (select_fn.has_value()) {
-
-        select_fn.value()(highlight_model->highlights[source_row], checksum);
-    }
-}
-
-void HighlightSelectorWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
-    int source_row = source_index.row();
-
-    std::string checksum = "";
-    if (source_index.model()->columnCount() == HighlightModel::max_columns) {
-        checksum = source_index.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
-    }
-
-    //qDebug() << source_row;
-    if (delete_fn.has_value()) {
-        delete_fn.value()(highlight_model->highlights[source_row], checksum);
-    }
-
-    //highlight_model->removeRow(source_row);
-    bool result = proxy_model->removeRow(selected_index.row());
-    //proxy_model->removeRow(selected_index.row());
-    //highlight_model->highlights.erase(highlight_model->highlights.begin() + source_row);
-    update_render();
 }
 
 
@@ -2305,9 +2261,6 @@ bool HighlightSelectorWidget::on_text_change(const QString& text) {
     return false;
 }
 
-//QString HighlightSelectorWidget::get_view_stylesheet_type_name() {
-//    return "QListView";
-//}
 
 QString get_view_stylesheet_type_name(QAbstractItemView* view) {
     if (dynamic_cast<QTableView*>(view)) {
@@ -2326,11 +2279,7 @@ HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Hi
 
     QListView* list_view = new QListView();
 
-    HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, parent,
-        [](Highlight hl, std::string checksum) {
-        },
-        [](Highlight hl, std::string checksum) {
-        });
+    HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, parent);
 
     highlight_model->setParent(highlight_selector_widget);
     list_view->setParent(highlight_selector_widget);
@@ -2343,30 +2292,87 @@ HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Hi
     return highlight_selector_widget;
 }
 
-void HighlightSelectorWidget::set_select_fn(std::function<void(Highlight, std::string)>&& fn) {
-    select_fn = std::move(fn);
-}
-
-void HighlightSelectorWidget::set_delete_fn(std::function<void(Highlight, std::string)>&& fn) {
-    delete_fn = std::move(fn);
-}
-
-void HighlightSelectorWidget::set_selected_index(int index) {
-
-    if (index != -1) {
-        lv->selectionModel()->setCurrentIndex(highlight_model->index(index, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
-        lv->scrollTo(this->proxy_model->mapFromSource(lv->currentIndex()), QAbstractItemView::EnsureVisible);
-
-        //lv->scrollTo(lv->currentIndex(), QAbstractItemView::PositionAtCenter);
-    }
-    else{
-        lv->selectionModel()->setCurrentIndex(highlight_model->index(0, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
-    }
-}
-
 bool HighlightModel::removeRows(int row, int count, const QModelIndex& parent) {
     beginRemoveRows(parent, row, row + count - 1);
     highlights.erase(highlights.begin() + row, highlights.begin() + row + count);
+
+    if (documents.size() > 0) {
+        documents.erase(documents.begin() + row, documents.begin() + row + count);
+    }
+
+    if (checksums.size() > 0) {
+        checksums.erase(checksums.begin() + row, checksums.begin() + row + count);
+    }
+
     endRemoveRows();
     return true;
+}
+
+void BaseCustomSelectorWidget::set_select_fn(std::function<void(int)>&& fn) {
+    select_fn = fn;
+}
+
+void BaseCustomSelectorWidget::set_delete_fn(std::function<void(int)>&& fn) {
+    delete_fn = fn;
+}
+
+BaseCustomSelectorWidget::BaseCustomSelectorWidget(
+    QAbstractItemView* view,
+    QAbstractItemModel* model,
+    MainWidget* parent
+) : BaseSelectorWidget(view, true, model, parent){
+
+    lv = dynamic_cast<decltype(lv)>(get_view());
+
+}
+
+void BaseCustomSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
+    dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate())->cached_sizes.clear();
+
+    BaseSelectorWidget::resizeEvent(resize_event);
+    //QWidget::resizeEvent(resize_event);
+    update_render();
+}
+
+void BaseCustomSelectorWidget::on_select(const QModelIndex& value) {
+    QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
+    int source_row = source_index.row();
+    std::string checksum = "";
+
+    if (value.model()->columnCount() == HighlightModel::max_columns) {
+        checksum = value.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
+    }
+
+    if (select_fn.has_value()) {
+
+        select_fn.value()(source_row);
+    }
+}
+
+void BaseCustomSelectorWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
+    int source_row = source_index.row();
+
+    std::string checksum = "";
+    if (source_index.model()->columnCount() == HighlightModel::max_columns) {
+        checksum = source_index.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
+    }
+
+    if (delete_fn.has_value()) {
+        delete_fn.value()(source_row);
+    }
+
+    bool result = proxy_model->removeRow(selected_index.row());
+    update_render();
+}
+
+void BaseCustomSelectorWidget::set_selected_index(int index) {
+
+    auto model = proxy_model->sourceModel();
+    if (index != -1) {
+        lv->selectionModel()->setCurrentIndex(model->index(index, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
+        lv->scrollTo(this->proxy_model->mapFromSource(lv->currentIndex()), QAbstractItemView::EnsureVisible);
+    }
+    else{
+        lv->selectionModel()->setCurrentIndex(model->index(0, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
+    }
 }
