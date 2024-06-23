@@ -3,6 +3,7 @@
 
 #include "rapidfuzz_amalgamated.hpp"
 #include "utils.h"
+#include "ui.h"
 
 bool MySortFilterProxyModel::filter_accepts_row_column(int row, int col, const QModelIndex& source_parent) const {
     if (filterString.size() == 0 || filterString == "<NULL>") return true;
@@ -20,6 +21,24 @@ bool MySortFilterProxyModel::filter_accepts_row_column(int row, int col, const Q
 bool MySortFilterProxyModel::filterAcceptsRow(int source_row,
     const QModelIndex& source_parent) const
 {
+    QString actual_filter_string = filterString;
+
+    if (is_highlight) {
+        if (filter_type.has_value()) {
+            //actual_filter_string = filterString.mid(2);
+            //int highlight_type = filterString[0].unicode();
+            int row_highlight_type = sourceModel()->data(sourceModel()->index(source_row, HighlightModel::type)).toInt();
+            if (filter_type.value() != row_highlight_type) {
+                return false;
+            }
+            else {
+                if (filterString.size() == 0) {
+                    return true;
+                }
+            }
+
+        }
+    }
     if (is_fuzzy) {
 
         int key_column = this->filterKeyColumn();
@@ -47,16 +66,31 @@ bool MySortFilterProxyModel::filterAcceptsRow(int source_row,
 }
 
 
-void MySortFilterProxyModel::setFilterCustom(const QString& filterString) {
+void MySortFilterProxyModel::setFilterCustom(const QString& fs) {
+    bool is_filtered = false;
+    QString actual_filter = fs;
+
+    if (is_highlight) {
+        if (fs.size() >= 2 && fs[1] == ' ') {
+            is_filtered = true;
+            filter_type = fs[0].unicode();
+            actual_filter = fs.mid(2);
+        }
+    }
+
+    if (!is_filtered) {
+        filter_type = {};
+    }
+
     if (is_fuzzy) {
-        this->filterString = filterString;
-        this->setFilterFixedString(filterString);
+        this->filterString = actual_filter;
+        this->setFilterFixedString(actual_filter);
         ensure_scores();
         this->invalidate();
         this->sort(0);
     }
     else {
-        this->setFilterFixedString(filterString);
+        this->setFilterFixedString(actual_filter);
     }
 }
 
@@ -172,4 +206,8 @@ void MySortFilterProxyModel::update_scores() const{
 
     fzf_free_pattern(pattern);
 
+}
+
+void MySortFilterProxyModel::set_is_highlight(bool is_hl) {
+    is_highlight = is_hl;
 }

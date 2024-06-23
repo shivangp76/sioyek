@@ -13,9 +13,11 @@ class MySortFilterProxyModel : public QSortFilterProxyModel {
 
 public:
     QString filterString;
+    std::optional<int> filter_type = {};
     mutable std::vector<int> scores;
     mutable QString last_update_string;
     bool is_fuzzy = false;
+    bool is_highlight = false;
     fzf_slab_t* slab;
     mutable QMap<QModelIndex, int> index_map;
     bool is_tree = false;
@@ -34,5 +36,6 @@ public:
     int update_scores_for_index(fzf_pattern_t* pattern, const QModelIndex& index, int col) const;
     void ensure_scores() const;
     void update_scores() const;
+    void set_is_highlight(bool is_hl);
 
 };

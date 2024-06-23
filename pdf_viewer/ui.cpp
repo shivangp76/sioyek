@@ -1966,16 +1966,16 @@ int HighlightModel::columnCount(const QModelIndex& parent) const {
 
 QVariant HighlightModel::data(const QModelIndex& index, int role) const {
     if (role == Qt::DisplayRole) {
-        if (index.column() == 0) {
+        if (index.column() == HighlightModelColumn::text) {
             return QString::fromStdWString(highlights[index.row()].description);
         }
-        if (index.column() == 1) {
+        if (index.column() == HighlightModelColumn::type) {
             return highlights[index.row()].type;
         }
-        if (index.column() == 2) {
+        if (index.column() == HighlightModelColumn::description) {
             return QString::fromStdWString(highlights[index.row()].text_annot);
         }
-        if (index.column() == 3) {
+        if (index.column() == HighlightModelColumn::file_name) {
             return documents[index.row()];
         }
     }
@@ -1991,7 +1991,12 @@ QVariant HighlightModel::headerData(int section, Qt::Orientation orientation, in
 }
 
 void HighlightSearchItemDelegate::set_pattern(QString p) {
-    pattern = p.toLower();
+    if (p.size() >= 2 && p[1] == ' ') {
+        pattern = p.mid(2).toLower();
+    }
+    else {
+        pattern = p.toLower();
+    }
 }
 
 HighlightSearchItemDelegate::HighlightSearchItemDelegate(QAbstractItemModel* highlight_model) {
@@ -2062,8 +2067,9 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     //qDebug() << (char)highlight_type << " " << highlight_color.name();
     bool is_color_light = (hc[0] + hc[1] + hc[2]) > 1.5;
     QString label_text_color = is_color_light ? "black" : "white";
-    QString text = get_index_text(index, label_text_color, highlight_color.name());
-    QString comment_text = index.siblingAtColumn(2).data().toString();
+    QString highlight_text = index.siblingAtColumn(HighlightModel::text).data().toString();
+    //QString text = get_index_text(index, label_text_color, highlight_color.name());
+    QString comment_text = index.siblingAtColumn(HighlightModel::description).data().toString();
 
 
 
@@ -2074,7 +2080,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         int text_highlight_begin = -1, text_highlight_end = -1;
         int comment_highlight_begin = -1, comment_highlight_end = -1;
 
-        int text_similarity = similarity_score(text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
+        int text_similarity = similarity_score(highlight_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
         int comment_similarity = similarity_score(comment_text.toLower().toStdWString(), pattern.toStdWString(), &comment_highlight_begin, &comment_highlight_end);
 
         //auto [text_highlight_begin, text_highlight_end] = find_smallest_containing_substring(text.toLower().toStdWString(), pattern.toStdWString());
@@ -2084,12 +2090,14 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         //comment_text = comment_text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
         const int similarity_threshold = 70;
         if (text_similarity > similarity_threshold) {
-            text = text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + text.mid(text_highlight_end);
+            highlight_text = highlight_text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + highlight_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + highlight_text.mid(text_highlight_end);
         }
         if (comment_similarity > similarity_threshold) {
             comment_text = comment_text.left(comment_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + comment_text.mid(comment_highlight_begin, comment_highlight_end - comment_highlight_begin) + "</span>" + comment_text.mid(comment_highlight_end);
         }
     }
+
+    QString highlight_html = get_display_text(highlight_text, highlight_type, label_text_color, highlight_color.name());
 
     painter->save();
     //float* highlight_type_color = &HIGHLIGHT_COLORS[highlight_type - 'a'];
@@ -2104,11 +2112,6 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     //bool is_color_dark = (hc[0] + highlight_type_color[1] + highlight_type_color[2]) < 1.5;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
-    bool is_focused = option.state & QStyle::State_MouseOver;
-    if (is_focused) {
-        selected_background_color = selected_background_color.lighter();
-        background_color = background_color.lighter();
-    }
     if (selected) {
         painter->fillRect(option.rect, selected_background_color);
         ctx.palette.setColor(QPalette::Text, selected_text_color);
@@ -2118,7 +2121,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         ctx.palette.setColor(QPalette::Text, text_color);
     }
 
-    highlight_document.setHtml(text);
+    highlight_document.setHtml(highlight_html);
     highlight_document.setTextWidth(option.rect.width());
     painter->translate(option.rect.topLeft());
     painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
@@ -2176,13 +2179,12 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     painter->restore();
 }
 
-QString HighlightSearchItemDelegate::get_index_text(const QModelIndex& index, QString type_text_color, QString type_label_bg) const {
-    QString txt = index.data().toString();
+QString HighlightSearchItemDelegate::get_display_text(const QString& highlight_text, int highlight_type, QString type_text_color, QString type_label_bg) const {
     char type_string[2] = { 0 };
-    type_string[0] = index.siblingAtColumn(1).data().toInt();
+    type_string[0] = highlight_type;
     std::string type_std_string = std::string(type_string);
 
-    return "<code style=\"background-color: " + type_label_bg + "; color: " + type_text_color + ";\">&nbsp;" + QString::fromStdString(type_std_string) + "&nbsp;</code> " + txt;
+    return "<code style=\"background-color: " + type_label_bg + "; color: " + type_text_color + ";\">&nbsp;" + QString::fromStdString(type_std_string) + "&nbsp;</code> " + highlight_text;
 }
 
 QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
@@ -2196,7 +2198,7 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
     bool is_global = index.model()->columnCount() == 4;
     bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
 
-    QString text = get_index_text(index);
+    QString text = get_display_text(index.data().toString(), index.siblingAtColumn(HighlightModel::type).data().toInt());
     //QTextDocument d;
     QFont somefont;
     somefont.setPixelSize(20);
@@ -2236,6 +2238,7 @@ HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstr
     if (lv) {
         lv->setItemDelegate(new HighlightSearchItemDelegate(model));
     }
+    proxy_model->set_is_highlight(true);
     //    emit list_view->model()->dataChanged(list_view->model()->index(0, 0), list_view->model()->index(list_view->model()->rowCount() - 1, 0));
 
 }

@@ -999,6 +999,13 @@ std::wstring select_any_existing_file_name();
 class HighlightModel : public QAbstractTableModel {
     Q_OBJECT
 public:
+    enum HighlightModelColumn {
+        text = 0,
+        type = 1,
+        description = 2,
+        file_name = 3
+    };
+
     std::vector<Highlight> highlights;
     std::vector<QString> documents;
 
@@ -1030,7 +1037,7 @@ public:
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-    QString get_index_text(const QModelIndex& index, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
+    QString get_display_text(const QString& highlight_text, int highlight_type, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
     void set_pattern(QString p);
 };
 
