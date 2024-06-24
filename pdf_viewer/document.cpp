@@ -3292,7 +3292,12 @@ std::vector<QString> Document::get_page_bib_candidates(int page_number, std::vec
         if (block->type == FZ_STEXT_BLOCK_TEXT) {
             LL_ITER(line, block->u.t.first_line) {
                 LL_ITER(chr, line->first_char) {
-                    block_string.push_back(QChar(chr->c));
+                    if (chr->c < 0xffff) {
+                        block_string.push_back(QChar(chr->c));
+                    }
+                    else {
+                        block_string.push_back(' ');
+                    }
                     block_rects.push_back(PagelessDocumentRect(fz_rect_from_quad(chr->quad)));
 
                     if (chr->next == nullptr) {
