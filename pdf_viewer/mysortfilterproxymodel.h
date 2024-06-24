@@ -24,7 +24,7 @@ public:
 
     MySortFilterProxyModel(bool fuzzy, bool is_tree);
     ~MySortFilterProxyModel();
-    bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const;
+    virtual bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const;
     bool filter_accepts_row_column(int row, int col, const QModelIndex& source_parent) const;
     Q_INVOKABLE void setFilterCustom(const QString& filterString);
 

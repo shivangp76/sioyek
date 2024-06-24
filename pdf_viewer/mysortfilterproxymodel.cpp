@@ -123,7 +123,6 @@ MySortFilterProxyModel::~MySortFilterProxyModel() {
 
 int MySortFilterProxyModel::compute_score(QString filter_string, QString item_string) const{
     return similarity_score(item_string.toLower().toStdWString(), filter_string.toLower().toStdWString());
-    //return static_cast<int>(rapidfuzz::fuzz::partial_ratio(filter_string.toStdWString(), item_string.toStdWString()));
 }
 
 int MySortFilterProxyModel::compute_score(fzf_pattern_t* pattern, QString item_string) const{

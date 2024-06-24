@@ -754,7 +754,8 @@ std::pair<int, int> find_smallest_containing_substring(const T& haystack, const 
 }
 
 template<typename T>
-int similarity_score(const T& haystack, const T& needle, int* out_begin = nullptr, int* out_end = nullptr) {
+int similarity_score(const T& haystack, const T& needle, int* out_begin = nullptr, int* out_end = nullptr, float size_threshold=0.5f) {
+
     if (needle.size() == 0) {
         return 100;
     }
@@ -774,10 +775,10 @@ int similarity_score(const T& haystack, const T& needle, int* out_begin = nullpt
     
     int length = end - begin;
 
-    if (length > 2 * needle.size()) {
+    if (static_cast<int>(length * size_threshold) > needle.size()) {
         return 0;
     }
 
     int lcs_length = lcs(&haystack[begin], &needle[0], length, needle.size());
-    return lcs_length * 100 / needle.size();
+    return lcs_length * 100 / length;
 }

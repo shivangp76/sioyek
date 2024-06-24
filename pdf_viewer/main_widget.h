@@ -1152,6 +1152,7 @@ public:
     void on_server_hashes_loaded();
     Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
     QMediaPlayer* get_media_player();
+    void show_command_menu();
 
     bool import_local_database(std::wstring path);
     bool import_shared_database(std::wstring path);

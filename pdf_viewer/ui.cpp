@@ -28,6 +28,11 @@ extern float TTS_RATE;
 extern float MENU_SCREEN_WDITH_RATIO;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 
+extern float UI_TEXT_COLOR[3];
+extern float UI_BACKGROUND_COLOR[3];
+extern float UI_SELECTED_TEXT_COLOR[3];
+extern float UI_SELECTED_BACKGROUND_COLOR[3];
+
 std::wstring select_command_file_name(std::string command_name) {
     if (command_name == "open_document") {
         return select_document_file_name();
@@ -1124,14 +1129,6 @@ void IntConfigUI::resizeEvent(QResizeEvent* resize_event) {
     move(parent_width / 6, parent_height / 4);
 }
 
-//QWidget* color3_configurator_ui(MainWidget* main_widget, void* location){
-//    return new Color3ConfigUI(main_widget, (float*)location);
-//}
-
-//QWidget* color4_configurator_ui(MainWidget* main_widget, void* location){
-//    return new Color4ConfigUI(main_widget, (float*)location);
-//}
-
 
 TouchCommandSelector::TouchCommandSelector(bool is_fuzzy, const QStringList& commands, MainWidget* mw) : QWidget(mw) {
     main_widget = mw;
@@ -1283,201 +1280,54 @@ void RangeConfigUI::resizeEvent(QResizeEvent* resize_event) {
     range_select_ui->resize(resize_event->size().width(), resize_event->size().height());
 
 }
-QList<QStandardItem*> CommandSelector::get_item(std::string command_name) {
-
-    std::string command_key = "";
-
-    if (key_map.find(command_name) != key_map.end()) {
-        const std::vector<std::string>& command_keys = key_map[command_name];
-        for (size_t i = 0; i < command_keys.size(); i++) {
-            const std::string& ck = command_keys[i];
-            if (i > 0) {
-                command_key += " | ";
-            }
-            command_key += ck;
-        }
-
-    }
-    QStandardItem* name_item = new QStandardItem(QString::fromStdString(command_name));
-    QStandardItem* key_item = new QStandardItem(QString::fromStdString(command_key));
-    key_item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
-    return (QList<QStandardItem*>() << name_item << key_item);
-}
-
-QAbstractItemModel* CommandSelector::get_standard_item_model(std::vector<std::string> command_names) {
-
-    QStandardItemModel* res = new QStandardItemModel();
-
-    for (size_t i = 0; i < command_names.size(); i++) {
-        res->appendRow(get_item(command_names[i]));
-    }
-    return res;
-}
-
-QAbstractItemModel* CommandSelector::get_standard_item_model(QStringList command_names) {
-
-    std::vector<std::string> std_command_names;
-
-    for (int i = 0; i < command_names.size(); i++) {
-        std_command_names.push_back(command_names.at(i).toStdString());
-    }
-    return get_standard_item_model(std_command_names);
-}
 
 
-//QString CommandSelector::get_view_stylesheet_type_name() {
-//    return "QTableView";
-//}
-
-void CommandSelector::on_select(const QModelIndex& index) {
-    bool is_numeric = false;
-    line_edit->text().toInt(&is_numeric);
-    std::string query = line_edit->text().toStdString();
-    QString name = standard_item_model->data(index).toString();
-    //hide();
-    main_widget->pop_current_widget();
-    parentWidget()->setFocus();
-    if (!is_numeric) {
-        (*on_done)(name.toStdString(), query);
-    }
-    else {
-        (*on_done)(line_edit->text().toStdString(), query);
-    }
-}
-
-CommandSelector::~CommandSelector() {
-}
-
-QStringList CommandSelector::get_elements_matching_prefix(QString text) {
-    QStringList res;
-
-    for (int i = 0; i < string_elements.size(); i++) {
-        QString required_prefix = prefixes[string_elements[i]];
-        bool show_because_command_was_recent = SHOW_MOST_RECENT_COMMANDS_FIRST ? i < 10 : false;
-        if (show_because_command_was_recent || required_prefix.size() == 0 || text.startsWith(required_prefix)) {
-            res.push_back(string_elements[i]);
-        }
-    }
-    return res;
-}
-
-CommandSelector::CommandSelector(bool is_fuzzy, std::function<void(std::string, std::string)>* on_done,
-    MainWidget* parent,
-    QStringList elements,
-    const std::unordered_map<QString, QString>& required_prefixed,
-    std::unordered_map<std::string, std::vector<std::string>> key_map
-) : BaseSelectorWidget(new QTableView(), is_fuzzy, nullptr, parent),
-    prefixes(required_prefixed),
-    key_map(key_map),
-    on_done(on_done),
-    main_widget(parent)
-{
-    string_elements = elements;
-
-    standard_item_model = get_standard_item_model(get_elements_matching_prefix(""));
-
-    QTableView* table_view = dynamic_cast<QTableView*>(get_view());
-
-    table_view->setSelectionMode(QAbstractItemView::SingleSelection);
-    table_view->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    table_view->setModel(standard_item_model);
-    table_view->setCurrentIndex(standard_item_model->index(0, 0));
-
-
-    table_view->horizontalHeader()->setStretchLastSection(true);
-    table_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    table_view->horizontalHeader()->hide();
-    table_view->verticalHeader()->hide();
-
-}
-
-bool CommandSelector::on_text_change(const QString& text) {
-
-    std::vector<std::string> matching_element_names;
-    std::vector<int> scores;
-    std::string search_text_string = text.toStdString();
-    std::vector<std::pair<std::string, int>> match_score_pairs;
-
-
-    QString actual_text = text;
+QString translate_command_search_string(QString actual_text) {
 
     if (actual_text.startsWith("+=")) {
         actual_text = "setsaveconfig_" + actual_text.right(actual_text.size() - 2);
-        search_text_string = actual_text.toStdString();
     }
 
     if (actual_text.startsWith("!")) {
         actual_text = "toggleconfig_" + actual_text.right(actual_text.size() - 1);
-        search_text_string = actual_text.toStdString();
     }
 
     if (actual_text.startsWith("=")) {
         actual_text = "setconfig_" + actual_text.right(actual_text.size() - 1);
-        search_text_string = actual_text.toStdString();
     }
 
     if (actual_text.startsWith("+")) {
         actual_text = "saveconfig_" + actual_text.right(actual_text.size() - 1);
-        search_text_string = actual_text.toStdString();
     }
 
 
     if (actual_text.startsWith("-")) {
         actual_text = "deleteconfig_" + actual_text.right(actual_text.size() - 1);
-        search_text_string = actual_text.toStdString();
     }
 
     if (actual_text.endsWith("?")){
         actual_text = actual_text.left(actual_text.size()-1);
-        search_text_string = actual_text.toStdString();
     }
     if (actual_text.startsWith("?")){
         actual_text = actual_text.right(actual_text.size()-1);
-        search_text_string = actual_text.toStdString();
     }
-
-    std::string pattern_str = actual_text.toStdString();
-
-    QStringList elements_matching_prefix = get_elements_matching_prefix(actual_text);
-
-    for (int i = 0; i < elements_matching_prefix.size(); i++) {
-        std::string encoded = utf8_encode(elements_matching_prefix.at(i).toStdWString());
-        int score = 0;
-        score = similarity_score(encoded, search_text_string);
-        match_score_pairs.push_back(std::make_pair(encoded, score));
-    }
-    std::sort(match_score_pairs.begin(), match_score_pairs.end(), [](std::pair<std::string, int> lhs, std::pair<std::string, int> rhs) {
-        return lhs.second > rhs.second;
-        });
-
-    for (int i = 0; i < elements_matching_prefix.size(); i++) {
-        if (elements_matching_prefix.at(i).startsWith(actual_text)) {
-            matching_element_names.push_back(elements_matching_prefix.at(i).toStdString());
-        }
-    }
-
-    //if (matching_element_names.size() == 0) {
-    for (auto [command, score] : match_score_pairs) {
-        if (score > 60 && (!QString::fromStdString(command).startsWith(actual_text))) {
-            matching_element_names.push_back(command);
-        }
-    }
-
-    QAbstractItemModel* new_standard_item_model = get_standard_item_model(matching_element_names);
-    dynamic_cast<QTableView*>(get_view())->setModel(new_standard_item_model);
-    delete standard_item_model;
-    standard_item_model = new_standard_item_model;
-    dynamic_cast<QTableView*>(get_view())->setCurrentIndex(standard_item_model->index(0, 0));
-
-    return true;
+    return actual_text;
 }
 
-BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent) : QWidget(parent) {
+
+BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent, MySortFilterProxyModel* custom_proxy_model) : QWidget(parent) {
 
     bool is_tree = dynamic_cast<QTreeView*>(item_view) != nullptr;
     is_fuzzy = fuzzy;
-    proxy_model = new MySortFilterProxyModel(fuzzy, is_tree);
+
+    if (custom_proxy_model == nullptr) {
+        proxy_model = new MySortFilterProxyModel(fuzzy, is_tree);
+    }
+    else {
+        proxy_model = custom_proxy_model;
+    }
+    proxy_model->setParent(this);
+
     proxy_model->setFilterCaseSensitivity(Qt::CaseSensitivity::CaseInsensitive);
 
     if (item_model) {
@@ -2006,14 +1856,14 @@ void HighlightSearchItemDelegate::set_pattern(QString p) {
     }
 }
 
-HighlightSearchItemDelegate::HighlightSearchItemDelegate(QAbstractItemModel* highlight_model) {
+HighlightSearchItemDelegate::HighlightSearchItemDelegate(){
     QFont highlight_font;
     QFont file_name_font;
     QFont comment_font;
 
-    highlight_font.setPixelSize(20);
-    file_name_font.setPixelSize(15);
-    comment_font.setPixelSize(18);
+    highlight_font.setPixelSize(FONT_SIZE);
+    file_name_font.setPixelSize(FONT_SIZE * 3 / 4);
+    comment_font.setPixelSize(FONT_SIZE * 7 / 8);
 
     highlight_document.setDefaultFont(highlight_font);
     file_name_document.setDefaultFont(file_name_font);
@@ -2242,24 +2092,24 @@ HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstr
     auto something = dynamic_cast<HighlightModel*>(proxy_model);
 
     if (lv) {
-        lv->setItemDelegate(new HighlightSearchItemDelegate(model));
+        lv->setItemDelegate(new HighlightSearchItemDelegate());
     }
     proxy_model->set_is_highlight(true);
     //    emit list_view->model()->dataChanged(list_view->model()->index(0, 0), list_view->model()->index(list_view->model()->rowCount() - 1, 0));
 
 }
 
-void HighlightSelectorWidget::update_render() {
+void BaseCustomSelectorWidget::update_render() {
     emit lv->model()->dataChanged(lv->model()->index(0, 0), lv->model()->index(lv->model()->rowCount() - 1, 0));
 }
 
 
-bool HighlightSelectorWidget::on_text_change(const QString& text) {
-
-    auto highlight_item_delegate = dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate());
-    highlight_item_delegate->set_pattern(text);
-    return false;
-}
+//bool HighlightSelectorWidget::on_text_change(const QString& text) {
+//
+//    auto highlight_item_delegate = dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate());
+//    highlight_item_delegate->set_pattern(text);
+//    return false;
+//}
 
 
 QString get_view_stylesheet_type_name(QAbstractItemView* view) {
@@ -2327,7 +2177,8 @@ BaseCustomSelectorWidget::BaseCustomSelectorWidget(
 }
 
 void BaseCustomSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
-    dynamic_cast<HighlightSearchItemDelegate*>(lv->itemDelegate())->cached_sizes.clear();
+    dynamic_cast<BaseCustomDelegate*>(lv->itemDelegate())->clear_cache();
+    //clear_ca
 
     BaseSelectorWidget::resizeEvent(resize_event);
     //QWidget::resizeEvent(resize_event);
@@ -2375,4 +2226,263 @@ void BaseCustomSelectorWidget::set_selected_index(int index) {
     else{
         lv->selectionModel()->setCurrentIndex(model->index(0, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
     }
+}
+
+CommandModel::CommandModel(std::vector<QString> commands, std::vector<QString> keybinds) : commands(commands), keybinds(keybinds){
+
+}
+
+int CommandModel::rowCount(const QModelIndex& parent) const {
+    if (parent == QModelIndex()) {
+        return commands.size();
+    }
+    return 0;
+}
+
+int CommandModel::columnCount(const QModelIndex& parent) const {
+    return CommandModel::max_columns;
+}
+
+QVariant CommandModel::data(const QModelIndex& index, int role) const {
+    if (role == Qt::DisplayRole) {
+        if (index.column() == CommandModel::command_name) {
+            return commands[index.row()];
+        }
+        else if (index.column() == CommandModel::keybind) {
+            return keybinds[index.row()];
+        }
+    }
+    return QVariant();
+}
+
+QVariant CommandModel::headerData(int section, Qt::Orientation orientation, int role) const {
+
+    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+        return "Command";
+    }
+    return QVariant();
+}
+
+
+CommandItemDelegate::CommandItemDelegate() {
+
+    QFont command_font;
+    QFont keybind_font;
+
+    command_font.setPixelSize(FONT_SIZE);
+    keybind_font.setPixelSize(FONT_SIZE * 3 / 4);
+
+    command_name_document.setDefaultFont(command_font);
+    keybind_document.setDefaultFont(keybind_font);
+}
+
+void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+    painter->save();
+
+    QString command_name = index.data().toString();
+
+    QAbstractTextDocumentLayout::PaintContext ctx;
+    QColor text_color = QColor::fromRgbF(UI_TEXT_COLOR[0], UI_TEXT_COLOR[1], UI_TEXT_COLOR[2]);
+    QColor background_color = QColor::fromRgbF(UI_BACKGROUND_COLOR[0], UI_BACKGROUND_COLOR[1], UI_BACKGROUND_COLOR[2]);
+
+    QColor selected_text_color = QColor::fromRgbF(UI_SELECTED_TEXT_COLOR[0], UI_SELECTED_TEXT_COLOR[1], UI_SELECTED_TEXT_COLOR[2]);
+    QColor selected_background_color = QColor::fromRgbF(UI_SELECTED_BACKGROUND_COLOR[0], UI_SELECTED_BACKGROUND_COLOR[1], UI_SELECTED_BACKGROUND_COLOR[2]);
+
+    int text_highlight_begin = 0;
+    int text_highlight_end = 0;
+    int text_similarity = similarity_score(command_name.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
+    //qDebug() << command_name << " " << text_similarity;
+
+    const int similarity_threshold = 70;
+    if (text_similarity > similarity_threshold) {
+        command_name = command_name.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + command_name.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + command_name.mid(text_highlight_end);
+    }
+
+    if (option.state & QStyle::State_Selected) {
+        //ctx.palette.setColor(QPalette::Text, option.palette.color(QPalette::HighlightedText));
+        //painter->fillRect(option.rect, option.palette.brush(QPalette::Highlight));
+        ctx.palette.setColor(QPalette::Text, selected_text_color);
+        painter->fillRect(option.rect, selected_background_color);
+    }
+    else {
+        ctx.palette.setColor(QPalette::Text, text_color);
+        painter->fillRect(option.rect, background_color);
+    }
+
+    command_name_document.setHtml(command_name);
+    command_name_document.setTextWidth(option.rect.width());
+    painter->translate(option.rect.topLeft());
+    painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
+    command_name_document.documentLayout()->draw(painter, ctx);
+
+    painter->restore();
+}
+
+QSize CommandItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+    if (cached_size.has_value()) {
+        return QSize(option.rect.width(), cached_size.value());
+    }
+
+    // text height
+    //QFont some_font;
+    //some_font.setPixelSize(FONT_SIZE);
+    //cached_size = QFontMetrics(some_font).height();
+    command_name_document.setHtml("test");
+    cached_size = command_name_document.size().height();
+    //command_name_document.documentLayout()->documentSize
+    return QSize(option.rect.width(), cached_size.value());
+}
+
+void BaseCustomDelegate::set_pattern(QString p) {
+    pattern = p.toLower();
+}
+
+CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString> commands, std::vector<QString> keybinds, MainWidget* parent) {
+
+
+    std::unordered_map<QString, std::vector<QString>> prefix_command_names;
+    std::unordered_map<QString, std::vector<QString>> prefix_keybinds;
+    std::unordered_map<QString, QAbstractItemModel*> prefix_models;
+
+    for (auto prefix : special_prefixes) {
+        prefix_command_names[prefix] = {};
+        prefix_keybinds[prefix] = {};
+    }
+
+
+    for (int i = 0; i < commands.size(); i++) {
+        QString current_prefix = "";
+        for (auto prefix : special_prefixes) {
+            if (commands[i].startsWith(prefix)) {
+                current_prefix = prefix;
+                break;
+            }
+        }
+        prefix_command_names[current_prefix].push_back(commands[i]);
+        prefix_keybinds[current_prefix].push_back(keybinds[i]);
+    }
+
+
+    for (auto prefix : special_prefixes) {
+        prefix_models[prefix] = new CommandModel(prefix_command_names[prefix], prefix_keybinds[prefix]);
+    }
+
+
+    //CommandModel* command_model = new CommandModel(std::move(commands), std::move(keybinds));
+
+    QListView* list_view = new QListView();
+
+    CommandSelectorWidget* command_selector_widget = new CommandSelectorWidget(list_view, prefix_models, parent);
+
+    for (auto [_, model] : prefix_models) {
+        model->setParent(command_selector_widget);
+    }
+
+    //command_model->setParent(command_selector_widget);
+    list_view->setParent(command_selector_widget);
+
+    command_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    command_selector_widget->set_filter_column_index(-1);
+
+    command_selector_widget->update_render();
+    return command_selector_widget;
+}
+
+
+bool BaseCustomSelectorWidget::on_text_change(const QString& text) {
+    auto command_item_delegate = dynamic_cast<BaseCustomDelegate*>(lv->itemDelegate());
+    command_item_delegate->set_pattern(text);
+    return false;
+}
+
+//HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent) 
+//    : BaseCustomSelectorWidget(view, model, parent) {
+//
+//    highlight_model = dynamic_cast<HighlightModel*>(model);
+//
+//    if (lv) {
+//        lv->setItemDelegate(new HighlightSearchItemDelegate(model));
+//    }
+//    proxy_model->set_is_highlight(true);
+//    //    emit list_view->model()->dataChanged(list_view->model()->index(0, 0), list_view->model()->index(list_view->model()->rowCount() - 1, 0));
+//
+//}
+
+//CommandSelectorWidget::CommandSelectorWidget(
+//    QAbstractItemView* view,
+//    QAbstractItemModel* model,
+//    MainWidget* parent
+//) : BaseCustomSelectorWidget(view, model, parent){
+//    command_model = dynamic_cast<CommandModel*>(model);
+//
+//    if (lv) {
+//        lv->setItemDelegate(new CommandItemDelegate(model));
+//    }
+//
+//}
+
+CommandSelectorWidget::CommandSelectorWidget(
+    QAbstractItemView* view,
+    std::unordered_map<QString, QAbstractItemModel*> prefix_model,
+    MainWidget* parent) : BaseCustomSelectorWidget(view, prefix_model[""], parent) {
+    //command_model = dynamic_cast<CommandModel*>(model);
+
+
+    prefix_command_model = prefix_model;
+    if (lv) {
+        lv->setItemDelegate(new CommandItemDelegate());
+        lv->setCurrentIndex(lv->model()->index(0, 0));
+    }
+
+}
+
+//BaseCustomDelegate::BaseCustomDelegate(QAbstractItemModel* model){
+//
+//}
+
+void HighlightSearchItemDelegate::clear_cache() {
+    cached_sizes.clear();
+}
+
+void CommandItemDelegate::clear_cache() {
+    cached_size = {};
+}
+
+bool CommandSelectorWidget::on_text_change(const QString& txt) {
+    QString text = translate_command_search_string(txt);
+
+    QString prefix = "";
+    for (auto p : special_prefixes) {
+        if (text.startsWith(p)) {
+            prefix = p;
+            break;
+        }
+    }
+    if (prefix != last_prefix) {
+
+        delete proxy_model;
+        proxy_model = new MySortFilterProxyModel(true, false);
+        proxy_model->setSourceModel(prefix_command_model[prefix]);
+        proxy_model->setParent(this);
+        get_view()->setModel(proxy_model);
+
+        //proxy_model->setSourceModel(prefix_command_model[prefix]);
+        //proxy_model->update_scores();
+
+        last_prefix = prefix;
+    }
+
+    return BaseCustomSelectorWidget::on_text_change(text);
+}
+
+void CommandSelectorWidget::on_text_changed(const QString& text) {
+    if (!on_text_change(text)) {
+        QString pattern = dynamic_cast<CommandItemDelegate*>(lv->itemDelegate())->pattern;
+        proxy_model->setFilterCustom(pattern);
+        get_view()->setCurrentIndex(get_view()->model()->index(0, 0));
+    }
+}
+
+QString CommandSelectorWidget::get_command_with_index(int index) {
+    return proxy_model->sourceModel()->data(proxy_model->sourceModel()->index(index, CommandModel::command_name)).toString();
 }

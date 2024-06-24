@@ -2785,14 +2785,7 @@ public:
         QStringList command_names = widget->command_manager->get_all_command_names();
         if (!TOUCH_MODE) {
 
-            widget->set_current_widget(new CommandSelector(
-                FUZZY_SEARCHING,
-                &widget->on_command_done,
-                widget,
-                command_names,
-                widget->command_manager->command_required_prefixes,
-                widget->input_handler->get_command_key_mappings())
-            );
+            widget->show_command_menu();
         }
         else {
 

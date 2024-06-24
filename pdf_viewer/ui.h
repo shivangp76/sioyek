@@ -117,15 +117,14 @@ QString get_view_stylesheet_type_name(QAbstractItemView* view);
 class BaseSelectorWidget : public QWidget {
 
 protected:
-    BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent);
+    BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent, MySortFilterProxyModel* custom_proxy_model=nullptr);
 
-    void on_text_changed(const QString& text);
+    virtual void on_text_changed(const QString& text);
 
 
 
     virtual QAbstractItemView* get_view();
 
-    QLineEdit* line_edit = nullptr;
     //QSortFilterProxyModel* proxy_model = nullptr;
     MySortFilterProxyModel* proxy_model = nullptr;
     bool is_fuzzy = false;
@@ -146,6 +145,7 @@ protected:
 
 
 public:
+    QLineEdit* line_edit = nullptr;
 
 
     void set_filter_column_index(int index);
@@ -564,38 +564,6 @@ public:
 private:
     MainWidget* main_widget;
     TouchListView* list_view;
-
-};
-
-class CommandSelector : public BaseSelectorWidget {
-private:
-    QStringList string_elements;
-    MainWidget* main_widget;
-    QAbstractItemModel* standard_item_model = nullptr;
-    std::unordered_map<std::string, std::vector<std::string>> key_map;
-    std::unordered_map<QString, QString> prefixes;
-    std::function<void(std::string, std::string)>* on_done = nullptr;
-
-    QList<QStandardItem*> get_item(std::string command_name);
-    QAbstractItemModel* get_standard_item_model(std::vector<std::string> command_names);
-    QAbstractItemModel* get_standard_item_model(QStringList command_names);
-    QStringList get_elements_matching_prefix(QString prefix);
-
-protected:
-public:
-
-    QString get_view_stylesheet_type_name();
-
-    void on_select(const QModelIndex& index);
-
-    CommandSelector(bool is_fuzzy, std::function<void(std::string, std::string)>* on_done,
-        MainWidget* parent,
-        QStringList elements,
-        const std::unordered_map<QString, QString>& required_prefixed,
-        std::unordered_map<std::string, std::vector<std::string>> key_map);
-    ~CommandSelector();
-
-    virtual bool on_text_change(const QString& text);
 
 };
 
@@ -1026,22 +994,73 @@ public:
 
 };
 
-class HighlightSearchItemDelegate : public QStyledItemDelegate {
+class CommandModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    enum CommandModelColumn{
+        command_name = 0,
+        keybind = 1,
+        max_columns = 2
+    };
+
+    std::vector<QString> commands;
+    std::vector<QString> keybinds;
+
+
+    CommandModel(std::vector<QString> commands, std::vector<QString> keybinds);
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+};
+
+class BaseCustomDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
     QString pattern;
+
+    virtual void set_pattern(QString p);
+    virtual void clear_cache() = 0;
+};
+
+class HighlightSearchItemDelegate : public BaseCustomDelegate {
+    Q_OBJECT
+public:
+    //QString pattern;
 
     mutable QTextDocument highlight_document;
     mutable QTextDocument file_name_document;
     mutable QTextDocument comment_document;
     mutable std::unordered_map<int, float> cached_sizes;
 
-    HighlightSearchItemDelegate(QAbstractItemModel* highlight_model);
+    HighlightSearchItemDelegate();
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
     QString get_display_text(const QString& highlight_text, int highlight_type, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
-    void set_pattern(QString p);
+    void clear_cache();
+    void set_pattern(QString p) override;
+};
+
+class CommandItemDelegate : public BaseCustomDelegate {
+    Q_OBJECT
+public:
+    //QString pattern;
+
+    mutable QTextDocument command_name_document;
+    mutable QTextDocument keybind_document;
+    mutable std::optional<float> cached_size = {};
+
+    CommandItemDelegate();
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void clear_cache();
+    //void set_pattern(QString p);
 };
 
 
@@ -1067,8 +1086,10 @@ public:
     void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
 
     void set_selected_index(int index);
+    void update_render();
+    virtual bool on_text_change(const QString& text) override;
 
-    virtual void update_render() = 0;
+    //virtual void update_render() = 0;
 };
 
 
@@ -1085,6 +1106,36 @@ public:
 
     HighlightModel* highlight_model = nullptr;
 
-    void update_render() override;
-    bool on_text_change(const QString& text);
+    //bool on_text_change(const QString& text) override;
 };
+
+class CommandSelectorWidget : public BaseCustomSelectorWidget{
+private:
+    //CommandSelectorWidget(
+    //    QAbstractItemView* view,
+    //    QAbstractItemModel* model,
+    //    MainWidget* parent
+    //);
+
+    CommandSelectorWidget(
+        QAbstractItemView* view,
+        std::unordered_map<QString, QAbstractItemModel*> prefix_model,
+        MainWidget* parent
+    );
+    inline static const std::vector<QString> special_prefixes = {"setconfig_", "toggleconfig_", "setsaveconfig_", "saveconfig_", "deleteconfig_", ""};
+public:
+
+    std::unordered_map<QString, QAbstractItemModel*> prefix_command_model;
+    QString last_prefix = "";
+
+    QString get_command_with_index(int index);
+    static CommandSelectorWidget* from_commands(std::vector<QString> commands, std::vector<QString> keybinds, MainWidget* parent);
+    bool on_text_change(const QString& text) override;
+    void on_text_changed(const QString& text) override;
+
+
+    //void update_render() override;
+    //bool on_text_change(const QString& text) override;
+};
+
+QString translate_command_search_string(QString raw_search_string);
