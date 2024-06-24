@@ -2228,7 +2228,7 @@ void BaseCustomSelectorWidget::set_selected_index(int index) {
     }
 }
 
-CommandModel::CommandModel(std::vector<QString> commands, std::vector<QString> keybinds) : commands(commands), keybinds(keybinds){
+CommandModel::CommandModel(std::vector<QString> commands, std::vector<QStringList> keybinds) : commands(commands), keybinds(keybinds){
 
 }
 
@@ -2280,6 +2280,7 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     painter->save();
 
     QString command_name = index.data().toString();
+    QStringList command_keybind = index.siblingAtColumn(CommandModel::keybind).data().toStringList();
 
     QAbstractTextDocumentLayout::PaintContext ctx;
     QColor text_color = QColor::fromRgbF(UI_TEXT_COLOR[0], UI_TEXT_COLOR[1], UI_TEXT_COLOR[2]);
@@ -2299,8 +2300,6 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     }
 
     if (option.state & QStyle::State_Selected) {
-        //ctx.palette.setColor(QPalette::Text, option.palette.color(QPalette::HighlightedText));
-        //painter->fillRect(option.rect, option.palette.brush(QPalette::Highlight));
         ctx.palette.setColor(QPalette::Text, selected_text_color);
         painter->fillRect(option.rect, selected_background_color);
     }
@@ -2310,10 +2309,44 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     }
 
     command_name_document.setHtml(command_name);
-    command_name_document.setTextWidth(option.rect.width());
+    //command_name_document.setTextWidth(option.rect.width());
     painter->translate(option.rect.topLeft());
     painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
     command_name_document.documentLayout()->draw(painter, ctx);
+
+    QString keybind_html = "";
+    QString keybind_tag_color;
+    if (option.state & QStyle::State_Selected) {
+        keybind_tag_color = selected_background_color.darker(120).name();
+    }
+    else {
+        keybind_tag_color = background_color.lighter().name();
+        if (background_color == Qt::black) {
+            keybind_tag_color = "#222";
+        }
+    }
+    //QString keybind_tag_color = option.state & QStyle::State_Selected ? "#ddd" : "#222";
+
+    for (int i = 0; i < command_keybind.size(); i++) {
+        keybind_html += "<kbd style=\"background-color: " + keybind_tag_color + ";\">&nbsp;" + command_keybind.at(i) + "&nbsp;</kbd>";
+        if (i < command_keybind.size() - 1) {
+            keybind_html += "&nbsp;";
+        }
+    }
+    keybind_document.setHtml(keybind_html);
+
+    //qDebug() << command_name_document.get
+    //if (command_keybind.size() > 0) {
+    //    //keybind_document.setHtml("<code style=\"background: gray; color: black;\">&nbsp;" + command_keybind + "&nbsp;</code>");
+    //    keybind_document.setHtml("<span style=\"background: gray; color: black; border-style: solid; border-color: red;\">&nbsp;" + command_keybind.at(0) + "&nbsp;</span>");
+    //}
+    //else {
+    //    keybind_document.setHtml("");
+    //}
+    keybind_document.setTextWidth(option.rect.width());
+    //painter->translate(command_name_document.size().width(), 0);
+    painter->translate(option.rect.width() - keybind_document.idealWidth(), 0);
+    keybind_document.documentLayout()->draw(painter, ctx);
 
     painter->restore();
 }
@@ -2337,11 +2370,11 @@ void BaseCustomDelegate::set_pattern(QString p) {
     pattern = p.toLower();
 }
 
-CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString> commands, std::vector<QString> keybinds, MainWidget* parent) {
+CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString> commands, std::vector<QStringList> keybinds, MainWidget* parent) {
 
 
     std::unordered_map<QString, std::vector<QString>> prefix_command_names;
-    std::unordered_map<QString, std::vector<QString>> prefix_keybinds;
+    std::unordered_map<QString, std::vector<QStringList>> prefix_keybinds;
     std::unordered_map<QString, QAbstractItemModel*> prefix_models;
 
     for (auto prefix : special_prefixes) {
@@ -2371,6 +2404,7 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString>
     //CommandModel* command_model = new CommandModel(std::move(commands), std::move(keybinds));
 
     QListView* list_view = new QListView();
+    list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     CommandSelectorWidget* command_selector_widget = new CommandSelectorWidget(list_view, prefix_models, parent);
 

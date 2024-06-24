@@ -1004,10 +1004,10 @@ public:
     };
 
     std::vector<QString> commands;
-    std::vector<QString> keybinds;
+    std::vector<QStringList> keybinds;
 
 
-    CommandModel(std::vector<QString> commands, std::vector<QString> keybinds);
+    CommandModel(std::vector<QString> commands, std::vector<QStringList> keybinds);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
 
@@ -1129,7 +1129,7 @@ public:
     QString last_prefix = "";
 
     QString get_command_with_index(int index);
-    static CommandSelectorWidget* from_commands(std::vector<QString> commands, std::vector<QString> keybinds, MainWidget* parent);
+    static CommandSelectorWidget* from_commands(std::vector<QString> commands, std::vector<QStringList> keybinds, MainWidget* parent);
     bool on_text_change(const QString& text) override;
     void on_text_changed(const QString& text) override;
 

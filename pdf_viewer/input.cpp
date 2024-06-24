@@ -7380,6 +7380,7 @@ public:
 
 CommandManager::CommandManager(ConfigManager* config_manager) {
 
+    register_command<CloseWindowCommand>("q");
     register_command<GotoBeginningCommand>();
     register_command<GotoEndCommand>();
     register_command<GotoDefinitionCommand>();
@@ -7685,7 +7686,6 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ResyncDocumentCommand>();
     register_command<DownloadUnsyncedFilesCommand>();
     register_command<SyncCurrentFileLocation>();
-    register_command<CloseWindowCommand>("q");
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {
         std::string command_name = utf8_encode(command_name_);

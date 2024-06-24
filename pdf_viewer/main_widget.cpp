@@ -7124,66 +7124,23 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
-    std::vector<QString> command_names;
-    std::vector<QString> command_keybinds;
-    std::unordered_map<std::string, std::vector<std::string>> command_key_mappings = input_handler->get_command_key_mappings();
-    QStringList all_command_names = command_manager->get_all_command_names();
-    for (int i = 0; i < all_command_names.size(); i++) {
-        QString keybinding = "";
-        auto iterator = command_key_mappings.find(all_command_names[i].toStdString());
-        if (iterator != command_key_mappings.end()) {
-            for (int j = 0; j < iterator->second.size(); j++) {
-                keybinding += QString::fromStdString(iterator->second[j]);
-            }
-        }
-        command_names.push_back(all_command_names[i]);
-        command_keybinds.push_back(keybinding);
-    }
-
-    CommandSelectorWidget* command_selector_widget = CommandSelectorWidget::from_commands(command_names, command_keybinds, this);
-    command_selector_widget->set_select_fn([&, command_selector_widget](int index) {
-        QString command_name = command_selector_widget->get_command_with_index(index);
-
-        //bool is_numeric = false;
-        //line_edit->text().toInt(&is_numeric);
-
-        //std::string query = line_edit->text().toStdString();
-        //QString name = standard_item_model->data(index).toString();
-        //hide();
-        std::string query = command_selector_widget->line_edit->text().toStdString();
-        pop_current_widget();
-        setFocus();
-        on_command_done(command_name.toStdString(), query);
-
-
-        //if (!is_numeric) {
-        //    (*on_done)(name.toStdString(), query);
-        //}
-        //else {
-        //    (*on_done)(line_edit->text().toStdString(), query);
-        //}
-        //qDebug() << "selected : " <<
-            //qDebug() << "selected " << command_selector_widget->prefix_command_model[""]->commands[index];
-        });
-    set_current_widget(command_selector_widget);
-    show_current_widget();
 }
 
 void MainWidget::show_command_menu() {
     std::vector<QString> command_names;
-    std::vector<QString> command_keybinds;
+    std::vector<QStringList> command_keybinds;
     std::unordered_map<std::string, std::vector<std::string>> command_key_mappings = input_handler->get_command_key_mappings();
     QStringList all_command_names = command_manager->get_all_command_names();
     for (int i = 0; i < all_command_names.size(); i++) {
-        QString keybinding = "";
+        QStringList keybindings;
         auto iterator = command_key_mappings.find(all_command_names[i].toStdString());
         if (iterator != command_key_mappings.end()) {
             for (int j = 0; j < iterator->second.size(); j++) {
-                keybinding += QString::fromStdString(iterator->second[j]);
+                keybindings.append(QString::fromStdString(iterator->second[j]).toHtmlEscaped());
             }
         }
         command_names.push_back(all_command_names[i]);
-        command_keybinds.push_back(keybinding);
+        command_keybinds.push_back(keybindings);
     }
 
     CommandSelectorWidget* command_selector_widget = CommandSelectorWidget::from_commands(command_names, command_keybinds, this);
