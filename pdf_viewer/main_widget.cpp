@@ -5608,9 +5608,11 @@ void MainWidget::handle_goto_bookmark() {
 void MainWidget::handle_goto_bookmark_global() {
     std::vector<std::pair<std::string, BookMark>> global_bookmarks;
     db_manager->global_select_bookmark(global_bookmarks);
-    std::vector<std::wstring> descs;
-    std::vector<std::wstring> file_names;
-    std::vector<BookState> book_states;
+    //std::vector<std::wstring> descs;
+    std::vector<BookMark> bookmarks;
+    std::vector<QString> file_names;
+    std::vector<QString> file_checksums;
+    //std::vector<BookState> book_states;
 
     for (const auto& desc_bm_pair : global_bookmarks) {
         std::string checksum = desc_bm_pair.first;
@@ -5623,30 +5625,57 @@ void MainWidget::handle_goto_bookmark_global() {
         if (path) {
             BookMark bm = desc_bm_pair.second;
             std::wstring file_name = is_remote ? SERVER_SYMBOL  : Path(path.value()).filename().value_or(L"");
-            descs.push_back(ITEM_LIST_PREFIX + L" " + bm.description);
-            file_names.push_back(truncate_string(file_name, 50));
-            book_states.push_back({ path.value(), bm.get_y_offset(), bm.uuid});
+            bookmarks.push_back(bm);
+            file_names.push_back(QString::fromStdWString(path.value_or(L"")));
+            file_checksums.push_back(QString::fromStdString(checksum));
         }
     }
 
-    set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names }, book_states, -1,
-        [&](BookState* book_state) {
-            QString path = QString::fromStdWString(book_state->document_path);
-            if (path.startsWith("SERVER://")) {
-                download_and_open(path.mid(9).toStdString(), book_state->offset_y);
-            }
-            else {
-                if (pending_command_instance) {
-                    pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
-                }
-                advance_command(std::move(pending_command_instance));
-            }
-        },
-        [&](BookState* book_state) {
-            delete_global_bookmark(book_state->uuid);
+    BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
+        std::move(bookmarks), this, std::move(file_names), std::move(file_checksums)
+    );
+    bookmark_widget->set_select_fn([&, bookmark_widget](int index) {
+        QString path = bookmark_widget->bookmark_model->checksums[index];
+        BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+        QString file_path = bookmark_widget->bookmark_model->documents[index];
+        if (path.startsWith("SERVER://")) {
+            download_and_open(path.mid(9).toStdString(), bm.get_y_offset());
         }
-        );
+        else {
+            if (pending_command_instance) {
+                pending_command_instance->set_generic_requirement(QList<QVariant>() << file_path << bm.get_y_offset());
+            }
+            advance_command(std::move(pending_command_instance));
+            pop_current_widget();
+        }
+        });
+    bookmark_widget->set_delete_fn(
+        [&, bookmark_widget](int index) {
+            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+            delete_global_bookmark(bm.uuid);
+        }
+    );
+
+    set_current_widget(bookmark_widget);
     show_current_widget();
+    //set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names }, book_states, -1,
+    //    [&](BookState* book_state) {
+    //        QString path = QString::fromStdWString(book_state->document_path);
+    //        if (path.startsWith("SERVER://")) {
+    //            download_and_open(path.mid(9).toStdString(), book_state->offset_y);
+    //        }
+    //        else {
+    //            if (pending_command_instance) {
+    //                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
+    //            }
+    //            advance_command(std::move(pending_command_instance));
+    //        }
+    //    },
+    //    [&](BookState* book_state) {
+    //        delete_global_bookmark(book_state->uuid);
+    //    }
+    //    );
+    //show_current_widget();
 }
 
 std::string MainWidget::add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type) {
