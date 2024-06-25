@@ -7162,23 +7162,14 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
-    std::vector<BookMark> bookmarks = doc()->get_bookmarks();
-    std::vector<QString> file_names;
-    std::vector<QString> file_checksums;
-    for (auto _ : bookmarks) {
-        file_names.push_back(QString::fromStdWString(doc()->get_path()));
-        file_checksums.push_back(QString::fromStdString(doc()->get_checksum()));
+    QFile command_names_file("command_names.txt");
+    auto command_names = command_manager->get_all_command_names();
+    if (command_names_file.open(QIODeviceBase::WriteOnly)) {
+        for (int i = 0; i < command_names.size(); i++) {
+            command_names_file.write((command_names[i] + "\n").toUtf8());
+        }
+        command_names_file.close();
     }
-
-    auto bookmark_selector_widget = BookmarkSelectorWidget::from_bookmarks(
-        std::move(bookmarks), this, std::move(file_names), std::move(file_checksums));
-
-    bookmark_selector_widget->set_select_fn([&, bookmark_selector_widget](int index) {
-        pop_current_widget();
-        });
-
-    set_current_widget(bookmark_selector_widget);
-    show_current_widget();
 }
 
 void MainWidget::show_command_menu() {

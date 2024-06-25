@@ -2592,34 +2592,62 @@ PageMergedLinesInfo merge_lines2(const std::vector<fz_stext_line*>& lines) {
 //}
 
 
-int lcs(const char* X, const char* Y, int m, int n)
-{
-    //int L[m + 1][n + 1];
-    std::vector<std::vector<int>> L;
-    for (int i = 0; i < m + 1; i++) {
-        L.push_back(std::vector<int>(n + 1));
-    }
+//int lcs(const char* X, const char* Y, int m, int n)
+//{
+//    std::vector<std::vector<int>> L;
+//    L.reserve(m + 1);
+//    for (int i = 0; i < m + 1; i++) {
+//        L.push_back(std::vector<int>(n + 1));
+//    }
+//
+//    int i, j;
+//
+//    /* Following steps build L[m+1][n+1] in bottom up fashion. Note
+//      that L[i][j] contains length of LCS of X[0..i-1] and Y[0..j-1] */
+//    for (i = 0; i <= m; i++) {
+//        for (j = 0; j <= n; j++) {
+//            if (i == 0 || j == 0)
+//                L[i][j] = 0;
+//
+//            else if (X[i - 1] == Y[j - 1])
+//                L[i][j] = L[i - 1][j - 1] + 1;
+//
+//            else
+//                L[i][j] = std::max(L[i - 1][j], L[i][j - 1]);
+//        }
+//    }
+//
+//    /* L[m][n] contains length of LCS for X[0..n-1] and Y[0..m-1] */
+//    return L[m][n];
+//}
 
-    int i, j;
-
-    /* Following steps build L[m+1][n+1] in bottom up fashion. Note
-      that L[i][j] contains length of LCS of X[0..i-1] and Y[0..j-1] */
-    for (i = 0; i <= m; i++) {
-        for (j = 0; j <= n; j++) {
-            if (i == 0 || j == 0)
-                L[i][j] = 0;
-
-            else if (X[i - 1] == Y[j - 1])
-                L[i][j] = L[i - 1][j - 1] + 1;
-
-            else
-                L[i][j] = std::max(L[i - 1][j], L[i][j - 1]);
-        }
-    }
-
-    /* L[m][n] contains length of LCS for X[0..n-1] and Y[0..m-1] */
-    return L[m][n];
-}
+//int lcs_small_optimized(const char* X, const char* Y, int m, int n)
+//{
+//    const int SIZE = 128;
+//    thread_local int L[SIZE * SIZE];
+//
+//    if (((m + 1) * (n + 1)) > SIZE * SIZE) {
+//        return lcs(X, Y, m, n);
+//    }
+//
+//    int i, j;
+//
+//    for (i = 0; i <= m; i++) {
+//        for (j = 0; j <= n; j++) {
+//            if (i == 0 || j == 0) {
+//                L[i * SIZE + j] = 0;
+//            }
+//            else if (X[i - 1] == Y[j - 1]) {
+//                L[i * SIZE + j] = L[(i - 1) * SIZE + j - 1] + 1;
+//            }
+//            else {
+//                L[i * SIZE + j] = std::max(L[(i - 1) * SIZE + j], L[i* SIZE + j - 1]);
+//            }
+//        }
+//    }
+//
+//    return L[m * SIZE + n];
+//}
 
 bool command_requires_text(const std::wstring& command) {
     if ((command.find(L"%5") != -1) || (command.find(L"command_text") != -1)) {
