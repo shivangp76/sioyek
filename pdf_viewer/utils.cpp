@@ -2903,9 +2903,7 @@ void convert_qcolor_to_float3(const QColor& color, float* out_floats) {
 //}
 
 QColor convert_float3_to_qcolor(const float* floats) {
-    int colors[3];
-    convert_color3(floats, colors);
-    return QColor(qRgb(colors[0], colors[1], colors[2]));
+    return QColor::fromRgbF(floats[0], floats[1], floats[2]);
 }
 
 QColor convert_float4_to_qcolor(const float* floats) {

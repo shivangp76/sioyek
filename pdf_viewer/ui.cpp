@@ -1808,13 +1808,13 @@ int HighlightModel::rowCount(const QModelIndex& parent) const {
 
 int HighlightModel::columnCount(const QModelIndex& parent) const {
     if (documents.size() == 0) {
-        return 3;
+        return 2;
     }
     else if (checksums.size() == 0) {
-        return 4;
+        return 3;
     }
     else {
-        return 5;
+        return 4;
     }
 }
 
@@ -2089,7 +2089,6 @@ HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstr
     : BaseCustomSelectorWidget(view, model, parent) {
 
     highlight_model = dynamic_cast<HighlightModel*>(model);
-    auto something = dynamic_cast<HighlightModel*>(proxy_model);
 
     if (lv) {
         lv->setItemDelegate(new HighlightSearchItemDelegate());
@@ -2521,4 +2520,209 @@ void CommandSelectorWidget::on_text_changed(const QString& text) {
 
 QString CommandSelectorWidget::get_command_with_index(int index) {
     return proxy_model->sourceModel()->data(proxy_model->sourceModel()->index(index, CommandModel::command_name)).toString();
+}
+
+BookmarkModel::BookmarkModel(std::vector<BookMark>&& data, std::vector<QString>&& docs, std::vector<QString>&& doc_checksums, QObject* parent) : QAbstractTableModel(parent) {
+    bookmarks = data;
+    documents = docs;
+    checksums = doc_checksums;
+}
+
+int BookmarkModel::rowCount(const QModelIndex& parent) const {
+    if (parent == QModelIndex()) {
+        return bookmarks.size();
+    }
+    return 0;
+}
+
+int BookmarkModel::columnCount(const QModelIndex& parent) const {
+    if (documents.size() == 0) {
+        return 2;
+    }
+    else if (checksums.size() == 0) {
+        return 3;
+    }
+    else {
+        return 4;
+    }
+}
+
+QVariant BookmarkModel::data(const QModelIndex& index, int role) const {
+    if (role == Qt::DisplayRole) {
+        if (index.column() == BookmarkModelColumn::description) {
+            return QString::fromStdWString(bookmarks[index.row()].description);
+        }
+        if (index.column() == BookmarkModelColumn::bookmark) {
+            return QVariant::fromValue(bookmarks[index.row()]);
+        }
+        if (index.column() == BookmarkModelColumn::file_name) {
+            return documents[index.row()];
+        }
+        if (index.column() == BookmarkModelColumn::checksum) {
+            return checksums[index.row()];
+        }
+    }
+    return QVariant();
+}
+
+QVariant BookmarkModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+        return "Bookmark";
+    }
+    return QVariant();
+}
+
+bool BookmarkModel::removeRows(int row, int count, const QModelIndex& parent) {
+    beginRemoveRows(parent, row, row + count - 1);
+    bookmarks.erase(bookmarks.begin() + row, bookmarks.begin() + row + count);
+
+    if (documents.size() > 0) {
+        documents.erase(documents.begin() + row, documents.begin() + row + count);
+    }
+
+    if (checksums.size() > 0) {
+        checksums.erase(checksums.begin() + row, checksums.begin() + row + count);
+    }
+
+    endRemoveRows();
+    return true;
+}
+
+BookmarkSearchItemDelegate::BookmarkSearchItemDelegate(){
+    QFont bookmark_font;
+    QFont file_name_font;
+
+    if (FONT_SIZE >= 0) {
+        bookmark_font.setPixelSize(FONT_SIZE);
+        file_name_font.setPixelSize(FONT_SIZE * 3 / 4);
+    }
+
+    bookmark_document.setDefaultFont(bookmark_font);
+    file_name_document.setDefaultFont(file_name_font);
+}
+
+QSize BookmarkSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+    const QSortFilterProxyModel *proxy_model = dynamic_cast<const QSortFilterProxyModel*>(index.model());
+    auto source_index = proxy_model->mapToSource(index);
+    if (cached_sizes.find(source_index.row()) != cached_sizes.end()) {
+        return QSize(option.rect.width(), cached_sizes[source_index.row()]);
+    }
+
+    BookMark bookmark = index.siblingAtColumn(BookmarkModel::bookmark).data().value<BookMark>();
+
+    bookmark_document.setTextWidth(option.rect.width());
+    bookmark_document.setPlainText(QString::fromStdWString(bookmark.description));
+
+    QSize res = bookmark_document.size().toSize();
+
+    //auto something = source_index.model().columnCount();
+    int col_count = index.model()->columnCount();
+    bool is_global = index.model()->columnCount() == BookmarkModel::max_columns;
+
+    if (is_global) {
+        file_name_document.setTextWidth(option.rect.width());
+        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
+        res = QSize(res.width(), res.height() + file_name_document.size().toSize().height());
+    }
+
+    return res;
+}
+
+void BookmarkSearchItemDelegate::clear_cache() {
+    cached_sizes.clear();
+}
+
+void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
+    const QModelIndex& index) const {
+
+    painter->save();
+    bool is_selected = option.state & QStyle::State_Selected;
+    bool is_global = index.model()->columnCount() == BookmarkModel::max_columns;
+    //BookMark bookmark = index.data().value<BookMark>();
+    BookMark bookmark = index.siblingAtColumn(BookmarkModel::bookmark).data().value<BookMark>();
+
+    bookmark_document.setTextWidth(option.rect.width());
+
+    QString bookmark_text = index.data().toString();
+    if (!bookmark.is_markdown()) {
+        bookmark_text = bookmark_text.toHtmlEscaped();
+    }
+    else {
+        bookmark_text = bookmark_text.mid(10);
+    }
+
+    int text_highlight_begin = -1, text_highlight_end=-1;
+    int text_similarity = similarity_score(bookmark_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
+
+    if (text_similarity > 0 && text_highlight_begin > 0) {
+        bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
+    }
+
+    if (bookmark.is_markdown()) {
+        bookmark_document.setMarkdown(bookmark_text);
+    }
+    else{
+        bookmark_document.setHtml(bookmark_text);
+    }
+
+    QAbstractTextDocumentLayout::PaintContext ctx;
+
+
+    if (is_selected) {
+        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_SELECTED_TEXT_COLOR));
+    }
+    else {
+        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_TEXT_COLOR));
+    }
+    painter->fillRect(option.rect, is_selected ? convert_float3_to_qcolor(UI_SELECTED_BACKGROUND_COLOR) : convert_float3_to_qcolor(UI_BACKGROUND_COLOR));
+    //painter->fillRect(option.rect, is_selected ? Qt::red : Qt::blue);
+
+    painter->translate(option.rect.topLeft());
+    painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
+    bookmark_document.documentLayout()->draw(painter, ctx);
+
+    if (is_global) {
+        painter->translate(0, bookmark_document.size().height());
+
+        if (!is_selected) {
+            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
+        }
+        else {
+            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
+        }
+
+        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
+        file_name_document.documentLayout()->draw(painter, ctx);
+    }
+
+    painter->restore();
+}
+
+BookmarkSelectorWidget::BookmarkSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent) 
+    : BaseCustomSelectorWidget(view, model, parent) {
+
+    bookmark_model = dynamic_cast<BookmarkModel*>(model);
+
+    if (lv) {
+        lv->setItemDelegate(new BookmarkSearchItemDelegate());
+    }
+}
+
+BookmarkSelectorWidget* BookmarkSelectorWidget::from_bookmarks(std::vector<BookMark>&& bookmarks, MainWidget* parent, std::vector<QString>&& doc_names, std::vector<QString>&& doc_checksums) {
+
+    BookmarkModel* bookmark_model = new BookmarkModel(std::move(bookmarks), std::move(doc_names), std::move(doc_checksums));
+
+    QListView* list_view = new QListView();
+
+    BookmarkSelectorWidget* bookmark_selector_widget = new BookmarkSelectorWidget(list_view, bookmark_model, parent);
+
+    bookmark_model->setParent(bookmark_selector_widget);
+    list_view->setParent(bookmark_selector_widget);
+
+    //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
+    bookmark_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    bookmark_selector_widget->set_filter_column_index(-1);
+
+    bookmark_selector_widget->update_render();
+    return bookmark_selector_widget;
 }

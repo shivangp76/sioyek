@@ -1139,3 +1139,63 @@ public:
 };
 
 QString translate_command_search_string(QString raw_search_string);
+
+class BookmarkModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    enum BookmarkModelColumn {
+        description = 0,
+        bookmark = 1,
+        file_name = 2,
+        checksum = 3,
+        max_columns = 4
+    };
+
+    std::vector<BookMark> bookmarks;
+    std::vector<QString> documents;
+    std::vector<QString> checksums;
+
+
+    BookmarkModel(std::vector<BookMark>&& data, std::vector<QString>&& documents = {}, std::vector<QString>&& checksums = {}, QObject * parent = nullptr);
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
+
+};
+
+class BookmarkSearchItemDelegate : public BaseCustomDelegate {
+    Q_OBJECT
+public:
+    //QString pattern;
+
+    mutable QTextDocument bookmark_document;
+    mutable QTextDocument file_name_document;
+    mutable std::unordered_map<int, float> cached_sizes;
+
+    BookmarkSearchItemDelegate();
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    QString get_display_text(const QString& highlight_text, int highlight_type, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
+    void clear_cache();
+};
+
+class BookmarkSelectorWidget : public BaseCustomSelectorWidget{
+private:
+    BookmarkSelectorWidget(
+        QAbstractItemView* view,
+        QAbstractItemModel* model,
+        MainWidget* parent
+    );
+public:
+
+    static BookmarkSelectorWidget* from_bookmarks(std::vector<BookMark>&& bookmarks, MainWidget* parent, std::vector<QString>&& doc_names = {}, std::vector<QString>&& doc_checksums = {});
+
+    BookmarkModel* bookmark_model = nullptr;
+};

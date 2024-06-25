@@ -8,6 +8,7 @@
 // continue high quality tts on ios and android when the app is minimized
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
+// handle edit on new menus
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -5560,7 +5561,7 @@ void MainWidget::handle_goto_portal_list() {
 }
 
 void MainWidget::handle_goto_bookmark() {
-    std::vector<std::wstring> option_names;
+    //std::vector<std::wstring> option_names;
     std::vector<std::wstring> option_location_strings;
     std::vector<BookMark> bookmarks;
 
@@ -5574,7 +5575,7 @@ void MainWidget::handle_goto_bookmark() {
     }
 
     for (auto bookmark : bookmarks) {
-        option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
+        //option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
         //option_locations.push_back(bookmark.y_offset);
         auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset()});
         option_location_strings.push_back(get_page_formatted_string(page + 1));
@@ -5582,26 +5583,25 @@ void MainWidget::handle_goto_bookmark() {
 
     int closest_bookmark_index = main_document_view->get_document()->find_closest_bookmark_index(bookmarks, main_document_view->get_offset_y());
 
-    set_filtered_select_menu<BookMark>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_strings }, bookmarks, closest_bookmark_index,
-        [&](BookMark* bm) {
-            if (pending_command_instance) {
-                pending_command_instance->set_generic_requirement(bm->get_y_offset());
-            }
-
-            advance_command(std::move(pending_command_instance));
-
-        },
-        [&](BookMark* bm) {
-            int bookmark_index = doc()->get_bookmark_index_with_uuid(bm->uuid);
-            delete_current_document_bookmark(bookmark_index);
-        },
-            [&](BookMark* bm) {
-            set_selected_bookmark_index(doc()->get_bookmark_index_with_uuid(bm->uuid));
-            pop_current_widget();
-            handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+    BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
+        std::move(bookmarks), this);
+    bookmark_widget->set_selected_index(closest_bookmark_index);
+    bookmark_widget->set_select_fn([&, bookmark_widget](int index) {
+        BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+        if (pending_command_instance) {
+            pending_command_instance->set_generic_requirement(bm.get_y_offset());
         }
-        );
 
+        advance_command(std::move(pending_command_instance));
+        pop_current_widget();
+        });
+
+    bookmark_widget->set_delete_fn([&, bookmark_widget](int index) {
+        BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+        delete_current_document_bookmark_with_bookmark(&bm);
+        });
+
+    set_current_widget(bookmark_widget);
     show_current_widget();
 }
 
@@ -7124,6 +7124,23 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
+    std::vector<BookMark> bookmarks = doc()->get_bookmarks();
+    std::vector<QString> file_names;
+    std::vector<QString> file_checksums;
+    for (auto _ : bookmarks) {
+        file_names.push_back(QString::fromStdWString(doc()->get_path()));
+        file_checksums.push_back(QString::fromStdString(doc()->get_checksum()));
+    }
+
+    auto bookmark_selector_widget = BookmarkSelectorWidget::from_bookmarks(
+        std::move(bookmarks), this, std::move(file_names), std::move(file_checksums));
+
+    bookmark_selector_widget->set_select_fn([&, bookmark_selector_widget](int index) {
+        pop_current_widget();
+        });
+
+    set_current_widget(bookmark_selector_widget);
+    show_current_widget();
 }
 
 void MainWidget::show_command_menu() {
@@ -11656,6 +11673,14 @@ void MainWidget::delete_current_document_highlight(Highlight* hl) {
     std::string uuid = hl->uuid;
     main_document_view->delete_highlight(*hl);
     on_highlight_deleted(uuid);
+}
+
+void MainWidget::delete_current_document_bookmark_with_bookmark(BookMark* bm) {
+    std::string uuid = bm->uuid;
+    int index = doc()->get_bookmark_index_with_uuid(bm->uuid);
+    if (index >= 0) {
+        delete_current_document_bookmark(index);
+    }
 }
 
 void MainWidget::on_bookmark_edited(const std::string& uuid) {
