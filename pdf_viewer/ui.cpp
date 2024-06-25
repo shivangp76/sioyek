@@ -2165,6 +2165,10 @@ void BaseCustomSelectorWidget::set_delete_fn(std::function<void(int)>&& fn) {
     delete_fn = fn;
 }
 
+void BaseCustomSelectorWidget::set_edit_fn(std::function<void(int)>&& fn) {
+    edit_fn = fn;
+}
+
 BaseCustomSelectorWidget::BaseCustomSelectorWidget(
     QAbstractItemView* view,
     QAbstractItemModel* model,
@@ -2187,11 +2191,6 @@ void BaseCustomSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
 void BaseCustomSelectorWidget::on_select(const QModelIndex& value) {
     QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
     int source_row = source_index.row();
-    std::string checksum = "";
-
-    if (value.model()->columnCount() == HighlightModel::max_columns) {
-        checksum = value.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
-    }
 
     if (select_fn.has_value()) {
 
@@ -2201,11 +2200,6 @@ void BaseCustomSelectorWidget::on_select(const QModelIndex& value) {
 
 void BaseCustomSelectorWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
     int source_row = source_index.row();
-
-    std::string checksum = "";
-    if (source_index.model()->columnCount() == HighlightModel::max_columns) {
-        checksum = source_index.siblingAtColumn(HighlightModel::checksum).data().toString().toStdString();
-    }
 
     if (delete_fn.has_value()) {
         delete_fn.value()(source_row);
