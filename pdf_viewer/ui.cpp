@@ -1808,13 +1808,13 @@ int HighlightModel::rowCount(const QModelIndex& parent) const {
 
 int HighlightModel::columnCount(const QModelIndex& parent) const {
     if (documents.size() == 0) {
-        return 2;
-    }
-    else if (checksums.size() == 0) {
         return 3;
     }
-    else {
+    else if (checksums.size() == 0) {
         return 4;
+    }
+    else {
+        return 5;
     }
 }
 
@@ -1969,7 +1969,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
     bool selected = option.state & QStyle::State_Selected;
     bool is_global = index.model()->columnCount() == HighlightModel::max_columns;
     //bool is_color_dark = (hc[0] + highlight_type_color[1] + highlight_type_color[2]) < 1.5;
-    bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
+    bool has_comment = index.siblingAtColumn(HighlightModel::description).data().toString().size() > 0;
 
     if (selected) {
         painter->fillRect(option.rect, selected_background_color);
@@ -2207,6 +2207,15 @@ void BaseCustomSelectorWidget::on_delete(const QModelIndex& source_index, const 
 
     bool result = proxy_model->removeRow(selected_index.row());
     update_render();
+}
+
+void BaseCustomSelectorWidget::on_edit(const QModelIndex& source_index, const QModelIndex& selected_index) {
+    int source_row = source_index.row();
+
+    if (edit_fn.has_value()) {
+        edit_fn.value()(source_row);
+    }
+
 }
 
 void BaseCustomSelectorWidget::set_selected_index(int index) {

@@ -1069,6 +1069,8 @@ class BaseCustomSelectorWidget : public BaseSelectorWidget {
 private:
     std::optional<std::function<void(int)>> select_fn = {};
     std::optional<std::function<void(int)>> delete_fn = {};
+    std::optional<std::function<void(int)>> edit_fn = {};
+
     mutable std::unordered_map<int, float> cached_sizes;
 public:
     QListView* lv = nullptr;
@@ -1080,10 +1082,12 @@ public:
 
     void set_select_fn(std::function<void(int)>&& fn);
     void set_delete_fn(std::function<void(int)>&& fn);
+    void set_edit_fn(std::function<void(int)>&& fn);
     void resizeEvent(QResizeEvent* resize_event) override;
 
-    void on_select(const QModelIndex& value);
+    void on_select(const QModelIndex& value) override;
     void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
+    void on_edit(const QModelIndex& source_index, const QModelIndex& selected_index) override;
 
     void set_selected_index(int index);
     void update_render();

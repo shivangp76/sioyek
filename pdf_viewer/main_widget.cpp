@@ -8,7 +8,6 @@
 // continue high quality tts on ios and android when the app is minimized
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
-// handle edit on new menus
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -5736,6 +5735,16 @@ void MainWidget::handle_goto_highlight() {
         [&, highlight_selector_widget](int index) {
             Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
             delete_current_document_highlight(&hl);
+        }
+    );
+    highlight_selector_widget->set_edit_fn(
+        [&, highlight_selector_widget](int index) {
+            set_selected_highlight_index(doc()->get_highlight_index_with_uuid(highlight_selector_widget->highlight_model->highlights[index].uuid));
+            pop_current_widget();
+
+            std::unique_ptr<Command> cmd = command_manager->get_command_with_name(this, "edit_selected_highlight");
+            cmd->pre_perform();
+            advance_command(std::move(cmd));
         }
     );
 
