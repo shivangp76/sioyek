@@ -1861,9 +1861,11 @@ HighlightSearchItemDelegate::HighlightSearchItemDelegate(){
     QFont file_name_font;
     QFont comment_font;
 
-    highlight_font.setPixelSize(FONT_SIZE);
-    file_name_font.setPixelSize(FONT_SIZE * 3 / 4);
-    comment_font.setPixelSize(FONT_SIZE * 7 / 8);
+    if (FONT_SIZE >= 0) {
+        highlight_font.setPixelSize(FONT_SIZE);
+        file_name_font.setPixelSize(FONT_SIZE * 3 / 4);
+        comment_font.setPixelSize(FONT_SIZE * 7 / 8);
+    }
 
     highlight_document.setDefaultFont(highlight_font);
     file_name_document.setDefaultFont(file_name_font);
@@ -2012,10 +2014,11 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         comment_document.setTextWidth(option.rect.width());
         QSize highlight_size = highlight_document.size().toSize();
         painter->translate(0, translate_amount);
-        translate_amount = comment_document.size().toSize().height();
 
         comment_document.setHtml(comment_text);
         comment_document.documentLayout()->draw(painter, ctx);
+        translate_amount = comment_document.size().toSize().height();
+
     }
     if (is_global) {
         file_name_document.setTextWidth(option.rect.width());
@@ -2053,13 +2056,10 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
     }
 
     bool is_global = index.model()->columnCount() == HighlightModel::max_columns;
-    bool has_comment = index.siblingAtColumn(2).data().toString().size() > 0;
+    bool has_comment = index.siblingAtColumn(HighlightModel::description).data().toString().size() > 0;
 
     QString text = get_display_text(index.data().toString(), index.siblingAtColumn(HighlightModel::type).data().toInt());
-    //QTextDocument d;
-    QFont somefont;
-    somefont.setPixelSize(20);
-    //.setDefaultFont(somefont);
+
     highlight_document.setHtml(text);
     highlight_document.setTextWidth(option.rect.width());
     comment_document.setTextWidth(option.rect.width());
@@ -2068,14 +2068,14 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
 
 
     if (is_global) {
-        QString doc_text = index.siblingAtColumn(3).data().toString();
+        QString doc_text = index.siblingAtColumn(HighlightModel::file_name).data().toString();
         file_name_document.setPlainText(doc_text);
         QSizeF footer_size = file_name_document.size();
         res.setHeight(res.height() + footer_size.height());
     }
 
     if (has_comment) {
-        QString comment_text = index.siblingAtColumn(2).data().toString();
+        QString comment_text = index.siblingAtColumn(HighlightModel::description).data().toString();
         comment_document.setHtml(comment_text);
         QSizeF comment_size = comment_document.size();
         res.setHeight(res.height() + comment_size.height());
@@ -2269,8 +2269,10 @@ CommandItemDelegate::CommandItemDelegate() {
     QFont command_font;
     QFont keybind_font;
 
-    command_font.setPixelSize(FONT_SIZE);
-    keybind_font.setPixelSize(FONT_SIZE * 3 / 4);
+    if (FONT_SIZE >= 0) {
+        command_font.setPixelSize(FONT_SIZE);
+        keybind_font.setPixelSize(FONT_SIZE * 3 / 4);
+    }
 
     command_name_document.setDefaultFont(command_font);
     keybind_document.setDefaultFont(keybind_font);

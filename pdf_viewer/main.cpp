@@ -159,6 +159,7 @@ extern bool DEFAULT_DARK_MODE;
 extern std::wstring VOLUME_UP_COMMAND;
 extern std::wstring VOLUME_DOWN_COMMAND;
 extern int NUM_CACHED_PAGES;
+extern int FONT_SIZE;
 
 std::string ACCESS_TOKEN = "";
 
@@ -845,7 +846,6 @@ int main(int argc, char* args[]) {
     //}
     //db_manager.ensure_database_compatibility(old_local_database_file_path.get_path(), old_global_database_file_path.get_path());
     //db_manager.ensure_schema_compatibility();
-
 
     BackgroundTaskManager background_task_manager;
 
