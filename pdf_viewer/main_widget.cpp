@@ -5562,7 +5562,7 @@ void MainWidget::handle_goto_portal_list() {
 
 void MainWidget::handle_goto_bookmark() {
     //std::vector<std::wstring> option_names;
-    std::vector<std::wstring> option_location_strings;
+    std::vector<QString> option_location_strings;
     std::vector<BookMark> bookmarks;
 
     if (!doc()) return;
@@ -5578,13 +5578,13 @@ void MainWidget::handle_goto_bookmark() {
         //option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
         //option_locations.push_back(bookmark.y_offset);
         auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset()});
-        option_location_strings.push_back(get_page_formatted_string(page + 1));
+        option_location_strings.push_back(QString::fromStdWString(get_page_formatted_string(page + 1)));
     }
 
     int closest_bookmark_index = main_document_view->get_document()->find_closest_bookmark_index(bookmarks, main_document_view->get_offset_y());
 
     BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
-        std::move(bookmarks), this);
+        std::move(bookmarks), this, std::move(option_location_strings));
     bookmark_widget->set_selected_index(closest_bookmark_index);
     bookmark_widget->set_select_fn([&, bookmark_widget](int index) {
         BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];

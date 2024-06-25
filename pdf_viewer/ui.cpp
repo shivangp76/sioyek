@@ -2619,12 +2619,12 @@ QSize BookmarkSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option, c
     int col_count = index.model()->columnCount();
     bool is_global = index.model()->columnCount() == BookmarkModel::max_columns;
 
-    if (is_global) {
-        file_name_document.setTextWidth(option.rect.width());
-        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
-        res = QSize(res.width(), res.height() + file_name_document.size().toSize().height());
-    }
+    //if (is_global) {
+    file_name_document.setTextWidth(option.rect.width());
+    file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
+    res = QSize(res.width(), res.height() + file_name_document.size().toSize().height());
 
+    cached_sizes[source_index.row()] = res.height();
     return res;
 }
 
@@ -2654,7 +2654,7 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     int text_highlight_begin = -1, text_highlight_end=-1;
     int text_similarity = similarity_score(bookmark_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
 
-    if (text_similarity > 0 && text_highlight_begin > 0) {
+    if (text_similarity > 0 && text_highlight_begin >= 0) {
         bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
     }
 
@@ -2681,19 +2681,19 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
     bookmark_document.documentLayout()->draw(painter, ctx);
 
-    if (is_global) {
-        painter->translate(0, bookmark_document.size().height());
+    //if (is_global) {
+    painter->translate(0, bookmark_document.size().height());
 
-        if (!is_selected) {
-            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
-        }
-        else {
-            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
-        }
-
-        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
-        file_name_document.documentLayout()->draw(painter, ctx);
+    if (!is_selected) {
+        ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
     }
+    else {
+        ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
+    }
+
+    file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
+    file_name_document.documentLayout()->draw(painter, ctx);
+    //}
 
     painter->restore();
 }
