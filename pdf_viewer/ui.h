@@ -1025,6 +1025,7 @@ public:
 
     virtual void set_pattern(QString p);
     virtual void clear_cache() = 0;
+    QString highlight_pattern(QString txt) const;
 };
 
 class HighlightSearchItemDelegate : public BaseCustomDelegate {
@@ -1186,7 +1187,7 @@ public:
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-    QString get_display_text(const QString& highlight_text, int highlight_type, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
+    //QString get_display_text(const QString& highlight_text, int highlight_type, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
     void clear_cache();
 };
 
@@ -1202,4 +1203,64 @@ public:
     static BookmarkSelectorWidget* from_bookmarks(std::vector<BookMark>&& bookmarks, MainWidget* parent, std::vector<QString>&& doc_names = {}, std::vector<QString>&& doc_checksums = {});
 
     BookmarkModel* bookmark_model = nullptr;
+};
+
+class DocumentNameModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    enum DocumentNameColumn {
+        file_path = 0,
+        document_title = 1,
+        last_access_time = 2,
+        max_columns = 3,
+    };
+
+    std::vector<OpenedBookInfo> opened_documents;
+    //std::vector<QString> document_titles;
+    //std::vector<QDateTime> last_access_times;
+
+
+    DocumentNameModel(std::vector<OpenedBookInfo>&& books, QObject * parent = nullptr);
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
+
+};
+
+class DocumentItemDelegate : public BaseCustomDelegate {
+    Q_OBJECT
+public:
+    //QString pattern;
+
+    mutable QTextDocument path_document;
+    mutable QTextDocument title_document;
+    mutable QTextDocument last_access_time_document;
+    mutable std::unordered_map<int, float> cached_sizes;
+
+    DocumentItemDelegate();
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void clear_cache();
+    QString get_time_string(QDateTime time) const;
+};
+
+class DocumentSelectorWidget : public BaseCustomSelectorWidget{
+private:
+    DocumentSelectorWidget(
+        QAbstractItemView* view,
+        QAbstractItemModel* model,
+        MainWidget* parent
+    );
+public:
+
+    static DocumentSelectorWidget* from_documents(std::vector<OpenedBookInfo>&& opened_documents, MainWidget* parent);
+
+    DocumentNameModel* document_model = nullptr;
 };

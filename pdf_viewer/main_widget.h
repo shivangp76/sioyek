@@ -1116,6 +1116,7 @@ public:
     void on_open_document(const std::wstring& path);
     void sync_edited_annot(const std::string& annot_type, const std::string& uuid);
     void sync_deleted_annot(const std::string& annot_type, const std::string& uuid);
+    std::vector<OpenedBookInfo> get_all_opened_books(bool include_server_books=true);
 
     void handle_sync_open_document();
 

@@ -2374,6 +2374,17 @@ void BaseCustomDelegate::set_pattern(QString p) {
     pattern = p.toLower();
 }
 
+QString BaseCustomDelegate::highlight_pattern(QString txt) const{
+    int text_highlight_begin = 0;
+    int text_highlight_end = 0;
+    int text_similarity = similarity_score(txt.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
+    const int similarity_threshold = 70;
+    if (text_similarity > similarity_threshold) {
+        txt = txt.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + txt.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + txt.mid(text_highlight_end);
+    }
+    return txt;
+}
+
 CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString> commands, std::vector<QStringList> keybinds, MainWidget* parent) {
 
 
@@ -2728,4 +2739,206 @@ BookmarkSelectorWidget* BookmarkSelectorWidget::from_bookmarks(std::vector<BookM
 
     bookmark_selector_widget->update_render();
     return bookmark_selector_widget;
+}
+
+DocumentNameModel::DocumentNameModel(
+    std::vector<OpenedBookInfo>&& books, QObject* parent)
+    : QAbstractTableModel(parent) {
+    opened_documents = books;
+}
+
+
+int DocumentNameModel::rowCount(const QModelIndex& parent) const {
+    if (parent == QModelIndex()) {
+        return opened_documents.size();
+    }
+    return 0;
+}
+
+int DocumentNameModel::columnCount(const QModelIndex& parent) const {
+    return DocumentNameColumn::max_columns;
+}
+
+QVariant DocumentNameModel::data(const QModelIndex& index, int role) const {
+    if (role == Qt::DisplayRole) {
+        if (index.column() == DocumentNameColumn::file_path) {
+            //return file_paths[index.row()];
+            return opened_documents[index.row()].file_name;
+        }
+        if (index.column() == DocumentNameColumn::document_title) {
+            //return document_titles[index.row()];
+            return opened_documents[index.row()].document_title;
+        }
+        if (index.column() == DocumentNameColumn::last_access_time) {
+            //return last_access_times[index.row()];
+            //qDebug() << opened_documents[index.row()].last_access_time.daysTo(QDateTime::currentDateTime());
+            return opened_documents[index.row()].last_access_time;
+        }
+    }
+
+    return QVariant();
+}
+
+QVariant DocumentNameModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+        return "Document";
+    }
+    return QVariant();
+}
+
+
+bool DocumentNameModel::removeRows(int row, int count, const QModelIndex& parent) {
+    beginRemoveRows(parent, row, row + count - 1);
+
+    opened_documents.erase(opened_documents.begin() + row, opened_documents.begin() + row + count);
+
+    endRemoveRows();
+    return true;
+}
+
+DocumentItemDelegate::DocumentItemDelegate() {
+
+    QFont path_font;
+    QFont title_font;
+    QFont last_access_time_font;
+
+    if (FONT_SIZE >= 0) {
+        title_font.setPixelSize(FONT_SIZE);
+        path_font.setPixelSize(FONT_SIZE * 3 / 4);
+        last_access_time_font.setPixelSize(FONT_SIZE * 7 / 8);
+    }
+
+    path_document.setDefaultFont(path_font);
+    title_document.setDefaultFont(title_font);
+    last_access_time_document.setDefaultFont(last_access_time_font);
+}
+
+void DocumentItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
+    const QModelIndex& index) const {
+    painter->save();
+    bool is_selected = option.state & QStyle::State_Selected;
+
+    QAbstractTextDocumentLayout::PaintContext ctx;
+    if (is_selected) {
+        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_SELECTED_TEXT_COLOR));
+        painter->fillRect(option.rect, convert_float3_to_qcolor(UI_SELECTED_BACKGROUND_COLOR));
+    }
+    else {
+        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_TEXT_COLOR));
+        painter->fillRect(option.rect, convert_float3_to_qcolor(UI_BACKGROUND_COLOR));
+    }
+    // draw separator
+    //painter->        setPen(QPen(convert_float3_to_qcolor(UI_SEPARATOR_COLOR), 1, Qt::SolidLine));
+    QPoint separator_left = option.rect.bottomLeft();
+    QPoint separator_right = option.rect.bottomRight();
+    separator_left.setX(separator_left.x() + option.rect.width() / 8);
+    separator_right.setX(separator_right.x() - option.rect.width() / 8);
+
+    QColor separator_color = QColor::fromRgbF(
+        UI_SELECTED_BACKGROUND_COLOR[0], UI_SELECTED_BACKGROUND_COLOR[1], UI_SELECTED_BACKGROUND_COLOR[2], 0.2f);
+    painter->setPen(separator_color);
+    painter->drawLine(separator_left, separator_right);
+
+    QString title_string = highlight_pattern(index.siblingAtColumn(DocumentNameModel::document_title).data().toString().toHtmlEscaped());
+    float offset = option.rect.topLeft().y();
+
+    painter->setClipRect(option.rect);
+
+    if (title_string.size() > 0) {
+        painter->translate(0, offset);
+        title_document.setTextWidth(option.rect.width());
+        title_document.setHtml(title_string);
+        title_document.documentLayout()->draw(painter, ctx);
+        offset = title_document.size().height();
+    }
+
+    painter->translate(0, offset);
+    path_document.setTextWidth(option.rect.width());
+    path_document.setHtml("<code>" + highlight_pattern(index.siblingAtColumn(DocumentNameModel::file_path).data().toString().toHtmlEscaped()) + "</code>");
+    path_document.documentLayout()->draw(painter, ctx);
+    offset = path_document.size().height();
+
+    painter->translate(0, offset);
+    last_access_time_document.setTextWidth(option.rect.width());
+    last_access_time_document.setHtml("<div align=\"right\">" + get_time_string(index.siblingAtColumn(DocumentNameModel::last_access_time).data().toDateTime()) + "</div>");
+    last_access_time_document.documentLayout()->draw(painter, ctx);
+    offset = last_access_time_document.size().height();
+
+    painter->restore();
+}
+
+QSize DocumentItemDelegate::sizeHint(const QStyleOptionViewItem& option,
+    const QModelIndex& index) const {
+    const QSortFilterProxyModel *proxy_model = dynamic_cast<const QSortFilterProxyModel*>(index.model());
+    auto source_index = proxy_model->mapToSource(index);
+    if (cached_sizes.find(source_index.row()) != cached_sizes.end()) {
+        return QSize(option.rect.width(), cached_sizes[source_index.row()]);
+    }
+
+    float height = 0;
+
+    path_document.setTextWidth(option.rect.width());
+    path_document.setHtml("<code>" + index.siblingAtColumn(DocumentNameModel::file_path).data().toString().toHtmlEscaped() + "</code>");
+    height += path_document.size().height();
+
+    QString title_string = index.siblingAtColumn(DocumentNameModel::document_title).data().toString().toHtmlEscaped();
+    if (title_string.size() > 0) {
+        title_document.setTextWidth(option.rect.width());
+        title_document.setHtml(title_string);
+        height += title_document.size().height();
+    }
+
+    QString time_string = index.siblingAtColumn(DocumentNameModel::last_access_time).data().toString();
+    last_access_time_document.setTextWidth(option.rect.width());
+    last_access_time_document.setHtml(time_string.toHtmlEscaped());
+    height += last_access_time_document.size().height();
+
+    cached_sizes[source_index.row()] = height;
+    return QSize(option.rect.width(), height);
+    //return QSize(option.rect.width(), 20);
+}
+
+QString DocumentItemDelegate::get_time_string(QDateTime time) const{
+    int days = time.daysTo(QDateTime::currentDateTime());
+    if (days == 1) {
+        return "1 day ago";
+    }
+    return QString::number(days) + " days ago";
+}
+
+void DocumentItemDelegate::clear_cache() {
+    cached_sizes.clear();
+}
+
+DocumentSelectorWidget::DocumentSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent) 
+    : BaseCustomSelectorWidget(view, model, parent) {
+
+    document_model = dynamic_cast<DocumentNameModel*>(model);
+
+    if (lv) {
+        lv->setItemDelegate(new DocumentItemDelegate());
+    }
+}
+
+DocumentSelectorWidget* DocumentSelectorWidget::from_documents(
+    std::vector<OpenedBookInfo>&& docs,
+    MainWidget* parent
+) {
+
+    DocumentNameModel* document_model = new DocumentNameModel(std::move(docs));
+
+    QListView* list_view = new QListView();
+
+    DocumentSelectorWidget* document_selector_widget = new DocumentSelectorWidget(list_view, document_model, parent);
+
+    document_model->setParent(document_selector_widget);
+    list_view->setParent(document_selector_widget);
+    list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+    //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
+    document_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    document_selector_widget->set_filter_column_index(-1);
+
+    document_selector_widget->update_render();
+    return document_selector_widget;
 }

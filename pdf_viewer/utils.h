@@ -722,6 +722,9 @@ std::pair<int, int> find_smallest_containing_substring_unicode(const T& haystack
         }
     }
     int positive_count = chars_left.size();
+    if (positive_count == 0) {
+        return std::make_pair(-1, -1);
+    }
 
     int start = 0;
     int end = -1;
@@ -802,15 +805,11 @@ std::pair<int, int> find_smallest_containing_substring_ascii(const T& haystack, 
         if (chars_left[ch] == 1) {
             positive_count++;
         }
-        //auto it = chars_left.find(ch);
-        //if (it == chars_left.end()) {
-        //    chars_left[ch] = 1;
-        //}
-        //else {
-        //    it->second++;
-        //}
     }
-    //int positive_count = chars_left.size();
+    if (positive_count == 0) {
+        return std::make_pair(-1, -1);
+    }
+
 
     int start = 0;
     int end = -1;

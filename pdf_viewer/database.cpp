@@ -1405,8 +1405,8 @@ bool DatabaseManager::select_opened_books(std::vector<OpenedBookInfo>& out_resul
 
             row.checksum = column_std_string(select_opened_books_stmt, 0);
             row.document_title = column_qstring(select_opened_books_stmt, 1);
-            row.last_access_time = QDateTime::fromString(column_qstring(select_opened_books_stmt, 2), Qt::ISODate);
-
+            QString time_string = column_qstring(select_opened_books_stmt, 2);
+            row.last_access_time = QDateTime::fromString(time_string, Qt::ISODate);
             out_result.push_back(row);
         });
 

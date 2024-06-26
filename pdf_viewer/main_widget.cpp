@@ -5925,113 +5925,166 @@ void MainWidget::handle_open_all_docs() {
     show_current_widget();
 }
 
-void MainWidget::handle_open_prev_doc() {
-
-    std::vector<std::wstring> opened_docs_names;
-    std::vector<std::wstring> opened_docs_actual_names;
-    std::vector<OpenedBookInfo> opened_docs;
-    std::vector<std::string> opened_docs_hashes;
-    std::vector<OpenedBookInfo> opened_docs_instances;
-
-    std::wstring current_path = L"";
-
-    if (doc()) {
-        current_path = doc()->get_path();
+std::vector<OpenedBookInfo> MainWidget::get_all_opened_books(bool include_server_books) {
+    std::vector<OpenedBookInfo> res;
+    db_manager->select_opened_books(res);
+    for (int i = 0; i < res.size(); i++) {
+        std::wstring path = document_manager->get_path_from_hash(res[i].checksum).value_or(L"");
+        if (path.size() > 0) {
+            if (SHOW_DOC_PATH) {
+                res[i].file_name = QString::fromStdWString(path);
+            }
+            else {
+                res[i].file_name = QString::fromStdWString(Path(path).filename().value_or(L""));
+            }
+        }
     }
 
+    auto new_end = std::remove_if(res.begin(), res.end(), [](OpenedBookInfo& info) {
+        return info.file_name.size() == 0;
+        });
+    res.erase(new_end, res.end());
 
-    db_manager->select_opened_books(opened_docs);
-    for (auto& info : opened_docs) {
-        opened_docs_hashes.push_back(info.checksum);
-    }
+    if ((sioyek_network_manager->status == ServerStatus::LoggedIn) && include_server_books) {
+        std::vector<std::string> local_file_hashes;
+        for (auto info : res) {
+            local_file_hashes.push_back(info.checksum);
+        }
+        std::vector<OpenedBookInfo> server_opened_books = sioyek_network_manager->get_excluded_opened_files(local_file_hashes);
 
-    if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
-        std::vector<OpenedBookInfo> server_opened_books = sioyek_network_manager->get_excluded_opened_files(opened_docs_hashes);
-
-        auto middle_index = opened_docs.size();
+        auto middle_index = res.size();
 
         for (auto& server_book : server_opened_books) {
             server_book.checksum = "SERVER://" + server_book.checksum;
-            opened_docs.push_back(server_book);
+            res.push_back(server_book);
         }
 
-        auto last = opened_docs.end();
+        auto last = res.end();
         // at the time of this commit, inplace_merge on android seems to be wrong, so we
         // sort the entire array instead, we should just be using the inplace_merge when
         // it is fixed
 #ifndef SIOYEK_MOBILE
-        std::inplace_merge(opened_docs.begin(), opened_docs.begin() + middle_index, last, [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
+        std::inplace_merge(res.begin(), res.begin() + middle_index, last, [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
             return lhs.last_access_time > rhs.last_access_time;
             });
 #else
-        std::sort(opened_docs.begin(), opened_docs.end(), [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
+        std::sort(res.begin(), res.end(), [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
             return lhs.last_access_time > rhs.last_access_time;
             });
 #endif
     }
+    return res;
+}
 
-    for (const auto& opened_doc : opened_docs) {
-        if (QString::fromStdString(opened_doc.checksum).startsWith("SERVER://")) {
-            opened_docs_names.push_back(L"[" + SERVER_SYMBOL + L"] " + opened_doc.file_name.toStdWString());
-            //opened_docs_hashes.push_back(opened_doc.checksum);
-            opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
-            opened_docs_instances.push_back(opened_doc);
-        }
-        else {
+void MainWidget::handle_open_prev_doc() {
+    std::vector<OpenedBookInfo> opened_documents = get_all_opened_books();
+    DocumentSelectorWidget* selector_widget = DocumentSelectorWidget::from_documents(std::move(opened_documents), this);
 
-            std::optional<std::wstring> path = checksummer->get_path(opened_doc.checksum);
-            if (path) {
-                if (path == current_path) continue;
-
-                if (SHOW_DOC_PATH) {
-                    opened_docs_names.push_back(path.value_or(L"<ERROR>"));
-                }
-                else {
-#ifdef SIOYEK_ANDROID
-                    std::wstring path_value = path.value();
-                    if (path_value.substr(0, 10) == L"content://") {
-                        path_value = android_file_name_from_uri(QString::fromStdWString(path_value)).toStdWString();
-                    }
-                    opened_docs_names.push_back(Path(path.value()).filename_no_ext().value_or(L"<ERROR>"));
-#else
-                    opened_docs_names.push_back(Path(path.value()).filename().value_or(L"<ERROR>"));
-#endif
-                }
-                //opened_docs_hashes.push_back(opened_doc.checksum);
-                opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
-                opened_docs_instances.push_back(opened_doc);
-            }
-        }
-    }
-
-    set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
-        [&](OpenedBookInfo* info) {
-            if ((info->checksum.size() > 0) && (pending_command_instance)) {
-                QString doc_hash_qstring = QString::fromStdString(info->checksum);
-                if (doc_hash_qstring.startsWith("SERVER://")) {
-                    doc_hash_qstring = doc_hash_qstring.mid(9);
-                    download_and_open(doc_hash_qstring.toStdString(), info->offset_y);
-                }
-                else {
-                    pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(info->checksum));
-                    advance_command(std::move(pending_command_instance));
-                }
-            }
-            pop_current_widget();
-        },
-        [&](OpenedBookInfo* info) {
-            QString doc_hash_qstring = QString::fromStdString(info->checksum);
+    selector_widget->set_select_fn([&, selector_widget](int index) {
+        OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
+        if ((info.checksum.size() > 0) && (pending_command_instance)) {
+            QString doc_hash_qstring = QString::fromStdString(info.checksum);
             if (doc_hash_qstring.startsWith("SERVER://")) {
-                sioyek_network_manager->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
+                doc_hash_qstring = doc_hash_qstring.mid(9);
+                download_and_open(doc_hash_qstring.toStdString(), info.offset_y);
             }
             else {
-                db_manager->delete_opened_book(info->checksum);
+                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(info.checksum));
+                advance_command(std::move(pending_command_instance));
             }
         }
-        );
+        pop_current_widget();
+        });
 
-    make_current_menu_columns_equal();
+    selector_widget->set_delete_fn([&, selector_widget](int index) {
+        OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
+        QString doc_hash_qstring = QString::fromStdString(info.checksum);
+        if (doc_hash_qstring.startsWith("SERVER://")) {
+            sioyek_network_manager->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
+        }
+        else {
+            db_manager->delete_opened_book(info.checksum);
+        }
+        });
+
+    set_current_widget(selector_widget);
     show_current_widget();
+
+//    std::vector<std::wstring> opened_docs_names;
+//    std::vector<std::wstring> opened_docs_actual_names;
+//    std::vector<OpenedBookInfo> opened_docs = get_all_opened_books();
+//    std::vector<OpenedBookInfo> opened_docs_instances;
+//
+//    std::wstring current_path = L"";
+//
+//    if (doc()) {
+//        current_path = doc()->get_path();
+//    }
+//
+//
+//
+//    for (const auto& opened_doc : opened_docs) {
+//        if (QString::fromStdString(opened_doc.checksum).startsWith("SERVER://")) {
+//            opened_docs_names.push_back(L"[" + SERVER_SYMBOL + L"] " + opened_doc.file_name.toStdWString());
+//            //opened_docs_hashes.push_back(opened_doc.checksum);
+//            opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
+//            opened_docs_instances.push_back(opened_doc);
+//        }
+//        else {
+//
+//            std::optional<std::wstring> path = checksummer->get_path(opened_doc.checksum);
+//            if (path) {
+//                if (path == current_path) continue;
+//
+//                if (SHOW_DOC_PATH) {
+//                    opened_docs_names.push_back(path.value_or(L"<ERROR>"));
+//                }
+//                else {
+//#ifdef SIOYEK_ANDROID
+//                    std::wstring path_value = path.value();
+//                    if (path_value.substr(0, 10) == L"content://") {
+//                        path_value = android_file_name_from_uri(QString::fromStdWString(path_value)).toStdWString();
+//                    }
+//                    opened_docs_names.push_back(Path(path.value()).filename_no_ext().value_or(L"<ERROR>"));
+//#else
+//                    opened_docs_names.push_back(Path(path.value()).filename().value_or(L"<ERROR>"));
+//#endif
+//                }
+//                //opened_docs_hashes.push_back(opened_doc.checksum);
+//                opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
+//                opened_docs_instances.push_back(opened_doc);
+//            }
+//        }
+//    }
+//
+//    set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
+//        [&](OpenedBookInfo* info) {
+//            if ((info->checksum.size() > 0) && (pending_command_instance)) {
+//                QString doc_hash_qstring = QString::fromStdString(info->checksum);
+//                if (doc_hash_qstring.startsWith("SERVER://")) {
+//                    doc_hash_qstring = doc_hash_qstring.mid(9);
+//                    download_and_open(doc_hash_qstring.toStdString(), info->offset_y);
+//                }
+//                else {
+//                    pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(info->checksum));
+//                    advance_command(std::move(pending_command_instance));
+//                }
+//            }
+//            pop_current_widget();
+//        },
+//        [&](OpenedBookInfo* info) {
+//            QString doc_hash_qstring = QString::fromStdString(info->checksum);
+//            if (doc_hash_qstring.startsWith("SERVER://")) {
+//                sioyek_network_manager->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
+//            }
+//            else {
+//                db_manager->delete_opened_book(info->checksum);
+//            }
+//        }
+//        );
+//
+//    make_current_menu_columns_equal();
+//    show_current_widget();
 }
 
 void MainWidget::handle_move_screen(int amount) {
@@ -7162,14 +7215,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 
 void MainWidget::handle_debug_command() {
-    QFile command_names_file("command_names.txt");
-    auto command_names = command_manager->get_all_command_names();
-    if (command_names_file.open(QIODeviceBase::WriteOnly)) {
-        for (int i = 0; i < command_names.size(); i++) {
-            command_names_file.write((command_names[i] + "\n").toUtf8());
-        }
-        command_names_file.close();
-    }
+
 }
 
 void MainWidget::show_command_menu() {
