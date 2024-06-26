@@ -2882,11 +2882,11 @@ QSize DocumentItemDelegate::sizeHint(const QStyleOptionViewItem& option,
     height += path_document.size().height();
 
     QString title_string = index.siblingAtColumn(DocumentNameModel::document_title).data().toString().toHtmlEscaped();
-    if (title_string.size() > 0) {
+    //if (title_string.size() > 0) {
         title_document.setTextWidth(option.rect.width());
         title_document.setHtml(title_string);
         height += title_document.size().height();
-    }
+    //}
 
     QString time_string = index.siblingAtColumn(DocumentNameModel::last_access_time).data().toString();
     last_access_time_document.setTextWidth(option.rect.width());
@@ -2934,6 +2934,7 @@ DocumentSelectorWidget* DocumentSelectorWidget::from_documents(
     document_model->setParent(document_selector_widget);
     list_view->setParent(document_selector_widget);
     list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    list_view->setUniformItemSizes(true);
 
     //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
     document_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
