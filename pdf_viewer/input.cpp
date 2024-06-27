@@ -6253,6 +6253,19 @@ public:
 
 };
 
+class FulltextSearchCommand : public Command {
+public:
+    inline static const std::string cname = "search_all_indexed_documents";
+    inline static const std::string hname = "Fulltext search all indexed documents";
+
+    FulltextSearchCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_fulltext_search();
+    }
+
+};
+
 class ShowTouchMainMenu : public Command {
 public:
     static inline const std::string cname = "show_touch_main_menu";
@@ -7665,6 +7678,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowTouchSettingsMenu>();
     register_command<ShowTouchDrawingMenu>();
     register_command<DebugCommand>();
+    register_command<FulltextSearchCommand>();
     register_command<ExportPythonApiCommand>();
     register_command<ExportDefaultConfigFile>();
     register_command<ExportCommandNamesCommand>();

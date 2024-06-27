@@ -710,6 +710,7 @@ public:
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
     void handle_debug_command();
+    void handle_fulltext_search();
     void handle_add_marked_data();
     void handle_undo_marked_data();
     void handle_remove_marked_data();

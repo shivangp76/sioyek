@@ -7214,7 +7214,7 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 
-void MainWidget::handle_debug_command() {
+void MainWidget::handle_fulltext_search() {
 
     auto search_widget = FulltextSearchWidget::create(this);
     search_widget->set_select_fn([&, search_widget](int index) {
@@ -7251,6 +7251,9 @@ void MainWidget::handle_debug_command() {
 
     set_current_widget(search_widget);
     show_current_widget();
+}
+
+void MainWidget::handle_debug_command() {
 }
 
 void MainWidget::show_command_menu() {
