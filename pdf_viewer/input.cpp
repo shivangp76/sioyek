@@ -6266,6 +6266,19 @@ public:
 
 };
 
+class CreateFulltextIndexForCurrentDocumentCommand : public Command {
+public:
+    inline static const std::string cname = "create_fulltext_index_for_current_document";
+    inline static const std::string hname = "Add current document to fulltext search index";
+
+    CreateFulltextIndexForCurrentDocumentCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->index_current_document_for_fulltext_search();
+    }
+
+};
+
 class ShowTouchMainMenu : public Command {
 public:
     static inline const std::string cname = "show_touch_main_menu";
@@ -7679,6 +7692,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowTouchDrawingMenu>();
     register_command<DebugCommand>();
     register_command<FulltextSearchCommand>();
+    register_command<CreateFulltextIndexForCurrentDocumentCommand>();
     register_command<ExportPythonApiCommand>();
     register_command<ExportDefaultConfigFile>();
     register_command<ExportCommandNamesCommand>();

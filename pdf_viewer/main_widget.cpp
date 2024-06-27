@@ -7253,6 +7253,18 @@ void MainWidget::handle_fulltext_search() {
     show_current_widget();
 }
 
+void MainWidget::index_current_document_for_fulltext_search() {
+    bool super_fast_search_index_is_ready = doc()->is_super_fast_index_ready();
+
+    if (!super_fast_search_index_is_ready) {
+        show_error_message(L"Super fast search index is not ready.");
+    }
+    else {
+        std::string document_checksum = doc()->get_checksum();
+        db_manager->index_document(document_checksum, doc()->get_super_fast_index(), doc()->get_super_fast_page_begin_indices());
+    }
+}
+
 void MainWidget::handle_debug_command() {
 }
 
