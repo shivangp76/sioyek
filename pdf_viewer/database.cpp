@@ -136,6 +136,23 @@ static int prev_doc_with_name_callback(void* res_vector, int argc, char** argv, 
 //    return 0;
 //}
 
+static int fulltext_search_callback(void* res_vector, int argc, char** argv, char** col_name) {
+
+    std::vector<FulltextSearchResult>* res = (std::vector<FulltextSearchResult>*)res_vector;
+    assert(argc == 3);
+
+    std::string file_checksum = argv[0];
+    int page = atoi(argv[1]);
+    std::wstring snippet = utf8_decode(argv[2]);
+
+    FulltextSearchResult search_result;
+    search_result.document_checksum = file_checksum;
+    search_result.page = page;
+    search_result.snippet = snippet;
+
+    res->push_back(search_result);
+    return 0;
+}
 static int mark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<Mark>* res = (std::vector<Mark>*)res_vector;
@@ -742,6 +759,32 @@ bool DatabaseManager::create_document_hash_table() {
     int error_code = sqlite3_exec(local_db, create_document_hash_sql, null_callback, 0, &error_message);
     return handle_error(
         "create_document_hash_table",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::create_full_text_search_table() {
+    const char* create_fts_sql = "CREATE VIRTUAL TABLE IF NOT EXISTS full_text_search USING fts5("\
+        "file_checksum,"\
+        "page_number,"\
+        "content);";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, create_fts_sql, null_callback, 0, &error_message);
+    return handle_error(
+        "create_full_text_search_table",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::create_document_fulltext_indexed_table() {
+    const char* create_fts_list_sql = "CREATE TABLE IF NOT EXISTS indexed_documents ("\
+        "file_checksum TEXT PRIMARY KEY NOT NULL);";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, create_fts_list_sql, null_callback, 0, &error_message);
+    return handle_error(
+        "create_document_fulltext_indexed_table",
         error_code,
         error_message);
 }
@@ -1705,6 +1748,8 @@ void DatabaseManager::create_tables() {
     create_highlights_table(global_db);
     create_links_table();
     create_document_hash_table();
+    create_full_text_search_table();
+    create_document_fulltext_indexed_table();
     create_server_update_time_table();
     create_unsynced_deletions_table();
     //create_unsynced_additions_table();
@@ -2911,40 +2956,16 @@ void migrate_database(sqlite3* old_local, sqlite3* old_shared, sqlite3* new_loca
 }
 
 void DatabaseManager::debug() {
-    DatabaseTableMetadata highlight_table_info = get_table_metadata(global_db, "highlights");
-    highlight_table_info.print();
 
-    //std::string query = "SELECT document_name FROM opened_books WHERE id=:id;";
-    //sqlite3_stmt* statement;
-    //auto is_ok = sqlite3_prepare_v2(global_db, query.c_str(), query.size(), &statement, nullptr);
-    //int id_index = sqlite3_bind_parameter_index(statement, ":id");
-
-    //if (is_ok == SQLITE_OK) {
-    //    sqlite3_bind_int(statement, id_index, 92);
-    //    while (true) {
-    //        auto state = sqlite3_step(statement);
-    //        if (state != SQLITE_ROW) {
-    //            break;
-    //        }
-    //        const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
-    //        qDebug() << QString::fromUtf8(document_name_utf8);
-
-    //    }
-
-    //    sqlite3_reset(statement);
-
-    //    sqlite3_bind_int(statement, id_index, 270);
-    //    while (true) {
-    //        auto state = sqlite3_step(statement);
-    //        if (state != SQLITE_ROW) {
-    //            break;
-    //        }
-    //        const unsigned char* document_name_utf8 = sqlite3_column_text(statement, 0);
-    //        qDebug() << QString::fromUtf8(document_name_utf8);
-
-    //    }
-    //}
-
+    int index = 0;
+    const char* compile_option = sqlite3_compileoption_get(index);
+    qDebug() << "compile options:";
+    while (compile_option != nullptr) {
+        qDebug() << compile_option;
+        index++;
+        compile_option = sqlite3_compileoption_get(index);
+    }
+    qDebug() << "end of compile options";
 }
 
 
@@ -3047,4 +3068,76 @@ bool DatabaseManager::import_shared(QString shared_database_file_path) {
         return true;
     }
     return false;
+}
+
+void DatabaseManager::index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices) {
+    std::wstringstream ss;
+
+    auto get_page_string = [&](int page) {
+        int start_index = page_indices[page];
+        int end_index = super_fast_search_index.size();
+        if (page < page_indices.size() - 1) {
+            end_index = page_indices[page + 1];
+        }
+        //return utf8_encode(super_fast_search_index.substr(start_index, end_index - start_index));
+        return QString::fromStdWString(super_fast_search_index.substr(start_index, end_index - start_index)).toStdString();
+        };
+
+    bool is_document_indexed = false;
+    int count = -1;
+    ss << "SELECT COUNT(file_checksum) FROM indexed_documents WHERE file_checksum='" << esc(document_checksum) << "';";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
+    if (error_code == SQLITE_OK) {
+        if (count == 0) {
+            std::string insert_page_index_query = "INSERT INTO full_text_search (file_checksum, page_number, content) VALUES (?, ?, ?);";
+            sqlite3_stmt* insert_page_index_stmt = nullptr;
+            int is_ok = sqlite3_prepare_v2(local_db, insert_page_index_query.c_str(), insert_page_index_query.size(), &insert_page_index_stmt, nullptr);
+            // begin the transaction
+            if (is_ok == SQLITE_OK) {
+                sqlite3_exec(local_db, "BEGIN TRANSACTION;", nullptr, nullptr, &error_message);
+
+                // insert into indexed documents
+                std::string insert_indexed_document_query = "INSERT INTO indexed_documents (file_checksum) VALUES ('"+ document_checksum + "');";
+                sqlite3_exec(local_db, insert_indexed_document_query.c_str(), nullptr, nullptr, &error_message);
+
+                for (int page = 0; page < page_indices.size(); page++) {
+                    std::string encoded_page_string = get_page_string(page);
+                    sqlite3_reset(insert_page_index_stmt);
+
+                    sqlite3_bind_text(insert_page_index_stmt, 1, document_checksum.c_str(), document_checksum.size(), SQLITE_STATIC);
+                    sqlite3_bind_int(insert_page_index_stmt, 2, page);
+                    sqlite3_bind_text(insert_page_index_stmt, 3, encoded_page_string.c_str(), encoded_page_string.size(), SQLITE_TRANSIENT);
+
+
+                    sqlite3_step(insert_page_index_stmt);
+                }
+                sqlite3_exec(local_db, "END TRANSACTION;", nullptr, nullptr, &error_message);
+
+                sqlite3_finalize(insert_page_index_stmt);
+            }
+            else {
+                qDebug() << "Failed to prepare statement: " << sqlite3_errmsg(local_db);
+            }
+             
+
+        }
+    }
+    else {
+    }
+
+
+}
+
+std::vector<FulltextSearchResult> DatabaseManager::perform_fulltext_search(const std::wstring& query) {
+    std::wstringstream ss;
+    ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' ORDER BY rank LIMIT 10;";
+    std::vector<FulltextSearchResult> results;
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), fulltext_search_callback, &results, &error_message);
+    if (error_code != SQLITE_OK) 
+        qDebug() << "Error executing fulltext search: " << error_message;{
+    }
+    return results;
 }

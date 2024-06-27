@@ -7216,6 +7216,41 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 void MainWidget::handle_debug_command() {
 
+    auto search_widget = FulltextSearchWidget::create(this);
+    search_widget->set_select_fn([&, search_widget](int index) {
+            FulltextSearchResult result = search_widget->result_model->search_results[index];
+            std::wstring document_path = document_manager->get_path_from_hash(result.document_checksum).value_or(L"");
+
+            QString snippet = QString::fromStdWString(result.snippet);
+            int first_index = snippet.indexOf("SIOYEK_MATCH_BEGIN");
+            int last_index = snippet.lastIndexOf("SIOYEK_MATCH_END");
+
+            if (first_index != -1 && last_index != -1) {
+                snippet = snippet.mid(first_index, last_index - first_index);
+            }
+
+            snippet = snippet.replace("SIOYEK_MATCH_BEGIN", "");
+            snippet = snippet.replace("SIOYEK_MATCH_END", "");
+            
+            if (snippet.startsWith("...")) {
+                snippet = snippet.mid(3);
+            }
+
+            if (snippet.endsWith("...")) {
+                snippet = snippet.mid(0, snippet.size() - 3);
+            }
+
+            if (document_path.size() > 0) {
+                open_document_at_location(Path(document_path), result.page, {}, {}, {});
+                main_document_view->focus_page_text(result.page, snippet.toStdWString());
+                invalidate_render();
+            }
+            pop_current_widget();
+            //qDebug() << "selected " << result.snippet;
+        });
+
+    set_current_widget(search_widget);
+    show_current_widget();
 }
 
 void MainWidget::show_command_menu() {

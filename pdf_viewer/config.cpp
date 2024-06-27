@@ -7,7 +7,7 @@
 //#include <ui.h>
 extern Path android_config_path;
 
-int FONT_SIZE = -1;
+int FONT_SIZE = 12;
 int STATUS_BAR_FONT_SIZE = -1;
 float BACKGROUND_COLOR[3] = { 0.97f, 0.97f, 0.97f };
 float DARK_MODE_BACKGROUND_COLOR[3] = { 0.0f, 0.0f, 0.0f };

@@ -514,3 +514,10 @@ struct TextUnderPointerInfo{
     std::wstring source_text;
     std::vector<DocumentRect> overview_highlight_rects;
 };
+
+struct FulltextSearchResult {
+    std::string document_checksum;
+    int page;
+    std::wstring snippet;
+    std::wstring document_title = L"";
+};

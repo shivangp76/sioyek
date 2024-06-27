@@ -234,6 +234,7 @@ public:
     int get_page_offset_into_super_fast_index(int from);
     int get_page_from_character_offset(int offset);
     const std::wstring& get_super_fast_index();
+    const std::vector<int>& get_super_fast_page_begin_indices();
 
     void update_last_local_edit_time();
     std::optional<QDateTime> last_server_update_time();

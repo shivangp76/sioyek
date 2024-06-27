@@ -30,6 +30,7 @@ struct DatabaseTableMetadata {
 };
 
 
+
 class DatabaseManager {
 private:
     sqlite3_stmt* select_opened_books_stmt = nullptr;
@@ -44,6 +45,8 @@ private:
     bool create_links_table();
     void create_tables();
     bool create_document_hash_table();
+    bool create_full_text_search_table();
+    bool create_document_fulltext_indexed_table();
     bool create_server_update_time_table();
     bool create_unsynced_deletions_table();
     //bool create_unsynced_additions_table();
@@ -207,6 +210,8 @@ public:
     bool import_shared(QString shared_database_file_path);
 
     bool generic_prepared_statement_run(sqlite3* db, sqlite3_stmt** stmt, const std::string& query, std::function<void()> on_init,std::function<void()> bind_params, std::function<void()> on_row);
+    void index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices);
+    std::vector<FulltextSearchResult> perform_fulltext_search(const std::wstring& query);
 };
 
 

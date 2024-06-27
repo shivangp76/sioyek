@@ -71,6 +71,7 @@
 #include "utils.h"
 #include "config.h"
 
+class DatabaseManager;
 class MainWidget;
 extern std::wstring UI_FONT_FACE_NAME;
 extern int FONT_SIZE;
@@ -1068,12 +1069,12 @@ public:
 class BaseCustomSelectorWidget : public BaseSelectorWidget {
 
 private:
-    std::optional<std::function<void(int)>> select_fn = {};
-    std::optional<std::function<void(int)>> delete_fn = {};
-    std::optional<std::function<void(int)>> edit_fn = {};
 
     mutable std::unordered_map<int, float> cached_sizes;
 public:
+    std::optional<std::function<void(int)>> select_fn = {};
+    std::optional<std::function<void(int)>> delete_fn = {};
+    std::optional<std::function<void(int)>> edit_fn = {};
     QListView* lv = nullptr;
     BaseCustomSelectorWidget(
         QAbstractItemView* view,
@@ -1251,6 +1252,24 @@ public:
     QString get_time_string(QDateTime time) const;
 };
 
+class SearchItemDelegate : public BaseCustomDelegate {
+    Q_OBJECT
+public:
+    //QString pattern;
+
+    mutable QTextDocument snippet_document;
+    mutable QTextDocument location_document;
+    //mutable std::unordered_map<int, float> cached_sizes;
+
+    SearchItemDelegate();
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void clear_cache();
+    QString highlight_match(QString match) const;
+    QString get_location_string(const QModelIndex& index) const;
+};
+
 class DocumentSelectorWidget : public BaseCustomSelectorWidget{
 private:
     DocumentSelectorWidget(
@@ -1264,3 +1283,53 @@ public:
 
     DocumentNameModel* document_model = nullptr;
 };
+
+class FulltextResultModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    enum SearchResultColumn {
+        snippet = 0,
+        document_title = 1,
+        page = 2,
+        max_columns = 3,
+    };
+
+    std::vector<FulltextSearchResult> search_results;
+
+
+    FulltextResultModel(std::vector<FulltextSearchResult>&& results, QObject * parent = nullptr);
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+};
+
+class FulltextSearchWidget : public BaseCustomSelectorWidget{
+private:
+    FulltextSearchWidget(
+        DatabaseManager* manager,
+        QAbstractItemView* view,
+        QAbstractItemModel* model,
+        MainWidget* parent
+    );
+    ~FulltextSearchWidget();
+
+    DatabaseManager* db_manager = nullptr;
+    MainWidget* main_widget = nullptr;
+public:
+
+    static FulltextSearchWidget* create(MainWidget* parent);
+
+    void on_text_changed(const QString& text) override;
+    virtual void on_select(const QModelIndex& value) override;
+    virtual void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
+
+    //QStringListModel* result_model = nullptr;
+    FulltextResultModel* result_model = nullptr;
+};
+

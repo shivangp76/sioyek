@@ -437,6 +437,7 @@ public:
     bool is_two_page_mode();
     void set_page_space_x(float space_x);
     void set_page_space_y(float space_y);
+    void focus_page_text(int page, const std::wstring& text);
 
     float get_page_space_x();
     float get_page_space_y();

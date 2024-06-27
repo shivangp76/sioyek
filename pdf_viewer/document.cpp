@@ -4451,7 +4451,10 @@ int Document::get_page_text_and_line_rects_after_rect(int page_number,
             index_into_page++;
         }
 
-        if (chr->c > 0 && chr->c < 128) {
+        if (chr->c > 0) {
+            if (!(chr->c < 0xffff)) {
+                continue;
+            }
             if (begun) {
                 if ((chr->next == nullptr) && (chr->c == '-')) continue;
                 text.push_back(chr->c);
@@ -4828,6 +4831,10 @@ std::vector <DocumentRect> Document::get_rects_for_portal_indices(const std::vec
 
 const std::wstring& Document::get_super_fast_index() {
     return super_fast_search_index;
+}
+
+const std::vector<int>& Document::get_super_fast_page_begin_indices() {
+    return super_fast_page_begin_indices;
 }
 
 int Document::absolute_to_page_index(int absolute_index, int& p){

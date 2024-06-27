@@ -3614,3 +3614,36 @@ int DocumentView::get_selected_portal_index() {
     }
     return -1;
 }
+
+void DocumentView::focus_page_text(int page, const std::wstring& text) {
+
+    std::wstring page_text;
+    std::vector <PagelessDocumentRect> line_rects;
+    std::vector <PagelessDocumentRect> char_rects;
+    current_document->get_page_text_and_line_rects_after_rect(page, fz_empty_rect, page_text, line_rects, char_rects);
+
+    int start_index = -1;
+    int end_index = -1;
+    int score = similarity_score(page_text, text, &start_index, &end_index, 0.5f);
+
+    std::deque<fz_rect> character_rects;
+    std::vector<fz_rect> merged_character_rects;
+
+    if (start_index >= 0) {
+        for (int i = start_index; i < end_index; i++) {
+            character_rects.push_back(char_rects[i]);
+        }
+        merge_selected_character_rects(character_rects, merged_character_rects);
+
+        SearchResult search_result;
+        search_result.begin_index_in_page = start_index;
+        search_result.end_index_in_page = end_index;
+        search_result.page = page;
+        search_result.rects = merged_character_rects;
+        set_search_results({ search_result });
+        goto_search_result(0, false);
+    }
+    else {
+        qDebug() << "could not find string";
+    }
+}
