@@ -57,6 +57,7 @@ bool AUTO_LOGIN_ON_STARTUP = true;
 #endif
 
 bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS = true;
+bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH = false;
 
 std::wstring SEARCH_URLS[26];
 std::wstring EXECUTE_COMMANDS[26];
@@ -1083,6 +1084,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"initial_snapped_dragging", &SNAP_DRAGGING);
     add_bool(L"auto_login_on_startup", &AUTO_LOGIN_ON_STARTUP);
     add_bool(L"automatically_upload_portal_destination_for_synced_documents", &AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS);
+    add_bool(L"automatically_index_documents_for_fulltext_search", &AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_bool(L"automatically_update_checksum_when_document_is_changed", &AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);

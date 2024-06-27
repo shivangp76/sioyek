@@ -105,10 +105,11 @@ private:
     std::deque<std::pair<int, CachedPageIndex>> cached_page_index;
 
     bool super_fast_search_index_ready = false;
+    bool super_fast_search_was_ready = false;
+
     // super fast index is the concatenated text of all pages along with two lists which map the
     // characters to pages and rects of those characters this index is built only if the 
     // super_fast_search config option is enabled
-
     std::wstring super_fast_search_index;
     std::vector<int> super_fast_page_begin_indices;
 
@@ -473,6 +474,7 @@ public:
     std::optional<DocumentPos> find_abbreviation(std::wstring abbr, std::vector<DocumentRect>& overview_highlight_rects);
 
     int get_page_merged_line_index_from_unmerged_index(int page, int unmerged_index);
+    bool super_fast_search_index_is_new();
 
     std::vector<DocumentRect> get_rects_for_highlight_indices(const std::vector<int>& indices);
     std::vector <DocumentRect> get_rects_for_bookmark_indices(const std::vector<int>& indices);

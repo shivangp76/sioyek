@@ -4959,3 +4959,11 @@ void DocumentManager::delete_highlight_with_uuid(const std::string& uuid) {
     }
     //db_manager->delete_highlight(uuid);
 }
+
+bool Document::super_fast_search_index_is_new() {
+    if (super_fast_search_index_ready && (!super_fast_search_was_ready)) {
+        super_fast_search_was_ready = true;
+        return true;
+    }
+    return false;
+}

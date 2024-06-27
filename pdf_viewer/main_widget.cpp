@@ -314,7 +314,7 @@ extern bool PAPER_DOWNLOAD_CREATE_PORTAL;
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool USE_KEYBOARD_POINT_SELECTION;
 
-
+extern bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH;
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;
 extern bool TOUCH_MODE;
@@ -1126,6 +1126,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
         focus_on_high_quality_text_being_read();
+        if (doc()) {
+            if (doc()->super_fast_search_index_is_new()) {
+                on_super_fast_search_index_computed();
+            }
+        }
 
         if (scheduled_portal_update) {
             update_link_with_opened_book_state(scheduled_portal_update->portal, scheduled_portal_update->state, true);
@@ -7253,15 +7258,24 @@ void MainWidget::handle_fulltext_search() {
     show_current_widget();
 }
 
-void MainWidget::index_current_document_for_fulltext_search() {
+void MainWidget::index_current_document_for_fulltext_search(bool async) {
     bool super_fast_search_index_is_ready = doc()->is_super_fast_index_ready();
 
     if (!super_fast_search_index_is_ready) {
         show_error_message(L"Super fast search index is not ready.");
     }
     else {
-        std::string document_checksum = doc()->get_checksum();
-        db_manager->index_document(document_checksum, doc()->get_super_fast_index(), doc()->get_super_fast_page_begin_indices());
+        if (async) {
+            Document* current_document = doc();
+            background_task_manager->add_task([this, current_document]() {
+                std::string document_checksum = current_document->get_checksum();
+                db_manager->index_document(document_checksum, current_document->get_super_fast_index(), current_document->get_super_fast_page_begin_indices());
+                }, this);
+        }
+        else {
+            std::string document_checksum = doc()->get_checksum();
+            db_manager->index_document(document_checksum, doc()->get_super_fast_index(), doc()->get_super_fast_page_begin_indices());
+        }
     }
 }
 
@@ -12561,4 +12575,10 @@ QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, std::opti
             on_paper_downloaded(reply);
         });
     return reply;
+}
+
+void MainWidget::on_super_fast_search_index_computed() {
+    if (AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH) {
+        index_current_document_for_fulltext_search(true);
+    }
 }

@@ -721,7 +721,8 @@ public:
     void handle_toggle_drawing_mask(char symbol);
     void show_command_palette();
     void auto_login();
-    void index_current_document_for_fulltext_search();
+    void index_current_document_for_fulltext_search(bool async=false);
+    void on_super_fast_search_index_computed();
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
     AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);
