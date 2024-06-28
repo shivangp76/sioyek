@@ -5588,36 +5588,101 @@ void MainWidget::handle_goto_bookmark() {
 
     int closest_bookmark_index = main_document_view->get_document()->find_closest_bookmark_index(bookmarks, main_document_view->get_offset_y());
 
-    BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
-        std::move(bookmarks), this, std::move(option_location_strings));
-    bookmark_widget->set_selected_index(closest_bookmark_index);
-    bookmark_widget->set_select_fn([&, bookmark_widget](int index) {
-        BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+    auto handle_select_fn = [&](BookMark bm) {
         if (pending_command_instance) {
             pending_command_instance->set_generic_requirement(bm.get_y_offset());
         }
 
         advance_command(std::move(pending_command_instance));
         pop_current_widget();
-        });
+        };
 
-    bookmark_widget->set_delete_fn([&, bookmark_widget](int index) {
-        BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+    auto handle_delete_fn = [&](BookMark bm) {
         delete_current_document_bookmark_with_bookmark(&bm);
-        });
+        };
 
-    set_current_widget(bookmark_widget);
-    show_current_widget();
+    auto handle_edit_fn = [&](BookMark bm) {
+        set_selected_bookmark_index(doc()->get_bookmark_index_with_uuid(bm.uuid));
+        pop_current_widget();
+        handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+        };
+
+    if (TOUCH_MODE) {
+        std::vector<std::wstring> option_names;
+        std::vector<std::wstring> option_location_wstrings;
+        //std::vector<BookMark> bookmarks;
+
+        for (auto bookmark : bookmarks) {
+            option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
+            auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset() });
+            option_location_wstrings.push_back(get_page_formatted_string(page + 1));
+        }
+
+        set_filtered_select_menu<BookMark>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, bookmarks, closest_bookmark_index,
+            [&, handle_select_fn](BookMark* bm) {
+                handle_select_fn(*bm);
+            },
+            [&, handle_delete_fn](BookMark* bm) {
+                handle_delete_fn(*bm);
+            },
+            [&, handle_edit_fn](BookMark* bm) {
+                handle_edit_fn(*bm);
+            }
+        );
+        show_current_widget();
+    }
+    else {
+        BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
+            std::move(bookmarks), this, std::move(option_location_strings));
+        bookmark_widget->set_selected_index(closest_bookmark_index);
+
+        bookmark_widget->set_select_fn([&, bookmark_widget, handle_select_fn](int index) {
+            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+            handle_select_fn(bm);
+
+            });
+
+        bookmark_widget->set_delete_fn([&, bookmark_widget, handle_delete_fn](int index) {
+            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+            handle_delete_fn(bm);
+            });
+
+        bookmark_widget->set_edit_fn([&, bookmark_widget, handle_edit_fn](int index) {
+            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+            handle_edit_fn(bm);
+            });
+
+        set_current_widget(bookmark_widget);
+        show_current_widget();
+    }
 }
 
 void MainWidget::handle_goto_bookmark_global() {
     std::vector<std::pair<std::string, BookMark>> global_bookmarks;
     db_manager->global_select_bookmark(global_bookmarks);
-    //std::vector<std::wstring> descs;
+
+    auto handle_select_fn = [&](QString checksum, float offset_y) {
+        if (checksum.startsWith("SERVER://")) {
+            download_and_open(checksum.mid(9).toStdString(), offset_y);
+        }
+        else {
+            if (pending_command_instance) {
+                QString file_path = QString::fromStdWString(document_manager->get_path_from_hash(checksum.toStdString()).value_or(L""));
+                pending_command_instance->set_generic_requirement(QList<QVariant>() << file_path << offset_y);
+            }
+            advance_command(std::move(pending_command_instance));
+            pop_current_widget();
+        }
+        };
+
+    auto handle_delete_fn = [&](std::string uuid) {
+        delete_global_bookmark(uuid);
+        };
+
+
     std::vector<BookMark> bookmarks;
     std::vector<QString> file_names;
     std::vector<QString> file_checksums;
-    //std::vector<BookState> book_states;
 
     for (const auto& desc_bm_pair : global_bookmarks) {
         std::string checksum = desc_bm_pair.first;
@@ -5635,34 +5700,56 @@ void MainWidget::handle_goto_bookmark_global() {
             file_checksums.push_back(QString::fromStdString(checksum));
         }
     }
-
-    BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
-        std::move(bookmarks), this, std::move(file_names), std::move(file_checksums)
-    );
-    bookmark_widget->set_select_fn([&, bookmark_widget](int index) {
-        QString path = bookmark_widget->bookmark_model->checksums[index];
-        BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
-        QString file_path = bookmark_widget->bookmark_model->documents[index];
-        if (path.startsWith("SERVER://")) {
-            download_and_open(path.mid(9).toStdString(), bm.get_y_offset());
+    if (TOUCH_MODE) {
+        std::vector<std::wstring> descs;
+        std::vector<std::wstring> file_names_wstring;
+        std::vector<BookState> book_states;
+        for (int i = 0; i < bookmarks.size(); i++) {
+            descs.push_back(bookmarks[i].description);
+            file_names_wstring.push_back(file_names[i].toStdWString());
+            BookState book_state;
+            book_state.document_path = file_checksums[i].toStdWString();
+            book_state.offset_y = bookmarks[i].get_y_offset();
+            book_state.uuid = bookmarks[i].uuid;
+            book_states.push_back(book_state);
         }
-        else {
-            if (pending_command_instance) {
-                pending_command_instance->set_generic_requirement(QList<QVariant>() << file_path << bm.get_y_offset());
+
+        set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
+            [&, handle_select_fn](BookState* book_state) {
+                QString path = QString::fromStdWString(book_state->document_path);
+
+                handle_select_fn(path, book_state->offset_y);
+
+            },
+            [&, handle_delete_fn](BookState* book_state) {
+                handle_delete_fn(book_state->uuid);
             }
-            advance_command(std::move(pending_command_instance));
-            pop_current_widget();
-        }
-        });
-    bookmark_widget->set_delete_fn(
-        [&, bookmark_widget](int index) {
-            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
-            delete_global_bookmark(bm.uuid);
-        }
-    );
+        );
+        show_current_widget();
+    }
+    else {
+        BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
+            std::move(bookmarks), this, std::move(file_names), std::move(file_checksums)
+        );
 
-    set_current_widget(bookmark_widget);
-    show_current_widget();
+        bookmark_widget->set_select_fn([&, bookmark_widget, handle_select_fn](int index) {
+            QString path = bookmark_widget->bookmark_model->checksums[index];
+            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+            QString file_path = bookmark_widget->bookmark_model->documents[index];
+            handle_select_fn(path, bm.get_y_offset());
+            });
+
+        bookmark_widget->set_delete_fn(
+            [&, bookmark_widget, handle_delete_fn](int index) {
+                BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+                handle_delete_fn(bm.uuid);
+            }
+        );
+
+        set_current_widget(bookmark_widget);
+        show_current_widget();
+    }
+
     //set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names }, book_states, -1,
     //    [&](BookState* book_state) {
     //        QString path = QString::fromStdWString(book_state->document_path);
