@@ -3,6 +3,7 @@
 #include <qsortfilterproxymodel.h>
 #include <map>
 #include <qmap.h>
+#include <qlist.h>
 
 extern "C" {
     #include "fzf/fzf.h"
@@ -27,6 +28,7 @@ public:
     virtual bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const;
     bool filter_accepts_row_column(int row, int col, const QModelIndex& source_parent) const;
     Q_INVOKABLE void setFilterCustom(const QString& filterString);
+    Q_INVOKABLE QList<int> get_highlight_positions(QString haystack, QString needle);
 
     //void setFilterFixedString(const QString &pattern) override;
     bool lessThan(const QModelIndex& left, const QModelIndex& right) const;

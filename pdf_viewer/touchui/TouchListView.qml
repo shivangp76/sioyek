@@ -89,6 +89,7 @@ Rectangle {
 
 
         delegate: Rectangle {
+            //property list<int> selection_range: model.get_highlight_positions(model.data(model.display.slice(0, 0), query.text))
             anchors {
                 left: parent ? parent.left : undefined
                 right: parent ? parent.right : undefined
@@ -111,15 +112,26 @@ Rectangle {
                     width: rootitem.root_model.columnCount() == 3 ? parent.width / 2 : parent.width
                     id: inner_container
 
+
+
                     Text {
+                        function getDisplayText(){
+                            let selectionRange = lview.model.get_highlight_positions(model.display.toLowerCase(), query.text.toLowerCase());
+                            if (selectionRange[0] == -1){
+                                return model.display;
+                            }
+                            return model.display.slice(0, selectionRange[0]) + "<span style='background-color: yellow; color: black;'>" + model.display.slice(selectionRange[0], selectionRange[1]) + "</span>" + model.display.slice(selectionRange[1]);
+                        }
+
                         id: inner
-                        text: model.display
+                        text:  getDisplayText()
                         color: "white"
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left
                         anchors.right: parent.right
                         font.pixelSize: 15
                         wrapMode: Text.Wrap
+                        textFormat: Text.RichText
                     }
                 }
                 Item{

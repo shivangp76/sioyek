@@ -18,6 +18,12 @@ bool MySortFilterProxyModel::filter_accepts_row_column(int row, int col, const Q
     }
 }
 
+Q_INVOKABLE QList<int> MySortFilterProxyModel::get_highlight_positions(QString haystack, QString needle) {
+    int begin = -1, end = -1;
+    int similarity = similarity_score(haystack.toStdWString(), needle.toStdWString(), &begin, &end);
+    return QList<int>() << begin << end;
+}
+
 bool MySortFilterProxyModel::filterAcceptsRow(int source_row,
     const QModelIndex& source_parent) const
 {

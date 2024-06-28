@@ -8,6 +8,7 @@
 // continue high quality tts on ios and android when the app is minimized
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
+// why does BookState have a uuid?
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -5718,48 +5719,122 @@ char MainWidget::get_current_selected_highlight_type() {
 
 void MainWidget::handle_goto_highlight() {
     std::vector<Highlight> highlights = doc()->get_highlights_sorted();
-
     int closest_highlight_index = doc()->find_closest_highlight_index(highlights, main_document_view->get_offset_y());
 
 
-    HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this);
-    highlight_selector_widget->set_selected_index(closest_highlight_index);
+    auto handle_select_fn = [&](Highlight hl) {
+        if (pending_command_instance) {
+            pending_command_instance->set_generic_requirement(hl.selection_begin.y);
+        }
+        advance_command(std::move(pending_command_instance));
+        pop_current_widget();
+        };
 
-    highlight_selector_widget->set_select_fn(
-        [&, highlight_selector_widget](int index) {
-            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-            if (pending_command_instance) {
-                pending_command_instance->set_generic_requirement(hl.selection_begin.y);
+    auto handle_edit_fn = [&](Highlight hl) {
+        set_selected_highlight_index(doc()->get_highlight_index_with_uuid(hl.uuid));
+        pop_current_widget();
+
+        std::unique_ptr<Command> cmd = command_manager->get_command_with_name(this, "edit_selected_highlight");
+        cmd->pre_perform();
+        advance_command(std::move(cmd));
+        };
+
+    auto handle_delete_fn = [&](Highlight hl) {
+        delete_current_document_highlight(&hl);
+        };
+
+    if (TOUCH_MODE) {
+        std::vector<std::wstring> option_names;
+        std::vector<std::wstring> option_text_annotations;
+        std::vector<std::wstring> option_location_strings;
+        bool has_text_annotations = false;
+
+        for (auto highlight : highlights) {
+            std::wstring type_name = L"a";
+            type_name[0] = highlight.type;
+            option_names.push_back(L"[" + type_name + L"] " + highlight.description);
+            option_text_annotations.push_back(highlight.text_annot);
+            if (highlight.text_annot.size() > 0) {
+                has_text_annotations = true;
             }
-            advance_command(std::move(pending_command_instance));
-            pop_current_widget();
+            auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos(highlight.selection_begin);
+            option_location_strings.push_back(get_page_formatted_string(page + 1));
         }
-    );
 
-    highlight_selector_widget->set_delete_fn(
-        [&, highlight_selector_widget](int index) {
-            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-            delete_current_document_highlight(&hl);
+        std::vector<std::vector<std::wstring>> table;
+        if (has_text_annotations) {
+            table = { option_names, option_text_annotations, option_location_strings };
         }
-    );
-    highlight_selector_widget->set_edit_fn(
-        [&, highlight_selector_widget](int index) {
-            set_selected_highlight_index(doc()->get_highlight_index_with_uuid(highlight_selector_widget->highlight_model->highlights[index].uuid));
-            pop_current_widget();
-
-            std::unique_ptr<Command> cmd = command_manager->get_command_with_name(this, "edit_selected_highlight");
-            cmd->pre_perform();
-            advance_command(std::move(cmd));
+        else {
+            table = { option_names, option_location_strings };
         }
-    );
 
-    set_current_widget(highlight_selector_widget);
-    show_current_widget();
+        set_filtered_select_menu<Highlight>(this, FUZZY_SEARCHING, MULTILINE_MENUS, table, highlights, closest_highlight_index,
+            [&, handle_select_fn](Highlight* hl) {
+                handle_select_fn(*hl);
+            },
+            [&, handle_delete_fn](Highlight* hl) {
+                handle_delete_fn(*hl);
+            },
+            [&, handle_edit_fn](Highlight* hl) {
+                handle_edit_fn(*hl);
+            });
+        show_current_widget();
+    }
+    else {
+        HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this);
+        highlight_selector_widget->set_selected_index(closest_highlight_index);
+
+        highlight_selector_widget->set_select_fn(
+            [&, highlight_selector_widget, handle_select_fn](int index) {
+                Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                handle_select_fn(hl);
+            }
+        );
+
+        highlight_selector_widget->set_delete_fn(
+            [&, highlight_selector_widget, handle_delete_fn](int index) {
+                Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                handle_delete_fn(hl);
+            }
+        );
+        highlight_selector_widget->set_edit_fn(
+            [&, highlight_selector_widget, handle_edit_fn](int index) {
+                Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                handle_edit_fn(hl);
+            }
+        );
+
+        set_current_widget(highlight_selector_widget);
+        show_current_widget();
+    }
 }
 
 void MainWidget::handle_goto_highlight_global() {
     std::vector<std::pair<std::string, Highlight>> global_highlights;
     db_manager->global_select_highlight(global_highlights);
+
+    auto handle_select_fn = [&](float offset_y, std::string checksum) {
+        if (checksum.size() > 0) {
+            if (QString::fromStdString(checksum).startsWith("SERVER://")) {
+                download_and_open(QString::fromStdString(checksum).mid(9).toStdString(), offset_y);
+
+            }
+            else {
+                if (pending_command_instance) {
+                    QString file_path = QString::fromStdWString(checksummer->get_path(checksum).value_or(L""));
+                    pending_command_instance->set_generic_requirement(
+                        QList<QVariant>() << file_path << offset_y);
+                }
+                advance_command(std::move(pending_command_instance));
+            }
+            pop_current_widget();
+        }
+    };
+
+    auto handle_delete_fn = [&](std::string uuid) {
+            delete_highlight_with_uuid(uuid);
+        };
 
     std::vector<QString> file_names;
     std::vector<QString> file_checksums;
@@ -5784,36 +5859,65 @@ void MainWidget::handle_goto_highlight_global() {
         file_names.push_back(file_name);
     }
 
-    HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(file_names), std::move(file_checksums));
+    if (TOUCH_MODE) {
+        std::vector<std::wstring> descs;
+        std::vector<std::wstring> text_annotations;
+        std::vector<std::wstring> file_names_wstring;
+        std::vector<BookState> book_states;
+        bool has_annots = false;
 
-    highlight_selector_widget->set_select_fn(
-        [&, highlight_selector_widget](int index) {
-            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-            std::string checksum = highlight_selector_widget->highlight_model->checksums[index].toStdString();
-            if (checksum.size() > 0) {
-                if (QString::fromStdString(checksum).startsWith("SERVER://")) {
-                    download_and_open(QString::fromStdString(checksum).mid(9).toStdString(), hl.selection_begin.y);
-
-                }
-                else {
-                    if (pending_command_instance) {
-                        QString file_path = QString::fromStdWString(checksummer->get_path(checksum).value_or(L""));
-                        pending_command_instance->set_generic_requirement(
-                            QList<QVariant>() << file_path << hl.selection_begin.y);
-                    }
-                    advance_command(std::move(pending_command_instance));
-                }
-                pop_current_widget();
+        for (int i = 0; i < highlights.size(); i++) {
+            const Highlight& hl = highlights[i];
+            descs.push_back(hl.description);
+            text_annotations.push_back(hl.text_annot);
+            file_names_wstring.push_back(file_names[i].toStdWString());
+            //BookState
+            book_states.push_back({ file_checksums[i].toStdWString(), hl.selection_begin.y, hl.uuid});
+            if (hl.text_annot.size() > 0) {
+                has_annots = true;
             }
-        });
+        }
 
-    highlight_selector_widget->set_delete_fn([&, highlight_selector_widget](int index) {
+        std::vector<std::vector<std::wstring>> table;
+        if (has_annots) {
+            table = { descs, text_annotations, file_names_wstring };
+        }
+        else {
+            table = { descs, file_names_wstring };
+        }
+
+        set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, table, book_states, -1,
+
+            [&, handle_select_fn](BookState* book_state) {
+                if (book_state) {
+                    handle_select_fn(book_state->offset_y, utf8_encode(book_state->document_path));
+
+                }
+            }, [&, handle_delete_fn](BookState* state) {
+                handle_delete_fn(state->uuid);
+                });
+
+        show_current_widget();
+    }
+    else {
+
+        HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(file_names), std::move(file_checksums));
+
+        highlight_selector_widget->set_select_fn(
+            [&, highlight_selector_widget, handle_select_fn](int index) {
+                Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                std::string checksum = highlight_selector_widget->highlight_model->checksums[index].toStdString();
+                handle_select_fn(hl.selection_begin.y, checksum);
+            });
+
+        highlight_selector_widget->set_delete_fn([&, highlight_selector_widget, handle_delete_fn](int index) {
             Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-            delete_highlight_with_uuid(hl.uuid);
-        });
+            handle_delete_fn(hl.uuid);
+            });
 
-    set_current_widget(highlight_selector_widget);
-    show_current_widget();
+        set_current_widget(highlight_selector_widget);
+        show_current_widget();
+    }
 }
 
 void MainWidget::handle_goto_toc() {
@@ -5982,114 +6086,109 @@ std::vector<OpenedBookInfo> MainWidget::get_all_opened_books(bool include_server
 }
 
 void MainWidget::handle_open_prev_doc() {
-    std::vector<OpenedBookInfo> opened_documents = get_all_opened_books();
-    DocumentSelectorWidget* selector_widget = DocumentSelectorWidget::from_documents(std::move(opened_documents), this);
-
-    selector_widget->set_select_fn([&, selector_widget](int index) {
-        OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
-        if ((info.checksum.size() > 0) && (pending_command_instance)) {
-            QString doc_hash_qstring = QString::fromStdString(info.checksum);
+    auto handle_select_fn = [&](std::string checksum, float offset_y) {
+        if ((checksum.size() > 0) && (pending_command_instance)) {
+            QString doc_hash_qstring = QString::fromStdString(checksum);
             if (doc_hash_qstring.startsWith("SERVER://")) {
                 doc_hash_qstring = doc_hash_qstring.mid(9);
-                download_and_open(doc_hash_qstring.toStdString(), info.offset_y);
+                download_and_open(doc_hash_qstring.toStdString(), offset_y);
             }
             else {
-                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(info.checksum));
+                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(checksum));
                 advance_command(std::move(pending_command_instance));
             }
         }
         pop_current_widget();
-        });
+        };
 
-    selector_widget->set_delete_fn([&, selector_widget](int index) {
-        OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
-        QString doc_hash_qstring = QString::fromStdString(info.checksum);
+    auto handle_delete_fn = [&](std::string checksum) {
+        QString doc_hash_qstring = QString::fromStdString(checksum);
         if (doc_hash_qstring.startsWith("SERVER://")) {
             sioyek_network_manager->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
         }
         else {
-            db_manager->delete_opened_book(info.checksum);
+            db_manager->delete_opened_book(checksum);
         }
-        });
+        };
 
-    set_current_widget(selector_widget);
-    show_current_widget();
+    if (TOUCH_MODE) {
+        std::vector<std::wstring> opened_docs_names;
+        std::vector<std::wstring> opened_docs_actual_names;
+        std::vector<OpenedBookInfo> opened_docs = get_all_opened_books();
+        std::vector<OpenedBookInfo> opened_docs_instances;
 
-//    std::vector<std::wstring> opened_docs_names;
-//    std::vector<std::wstring> opened_docs_actual_names;
-//    std::vector<OpenedBookInfo> opened_docs = get_all_opened_books();
-//    std::vector<OpenedBookInfo> opened_docs_instances;
-//
-//    std::wstring current_path = L"";
-//
-//    if (doc()) {
-//        current_path = doc()->get_path();
-//    }
-//
-//
-//
-//    for (const auto& opened_doc : opened_docs) {
-//        if (QString::fromStdString(opened_doc.checksum).startsWith("SERVER://")) {
-//            opened_docs_names.push_back(L"[" + SERVER_SYMBOL + L"] " + opened_doc.file_name.toStdWString());
-//            //opened_docs_hashes.push_back(opened_doc.checksum);
-//            opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
-//            opened_docs_instances.push_back(opened_doc);
-//        }
-//        else {
-//
-//            std::optional<std::wstring> path = checksummer->get_path(opened_doc.checksum);
-//            if (path) {
-//                if (path == current_path) continue;
-//
-//                if (SHOW_DOC_PATH) {
-//                    opened_docs_names.push_back(path.value_or(L"<ERROR>"));
-//                }
-//                else {
-//#ifdef SIOYEK_ANDROID
-//                    std::wstring path_value = path.value();
-//                    if (path_value.substr(0, 10) == L"content://") {
-//                        path_value = android_file_name_from_uri(QString::fromStdWString(path_value)).toStdWString();
-//                    }
-//                    opened_docs_names.push_back(Path(path.value()).filename_no_ext().value_or(L"<ERROR>"));
-//#else
-//                    opened_docs_names.push_back(Path(path.value()).filename().value_or(L"<ERROR>"));
-//#endif
-//                }
-//                //opened_docs_hashes.push_back(opened_doc.checksum);
-//                opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
-//                opened_docs_instances.push_back(opened_doc);
-//            }
-//        }
-//    }
-//
-//    set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
-//        [&](OpenedBookInfo* info) {
-//            if ((info->checksum.size() > 0) && (pending_command_instance)) {
-//                QString doc_hash_qstring = QString::fromStdString(info->checksum);
-//                if (doc_hash_qstring.startsWith("SERVER://")) {
-//                    doc_hash_qstring = doc_hash_qstring.mid(9);
-//                    download_and_open(doc_hash_qstring.toStdString(), info->offset_y);
-//                }
-//                else {
-//                    pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(info->checksum));
-//                    advance_command(std::move(pending_command_instance));
-//                }
-//            }
-//            pop_current_widget();
-//        },
-//        [&](OpenedBookInfo* info) {
-//            QString doc_hash_qstring = QString::fromStdString(info->checksum);
-//            if (doc_hash_qstring.startsWith("SERVER://")) {
-//                sioyek_network_manager->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
-//            }
-//            else {
-//                db_manager->delete_opened_book(info->checksum);
-//            }
-//        }
-//        );
-//
-//    make_current_menu_columns_equal();
-//    show_current_widget();
+        std::wstring current_path = L"";
+
+        if (doc()) {
+            current_path = doc()->get_path();
+        }
+
+
+
+        for (const auto& opened_doc : opened_docs) {
+            if (QString::fromStdString(opened_doc.checksum).startsWith("SERVER://")) {
+                opened_docs_names.push_back(L"[" + SERVER_SYMBOL + L"] " + opened_doc.file_name.toStdWString());
+                //opened_docs_hashes.push_back(opened_doc.checksum);
+                opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
+                opened_docs_instances.push_back(opened_doc);
+            }
+            else {
+
+                std::optional<std::wstring> path = checksummer->get_path(opened_doc.checksum);
+                if (path) {
+                    if (path == current_path) continue;
+
+                    if (SHOW_DOC_PATH) {
+                        opened_docs_names.push_back(path.value_or(L"<ERROR>"));
+                    }
+                    else {
+#ifdef SIOYEK_ANDROID
+                        std::wstring path_value = path.value();
+                        if (path_value.substr(0, 10) == L"content://") {
+                            path_value = android_file_name_from_uri(QString::fromStdWString(path_value)).toStdWString();
+                        }
+                        opened_docs_names.push_back(Path(path.value()).filename_no_ext().value_or(L"<ERROR>"));
+#else
+                        opened_docs_names.push_back(Path(path.value()).filename().value_or(L"<ERROR>"));
+#endif
+                    }
+                    //opened_docs_hashes.push_back(opened_doc.checksum);
+                    opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
+                    opened_docs_instances.push_back(opened_doc);
+                }
+            }
+        }
+
+        set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
+            [&, handle_select_fn](OpenedBookInfo* info) {
+                handle_select_fn(info->checksum, info->offset_y);
+            },
+            [&, handle_delete_fn](OpenedBookInfo* info) {
+                handle_delete_fn(info->checksum);
+            }
+        );
+
+        make_current_menu_columns_equal();
+        show_current_widget();
+    }
+    else {
+        std::vector<OpenedBookInfo> opened_documents = get_all_opened_books();
+        DocumentSelectorWidget* selector_widget = DocumentSelectorWidget::from_documents(std::move(opened_documents), this);
+
+        selector_widget->set_select_fn([&, selector_widget, handle_select_fn](int index) {
+            OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
+            handle_select_fn(info.checksum, info.offset_y);
+            });
+
+        selector_widget->set_delete_fn([&, selector_widget, handle_delete_fn](int index) {
+            OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
+            handle_delete_fn(info.checksum);
+            });
+
+        set_current_widget(selector_widget);
+        show_current_widget();
+    }
+
 }
 
 void MainWidget::handle_move_screen(int amount) {
