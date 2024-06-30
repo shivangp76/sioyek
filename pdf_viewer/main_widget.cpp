@@ -7469,18 +7469,18 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    std::vector<Highlight> highlights = doc()->get_highlights();
-    HighlightModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
+    //std::vector<std::pair<std::string, Highlight>> global_highlights;
+    //db_manager->global_select_highlight(global_highlights);
+    //std::vector<Highlight> highlights;
+    //std::vector<QString> checksums;
+    //std::vector<QString> paths;
 
-    TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", {std::make_pair("_colorMap", get_color_mapping())}, this);
-    lv->list_view->proxy_model->set_is_highlight(true);
-    lv->set_select_fn([&, highlights_model](int index) {
-        qDebug() << "seelcted : " << highlights_model->highlights[index].description;
-        //highlights_model->index(index, 0);
-        });
+    //for (auto [checksum, hl] : global_highlights) {
+    //}
 
-    set_current_widget(lv);
-    show_current_widget();
+    //HighlightModel* highlights_model = new HighlightModel()
+
+
 }
 
 void MainWidget::show_command_menu() {

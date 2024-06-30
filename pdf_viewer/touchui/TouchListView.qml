@@ -18,6 +18,7 @@ Rectangle {
     property alias listModel: lview.model
     property alias listView: lview
 
+
     signal itemSelected(item: string, index: int)
     signal itemPressAndHold(item: string, index: int)
     signal itemDeleted(item: string, index: int)

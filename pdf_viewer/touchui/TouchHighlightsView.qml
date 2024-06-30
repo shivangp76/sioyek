@@ -25,34 +25,66 @@ TouchListView{
         // height: 20
         property color hlColor: _colorMap["" + listModel.data(listModel.index(index, 1))]
         property string displayText: listModel.data(listModel.index(index, 0))
+        property string annotText: listModel.data(listModel.index(index, 2))
         property string typeString: String.fromCharCode(listModel.data(listModel.index(index, 1)))
         property color hlTextColor: isColorDark(hlColor) ? "white" : "black"
 
-        height: inner.height + 30
+        height: textContainer.height + 30
 
         // color: mosuearea.pressed ? "#111" : "black"
         color: mosuearea.pressed ? "#222" : (listModel.mapToSource(listModel.index(index, 0)).row == _selected_index ? "#444": "black")
 
-        Text {
-
-            id: inner
-            text: "<span style=\"background-color: " + hlColor + "; color: " + hlTextColor + ";\"><code>&nbsp;"+ typeString + "&nbsp;</code></span> &nbsp;" + displayText
-            color: "white"
-
-            anchors.verticalCenter: parent.verticalCenter
+        Item{
+            id: textContainer
             anchors.left: parent.left
             anchors.right: parent.right
-            font.pixelSize: 15
-            wrapMode: Text.Wrap
-            textFormat: Text.RichText
+            anchors.verticalCenter: parent.verticalCenter
+            height: highlight_text.height + highlight_annot.height
+
+            Text {
+
+                id: highlight_text
+                text: "<span style=\"background-color: " + hlColor + "; color: " + hlTextColor + ";\"><code>&nbsp;"+ typeString + "&nbsp;</code></span> &nbsp;" + displayText
+                color: "white"
+
+                // anchors.verticalCenter: parent.verticalCenter
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                font.pixelSize: 15
+                wrapMode: Text.Wrap
+                textFormat: Text.RichText
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: "#444"
+                anchors.top: highlight_text.bottom
+                visible: highlight_annot.text.length > 0
+            }
+            Text {
+                id: highlight_annot
+                text: annotText
+                color: "white"
+
+                // anchors.verticalCenter: parent.verticalCenter
+                anchors.top: highlight_text.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                font.pixelSize: 15
+                wrapMode: Text.Wrap
+                textFormat: Text.RichText
+            }
         }
+
         // draw a separator
-        Rectangle {
-            width: parent.width
-            height: 1
-            color: "#222"
-            anchors.bottom: parent.bottom
-        }
+        // Rectangle {
+        //     width: parent.width
+        //     height: 1
+        //     color: "#222"
+        //     anchors.bottom: parent.bottom
+        // }
 
         
         Button{
