@@ -31,7 +31,7 @@ TouchListView{
         height: inner.height + 30
 
         // color: mosuearea.pressed ? "#111" : "black"
-        color: listModel.mapToSource(listModel.index(index, 0)).row == _selected_index ? "#444": "black"
+        color: mosuearea.pressed ? "#222" : (listModel.mapToSource(listModel.index(index, 0)).row == _selected_index ? "#444": "black")
 
         Text {
 

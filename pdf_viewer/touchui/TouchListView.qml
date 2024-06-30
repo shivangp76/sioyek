@@ -15,7 +15,6 @@ Rectangle {
     property var root_model: _model
     property Component delegateComponent: GenericListViewDelegate{}
 
-
     property alias listModel: lview.model
     property alias listView: lview
 
