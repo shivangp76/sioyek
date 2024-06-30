@@ -4,7 +4,7 @@
 
 #include "mysortfilterproxymodel.h"
 
-void TouchListView::initialize(int selected_index, bool deletable, bool is_tree) {
+void TouchListView::initialize(int selected_index, bool deletable, std::vector<std::pair<QString, QVariant>> context_props) {
     setAttribute(Qt::WA_NoMousePropagation);
 
     proxy_model->setSourceModel(model);
@@ -18,7 +18,12 @@ void TouchListView::initialize(int selected_index, bool deletable, bool is_tree)
 
     quick_widget->rootContext()->setContextProperty("_selected_index", QVariant::fromValue(selected_index));
     quick_widget->rootContext()->setContextProperty("_focus", QVariant::fromValue(false));
-    if (is_tree) {
+
+    for (auto [name, prop] : context_props) {
+        quick_widget->rootContext()->setContextProperty(name, prop);
+    }
+
+    if (component_name == "TouchTreeView") {
         quick_widget->rootContext()->setContextProperty("_model", QVariant::fromValue(model));
     }
     else {
@@ -29,12 +34,14 @@ void TouchListView::initialize(int selected_index, bool deletable, bool is_tree)
     //    quick_widget->rootContext()->setContextProperty("_from", from);
     //    quick_widget->rootContext()->setContextProperty("_to", to);
 
-    if (is_tree) {
-        quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchTreeView.qml"));
-    }
-    else {
-        quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchListView.qml"));
-    }
+    quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/" + component_name + ".qml"));
+    //if (is_tree) {
+    //    quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchTreeView.qml"));
+    //}
+    //else {
+    //    quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchListView.qml"));
+    //    //quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchHighlightsView.qml"));
+    //}
 
 
     QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(itemSelected(QString, int)), this, SLOT(handleSelect(QString, int)));
@@ -43,18 +50,20 @@ void TouchListView::initialize(int selected_index, bool deletable, bool is_tree)
     quick_widget->setFocus();
 }
 
-TouchListView::TouchListView(bool is_fuzzy, QAbstractItemModel* items_, int selected_index, QWidget* parent, bool deletable, bool move, bool is_tree) : QWidget(parent) {
+TouchListView::TouchListView(bool is_fuzzy, QAbstractItemModel* items_, int selected_index, QWidget* parent, bool deletable, bool move, QString component_name_, std::vector<std::pair<QString, QVariant>> props) : QWidget(parent) {
 
+    component_name = component_name_;
     proxy_model = new MySortFilterProxyModel(is_fuzzy, false);
     model = items_;
     if (move) {
         items_->setParent(this);
     }
-    initialize(selected_index, deletable, is_tree);
+    initialize(selected_index, deletable, props);
 }
 
-TouchListView::TouchListView(bool is_fuzzy, QStringList items_, int selected_index, QWidget* parent, bool deletable) : QWidget(parent) {
+TouchListView::TouchListView(bool is_fuzzy, QStringList items_, int selected_index, QWidget* parent, bool deletable, QString component_name_) : QWidget(parent) {
 
+    component_name = component_name_;
     proxy_model = new MySortFilterProxyModel(is_fuzzy, false);
     model = new QStringListModel(items_, this);
     initialize(selected_index, deletable);

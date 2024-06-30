@@ -78,6 +78,7 @@
 #include <qtextdocument.h>
 #include <qabstracttextdocumentlayout.h>
 #include <qtextcursor.h>
+#include <qvariantmap.h>
 
 //#include "main_widget.moc"
 
@@ -5806,6 +5807,7 @@ char MainWidget::get_current_selected_highlight_type() {
 
 void MainWidget::handle_goto_highlight() {
     std::vector<Highlight> highlights = doc()->get_highlights_sorted();
+
     int closest_highlight_index = doc()->find_closest_highlight_index(highlights, main_document_view->get_offset_y());
 
 
@@ -5831,42 +5833,27 @@ void MainWidget::handle_goto_highlight() {
         };
 
     if (TOUCH_MODE) {
-        std::vector<std::wstring> option_names;
-        std::vector<std::wstring> option_text_annotations;
-        std::vector<std::wstring> option_location_strings;
-        bool has_text_annotations = false;
+        std::vector<Highlight> highlights = doc()->get_highlights();
+        HighlightModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
 
-        for (auto highlight : highlights) {
-            std::wstring type_name = L"a";
-            type_name[0] = highlight.type;
-            option_names.push_back(L"[" + type_name + L"] " + highlight.description);
-            option_text_annotations.push_back(highlight.text_annot);
-            if (highlight.text_annot.size() > 0) {
-                has_text_annotations = true;
-            }
-            auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos(highlight.selection_begin);
-            option_location_strings.push_back(get_page_formatted_string(page + 1));
-        }
+        TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", { std::make_pair("_colorMap", get_color_mapping()) }, this);
+        lv->list_view->proxy_model->set_is_highlight(true);
 
-        std::vector<std::vector<std::wstring>> table;
-        if (has_text_annotations) {
-            table = { option_names, option_text_annotations, option_location_strings };
-        }
-        else {
-            table = { option_names, option_location_strings };
-        }
-
-        set_filtered_select_menu<Highlight>(this, FUZZY_SEARCHING, MULTILINE_MENUS, table, highlights, closest_highlight_index,
-            [&, handle_select_fn](Highlight* hl) {
-                handle_select_fn(*hl);
-            },
-            [&, handle_delete_fn](Highlight* hl) {
-                handle_delete_fn(*hl);
-            },
-            [&, handle_edit_fn](Highlight* hl) {
-                handle_edit_fn(*hl);
+        lv->set_select_fn([&, highlights_model, handle_select_fn](int index) {
+            Highlight hl = highlights_model->highlights[index];
+            handle_select_fn(hl);
             });
+
+        lv->set_delete_fn(
+            [&, highlights_model, handle_delete_fn](int index) {
+                Highlight hl = highlights_model->highlights[index];
+                handle_delete_fn(hl);
+            }
+        );
+
+        set_current_widget(lv);
         show_current_widget();
+
     }
     else {
         HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this);
@@ -7465,7 +7452,36 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
     }
 }
 
+QVariantMap MainWidget::get_color_mapping() {
+    std::vector<Highlight> highlights = doc()->get_highlights();
+    QAbstractTableModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
+    QVariantMap color_map;
+    for (int i = 'a'; i <= 'z'; i++) {
+        QColor color = QColor::fromRgbF(
+            HIGHLIGHT_COLORS[3 * (i - 'a') + 0],
+            HIGHLIGHT_COLORS[3 * (i - 'a') + 1],
+            HIGHLIGHT_COLORS[3 * (i - 'a') + 2]
+        );
+        color_map[QString::number(i)] = color;
+        color_map[QString::number(i + 'A' - 'a')] = color;
+    }
+    color_map["_"] = QVariant::fromValue(Qt::black);
+    return color_map;
+}
+
 void MainWidget::handle_debug_command() {
+    std::vector<Highlight> highlights = doc()->get_highlights();
+    HighlightModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
+
+    TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", {std::make_pair("_colorMap", get_color_mapping())}, this);
+    lv->list_view->proxy_model->set_is_highlight(true);
+    lv->set_select_fn([&, highlights_model](int index) {
+        qDebug() << "seelcted : " << highlights_model->highlights[index].description;
+        //highlights_model->index(index, 0);
+        });
+
+    set_current_widget(lv);
+    show_current_widget();
 }
 
 void MainWidget::show_command_menu() {

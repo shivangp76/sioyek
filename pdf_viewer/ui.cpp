@@ -3183,3 +3183,61 @@ void FulltextSearchWidget::on_select(const QModelIndex& value) {
 void FulltextSearchWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
 
 }
+
+QHash<int, QByteArray> HighlightModel::roleNames() const {
+
+    QHash<int, QByteArray> roles;
+    roles[HighlightModelColumn::checksum] = "checksum";
+    roles[HighlightModelColumn::description] = "description";
+    roles[HighlightModelColumn::file_name] = "fileName";
+    roles[HighlightModelColumn::type] = "highlightType";
+    roles[HighlightModelColumn::text] = "highlightText";
+    return roles;
+
+}
+
+TouchDelegateListView::TouchDelegateListView(QAbstractTableModel* model, bool deletable, QString delegate_name, std::vector<std::pair<QString, QVariant>> props, QWidget* parent) : QWidget(parent) {
+    //std::vector<Highlight> highlights = doc()->get_highlights();
+    //QAbstractTableModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
+    model->setParent(this);
+
+    list_view = new TouchListView(
+        true,
+        model,
+        -1,
+        this,
+        deletable,
+        true,
+        delegate_name,
+        props);
+
+    QObject::connect(list_view, &TouchListView::itemSelected, [&](QString item, int index) {
+        if (on_select.has_value()) {
+            on_select.value()(index);
+        }
+        });
+
+    QObject::connect(list_view, &TouchListView::itemDeleted, [&](QString item, int index) {
+        if (on_delete.has_value()) {
+            on_delete.value()(index);
+        }
+        });
+}
+
+void TouchDelegateListView::resizeEvent(QResizeEvent* resize_event) {
+    QWidget::resizeEvent(resize_event);
+    int parent_width = parentWidget()->size().width();
+    int parent_height = parentWidget()->size().height();
+
+    list_view->resize(parent_width * 0.9f, parent_height);
+    move(parent_width * 0.05f, 0);
+    resize(parent_width * 0.9f, parent_height);
+}
+
+void TouchDelegateListView::set_select_fn(std::function<void(int)>&& fn) {
+    on_select = fn;
+}
+
+void TouchDelegateListView::set_delete_fn(std::function<void(int)>&& fn) {
+    on_delete = fn;
+}

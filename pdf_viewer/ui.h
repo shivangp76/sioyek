@@ -42,7 +42,9 @@
 #include <qstyleditemdelegate.h>
 #include <qabstractitemmodel.h>
 #include <qtextdocument.h>
+#include <qhash.h>
 #include <QQuickWidget>
+
 #include "touchui/TouchSlider.h"
 #include "touchui/TouchCheckbox.h"
 #include "touchui/TouchListView.h"
@@ -377,6 +379,24 @@ public:
     }
 };
 
+class TouchDelegateListView : public QWidget {
+private:
+
+    std::optional<std::function<void(int)>> on_select = {};
+    std::optional<std::function<void(int)>> on_delete = {};
+
+public:
+    TouchListView* list_view = nullptr;
+    QAbstractTableModel* model = nullptr;
+
+    TouchDelegateListView(QAbstractTableModel* model, bool deletable, QString delegate_name, std::vector<std::pair<QString, QVariant>> props, QWidget* parent);
+
+    void resizeEvent(QResizeEvent* resize_event) override;
+
+    void set_select_fn(std::function<void(int)>&& fn);
+    void set_delete_fn(std::function<void(int)>&& fn);
+};
+
 template <typename T>
 class TouchFilteredSelectWidget : public QWidget {
 private:
@@ -434,7 +454,7 @@ public:
         QWidget(parent),
         on_done(on_done_) {
         parent_widget = parent;
-        list_view = new TouchListView(is_fuzzy, model, selected_index, this, false, false, true);
+        list_view = new TouchListView(is_fuzzy, model, selected_index, this, false, false, "TouchTreeView");
 
         QObject::connect(list_view, &TouchListView::itemSelected, [&](QString name, int index) {
             on_done(&values[index]);
@@ -992,6 +1012,8 @@ public:
 
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
+    QHash<int, QByteArray> roleNames() const override;
+
 
 };
 
