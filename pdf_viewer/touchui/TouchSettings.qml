@@ -40,7 +40,6 @@ Rectangle{
             buttons: MessageDialog.Ok | MessageDialog.Cancel
             text: "Are you sure you want to restore all settings to default?"
             onOkClicked: {
-                console.log("accepted!!!!!!!!!!!!!!!!");
                 root.restoreDefaultsClicked();
             }
         }

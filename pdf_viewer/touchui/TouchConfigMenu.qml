@@ -91,7 +91,8 @@ Rectangle {
 
 
             onTextChanged: {
-                lview.model.setFilterRegularExpression(text);
+                lview.model.setFilterCustom(text);
+                //lview.model.setFilterRegularExpression(text);
             }
 
         }
