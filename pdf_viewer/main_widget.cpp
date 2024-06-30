@@ -5808,6 +5808,13 @@ char MainWidget::get_current_selected_highlight_type() {
 void MainWidget::handle_goto_highlight() {
     std::vector<Highlight> highlights = doc()->get_highlights_sorted();
 
+    std::vector<QString> page_numbers;
+    page_numbers.reserve(highlights.size());
+
+    for (auto hl : highlights) {
+        page_numbers.push_back(QString::number(hl.selection_begin.to_document(doc()).page));
+    }
+
     int closest_highlight_index = doc()->find_closest_highlight_index(highlights, main_document_view->get_offset_y());
 
 
@@ -5833,7 +5840,7 @@ void MainWidget::handle_goto_highlight() {
         };
 
     if (TOUCH_MODE) {
-        HighlightModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
+        HighlightModel* highlights_model = new HighlightModel(std::move(highlights), std::move(page_numbers), {}, this);
 
         TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", { std::make_pair("_colorMap", get_color_mapping()), std::make_pair("_selected_index", closest_highlight_index)}, this);
         lv->list_view->proxy_model->set_is_highlight(true);
@@ -5855,7 +5862,7 @@ void MainWidget::handle_goto_highlight() {
 
     }
     else {
-        HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this);
+        HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(page_numbers));
         highlight_selector_widget->set_selected_index(closest_highlight_index);
 
         highlight_selector_widget->set_select_fn(

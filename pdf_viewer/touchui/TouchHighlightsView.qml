@@ -25,6 +25,7 @@ TouchListView{
         // height: 20
         property color hlColor: _colorMap["" + listModel.data(listModel.index(index, 1))]
         property string displayText: listModel.data(listModel.index(index, 0))
+        property string fileNameOrPageNumber: listModel.data(listModel.index(index, 3))
         property string annotText: listModel.data(listModel.index(index, 2))
         property string typeString: String.fromCharCode(listModel.data(listModel.index(index, 1)))
         property color hlTextColor: isColorDark(hlColor) ? "white" : "black"
@@ -39,7 +40,7 @@ TouchListView{
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            height: highlight_text.height + highlight_annot.height
+            height: highlight_text.height + highlight_annot.height + location_text.height
 
             Text {
 
@@ -66,9 +67,9 @@ TouchListView{
             Text {
                 id: highlight_annot
                 text: annotText
+                // text: fileNameOrPageNumber
                 color: "white"
 
-                // anchors.verticalCenter: parent.verticalCenter
                 anchors.top: highlight_text.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -76,6 +77,20 @@ TouchListView{
                 wrapMode: Text.Wrap
                 textFormat: Text.RichText
             }
+            Text{
+                id: location_text
+                anchors.top: highlight_annot.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                color: "#ddd"
+
+                horizontalAlignment: Text.AlignRight
+                anchors.rightMargin: 20
+
+                text: "<code>[" + fileNameOrPageNumber + "]</code>"
+                textFormat: Text.RichText
+            }
+
         }
 
         // draw a separator
