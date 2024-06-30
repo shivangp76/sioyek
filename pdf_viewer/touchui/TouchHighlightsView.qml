@@ -62,7 +62,7 @@ TouchListView{
                 height: 1
                 color: "#444"
                 anchors.top: highlight_text.bottom
-                visible: highlight_annot.text.length > 0
+                visible: annotText.length > 0
             }
             Text {
                 id: highlight_annot
