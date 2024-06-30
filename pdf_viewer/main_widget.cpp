@@ -5844,6 +5844,7 @@ void MainWidget::handle_goto_highlight() {
 
         TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", { std::make_pair("_colorMap", get_color_mapping()), std::make_pair("_selected_index", closest_highlight_index)}, this);
         lv->list_view->proxy_model->set_is_highlight(true);
+        lv->list_view->proxy_model->setFilterKeyColumn(-1);
 
         lv->set_select_fn([&, highlights_model, handle_select_fn](int index) {
             Highlight hl = highlights_model->highlights[index];

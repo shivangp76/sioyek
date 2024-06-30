@@ -45,7 +45,7 @@ TouchListView{
             Text {
 
                 id: highlight_text
-                text: "<span style=\"background-color: " + hlColor + "; color: " + hlTextColor + ";\"><code>&nbsp;"+ typeString + "&nbsp;</code></span> &nbsp;" + displayText
+                text: "<span style=\"background-color: " + hlColor + "; color: " + hlTextColor + ";\"><code>&nbsp;"+ typeString + "&nbsp;</code></span> &nbsp;" + highlightQuery(displayText)
                 color: "white"
 
                 // anchors.verticalCenter: parent.verticalCenter
@@ -66,7 +66,7 @@ TouchListView{
             }
             Text {
                 id: highlight_annot
-                text: annotText
+                text: highlightQuery(annotText)
                 // text: fileNameOrPageNumber
                 color: "white"
 

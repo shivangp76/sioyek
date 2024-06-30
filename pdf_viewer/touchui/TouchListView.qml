@@ -6,8 +6,20 @@ import "qrc:/pdf_viewer/touchui"
 
 Rectangle {
 
-//    width: 250
-//    height: 400
+
+    function highlightQuery(txt){
+
+        let queryString = query.text.toLowerCase();
+        if (queryString.length > 2  && queryString[1] == ' '){
+            queryString = queryString.slice(2);
+        }
+
+        let selectionRange = lview.model.get_highlight_positions(txt.toLowerCase(), queryString);
+        if ((selectionRange[0] === -1) || (selectionRange[1] - selectionRange[0] > queryString.length * 1.5)){
+            return txt;
+        }
+        return txt.slice(0, selectionRange[0]) + "<span style='background-color: yellow; color: black;'>" + txt.slice(selectionRange[0], selectionRange[1]) + "</span>" + txt.slice(selectionRange[1]);
+    }
 
     id: rootitem
     color: "black"
