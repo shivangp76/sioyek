@@ -2025,7 +2025,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         translate_amount = comment_document.size().toSize().height();
 
     }
-    if (is_global) {
+    if (index.model()->columnCount() > 3) {
         file_name_document.setTextWidth(option.rect.width());
 
         //QSize comment_size =  comment_document.size().toSize();
@@ -2038,7 +2038,7 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
             ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
         }
 
-        file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(HighlightModel::file_name).data().toString() + "</div>");
+        file_name_document.setHtml("<div align=\"right\">[" + index.siblingAtColumn(HighlightModel::file_name).data().toString() + "]</div>");
         file_name_document.documentLayout()->draw(painter, ctx);
     }
     painter->restore();
@@ -2072,7 +2072,7 @@ QSize HighlightSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option,
     QSizeF res = highlight_document.size();
 
 
-    if (is_global) {
+    if (index.model()->columnCount() > 3) {
         QString doc_text = index.siblingAtColumn(HighlightModel::file_name).data().toString();
         file_name_document.setPlainText(doc_text);
         QSizeF footer_size = file_name_document.size();
