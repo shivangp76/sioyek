@@ -5941,43 +5941,27 @@ void MainWidget::handle_goto_highlight_global() {
     }
 
     if (TOUCH_MODE) {
-        std::vector<std::wstring> descs;
-        std::vector<std::wstring> text_annotations;
-        std::vector<std::wstring> file_names_wstring;
-        std::vector<BookState> book_states;
-        bool has_annots = false;
+        //HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(file_names), std::move(file_checksums));
+        HighlightModel* highlights_model = new HighlightModel(std::move(highlights), std::move(file_names), std::move(file_checksums), this);
 
-        for (int i = 0; i < highlights.size(); i++) {
-            const Highlight& hl = highlights[i];
-            descs.push_back(hl.description);
-            text_annotations.push_back(hl.text_annot);
-            file_names_wstring.push_back(file_names[i].toStdWString());
-            //BookState
-            book_states.push_back({ file_checksums[i].toStdWString(), hl.selection_begin.y, hl.uuid});
-            if (hl.text_annot.size() > 0) {
-                has_annots = true;
-            }
-        }
+        TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", { std::make_pair("_colorMap", get_color_mapping())}, this);
+        lv->list_view->proxy_model->set_is_highlight(true);
+        lv->list_view->proxy_model->setFilterKeyColumn(-1);
 
-        std::vector<std::vector<std::wstring>> table;
-        if (has_annots) {
-            table = { descs, text_annotations, file_names_wstring };
-        }
-        else {
-            table = { descs, file_names_wstring };
-        }
+        lv->set_select_fn(
+            [&, highlights_model, handle_select_fn](int index) {
+                Highlight hl = highlights_model->highlights[index];
+                std::string checksum = highlights_model->checksums[index].toStdString();
+                handle_select_fn(hl.selection_begin.y, checksum);
+            });
 
-        set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, table, book_states, -1,
+        lv->set_delete_fn([&, highlights_model, handle_delete_fn](int index) {
+            Highlight hl = highlights_model->highlights[index];
+            handle_delete_fn(hl.uuid);
+            });
 
-            [&, handle_select_fn](BookState* book_state) {
-                if (book_state) {
-                    handle_select_fn(book_state->offset_y, utf8_encode(book_state->document_path));
 
-                }
-            }, [&, handle_delete_fn](BookState* state) {
-                handle_delete_fn(state->uuid);
-                });
-
+        set_current_widget(lv);
         show_current_widget();
     }
     else {
@@ -7477,17 +7461,30 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    //std::vector<std::pair<std::string, Highlight>> global_highlights;
-    //db_manager->global_select_highlight(global_highlights);
-    //std::vector<Highlight> highlights;
-    //std::vector<QString> checksums;
-    //std::vector<QString> paths;
+    std::vector<std::pair<std::string, Highlight>> global_highlights;
+    db_manager->global_select_highlight(global_highlights);
+    std::vector<Highlight> highlights;
+    std::vector<QString> checksums;
+    std::vector<QString> paths;
 
-    //for (auto [checksum, hl] : global_highlights) {
-    //}
+    for (auto [checksum, hl] : global_highlights) {
 
-    //HighlightModel* highlights_model = new HighlightModel()
+        QString path = QString::fromStdWString(document_manager->get_path_from_hash(checksum).value_or(L""));
+        if (path.size() > 0) {
+            highlights.push_back(hl);
+            checksums.push_back(QString::fromStdString(checksum));
+            paths.push_back(path);
+        }
+    }
 
+    HighlightModel* highlights_model = new HighlightModel(std::move(highlights), std::move(paths), std::move(checksums), this);
+
+    TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", { std::make_pair("_colorMap", get_color_mapping())}, this);
+    lv->list_view->proxy_model->set_is_highlight(true);
+    lv->list_view->proxy_model->setFilterKeyColumn(-1);
+
+    set_current_widget(lv);
+    show_current_widget();
 
 }
 
