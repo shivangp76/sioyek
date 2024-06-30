@@ -53,6 +53,7 @@ void TouchListView::initialize(int selected_index, bool deletable, std::vector<s
 TouchListView::TouchListView(bool is_fuzzy, QAbstractItemModel* items_, int selected_index, QWidget* parent, bool deletable, bool move, QString component_name_, std::vector<std::pair<QString, QVariant>> props) : QWidget(parent) {
 
     component_name = component_name_;
+    // todo: make sure this is freed
     proxy_model = new MySortFilterProxyModel(is_fuzzy, false);
     model = items_;
     if (move) {

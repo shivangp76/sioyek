@@ -28,9 +28,10 @@ TouchListView{
         property string typeString: String.fromCharCode(listModel.data(listModel.index(index, 1)))
         property color hlTextColor: isColorDark(hlColor) ? "white" : "black"
 
-        height: Math.min(inner.height * 1.5, inner.height + 50)
+        height: inner.height + 30
 
-        color: mosuearea.pressed ? "darkgrey" : "black"
+        // color: mosuearea.pressed ? "#111" : "black"
+        color: listModel.mapToSource(listModel.index(index, 0)).row == _selected_index ? "#444": "black"
 
         Text {
 
