@@ -6,7 +6,6 @@ import "qrc:/pdf_viewer/touchui"
 
 Rectangle {
 
-
     function highlightQuery(txt){
 
         let queryString = query.text.toLowerCase();

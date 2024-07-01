@@ -1165,6 +1165,7 @@ public:
     QNetworkReply* download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action = {}, std::string pending_portal_handle="");
     int get_pending_portal_index_with_handle(const std::string& handle);
     QVariantMap get_color_mapping();
+    void handle_type_text_into_input(QString txt);
 
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);

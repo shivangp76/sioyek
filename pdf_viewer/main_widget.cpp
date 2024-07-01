@@ -12788,3 +12788,16 @@ void MainWidget::on_super_fast_search_index_computed() {
         index_current_document_for_fulltext_search(true);
     }
 }
+
+
+void MainWidget::handle_type_text_into_input(QString txt) {
+
+    QWidget* focus_widget = focusWidget();
+
+    if (focus_widget) {
+        QKeySequence seq = QKeySequence::mnemonic(txt);
+        QKeyEvent* e = new QKeyEvent(QEvent::KeyPress, seq[0], Qt::NoModifier, txt);
+        // send event to focused widget
+        QCoreApplication::sendEvent(focus_widget, e);
+    }
+}

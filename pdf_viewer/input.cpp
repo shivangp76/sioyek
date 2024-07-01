@@ -1427,6 +1427,25 @@ public:
 
 };
 
+class TypeTextCommand : public TextCommand {
+public:
+    static inline const std::string cname = "type_text";
+    static inline const std::string hname = "Type Text";
+    static inline const bool developer_only = true;
+
+    TypeTextCommand(MainWidget* w) : TextCommand(cname, w) {
+    };
+
+    void perform() {
+        widget->handle_type_text_into_input(QString::fromStdWString(text.value()));
+    }
+
+    std::string text_requirement_name() {
+        return "Text";
+    }
+
+};
+
 class DownloadClipboardUrlCommand : public Command {
 public:
     static inline const std::string cname = "download_clipboard_url";
@@ -7435,6 +7454,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SemanticSearchExtractiveCommand>();
     register_command<DownloadPaperWithUrlCommand>();
     register_command<DownloadClipboardUrlCommand>();
+    register_command<TypeTextCommand>();
     register_command<ExecuteMacroCommand>();
     register_command<ControlMenuCommand>();
     register_command<SetViewStateCommand>();
