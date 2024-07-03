@@ -1948,6 +1948,15 @@ QCommandLineParser* get_command_line_parser() {
     QCommandLineOption local_database_path_option("local-database-path", "Specify which file to use for local data", "path");
     parser->addOption(local_database_path_option);
 
+    QCommandLineOption last_file_path_option("last-file-path", "Specify which file to use for last file location.", "path");
+    parser->addOption(last_file_path_option);
+
+    QCommandLineOption force_drawings_path_option("force-drawing-path", "Specify the path of drawings file to use (this is mainly used for testing and documentation, probably not very useful for end-users)", "path");
+    parser->addOption(force_drawings_path_option);
+
+    QCommandLineOption force_annotations_option("force-annotations-path", "Specify the path of annotations file to use (this is mainly used for testing and documentation, probably not very useful for end-users)", "path");
+    parser->addOption(force_annotations_option);
+
     QCommandLineOption verbose_option("verbose", "Print extra information in commnad line.");
     parser->addOption(verbose_option);
 

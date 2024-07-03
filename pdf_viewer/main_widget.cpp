@@ -5314,6 +5314,7 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstr
                 show_textbar(utf8_decode(next_requirement.name), true, pending_command_instance->get_text_default_value());
             }
             else if (next_requirement.type == RequirementType::Symbol) {
+                invalidate_ui();
                 if (TOUCH_MODE) {
                     show_mark_selector();
                 }
@@ -10084,6 +10085,10 @@ QString MainWidget::handle_action_in_menu(std::wstring action) {
         }
     }
     if (my_line_edit) {
+        if (action == L"select") {
+            QKeyEvent* enter_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Enter, Qt::NoModifier);
+            QApplication::sendEvent(my_line_edit, enter_event);
+        }
         if (action == L"cursor_backward") {
             my_line_edit->cursorBackward(false);
         }

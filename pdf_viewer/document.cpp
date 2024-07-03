@@ -26,6 +26,8 @@
 #include "utils.h"
 
 extern bool SHOULD_RENDER_PDF_ANNOTATIONS;
+extern std::wstring forced_drawings_path;
+extern std::wstring forced_annotations_path;
 
 const int WINDOW_SIZE = 10;
 const int EMBEDDING_DIM = 10;
@@ -3480,7 +3482,12 @@ std::wstring Document::get_drawings_file_path() {
         return Path(parent_path.toStdWString()).slash(L"tutorial.pdf.sioyek.drawings").get_path();
     }
 #endif
-    return get_addtional_sioyek_file_path("drawings");
+    if (forced_drawings_path.size() > 0) {
+        return forced_drawings_path;
+    }
+    else {
+        return get_addtional_sioyek_file_path("drawings");
+    }
 }
 
 std::wstring Document::get_scratchpad_file_path() {
@@ -3523,7 +3530,12 @@ std::wstring Document::get_annotations_file_path() {
         return Path(parent_path.toStdWString()).slash(L"tutorial.pdf.sioyek.annotations").get_path();
     }
 #endif
-    return get_addtional_sioyek_file_path("annotations");
+    if (forced_annotations_path.size() > 0) {
+        return forced_annotations_path;
+    }
+    else {
+        return get_addtional_sioyek_file_path("annotations");
+    }
 }
 
 

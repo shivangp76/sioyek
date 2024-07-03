@@ -115,6 +115,8 @@ Path old_local_database_file_path(L"");
 Path old_global_database_file_path(L"");
 Path local_database_file_path(L"");
 Path global_database_file_path(L"");
+std::wstring forced_drawings_path(L"");
+std::wstring forced_annotations_path(L"");
 
 #ifdef SIOYEK_MOBILE
 Path tutorial_path(L":/tutorial.pdf");
@@ -791,12 +793,26 @@ int main(int argc, char* args[]) {
     }
     char* shared_database_path_arg = get_argv_value(argc, args, "--shared-database-path");
     char* local_database_path_arg = get_argv_value(argc, args, "--local-database-path");
+    char* last_file_path_arg = get_argv_value(argc, args, "--last-file-path");
+    char* forced_drawings_path_arg = get_argv_value(argc, args, "--force-drawing-path");
+    char* forced_annotations_path_arg = get_argv_value(argc, args, "--force-annotations-path");
 
     if (shared_database_path_arg) {
         global_database_file_path = utf8_decode(std::string(shared_database_path_arg));
     }
     if (local_database_path_arg) {
         local_database_file_path = utf8_decode(std::string(local_database_path_arg));
+    }
+    if (last_file_path_arg) {
+        last_opened_file_address_path = utf8_decode(std::string(last_file_path_arg));
+    }
+
+    if (forced_drawings_path_arg) {
+        forced_drawings_path = utf8_decode(std::string(forced_drawings_path_arg));
+    }
+
+    if (forced_annotations_path_arg) {
+        forced_annotations_path = utf8_decode(std::string(forced_annotations_path_arg));
     }
 
     verify_paths();

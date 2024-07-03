@@ -1,0 +1,1 @@
+Open the list of tabs.

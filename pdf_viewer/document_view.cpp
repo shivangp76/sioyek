@@ -1649,11 +1649,11 @@ std::optional<AbsoluteRect> DocumentView::get_control_rect() {
 std::optional<AbsoluteRect> DocumentView::shrink_selection(bool is_begin, bool word) {
     if (selected_character_rects.size() > 1) {
         if (word) {
-            int page;
+            //int page;
             int index = is_begin ? 0 : selected_character_rects.size() - 1;
             DocumentRect page_rect = selected_character_rects[index].to_document(current_document);
-            if (page >= 0) {
-                fz_stext_page* stext_page = current_document->get_stext_with_page_number(page);
+            if (page_rect.page >= 0) {
+                fz_stext_page* stext_page = current_document->get_stext_with_page_number(page_rect.page);
                 std::optional<DocumentRect> new_rect_ = find_shrinking_rect_word(is_begin, stext_page, page_rect);
                 if (new_rect_) {
                     AbsoluteRect new_rect = new_rect_->to_absolute(current_document);

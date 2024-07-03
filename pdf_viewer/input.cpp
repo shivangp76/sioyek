@@ -156,6 +156,7 @@ struct ParseState {
             }
             return arg;
         }
+        return {};
     }
 
     bool is_valid_command_name_char(QChar c) {
@@ -3825,6 +3826,59 @@ public:
 };
 
 
+class SelectVisibleItem : public GenericVisibleSelectCommand {
+
+    std::vector<VisibleObjectIndex> visible_objects;
+public:
+    static inline const std::string cname = "generic_select";
+    static inline const std::string hname = "Select visible items";
+    SelectVisibleItem(MainWidget* w) : GenericVisibleSelectCommand(cname, w) {
+        visible_objects = widget->dv()->get_generic_visible_item_indices();
+    };
+
+    int get_selected_item_index() override{
+        return -1;
+        //return widget->selected_highlight_index;
+    }
+
+    //void pre_perform() {
+    //    widget->clear_tag_prefix();
+    //}
+
+    std::vector<int> get_visible_item_indices() override {
+        std::vector<int> res;
+        for (int i = 0; i < visible_objects.size(); i++) {
+            res.push_back(i);
+        }
+        return res;
+        //return widget->main_document_view->get_visible_highlight_indices();
+    }
+
+    void handle_indices_pre_perform() override {
+        widget->clear_tag_prefix();
+        widget->handle_generic_tags_pre_perform(visible_objects);
+
+    }
+
+    void perform_with_selected_index(std::optional<int> index) override {
+        if (index && index.value() < visible_objects.size()) {
+            VisibleObjectIndex object_index = visible_objects[index.value()];
+            if (object_index.object_type == VisibleObjectType::Highlight) {
+                widget->set_selected_highlight_index(object_index.index);
+            }
+            if (object_index.object_type == VisibleObjectType::Bookmark) {
+                widget->set_selected_bookmark_index(object_index.index);
+            }
+            if (object_index.object_type == VisibleObjectType::Portal) {
+                widget->set_selected_portal_index(object_index.index);
+            }
+
+        }
+
+    }
+
+};
+
 class DeteteVisibleItem : public GenericVisibleSelectCommand {
 
     std::vector<VisibleObjectIndex> visible_objects;
@@ -7472,6 +7526,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<AddAnnotationToHighlightCommand>();
     register_command<ChangeHighlightTypeCommand>();
     register_command<DeteteVisibleItem>();
+    register_command<SelectVisibleItem>();
     register_command<RenameCommand>();
     register_command<SetFreehandThickness>();
     register_command<GotoPageWithLabel>();

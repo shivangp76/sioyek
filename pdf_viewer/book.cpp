@@ -613,6 +613,7 @@ const std::vector<DocumentRect> SmartViewCandidate::get_highlight_rects() {
             return highlight_rects_;
         }
     }
+    return {};
 }
 
 bool BookMark::is_latex() const {

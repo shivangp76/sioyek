@@ -370,6 +370,7 @@ tutorial/*.pdf
 tutorial/*.synctex.gz
 tutorial/*.bbl
 tutorial/*.blg
+docs/videos/*
 *.o.d
 compile_commands.json
 
