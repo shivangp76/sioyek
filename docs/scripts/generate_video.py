@@ -21,8 +21,8 @@ def show_run_command(s, command):
     s.command()
 
     for ch in command:
-        if ch == ' ':
-            s.type_text("' '")
+        if ch == ' ' or ch == ',':
+            s.type_text("'" + ch + "'")
         else:
             s.type_text(ch)
         time.sleep(0.1)
@@ -32,8 +32,8 @@ def show_run_command(s, command):
 
 def type_words(s, command):
     for ch in command:
-        if ch == ' ':
-            s.type_text("' '")
+        if ch == ' ' or ch == ',':
+            s.type_text("'" + ch + "'")
         else:
             s.type_text(ch)
         time.sleep(0.1)

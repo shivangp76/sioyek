@@ -9,6 +9,8 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // why does BookState have a uuid?
+// make page range in search command 1-indexed
+// make the action of download and clipboard paper configurable
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -12463,7 +12465,11 @@ void MainWidget::on_ios_resume(){
 
 
 QNetworkReply* MainWidget::download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action) {
-    return sioyek_network_manager->download_paper_with_url(paper_url, use_archive_url, action);
+    QNetworkReply* reply = sioyek_network_manager->download_paper_with_url(paper_url, use_archive_url, action);
+    QObject::connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        on_paper_downloaded(reply);
+        });
+    return reply;
 }
 
 
