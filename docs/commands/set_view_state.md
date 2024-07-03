@@ -1,0 +1,3 @@
+Sets the view state to the state described by the given input text. The text format is : `{offset_x} {offset_y} {zoom_level} {push_state}`. For example: `0 1000 3 1` means we want to move to location (0, 1000) in the document with `zoom_level=3` and we want to push the previous state into history stack.
+
+This command in mainly useful for scripting and it is probably not directly useful for end-users.

@@ -21,7 +21,8 @@ def show_run_command(s, command):
     s.command()
 
     for ch in command:
-        if ch == ' ' or ch == ',':
+        special_chars = [' ', ',', ')']
+        if ch in special_chars:
             s.type_text("'" + ch + "'")
         else:
             s.type_text(ch)
@@ -30,15 +31,18 @@ def show_run_command(s, command):
     time.sleep(0.5)
     s.control_menu('select')
 
-def type_words(s, command):
+def type_words(s, command, delay=0.1, final_delay=0.5):
+    special_chars = [' ', ',', ')']
     for ch in command:
-        if ch == ' ' or ch == ',':
+        if ch in special_chars:
             s.type_text("'" + ch + "'")
+        elif ch == "'":
+            s.type_text("'\\''")
         else:
             s.type_text(ch)
-        time.sleep(0.1)
+        time.sleep(delay)
     
-    time.sleep(0.5)
+    time.sleep(final_delay)
     s.control_menu('select')
 
 
@@ -69,9 +73,10 @@ def generate_video_for_markdown_file(markdown_file_path):
     with open(markdown_file_path, 'r', encoding='utf-8') as infile:
         markdown_content = infile.read()
     
+    has_code = markdown_content.find('demo_code:') != -1
     code_begin_index = markdown_content.find('```python')
     code_end_index = markdown_content.find('```', code_begin_index + 1)
-    if code_begin_index >= 0:
+    if has_code:
         code_text = markdown_content[code_begin_index + 9:code_end_index].strip()
         print('^' * 80)
         print('generating video for ', markdown_file_path)

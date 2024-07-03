@@ -10087,7 +10087,7 @@ QString MainWidget::handle_action_in_menu(std::wstring action) {
         }
     }
     if (my_line_edit) {
-        if (action == L"select") {
+        if ((!selector_widget) && action == L"select") {
             QKeyEvent* enter_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Enter, Qt::NoModifier);
             QApplication::sendEvent(my_line_edit, enter_event);
         }
