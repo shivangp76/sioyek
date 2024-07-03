@@ -8666,14 +8666,6 @@ bool MainWidget::ensure_internet_permission() {
     return true;
 }
 
-void MainWidget::add_text_annotation_to_selected_highlight(const std::wstring& annot_text) {
-    int selected_highlight_index = get_selected_highlight_index();
-    if (selected_highlight_index > -1) {
-        Highlight hl = main_document_view->get_highlight_with_index(selected_highlight_index);
-        update_highlight_annot_with_uuid(hl.uuid, annot_text);
-    }
-}
-
 void MainWidget::change_selected_bookmark_text(const std::wstring& new_text) {
     int selected_bookmark_index = get_selected_bookmark_index();
     if (selected_bookmark_index != -1) {

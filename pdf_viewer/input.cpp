@@ -1909,32 +1909,6 @@ public:
 
 };
 
-class AddAnnotationToSelectedHighlightCommand : public TextCommand {
-public:
-    static inline const std::string cname = "add_annot_to_selected_highlight";
-    static inline const std::string hname = "Add annotation to selected highlight";
-    AddAnnotationToSelectedHighlightCommand(MainWidget* w) : TextCommand(cname, w) {};
-
-    void perform() {
-        widget->add_text_annotation_to_selected_highlight(this->text.value());
-    }
-
-    void pre_perform() {
-
-        int selected_highlight_index = widget->get_selected_highlight_index();
-        if (selected_highlight_index >= 0){
-            widget->text_command_line_edit->setText(
-                    QString::fromStdWString(widget->doc()->get_highlights()[selected_highlight_index].text_annot)
-                    );
-        }
-    }
-
-
-    std::string text_requirement_name() {
-        return "Comment";
-    }
-};
-
 class RenameCommand : public TextCommand {
 public:
     static inline const std::string cname = "rename";
@@ -7522,7 +7496,6 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<GetOverviewPaperName>();
     register_command<GetAnnotationsJsonCommand>();
     register_command<ToggleRectHintsCommand>();
-    register_command<AddAnnotationToSelectedHighlightCommand>();
     register_command<AddAnnotationToHighlightCommand>();
     register_command<ChangeHighlightTypeCommand>();
     register_command<DeteteVisibleItem>();

@@ -436,8 +436,6 @@ public:
     void toggle_statusbar();
     void toggle_titlebar();
 
-    void add_text_annotation_to_selected_highlight(const std::wstring& annot_text);
-
     // search the `paper_name` in one of the configurable when middle-click or shift+middle-clicking on paper's name
     void handle_search_paper_name(QString paper_name, bool is_shift_pressed);
 
