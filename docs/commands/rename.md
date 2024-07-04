@@ -1,0 +1,1 @@
+Rename the current file. Sioyek tries to fill the default value to an automatically detected title.

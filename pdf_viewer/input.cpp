@@ -1136,6 +1136,24 @@ public:
     bool requires_document() { return false; }
 };
 
+class SendSymbolCommand : public SymbolCommand {
+public:
+    static inline const std::string cname = "send_symbol";
+    static inline const std::string hname = "Send a symbol to the previous running command";
+
+    SendSymbolCommand(MainWidget* w) : SymbolCommand(cname, w) {}
+
+    std::string get_name() {
+        return cname;
+    }
+
+    void perform() {
+        widget->send_symbol_to_last_command(this->symbol);
+    }
+
+    bool requires_document() { return false; }
+};
+
 class SetMark : public SymbolCommand {
 public:
     static inline const std::string cname = "set_mark";
@@ -4036,7 +4054,7 @@ public:
     AddAnnotationToHighlightCommand(MainWidget* w) : GenericHighlightCommand(cname, w) {};
 
     void perform_with_highlight_selected() {
-        widget->execute_macro_if_enabled(L"add_annot_to_selected_highlight");
+        widget->execute_macro_if_enabled(L"edit_selected_highlight");
     }
 
 };
@@ -7470,6 +7488,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<MoveTextMarkDownCommand>();
     register_command<MoveTextMarkUpCommand>();
     register_command<SetMark>();
+    register_command<SendSymbolCommand>();
     register_command<ToggleDrawingMask>();
     register_command<TurnOnAllDrawings>();
     register_command<TurnOffAllDrawings>();

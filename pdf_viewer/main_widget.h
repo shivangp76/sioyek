@@ -1164,6 +1164,7 @@ public:
     int get_pending_portal_index_with_handle(const std::string& handle);
     QVariantMap get_color_mapping();
     void handle_type_text_into_input(QString txt);
+    void send_symbol_to_last_command(char symbol);
 
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);

@@ -413,8 +413,8 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
         document_view->visible_drawing_mask[i] = true;
     }
 
-    //bookmark_pixmap = QPixmap(":/icons/B.svg");
-    //portal_pixmap = QPixmap(":/end.png");
+    bookmark_icon = QPixmap(":/icons/B.svg");
+    //portal_icon = QPixmap(":/end.png");
     portal_icon = QIcon(":/icons/P.svg");
     bookmark_icon_white = QIcon(":/icons/B_white.svg");
     portal_icon_white = QIcon(":/icons/P_white.svg");

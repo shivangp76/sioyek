@@ -22,6 +22,7 @@ for i in range(3):
 
 end_recording()
 ```
+for_commands: search chapter_search
 
 doc_body:
-Search the contents of current document. You can use @command(next_item) and @command(previous_item) to navigate search results. You can optionally specify a page range using the following syntax: `<begin_page,end_page>query`.
+Search the contents of current document. You can use @command(next_item) and @command(previous_item) to navigate search results. You can optionally specify a page range using the following syntax: `<begin_page,end_page>query`. The @command(chapter_search) command automatically fills the page range with the current chapter's page range.

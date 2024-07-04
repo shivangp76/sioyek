@@ -1,0 +1,42 @@
+{
+    "bookmarks": [
+    ],
+    "highlights": [
+        {
+            "begin_x": -200.4940643310547,
+            "begin_y": 253.24728393554688,
+            "creation_time": "2024-07-03T11:05:11Z",
+            "desc": "Press o to open a new document or Shift + o to open a previously opened document. ",
+            "end_x": 184.55654907226562,
+            "end_y": 254.52227783203125,
+            "modification_time": "2024-07-03T11:05:11Z",
+            "text_annot": "",
+            "type": 104,
+            "uuid": "{a7deadb3-68b5-4522-804a-b38aac05f5f5}"
+        }
+    ],
+    "marks": [
+        {
+            "creation_time": "2024-07-02 12:01:49",
+            "modification_time": "2024-07-02 15:31:23",
+            "offset_x": 0,
+            "offset_y": 2560.9599609375,
+            "symbol": 47,
+            "uuid": "{e2dbf9db-9ae6-4243-a909-f5e0307fcd9f}"
+        }
+    ],
+    "portals": [
+        {
+            "creation_time": "2024-05-26 14:19:33",
+            "dst_document": "1a3d9733887495eb8ffbe8bbb2a5d040",
+            "dst_offset_x": 0,
+            "dst_offset_y": 270,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-05-26 14:20:07",
+            "same": false,
+            "src_offset_x": 92.118896484375,
+            "src_offset_y": 1143.90966796875,
+            "uuid": "{4918ad8d-f214-46a5-beec-69a2d47824a9}"
+        }
+    ]
+}

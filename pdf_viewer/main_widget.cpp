@@ -12804,3 +12804,10 @@ void MainWidget::handle_type_text_into_input(QString txt) {
         QCoreApplication::sendEvent(focus_widget, e);
     }
 }
+
+void MainWidget::send_symbol_to_last_command(char symbol) {
+    if (pending_command_instance) {
+        pending_command_instance->set_symbol_requirement(symbol);
+        advance_command(std::move(pending_command_instance));
+    }
+}

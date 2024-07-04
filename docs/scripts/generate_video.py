@@ -26,9 +26,9 @@ def show_run_command(s, command):
             s.type_text("'" + ch + "'")
         else:
             s.type_text(ch)
-        time.sleep(0.1)
+        time.sleep(0.03)
     
-    time.sleep(0.5)
+    time.sleep(1)
     s.control_menu('select')
 
 def type_words(s, command, delay=0.1, final_delay=0.5):
@@ -76,12 +76,13 @@ def generate_video_for_markdown_file(markdown_file_path):
     has_code = markdown_content.find('demo_code:') != -1
     code_begin_index = markdown_content.find('```python')
     code_end_index = markdown_content.find('```', code_begin_index + 1)
-    if has_code:
+    if has_code and (code_begin_index >= 0):
         code_text = markdown_content[code_begin_index + 9:code_end_index].strip()
         print('^' * 80)
         print('generating video for ', markdown_file_path)
         exec(code_text)
         exec('s.quit()')
+        time.sleep(2)
         return True
     return False
 
