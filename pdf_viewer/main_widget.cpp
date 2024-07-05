@@ -7246,7 +7246,7 @@ void MainWidget::show_command_documentation(QString command_name) {
 }
 
 
-bool MainWidget::show_contextual_context_menu() {
+bool MainWidget::show_contextual_context_menu(QString default_context_menu) {
     auto p = mapFromGlobal(QCursor::pos());
     WindowPos window_pos = WindowPos{
         p.x(), p.y()
@@ -7287,6 +7287,10 @@ bool MainWidget::show_contextual_context_menu() {
                 return true;
             }
         }
+    }
+    if (default_context_menu.size() > 0) {
+        show_context_menu(default_context_menu);
+        return true;
     }
     return false;
 }
@@ -7495,6 +7499,19 @@ void MainWidget::show_command_menu() {
     std::vector<QString> command_names;
     std::vector<QStringList> command_keybinds;
     std::unordered_map<std::string, std::vector<std::string>> command_key_mappings = input_handler->get_command_key_mappings();
+
+    // also add key mapping to aliased commands
+    for (auto [original_name, alias] : command_manager->command_aliases) {
+        auto original_it = command_key_mappings.find(original_name);
+        auto alias_it = command_key_mappings.find(alias);
+        if ((original_it == command_key_mappings.end()) && (alias_it != command_key_mappings.end())) {
+            command_key_mappings[original_name] = command_key_mappings[alias];
+        }
+        if ((original_it != command_key_mappings.end()) && (alias_it == command_key_mappings.end())) {
+            command_key_mappings[alias] = command_key_mappings[original_name];
+        }
+    }
+
     QStringList all_command_names = command_manager->get_all_command_names();
     for (int i = 0; i < all_command_names.size(); i++) {
         QStringList keybindings;
@@ -8200,7 +8217,8 @@ bool MainWidget::is_network_manager_running(bool* is_downloading) {
     for (int i = 0; i < children.size(); i++) {
         if (children.at(i)->isRunning()) {
             if (is_downloading) {
-                *is_downloading = children.at(i)->url().toString().endsWith(".pdf");
+                bool downloading = !children.at(i)->property("sioyek_downloading").isNull();
+                *is_downloading = downloading;
             }
             return true;
         }

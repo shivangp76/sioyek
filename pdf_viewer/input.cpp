@@ -53,6 +53,8 @@ extern bool INCREMENTAL_SEARCH;
 
 extern std::wstring EXTRACT_TABLE_PROMPT;
 
+extern std::wstring CONTEXT_MENU_ITEMS;
+
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 bool is_command_string_modal(const std::wstring& command_name) {
     return std::find(command_name.begin(), command_name.end(), '[') != command_name.end();
@@ -3080,6 +3082,19 @@ public:
     }
 };
 
+class WaitForDownloadsToFinish : public GenericWaitCommand {
+public:
+    static inline const std::string cname = "wait_for_downloads_to_finish";
+    static inline const std::string hname = "";
+    WaitForDownloadsToFinish(MainWidget* w) : GenericWaitCommand(cname, w) {};
+
+    bool is_ready() override {
+        bool is_downloading = false;
+        bool is_running = widget->is_network_manager_running(&is_downloading);
+        return !(is_downloading || is_running);
+    }
+};
+
 class OpenDocumentCommand : public Command {
 public:
     static inline const std::string cname = "open_document";
@@ -4578,7 +4593,8 @@ public:
     ShowContextMenuCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->show_context_menu();
+        widget->show_contextual_context_menu(QString::fromStdWString(CONTEXT_MENU_ITEMS));
+        //widget->show_contextual_context_menu();
     }
 
     bool requires_document() { return false; }
@@ -7596,6 +7612,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<WaitCommand>();
     register_command<WaitForRendersToFinishCommand>();
     register_command<WaitForSearchToFinishCommand>();
+    register_command<WaitForDownloadsToFinish>();
     register_command<WaitForIndexingToFinishCommand>();
     register_command<AddBookmarkCommand>();
     register_command<AddBookmarkMarkedCommand>();
@@ -7676,16 +7693,14 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<KeysUserCommand>();
     register_command<PrefsCommand>();
     register_command<PrefsUserCommand>();
-    register_command<MoveVisualMarkDownCommand>();
+    register_command<MoveVisualMarkDownCommand>("move_ruler_down");
+    register_command<MoveVisualMarkUpCommand>("move_ruler_up");
+    //register_command<MoveVisualMarkDownCommand>();
+    //register_command<MoveVisualMarkUpCommand>();
     register_command<MoveRulerToNextBlockCommand>();
     register_command<MoveRulerToPrevBlockCommand>();
-    register_command<MoveVisualMarkUpCommand>();
-    register_command<MoveVisualMarkNextCommand>();
-    register_command<MoveVisualMarkPrevCommand>();
-    register_command<MoveVisualMarkDownCommand>();
-    register_command<MoveVisualMarkUpCommand>();
-    register_command<MoveVisualMarkNextCommand>();
-    register_command<MoveVisualMarkPrevCommand>();
+    register_command<MoveVisualMarkNextCommand>("move_ruler_next");
+    register_command<MoveVisualMarkPrevCommand>("move_ruler_prev");
     register_command<ToggleCustomColorMode>();
     register_command<SetSelectHighlightTypeCommand>();
     register_command<SetFreehandType>();
@@ -8663,8 +8678,11 @@ void InputHandler::add_command_key_mappings(InputParseTreeNode* thisroot,
     std::vector<InputParseTreeNode*> prefix) const {
 
     if (thisroot->is_final) {
+        std::string key_string = get_key_string_from_tree_node_sequence(prefix);
+        std::string cmd_name;
+
         if (thisroot->name_.size() == 1) {
-            map[thisroot->name_[0]].push_back(get_key_string_from_tree_node_sequence(prefix));
+            map[thisroot->name_[0]].push_back(key_string);
         }
         else if (thisroot->name_.size() > 1) {
             for (const auto& name : thisroot->name_) {

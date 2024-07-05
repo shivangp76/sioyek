@@ -1046,7 +1046,7 @@ public:
     PaperDownloadFinishedAction get_default_paper_download_finish_action();
     void set_tag_prefix(std::wstring prefix);
     void clear_tag_prefix();
-    bool show_contextual_context_menu();
+    bool show_contextual_context_menu(QString default_context_menu="");
     void show_context_menu(QString menu="");
     QMenu* get_menu_from_items(std::unique_ptr<MenuItems> items, QWidget* parent);
     void show_recursive_context_menu(std::unique_ptr<MenuItems> items);

@@ -10,7 +10,9 @@ def get_documented_command_names():
         with open(file_path, 'r') as infile:
             for line in infile:
                 if line.startswith('for_commands:'):
-                    commands = line.split(':')[1].strip().split(' ')
+                    commands_tmp = line.split(':')[1].strip().split(' ')
+                    if len(commands_tmp) > 1:
+                        commands = commands_tmp
         all_commands.extend(commands)
     return all_commands
 
@@ -28,6 +30,7 @@ if __name__ == '__main__':
     documented_commands = set(get_documented_command_names())
     all_commands = set(get_all_commands_names())
     undocumented_commands = all_commands - documented_commands
+    # for com in documented_commands:
     for com in undocumented_commands:
         print(com)
     print('#all commands:', len(all_commands))

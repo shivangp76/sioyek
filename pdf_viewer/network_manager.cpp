@@ -132,6 +132,7 @@ void SioyekNetworkManager::load_access_token() {
             status = ServerStatus::LoggingIn;
             QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
                 int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                QString content = reply->readAll();
                 if (status_code == 401) {
                     ACCESS_TOKEN = "";
                     persist_access_token(ACCESS_TOKEN);
@@ -407,6 +408,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
     auto reply = network_manager.get(req);
     reply->setProperty("sioyek_paper_name", QString::fromStdWString(name));
     reply->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
+    reply->setProperty("sioyek_downloading", true);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, parent, fn=std::move(fn), begin_function=std::move(begin_function)]() {
 
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -455,6 +457,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
             QString sioyek_actual_paper_name = paper_titles[matching_index];
             download_reply->setProperty("sioyek_paper_name", sioyek_paper_name);
             download_reply->setProperty("sioyek_actual_paper_name", sioyek_actual_paper_name);
+            download_reply->setProperty("sioyek_downloading", true);
 
             //qDebug() << "downlaod_reply: " << download_reply;
             //QObject::connect(download_reply, &QNetworkReply::downloadProgress, [](qint64 r, qint64 t) {
@@ -473,6 +476,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
                     auto redirect_download_reply = download_paper_with_url(redirect_url.toStdWString(), false, download_finish_action);
                     redirect_download_reply->setProperty("sioyek_paper_name", sioyek_paper_name);
                     redirect_download_reply->setProperty("sioyek_actual_paper_name", sioyek_actual_paper_name);
+                    redirect_download_reply->setProperty("sioyek_downloading", true);
                     begin_function(redirect_download_reply);
                     QObject::connect(redirect_download_reply, &QNetworkReply::finished, [this, redirect_download_reply, fn=std::move(fn)]() {
                         fn(redirect_download_reply);

@@ -93,6 +93,7 @@ public:
     std::map<std::string, std::string> command_human_readable_names;
     std::map<std::string, QDateTime> command_last_uses;
     std::unordered_map<QString, QString> command_required_prefixes;
+    std::unordered_map<std::string, std::string> command_aliases;
 
     CommandManager(ConfigManager* config_manager);
     std::unique_ptr<Command> get_command_with_name(MainWidget* w, std::string name);
@@ -113,7 +114,11 @@ public:
         if (is_developer_mode || !T::developer_only) {
             std::string name = alias_name.size() > 0 ? alias_name : T::cname;
             bool is_alias = alias_name.size() > 0;
-            new_commands[name]  = [](MainWidget* widget) {return std::make_unique<T>(widget); };
+            new_commands[T::cname] = [](MainWidget* widget) {return std::make_unique<T>(widget); };
+            if (is_alias) {
+                new_commands[name] = [](MainWidget* widget) {return std::make_unique<T>(widget); };
+                command_aliases[T::cname] = name;
+            }
             command_human_readable_names[name] = is_alias ? "alias for " + T::cname : T::hname;
             command_required_prefixes[QString::fromStdString(name)] = "";
         }

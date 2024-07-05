@@ -979,6 +979,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"zoom_inc_factor", &ZOOM_INC_FACTOR, FloatExtras{1.0f, 2.0f});
     add_float(L"vertical_move_amount", &VERTICAL_MOVE_AMOUNT, FloatExtras{0.1f, 10.0f});
     add_float(L"horizontal_move_amount", &HORIZONTAL_MOVE_AMOUNT, FloatExtras{0.1f, 10.0f});
+    add_float(L"move_screen_ratio", &MOVE_SCREEN_PERCENTAGE, FloatExtras{0.0f, 1.0f});
     add_float(L"move_screen_percentage", &MOVE_SCREEN_PERCENTAGE, FloatExtras{0.0f, 1.0f});
     add_float(L"strike_line_width", &STRIKE_LINE_WIDTH, FloatExtras{0.0f, 10.0f});
     add_float(L"move_screen_ratio", &MOVE_SCREEN_PERCENTAGE, FloatExtras{0.0f, 1.0f});
