@@ -17,6 +17,12 @@ def start_recording(file_path):
 def end_recording():
     recorder.stop_recording()
 
+def pause_recording():
+    recorder.pause_recording()
+
+def resume_recording():
+    recorder.resume_recording()
+
 def show_run_command(s, command):
     s.command()
 
@@ -31,7 +37,7 @@ def show_run_command(s, command):
     time.sleep(1)
     s.control_menu('select')
 
-def type_words(s, command, delay=0.1, final_delay=0.5):
+def type_words(s, command, delay=0.1, final_delay=0.5, select=True):
     special_chars = [' ', ',', ')']
     for ch in command:
         if ch in special_chars:
@@ -42,8 +48,9 @@ def type_words(s, command, delay=0.1, final_delay=0.5):
             s.type_text(ch)
         time.sleep(delay)
     
-    time.sleep(final_delay)
-    s.control_menu('select')
+    if select:
+        time.sleep(final_delay)
+        s.control_menu('select')
 
 
 def get_video_file_path_for_markdown_file(markdown_file_path):
@@ -70,6 +77,9 @@ def generate_video_for_markdown_file(markdown_file_path):
     LAUNCH_ARGS = get_launch_args_for_markdown_file(markdown_file_path)
     video_file_path = get_video_file_path_for_markdown_file(markdown_file_path)
     RECORDING_FILE_NAME = str(video_file_path)
+
+    PDF_FILES_PATH = str(docs_base_path / "files" / "pdfs")
+
     with open(markdown_file_path, 'r', encoding='utf-8') as infile:
         markdown_content = infile.read()
     
@@ -94,7 +104,9 @@ def get_launch_args_for_markdown_file(markdown_file_path):
         drawings_file = files_dir / 'drawings.sioyek.drawings'
         annotations_file = files_dir / 'annotations.sioyek.annotations'
         if os.path.exists(drawings_file):
-            res['--force-drawing-path'] = drawings_file
+            copied_drawings_file = drawings_file.with_suffix('.tmp')
+            shutil.copy(drawings_file, copied_drawings_file)
+            res['--force-drawing-path'] = copied_drawings_file
         if os.path.exists(annotations_file):
             # copy annotations file with a .tmp suffix
             copied_annotations_file = annotations_file.with_suffix('.tmp')

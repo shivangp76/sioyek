@@ -3,10 +3,15 @@ related_commands: add_freetext_bookmark add_bookmark
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
-s.goto_page_with_page_number(2)
+s.goto_page_with_page_number(3)
 start_recording(RECORDING_FILE_NAME)
-show_run_command(s, 'add_bookmark')
-type_words(s, 'This is a bookmark')
+show_run_command(s, 'add_marked_bookmark')
+time.sleep(1)
+s.escape()
+s.toggleconfig_keyboard_point_selection()
+s.add_marked_bookmark('cc', wait=False)
+time.sleep(0.3)
+type_words(s, 'This is a marked bookmark')
 s.goto_page_with_page_number(1)
 time.sleep(1)
 show_run_command(s, 'goto_bookmark')

@@ -33,6 +33,7 @@ extern bool ALPHABETIC_LINK_TAGS;
 extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 extern std::wstring TABLE_EXTRACT_BEHAVIOUR;
 
+extern bool USE_KEYBOARD_POINT_SELECTION;
 extern float EPUB_WIDTH;
 extern float EPUB_HEIGHT;
 
@@ -945,7 +946,14 @@ void Command::set_next_requirement_with_string(std::wstring str) {
             set_rect_requirement(get_rect_from_string(str));
         }
         else if (req.type == RequirementType::Point) {
-            set_point_requirement(get_point_from_string(str));
+            if (USE_KEYBOARD_POINT_SELECTION && is_alpha_only(str)) {
+                int index = get_index_from_tag(utf8_encode(str));
+                AbsoluteDocumentPos abspos = widget->get_index_document_pos(index).to_absolute(widget->doc());
+                set_point_requirement(abspos);
+            }
+            else {
+                set_point_requirement(get_point_from_string(str));
+            }
         }
         else if (req.type == RequirementType::Generic) {
             set_generic_requirement(QString::fromStdWString(str));
@@ -4374,7 +4382,7 @@ public:
 
 class ToggleHighlightCommand : public Command {
 public:
-    static inline const std::string cname = "toggle_highlight";
+    static inline const std::string cname = "toggle_highlight_links";
     static inline const std::string hname = "Toggle whether PDF links are highlighted";
     ToggleHighlightCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
@@ -6440,6 +6448,18 @@ public:
 
 };
 
+class ToggleLineSelectCursor : public Command {
+public:
+    static inline const std::string cname = "toggle_line_select_cursor";
+    static inline const std::string hname = "Swap between begin/end of line selection.";
+    ToggleLineSelectCursor(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->main_document_view->swap_line_select_cursor();
+    }
+
+};
+
 class SelectRectCommand : public Command {
 public:
     static inline const std::string cname = "select_rect";
@@ -6644,6 +6664,26 @@ public:
         if (is_string_numeric(text.value().c_str()) && text.value().size() < 6) { // make sure the page number is valid
             widget->main_document_view->set_page_offset(std::stoi(text.value().c_str()));
         }
+    }
+};
+
+class MoveWindowCommand : public TextCommand {
+public:
+    static inline const std::string cname = "move_window";
+    static inline const std::string hname = "Move the sioyek window according to the given string";
+    MoveWindowCommand(MainWidget* w) : TextCommand(cname, w) {};
+
+    void perform() {
+        // format is "x y width height"
+        QString str = QString::fromStdWString(text.value());
+        QStringList parts = str.split(' ');
+        int x = parts[0].toInt();
+        int y = parts[1].toInt();
+        int width = parts[2].toInt();
+        int height = parts[3].toInt();
+        widget->resize(width, height);
+        widget->move(x, y);
+
     }
 };
 
@@ -7060,6 +7100,7 @@ public:
 
 	bool requires_document() { return false; }
 };
+
 
 class ConfigCommand : public Command {
     std::string config_name;
@@ -7574,21 +7615,15 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<GotoBookmarkGlobalCommand>();
     register_command<GotoHighlightGlobalCommand>();
     register_command<PortalCommand>();
-    register_command<PortalCommand>();
     register_command<CreateVisiblePortalCommand>();
     register_command<NextStateCommand>();
     register_command<PrevStateCommand>();
-    register_command<NextStateCommand>();
-    register_command<PrevStateCommand>();
-    register_command<DeletePortalCommand>();
     register_command<DeletePortalCommand>();
     register_command<DeleteBookmarkCommand>();
     register_command<DeleteHighlightCommand>();
     register_command<DeleteVisibleBookmarkCommand>();
     register_command<EditVisibleBookmarkCommand>();
     register_command<GotoPortalCommand>();
-    register_command<GotoPortalCommand>();
-    register_command<EditPortalCommand>();
     register_command<EditPortalCommand>();
     register_command<OpenPrevDocCommand>();
     register_command<OpenAllDocsCommand>();
@@ -7671,6 +7706,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<CloseVisualMarkCommand>();
     register_command<ZoomInCursorCommand>();
     register_command<ZoomOutCursorCommand>();
+    register_command<MoveWindowCommand>();
     register_command<GotoLeftCommand>();
     register_command<GotoLeftSmartCommand>();
     register_command<GotoRightCommand>();
@@ -7752,6 +7788,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SelectFreehandDrawingsCommand>();
     register_command<SelectCurrentSearchMatchCommand>();
     register_command<SelectRulerTextCommand>();
+    register_command<ToggleLineSelectCursor>();
     register_command<ShowTouchMainMenu>();
     register_command<ShowTouchPageSelectCommand>();
     register_command<ShowTouchHighlightTypeSelectCommand>();

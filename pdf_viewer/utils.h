@@ -929,3 +929,5 @@ int similarity_score(const T& haystack, const T& needle, int* out_begin = nullpt
     int lcs_length = lcs_small_optimized(&haystack[begin], &needle[0], length, needle.size());
     return lcs_length * 100 / length;
 }
+
+bool is_alpha_only(const std::wstring& str);

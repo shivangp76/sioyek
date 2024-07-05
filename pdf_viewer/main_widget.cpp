@@ -8743,6 +8743,7 @@ void MainWidget::update_selected_bookmark_font_size() {
         BookMark& selected_bookmark = doc()->get_bookmarks()[selected_bookmark_index];
         if (selected_bookmark.font_size != -1) {
             selected_bookmark.font_size = FREETEXT_BOOKMARK_FONT_SIZE;
+            pdf_renderer->get_bookmark_renderer()->release_cache();
         }
     }
 }

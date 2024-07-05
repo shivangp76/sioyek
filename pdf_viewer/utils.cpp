@@ -4761,4 +4761,10 @@ void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[
     pixel[2] = static_cast<unsigned char>(transformed_color[2] * 255);
 }
 
+bool is_alpha_only(const std::wstring& str) {
+    for (auto ch : str) {
+        if (!std::iswalpha(ch)) return false;
+    }
+    return true;
+}
 
