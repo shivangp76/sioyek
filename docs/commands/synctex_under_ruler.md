@@ -1,0 +1,23 @@
+related_commands:
+
+demo_code:
+```python
+s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
+s.open_document(str(tutorial_file_path))
+s.goto_page_with_page_number(3)
+s.keyboard_select_line('', wait=False)
+time.sleep(0.3)
+s.send_symbol('g')
+s.send_symbol('a')
+start_recording(RECORDING_FILE_NAME)
+# show_run_command(s, '')
+time.sleep(2)
+show_run_command(s, 'synctex_under_ruler')
+time.sleep(3)
+end_recording()
+```
+
+for_commands:
+
+doc_body:
+Perform a synctex search to the location of the line highlighted by ruler.

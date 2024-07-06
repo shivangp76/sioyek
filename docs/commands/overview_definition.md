@@ -1,4 +1,4 @@
-related_commands: goto_definition portal_to_definition visual_mark_under_cursor
+related_commands: goto_definition portal_to_definition visual_mark_under_cursor next_overview previous_overview
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True)

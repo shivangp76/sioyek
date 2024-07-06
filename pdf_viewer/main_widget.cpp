@@ -5055,7 +5055,7 @@ void MainWidget::handle_portal_overview_update() {
 void MainWidget::goto_overview() {
     if (main_document_view->get_overview_page()) {
         OverviewState overview = main_document_view->get_overview_page().value();
-        if (overview.doc != nullptr) {
+        if (overview.doc != nullptr && (overview.doc != doc())) {
             std::optional<Portal> closest_link_ = get_target_portal(false);
             if (closest_link_) {
                 push_state();
@@ -5431,7 +5431,7 @@ void MainWidget::overview_to_definition() {
             OverviewState overview_state;
             overview_state.absolute_offset_x = 0;
             overview_state.absolute_offset_y = first_abspos.y;
-            overview_state.doc = doc();
+            overview_state.doc = candidates[0].doc;
             overview_state.highlight_rects = candidates[0].get_highlight_rects();
             overview_state.overview_type = reference_type_string(candidates[0].reference_type);
 

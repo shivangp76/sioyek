@@ -8,6 +8,8 @@ import shutil
 video_base_path = pathlib.Path(__file__).parent.parent / "videos"
 files_base_path = pathlib.Path(__file__).parent.parent / "files"
 docs_base_path = pathlib.Path(__file__).parent.parent
+tutorial_base_path = pathlib.Path(__file__).parent.parent.parent / "tutorial"
+tutorial_file_path = pathlib.Path(__file__).parent.parent.parent / "tutorial" / "tut.pdf"
 markdown_file_path = pathlib.Path(r'C:\sioyek\sioyek-new\sioyek\docs\commands\goto_definition.md')
 recorder = pyscreenrec.ScreenRecorder()
 

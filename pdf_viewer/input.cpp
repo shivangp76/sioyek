@@ -7715,10 +7715,10 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DownloadPaperWithNameCommand>();
     register_command<OverviewUnderCursorCommand>();
     register_command<CloseOverviewCommand>();
-    register_command<VisualMarkUnderCursorCommand>();
+    register_command<VisualMarkUnderCursorCommand>("ruler_under_cursor");
     register_command<RulerUnderSelectedPointCommand>();
     register_command<StartMobileTextSelectionAtPointCommand>();
-    register_command<CloseVisualMarkCommand>();
+    register_command<CloseVisualMarkCommand>("exit_ruler_mode");
     register_command<ZoomInCursorCommand>();
     register_command<ZoomOutCursorCommand>();
     register_command<MoveWindowCommand>();
