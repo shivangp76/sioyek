@@ -75,3 +75,4 @@ Add a freetext bookmark in the selected rectangle. Freetext bookmarks are visibl
 - if the bookmark text starts with `#` followed by a symbol, it will draw a box with the symbol's color (the same color as the highlighs of the symbol).
 - if the bookmark text starts with `#markdown`, the rest of the bookmark will be rendered as markdown
 - if the bookmark text starts with `#latex`, the rest of the bookmark will be rendered as latex
+- if the bookmarks text starts with `? `, it will be interpreted as a question to be asked from the current document (using a large language model). The response will be displayed in the bookmark (this feature is only available to pro users).

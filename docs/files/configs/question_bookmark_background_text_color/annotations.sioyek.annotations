@@ -1,0 +1,134 @@
+{
+    "bookmarks": [
+        {
+            "begin_x": 80.64436340332031,
+            "begin_y": 318.4314270019531,
+            "color_blue": 0,
+            "color_green": 0,
+            "color_red": 0,
+            "creation_time": "2024-07-07T07:34:36Z",
+            "desc": "? what is the role of attention?\n\nThe role of attention in neural networks, particularly in models like the Transformer, is to allow the model to focus on different parts of the input sequence when generating an output. This mechanism helps in capturing long-distance dependencies and resolving anaphora within sentences by assigning varying degrees of importance to different words. Additionally, multi-head attention enables the model to attend to information from different representation subspaces simultaneously.",
+            "end_x": 287.1947021484375,
+            "end_y": 428.08160400390625,
+            "font_face": "",
+            "font_size": 8,
+            "modification_time": "2024-07-07T07:34:39Z",
+            "offset_y": -1,
+            "uuid": "{0bd32ded-6a63-4794-89fa-51a9b40ed93a}"
+        }
+    ],
+    "highlights": [
+    ],
+    "marks": [
+    ],
+    "portals": [
+        {
+            "creation_time": "2024-07-06 09:15:59",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:15:59",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{87e342ac-d419-4325-9b70-783e75f7046e}"
+        },
+        {
+            "creation_time": "2024-07-06 09:16:39",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:16:39",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{51f30d49-d440-4e32-aa95-1932e7a122cf}"
+        },
+        {
+            "creation_time": "2024-07-06 09:17:33",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:17:33",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{27a4637b-fdce-4407-aae9-842757616bb9}"
+        },
+        {
+            "creation_time": "2024-07-06 09:18:26",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:18:26",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{799f73f4-9e9a-4096-9d35-03708b7c1823}"
+        },
+        {
+            "creation_time": "2024-07-06 09:22:54",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:22:54",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{244ad43a-5d3c-49c1-9216-cdaa007c6994}"
+        },
+        {
+            "creation_time": "2024-07-06 09:32:52",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:32:52",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{d51def72-8921-4896-b55f-a0f23e222c7e}"
+        },
+        {
+            "creation_time": "2024-07-06 09:33:30",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:33:30",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{bb70aa8d-09b1-4871-9d10-35bda02b608a}"
+        },
+        {
+            "creation_time": "2024-07-06 09:37:58",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:37:58",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{950a71ea-51f1-43cc-81c6-ccad5572c199}"
+        },
+        {
+            "creation_time": "2024-07-06 09:44:10",
+            "dst_document": "4c74116a86bf750934ab2fb5154a2cf7",
+            "dst_offset_x": 0,
+            "dst_offset_y": 168.45899963378906,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-07-06 09:44:10",
+            "same": false,
+            "src_offset_x": 119.27899932861328,
+            "src_offset_y": 917.135986328125,
+            "uuid": "{5f028a6d-abdc-45f1-8b55-d54fb0903c86}"
+        }
+    ]
+}

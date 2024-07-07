@@ -1,4 +1,4 @@
-related_commands: close_window
+related_commands: close_window goto_window
 
 demo_code:
 ```python

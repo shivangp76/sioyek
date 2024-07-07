@@ -11,6 +11,8 @@
 // why does BookState have a uuid?
 // make page range in search command 1-indexed
 // make the action of download and clipboard paper configurable
+// api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
+// when searching for commands like setconfig_ we should not consider the setconfig_ part in string matching
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -1692,10 +1694,18 @@ void MainWidget::move_document_screens(int num_screens) {
 
 void MainWidget::on_config_file_changed(ConfigManager* new_config) {
 
+    QFont label_font = QFont(get_status_font_face_name());
+    label_font.setStyleHint(QFont::TypeWriter);
+
     status_label->setStyleSheet(get_status_stylesheet());
-    status_label->setFont(QFont(get_status_font_face_name()));
+    status_label->setFont(label_font);
     text_command_line_edit_container->setStyleSheet(get_status_stylesheet());
-    text_command_line_edit->setFont(QFont(get_status_font_face_name()));
+    text_command_line_edit->setFont(label_font);
+
+    status_label_left->setStyleSheet(get_status_stylesheet());
+    status_label_right->setStyleSheet(get_status_stylesheet());
+    status_label_left->setFont(label_font);
+    status_label_right->setFont(label_font);
 
     text_command_line_edit_label->setStyleSheet(get_status_stylesheet());
     text_command_line_edit->setStyleSheet(get_status_stylesheet());
@@ -1704,6 +1714,13 @@ void MainWidget::on_config_file_changed(ConfigManager* new_config) {
     int status_bar_height = get_status_bar_height();
     status_label->move(0, main_window_height - status_bar_height);
     status_label->resize(size().width(), status_bar_height);
+
+    if (current_widget_stack.size() > 0) {
+        BaseSelectorWidget* selector_widget = dynamic_cast<BaseSelectorWidget*>(current_widget_stack.back());
+        if (selector_widget) {
+            selector_widget->on_config_file_changed();
+        }
+    }
 
     //text_command_line_edit_container->setStyleSheet("background-color: black; color: white; border: none;");
 }
@@ -7545,7 +7562,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
     doc()->get_bookmarks()[ind].description += L"\n\n";
     sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, [this, bookmark_uuid, document=doc()](QString chunk) {
         int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
-        if (bookmark_index > 0) {
+        if (bookmark_index >= 0) {
             BookMark& bm = document->get_bookmarks()[bookmark_index];
             bm.description += chunk.toStdWString();
             // if the new description doesn't fit, increase the height of the bookmark
@@ -8091,7 +8108,7 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             set_color_mode_to_system_theme();
         }
 
-        if ((confname == "custom_background_color") || (confname == "custom_text_color")) {
+        if ((confname == "custom_background_color") || (confname == "custom_text_color") || (confname == "question_bookmark_text_color")) {
             pdf_renderer->get_bookmark_renderer()->release_cache();
         }
 
@@ -8214,16 +8231,18 @@ void MainWidget::show_download_paper_menu(
 
 bool MainWidget::is_network_manager_running(bool* is_downloading) {
     auto children = sioyek_network_manager->network_manager.findChildren<QNetworkReply*>();
+    bool running = false;
     for (int i = 0; i < children.size(); i++) {
         if (children.at(i)->isRunning()) {
+            running = true;
             if (is_downloading) {
                 bool downloading = !children.at(i)->property("sioyek_downloading").isNull();
                 *is_downloading = downloading;
+                return running;
             }
-            return true;
         }
     }
-    return false;
+    return running;
 }
 
 QString MainWidget::get_network_status_string() {

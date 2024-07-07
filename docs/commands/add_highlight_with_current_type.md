@@ -13,7 +13,7 @@ time.sleep(3)
 end_recording()
 ```
 
-for_commands: goto_next_highlight_of_type goto_prev_highlight_of_type
+for_commands:
 
 doc_body:
 Highlight the selected text with the current highlight type as set by @command(set_select_highlight_type).

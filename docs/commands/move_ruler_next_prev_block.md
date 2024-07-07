@@ -22,7 +22,7 @@ time.sleep(3)
 end_recording()
 ```
 
-for_commands: move_ruler_up move_ruler_down move_visual_mark_up move_visual_mark_down
+for_commands: move_ruler_to_next_block move_ruler_to_prev_block
 
 doc_body:
 Move the ruler to previous/next text block.

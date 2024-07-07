@@ -1,5 +1,7 @@
 related_commands: 
 
+related_configs: custom_text_color custom_background_color custom_color_mode_empty_background_color
+
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)

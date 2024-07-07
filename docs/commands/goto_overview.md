@@ -11,7 +11,6 @@ time.sleep(2)
 s.overview_definition()
 time.sleep(2)
 show_run_command(s, 'goto_overview')
-# s.goto_overview()
 time.sleep(3)
 end_recording()
 

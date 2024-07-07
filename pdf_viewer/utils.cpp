@@ -1933,6 +1933,9 @@ QCommandLineParser* get_command_line_parser() {
     QCommandLineOption zoom_level_option("zoom", "Set zoom level to <zoom>.", "zoom");
     parser->addOption(zoom_level_option);
 
+    QCommandLineOption file_path_option("file-path", "The pdf file path.", "file");
+    parser->addOption(file_path_option);
+
     QCommandLineOption xloc_option("xloc", "Set x position within page to <xloc>.", "xloc");
     parser->addOption(xloc_option);
 

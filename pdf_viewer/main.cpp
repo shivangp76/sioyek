@@ -544,6 +544,9 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
     std::optional<int> latex_line = {};
     std::optional<int> latex_column = {};
 
+    if (parser->isSet("file-path")) {
+        pdf_file_name = parser->value("file-path").toStdWString();
+    }
     if (parser->isSet("forward-search-file")) {
         latex_file_name = parser->value("forward-search-file").toStdWString();
     }

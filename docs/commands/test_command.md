@@ -1,0 +1,9 @@
+related_commands: 
+
+demo_code:
+
+for_commands: test_command export_config_names open_selected_url toggle_smooth_scroll_mode export_python_api print_undocumented_commands print_non_default_configs export_default_config_file unregister_url_handler toggle_one_window register_url_handler export_command_names goto_begining send_symbol open_all_docs print_undocumented_configs toggle_show_last_command move_selected_bookmark type_text
+
+hide: true
+
+doc_body:

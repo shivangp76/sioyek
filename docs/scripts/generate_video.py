@@ -10,8 +10,11 @@ files_base_path = pathlib.Path(__file__).parent.parent / "files"
 docs_base_path = pathlib.Path(__file__).parent.parent
 tutorial_base_path = pathlib.Path(__file__).parent.parent.parent / "tutorial"
 tutorial_file_path = pathlib.Path(__file__).parent.parent.parent / "tutorial" / "tut.pdf"
+tutorial_tex_path = pathlib.Path(__file__).parent.parent.parent / "tutorial" / "tut.tex"
 markdown_file_path = pathlib.Path(r'C:\sioyek\sioyek-new\sioyek\docs\commands\goto_definition.md')
 recorder = pyscreenrec.ScreenRecorder()
+DARK_COLORS = ['1 0 0', '0.5 0 0.5', '0 0 1']
+LIGHT_COLORS = ['0 1 1', '0 1 0', '1 1 0']
 
 def start_recording(file_path):
     recorder.start_recording(file_path, 10)
@@ -120,8 +123,18 @@ def get_launch_args_for_markdown_file(markdown_file_path):
 
 def generate_video_for_new_markdown_files():
     print('-----------------')
-    for file in os.listdir(docs_base_path / 'commands'):
-        markdown_file_path = docs_base_path / 'commands' / file
+    markdown_files_paths = []
+
+    # for file in os.listdir(docs_base_path / 'commands'):
+    #     markdown_file_path = docs_base_path / 'commands' / file
+    #     markdown_files_paths.append(markdown_file_path)
+
+    for file in os.listdir(docs_base_path / 'configs'):
+        markdown_file_path = docs_base_path / 'configs' / file
+        markdown_files_paths.append(markdown_file_path)
+
+    for markdown_file_path in markdown_files_paths:
+        # markdown_file_path = docs_base_path / 'commands' / file
 
         video_file_path = get_video_file_path_for_markdown_file(markdown_file_path)
         markdown_file_last_edit_time = os.path.getmtime(markdown_file_path)
@@ -130,6 +143,7 @@ def generate_video_for_new_markdown_files():
             generated = generate_video_for_markdown_file(markdown_file_path)
             if generated:
                 print('generated video for ', markdown_file_path)
+
 
     # for base, dirs, files in os.walk(docs_base_path / 'commands'):
     #     file_path = pathlib.Path(base) / file

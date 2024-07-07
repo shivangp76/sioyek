@@ -50,6 +50,7 @@ extern bool TOC_JUMP_ALIGN_TOP;
 extern bool FILL_TEXTBAR_WITH_SELECTED_TEXT;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 extern bool INCREMENTAL_SEARCH;
+extern bool SHOW_SETCONFIG_IN_STATUSBAR;
 
 extern std::wstring EXTRACT_TABLE_PROMPT;
 
@@ -6344,8 +6345,8 @@ public:
 
 class FulltextSearchCommand : public Command {
 public:
-    inline static const std::string cname = "search_all_indexed_documents";
-    inline static const std::string hname = "Fulltext search all indexed documents";
+    static inline const std::string cname = "search_all_indexed_documents";
+    static inline const std::string hname = "Fulltext search all indexed documents";
 
     FulltextSearchCommand(MainWidget* w) : Command(cname, w) {};
 
@@ -6357,8 +6358,8 @@ public:
 
 class CreateFulltextIndexForCurrentDocumentCommand : public Command {
 public:
-    inline static const std::string cname = "create_fulltext_index_for_current_document";
-    inline static const std::string hname = "Add current document to fulltext search index";
+    static inline const std::string cname = "create_fulltext_index_for_current_document";
+    static inline const std::string hname = "Add current document to fulltext search index";
 
     CreateFulltextIndexForCurrentDocumentCommand(MainWidget* w) : Command(cname, w) {};
 
@@ -6680,26 +6681,6 @@ public:
         if (is_string_numeric(text.value().c_str()) && text.value().size() < 6) { // make sure the page number is valid
             widget->main_document_view->set_page_offset(std::stoi(text.value().c_str()));
         }
-    }
-};
-
-class MoveWindowCommand : public TextCommand {
-public:
-    static inline const std::string cname = "move_window";
-    static inline const std::string hname = "Move the sioyek window according to the given string";
-    MoveWindowCommand(MainWidget* w) : TextCommand(cname, w) {};
-
-    void perform() {
-        // format is "x y width height"
-        QString str = QString::fromStdWString(text.value());
-        QStringList parts = str.split(' ');
-        int x = parts[0].toInt();
-        int y = parts[1].toInt();
-        int width = parts[2].toInt();
-        int height = parts[3].toInt();
-        widget->resize(width, height);
-        widget->move(x, y);
-
     }
 };
 
@@ -7202,6 +7183,9 @@ public:
     }
 
     void perform() {
+        if (SHOW_SETCONFIG_IN_STATUSBAR) {
+            widget->set_status_message(utf8_decode(config_name) + L" = '" + text.value() + L"'");
+        }
 
         if (TOUCH_MODE) {
             Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
@@ -7721,7 +7705,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<CloseVisualMarkCommand>("exit_ruler_mode");
     register_command<ZoomInCursorCommand>();
     register_command<ZoomOutCursorCommand>();
-    register_command<MoveWindowCommand>();
+    //register_command<MoveWindowCommand>();
     register_command<GotoLeftCommand>();
     register_command<GotoLeftSmartCommand>();
     register_command<GotoRightCommand>();
@@ -7756,7 +7740,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DownloadOverviewPaperCommand>();
     register_command<DownloadOverviewPaperNoPrompt>();
     register_command<GotoWindowCommand>();
-    register_command<ToggleSmoothScrollModeCommand>();
+    register_command<ToggleSmoothScrollModeCommand>(); // todo: this probably should be a config?
     register_command<ToggleScrollbarCommand>();
     register_command<OverviewToPortalCommand>();
     register_command<OverviewRulerPortalCommand>();
@@ -7766,7 +7750,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DonateCommand>();
     register_command<OverviewNextItemCommand>();
     register_command<OverviewPrevItemCommand>();
-    register_command<DeleteHighlightUnderCursorCommand>();
+    register_command<DeleteHighlightUnderCursorCommand>(); // todo: delete generic item instead of highlight?
     register_command<NoopCommand>();
     register_command<ImportCommand>();
     register_command<ImportLocalDatabaseCommand>();
@@ -7777,7 +7761,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<LoadAnnotationsFileSyncDeletedCommand>();
     register_command<EnterVisualMarkModeCommand>();
     register_command<SetPageOffsetCommand>();
-    register_command<ToggleVisualScrollCommand>();
+    register_command<ToggleVisualScrollCommand>("toggle_ruler_scroll_mode");
     register_command<ToggleHorizontalLockCommand>();
     register_command<ExecuteCommand>();
     register_command<EmbedAnnotationsCommand>();

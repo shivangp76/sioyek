@@ -3632,7 +3632,16 @@ void Document::load_annotations(bool sync) {
         }
 
         for (int i = 0; i < new_annotations.size(); i++) {
-            bool success = db_manager->insert_annotation(new_annotations[i], get_checksum());
+            bool success = false;
+
+            if (forced_annotations_path.size() == 0) {
+                success = db_manager->insert_annotation(new_annotations[i], get_checksum());
+            }
+            else {
+                // when using the test annotations file for testing and documentation purposes
+                // there is no need to insert the annotations into database
+                success = true;
+            }
 
             if (success) {
                 if (dynamic_cast<BookMark*>(new_annotations[i])) {
@@ -3669,6 +3678,9 @@ void Document::load_annotations(bool sync) {
 
         }
 
+    }
+    else {
+        show_error_message(json_file.errorString().toStdWString() + L": " + forced_annotations_path);
     }
 
 }

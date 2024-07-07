@@ -33,6 +33,9 @@ if __name__ == '__main__':
     # for com in documented_commands:
     for com in undocumented_commands:
         print(com)
+    # print('non existing commands:')
+    # for com in documented_commands - all_commands:
+    #     print(com)
     print('#all commands:', len(all_commands))
     print('#documented commands:', len(documented_commands))
     print('#undocumented commands:', len(undocumented_commands))

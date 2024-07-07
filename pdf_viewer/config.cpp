@@ -58,6 +58,7 @@ bool AUTO_LOGIN_ON_STARTUP = true;
 
 bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS = true;
 bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH = false;
+bool SHOW_SETCONFIG_IN_STATUSBAR = false;
 
 std::wstring SEARCH_URLS[26];
 std::wstring EXECUTE_COMMANDS[26];
@@ -960,12 +961,13 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"ui_text_color", UI_TEXT_COLOR);
     add_color3(L"ui_background_color", UI_BACKGROUND_COLOR);
     add_color3(L"ui_selected_text_color", UI_SELECTED_TEXT_COLOR);
-    add_color3(L"ui_background_color", STATUS_BAR_COLOR);
+    //add_color3(L"ui_background_color", STATUS_BAR_COLOR);
     add_color3(L"question_bookmark_background_color", QUESTION_BOOKMARK_BACKGROUND_COLOR);
     add_color3(L"question_bookmark_text_color", QUESTION_BOOKMARK_TEXT_COLOR);
 
     add_color4(L"vertical_line_color",DEFAULT_VERTICAL_LINE_COLOR);
     add_color4(L"visual_mark_color",DEFAULT_VERTICAL_LINE_COLOR);
+    add_color4(L"ruler_slit_color",DEFAULT_VERTICAL_LINE_COLOR);
     add_color4(L"keyboard_select_background_color", KEYBOARD_SELECT_BACKGROUND_COLOR);
     add_color4(L"keyboard_select_text_color", KEYBOARD_SELECT_TEXT_COLOR);
     add_color4(L"keyboard_selected_tag_text_color", KEYBOARD_SELECTED_TAG_TEXT_COLOR);
@@ -1086,6 +1088,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"auto_login_on_startup", &AUTO_LOGIN_ON_STARTUP);
     add_bool(L"automatically_upload_portal_destination_for_synced_documents", &AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS);
     add_bool(L"automatically_index_documents_for_fulltext_search", &AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH);
+    add_bool(L"show_setconfig_in_statusbar", &SHOW_SETCONFIG_IN_STATUSBAR);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_bool(L"automatically_update_checksum_when_document_is_changed", &AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
