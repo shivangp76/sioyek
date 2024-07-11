@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <qrect.h>
 
+
 class Document;
 class DocumentView;
 

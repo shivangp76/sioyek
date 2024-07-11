@@ -491,38 +491,9 @@ public:
     template <typename T>
     const std::vector<T>& get_annots() = delete;
 
-    template <>
-    const std::vector<Highlight>& get_annots<Highlight>() {
-        return get_highlights();
-    }
-
-    template <>
-    const std::vector<BookMark>& get_annots<BookMark>() {
-        return get_bookmarks();
-    }
-
-    template <>
-    const std::vector<Portal>& get_annots<Portal>() {
-        return get_portals();
-    }
-
     template <typename T>
     std::vector<T>& get_annots_mut() = delete;
 
-    template <>
-    std::vector<Highlight>& get_annots_mut<Highlight>() {
-        return highlights;
-    }
-
-    template <>
-    std::vector<BookMark>& get_annots_mut<BookMark>() {
-        return bookmarks;
-    }
-
-    template <>
-    std::vector<Portal>& get_annots_mut<Portal>() {
-        return portals;
-    }
 
     template <typename T>
     std::vector<T> get_unsynced_annots() {
@@ -593,3 +564,17 @@ public:
     void update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     ~DocumentManager();
 };
+
+
+template <>
+const std::vector<Highlight>& Document::get_annots<Highlight>();
+template <>
+const std::vector<BookMark>& Document::get_annots<BookMark>();
+template <>
+const std::vector<Portal>& Document::get_annots<Portal>();
+template <>
+std::vector<Highlight>& Document::get_annots_mut<Highlight>();
+template <>
+std::vector<BookMark>& Document::get_annots_mut<BookMark>();
+template <>
+std::vector<Portal>& Document::get_annots_mut<Portal>();

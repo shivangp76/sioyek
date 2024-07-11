@@ -2704,6 +2704,7 @@ public:
     bool requires_document() { return false; }
 };
 
+#ifdef Q_OS_WIN
 bool CreateRegistryKey(HKEY hKeyRoot, LPCSTR subKey, LPCSTR valueName, LPCSTR value) {
     HKEY hKey;
     LONG lResult;
@@ -2747,6 +2748,7 @@ bool CreateRegistryKey(HKEY hKeyRoot, LPCSTR subKey, LPCSTR valueName, LPCSTR va
     RegCloseKey(hKey);
     return true;
 }
+#endif
 
 class RegisterUrlHandler : public Command {
 public:

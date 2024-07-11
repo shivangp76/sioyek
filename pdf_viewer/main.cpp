@@ -911,6 +911,7 @@ int main(int argc, char* args[]) {
     QFileSystemWatcher pref_file_watcher;
     add_paths_to_file_system_watcher(pref_file_watcher, default_config_path, user_config_paths);
 
+
     QFileSystemWatcher key_file_watcher;
     add_paths_to_file_system_watcher(key_file_watcher, default_keys_path, user_keys_paths);
 #ifdef SIOYEK_IOS
@@ -924,6 +925,7 @@ int main(int argc, char* args[]) {
     PdfRenderer pdf_renderer(&bookmark_renderer, 4, &quit, mupdf_context);
     pdf_renderer.set_num_cached_pages(NUM_CACHED_PAGES);
     pdf_renderer.start_threads();
+
 
 
     SioyekNetworkManager sioyek_network_manager(&db_manager, &background_task_manager, &document_manager, nullptr);

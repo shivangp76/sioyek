@@ -4991,3 +4991,34 @@ bool Document::super_fast_search_index_is_new() {
     }
     return false;
 }
+
+template <>
+const std::vector<Highlight>& Document::get_annots<Highlight>() {
+    return get_highlights();
+}
+
+template <>
+const std::vector<BookMark>& Document::get_annots<BookMark>() {
+    return get_bookmarks();
+}
+
+template <>
+const std::vector<Portal>& Document::get_annots<Portal>() {
+    return get_portals();
+}
+
+
+template <>
+std::vector<Highlight>& Document::get_annots_mut<Highlight>() {
+    return highlights;
+}
+
+template <>
+std::vector<BookMark>& Document::get_annots_mut<BookMark>() {
+    return bookmarks;
+}
+
+template <>
+std::vector<Portal>& Document::get_annots_mut<Portal>() {
+    return portals;
+}

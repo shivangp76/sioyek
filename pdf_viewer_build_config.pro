@@ -219,7 +219,7 @@ unix:!mac:!android {
     QMAKE_CXXFLAGS += -std=c++17
 
     CONFIG(linux_app_image){
-        LIBS += -ldl -Lmupdf/build/release -lmupdf -lmupdf-third -lmupdf-threads -lharfbuzz -lz
+        LIBS += -ldl -L$$PWD/mupdf/build/release -lmupdf -lmupdf-third -lmupdf-threads -lharfbuzz -lz
     } else {
         DEFINES += NON_PORTABLE
         DEFINES += LINUX_STANDARD_PATHS
