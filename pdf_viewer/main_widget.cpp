@@ -13,6 +13,7 @@
 // make the action of download and clipboard paper configurable
 // api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
 // when searching for commands like setconfig_ we should not consider the setconfig_ part in string matching
+// remove RULER_MODE config and instead add another option to ruler_display_mode
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"

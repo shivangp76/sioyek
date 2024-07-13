@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-pdflatex tut.tex
+pdflatex -synctex=1 tut.tex
 bibtex tut
-pdflatex tut.tex
-pdflatex tut.tex
+pdflatex -synctex=1 tut.tex
+pdflatex -synctex=1 tut.tex
