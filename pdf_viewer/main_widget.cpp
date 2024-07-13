@@ -796,12 +796,14 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             // if hover_overview config is set, we show an overview of links while hovering over them
             if (HOVER_OVERVIEW) {
                 dv()->set_overview_link(link.value());
+                invalidate_render();
             }
         }
         else {
             setCursor(Qt::ArrowCursor);
             if (HOVER_OVERVIEW) {
                 set_overview_page({}, false);
+                invalidate_render();
                 //            invalidate_render();
             }
         }

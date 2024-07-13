@@ -163,7 +163,6 @@ bool SHOULD_DRAW_UNRENDERED_PAGES = false;
 bool PRESERVE_IMAGE_COLORS = false;
 bool INVERTED_PRESERVED_IMAGE_COLORS = false;
 bool HOVER_OVERVIEW = false;
-bool RERENDER_OVERVIEW = true;
 bool LINEAR_TEXTURE_FILTERING = false;
 bool RULER_MODE = true;
 bool SMALL_TOC = false;
@@ -1040,7 +1039,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"check_for_updates_on_startup", &SHOULD_CHECK_FOR_LATEST_VERSION_ON_STARTUP);
     add_bool(L"sort_bookmarks_by_location", &SORT_BOOKMARKS_BY_LOCATION);
     add_bool(L"hover_overview", &HOVER_OVERVIEW);
-    add_bool(L"rerender_overview", &RERENDER_OVERVIEW);
     add_bool(L"wheel_zoom_on_cursor", &WHEEL_ZOOM_ON_CURSOR);
     add_bool(L"linear_filter", &LINEAR_TEXTURE_FILTERING);
     add_bool(L"collapsed_toc", &SMALL_TOC);
