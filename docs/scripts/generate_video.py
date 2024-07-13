@@ -17,6 +17,7 @@ DARK_COLORS = ['1 0 0', '0.5 0 0.5', '0 0 1']
 LIGHT_COLORS = ['0 1 1', '0 1 0', '1 1 0']
 
 def start_recording(file_path):
+    print(f'recording path is: {file_path}')
     recorder.start_recording(file_path, 10)
 
 def end_recording():

@@ -1,5 +1,7 @@
 related_commands: fit_to_page_width
 
+related_configs: fit_to_page_width_ratio
+
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)

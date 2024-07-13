@@ -9810,10 +9810,11 @@ void MainWidget::export_python_api() {
     }
 
 
-    char* sioyek_python_base_path = std::getenv("SIOYEK_PYTHON_BASE_PATH");
-    char* sioyek_python_path = std::getenv("SIOYEK_PYTHON_PATH");
-    if ((sioyek_python_base_path == nullptr) || (sioyek_python_path == nullptr)){
-        show_error_message(L"You should set SIOYEK_PYTHON_BASE_PATH and SIOYEK_PYTHON_PATH environment variables for export to work");
+    char* sioyek_python_base_path = std::getenv("SIOYEK_LIB_PYTHON_BASE_PATH");
+    char* sioyek_python_path = std::getenv("SIOYEK_LIB_PYTHON_PATH");
+    char* python_interpreter_path = std::getenv("SIOYEK_PYTHON_INTERPRETER_PATH");
+    if ((sioyek_python_base_path == nullptr) || (sioyek_python_path == nullptr) || (python_interpreter_path == nullptr)){
+        show_error_message(L"You should set SIOYEK_LIB_PYTHON_BASE_PATH, SIOYEK_LIB_PYTHON_PATH and SIOYEK_PYTHON_INTERPRETER_PATH environment variables for export to work");
         return;
     }
     QFile output(sioyek_python_base_path);
@@ -9823,7 +9824,7 @@ void MainWidget::export_python_api() {
     }
     output.close();
 
-    std::string command = "python -m pip install " + std::string(sioyek_python_path);
+    std::string command = std::string(python_interpreter_path) + " -m pip install " + std::string(sioyek_python_path);
     std::system(command.c_str());
 #endif
 }

@@ -208,6 +208,7 @@ protected:
     void render_highlights_and_bookmarks();
     void do_paint();
 
+    void render_ruler_thresholds();
     void prepare_initial_render_pipeline();
     void prepare_link_highlight_state();
 public:

@@ -77,6 +77,7 @@ extern bool HIDE_OVERLAPPING_LINK_LABELS;
 extern bool PRESERVE_IMAGE_COLORS;
 extern bool INVERTED_PRESERVED_IMAGE_COLORS;
 extern bool INVERT_SELECTED_TEXT;
+extern bool VISUALIZE_RULER_THRESHOLDS;
 extern bool DEBUG;
 
 extern int NUM_PRERENDERED_NEXT_SLIDES;
@@ -92,6 +93,8 @@ extern float KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO[4];
 extern float QUESTION_BOOKMARK_BACKGROUND_COLOR[3];
 extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
 extern float OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[3];
+extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
+extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
 
 extern int RULER_UNDERLINE_PIXEL_WIDTH;
 extern UIRect PORTRAIT_EDIT_PORTAL_UI_RECT;
@@ -982,7 +985,7 @@ void PdfViewOpenGLWidget::my_render() {
         }
 
         if ((!ruler_rect.has_value()) || (RULER_DISPLAY_MODE == L"slit")) {
-            render_line_window(vertical_line_end, ruler_rect);
+            render_line_window(vertical_line_end, dv()->get_ruler_window_rect());
         }
         else {
             int flags = 0;
@@ -1313,10 +1316,30 @@ void PdfViewOpenGLWidget::my_render() {
     render_highlight_annotations();
     render_text_highlights();
 
+    if (VISUALIZE_RULER_THRESHOLDS){
+        render_ruler_thresholds();
+    }
+
     if (document_view->overview_page) {
         render_overview(document_view->overview_page.value());
     }
     end_native_painting();
+}
+
+void PdfViewOpenGLWidget::render_ruler_thresholds(){
+    NormalizedWindowRect top_rect;
+    top_rect.x0 = -1;
+    top_rect.x1 = 1;
+    top_rect.y1 = 1;
+    top_rect.y0 = VISUAL_MARK_NEXT_PAGE_FRACTION;
+    render_highlight_window(top_rect, HRF_FILL);
+
+    NormalizedWindowRect bottom_rect;
+    bottom_rect.x0 = -1;
+    bottom_rect.x1 = 1;
+    bottom_rect.y1 = -1 + VISUAL_MARK_NEXT_PAGE_THRESHOLD;
+    bottom_rect.y0 = -1;
+    render_highlight_window(bottom_rect, HRF_FILL);
 }
 
 PdfViewOpenGLWidget::~PdfViewOpenGLWidget() {

@@ -1,6 +1,6 @@
 related_commands: add_freetext_bookmark
 
-related_configs: freetext_bookmark_font_size
+related_configs: freetext_bookmark_color
 
 demo_code:
 ```python
@@ -19,12 +19,14 @@ s.send_symbol('a')
 s.send_symbol('l')
 s.send_symbol('l')
 
-type_words(s, 'This is a freetext bookmark with the default color', delay=0.02)
+type_words(s, 'This is a freetext bookmark with the default font size', delay=0.02)
 time.sleep(2)
 s.delete_bookmark()
 
-for color in DARK_COLORS:
-    s.setconfig_freetext_bookmark_color(color)
+sizes = [5, 10, 20]
+
+for size in sizes:
+    s.setconfig_freetext_bookmark_font_size(f'{size}')
     s.add_freetext_bookmark('', wait=False)
     time.sleep(0.3)
     s.send_symbol('a')
@@ -32,7 +34,7 @@ for color in DARK_COLORS:
     s.send_symbol('l')
     s.send_symbol('l')
 
-    type_words(s, f'This is a freetext bookmark with color="{color}"', delay=0.02)
+    type_words(s, f'This is a freetext bookmark with font size="{size}"', delay=0.02)
     time.sleep(2)
     s.delete_bookmark()
 
@@ -43,4 +45,4 @@ end_recording()
 for_configs: 
 
 doc_body:
-Text color to use when adding new freetext bookmarks.
+Font size to use when adding new freetext bookmarks.
