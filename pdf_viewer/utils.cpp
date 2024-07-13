@@ -66,7 +66,6 @@ extern float EPUB_FONT_SIZE;
 extern std::wstring EPUB_CSS;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern float BLACK_COLOR[3];
-extern bool PAPER_DOWNLOAD_AUTODETECT_PAPER_NAME;
 
 extern float UI_BACKGROUND_COLOR[3];
 extern float UI_TEXT_COLOR[3];

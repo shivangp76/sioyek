@@ -175,6 +175,7 @@ int TEXT_SUMMARY_CONTEXT_SIZE = 49;
 float VISUAL_MARK_NEXT_PAGE_FRACTION = 0.75;
 float VISUAL_MARK_NEXT_PAGE_THRESHOLD = 0.25f;
 float MENU_SCREEN_WDITH_RATIO = 0.9f;
+float MENU_SCREEN_HEIGHT_RATIO = 1.0f;
 float RULER_PADDING = 1.0f;
 float RULER_X_PADDING = 5.0f;
 std::wstring ITEM_LIST_PREFIX = L">";
@@ -299,7 +300,6 @@ std::wstring TAG_FONT_FACE = L"";
 //UIRect TEST_UI_RECT = {true, -0.1f, 0.1f, -0.1f, 0.1f};
 
 bool PAPER_DOWNLOAD_CREATE_PORTAL = true;
-bool PAPER_DOWNLOAD_AUTODETECT_PAPER_NAME = true;
 float DEFAULT_TEXT_HIGHLIGHT_COLOR[3] = { 1.0f, 1.0f, 0.0 };
 float DEFAULT_VERTICAL_LINE_COLOR[4] = { 0.0f, 0.0f, 0.0f, 0.1f };
 float DEFAULT_SEARCH_HIGHLIGHT_COLOR[3] = { 0.0f, 1.0f, 0.0f };
@@ -998,11 +998,12 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"ruler_padding", &RULER_PADDING, FloatExtras{0.0f, 10.0f});
     add_float(L"ruler_x_padding", &RULER_X_PADDING, FloatExtras{0.0f, 10.0f});
     add_float(L"ruler_auto_move_sensitivity", &RULER_AUTO_MOVE_SENSITIVITY, FloatExtras{0.0f, 200.0f});
+    add_float(L"ruler_auto_move_threshold_distance", &RULER_AUTO_MOVE_SENSITIVITY, FloatExtras{0.0f, 200.0f});
     add_float(L"fastread_opacity", &FASTREAD_OPACITY, FloatExtras{0.0f, 1.0f});
     add_float(L"page_space_x", &PAGE_SPACE_X, FloatExtras{0.0f, 100.0f});
     add_float(L"page_space_y", &PAGE_SPACE_Y, FloatExtras{0.0f, 100.0f});
     add_float(L"menu_screen_width_ratio", &MENU_SCREEN_WDITH_RATIO, FloatExtras{0.0f, 1.0f});
-    add_float(L"menu_screen_width_ratio", &MENU_SCREEN_WDITH_RATIO, FloatExtras{0.0f, 1.0f});
+    add_float(L"menu_screen_height_ratio", &MENU_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
     add_float(L"smooth_scroll_speed", &SMOOTH_SCROLL_SPEED, FloatExtras{0.0f, 20.0f});
     add_float(L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, FloatExtras{10.0f, 10000.0f});
     add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f});
@@ -1027,7 +1028,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"dont_center_if_synctex_rect_is_visible", &DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE);
     add_bool(L"should_use_multiple_monitors", &SHOULD_USE_MULTIPLE_MONITORS);
     add_bool(L"paper_download_should_create_portal", &PAPER_DOWNLOAD_CREATE_PORTAL);
-    add_bool(L"paper_download_should_detect_paper_name", &PAPER_DOWNLOAD_AUTODETECT_PAPER_NAME);
     add_bool(L"automatically_download_matching_paper_name", &AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME);
     add_bool(L"should_load_tutorial_when_no_other_file", &SHOULD_LOAD_TUTORIAL_WHEN_NO_OTHER_FILE);
     add_bool(L"should_launch_new_instance", &SHOULD_LAUNCH_NEW_INSTANCE);

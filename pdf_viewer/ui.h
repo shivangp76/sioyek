@@ -164,6 +164,7 @@ public:
     void simulate_select();
     void handle_delete();
     void handle_edit();
+    virtual void on_resize();
     QString get_selected_item();
 
 

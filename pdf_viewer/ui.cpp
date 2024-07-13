@@ -29,6 +29,7 @@ extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern float TTS_RATE;
 extern float MENU_SCREEN_WDITH_RATIO;
+extern float MENU_SCREEN_HEIGHT_RATIO;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 
 extern float UI_TEXT_COLOR[3];
@@ -1657,10 +1658,14 @@ void BaseSelectorWidget::on_config_file_changed() {
 
 void BaseSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
     QWidget::resizeEvent(resize_event);
+    on_resize();
+}
+
+void BaseSelectorWidget::on_resize(){
     int parent_width = parentWidget()->width();
     int parent_height = parentWidget()->height();
-    setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
-    move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, 0);
+    setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height * MENU_SCREEN_HEIGHT_RATIO);
+    move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2);
 
     if (!is_initialized) {
         is_initialized = true;
@@ -2139,7 +2144,8 @@ HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Hi
     list_view->setParent(highlight_selector_widget);
 
     //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
-    highlight_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    //highlight_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    highlight_selector_widget->on_resize();
     highlight_selector_widget->set_filter_column_index(-1);
 
     highlight_selector_widget->update_render();
@@ -2436,7 +2442,8 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString>
     //command_model->setParent(command_selector_widget);
     list_view->setParent(command_selector_widget);
 
-    command_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    // command_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    command_selector_widget->on_resize();
     command_selector_widget->set_filter_column_index(-1);
 
     command_selector_widget->update_render();
@@ -2742,7 +2749,8 @@ BookmarkSelectorWidget* BookmarkSelectorWidget::from_bookmarks(std::vector<BookM
     list_view->setParent(bookmark_selector_widget);
 
     //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
-    bookmark_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    //bookmark_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    bookmark_selector_widget->on_resize();
     bookmark_selector_widget->set_filter_column_index(-1);
 
     bookmark_selector_widget->update_render();
@@ -2947,7 +2955,8 @@ DocumentSelectorWidget* DocumentSelectorWidget::from_documents(
     list_view->setUniformItemSizes(true);
 
     //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
-    document_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    // document_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    document_selector_widget->on_resize();
     document_selector_widget->set_filter_column_index(-1);
 
     document_selector_widget->update_render();
@@ -2981,7 +2990,8 @@ FulltextSearchWidget* FulltextSearchWidget::create(MainWidget* parent) {
     //list_view->setUniformItemSizes(true);
 
     //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
-    fulltext_search_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    // fulltext_search_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
+    fulltext_search_widget->on_resize();
     fulltext_search_widget->set_filter_column_index(-1);
 
     fulltext_search_widget->update_render();

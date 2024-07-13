@@ -22,11 +22,19 @@ for val in values:
     s.setconfig_ruler_padding(f'{val}')
     time.sleep(1)
 
+s.setconfig_ruler_padding('2')
+
+values = [0, 3, 5, 10]
+for val in values:
+    s.setconfig_ruler_x_padding(f'{val}')
+    time.sleep(1)
+
+
 time.sleep(2)
 end_recording()
 ```
 
-for_configs: 
+for_configs: ruler_padding ruler_x_padding
 
 doc_body:
 Ruler padding when using `slit` ruler display mode.
