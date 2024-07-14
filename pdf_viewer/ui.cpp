@@ -1865,9 +1865,10 @@ void HighlightSearchItemDelegate::set_pattern(QString p) {
 }
 
 HighlightSearchItemDelegate::HighlightSearchItemDelegate(){
-    QFont highlight_font;
+    QString font_name = get_ui_font_face_name();
+    QFont highlight_font(font_name);
     QFont file_name_font;
-    QFont comment_font;
+    QFont comment_font(font_name);
 
     int font_size = FONT_SIZE > 0 ? FONT_SIZE : highlight_font.pointSize();
 
@@ -2279,7 +2280,7 @@ QVariant CommandModel::headerData(int section, Qt::Orientation orientation, int 
 
 CommandItemDelegate::CommandItemDelegate() {
 
-    QFont command_font;
+    QFont command_font(get_ui_font_face_name());
     QFont keybind_font;
 
     int font_size = FONT_SIZE > 0 ? FONT_SIZE : command_font.pointSize();
@@ -2326,6 +2327,7 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     }
 
     command_name_document.setHtml(command_name);
+    //command_name_document.setPlainText(command_name);
     //command_name_document.setTextWidth(option.rect.width());
     painter->translate(option.rect.topLeft());
     painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
@@ -2616,7 +2618,7 @@ bool BookmarkModel::removeRows(int row, int count, const QModelIndex& parent) {
 }
 
 BookmarkSearchItemDelegate::BookmarkSearchItemDelegate(){
-    QFont bookmark_font;
+    QFont bookmark_font(get_ui_font_face_name());
     QFont file_name_font;
 
     int font_size = FONT_SIZE > 0 ? FONT_SIZE : bookmark_font.pointSize();
@@ -2815,7 +2817,7 @@ bool DocumentNameModel::removeRows(int row, int count, const QModelIndex& parent
 DocumentItemDelegate::DocumentItemDelegate() {
 
     QFont path_font;
-    QFont title_font;
+    QFont title_font(get_ui_font_face_name());
     QFont last_access_time_font;
 
     int font_size = FONT_SIZE > 0 ? FONT_SIZE : path_font.pointSize();
@@ -3000,7 +3002,7 @@ FulltextSearchWidget* FulltextSearchWidget::create(MainWidget* parent) {
 
 SearchItemDelegate::SearchItemDelegate() {
 
-    QFont snippet_font;
+    QFont snippet_font(get_ui_font_face_name());
     QFont location_font;
 
     int font_size = FONT_SIZE >= 0 ? FONT_SIZE : snippet_font.pointSize();
