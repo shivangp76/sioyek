@@ -3494,7 +3494,11 @@ void DocumentView::set_overview_link(PdfLink link) {
         current_candidate.source_text = source_text;
         smart_view_candidates = { current_candidate };
         index_into_candidates = 0;
-        std::vector<DocumentRect> overview_highlight_rects = get_reference_link_highlights(page - 1, link, link_info);
+        std::vector<DocumentRect> overview_highlight_rects = {};
+
+        if (SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS){
+            overview_highlight_rects = get_reference_link_highlights(page - 1, link, link_info);
+        }
 
         set_overview_position(page - 1, offset_y, is_reference > 0 ? "reflink" : "link", overview_highlight_rects);
         //main_document_view->set_overview_highlights(overview_highlight_rects);

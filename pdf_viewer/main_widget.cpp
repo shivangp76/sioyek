@@ -15,6 +15,7 @@
 // when searching for commands like setconfig_ we should not consider the setconfig_ part in string matching
 // remove RULER_MODE config and instead add another option to ruler_display_mode
 // show_closest_bookmark_in_statusbar and show_closest_portal_in_statusbar and show_document_name_in_statusbar should be removed
+// ALPHABETIC_LINK_TAGS and NUMERIC_TAGS should be merged
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
