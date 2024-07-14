@@ -890,10 +890,11 @@ bool has_unicode(const T& str) {
     return false;
 }
 template<typename T>
-int similarity_score(const T& haystack, const T& needle, int* out_begin = nullptr, int* out_end = nullptr, float size_threshold=0.5f) {
+float similarity_score(const T& haystack, const T& needle, int* out_begin = nullptr, int* out_end = nullptr, float size_threshold=0.5f) {
 
     bool unicode = has_unicode(haystack) || has_unicode(needle);
 
+    float size_discount_factor = 1.0f / haystack.size();
     if (haystack == needle) {
         if (out_begin) {
             *out_begin = 0;
@@ -927,7 +928,7 @@ int similarity_score(const T& haystack, const T& needle, int* out_begin = nullpt
     }
 
     int lcs_length = lcs_small_optimized(&haystack[begin], &needle[0], length, needle.size());
-    return lcs_length * 100 / length;
+    return lcs_length * 100 / length + size_discount_factor;
 }
 
 bool is_alpha_only(const std::wstring& str);

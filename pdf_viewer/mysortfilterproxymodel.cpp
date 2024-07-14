@@ -20,7 +20,7 @@ bool MySortFilterProxyModel::filter_accepts_row_column(int row, int col, const Q
 
 Q_INVOKABLE QList<int> MySortFilterProxyModel::get_highlight_positions(QString haystack, QString needle) {
     int begin = -1, end = -1;
-    int similarity = similarity_score(haystack.toStdWString(), needle.toStdWString(), &begin, &end);
+    float similarity = similarity_score(haystack.toStdWString(), needle.toStdWString(), &begin, &end);
     return QList<int>() << begin << end;
 }
 
@@ -104,8 +104,8 @@ bool MySortFilterProxyModel::lessThan(const QModelIndex& left,
     const QModelIndex& right) const
 {
     if (is_fuzzy) {
-        int left_score = scores[index_map[left]];
-        int right_score = scores[index_map[right]];
+        float left_score = scores[index_map[left]];
+        float right_score = scores[index_map[right]];
         return left_score > right_score;
     }
     else {
@@ -127,32 +127,32 @@ MySortFilterProxyModel::~MySortFilterProxyModel() {
     fzf_free_slab(slab);
 }
 
-int MySortFilterProxyModel::compute_score(QString filter_string, QString item_string) const{
+float MySortFilterProxyModel::compute_score(QString filter_string, QString item_string) const{
     return similarity_score(item_string.toLower().toStdWString(), filter_string.toLower().toStdWString());
 }
 
-int MySortFilterProxyModel::compute_score(fzf_pattern_t* pattern, QString item_string) const{
+float MySortFilterProxyModel::compute_score(fzf_pattern_t* pattern, QString item_string) const{
     //return similarity_score(filter_string.toStdWString(), item_string.toStdWString());
     std::string item_str = item_string.toStdString();
     return fzf_get_score(item_str.c_str(), pattern, slab);
 }
 
 
-int MySortFilterProxyModel::update_scores_for_index(fzf_pattern_t* pattern, const QModelIndex& index, int col) const{
+float MySortFilterProxyModel::update_scores_for_index(fzf_pattern_t* pattern, const QModelIndex& index, int col) const{
     int n_children = sourceModel()->rowCount(index);
 
-    int max_child_score = 0;
+    float max_child_score = 0;
 
     for (int i = 0; i < n_children; i++) {
         QModelIndex child_index = sourceModel()->index(i, col, index);
-        int child_score = update_scores_for_index(pattern, child_index, col);
+        float child_score = update_scores_for_index(pattern, child_index, col);
         if (child_score > max_child_score) {
             max_child_score = child_score;
         }
 
     }
 
-    int score = compute_score(pattern, sourceModel()->data(index).toString());
+    float score = compute_score(pattern, sourceModel()->data(index).toString());
     scores.push_back(score);
     index_map[index] = scores.size() - 1;
     return std::max(score, max_child_score);
@@ -187,7 +187,7 @@ void MySortFilterProxyModel::update_scores() const{
                 QModelIndex current_index = sourceModel()->index(i, filter_column_index);
 
                 QString row_data = sourceModel()->data(current_index).toString();
-                int score = compute_score(filterString, row_data);
+                float score = compute_score(filterString, row_data);
                 scores.push_back(score);
                 index_map[current_index] = scores.size() - 1;
 
@@ -195,11 +195,11 @@ void MySortFilterProxyModel::update_scores() const{
         }
         else {
             for (int i = 0; i < n_rows; i++) {
-                int score = -1;
+                float score = -1;
 
                 for (int col_index = 0; col_index < n_cols; col_index++) {
                     QString rowcol_data = sourceModel()->data(sourceModel()->index(i, col_index)).toString();
-                    int col_score = compute_score(filterString, rowcol_data);
+                    float col_score = compute_score(filterString, rowcol_data);
                     if (col_score > score) score = col_score;
                 }
 

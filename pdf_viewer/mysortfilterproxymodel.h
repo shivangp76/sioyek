@@ -15,7 +15,7 @@ class MySortFilterProxyModel : public QSortFilterProxyModel {
 public:
     QString filterString;
     std::optional<int> filter_type = {};
-    mutable std::vector<int> scores;
+    mutable std::vector<float> scores;
     mutable QString last_update_string;
     bool is_fuzzy = false;
     bool is_highlight = false;
@@ -33,9 +33,9 @@ public:
     //void setFilterFixedString(const QString &pattern) override;
     bool lessThan(const QModelIndex& left, const QModelIndex& right) const;
 
-    int compute_score(QString filter_string, QString item_string) const;
-    int compute_score(fzf_pattern_t* pattern, QString item_string) const;
-    int update_scores_for_index(fzf_pattern_t* pattern, const QModelIndex& index, int col) const;
+    float compute_score(QString filter_string, QString item_string) const;
+    float compute_score(fzf_pattern_t* pattern, QString item_string) const;
+    float update_scores_for_index(fzf_pattern_t* pattern, const QModelIndex& index, int col) const;
     void ensure_scores() const;
     void update_scores() const;
     void set_is_highlight(bool is_hl);
