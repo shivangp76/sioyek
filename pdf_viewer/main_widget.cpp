@@ -154,10 +154,10 @@ extern bool HOVER_OVERVIEW;
 extern bool WHEEL_ZOOM_ON_CURSOR;
 extern float MOVE_SCREEN_PERCENTAGE;
 extern std::wstring INVERSE_SEARCH_COMMAND;
-extern std::wstring PAPER_SEARCH_URL;
-extern std::wstring PAPER_SEARCH_URL_PATH;
-extern std::wstring PAPER_SEARCH_TILE_PATH;
-extern std::wstring PAPER_SEARCH_CONTRIB_PATH;
+// extern std::wstring PAPER_SEARCH_URL;
+// extern std::wstring PAPER_SEARCH_URL_PATH;
+// extern std::wstring PAPER_SEARCH_TILE_PATH;
+// extern std::wstring PAPER_SEARCH_CONTRIB_PATH;
 extern bool FUZZY_SEARCHING;
 extern bool AUTO_RENAME_DOWNLOADED_PAPERS;
 
@@ -8091,6 +8091,13 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
 #endif
         if (confname == "use_system_theme") {
             set_color_mode_to_system_theme();
+        }
+        if (confname == "status_font"){
+            QFont status_font = QFont(get_status_font_face_name());
+            status_font.setStyleHint(QFont::TypeWriter);
+            status_label->setFont(status_font);
+            status_label_left->setFont(status_font);
+            status_label_right->setFont(status_font);
         }
 
         if ((confname == "custom_background_color") || (confname == "custom_text_color") || (confname == "question_bookmark_text_color")) {

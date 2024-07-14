@@ -1,6 +1,6 @@
 related_commands: search
 
-related_configs:
+related_configs: smartcase_search
 
 demo_code:
 

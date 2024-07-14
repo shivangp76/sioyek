@@ -34,7 +34,7 @@ const int EMBEDDING_DIM = 10;
 
 extern float SMALL_PIXMAP_SCALE;
 extern float HIGHLIGHT_COLORS[26 * 3];
-extern std::wstring TEXT_HIGHLIGHT_URL;
+// extern std::wstring TEXT_HIGHLIGHT_URL;
 // extern bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_REFINE;
 // extern bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_FILL;
 // extern int TEXT_SUMMARY_CONTEXT_SIZE;

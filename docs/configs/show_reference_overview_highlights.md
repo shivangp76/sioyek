@@ -17,9 +17,9 @@ s.setconfig_show_reference_overview_highlights('1')
 time.sleep(2)
 
 s.escape()
+s.setconfig_show_reference_overview_highlights('0')
 s.overview_link('a')
 
-s.setconfig_show_reference_overview_highlights('0')
 time.sleep(2)
 
 end_recording()

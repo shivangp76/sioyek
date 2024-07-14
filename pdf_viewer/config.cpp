@@ -63,18 +63,18 @@ bool SHOW_SETCONFIG_IN_STATUSBAR = false;
 
 std::wstring SEARCH_URLS[26];
 std::wstring EXECUTE_COMMANDS[26];
-std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
+// std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
 //std::wstring PAPER_SEARCH_URL = L"https://search.fatcat.wiki/fatcat_release/_search?q=%{query}";
 //std::wstring PAPER_SEARCH_URL_PATH = L"hits.hits[]._source.best_pdf_url";
 //std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
 //std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 
 std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a markdown table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns.";
-std::wstring PAPER_SEARCH_URL = L"https://scholar.google.com/scholar?oi=gsr-r&output=gsb&q=%{query}";
+// std::wstring PAPER_SEARCH_URL = L"https://scholar.google.com/scholar?oi=gsr-r&output=gsb&q=%{query}";
 
-std::wstring PAPER_SEARCH_URL_PATH = L"r[].u";
-std::wstring PAPER_SEARCH_TILE_PATH = L"r[].t";
-std::wstring PAPER_SEARCH_CONTRIB_PATH = L"r[].m";
+// std::wstring PAPER_SEARCH_URL_PATH = L"r[].u";
+// std::wstring PAPER_SEARCH_TILE_PATH = L"r[].t";
+// std::wstring PAPER_SEARCH_CONTRIB_PATH = L"r[].m";
 
 std::wstring MIDDLE_CLICK_SEARCH_ENGINE = L"s";
 std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
@@ -1102,9 +1102,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"status_font", &STATUS_FONT_FACE_NAME);
     add_string(L"middle_click_search_engine", &MIDDLE_CLICK_SEARCH_ENGINE);
     add_string(L"shift_middle_click_search_engine", &SHIFT_MIDDLE_CLICK_SEARCH_ENGINE);
-    add_string(L"text_summary_url", &TEXT_HIGHLIGHT_URL);
+    // add_string(L"text_summary_url", &TEXT_HIGHLIGHT_URL);
     add_string(L"extract_table_prompt", &EXTRACT_TABLE_PROMPT);
-    add_string(L"paper_search_url", &PAPER_SEARCH_URL);
+    // add_string(L"paper_search_url", &PAPER_SEARCH_URL);
     add_string(L"papers_folder_path", &PAPERS_FOLDER_PATH);
     add_string(L"scan_path", &BOOK_SCAN_PATH);
     add_string(L"context_menu_items", &CONTEXT_MENU_ITEMS);
@@ -1114,9 +1114,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"context_menu_items_for_bookmarks", &CONTEXT_MENU_ITEMS_FOR_BOOKMARKS);
     add_string(L"context_menu_items_for_overview", &CONTEXT_MENU_ITEMS_FOR_OVERVIEW);
     add_string(L"external_text_editor_command", &EXTERNAL_TEXT_EDITOR_COMMAND);
-    add_string(L"paper_download_url_path", &PAPER_SEARCH_URL_PATH);
-    add_string(L"paper_download_title_path", &PAPER_SEARCH_TILE_PATH);
-    add_string(L"paper_download_contrib_path", &PAPER_SEARCH_CONTRIB_PATH);
+    // add_string(L"paper_download_url_path", &PAPER_SEARCH_URL_PATH);
+    // add_string(L"paper_download_title_path", &PAPER_SEARCH_TILE_PATH);
+    // add_string(L"paper_download_contrib_path", &PAPER_SEARCH_CONTRIB_PATH);
     add_string(L"default_open_file_path", &DEFAULT_OPEN_FILE_PATH);
     add_string(L"annotations_directory", &ANNOTATIONS_DIR_PATH);
     add_string(L"status_bar_format", &STATUS_BAR_FORMAT);

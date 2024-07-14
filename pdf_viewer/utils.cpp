@@ -68,7 +68,7 @@ extern float BLACK_COLOR[3];
 extern float UI_BACKGROUND_COLOR[3];
 extern float UI_TEXT_COLOR[3];
 
-extern std::wstring PAPER_SEARCH_URL_PATH;
+// extern std::wstring PAPER_SEARCH_URL_PATH;
 extern std::wstring PAPER_SEARCH_TILE_PATH;
 extern std::wstring PAPER_SEARCH_CONTRIB_PATH;
 extern std::wstring UI_FONT_FACE_NAME;
@@ -4382,7 +4382,7 @@ bool is_doc_valid(fz_context* ctx, std::string path) {
 
 QString get_ui_font_face_name() {
     if (UI_FONT_FACE_NAME.empty()) {
-        return "";
+        return "JetBrainsMono";
     }
     else {
         return QString::fromStdWString(UI_FONT_FACE_NAME);
