@@ -93,8 +93,6 @@ void open_web_url(const std::wstring& web_url);
 
 void open_file(const std::wstring& path, bool show_fail_message);
 void search_custom_engine(const std::wstring& search_string, const std::wstring& custom_engine_url);
-void search_google_scholar(const std::wstring& search_string);
-void search_libgen(const std::wstring& search_string);
 void index_references(fz_stext_page* page, int page_number, std::map<std::wstring, IndexedData>& indices);
 void get_flat_chars_from_stext_page(fz_stext_page* stext_page, std::vector<fz_stext_char*>& flat_chars, bool dehyphenate=false);
 //void get_flat_chars_from_stext_page_for_bib_detection(fz_stext_page* stext_page, std::vector<fz_stext_char*>& flat_chars);

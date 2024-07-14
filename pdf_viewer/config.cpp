@@ -146,8 +146,6 @@ bool DEFAULT_DARK_MODE = false;
 bool USE_SYSTEM_THEME = false;
 bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME = false;
 bool SORT_BOOKMARKS_BY_LOCATION = true;
-std::wstring LIBGEN_ADDRESS = L"";
-std::wstring GOOGLE_SCHOLAR_ADDRESS = L"";
 std::wstring INVERSE_SEARCH_COMMAND = L"";
 std::wstring SHARED_DATABASE_PATH = L"";
 std::wstring BOOK_SCAN_PATH = L"";
@@ -1097,10 +1095,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"show_reference_overview_highlights", &SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS);
     add_bool(L"visualize_ruler_thresholds", &VISUALIZE_RULER_THRESHOLDS);
 
-    add_string(L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
-    add_string(L"libgen_address", &LIBGEN_ADDRESS);
     add_string(L"shared_database_path", &SHARED_DATABASE_PATH);
     add_string(L"ui_font", &UI_FONT_FACE_NAME);
     add_string(L"status_font", &STATUS_FONT_FACE_NAME);

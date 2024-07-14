@@ -153,7 +153,6 @@ extern bool FLAT_TABLE_OF_CONTENTS;
 extern bool HOVER_OVERVIEW;
 extern bool WHEEL_ZOOM_ON_CURSOR;
 extern float MOVE_SCREEN_PERCENTAGE;
-extern std::wstring LIBGEN_ADDRESS;
 extern std::wstring INVERSE_SEARCH_COMMAND;
 extern std::wstring PAPER_SEARCH_URL;
 extern std::wstring PAPER_SEARCH_URL_PATH;

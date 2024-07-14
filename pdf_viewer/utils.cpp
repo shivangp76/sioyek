@@ -42,8 +42,6 @@
 
 #include <mupdf/pdf.h>
 
-extern std::wstring LIBGEN_ADDRESS;
-extern std::wstring GOOGLE_SCHOLAR_ADDRESS;
 extern std::ofstream LOG_FILE;
 extern int STATUS_BAR_FONT_SIZE;
 extern float STATUS_BAR_COLOR[3];
@@ -1222,15 +1220,6 @@ void search_custom_engine(const std::wstring& search_string, const std::wstring&
         open_web_url(qurl_string);
     }
 }
-
-void search_google_scholar(const std::wstring& search_string) {
-    search_custom_engine(search_string, GOOGLE_SCHOLAR_ADDRESS);
-}
-
-void search_libgen(const std::wstring& search_string) {
-    search_custom_engine(search_string, LIBGEN_ADDRESS);
-}
-
 
 
 //void open_url(const std::wstring& url_string) {
