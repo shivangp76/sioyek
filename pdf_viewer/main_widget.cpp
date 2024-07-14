@@ -14,6 +14,7 @@
 // api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
 // when searching for commands like setconfig_ we should not consider the setconfig_ part in string matching
 // remove RULER_MODE config and instead add another option to ruler_display_mode
+// show_closest_bookmark_in_statusbar and show_closest_portal_in_statusbar and show_document_name_in_statusbar should be removed
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -3774,6 +3775,7 @@ void MainWidget::toggle_custom_color_mode() {
 
 
 void MainWidget::execute_command(std::wstring command, std::wstring text, bool wait) {
+    qDebug() << "executing command: " << QString::fromStdWString(command);
 
     std::wstring file_path = main_document_view->get_document()->get_path();
     QString qfile_path = QString::fromStdWString(file_path);
@@ -4632,6 +4634,9 @@ AbsoluteRect MainWidget::move_visual_mark(int offset) {
     }
     if (is_reading || high_quality_play_state.has_value()) {
         read_current_line();
+    }
+    if (AUTOCENTER_VISUAL_SCROLL) {
+        return_to_last_visual_mark();
     }
     main_document_view->clear_underline();
     return ruler_rect;
@@ -7488,30 +7493,7 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    std::vector<std::pair<std::string, Highlight>> global_highlights;
-    db_manager->global_select_highlight(global_highlights);
-    std::vector<Highlight> highlights;
-    std::vector<QString> checksums;
-    std::vector<QString> paths;
-
-    for (auto [checksum, hl] : global_highlights) {
-
-        QString path = QString::fromStdWString(document_manager->get_path_from_hash(checksum).value_or(L""));
-        if (path.size() > 0) {
-            highlights.push_back(hl);
-            checksums.push_back(QString::fromStdString(checksum));
-            paths.push_back(path);
-        }
-    }
-
-    HighlightModel* highlights_model = new HighlightModel(std::move(highlights), std::move(paths), std::move(checksums), this);
-
-    TouchDelegateListView* lv = new TouchDelegateListView(highlights_model, true, "TouchHighlightsView", { std::make_pair("_colorMap", get_color_mapping())}, this);
-    lv->list_view->proxy_model->set_is_highlight(true);
-    lv->list_view->proxy_model->setFilterKeyColumn(-1);
-
-    set_current_widget(lv);
-    show_current_widget();
+    execute_command(L"nvim-qt");
 
 }
 

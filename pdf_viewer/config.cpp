@@ -1081,6 +1081,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"inverted_horizontal_scrolling", &INVERTED_HORIZONTAL_SCROLLING);
     add_bool(L"toc_jump_align_top", &TOC_JUMP_ALIGN_TOP);
     add_bool(L"autocenter_visual_scroll", &AUTOCENTER_VISUAL_SCROLL);
+    add_bool(L"autocenter_ruler", &AUTOCENTER_VISUAL_SCROLL);
     add_bool(L"alphabetic_link_tags", &ALPHABETIC_LINK_TAGS);
     add_bool(L"vimtex_wsl_fix", &VIMTEX_WSL_FIX);
     add_bool(L"sliced_rendering", &SLICED_RENDERING);

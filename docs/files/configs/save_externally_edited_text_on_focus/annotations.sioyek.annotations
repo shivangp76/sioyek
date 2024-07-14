@@ -1,0 +1,46 @@
+{
+    "bookmarks": [
+        {
+            "begin_x": -236.19400024414062,
+            "begin_y": 94.50990295410156,
+            "color_blue": 0,
+            "color_green": 0,
+            "color_red": 0,
+            "creation_time": "2024-07-03 09:08:34",
+            "desc": "this is a bookmark",
+            "end_x": -96.5813980102539,
+            "end_y": 180.89100646972656,
+            "font_face": "",
+            "font_size": 8,
+            "modification_time": "2024-07-03 09:09:58",
+            "offset_y": 94.50990295410156,
+            "uuid": "{4d37837e-f927-4e3d-8d1a-6c520ad9aed8}"
+        }
+    ],
+    "highlights": [
+    ],
+    "marks": [
+        {
+            "creation_time": "2024-07-02 12:01:49",
+            "modification_time": "2024-07-02 15:31:23",
+            "offset_x": 0,
+            "offset_y": 2560.9599609375,
+            "symbol": 47,
+            "uuid": "{e2dbf9db-9ae6-4243-a909-f5e0307fcd9f}"
+        }
+    ],
+    "portals": [
+        {
+            "creation_time": "2024-05-26 14:19:33",
+            "dst_document": "1a3d9733887495eb8ffbe8bbb2a5d040",
+            "dst_offset_x": 0,
+            "dst_offset_y": 270,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-05-26 14:20:07",
+            "same": false,
+            "src_offset_x": 92.118896484375,
+            "src_offset_y": 1143.90966796875,
+            "uuid": "{4918ad8d-f214-46a5-beec-69a2d47824a9}"
+        }
+    ]
+}
