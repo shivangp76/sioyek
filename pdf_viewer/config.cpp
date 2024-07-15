@@ -62,7 +62,7 @@ bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH = false;
 bool SHOW_SETCONFIG_IN_STATUSBAR = false;
 
 std::wstring SEARCH_URLS[26];
-std::wstring EXECUTE_COMMANDS[26];
+// std::wstring EXECUTE_COMMANDS[26];
 // std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
 //std::wstring PAPER_SEARCH_URL = L"https://search.fatcat.wiki/fatcat_release/_search?q=%{query}";
 //std::wstring PAPER_SEARCH_URL_PATH = L"hits.hits[]._source.best_pdf_url";
@@ -168,7 +168,7 @@ bool WHEEL_ZOOM_ON_CURSOR = false;
 // bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_REFINE = true;
 // bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_FILL = true;
 // bool USE_HEURISTIC_IF_TEXT_SUMMARY_NOT_AVAILABLE = false;
-int TEXT_SUMMARY_CONTEXT_SIZE = 49;
+// int TEXT_SUMMARY_CONTEXT_SIZE = 49;
 float VISUAL_MARK_NEXT_PAGE_FRACTION = 0.75;
 float VISUAL_MARK_NEXT_PAGE_THRESHOLD = 0.25f;
 float MENU_SCREEN_WDITH_RATIO = 0.9f;
@@ -1130,28 +1130,11 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
     add_macro(L"startup_commands", &STARTUP_COMMANDS);
     add_macro(L"shift_click_command", &SHIFT_CLICK_COMMAND);
-    add_macro(L"resize_command", &RESIZE_COMMAND);
     add_macro(L"control_click_command", &CONTROL_CLICK_COMMAND);
     add_macro(L"command_click_command", &COMMAND_CLICK_COMMAND);
     add_macro(L"hold_middle_click_command", &HOLD_MIDDLE_CLICK_COMMAND);
-    add_macro(L"back_rect_tap_command", &BACK_RECT_TAP_COMMAND);
     add_macro(L"tablet_pen_click_command", &TABLET_PEN_CLICK_COMMAND);
     add_macro(L"tablet_pen_double_click_command", &TABLET_PEN_DOUBLE_CLICK_COMMAND);
-    add_macro(L"volume_down_command", &VOLUME_DOWN_COMMAND);
-    add_macro(L"volume_down_command", &VOLUME_UP_COMMAND);
-    add_macro(L"back_rect_hold_command", &BACK_RECT_HOLD_COMMAND);
-    add_macro(L"forward_rect_tap_command", &FORWARD_RECT_TAP_COMMAND);
-    add_macro(L"forward_rect_hold_command", &FORWARD_RECT_HOLD_COMMAND);
-    add_macro(L"top_center_tap_command", &TOP_CENTER_TAP_COMMAND);
-    add_macro(L"top_center_hold_command", &TOP_CENTER_HOLD_COMMAND);
-    add_macro(L"middle_left_rect_tap_command", &MIDDLE_LEFT_RECT_TAP_COMMAND);
-    add_macro(L"middle_left_rect_hold_command", &MIDDLE_LEFT_RECT_HOLD_COMMAND);
-    add_macro(L"middle_right_rect_tap_command", &MIDDLE_RIGHT_RECT_TAP_COMMAND);
-    add_macro(L"middle_right_rect_hold_command", &MIDDLE_RIGHT_RECT_HOLD_COMMAND);
-    add_macro(L"visual_mark_next_tap_command", &VISUAL_MARK_NEXT_TAP_COMMAND);
-    add_macro(L"visual_mark_next_hold_command", &VISUAL_MARK_NEXT_HOLD_COMMAND);
-    add_macro(L"visual_mark_prev_tap_command", &VISUAL_MARK_PREV_TAP_COMMAND);
-    add_macro(L"visual_mark_prev_hold_command", &VISUAL_MARK_PREV_HOLD_COMMAND);
     add_macro(L"right_click_command", &RIGHT_CLICK_COMMAND);
     add_macro(L"middle_click_command", &MIDDLE_CLICK_COMMAND);
     add_macro(L"shift_middle_click_command", &SHIFT_MIDDLE_CLICK_COMMAND);
@@ -1163,6 +1146,27 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_macro(L"command_right_click_command", &COMMAND_RIGHT_CLICK_COMMAND);
     add_macro(L"alt_click_command", &ALT_CLICK_COMMAND);
     add_macro(L"alt_right_click_command", &ALT_RIGHT_CLICK_COMMAND);
+    add_macro(L"resize_command", &RESIZE_COMMAND);
+    add_macro(L"volume_down_command", &VOLUME_DOWN_COMMAND);
+    add_macro(L"volume_down_command", &VOLUME_UP_COMMAND);
+    add_macro(L"top_center_tap_command", &TOP_CENTER_TAP_COMMAND);
+    add_macro(L"top_center_hold_command", &TOP_CENTER_HOLD_COMMAND);
+    add_macro(L"back_rect_tap_command", &BACK_RECT_TAP_COMMAND);
+    add_macro(L"back_rect_hold_command", &BACK_RECT_HOLD_COMMAND);
+    add_macro(L"forward_rect_tap_command", &FORWARD_RECT_TAP_COMMAND);
+    add_macro(L"forward_rect_hold_command", &FORWARD_RECT_HOLD_COMMAND);
+    add_macro(L"middle_left_rect_tap_command", &MIDDLE_LEFT_RECT_TAP_COMMAND);
+    add_macro(L"middle_left_rect_hold_command", &MIDDLE_LEFT_RECT_HOLD_COMMAND);
+    add_macro(L"middle_right_rect_tap_command", &MIDDLE_RIGHT_RECT_TAP_COMMAND);
+    add_macro(L"middle_right_rect_hold_command", &MIDDLE_RIGHT_RECT_HOLD_COMMAND);
+    add_macro(L"visual_mark_next_tap_command", &VISUAL_MARK_NEXT_TAP_COMMAND);
+    add_macro(L"visual_mark_next_hold_command", &VISUAL_MARK_NEXT_HOLD_COMMAND);
+    add_macro(L"visual_mark_prev_tap_command", &VISUAL_MARK_PREV_TAP_COMMAND);
+    add_macro(L"visual_mark_prev_hold_command", &VISUAL_MARK_PREV_HOLD_COMMAND);
+    add_macro(L"ruler_next_tap_command", &VISUAL_MARK_NEXT_TAP_COMMAND);
+    add_macro(L"ruler_next_hold_command", &VISUAL_MARK_NEXT_HOLD_COMMAND);
+    add_macro(L"ruler_prev_tap_command", &VISUAL_MARK_PREV_TAP_COMMAND);
+    add_macro(L"ruler_prev_hold_command", &VISUAL_MARK_PREV_HOLD_COMMAND);
 
     add_int(L"font_size", &FONT_SIZE, IntExtras{1, 100});
     add_int(L"ruler_pixel_width", &RULER_UNDERLINE_PIXEL_WIDTH, IntExtras{1, 100});
@@ -1172,7 +1176,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"keyboard_select_font_size", &KEYBOARD_SELECT_FONT_SIZE, IntExtras{1, 100});
     add_int(L"documentation_font_size", &DOCUMENTATION_FONT_SIZE, IntExtras{1, 100});
     add_int(L"status_bar_font_size", &STATUS_BAR_FONT_SIZE, IntExtras{1, 100});
-    add_int(L"text_summary_context_size", &TEXT_SUMMARY_CONTEXT_SIZE, IntExtras{1, 100});
+    // add_int(L"text_summary_context_size", &TEXT_SUMMARY_CONTEXT_SIZE, IntExtras{1, 100});
     add_int(L"max_created_toc_size", &MAX_CREATED_TABLE_OF_CONTENTS_SIZE, IntExtras{1, 100000});
     add_int(L"background_bookmarks_pixel_budget", &BACKGROUND_BOOKMARKS_PIXEL_BUDGET, IntExtras{1, 1000000000});
     add_int(L"prerendered_page_count", &PRERENDERED_PAGE_COUNT, IntExtras{0, 10});
@@ -1220,7 +1224,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
         configs.push_back({ highlight_config_string, ConfigType::Color3, &HIGHLIGHT_COLORS[(letter - 'a') * 3], vec3_serializer, color3_deserializer, color_3_validator });
         configs.push_back({ search_url_config_string, ConfigType::String, &SEARCH_URLS[letter - 'a'], string_serializer, string_deserializer, nullptr });
-        configs.push_back({ execute_command_config_string, ConfigType::String, &EXECUTE_COMMANDS[letter - 'a'], string_serializer, string_deserializer, nullptr });
+        // configs.push_back({ execute_command_config_string, ConfigType::String, &EXECUTE_COMMANDS[letter - 'a'], string_serializer, string_deserializer, nullptr });
     }
 
     for (int i = 0; i < STATUS_STRING_PARTS.size(); i++) {

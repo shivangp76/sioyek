@@ -7765,7 +7765,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SetPageOffsetCommand>();
     register_command<ToggleVisualScrollCommand>("toggle_ruler_scroll_mode");
     register_command<ToggleHorizontalLockCommand>();
-    register_command<ExecuteCommand>();
+    register_command<ExecuteCommand>("execute_shell_command");
     register_command<EmbedAnnotationsCommand>();
     register_command<ImportAnnotationsCommand>();
     register_command<CopyWindowSizeConfigCommand>();

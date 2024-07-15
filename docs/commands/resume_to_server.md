@@ -1,4 +1,5 @@
 related_commands: sync_current_file_location
+related_configs: document_location_mismatch_strategy
 
 demo_code:
 

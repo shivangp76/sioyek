@@ -1,0 +1,158 @@
+{
+    "bookmarks": [
+    ],
+    "highlights": [
+        {
+            "begin_x": -200.49400329589844,
+            "begin_y": 253.2469940185547,
+            "creation_time": "2024-07-03 11:05:11",
+            "desc": "Press o to open a new document or Shift + o to open a previously opened document. ",
+            "end_x": 184.5570068359375,
+            "end_y": 254.52200317382812,
+            "modification_time": "2024-07-03 15:20:52",
+            "text_annot": "sldnfsldnf aldskn lkad alsdkn",
+            "type": 98,
+            "uuid": "{a7deadb3-68b5-4522-804a-b38aac05f5f5}"
+        },
+        {
+            "begin_x": -200.49400329589844,
+            "begin_y": 274.9230041503906,
+            "creation_time": "2024-07-04 12:25:49",
+            "desc": "Use the arrow keys for navigation. ",
+            "end_x": -52.912601470947266,
+            "end_y": 276.5159912109375,
+            "modification_time": "2024-07-04 12:25:49",
+            "text_annot": "",
+            "type": 99,
+            "uuid": "{12a538f6-bd88-4e10-a2ac-f3382585aa94}"
+        },
+        {
+            "begin_x": -201.1320037841797,
+            "begin_y": 295.0039978027344,
+            "creation_time": "2024-07-04 12:25:52",
+            "desc": "Use Ctrl + PageDown / Ctrl + PageUp to go to previous/next page. ",
+            "end_x": 72.993896484375,
+            "end_y": 297.87298583984375,
+            "modification_time": "2024-07-04 12:25:52",
+            "text_annot": "",
+            "type": 100,
+            "uuid": "{f7601933-c719-469a-97d7-3eee1667787a}"
+        },
+        {
+            "begin_x": -204.31900024414062,
+            "begin_y": 316.6789855957031,
+            "creation_time": "2024-07-04 12:25:55",
+            "desc": "Press Space / Shift + Space to go to the next/previous screen (which is equivalent to scrolling down half of screen width). You can also use PageDown and PageUp",
+            "end_x": 77.77510070800781,
+            "end_y": 334.52899169921875,
+            "modification_time": "2024-07-04 12:25:55",
+            "text_annot": "",
+            "type": 101,
+            "uuid": "{39bf3cf9-11dd-46ad-8fff-ed70b66166c2}"
+        },
+        {
+            "begin_x": -200.81300354003906,
+            "begin_y": 357.1600036621094,
+            "creation_time": "2024-07-04 12:25:58",
+            "desc": "Press to zoom out and + to zoom in. ",
+            "end_x": -8.28750991821289,
+            "end_y": 360.6669921875,
+            "modification_time": "2024-07-04 12:25:58",
+            "text_annot": "",
+            "type": 102,
+            "uuid": "{5aceb77f-c128-4009-b947-f535a6b7cb7a}"
+        },
+        {
+            "begin_x": -203.6820068359375,
+            "begin_y": 382.02301025390625,
+            "creation_time": "2024-07-04 12:26:01",
+            "desc": "Press F11 to enter fullscreen mode. ",
+            "end_x": -43.03129959106445,
+            "end_y": 384.572998046875,
+            "modification_time": "2024-07-04 12:26:01",
+            "text_annot": "",
+            "type": 105,
+            "uuid": "{f987f6c8-7a60-44f7-b4a1-08ac57b2bbe3}"
+        },
+        {
+            "begin_x": -201.7689971923828,
+            "begin_y": 403.697998046875,
+            "creation_time": "2024-07-04 12:26:04",
+            "desc": "Press F10 to fit the document to screen ignoring white page margins. ",
+            "end_x": 107.0999984741211,
+            "end_y": 408.47900390625,
+            "modification_time": "2024-07-04 12:26:04",
+            "text_annot": "",
+            "type": 106,
+            "uuid": "{0fc55c6c-64d8-48f5-84fd-682eb14b417c}"
+        },
+        {
+            "begin_x": -202.08799743652344,
+            "begin_y": 426.9670104980469,
+            "creation_time": "2024-07-04 12:26:09",
+            "desc": "Press F9 to fit the document to screen (including white margins). ",
+            "end_x": 90.52510070800781,
+            "end_y": 432.385009765625,
+            "modification_time": "2024-07-04 12:26:09",
+            "text_annot": "",
+            "type": 98,
+            "uuid": "{e8b8d089-b084-48e3-a358-8cadfde3b4a7}"
+        },
+        {
+            "begin_x": -205.91299438476562,
+            "begin_y": 452.14801025390625,
+            "creation_time": "2024-07-04 12:26:12",
+            "desc": "Press F8 to toggle dark mode. ",
+            "end_x": -62.793800354003906,
+            "end_y": 451.8290100097656,
+            "modification_time": "2024-07-04 12:26:12",
+            "text_annot": "",
+            "type": 106,
+            "uuid": "{eae751d3-c50f-4935-aa33-6b860d585793}"
+        },
+        {
+            "begin_x": -200.1750030517578,
+            "begin_y": 474.46099853515625,
+            "creation_time": "2024-07-04 12:26:15",
+            "desc": "Enter gg (press g two times) to go to the first page. In order to go to a specific page, enter [NUM] gg where [NUM] is the page number. For example in order to go to page 31, enter 31gg . You can also press Home to go to a specific page. ",
+            "end_x": 18.487499237060547,
+            "end_y": 506.65399169921875,
+            "modification_time": "2024-07-04 12:26:15",
+            "text_annot": "",
+            "type": 114,
+            "uuid": "{0264bdf1-73fe-423c-9710-6e490d42094f}"
+        }
+    ],
+    "marks": [
+        {
+            "creation_time": "2024-07-02 12:01:49",
+            "modification_time": "2024-07-03 15:55:27",
+            "offset_x": 0,
+            "offset_y": 366.3330078125,
+            "symbol": 47,
+            "uuid": "{e2dbf9db-9ae6-4243-a909-f5e0307fcd9f}"
+        },
+        {
+            "creation_time": "2024-07-03 15:28:27",
+            "modification_time": "2024-07-03 15:28:27",
+            "offset_x": 0,
+            "offset_y": 366.3330078125,
+            "symbol": 116,
+            "uuid": "{91b5eabd-8955-4d88-94a5-81f0b2089908}"
+        }
+    ],
+    "portals": [
+        {
+            "creation_time": "2024-05-26 14:19:33",
+            "dst_document": "1a3d9733887495eb8ffbe8bbb2a5d040",
+            "dst_offset_x": 0,
+            "dst_offset_y": 270,
+            "dst_zoom_level": 3.1372499465942383,
+            "modification_time": "2024-05-26 14:20:07",
+            "same": false,
+            "src_offset_x": 92.118896484375,
+            "src_offset_y": 1143.90966796875,
+            "uuid": "{4918ad8d-f214-46a5-beec-69a2d47824a9}"
+        }
+    ]
+}

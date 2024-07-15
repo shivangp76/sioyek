@@ -2,7 +2,7 @@ related_commands:
 
 demo_code:
 
-for_commands:
+for_commands: execute execute_shell_command
 
 doc_body:
 Executes the given shell command. The following substrings will be expanded in the command:

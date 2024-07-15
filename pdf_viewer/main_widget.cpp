@@ -16,6 +16,7 @@
 // remove RULER_MODE config and instead add another option to ruler_display_mode
 // show_closest_bookmark_in_statusbar and show_closest_portal_in_statusbar and show_document_name_in_statusbar should be removed
 // ALPHABETIC_LINK_TAGS and NUMERIC_TAGS should be merged
+// add ability for configs to specify behaviour when they are changed (split on_configs_changed for each config)
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -164,7 +165,7 @@ extern bool AUTO_RENAME_DOWNLOADED_PAPERS;
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
 extern float SMALL_PIXMAP_SCALE;
-extern std::wstring EXECUTE_COMMANDS[26];
+// extern std::wstring EXECUTE_COMMANDS[26];
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
 
@@ -8091,6 +8092,11 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
 #endif
         if (confname == "use_system_theme") {
             set_color_mode_to_system_theme();
+        }
+        if (confname == "status_bar_font_size"){
+            status_label->setStyleSheet(get_status_stylesheet());
+            status_label_left->setStyleSheet(get_status_stylesheet());
+            status_label_right->setStyleSheet(get_status_stylesheet());
         }
         if (confname == "status_font"){
             QFont status_font = QFont(get_status_font_face_name());
