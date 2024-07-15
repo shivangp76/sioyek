@@ -13,6 +13,7 @@ class MySortFilterProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 
 public:
+    QString ignore_prefix = "";
     QString filterString;
     std::optional<int> filter_type = {};
     mutable std::vector<float> scores;
@@ -38,6 +39,7 @@ public:
     float update_scores_for_index(fzf_pattern_t* pattern, const QModelIndex& index, int col) const;
     void ensure_scores() const;
     void update_scores() const;
+    void set_ignore_prefix(QString prefix);
     void set_is_highlight(bool is_hl);
 
 };

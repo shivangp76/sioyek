@@ -128,7 +128,12 @@ MySortFilterProxyModel::~MySortFilterProxyModel() {
 }
 
 float MySortFilterProxyModel::compute_score(QString filter_string, QString item_string) const{
-    return similarity_score(item_string.toLower().toStdWString(), filter_string.toLower().toStdWString());
+    if (ignore_prefix.size() > 0 && filter_string.startsWith(ignore_prefix) && item_string.startsWith(ignore_prefix)){
+        return similarity_score(item_string.toLower().mid(ignore_prefix.size()).toStdWString(), filter_string.mid(ignore_prefix.size()).toLower().toStdWString());
+    }
+    else{
+        return similarity_score(item_string.toLower().toStdWString(), filter_string.toLower().toStdWString());
+    }
 }
 
 float MySortFilterProxyModel::compute_score(fzf_pattern_t* pattern, QString item_string) const{
@@ -215,4 +220,9 @@ void MySortFilterProxyModel::update_scores() const{
 
 void MySortFilterProxyModel::set_is_highlight(bool is_hl) {
     is_highlight = is_hl;
+}
+
+
+void MySortFilterProxyModel::set_ignore_prefix(QString prefix){
+    ignore_prefix = prefix;
 }

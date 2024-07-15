@@ -1074,7 +1074,7 @@ public:
 class CommandItemDelegate : public BaseCustomDelegate {
     Q_OBJECT
 public:
-    //QString pattern;
+    QString ignore_prefix;
 
     mutable QTextDocument command_name_document;
     mutable QTextDocument keybind_document;
@@ -1085,7 +1085,7 @@ public:
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
     void clear_cache();
-    //void set_pattern(QString p);
+    void set_ignore_prefix(QString p);
 };
 
 

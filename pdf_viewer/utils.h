@@ -889,7 +889,6 @@ bool has_unicode(const T& str) {
 }
 template<typename T>
 float similarity_score(const T& haystack, const T& needle, int* out_begin = nullptr, int* out_end = nullptr, float size_threshold=0.5f) {
-
     bool unicode = has_unicode(haystack) || has_unicode(needle);
 
     float size_discount_factor = 1.0f / haystack.size();

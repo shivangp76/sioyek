@@ -2294,6 +2294,10 @@ CommandItemDelegate::CommandItemDelegate() {
     keybind_document.setDefaultFont(keybind_font);
 }
 
+void CommandItemDelegate::set_ignore_prefix(QString p){
+    ignore_prefix = p;
+}
+
 void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
     painter->save();
 
@@ -2309,12 +2313,25 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     int text_highlight_begin = 0;
     int text_highlight_end = 0;
-    int text_similarity = similarity_score(command_name.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
     //qDebug() << command_name << " " << text_similarity;
 
     const int similarity_threshold = 70;
-    if (text_similarity > similarity_threshold) {
-        command_name = command_name.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + command_name.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + command_name.mid(text_highlight_end);
+    QString highlight_span = "<span style=\"background-color: yellow; color: black;\">";
+    if (ignore_prefix.size() == 0){
+        int text_similarity = similarity_score(command_name.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
+        if (text_similarity > similarity_threshold) {
+            command_name = command_name.left(text_highlight_begin) + highlight_span + command_name.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + command_name.mid(text_highlight_end);
+        }
+    }
+    else{
+        int text_similarity = similarity_score(command_name.mid(ignore_prefix.size()).toLower().toStdWString(), pattern.mid(ignore_prefix.size()).toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
+
+        if (text_highlight_begin >= 0) text_highlight_begin += ignore_prefix.size();
+        if (text_highlight_end >= 0) text_highlight_end += ignore_prefix.size();
+
+        if (text_similarity > similarity_threshold) {
+            command_name = highlight_span + ignore_prefix + "</span>" + command_name.mid(ignore_prefix.size(), text_highlight_begin - ignore_prefix.size()) + highlight_span + command_name.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + command_name.mid(text_highlight_end);
+        }
     }
 
     if (option.state & QStyle::State_Selected) {
@@ -2528,7 +2545,11 @@ bool CommandSelectorWidget::on_text_change(const QString& txt) {
         proxy_model = new MySortFilterProxyModel(true, false);
         proxy_model->setSourceModel(prefix_command_model[prefix]);
         proxy_model->setParent(this);
+        proxy_model->set_ignore_prefix(prefix);
         get_view()->setModel(proxy_model);
+        auto delegate = dynamic_cast<CommandItemDelegate*>(get_view()->itemDelegate());
+        delegate->set_ignore_prefix(prefix);
+        // auto command_item_delegate = dynamic_cast<BaseCustomDelegate*>(lv->itemDelegate());
 
         //proxy_model->setSourceModel(prefix_command_model[prefix]);
         //proxy_model->update_scores();
