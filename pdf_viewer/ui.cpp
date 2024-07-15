@@ -2381,7 +2381,7 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     //}
     keybind_document.setTextWidth(option.rect.width());
     //painter->translate(command_name_document.size().width(), 0);
-    painter->translate(option.rect.width() - keybind_document.idealWidth(), 0);
+    painter->translate((option.rect.width() - keybind_document.idealWidth()), (option.rect.height() - keybind_document.size().height()) / 2);
     keybind_document.documentLayout()->draw(painter, ctx);
 
     painter->restore();
