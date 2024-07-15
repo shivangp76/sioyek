@@ -20,6 +20,7 @@
 #include "touchui/TouchConfigMenu.h"
 #include "touchui/TouchSettings.h"
 
+extern std::wstring MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE;
 extern std::wstring DEFAULT_OPEN_FILE_PATH;
 extern float DARK_MODE_CONTRAST;
 extern float BACKGROUND_COLOR[3];
@@ -1959,11 +1960,12 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         //text = text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
         //comment_text = comment_text.replace(pattern, "<span style=\"background-color: yellow; color: black;\">" + pattern + "</span>");
         const int similarity_threshold = 70;
+        QString span_begin = "<span style=\"" + QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) + "\">";
         if (text_similarity > similarity_threshold) {
-            highlight_text = highlight_text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + highlight_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + highlight_text.mid(text_highlight_end);
+            highlight_text = highlight_text.left(text_highlight_begin) + span_begin + highlight_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + highlight_text.mid(text_highlight_end);
         }
         if (comment_similarity > similarity_threshold) {
-            comment_text = comment_text.left(comment_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + comment_text.mid(comment_highlight_begin, comment_highlight_end - comment_highlight_begin) + "</span>" + comment_text.mid(comment_highlight_end);
+            comment_text = comment_text.left(comment_highlight_begin) + span_begin + comment_text.mid(comment_highlight_begin, comment_highlight_end - comment_highlight_begin) + "</span>" + comment_text.mid(comment_highlight_end);
         }
     }
 
@@ -2316,7 +2318,7 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     //qDebug() << command_name << " " << text_similarity;
 
     const int similarity_threshold = 70;
-    QString highlight_span = "<span style=\"background-color: yellow; color: black;\">";
+    QString highlight_span = "<span style=\"" + QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) + "\">";
     if (ignore_prefix.size() == 0){
         int text_similarity = similarity_score(command_name.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
         if (text_similarity > similarity_threshold) {
@@ -2411,7 +2413,7 @@ QString BaseCustomDelegate::highlight_pattern(QString txt) const{
     int text_similarity = similarity_score(txt.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
     const int similarity_threshold = 70;
     if (text_similarity > similarity_threshold) {
-        txt = txt.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + txt.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + txt.mid(text_highlight_end);
+        txt = txt.left(text_highlight_begin) + "<span style=\"" + QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) + "\">" + txt.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + txt.mid(text_highlight_end);
     }
     return txt;
 }
@@ -2707,7 +2709,7 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     int text_similarity = similarity_score(bookmark_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
 
     if (text_similarity > 0 && text_highlight_begin >= 0) {
-        bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\"background-color: yellow; color: black;\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
+        bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
     }
 
     if (bookmark.is_markdown()) {
@@ -3088,7 +3090,7 @@ void SearchItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& op
 }
 
 QString SearchItemDelegate::highlight_match(QString match) const{
-    return match.replace("SIOYEK_MATCH_BEGIN", "<span style=\"background-color: yellow; color: black;\"; >").replace("SIOYEK_MATCH_END", "</span>");
+    return match.replace("SIOYEK_MATCH_BEGIN", "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\"; >").replace("SIOYEK_MATCH_END", "</span>");
 }
 
 QString SearchItemDelegate::get_location_string(const QModelIndex& index) const{
