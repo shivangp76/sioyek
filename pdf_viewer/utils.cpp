@@ -840,9 +840,10 @@ void get_word_rect_list_from_flat_chars(const std::vector<fz_stext_char*>& flat_
 }
 
 int get_num_tag_digits(int n) {
+    int base = NUMERIC_TAGS ? 10 : 26;
     int res = 1;
-    while (n > 26) {
-        n = n / 26;
+    while (n > base) {
+        n = n / base;
         res++;
     }
     return res;
@@ -873,6 +874,9 @@ std::vector<std::string> get_tags(int n) {
         }
         else {
             tag = std::to_string(i);
+            for (int i = tag.size(); i < n_digits; i++){
+                tag = "0" + tag;
+            }
         }
         res.push_back(tag);
     }

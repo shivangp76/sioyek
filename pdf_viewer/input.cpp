@@ -29,7 +29,8 @@ extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
 extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
 extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 extern std::wstring SEARCH_URLS[26];
-extern bool ALPHABETIC_LINK_TAGS;
+// extern bool ALPHABETIC_LINK_TAGS;
+extern bool NUMERIC_TAGS;
 extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 extern std::wstring TABLE_EXTRACT_BEHAVIOUR;
 
@@ -4874,8 +4875,8 @@ public:
     }
 
     bool is_done() {
-        if ((!ALPHABETIC_LINK_TAGS && text.has_value())) return true;
-        if (ALPHABETIC_LINK_TAGS && text.has_value() && (text.value().size() == get_num_tag_digits(widget->num_visible_links()))) return true;
+        if ((NUMERIC_TAGS && text.has_value())) return true;
+        if ((!NUMERIC_TAGS) && text.has_value() && (text.value().size() == get_num_tag_digits(widget->num_visible_links()))) return true;
         return false;
     }
 
@@ -4886,10 +4887,10 @@ public:
             return {};
         }
         else {
-            if (ALPHABETIC_LINK_TAGS) {
+            if (!NUMERIC_TAGS) {
                 return Requirement{ RequirementType::Symbol, "Label" };
             }
-            else if ((widget->num_visible_links() < 10) && (!ALPHABETIC_LINK_TAGS)) {
+            else if ((widget->num_visible_links() < 10) && (NUMERIC_TAGS)) {
                 return Requirement{ RequirementType::Symbol, "Label" };
             }
             else {

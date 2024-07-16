@@ -281,7 +281,7 @@ float KEYBOARD_SELECTED_TAG_TEXT_COLOR[] = { 1.0f , 1.0f, 1.0f, 1.0f };
 float KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO[] = { 0.0f , 0.0f, 0.0f, 1.0f };
 
 bool AUTOCENTER_VISUAL_SCROLL = false;
-bool ALPHABETIC_LINK_TAGS = true;
+// bool ALPHABETIC_LINK_TAGS = true;
 bool VIMTEX_WSL_FIX = false;
 float RULER_AUTO_MOVE_SENSITIVITY = 40.0f;
 float TTS_RATE = 0.0f;
@@ -1081,7 +1081,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"toc_jump_align_top", &TOC_JUMP_ALIGN_TOP);
     add_bool(L"autocenter_visual_scroll", &AUTOCENTER_VISUAL_SCROLL);
     add_bool(L"autocenter_ruler", &AUTOCENTER_VISUAL_SCROLL);
-    add_bool(L"alphabetic_link_tags", &ALPHABETIC_LINK_TAGS);
+    // add_bool(L"alphabetic_link_tags", &ALPHABETIC_LINK_TAGS);
     add_bool(L"vimtex_wsl_fix", &VIMTEX_WSL_FIX);
     add_bool(L"sliced_rendering", &SLICED_RENDERING);
     add_bool(L"touch_mode", &TOUCH_MODE);

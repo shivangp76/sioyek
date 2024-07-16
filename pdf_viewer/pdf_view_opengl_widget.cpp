@@ -60,7 +60,8 @@ extern float CUSTOM_COLOR_CONTRAST;
 extern float DISPLAY_RESOLUTION_SCALE;
 extern float KEYBOARD_SELECT_BACKGROUND_COLOR[4];
 extern float KEYBOARD_SELECT_TEXT_COLOR[4];
-extern bool ALPHABETIC_LINK_TAGS;
+// extern bool ALPHABETIC_LINK_TAGS;
+extern bool NUMERIC_TAGS;
 extern int NUM_H_SLICES;
 extern int NUM_V_SLICES;
 extern bool SLICED_RENDERING;
@@ -1241,7 +1242,7 @@ void PdfViewOpenGLWidget::my_render() {
             ss << i;
             std::string index_string = ss.str();
 
-            if (ALPHABETIC_LINK_TAGS) {
+            if (!NUMERIC_TAGS) {
                 index_string = get_aplph_tag(i, all_visible_links.size());
             }
 

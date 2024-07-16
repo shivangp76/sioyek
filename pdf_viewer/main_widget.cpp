@@ -240,7 +240,8 @@ extern std::wstring RIGHT_STATUS_BAR_FORMAT;
 extern bool INVERTED_HORIZONTAL_SCROLLING;
 extern bool TOC_JUMP_ALIGN_TOP;
 extern bool AUTOCENTER_VISUAL_SCROLL;
-extern bool ALPHABETIC_LINK_TAGS;
+// extern bool ALPHABETIC_LINK_TAGS;
+extern bool NUMERIC_TAGS;
 extern bool VIMTEX_WSL_FIX;
 extern float RULER_AUTO_MOVE_SENSITIVITY;
 extern float TTS_RATE;
@@ -6318,11 +6319,11 @@ MainWidget* MainWidget::handle_new_window() {
 
 std::optional<PdfLink> MainWidget::get_selected_link(const std::wstring& text) {
     std::vector<PdfLink> visible_page_links;
-    if (ALPHABETIC_LINK_TAGS || is_string_numeric(text)) {
+    if ((!NUMERIC_TAGS) || is_string_numeric(text)) {
 
         int link_index = 0;
 
-        if (ALPHABETIC_LINK_TAGS) {
+        if (!NUMERIC_TAGS) {
             link_index = get_index_from_tag(utf8_encode(text), true);
         }
         else {
