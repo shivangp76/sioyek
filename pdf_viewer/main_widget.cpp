@@ -8077,51 +8077,22 @@ void MainWidget::goto_page_with_label(std::wstring label) {
 void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
     bool should_reflow = false;
     bool should_invalidate_render = false;
+    for (int i = 0; i < config_names->size(); i++){
+        std::wstring confname = QString::fromStdString((*config_names)[i]).toStdWString();
+        Config* conf = config_manager->get_mut_config_with_name(confname);
+        if (conf->on_change){
+            conf->on_change.value()(this);
+        }
+    }
+    // return;
+
     for (int i = 0; i < config_names->size(); i++) {
         QString confname = QString::fromStdString((*config_names)[i]);
-#ifdef Q_OS_MACOS
-        if (confname == "macos_titlebar_color"){
-            changeTitlebarColor(winId(), MACOS_TITLEBAR_COLOR[0], MACOS_TITLEBAR_COLOR[1], MACOS_TITLEBAR_COLOR[2], 1.0f);
-        }
-#endif
-        if (confname == "use_system_theme") {
-            set_color_mode_to_system_theme();
-        }
-        if (confname == "status_bar_font_size"){
-            status_label->setStyleSheet(get_status_stylesheet());
-            status_label_left->setStyleSheet(get_status_stylesheet());
-            status_label_right->setStyleSheet(get_status_stylesheet());
-        }
-        if (confname == "status_font"){
-            QFont status_font = QFont(get_status_font_face_name());
-            status_font.setStyleHint(QFont::TypeWriter);
-            status_label->setFont(status_font);
-            status_label_left->setFont(status_font);
-            status_label_right->setFont(status_font);
-        }
 
-        if ((confname == "custom_background_color") || (confname == "custom_text_color") || (confname == "question_bookmark_text_color")) {
-            pdf_renderer->get_bookmark_renderer()->release_cache();
-        }
-
-        if (confname == "tts_rate") {
-            if (is_reading) {
-                handle_stop_reading();
-                handle_start_reading();
-            }
-        }
         if (confname.startsWith("epub")) {
             should_reflow = true;
         }
-        if (confname == "gamma") {
-            should_invalidate_render = true;
-        }
-        if (confname == "status_bar_format") {
-            left_status_string_generator = std::move(compile_status_string(QString::fromStdWString(STATUS_BAR_FORMAT), this));
-        }
-        if (confname == "highlight_links") {
-            main_document_view->set_highlight_links(SHOULD_HIGHLIGHT_LINKS, false);
-        }
+
         if (confname.startsWith("page_space")) {
             if (confname == "page_space_x") main_document_view->set_page_space_x(PAGE_SPACE_X);
             if (confname == "page_space_y") main_document_view->set_page_space_y(PAGE_SPACE_Y);
@@ -8142,6 +8113,7 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
 void MainWidget::on_config_changed(std::string config_name, bool should_save) {
     std::vector<std::string> config_names;
     config_names.push_back(config_name);
+
     for (auto window : windows){
         window->on_configs_changed(&config_names);
     }

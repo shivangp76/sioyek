@@ -17,6 +17,7 @@
 
 //#include <main_widget.h>
 
+class MainWidget;
 
 
 enum class ConfigType {
@@ -89,6 +90,7 @@ struct Config {
     std::function<void(void*, std::wstringstream&)> serialize = nullptr;
     std::function<void*(std::wstringstream&, void* res, bool* changed)> deserialize = nullptr;
     std::function<bool(const std::wstring& value)> validator = nullptr;
+    std::optional<std::function<void(MainWidget*)>> on_change = {};
     std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras = EmptyExtras{};
     std::wstring default_value_string;
     bool is_auto = false;
@@ -102,6 +104,7 @@ struct Config {
     std::wstring get_current_string();
     bool has_changed_from_default();
     bool is_empty_string();
+    void set_change_fn(std::function<void(MainWidget*)> on_change_fn);
 
 };
 

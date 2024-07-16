@@ -4,6 +4,12 @@
 #include <cassert>
 #include <map>
 #include <qdir.h>
+#include <qlabel.h>
+#include <qfont.h>
+#include "pdf_renderer.h"
+#include "document_view.h"
+#include "main_widget.h"
+
 //#include <ui.h>
 extern Path android_config_path;
 
@@ -319,6 +325,8 @@ int RELOAD_INTERVAL_MILISECONDS = 200;
 bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE = true;
 
 #ifdef Q_OS_MACOS
+extern "C" void changeTitlebarColor(WId, double, double, double, double);
+extern "C" void hideWindowTitleBar(WId);
 float MACOS_TITLEBAR_COLOR[3] = { -1.0f, -1.0f, -1.0f };
 bool MACOS_HIDE_TITLEBAR = false;
 #endif
@@ -711,6 +719,7 @@ private:
     std::function<bool(const std::wstring& value)> validator = nullptr;
     std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras = EmptyExtras{};
     bool is_auto = false;
+    std::optional<std::function<void(MainWidget*)>> on_change = {};
 
     std::function<void(void*, std::wstringstream&)> get_serializer(){
         if (serialize) return serialize;
@@ -869,6 +878,10 @@ public:
 
 };
 
+void Config::set_change_fn(std::function<void(MainWidget*)> on_change_fn){
+    this->on_change = on_change_fn;
+}
+
 ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, const std::vector<Path>& user_paths) {
 
     user_config_paths = user_paths;
@@ -877,66 +890,77 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         configs.push_back(
             ConfigBuilder::color3(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_color4 = [&](std::wstring name, float* location){
         configs.push_back(
             ConfigBuilder::color4(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_bool = [&](std::wstring name, bool* location){
         configs.push_back(
             ConfigBuilder::boolean(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_string = [&](std::wstring name, std::wstring* location){
         configs.push_back(
             ConfigBuilder::string(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_macro = [&](std::wstring name, std::wstring* location){
         configs.push_back(
             ConfigBuilder::macro(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_ivec2 = [&](std::wstring name, int* location){
         configs.push_back(
             ConfigBuilder::ivec2(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_fvec2 = [&](std::wstring name, float* location){
         configs.push_back(
             ConfigBuilder::fvec2(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_rect = [&](std::wstring name, UIRect* location){
         configs.push_back(
             ConfigBuilder::rect(name, location).build()
             );
+        return &configs.back();
     };
 
     auto add_float = [&](std::wstring name, float* location, FloatExtras extras){
         configs.push_back(
             ConfigBuilder::floatc(name, location, extras).build()
             );
+        return &configs.back();
     };
 
     auto add_enum = [&](std::wstring name, std::wstring* location, EnumExtras extras){
         configs.push_back(
             ConfigBuilder::enumeration(name, location, extras).build()
             );
+        return &configs.back();
     };
 
     auto add_int = [&](std::wstring name, int* location, IntExtras extras){
         configs.push_back(
             ConfigBuilder::intc(name, location, extras).build()
             );
+        return &configs.back();
     };
 
     add_color3(L"text_highlight_color", DEFAULT_TEXT_HIGHLIGHT_COLOR);
@@ -951,8 +975,12 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"background_color", BACKGROUND_COLOR);
     add_color3(L"dark_mode_background_color", DARK_MODE_BACKGROUND_COLOR);
     add_color3(L"custom_color_mode_empty_background_color", CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR);
-    add_color3(L"custom_background_color", CUSTOM_BACKGROUND_COLOR);
-    add_color3(L"custom_text_color", CUSTOM_TEXT_COLOR);
+    add_color3(L"custom_background_color", CUSTOM_BACKGROUND_COLOR)->set_change_fn([](MainWidget* w){
+        w->pdf_renderer->get_bookmark_renderer()->release_cache();
+    });
+    add_color3(L"custom_text_color", CUSTOM_TEXT_COLOR)->set_change_fn([](MainWidget* w){
+        w->pdf_renderer->get_bookmark_renderer()->release_cache();
+    });
     add_color3(L"status_bar_color", STATUS_BAR_COLOR);
     add_color3(L"status_bar_text_color", STATUS_BAR_TEXT_COLOR);
     add_color3(L"page_separator_color", PAGE_SEPARATOR_COLOR);
@@ -962,7 +990,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"ui_selected_text_color", UI_SELECTED_TEXT_COLOR);
     //add_color3(L"ui_background_color", STATUS_BAR_COLOR);
     add_color3(L"question_bookmark_background_color", QUESTION_BOOKMARK_BACKGROUND_COLOR);
-    add_color3(L"question_bookmark_text_color", QUESTION_BOOKMARK_TEXT_COLOR);
+    add_color3(L"question_bookmark_text_color", QUESTION_BOOKMARK_TEXT_COLOR)->set_change_fn([](MainWidget* w){
+        w->pdf_renderer->get_bookmark_renderer()->release_cache();
+    });
 
     add_color4(L"vertical_line_color",DEFAULT_VERTICAL_LINE_COLOR);
     add_color4(L"visual_mark_color",DEFAULT_VERTICAL_LINE_COLOR);
@@ -1004,16 +1034,25 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"menu_screen_height_ratio", &MENU_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
     add_float(L"smooth_scroll_speed", &SMOOTH_SCROLL_SPEED, FloatExtras{0.0f, 20.0f});
     add_float(L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, FloatExtras{10.0f, 10000.0f});
-    add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f});
+    add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f})->set_change_fn([](MainWidget* w){
+        w->invalidate_render();
+    });
     add_float(L"highlight_delete_threshold", &HIGHLIGHT_DELETE_THRESHOLD, FloatExtras{0.0f, 0.1f});
-    add_float(L"tts_rate", &TTS_RATE, FloatExtras{-1.0f, 1.0f});
+    add_float(L"tts_rate", &TTS_RATE, FloatExtras{-1.0f, 1.0f})->set_change_fn([](MainWidget* w){
+        if (w->is_reading) {
+            w->handle_stop_reading();
+            w->handle_start_reading();
+        }
+    });
     add_float(L"smooth_move_max_velocity", &SMOOTH_MOVE_MAX_VELOCITY, FloatExtras{0.0f, 100000.0f});
     add_float(L"epub_width", &EPUB_WIDTH, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_height", &EPUB_HEIGHT, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_font_size", &EPUB_FONT_SIZE, FloatExtras{0.0f, 100.0f});
 
     add_bool(L"default_dark_mode", &DEFAULT_DARK_MODE);
-    add_bool(L"use_system_theme", &USE_SYSTEM_THEME);
+    add_bool(L"use_system_theme", &USE_SYSTEM_THEME)->set_change_fn([](MainWidget* w){
+        w->set_color_mode_to_system_theme();
+    });
     add_bool(L"use_custom_color_as_dark_system_theme", &USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME);
     add_bool(L"render_freetext_borders", &RENDER_FREETEXT_BORDERS);
     add_bool(L"flat_toc", &FLAT_TABLE_OF_CONTENTS);
@@ -1074,7 +1113,10 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"smartcase_search", &SMARTCASE_SEARCH);
     // add_bool(L"show_document_name_in_statusbar", &SHOW_DOCUMENT_NAME_IN_STATUSBAR);
     add_bool(L"numeric_tags", &NUMERIC_TAGS);
-    add_bool(L"highlight_links", &SHOULD_HIGHLIGHT_LINKS);
+    add_bool(L"highlight_links", &SHOULD_HIGHLIGHT_LINKS)->set_change_fn([](MainWidget* w){
+        w->main_document_view->set_highlight_links(SHOULD_HIGHLIGHT_LINKS, false);
+    });
+
     add_bool(L"should_highlight_unselected_search", &SHOULD_HIGHLIGHT_UNSELECTED_SEARCH);
     add_bool(L"fuzzy_searching", &FUZZY_SEARCHING);
     add_bool(L"inverted_horizontal_scrolling", &INVERTED_HORIZONTAL_SCROLLING);
@@ -1100,7 +1142,13 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
     add_string(L"shared_database_path", &SHARED_DATABASE_PATH);
     add_string(L"ui_font", &UI_FONT_FACE_NAME);
-    add_string(L"status_font", &STATUS_FONT_FACE_NAME);
+    add_string(L"status_font", &STATUS_FONT_FACE_NAME)->set_change_fn([](MainWidget* w){
+        QFont status_font = QFont(get_status_font_face_name());
+        status_font.setStyleHint(QFont::TypeWriter);
+        w->status_label->setFont(status_font);
+        w->status_label_left->setFont(status_font);
+        w->status_label_right->setFont(status_font);
+    });
     add_string(L"middle_click_search_engine", &MIDDLE_CLICK_SEARCH_ENGINE);
     add_string(L"menu_matched_search_highlight", &MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE);
     add_string(L"shift_middle_click_search_engine", &SHIFT_MIDDLE_CLICK_SEARCH_ENGINE);
@@ -1121,7 +1169,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     // add_string(L"paper_download_contrib_path", &PAPER_SEARCH_CONTRIB_PATH);
     add_string(L"default_open_file_path", &DEFAULT_OPEN_FILE_PATH);
     add_string(L"annotations_directory", &ANNOTATIONS_DIR_PATH);
-    add_string(L"status_bar_format", &STATUS_BAR_FORMAT);
+    add_string(L"status_bar_format", &STATUS_BAR_FORMAT)->set_change_fn([](MainWidget* w){
+        w->left_status_string_generator = std::move(compile_status_string(QString::fromStdWString(STATUS_BAR_FORMAT), w));
+    });
     add_string(L"right_status_bar_format", &RIGHT_STATUS_BAR_FORMAT);
     add_string(L"epub_css", &EPUB_CSS);
     add_string(L"tag_font_face", &TAG_FONT_FACE);
@@ -1177,7 +1227,11 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"num_prerendered_prev_slides", &NUM_PRERENDERED_PREV_SLIDES, IntExtras{0, 5});
     add_int(L"keyboard_select_font_size", &KEYBOARD_SELECT_FONT_SIZE, IntExtras{1, 100});
     add_int(L"documentation_font_size", &DOCUMENTATION_FONT_SIZE, IntExtras{1, 100});
-    add_int(L"status_bar_font_size", &STATUS_BAR_FONT_SIZE, IntExtras{1, 100});
+    add_int(L"status_bar_font_size", &STATUS_BAR_FONT_SIZE, IntExtras{1, 100})->set_change_fn([](MainWidget* w){
+        w->status_label->setStyleSheet(get_status_stylesheet());
+        w->status_label_left->setStyleSheet(get_status_stylesheet());
+        w->status_label_right->setStyleSheet(get_status_stylesheet());
+    });
     // add_int(L"text_summary_context_size", &TEXT_SUMMARY_CONTEXT_SIZE, IntExtras{1, 100});
     add_int(L"max_created_toc_size", &MAX_CREATED_TABLE_OF_CONTENTS_SIZE, IntExtras{1, 100000});
     add_int(L"background_bookmarks_pixel_budget", &BACKGROUND_BOOKMARKS_PIXEL_BUDGET, IntExtras{1, 1000000000});
@@ -1211,7 +1265,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
 
 #ifdef Q_OS_MACOS
-    add_color3(L"macos_titlebar_color", MACOS_TITLEBAR_COLOR);
+    add_color3(L"macos_titlebar_color", MACOS_TITLEBAR_COLOR)->set_change_fn([](MainWidget* w){
+        changeTitlebarColor(w->winId(), MACOS_TITLEBAR_COLOR[0], MACOS_TITLEBAR_COLOR[1], MACOS_TITLEBAR_COLOR[2], 1.0f);
+    });
     add_bool(L"macos_hide_titlebar", &MACOS_HIDE_TITLEBAR);
 #endif
 
