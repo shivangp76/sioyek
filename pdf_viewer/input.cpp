@@ -8702,15 +8702,16 @@ std::string InputHandler::get_key_name_from_key_code(int key_code) const {
         {Qt::Key::Key_End, "end"},
         {Qt::Key::Key_Tab, "tab"},
         {Qt::Key::Key_Backtab, "tab"},
+        {Qt::Key::Key_Space, "space"},
     };
 
     //if (((key_code <= 'z') && (key_code >= 'a')) || ((key_code <= 'Z') && (key_code >= 'A'))) {
-    if (key_code < 127) {
+    if (keymap.find(key_code) != keymap.end()) {
+        return "<" + keymap[key_code] + ">";
+    }
+    else if (key_code < 127) {
         result.push_back(key_code);
         return result;
-    }
-    else if (keymap.find(key_code) != keymap.end()) {
-        return "<" + keymap[key_code] + ">";
     }
     else if ((key_code >= Qt::Key::Key_F1) && (key_code <= Qt::Key::Key_F35)) {
         int f_number = 1 + (key_code - Qt::Key::Key_F1);

@@ -12,8 +12,8 @@
 // make page range in search command 1-indexed
 // make the action of download and clipboard paper configurable
 // api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
-// when searching for commands like setconfig_ we should not consider the setconfig_ part in string matching
 // add ability for configs to specify behaviour when they are changed (split on_configs_changed for each config)
+// fix the display of space shortcut on command menu
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"

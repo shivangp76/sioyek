@@ -163,7 +163,7 @@ bool PRESERVE_IMAGE_COLORS = false;
 bool INVERTED_PRESERVED_IMAGE_COLORS = false;
 bool HOVER_OVERVIEW = false;
 bool LINEAR_TEXTURE_FILTERING = false;
-bool RULER_MODE = true;
+// bool RULER_MODE = true;
 bool SMALL_TOC = false;
 bool WHEEL_ZOOM_ON_CURSOR = false;
 // bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_REFINE = true;
@@ -1042,7 +1042,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"linear_filter", &LINEAR_TEXTURE_FILTERING);
     add_bool(L"collapsed_toc", &SMALL_TOC);
     add_bool(L"render_pdf_annotations", &SHOULD_RENDER_PDF_ANNOTATIONS);
-    add_bool(L"ruler_mode", &RULER_MODE);
+    // add_bool(L"ruler_mode", &RULER_MODE);
     add_bool(L"use_ruler_to_highlight_synctex_line", &USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE);
     add_bool(L"show_most_recent_commands_first", &SHOW_MOST_RECENT_COMMANDS_FIRST);
     add_bool(L"keyboard_point_selection", &USE_KEYBOARD_POINT_SELECTION);
