@@ -16,8 +16,11 @@ The @config(right_status_bar_format) is similar, but determines what to display 
 
 Here is what each of the `%{}` variables expand to:
 - `%{current_page}` expands to the current page number
+- `%{current_page_label}` expands to the the label of the current page (might be different from `current_page` for example some documents have pages labeled with roman numerals, e.g. XII)
 - `%{num_pages}` expands to the total number of pages in current document
 - `%{chapter_name}` expands to the name of current chapter
+- `%{document_name}` expands to the file name of current document
+- `%{auto_name}` expands to automatically detected document name
 - `%{search_results}` expands to the search results (if there is a search active)
 - `%{search_progress}` expands to the current search progress (if there is one in progress)
 - `%{link_status}` specifies whether we are linking (that is the source of a @config(portal) has been set and we are waiting for the destination)
@@ -32,9 +35,14 @@ Here is what each of the `%{}` variables expand to:
 - `%{highlight}` displays information about the current highlight state (@command(set_select_highlight_type)) 
 - `%{freehand_drawing}` displays if we are in freehand drawing mode (@command(toggle_freehand_drawing_mode))
 - `%{rect_select}` displays if a command requires a rectangle to be selected
+- `%{point_select}` displays if a command requires a point to be selected
 - `%{custom_message}` user message that can be set using @command(set_status_string)
 - `%{download}` displays if we are currently downloading a paper
 - `%{download_button}` a button that displays when the current overview is a reference to a paper, clickin on this button downloads the paper
+- `%{closest_bookmark}` displays the closest bookmark to current location
+- `%{closest_portal}` displays the closest portal to the current location
+- `%{selected_highlight}` displays the comment of the selected highlight
+- `%{mode_string}` displays the current mode string (this can be useful when defining @concept(macro)s)
 - `%{network_status}` displays the current network status
 - `%{tts_status}` displays the current text to speech status
 - `%{tts_rate}` displays the current text to speech speed

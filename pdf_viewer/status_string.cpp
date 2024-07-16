@@ -300,6 +300,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         {"freehand_drawing", std::move(drawing_fn)},
         {"mode_string", std::move(mode_fn)},
         {"closest_bookmark", std::move(closest_bookmark_fn)},
+        {"selected_highlight", std::move(selected_highlight_fn)},
         {"closest_portal", std::move(closest_portal_fn)},
         {"rect_select", std::move(rect_select_fn)},
         {"point_select", std::move(point_select_fn)},

@@ -15,7 +15,6 @@
 // when searching for commands like setconfig_ we should not consider the setconfig_ part in string matching
 // remove RULER_MODE config and instead add another option to ruler_display_mode
 // show_closest_bookmark_in_statusbar and show_closest_portal_in_statusbar and show_document_name_in_statusbar should be removed
-// ALPHABETIC_LINK_TAGS and NUMERIC_TAGS should be merged
 // add ability for configs to specify behaviour when they are changed (split on_configs_changed for each config)
 
 #include "latex.h"
@@ -228,11 +227,8 @@ extern float SMOOTH_SCROLL_SPEED;
 extern float SMOOTH_SCROLL_DRAG;
 extern bool SUPER_FAST_SEARCH;
 extern bool INCREMENTAL_SEARCH;
-extern bool SHOW_CLOSEST_BOOKMARK_IN_STATUSBAR;
-extern bool SHOW_CLOSE_PORTAL_IN_STATUSBAR;
 extern bool CASE_SENSITIVE_SEARCH;
 extern bool SMARTCASE_SEARCH;
-extern bool SHOW_DOCUMENT_NAME_IN_STATUSBAR;
 extern bool SHOULD_HIGHLIGHT_LINKS;
 extern float SCROLL_VIEW_SENSITIVITY;
 extern std::wstring STATUS_BAR_FORMAT;
