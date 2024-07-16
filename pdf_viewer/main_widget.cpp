@@ -13,7 +13,6 @@
 // make the action of download and clipboard paper configurable
 // api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
 // add ability for configs to specify behaviour when they are changed (split on_configs_changed for each config)
-// fix the display of space shortcut on command menu
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
@@ -8143,7 +8142,9 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
 void MainWidget::on_config_changed(std::string config_name, bool should_save) {
     std::vector<std::string> config_names;
     config_names.push_back(config_name);
-    on_configs_changed(&config_names);
+    for (auto window : windows){
+        window->on_configs_changed(&config_names);
+    }
 
     if (should_save) {
         auto conf = config_manager->get_mut_config_with_name(utf8_decode(config_name));
