@@ -45,7 +45,7 @@ extern float HIGHLIGHT_COLORS[26 * 3];
 extern bool SHOULD_DRAW_UNRENDERED_PAGES;
 extern float CUSTOM_BACKGROUND_COLOR[3];
 extern float CUSTOM_TEXT_COLOR[3];
-extern bool RULER_MODE;
+// extern bool RULER_MODE;
 extern float PAGE_SEPARATOR_WIDTH;
 extern float PAGE_SEPARATOR_COLOR[3];
 extern float RULER_PADDING;
@@ -984,7 +984,7 @@ void PdfViewOpenGLWidget::my_render() {
             ruler_rect = dv()->document_to_window_rect_pixel_perfect(ruler_document_rect, ruler_pixel_width, ruler_pixel_height, false);
         }
 
-        if ((!ruler_rect.has_value()) || (RULER_DISPLAY_MODE == L"slit")) {
+        if ((!ruler_rect.has_value()) || (RULER_DISPLAY_MODE == L"slit") || (RULER_DISPLAY_MODE == L"highlight_below")) {
             render_line_window(vertical_line_end, dv()->get_ruler_window_rect());
         }
         else {
@@ -2582,7 +2582,7 @@ void PdfViewOpenGLWidget::render_line_window_opengl_backend(float gl_vertical_po
     glBufferData(GL_ARRAY_BUFFER, sizeof(bar_data), bar_data, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    if (RULER_MODE && ruler_rect.has_value()) {
+    if ((RULER_DISPLAY_MODE != L"highlight_below") && ruler_rect.has_value()) {
         float gl_vertical_begin_pos = ruler_rect->y0;
         float ruler_left_pos = ruler_rect->x0;
         float ruler_right_pos = ruler_rect->x1;

@@ -1207,7 +1207,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_rect(L"landscape_visual_mark_prev", &LANDSCAPE_VISUAL_MARK_PREV);
 
     add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({ {L"local", L"server", L"ask", L"show_button"}}));
-    add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline"}}));
+    add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below"}}));
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
 
 #ifdef Q_OS_MACOS

@@ -14,7 +14,7 @@ s.focus_text('fullscreen')
 start_recording(RECORDING_FILE_NAME)
 time.sleep(1)
 
-values = ['box', 'slit', 'underline']
+values = ['box', 'slit', 'underline', 'highlight_below']
 for val in values:
     s.setconfig_ruler_display_mode(f'{val}')
     time.sleep(2)
@@ -29,3 +29,4 @@ Specifies how the ruler should be rendered. The possible values are:
 - `box`: draw a box around selected line
 - `slit`: draw a shadow on everything except the selected line
 - `underline`: draw a line under the selected line
+- `highlight_below`: highlight the entire screen area below the line
