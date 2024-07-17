@@ -4936,6 +4936,10 @@ bool Document::get_drawings_are_dirty() {
 
 std::vector<fz_stext_char*> Document::get_flat_chars_around_pos(DocumentPos docpos, int count) {
     fz_stext_page* stext_page = get_stext_with_page_number(docpos.page);
+    if (!stext_page) {
+        // can happen if the reference was stale (e.g. file got overwritten etc.)
+        return {};
+    }
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
 

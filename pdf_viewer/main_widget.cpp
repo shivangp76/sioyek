@@ -1960,8 +1960,14 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     show_password_prompt_if_required();
 
     if (main_document_view_has_document()) {
-        scroll_bar->setSingleStep(std::max(MAX_SCROLLBAR / doc()->num_pages() / 10, 1));
-        scroll_bar->setPageStep(MAX_SCROLLBAR / doc()->num_pages());
+        if (doc()->num_pages() > 0){
+            scroll_bar->setSingleStep(std::max(MAX_SCROLLBAR / doc()->num_pages() / 10, 1));
+            scroll_bar->setPageStep(MAX_SCROLLBAR / doc()->num_pages());
+        }
+        else {
+            scroll_bar->setSingleStep(1);
+            scroll_bar->setPageStep(10);
+        }
         update_scrollbar();
     }
 
