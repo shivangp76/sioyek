@@ -328,6 +328,7 @@ bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE = true;
 extern "C" void changeTitlebarColor(WId, double, double, double, double);
 extern "C" void hideWindowTitleBar(WId);
 float MACOS_TITLEBAR_COLOR[3] = { -1.0f, -1.0f, -1.0f };
+float MACOS_DARK_TITLEBAR_COLOR[3] = {-1.0f, -1.0f, -1.0f};
 bool MACOS_HIDE_TITLEBAR = false;
 #endif
 
@@ -1267,6 +1268,11 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 #ifdef Q_OS_MACOS
     add_color3(L"macos_titlebar_color", MACOS_TITLEBAR_COLOR)->set_change_fn([](MainWidget* w){
         changeTitlebarColor(w->winId(), MACOS_TITLEBAR_COLOR[0], MACOS_TITLEBAR_COLOR[1], MACOS_TITLEBAR_COLOR[2], 1.0f);
+    });
+    add_color3(L"macos_dark_titlebar_color", MACOS_DARK_TITLEBAR_COLOR)->set_change_fn([](MainWidget* w){
+        if (w->main_document_view->color_mode != ColorPalette::Normal){
+            changeTitlebarColor(w->winId(), MACOS_DARK_TITLEBAR_COLOR[0], MACOS_DARK_TITLEBAR_COLOR[1], MACOS_DARK_TITLEBAR_COLOR[2], 1.0f);
+        }
     });
     add_bool(L"macos_hide_titlebar", &MACOS_HIDE_TITLEBAR);
 #endif

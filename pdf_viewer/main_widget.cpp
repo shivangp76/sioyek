@@ -331,6 +331,7 @@ const unsigned int INTERVAL_TIME = 200;
 
 #ifdef Q_OS_MACOS
 extern float MACOS_TITLEBAR_COLOR[3];
+extern float MACOS_DARK_TITLEBAR_COLOR[3];
 extern bool MACOS_HIDE_TITLEBAR;
 #endif
 
@@ -1281,9 +1282,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
 #ifdef Q_OS_MACOS
     // only apply titlebar menu if the user has specifically changed it in settings
-    if (MACOS_TITLEBAR_COLOR[0] >= 0){
-        changeTitlebarColor(winId(), MACOS_TITLEBAR_COLOR[0], MACOS_TITLEBAR_COLOR[1], MACOS_TITLEBAR_COLOR[2], 1.0f);
-    }
+    ensure_titlebar_colors_match_color_mode();
 
     if (MACOS_HIDE_TITLEBAR) {
         hideWindowTitleBar(winId());
@@ -3754,6 +3753,7 @@ CommandManager* MainWidget::get_command_manager() {
 
 void MainWidget::toggle_dark_mode() {
     main_document_view->toggle_dark_mode();
+    ensure_titlebar_colors_match_color_mode();
 
     if (helper_opengl_widget_) {
         helper_document_view_->toggle_dark_mode();
@@ -3762,6 +3762,7 @@ void MainWidget::toggle_dark_mode() {
 
 void MainWidget::toggle_custom_color_mode() {
     main_document_view->toggle_custom_color_mode();
+    ensure_titlebar_colors_match_color_mode();
 
     if (helper_opengl_widget_) {
         helper_document_view_->toggle_custom_color_mode();
@@ -7233,6 +7234,10 @@ void MainWidget::set_color_mode_to_system_theme() {
                 set_dark_mode();
             }
         }
+#ifdef Q_OS_MACOS
+        ensure_titlebar_colors_match_color_mode();
+#endif
+
     }
 #endif
 }
@@ -12821,4 +12826,19 @@ void MainWidget::send_symbol_to_last_command(char symbol) {
         pending_command_instance->set_symbol_requirement(symbol);
         advance_command(std::move(pending_command_instance));
     }
+}
+
+void MainWidget::ensure_titlebar_colors_match_color_mode(){
+#ifdef Q_OS_MACOS
+    if (main_document_view->get_current_color_mode() == ColorPalette::Normal){
+        if (MACOS_TITLEBAR_COLOR[0] >= 0){
+            changeTitlebarColor(winId(), MACOS_TITLEBAR_COLOR[0], MACOS_TITLEBAR_COLOR[1], MACOS_TITLEBAR_COLOR[2], 1.0f);
+        }
+    }
+    else{
+        if (MACOS_DARK_TITLEBAR_COLOR[0] >= 0){
+            changeTitlebarColor(winId(), MACOS_DARK_TITLEBAR_COLOR[0], MACOS_DARK_TITLEBAR_COLOR[1], MACOS_DARK_TITLEBAR_COLOR[2], 1.0f);
+        }
+    }
+#endif
 }

@@ -1165,6 +1165,7 @@ public:
     QVariantMap get_color_mapping();
     void handle_type_text_into_input(QString txt);
     void send_symbol_to_last_command(char symbol);
+    void ensure_titlebar_colors_match_color_mode();
 
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
