@@ -12848,3 +12848,7 @@ void MainWidget::ensure_titlebar_colors_match_color_mode(){
     }
 #endif
 }
+
+MainWidget* MainWidget::get_widget_with_id(int window_id){
+    return get_window_with_window_id(window_id);
+}

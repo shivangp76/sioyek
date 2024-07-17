@@ -1014,6 +1014,7 @@ public:
     void deselect_document_indices();
     void zoom_in_overview();
     void zoom_out_overview();
+    Q_INVOKABLE MainWidget* get_widget_with_id(int window_id);
     Q_INVOKABLE QString run_macro_on_main_thread(QString macro_string, QStringList args, bool wait_for_result=true, int target_window_id=-1);
     Q_INVOKABLE QByteArray perform_network_request(QString url, QString method = "get", QString json_data = "");
     Q_INVOKABLE QString read_text_file(QString path);
