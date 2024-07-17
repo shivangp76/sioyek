@@ -14,9 +14,9 @@
 // api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
 // add ability for configs to specify behaviour when they are changed (split on_configs_changed for each config)
 
-#include "latex.h"
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
+#include "latex.h"
 
 #include <iostream>
 #include <vector>
@@ -4447,7 +4447,10 @@ void MainWidget::perform_sync_operations_when_document_is_closed(bool wait_for_s
 
 void MainWidget::handle_close_event() {
 
-    bool should_sync_drawings = doc()->get_drawings_are_dirty();
+    bool should_sync_drawings = false;
+    if (doc()){
+        should_sync_drawings = doc()->get_drawings_are_dirty();
+    }
 
     save_auto_config();
 #ifndef SIOYEK_ANDROID
@@ -11547,7 +11550,10 @@ void MainWidget::create_menu_from_menu_node(
             human_readable_name = items->doc.toStdString();
         }
         else {
-            human_readable_name = command_manager->get_command_with_name(this, command)->get_human_readable_name();
+            auto cmd = command_manager->get_command_with_name(this, command);
+            if (cmd){
+                human_readable_name = cmd->get_human_readable_name();
+            }
         }
 
         std::vector<std::string> key_mappings;
