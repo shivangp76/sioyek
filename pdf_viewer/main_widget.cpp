@@ -12,7 +12,6 @@
 // make page range in search command 1-indexed
 // make the action of download and clipboard paper configurable
 // api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
-// add ability for configs to specify behaviour when they are changed (split on_configs_changed for each config)
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -5427,6 +5426,10 @@ void MainWidget::perform_search(std::wstring text, bool is_regex, bool is_increm
     std::wstring search_term;
     std::optional<std::pair<int, int>> search_range = {};
     if (parse_search_command(text, &range_begin, &range_end, &search_term)) {
+        // we assuem the user-entered range is 1-indexed so we convert it to
+        // 0 indexed here
+        range_begin -= 1;
+        range_end -= 1;
         search_range = std::make_pair(range_begin, range_end);
     }
 
