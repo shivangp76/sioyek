@@ -22,6 +22,9 @@
 #include "document_view.h"
 #include "network_manager.h"
 
+extern Path local_database_file_path;
+extern Path global_database_file_path;
+
 extern bool SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE;
 extern bool USE_LEGACY_KEYBINDS;
 extern std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
@@ -6650,6 +6653,34 @@ public:
 
 };
 
+class OpenLocalDatabaseContainingFolder : public Command {
+public:
+    static inline const std::string cname = "open_local_database_containing_folder";
+    static inline const std::string hname = "";
+    OpenLocalDatabaseContainingFolder(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        QFileInfo file_info(QString::fromStdWString(local_database_file_path.get_path()));
+        QDir directory = file_info.dir();
+        QDesktopServices::openUrl(directory.absolutePath());
+    }
+
+};
+
+class OpenSharedDatabaseContainingFolder : public Command {
+public:
+    static inline const std::string cname = "open_shared_database_containing_folder";
+    static inline const std::string hname = "";
+    OpenSharedDatabaseContainingFolder(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        QFileInfo file_info(QString::fromStdWString(global_database_file_path.get_path()));
+        QDir directory = file_info.dir();
+        QDesktopServices::openUrl(directory.absolutePath());
+    }
+
+};
+
 class LoadAnnotationsFileSyncDeletedCommand : public Command {
 public:
     static inline const std::string cname = "import_annotations_file_sync_deleted";
@@ -7761,6 +7792,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ExportCommand>();
     register_command<WriteAnnotationsFileCommand>();
     register_command<LoadAnnotationsFileCommand>();
+    register_command<OpenLocalDatabaseContainingFolder>();
+    register_command<OpenSharedDatabaseContainingFolder>();
     register_command<LoadAnnotationsFileSyncDeletedCommand>();
     register_command<EnterVisualMarkModeCommand>();
     register_command<SetPageOffsetCommand>();
