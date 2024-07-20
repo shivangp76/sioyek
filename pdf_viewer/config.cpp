@@ -66,6 +66,7 @@ bool AUTO_LOGIN_ON_STARTUP = true;
 bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS = true;
 bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH = false;
 bool SHOW_SETCONFIG_IN_STATUSBAR = false;
+int NUM_PAGE_COLUMNS = 2;
 
 std::wstring SEARCH_URLS[26];
 // std::wstring EXECUTE_COMMANDS[26];
@@ -1232,6 +1233,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         w->status_label->setStyleSheet(get_status_stylesheet());
         w->status_label_left->setStyleSheet(get_status_stylesheet());
         w->status_label_right->setStyleSheet(get_status_stylesheet());
+    });
+    add_int(L"num_two_page_columns", &NUM_PAGE_COLUMNS, IntExtras{1, 10})->set_change_fn([](MainWidget* w){
+        w->main_document_view->fill_cached_virtual_rects(true);
     });
     // add_int(L"text_summary_context_size", &TEXT_SUMMARY_CONTEXT_SIZE, IntExtras{1, 100});
     add_int(L"max_created_toc_size", &MAX_CREATED_TABLE_OF_CONTENTS_SIZE, IntExtras{1, 100000});

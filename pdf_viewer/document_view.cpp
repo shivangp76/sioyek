@@ -25,6 +25,7 @@ extern float OVERVIEW_OFFSET[2];
 extern bool SHOULD_HIGHLIGHT_LINKS;
 extern float HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT;
 extern int PAGE_PADDINGS;
+extern int NUM_PAGE_COLUMNS;
 extern bool SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
@@ -947,7 +948,7 @@ void DocumentView::fit_to_page_width(bool smart, bool ratio) {
             page_space_x = -(left_normal_page_width * (1 - left_right_ratio) + right_normal_page_width * right_left_ratio) / 2;
             cached_virtual_rects.clear();
 
-            set_zoom_level(static_cast<float>(view_width) / (left_page_width + right_page_width + page_space_x * 2), false);
+            set_zoom_level(static_cast<float>(view_width) / (left_page_width + right_page_width + right_page_width * (NUM_PAGE_COLUMNS - 2) + page_space_x * (NUM_PAGE_COLUMNS - 1)), false);
             offset.x = -imbalance * (left_normal_page_width + right_normal_page_width + page_space_x * 2) / 4.0f;
         }
 
@@ -974,7 +975,7 @@ void DocumentView::fit_to_page_width(bool smart, bool ratio) {
             page_space_x = PAGE_SPACE_X;
             cached_virtual_rects.clear();
             offset.x = 0;
-            page_width += page_width + page_space_x;
+            page_width += (page_width + page_space_x) * (NUM_PAGE_COLUMNS - 1);
         }
         else {
             set_offset_x(0);
@@ -2175,29 +2176,25 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
                 float page_width = current_document->get_page_width(i);
                 float page_height = current_document->get_page_height(i);
                 VirtualRect page_rect;
-                page_rect.x0 = -page_width / 2;
-                page_rect.x1 = page_width / 2;
+                page_rect.x0 = 0;
+                page_rect.x1 = 0;
                 page_rect.y0 = cum_offset;
                 page_rect.y1 = cum_offset + page_height;
 
-                float mult = 1.0f;
-                if (i % 2 == 1) {
+                float leftmost_x = -(page_width + page_space_x) * NUM_PAGE_COLUMNS / 2;
+                if (i % NUM_PAGE_COLUMNS == (NUM_PAGE_COLUMNS - 1)) {
                     cum_offset += page_height + page_space_y;
-                }
-                else {
-                    mult = -1.0f;
                 }
 
                 if (page_space_x >= 0) {
-                    page_rect.x0 += mult * (page_width + page_space_x) / 2;
-                    page_rect.x1 += mult * (page_width + page_space_x) / 2;
+                    page_rect.x0 = leftmost_x + (i % NUM_PAGE_COLUMNS) * (page_width + page_space_x);
+                    page_rect.x1 = page_rect.x0 + page_width;
                 }
                 else {
-                    page_rect.x0 += mult * (page_width / 2) + mult * page_space_x;
-                    page_rect.x1 += mult * (page_width / 2) + mult * page_space_x;
+                    page_rect.x0 = leftmost_x + (i % NUM_PAGE_COLUMNS) * (page_width + 2 * page_space_x);
+                    page_rect.x1 = page_rect.x0 + page_width;
 
                 }
-
 
                 cached_virtual_rects.push_back(page_rect);
 

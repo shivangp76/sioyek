@@ -31,6 +31,7 @@
 #define GL_PRIMITIVE_RESTART_FIXED_INDEX  0x8D69
 #endif
 
+extern int NUM_PAGE_COLUMNS;
 extern bool DEBUG_DISPLAY_FREEHAND_POINTS;
 extern bool DEBUG_SMOOTH_FREEHAND_DRAWINGS;
 extern Path shader_path;
@@ -617,10 +618,10 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
             fz_scale(zoom_level, zoom_level)));
         PagelessDocumentRect page_content = full_page_rect;
         if (dv()->get_page_space_x() < 0) {
-            if (page_number % 2 == 1) {
+            if (page_number % NUM_PAGE_COLUMNS > 0) {
                 page_content.x0 -= dv()->get_page_space_x();
             }
-            else {
+            if(page_number % NUM_PAGE_COLUMNS < (NUM_PAGE_COLUMNS - 1)) {
                 page_content.x1 += dv()->get_page_space_x();
             }
         }
