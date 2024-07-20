@@ -265,6 +265,7 @@ extern std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW;
 extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 extern std::wstring DOCUMENT_LOCATION_MISMATCH_STRATEGY;
+extern int NUM_PAGE_COLUMNS;
 
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
@@ -835,7 +836,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             float current_page_width = doc()->get_page_width(get_current_page_number());
 
             if (dv()->is_two_page_mode()) {
-                current_page_width += current_page_width + PAGE_SPACE_X;
+                current_page_width += (current_page_width + PAGE_SPACE_X) * (NUM_PAGE_COLUMNS - 1);
             }
 
             if ((current_page_width > 0) && ((dv()->get_zoom_level() * current_page_width) < width())) {
