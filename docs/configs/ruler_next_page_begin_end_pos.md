@@ -59,7 +59,7 @@ time.sleep(1)
 end_recording()
 ```
 
-for_configs: 
+for_configs: ruler_next_page_end_pos ruler_next_page_begin_pos
 
 doc_body:
 @config(ruler_next_page_end_pos) determines when we should move to the next page when using the ruler and when we do so, @config(ruler_next_page_begin_pos) determines where the new location of the ruler should be in the screen.

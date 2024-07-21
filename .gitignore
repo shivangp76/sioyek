@@ -371,6 +371,7 @@ tutorial/*.synctex.gz
 tutorial/*.bbl
 tutorial/*.blg
 docs/videos/*
+docs/build/*
 *.o.d
 compile_commands.json
 

@@ -27,4 +27,4 @@ end_recording()
 for_configs: 
 
 doc_body:
-The screen width ratio when using @commnad(fit_to_page_width_ratio) command.
+The screen width ratio when using @command(fit_to_page_width_ratio) command.

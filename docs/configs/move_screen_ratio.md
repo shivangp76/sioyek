@@ -36,4 +36,4 @@ end_recording()
 for_configs: 
 
 doc_body:
-The ratio of screen height to move when executing @command(move_screen_down) and @command(move_screen_up).
+The ratio of screen height to move when executing @command(screen_down) and @command(screen_up).

@@ -19,4 +19,3 @@ for_commands:
 
 doc_body:
 Opens the last document that was opened in the current sioyek window.
-```

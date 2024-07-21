@@ -32,4 +32,4 @@ end_recording()
 for_commands:
 
 doc_body:
-Select the current line highlighted by ruler, you can use the up and down movement commands to move the selection and @command(toogle_line_select_cursor) to toggle between begin and end of the selection. Exit the selection mode by pressing escape.
+Select the current line highlighted by ruler, you can use the up and down movement commands to move the selection and @command(toggle_line_select_cursor) to toggle between begin and end of the selection. Exit the selection mode by pressing escape.

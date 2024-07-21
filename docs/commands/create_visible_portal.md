@@ -26,5 +26,4 @@ end_recording()
 for_commands:
 
 doc_body:
-Creates a portal with the selected window point as source. The source will be visible on the document. The destination of the portal can later be set using the @(portal) command. An overview to the destination of the portal can be opened by right clicking on the portal icon.
-```
+Creates a portal with the selected window point as source. The source will be visible on the document. The destination of the portal can later be set using the @command(portal) command. An overview to the destination of the portal can be opened by right clicking on the portal icon.

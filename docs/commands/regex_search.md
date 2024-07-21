@@ -17,4 +17,3 @@ end_recording()
 
 doc_body:
 Search the contents of current document using regular expressions. You can navigate the results the same way you would with @command(search) results.
-```

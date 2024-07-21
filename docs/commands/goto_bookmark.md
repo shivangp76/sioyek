@@ -16,4 +16,4 @@ end_recording()
 for_commands: goto_bookmark goto_bookmark_g
 
 doc_body:
-@command(goto_bookmarke) opens a searchable list of current document's bookmarks. @command(goto_bookmark_g) opens a searchable list of all documents' bookmarks.
+@command(goto_bookmark) opens a searchable list of current document's bookmarks. @command(goto_bookmark_g) opens a searchable list of all documents' bookmarks.

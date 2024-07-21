@@ -23,7 +23,7 @@ Here is what each of the `%{}` variables expand to:
 - `%{auto_name}` expands to automatically detected document name
 - `%{search_results}` expands to the search results (if there is a search active)
 - `%{search_progress}` expands to the current search progress (if there is one in progress)
-- `%{link_status}` specifies whether we are linking (that is the source of a @config(portal) has been set and we are waiting for the destination)
+- `%{link_status}` specifies whether we are linking (that is the source of a @command(portal) has been set and we are waiting for the destination)
 - `%{waiting_for_symbol}` specifies if a command is expecting a symbol to be entered
 - `%{indexing}` specifies if the current document is currently being indexed
 - `%{preview_index}` if there are more than one possible overviews available for the overview window, this option shows how many there are and what is the current index 

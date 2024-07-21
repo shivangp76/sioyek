@@ -28,4 +28,4 @@ end_recording()
 for_configs: 
 
 doc_body:
-Highlight color to use when highlighting synctex search results. This only applies when @config(use_rule_to_highlight_synctex_line) is set to 0, otherwise we use the ruler to highlight the line.
+Highlight color to use when highlighting synctex search results. This only applies when @config(use_ruler_to_highlight_synctex_line) is set to 0, otherwise we use the ruler to highlight the line.

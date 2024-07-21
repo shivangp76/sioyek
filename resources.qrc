@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file>data/sioyek_documentation.json</file>
         <file>tutorial.pdf</file>
         <file>pdf_viewer/keys.config</file>
         <file>pdf_viewer/prefs.config</file>

@@ -195,8 +195,7 @@ public:
     QScrollBar* scroll_bar = nullptr;
     QMediaPlayer* media_player = nullptr;
 
-    QJsonDocument commands_doc_json_document;
-    QJsonDocument config_doc_json_document;
+    QJsonDocument sioyek_documentation_json_document;
 
     // Some commands can not be executed immediately (e.g. because they require a text or symbol
     // input to be completed) this is where they are stored until they can be executed.
@@ -969,8 +968,10 @@ public:
     int get_window_id();
     void add_command_being_performed(Command* new_command);
     void remove_command_being_performed(Command* new_command);
-    void load_command_docs();
+    void load_sioyek_documentation();
     QString get_command_documentation(QString command_name);
+    QString get_command_documentation_with_title(QString command_name);
+    QString get_config_documentation_with_title(QString command_name);
     void show_command_documentation(QString command_name);
 
     QString handle_action_in_menu(std::wstring action);

@@ -25,5 +25,4 @@ end_recording()
 for_commands:
 
 doc_body:
-Creates a new pending portal with the current location as source. If we already have a pending-portal, create the portal with the current location as the destination. As an example use-case you can create a portal from a part of text describing an equation or table to the equation/table itself, the contents of the destination portal can be viewed in a separate window using @command(toggle_window_configuration) or an overview to see the contents of the portal in the same window using @command(overview_portal).
-```
+Creates a new pending portal with the current location as source. If we already have a pending-portal, create the portal with the current location as the destination. As an example use-case you can create a portal from a part of text describing an equation or table to the equation/table itself, the contents of the destination portal can be viewed in a separate window using @command(toggle_window_configuration) or an overview to see the contents of the portal in the same window using @command(overview_to_portal).

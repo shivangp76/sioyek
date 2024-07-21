@@ -24,4 +24,4 @@ end_recording()
 for_commands: next_overview previous_overview
 
 doc_body:
-Go to the next/prevoius possible overview desitnation. For example, when executing @commnad(overview_definition) there might be more than one possible target. This command will jump to the next/previous target.
+Go to the next/prevoius possible overview desitnation. For example, when executing @command(overview_definition) there might be more than one possible target. This command will jump to the next/previous target.

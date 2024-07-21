@@ -37,6 +37,7 @@
 #include <qmenu.h>
 #include <qdesktopservices.h>
 #include <qtemporarydir.h>
+#include <qtextbrowser.h>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
@@ -7266,19 +7267,66 @@ void MainWidget::update_highlight_buttons_position() {
     }
 }
 
+class SioyekDocumentationTextBrowser : public QTextBrowser {
+private:
+    MainWidget* main_widget = nullptr;
+public:
+    SioyekDocumentationTextBrowser(MainWidget* parent) : QTextBrowser(parent) {
+        main_widget = parent;
+    }
+
+    // prevent the click events to be propagated to the parent widget
+    void mousePressEvent(QMouseEvent* mevent) override {
+        QTextBrowser::mousePressEvent(mevent);
+        mevent->accept();
+    }
+
+    void mouseReleaseEvent(QMouseEvent* mevent) override {
+        QTextBrowser::mouseReleaseEvent(mevent);
+        mevent->accept();
+    }
+
+    void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override {
+        QString url_string = url.toString();
+        if (url_string.startsWith("commands.md")) {
+            QString documentation_title = url_string.mid(12).trimmed();
+            QString documentation = main_widget->get_command_documentation_with_title(documentation_title);
+            setMarkdown(documentation);
+        }
+        else if (url_string.startsWith("configs.md")) {
+            QString documentation_title = url_string.mid(11).trimmed();
+            QString documentation = main_widget->get_config_documentation_with_title(documentation_title);
+            setMarkdown(documentation);
+        }
+        else {
+            QTextBrowser::doSetSource(url, type);
+        }
+        //qDebug() << "do set source called";
+        //qDebug() << url;
+    }
+
+
+};
+
 void MainWidget::show_command_documentation(QString command_name) {
-    QTextEdit* text_edit = new QTextEdit(this);
+    //QTextEdit* text_edit = new QTextEdit(this);
+    SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
     text_edit->setStyleSheet(get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE));
+    text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+
     /* text_edit->setFontSiz */
     /* text_edit->setTextBackgroundColor(QColor(0, 0, 0)); */
     /* text_edit->setTextColor(QColor(255, 255, 255)); */
     int w = width() / 2;
     int h = height() / 2;
+    // make text_edit links clickable
     text_edit->setReadOnly(true);
     text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
     text_edit->resize(w, h);
+
     auto doc = get_command_documentation(command_name);
-    text_edit->setHtml(doc);
+
+    text_edit->setMarkdown(doc);
     push_current_widget(text_edit);
     text_edit->show();
 }
@@ -7506,7 +7554,15 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    execute_command(L"nvim-qt");
+    QFile file(":/docs/sioyek_documentation.json");
+    file.open(QIODeviceBase::ReadOnly);
+
+    QByteArray doc_data = file.readAll();
+    QJsonDocument json_doc = QJsonDocument::fromJson(doc_data);
+    QJsonObject command_name_to_title_map = json_doc.object()["command_name_to_title_map"].toObject();
+    QJsonObject config_name_to_title_map = json_doc.object()["config_name_to_title_map"].toObject();
+    QJsonObject command_title_to_documentation_map = json_doc.object()["command_title_to_documentation_map"].toObject();
+    QJsonObject config_title_to_documentation_map = json_doc.object()["config_title_to_documentation_map"].toObject();
 
 }
 
@@ -7708,22 +7764,22 @@ void MainWidget::export_config_names(std::wstring file_path){
 }
 
 void MainWidget::export_default_config_file(std::wstring file_path){
-    load_command_docs();
+    load_sioyek_documentation();
 
-    auto config_docs = config_doc_json_document.object();
+    //auto config_docs = config_doc_json_document.object();
 
     QFile output_file(QString::fromStdWString(file_path));
     if (output_file.open(QIODeviceBase::WriteOnly)){
         std::vector<Config> configs = config_manager->get_configs();
         for (auto config : configs){
             QString config_name = QString::fromStdWString(config.name);
-            QString config_doc = QTextDocumentFragment::fromHtml(config_docs[config_name].toString()).toPlainText();
-            if (config_doc.size() > 0){
-                QStringList lines = config_doc.split("\n");
-                for (auto line : lines.sliced(1)){
-                    output_file.write(("# " + line + "\n").toUtf8());
-                }
-            }
+            //QString config_doc = QTextDocumentFragment::fromHtml(config_docs[config_name].toString()).toPlainText();
+            //if (config_doc.size() > 0){
+            //    QStringList lines = config_doc.split("\n");
+            //    for (auto line : lines.sliced(1)){
+            //        output_file.write(("# " + line + "\n").toUtf8());
+            //    }
+            //}
 
             if (config.default_value_string.size() > 0){
                 output_file.write((config_name + " " + QString::fromStdWString(config.default_value_string) + "\n\n").toUtf8());
@@ -10790,104 +10846,126 @@ void MainWidget::run_javascript_command(std::wstring javascript_code, std::optio
 
 }
 
-void MainWidget::load_command_docs(){
-    if (commands_doc_json_document.isNull()){
-        QFile command_json_file(":/data/command_docs.json");
-        QFile config_json_file(":/data/config_docs.json");
-        if (command_json_file.open(QFile::ReadOnly) && config_json_file.open(QFile::ReadOnly)) {
-            commands_doc_json_document = QJsonDocument().fromJson(command_json_file.readAll());
-            config_doc_json_document = QJsonDocument().fromJson(config_json_file.readAll());
-            command_json_file.close();
-            config_json_file.close();
+void MainWidget::load_sioyek_documentation(){
+    if (sioyek_documentation_json_document.isNull()){
+        QFile documentation_json_file(":/data/sioyek_documentation.json");
+        if (documentation_json_file.open(QFile::ReadOnly)){
+            sioyek_documentation_json_document = QJsonDocument().fromJson(documentation_json_file.readAll());
+            documentation_json_file.close();
         }
     }
+}
+
+QString MainWidget::get_config_documentation_with_title(QString title) {
+    load_sioyek_documentation();
+
+    const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
+    if (config_title_to_documentation_map.value(title).isString()) {
+        return config_title_to_documentation_map.value(title).toString();
+    }
+
+    return "";
+}
+
+QString MainWidget::get_command_documentation_with_title(QString title) {
+    load_sioyek_documentation();
+
+    const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
+    if (command_title_to_documentation_map.value(title).isString()) {
+        return command_title_to_documentation_map.value(title).toString();
+    }
+
+    return "";
 }
 
 QString MainWidget::get_command_documentation(QString command_name){
-    load_command_docs();
-    auto command_parts= command_name.split("_");
-    if (command_parts.at(command_parts.size()-1).size() == 1){
-        if (command_name != "goto_bookmark_g" && command_name != "goto_highlight_g") {
-            command_name = command_name.left(command_name.size()-1) + "*";
+    load_sioyek_documentation();
+
+    const QJsonObject& command_name_to_title_map = sioyek_documentation_json_document["command_name_to_title_map"].toObject();
+    const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
+    if (command_name.startsWith("setconfig_")) {
+        QString config_name = command_name.mid(10);
+        const QJsonObject& config_name_to_title_map = sioyek_documentation_json_document["config_name_to_title_map"].toObject();
+        const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
+
+        if (config_name_to_title_map.value(config_name).isString()) {
+            QString documentation_title = config_name_to_title_map.value(config_name).toString();
+            return get_config_documentation_with_title(documentation_title);
         }
     }
 
+    if (command_name_to_title_map.value(command_name).isString()){
+        QString documentation_title = command_name_to_title_map.value(command_name).toString();
+        if (command_title_to_documentation_map.value(documentation_title).isString()) {
+            return command_title_to_documentation_map.value(documentation_title).toString();
+        }
+    }
 
-    if (command_name.startsWith("setconfig")){
-        QString config_name = command_name.right(command_name.size() - 10);
-        return config_doc_json_document.object()[config_name].toString();
-    }
-    if (command_name.startsWith("toggleconfig")){
-        QString config_name = command_name.right(command_name.size() - 13);
-        return config_doc_json_document.object()[config_name].toString();
-    }
-    else{
-        return commands_doc_json_document.object()[command_name].toString();
-    }
+    return "";
 }
 
 void MainWidget::print_undocumented_configs(){
-    load_command_docs();
-    std::vector<Config> all_configs = config_manager->get_configs();
-    std::vector<QString> all_config_names;
-    std::set<QString> already_added;
-    auto documented_config_names = config_doc_json_document.object().keys();
+    //load_command_docs();
+    //std::vector<Config> all_configs = config_manager->get_configs();
+    //std::vector<QString> all_config_names;
+    //std::set<QString> already_added;
+    //auto documented_config_names = config_doc_json_document.object().keys();
 
-    auto translate_config_name = [](QString config_name){
-        if (config_name[config_name.size()-2] == '_'){
-            config_name[config_name.size()-1] = '*';
-            return config_name;
-        }
-        return config_name;
-    };
+    //auto translate_config_name = [](QString config_name){
+    //    if (config_name[config_name.size()-2] == '_'){
+    //        config_name[config_name.size()-1] = '*';
+    //        return config_name;
+    //    }
+    //    return config_name;
+    //};
 
-    for (auto config : all_configs){
-        all_config_names.push_back(QString::fromStdWString(config.name));
-    }
+    //for (auto config : all_configs){
+    //    all_config_names.push_back(QString::fromStdWString(config.name));
+    //}
 
-    int index = 0;
-    for (auto config : all_config_names){
-        bool found = false;
-        for (auto doc_config : documented_config_names){
-            if (config == doc_config){
-                found = true;
-                break;
-            }
-        }
-        if (!found){
-            QString translated_config_name = translate_config_name(config);
-            if (already_added.find(translated_config_name) == already_added.end()){
-                qDebug() << index << ": " << translated_config_name;
-                already_added.insert(translated_config_name);
-                index++;
-            }
-        }
-    }
+    //int index = 0;
+    //for (auto config : all_config_names){
+    //    bool found = false;
+    //    for (auto doc_config : documented_config_names){
+    //        if (config == doc_config){
+    //            found = true;
+    //            break;
+    //        }
+    //    }
+    //    if (!found){
+    //        QString translated_config_name = translate_config_name(config);
+    //        if (already_added.find(translated_config_name) == already_added.end()){
+    //            qDebug() << index << ": " << translated_config_name;
+    //            already_added.insert(translated_config_name);
+    //            index++;
+    //        }
+    //    }
+    //}
 }
 
 void MainWidget::print_undocumented_commands(){
-    load_command_docs();
-    auto is_unimportant_command = [](QString command_name){
-        return command_name[0] == '_' || command_name.startsWith("setconfig_") || command_name.startsWith("toggleconfig_");
-    };
+    //load_command_docs();
+    //auto is_unimportant_command = [](QString command_name){
+    //    return command_name[0] == '_' || command_name.startsWith("setconfig_") || command_name.startsWith("toggleconfig_");
+    //};
 
-    auto keys = commands_doc_json_document.object().keys();
-    auto all_commands = command_manager->get_all_command_names();
-    int index = 0;
-    for (auto command : all_commands){
-        bool found = false;
-        if (is_unimportant_command(command)) continue;
-        for (auto documented_command : keys){
-            if (command == documented_command){
-                found = true;
-                break;
-            }
-        }
-        if (!found){
-            qDebug() << index << ": " << command;
-            index++;
-        }
-    }
+    //auto keys = commands_doc_json_document.object().keys();
+    //auto all_commands = command_manager->get_all_command_names();
+    //int index = 0;
+    //for (auto command : all_commands){
+    //    bool found = false;
+    //    if (is_unimportant_command(command)) continue;
+    //    for (auto documented_command : keys){
+    //        if (command == documented_command){
+    //            found = true;
+    //            break;
+    //        }
+    //    }
+    //    if (!found){
+    //        qDebug() << index << ": " << command;
+    //        index++;
+    //    }
+    //}
 }
 
 void MainWidget::print_non_default_configs(){
