@@ -117,6 +117,7 @@ class ConfigManager {
 
 public:
     Config* get_mut_config_with_name(std::wstring config_name);
+    std::wstring get_config_value_string(std::wstring config_name);
 
     ConfigManager(const Path& default_path, const Path& auto_path, const std::vector<Path>& user_paths);
     void serialize(const Path& path);

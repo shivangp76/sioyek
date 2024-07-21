@@ -7295,14 +7295,19 @@ public:
         }
         else if (url_string.startsWith("configs.md")) {
             QString documentation_title = url_string.mid(11).trimmed();
-            QString documentation = main_widget->get_config_documentation_with_title(documentation_title);
+            QString documentation = main_widget->get_config_documentation_with_title("", documentation_title);
             setMarkdown(documentation);
         }
+        else if (url_string.startsWith("changeconfig")) {
+            QString config_name = url_string.split('-').at(1);
+            main_widget->pop_current_widget();
+            main_widget->execute_macro_if_enabled(L"setconfig_" + config_name.toStdWString());
+        }
         else {
+            //qDebug() << "clicled on url:";
+            //qDebug() << url;
             QTextBrowser::doSetSource(url, type);
         }
-        //qDebug() << "do set source called";
-        //qDebug() << url;
     }
 
 
@@ -10856,12 +10861,22 @@ void MainWidget::load_sioyek_documentation(){
     }
 }
 
-QString MainWidget::get_config_documentation_with_title(QString title) {
+QString MainWidget::get_config_documentation_with_title(QString config, QString title) {
     load_sioyek_documentation();
 
     const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
     if (config_title_to_documentation_map.value(title).isString()) {
-        return config_title_to_documentation_map.value(title).toString();
+        QString doc_string = config_title_to_documentation_map.value(title).toString();
+
+        if (config.size() > 0) {
+            QString current_value_string = QString::fromStdWString(
+                config.toStdWString() + L" " + config_manager->get_config_value_string(config.toStdWString())
+                );
+            return doc_string + "\n\n" + "## current value:\n\n[`" + current_value_string + "`](changeconfig-" + config + ")\n";
+        }
+        else {
+            return doc_string;
+        }
     }
 
     return "";
@@ -10890,7 +10905,7 @@ QString MainWidget::get_command_documentation(QString command_name){
 
         if (config_name_to_title_map.value(config_name).isString()) {
             QString documentation_title = config_name_to_title_map.value(config_name).toString();
-            return get_config_documentation_with_title(documentation_title);
+            return get_config_documentation_with_title(config_name, documentation_title);
         }
     }
 

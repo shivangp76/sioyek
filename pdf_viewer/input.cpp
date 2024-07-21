@@ -7159,12 +7159,7 @@ public:
     }
 
     std::wstring get_text_default_value() {
-        Config* config = config_manager->get_mut_config_with_name(utf8_decode(config_name));
-        std::wstringstream config_stream;
-        config->serialize(config->value, config_stream);
-        std::wstring default_value = config_stream.str();
-
-        return default_value;
+        return config_manager->get_config_value_string(utf8_decode(config_name));
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {

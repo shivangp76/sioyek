@@ -601,6 +601,17 @@ void* Config::get_value() {
     return value;
 }
 
+std::wstring ConfigManager::get_config_value_string(std::wstring config_name) {
+    Config* config = get_mut_config_with_name(config_name);
+    if (config) {
+        std::wstringstream config_stream;
+        config->serialize(config->value, config_stream);
+        std::wstring default_value = config_stream.str();
+        return default_value;
+    }
+    return L"";
+}
+
 Config* ConfigManager::get_mut_config_with_name(std::wstring config_name) {
     for (auto& it : configs) {
         if (it.name == config_name) return &it;
