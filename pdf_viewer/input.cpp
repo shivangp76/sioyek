@@ -628,6 +628,21 @@ public:
     }
 
 
+    std::wstring get_text_default_value() {
+        if (is_modal) {
+            int current_mode_index = get_current_mode_index();
+            if (current_mode_index >= 0) {
+                return commands[current_mode_index]->get_text_default_value();
+            }
+        }
+        else {
+            int index = get_current_executing_command_index();
+            if (index >= 0 && index < commands.size()) {
+                return commands[index]->get_text_default_value();
+            }
+        }
+    }
+
     void pre_perform() {
         if (is_modal) {
             int current_mode_index = get_current_mode_index();

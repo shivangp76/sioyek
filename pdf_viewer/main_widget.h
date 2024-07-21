@@ -969,7 +969,7 @@ public:
     void add_command_being_performed(Command* new_command);
     void remove_command_being_performed(Command* new_command);
     void load_sioyek_documentation();
-    QString get_command_documentation(QString command_name);
+    QString get_command_documentation(QString command_name, QString* out_url);
     QString get_command_documentation_with_title(QString command_name);
     QString get_config_documentation_with_title(QString config, QString command_name);
     void show_command_documentation(QString command_name);

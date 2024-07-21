@@ -1522,6 +1522,8 @@ void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_na
                 auto deserialization_result = conf->deserialize(config_value_stream, conf->value, &changed);
                 if (deserialization_result != nullptr) {
                     conf->value = deserialization_result;
+                    conf->definition_line = line_number;
+                    conf->definition_file = file_path.get_path();
                 }
                 else {
                     std::wcout << L"Error in config file " << file_path.get_path() << L" at line " << line_number << L" : " << line << L"\n";

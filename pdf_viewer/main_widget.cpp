@@ -521,6 +521,96 @@ public:
     }
 };
 
+class SioyekDocumentationTextBrowser : public QTextBrowser {
+private:
+    MainWidget* main_widget = nullptr;
+public:
+    SioyekDocumentationTextBrowser(MainWidget* parent) : QTextBrowser(parent) {
+        main_widget = parent;
+    }
+
+    // prevent the click events to be propagated to the parent widget
+    void mousePressEvent(QMouseEvent* mevent) override {
+        QTextBrowser::mousePressEvent(mevent);
+        mevent->accept();
+    }
+
+    void mouseReleaseEvent(QMouseEvent* mevent) override {
+        QTextBrowser::mouseReleaseEvent(mevent);
+        mevent->accept();
+    }
+
+    void backward() override {
+        QTextBrowser::backward();
+        QUrl current_url = historyUrl(0);
+        doSetSource(current_url, QTextDocument::ResourceType::MarkdownResource);
+    }
+
+    void forward() override {
+        QTextBrowser::forward();
+        QUrl current_url = historyUrl(0);
+        doSetSource(current_url, QTextDocument::ResourceType::MarkdownResource);
+    }
+
+    void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override {
+        // push the previous state to history
+        QTextBrowser::doSetSource(url, type);
+
+        QString url_string = url.toString();
+        if (url_string.startsWith("commands.md")) {
+            QString documentation_title = url_string.mid(12).trimmed();
+            QString documentation = main_widget->get_command_documentation_with_title(documentation_title);
+            setMarkdown(documentation);
+        }
+        else if (url_string.startsWith("configs.md")) {
+            QString documentation_title = url_string.mid(11).trimmed();
+            QString documentation = main_widget->get_config_documentation_with_title("", documentation_title).trimmed();
+            setMarkdown(documentation);
+        }
+        else if (url_string.startsWith("setconfig")) {
+            QString config_name = url_string.split('-').at(1);
+            main_widget->pop_current_widget();
+            main_widget->execute_macro_if_enabled(L"setconfig_" + config_name.toStdWString());
+        }
+        else if (url_string.startsWith("setsaveconfig")) {
+            QString config_name = url_string.split('-').at(1);
+            main_widget->pop_current_widget();
+            main_widget->execute_macro_if_enabled(L"setsaveconfig_" + config_name.toStdWString());
+        }
+        else if (url_string.startsWith("changeconfig")){
+            QString config_name = url_string.split('-').at(1);
+            Config* config_obj = main_widget->config_manager->get_mut_config_with_name(config_name.toStdWString());
+            if (config_obj) {
+                if (EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
+                    show_error_message(L"external_text_editor_command config must be set for this to work");
+                }
+                main_widget->pop_current_widget();
+
+                if (config_obj->definition_file.size() > 0) {
+                    // if the config exists in a config file, open the location of the config
+                    std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND)
+                        .replace("%{file}", QString::fromStdWString(config_obj->definition_file))
+                        .replace("%{line}", QString::number(config_obj->definition_line))
+                        .toStdWString();
+                    main_widget->execute_command(command);
+                }
+                else {
+                    // if the config is not present in any config files, open the prefs_user
+                    // file so that the user can add it 
+                    main_widget->execute_macro_if_enabled(L"prefs_user");
+                }
+            }
+        }
+        else {
+            //qDebug() << "clicled on url:";
+            //qDebug() << url;
+            //QTextBrowser::doSetSource(url, type);
+        }
+    }
+
+
+};
+
 bool MainWidget::is_current_document_available_on_server() {
     return sioyek_network_manager->is_document_available_on_server(doc());
 }
@@ -2607,7 +2697,12 @@ void MainWidget::push_state(bool update) {
 }
 
 void MainWidget::next_state() {
-    //update_current_history_index();
+    if (current_widget_stack.size() > 0 && dynamic_cast<SioyekDocumentationTextBrowser*>(current_widget_stack.back())) {
+        // if we are showing documentation, use history navigation commands to navigate the documentation 
+        SioyekDocumentationTextBrowser* doc_browser = dynamic_cast<SioyekDocumentationTextBrowser*>(current_widget_stack.back());
+        doc_browser->forward();
+    }
+
     if (current_history_index < (static_cast<int>(history.size()) - 1)) {
         update_current_history_index();
         current_history_index++;
@@ -2619,6 +2714,11 @@ void MainWidget::next_state() {
 }
 
 void MainWidget::prev_state() {
+    if (current_widget_stack.size() > 0 && dynamic_cast<SioyekDocumentationTextBrowser*>(current_widget_stack.back())) {
+        // if we are showing documentation, use history navigation commands to navigate the documentation 
+        SioyekDocumentationTextBrowser* doc_browser = dynamic_cast<SioyekDocumentationTextBrowser*>(current_widget_stack.back());
+        doc_browser->backward();
+    }
     if (current_history_index >= 0) {
         update_current_history_index();
 
@@ -7267,51 +7367,6 @@ void MainWidget::update_highlight_buttons_position() {
     }
 }
 
-class SioyekDocumentationTextBrowser : public QTextBrowser {
-private:
-    MainWidget* main_widget = nullptr;
-public:
-    SioyekDocumentationTextBrowser(MainWidget* parent) : QTextBrowser(parent) {
-        main_widget = parent;
-    }
-
-    // prevent the click events to be propagated to the parent widget
-    void mousePressEvent(QMouseEvent* mevent) override {
-        QTextBrowser::mousePressEvent(mevent);
-        mevent->accept();
-    }
-
-    void mouseReleaseEvent(QMouseEvent* mevent) override {
-        QTextBrowser::mouseReleaseEvent(mevent);
-        mevent->accept();
-    }
-
-    void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override {
-        QString url_string = url.toString();
-        if (url_string.startsWith("commands.md")) {
-            QString documentation_title = url_string.mid(12).trimmed();
-            QString documentation = main_widget->get_command_documentation_with_title(documentation_title);
-            setMarkdown(documentation);
-        }
-        else if (url_string.startsWith("configs.md")) {
-            QString documentation_title = url_string.mid(11).trimmed();
-            QString documentation = main_widget->get_config_documentation_with_title("", documentation_title);
-            setMarkdown(documentation);
-        }
-        else if (url_string.startsWith("changeconfig")) {
-            QString config_name = url_string.split('-').at(1);
-            main_widget->pop_current_widget();
-            main_widget->execute_macro_if_enabled(L"setconfig_" + config_name.toStdWString());
-        }
-        else {
-            //qDebug() << "clicled on url:";
-            //qDebug() << url;
-            QTextBrowser::doSetSource(url, type);
-        }
-    }
-
-
-};
 
 void MainWidget::show_command_documentation(QString command_name) {
     //QTextEdit* text_edit = new QTextEdit(this);
@@ -7329,8 +7384,11 @@ void MainWidget::show_command_documentation(QString command_name) {
     text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
     text_edit->resize(w, h);
 
-    auto doc = get_command_documentation(command_name);
+    QString documentation_url = "";
+    auto doc = get_command_documentation(command_name, &documentation_url);
 
+    text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
+    
     text_edit->setMarkdown(doc);
     push_current_widget(text_edit);
     text_edit->show();
@@ -7559,16 +7617,6 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    QFile file(":/docs/sioyek_documentation.json");
-    file.open(QIODeviceBase::ReadOnly);
-
-    QByteArray doc_data = file.readAll();
-    QJsonDocument json_doc = QJsonDocument::fromJson(doc_data);
-    QJsonObject command_name_to_title_map = json_doc.object()["command_name_to_title_map"].toObject();
-    QJsonObject config_name_to_title_map = json_doc.object()["config_name_to_title_map"].toObject();
-    QJsonObject command_title_to_documentation_map = json_doc.object()["command_title_to_documentation_map"].toObject();
-    QJsonObject config_title_to_documentation_map = json_doc.object()["config_title_to_documentation_map"].toObject();
-
 }
 
 void MainWidget::show_command_menu() {
@@ -10866,13 +10914,19 @@ QString MainWidget::get_config_documentation_with_title(QString config, QString 
 
     const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
     if (config_title_to_documentation_map.value(title).isString()) {
-        QString doc_string = config_title_to_documentation_map.value(title).toString();
+        QString doc_string = "##" + config_title_to_documentation_map.value(title).toString().trimmed();
 
         if (config.size() > 0) {
             QString current_value_string = QString::fromStdWString(
                 config.toStdWString() + L" " + config_manager->get_config_value_string(config.toStdWString())
                 );
-            return doc_string + "\n\n" + "## current value:\n\n[`" + current_value_string + "`](changeconfig-" + config + ")\n";
+            QString res = doc_string + "\n\n" + "#### current value:\n\n`" + current_value_string + "`\n\n";
+            res += "[open config file in text editor](changeconfig-" + config + ")\n\n";
+            res += "[temporarily change in sioyek](setconfig-" + config + ")\n\n";
+            res += "[permanently change in sioyek](setsaveconfig-" + config + ")\n\n";
+
+            return res;
+                //`(changeconfig-" + config + ")\n";
         }
         else {
             return doc_string;
@@ -10893,7 +10947,7 @@ QString MainWidget::get_command_documentation_with_title(QString title) {
     return "";
 }
 
-QString MainWidget::get_command_documentation(QString command_name){
+QString MainWidget::get_command_documentation(QString command_name, QString* out_url){
     load_sioyek_documentation();
 
     const QJsonObject& command_name_to_title_map = sioyek_documentation_json_document["command_name_to_title_map"].toObject();
@@ -10905,6 +10959,7 @@ QString MainWidget::get_command_documentation(QString command_name){
 
         if (config_name_to_title_map.value(config_name).isString()) {
             QString documentation_title = config_name_to_title_map.value(config_name).toString();
+            if (out_url) *out_url = "configs.md#" + documentation_title;
             return get_config_documentation_with_title(config_name, documentation_title);
         }
     }
@@ -10912,6 +10967,7 @@ QString MainWidget::get_command_documentation(QString command_name){
     if (command_name_to_title_map.value(command_name).isString()){
         QString documentation_title = command_name_to_title_map.value(command_name).toString();
         if (command_title_to_documentation_map.value(documentation_title).isString()) {
+            if (out_url) *out_url = "commands.md#" + documentation_title;
             return command_title_to_documentation_map.value(documentation_title).toString();
         }
     }
@@ -12094,7 +12150,10 @@ void MainWidget::open_external_text_editor() {
     external_file.write(text_command_line_edit->text().toUtf8());
     external_file.close();
 
-    std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND).replace("%{file}", QString::fromStdWString(sioyek_temp_text_path.get_path())).toStdWString();
+    std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND)
+        .replace("%{file}", QString::fromStdWString(sioyek_temp_text_path.get_path()))
+        .replace("%{line}", QString::number(1))
+        .toStdWString();
     execute_command(command);
     is_external_file_edited = false;
     if (external_command_edit_watcher.files().size() == 0) {

@@ -95,6 +95,9 @@ struct Config {
     std::wstring default_value_string;
     bool is_auto = false;
 
+    std::wstring definition_file = L"";
+    int definition_line = -1;
+
     //    QWidget* (*configurator_ui)(MainWidget* main_widget, void* location);
 
     void* get_value();
