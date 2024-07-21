@@ -10913,6 +10913,10 @@ QString MainWidget::get_config_documentation_with_title(QString config, QString 
     load_sioyek_documentation();
 
     const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
+    QJsonArray related_commands = sioyek_documentation_json_document["config_related_commands_map"][title].toArray();
+    QJsonArray related_configs = sioyek_documentation_json_document["config_related_configs_map"][title].toArray();
+    QString relateds = get_related_command_and_configs_string(related_commands, related_configs);
+
     if (config_title_to_documentation_map.value(title).isString()) {
         QString doc_string = "##" + config_title_to_documentation_map.value(title).toString().trimmed();
 
@@ -10925,23 +10929,55 @@ QString MainWidget::get_config_documentation_with_title(QString config, QString 
             res += "[temporarily change in sioyek](setconfig-" + config + ")\n\n";
             res += "[permanently change in sioyek](setsaveconfig-" + config + ")\n\n";
 
-            return res;
-                //`(changeconfig-" + config + ")\n";
+            return res + relateds;
         }
         else {
-            return doc_string;
+            return doc_string + relateds;
         }
     }
 
     return "";
 }
 
+QString MainWidget::get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs) {
+    QString result = "";
+
+    const QJsonObject& command_name_to_title_map = sioyek_documentation_json_document["command_name_to_title_map"].toObject();
+    const QJsonObject& config_name_to_title_map = sioyek_documentation_json_document["config_name_to_title_map"].toObject();
+
+    if (related_commands.size() > 0) {
+        result += "\n\nrelated commands: ";
+        for (int i = 0; i < related_commands.size(); i++) {
+            result += "[" + related_commands[i].toString() + "](commands.md#" + command_name_to_title_map[related_commands[i].toString()].toString() + ")";
+            if (i < related_commands.size() - 1) {
+                result += ", ";
+            }
+        }
+    }
+
+    if (related_configs.size() > 0) {
+        result += "\n\nrelated configs: ";
+        for (int i = 0; i < related_configs.size(); i++) {
+            result += "[" + related_configs[i].toString() + "](configs.md#" + config_name_to_title_map[related_configs[i].toString()].toString() + ")";
+            if (i < related_configs.size() - 1) {
+                result += ", ";
+            }
+        }
+    }
+    return result;
+}
+
 QString MainWidget::get_command_documentation_with_title(QString title) {
     load_sioyek_documentation();
 
     const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
+
+    QJsonArray related_commands = sioyek_documentation_json_document["command_related_commands_map"][title].toArray();
+    QJsonArray related_configs = sioyek_documentation_json_document["command_related_configs_map"][title].toArray();
+
     if (command_title_to_documentation_map.value(title).isString()) {
-        return command_title_to_documentation_map.value(title).toString();
+        QString relateds = get_related_command_and_configs_string(related_commands, related_configs);
+        return command_title_to_documentation_map.value(title).toString() + relateds;
     }
 
     return "";
@@ -10952,10 +10988,13 @@ QString MainWidget::get_command_documentation(QString command_name, QString* out
 
     const QJsonObject& command_name_to_title_map = sioyek_documentation_json_document["command_name_to_title_map"].toObject();
     const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
+    const QJsonObject& config_name_to_title_map = sioyek_documentation_json_document["config_name_to_title_map"].toObject();
+
     if (command_name.startsWith("setconfig_")) {
         QString config_name = command_name.mid(10);
-        const QJsonObject& config_name_to_title_map = sioyek_documentation_json_document["config_name_to_title_map"].toObject();
         const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
+        const QJsonObject& config_related_commands_map = sioyek_documentation_json_document["config_related_commands_map"].toObject();
+        const QJsonObject& config_related_configs_map = sioyek_documentation_json_document["config_related_configs_map"].toObject();
 
         if (config_name_to_title_map.value(config_name).isString()) {
             QString documentation_title = config_name_to_title_map.value(config_name).toString();
@@ -10966,9 +11005,13 @@ QString MainWidget::get_command_documentation(QString command_name, QString* out
 
     if (command_name_to_title_map.value(command_name).isString()){
         QString documentation_title = command_name_to_title_map.value(command_name).toString();
+        const QJsonObject& command_related_commands_map = sioyek_documentation_json_document["command_related_commands_map"].toObject();
+        const QJsonObject& command_related_configs_map = sioyek_documentation_json_document["command_related_configs_map"].toObject();
+
         if (command_title_to_documentation_map.value(documentation_title).isString()) {
             if (out_url) *out_url = "commands.md#" + documentation_title;
-            return command_title_to_documentation_map.value(documentation_title).toString();
+            //return command_title_to_documentation_map.value(documentation_title).toString();
+            return get_command_documentation_with_title(documentation_title);
         }
     }
 

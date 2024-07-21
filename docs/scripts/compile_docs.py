@@ -81,6 +81,10 @@ def get_documentation_maps(commands_file_name, configs_file_name):
 
     command_title_to_documentation_map = dict()
     config_title_to_documentation_map = dict()
+    command_related_commands_map = dict()
+    command_related_configs_map = dict()
+    config_related_commands_map = dict()
+    config_related_configs_map = dict()
 
     for file in os.listdir(docs_base_path / 'commands'):
         markdown_file_path = docs_base_path / 'commands' / file
@@ -93,10 +97,6 @@ def get_documentation_maps(commands_file_name, configs_file_name):
     all_files = command_file_paths + config_file_paths
 
     for markdown_file_path in all_files:
-
-
-        if markdown_file_path.stem == 'set_select_highlight_type':
-            a = 2
 
         with open(markdown_file_path, 'r', encoding='utf8') as infile:
             file_content = infile.read()
@@ -126,8 +126,7 @@ def get_documentation_maps(commands_file_name, configs_file_name):
         
 
     for markdown_file_path in tqdm.tqdm(all_files):
-        if markdown_file_path.stem == 'add_highlight_with_current_type':
-            a = 2
+
         with open(markdown_file_path, 'r', encoding='utf8') as infile:
             file_content = infile.read()
 
@@ -158,29 +157,47 @@ def get_documentation_maps(commands_file_name, configs_file_name):
                 if len(for_commands) == 0:
                     for_commands = [markdown_file_path.stem]
 
+                # for command in for_commands:
+                #     command_related_commands_map[command] = related_commands
+                #     command_related_configs_map[command] = related_configs
+
                 current_doc = ''
                 link_title = '-'.join(for_commands)
                 title = '# ' + ', '.join(for_commands) + '\n'
                 current_doc += title
                 # commands_documentation += '-' * len(title) + '\n\n'
                 current_doc += markdown_content
+
+                command_related_commands_map[link_title] = related_commands
+                command_related_configs_map[link_title] = related_configs
+
                 command_title_to_documentation_map[link_title] = current_doc
 
             elif document_type == 'configs':
                 if len(for_configs) == 0:
                     for_configs = [markdown_file_path.stem]
 
+                # for config in for_configs:
+                #     config_related_commands_map[config] = related_commands
+                #     config_related_configs_map[config] = related_configs
+
                 current_doc = ''
                 link_title = '-'.join(for_configs)
                 title = '# ' + ', '.join(for_configs) + '\n'
                 current_doc += title
                 current_doc += markdown_content
+                config_related_commands_map[link_title] = related_commands
+                config_related_configs_map[link_title] = related_configs
                 config_title_to_documentation_map[link_title] = current_doc
     return {
         'command_name_to_title_map': command_name_to_title_map,
         'config_name_to_title_map': config_name_to_title_map,
         'command_title_to_documentation_map': command_title_to_documentation_map,
-        'config_title_to_documentation_map': config_title_to_documentation_map
+        'config_title_to_documentation_map': config_title_to_documentation_map,
+        'command_related_commands_map': command_related_commands_map,
+        'command_related_configs_map': command_related_configs_map,
+        'config_related_commands_map': config_related_commands_map,
+        'config_related_configs_map': config_related_configs_map
     }
         
 

@@ -973,6 +973,7 @@ public:
     QString get_command_documentation_with_title(QString command_name);
     QString get_config_documentation_with_title(QString config, QString command_name);
     void show_command_documentation(QString command_name);
+    QString get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs);
 
     QString handle_action_in_menu(std::wstring action);
     std::wstring handle_synctex_to_ruler();

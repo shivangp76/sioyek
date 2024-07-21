@@ -898,5 +898,1310 @@
         "wheel_zoom_in_cursor": "# wheel_zoom_in_cursor\nWhen performing zoom using control+mouse wheel, zoom on the mouse cursor instead of the center of the screen.",
         "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": "# main_window_size, helper_window_size, main_window_move, helper_window_move, single_main_window_size, single_main_window_move, overview_size, overview_offset\nDefault size and offset of sioyek windows. the `single_*` is used when only the main sioyek window is visible (no helper window) otherwise we use the other values.",
         "zoom_inc_factor": "# zoom_inc_factor\nThe amount to multiply/divide the zoom level when executing zoom commands. For example, if the current zoom level is 2 and `zoom_inc_factor` is 1.5, then after executing [`zoom_in`](commands.md#zoom_in-zoom_out-zoom_in_cursor-zoom_out_cursor), the zoom level will be `2 * 1.5 = 3`."
+    },
+    "command_related_commands_map": {
+        "add_annot_to_highlight": [
+            "add_highlight",
+            "change_highlight_type"
+        ],
+        "add_bookmark": [
+            "add_freetext_bookmark",
+            "add_marked_bookmark"
+        ],
+        "add_freetext_bookmark": [
+            "add_freetext_bookmark",
+            "add_bookmark"
+        ],
+        "add_highlight": [
+            "goto_highlight",
+            "goto_highlight_g",
+            "add_highlight_with_current_type"
+        ],
+        "add_highlight_with_current_type": [
+            "add_highlight",
+            "set_select_highlight_type"
+        ],
+        "add_keybind": [],
+        "add_marked_bookmark": [
+            "add_freetext_bookmark",
+            "add_bookmark"
+        ],
+        "change_highlight": [
+            "add_highlight",
+            "add_annot_to_highlight"
+        ],
+        "clear_current_page_drawings-clear_current_document_drawings": [
+            "toggle_freehand_drawing_mode",
+            "toggle_pen_drawing_mode"
+        ],
+        "clear_scratchpad": [
+            "toggle_scratchpad"
+        ],
+        "close_overview": [
+            "overview_under_cursor",
+            "overview_definition"
+        ],
+        "close_window": [],
+        "command": [],
+        "command_palette": [],
+        "copy": [],
+        "copy_drawings_from_scratchpad": [
+            "toggle_scratchpad_mode",
+            "copy_screenshot_to_scratchpad"
+        ],
+        "copy_link": [
+            "open_link",
+            "overview_portal"
+        ],
+        "copy_screenshot_to_clipboard": [],
+        "copy_screenshot_to_scratchpad": [
+            "toggle_scratchpad_mode",
+            "copy_drawings_from_scratchpad"
+        ],
+        "create_fulltext_index_for_current_document": [
+            "search_all_indexed_documents"
+        ],
+        "create_visible_portal": [
+            "portal",
+            "overview_to_portal"
+        ],
+        "delete_current_file_from_server": [
+            "upload_current_file"
+        ],
+        "delete_freehand_drawings": [
+            "select_freehand_drawings",
+            "toggle_freehand_drawing_mode",
+            "toggle_pen_drawing_mode"
+        ],
+        "delete_highlight_under_cursor": [],
+        "delete_portal-delete_bookmark-delete_highlight": [],
+        "delete_visible_bookmark": [
+            "add_marked_bookmark",
+            "add_freetext_bookmark",
+            "edit_visible_bookmark"
+        ],
+        "donate": [],
+        "download_paper_with_url-download_clipboard_url": [],
+        "download_link": [
+            "open_link"
+        ],
+        "download_overview_paper-download_overview_paper_no_prompt": [
+            "overview_definition"
+        ],
+        "download_paper_under_cursor": [
+            "download_link"
+        ],
+        "download_paper_with_name": [
+            "download_paper_under_cursor"
+        ],
+        "download_unsynced_files": [],
+        "edit_portal": [
+            "portal",
+            "overview_to_portal"
+        ],
+        "edit_selected_bookmark": [
+            "add_bookmark",
+            "add_freetext_bookmark",
+            "add_marked_bookmark"
+        ],
+        "edit_selected_highlight": [
+            "add_highlight"
+        ],
+        "edit_visible_bookmark": [
+            "add_marked_bookmark",
+            "add_freetext_bookmark",
+            "delete_visible_bookmark"
+        ],
+        "embed_annotations": [
+            "import_annotations"
+        ],
+        "enter_password": [],
+        "escape": [],
+        "execute-execute_shell_command": [],
+        "execute_macro": [],
+        "exit_ruler_mode-close_visual_mark": [
+            "ruler_under_cursor",
+            "keyboard_select_line"
+        ],
+        "export": [
+            "import"
+        ],
+        "external_search": [],
+        "extract_table-extract_table_with_prompt": [],
+        "fit_epub_to_window": [],
+        "fit_to_page_width_ratio": [
+            "fit_to_page_width"
+        ],
+        "fit_to_page_width-fit_to_page_height-fit_to_page_width_smart-fit_to_page_height_smart-fit_to_page_smart": [],
+        "focus_text": [],
+        "force_download_annotations": [],
+        "framebuffer_screenshot": [],
+        "generic_delete": [
+            "generic_select"
+        ],
+        "generic_select": [
+            "generic_delete"
+        ],
+        "goto_beginning-goto_end": [],
+        "goto_bookmark-goto_bookmark_g": [
+            "add_bookmark",
+            "add_marked_bookmark",
+            "add_freetext_bookmark"
+        ],
+        "goto_definition": [
+            "overview_definition",
+            "portal_to_definition",
+            "visual_mark_under_cursor"
+        ],
+        "goto_highlight-goto_highlight_g": [
+            "add_highlight"
+        ],
+        "goto_left-goto_right-goto_left_smart-goto_right_smart": [],
+        "goto_mark": [
+            "set_mark"
+        ],
+        "goto_next_highlight-goto_prev_highlight": [
+            "add_highlight",
+            "add_highlight_with_current_type"
+        ],
+        "goto_next_highlight_of_type-goto_prev_highlight_of_type": [
+            "add_highlight",
+            "add_highlight_with_current_type"
+        ],
+        "goto_overview": [
+            "overview_definition"
+        ],
+        "goto_portal": [
+            "portal",
+            "overview_to_portal"
+        ],
+        "goto_selected_text": [],
+        "goto_toc": [],
+        "goto_top_of_page-goto_bottom_of_page": [],
+        "goto_window": [
+            "close_window",
+            "new_window"
+        ],
+        "import": [
+            "export"
+        ],
+        "import_annotations": [
+            "import_annotations"
+        ],
+        "import_local_database-import_shared_database": [],
+        "increase_freetext_font_size-decrease_freetext_font_size": [
+            "add_freetext_bookmark"
+        ],
+        "keyboard_overview": [
+            "keyboard_select_line",
+            "keyboard_overview",
+            "keyboard_smart_jump"
+        ],
+        "keyboard_select": [
+            "keyboard_select_line",
+            "keyboard_overview",
+            "keyboard_smart_jump"
+        ],
+        "keyboard_select_line": [
+            "visual_mark_under_cursor"
+        ],
+        "keyboard_smart_jump": [
+            "keyboard_select_line",
+            "keyboard_overview",
+            "keyboard_smart_jump"
+        ],
+        "keys": [
+            "keys_user",
+            "keys_user_all",
+            "prefs",
+            "prefs_user",
+            "prefs_user_all"
+        ],
+        "keys_user": [
+            "keys",
+            "keys_user_all",
+            "prefs",
+            "prefs_user",
+            "prefs_user_all"
+        ],
+        "keys_user_all": [
+            "keys_user"
+        ],
+        "load_annotations_file-import_annotations_file_sync_deleted": [
+            "write_annotations_file"
+        ],
+        "load_scratchpad": [
+            "toggle_scratchpad",
+            "save_scratchpad"
+        ],
+        "login": [
+            "logout"
+        ],
+        "login_using_access_token": [
+            "login",
+            "logout"
+        ],
+        "logout": [
+            "login"
+        ],
+        "maximize": [
+            "toggle_fullscreen"
+        ],
+        "move_left-move_right-move_down-move_up": [
+            "move_down_smooth",
+            "move_up_smooth",
+            "screen_down",
+            "screen_up"
+        ],
+        "move_left_in_overview-move_right_in_overview": [
+            "overview_definition"
+        ],
+        "move_ruler_up-move_ruler_down-move_visual_mark_up-move_visual_mark_down": [
+            "keyboard_select_line"
+        ],
+        "move_ruler_to_next_block-move_ruler_to_prev_block": [
+            "keyboard_select_line",
+            "move_ruler_up",
+            "move_ruler_down"
+        ],
+        "move_ruler_next-move_ruler_prev-move_visual_mark_next-move_visual_mark_prev": [
+            "keyboard_select_line",
+            "move_ruler_up",
+            "move_ruler_down"
+        ],
+        "new_window": [
+            "close_window",
+            "goto_window"
+        ],
+        "next_overview-previous_overview": [
+            "overview_definition"
+        ],
+        "next_chapter-prev_chapter": [],
+        "next_item-previous_item": [
+            "search",
+            "regex_search"
+        ],
+        "next_page-previous_page": [
+            "goto_page_with_page_number",
+            "goto_page_with_label"
+        ],
+        "next_state-prev_state": [],
+        "noop": [],
+        "open_containing_folder": [],
+        "open_document": [
+            "open_prev_doc",
+            "open_document_embedded",
+            "open_document_embedded_from_current_path"
+        ],
+        "open_document_embedded": [
+            "open_document",
+            "open_document_embedded_from_current_path"
+        ],
+        "open_document_embedded_from_current_path": [
+            "open_document",
+            "open_document_embedded"
+        ],
+        "open_external_text_editor": [],
+        "open_last_document": [],
+        "open_link": [
+            "overview_link"
+        ],
+        "open_local_database_containing_folder-open_shared_database_containing_folder": [],
+        "open_prev_doc": [
+            "open_document",
+            "open_document_embedded",
+            "open_document_embedded_from_current_path"
+        ],
+        "open_server_only_file": [],
+        "overview_definition": [
+            "goto_definition",
+            "portal_to_definition",
+            "visual_mark_under_cursor",
+            "next_overview",
+            "previous_overview"
+        ],
+        "overview_link": [
+            "open_link"
+        ],
+        "overview_next_item-overview_prev_item": [
+            "search",
+            "regex_search"
+        ],
+        "overview_to_portal": [
+            "portal",
+            "create_visible_portal"
+        ],
+        "overview_to_ruler_portal-goto_ruler_portal": [
+            "create_visible_portal",
+            "download_link",
+            "download_overview_paper",
+            "download_overview_paper_no_prompt"
+        ],
+        "overview_under_cursor": [
+            "close_overview",
+            "overview_definition"
+        ],
+        "portal": [
+            "overview_to_portal",
+            "toggle_window_configuration"
+        ],
+        "portal_to_definition": [
+            "goto_definition",
+            "overview_definition",
+            "visual_mark_under_cursor"
+        ],
+        "portal_to_link": [
+            "open_link",
+            "overview_portal"
+        ],
+        "portal_to_overview": [
+            "overview_definition"
+        ],
+        "prefs": [
+            "keys",
+            "keys_user",
+            "keys_user_all",
+            "prefs_user",
+            "prefs_user_all"
+        ],
+        "prefs_user": [
+            "keys",
+            "keys_user",
+            "keys_user_all",
+            "prefs",
+            "prefs_user_all"
+        ],
+        "prefs_user_all": [
+            "prefs_user"
+        ],
+        "quit": [
+            "close_window"
+        ],
+        "regex_search": [
+            "search",
+            "next_item",
+            "previous_item",
+            "overview_next_item",
+            "overview_prev_item"
+        ],
+        "reload": [
+            "reload_no_flicker"
+        ],
+        "reload_config": [
+            "prefs_user",
+            "keys_user"
+        ],
+        "reload_no_flicker": [
+            "reload"
+        ],
+        "resume_to_server": [
+            "sync_current_file_location"
+        ],
+        "resync_document": [],
+        "rotate_clockwise-rotate_counterclockwise": [],
+        "ruler_under_cursor-visual_mark_under_cursor": [
+            "move_ruler_down",
+            "move_ruler_up",
+            "overview_definition"
+        ],
+        "save_scratchpad": [
+            "toggle_scratchpad",
+            "load_scratchpad"
+        ],
+        "screenshot": [],
+        "screen_down-screen_up": [],
+        "search-chapter_search": [
+            "regex_search",
+            "next_item",
+            "previous_item",
+            "overview_next_item",
+            "overview_prev_item"
+        ],
+        "search_all_indexed_documents": [
+            "create_fulltext_index_for_current_document"
+        ],
+        "select_current_search_match": [
+            "search",
+            "regex_search"
+        ],
+        "select_freehand_drawings": [
+            "delete_freehand_drawings",
+            "toggle_freehand_drawing_mode",
+            "toggle_pen_drawing_mode"
+        ],
+        "select_ruler_text": [
+            "visual_mark_under_cursor",
+            "focus_text",
+            "toggle_line_select_cursor"
+        ],
+        "semantic_search": [
+            "semantic_search_extractive"
+        ],
+        "semantic_search_extractive": [
+            "semantic_search"
+        ],
+        "set_mark": [
+            "goto_mark"
+        ],
+        "set_select_highlight_type": [
+            "toggle_select_highlight"
+        ],
+        "set_status_string-clear_status_string": [],
+        "show_context_menu": [],
+        "show_touch_draw_controls": [
+            "show_touch_main_menu"
+        ],
+        "show_touch_highlight_type_select": [
+            "add_highlight_with_current_type"
+        ],
+        "show_touch_main_menu": [
+            "show_touch_settings_menu",
+            "show_touch_page_select"
+        ],
+        "show_touch_page_select": [
+            "show_touch_settings_menu",
+            "show_touch_main_menu"
+        ],
+        "show_touch_settings_menu": [
+            "show_touch_main_menu",
+            "show_touch_page_select"
+        ],
+        "smart_jump_under_cursor": [
+            "keyboard_smart_jump"
+        ],
+        "move_down_smooth-move_up_smooth": [
+            "move_down",
+            "move_up"
+        ],
+        "start_reading-stop_reading": [],
+        "start_reading_high_quality": [
+            "stop_reading"
+        ],
+        "synchronize": [],
+        "synctex_forward_search": [
+            "synctex_under_ruler",
+            "toggle_synctex",
+            "synctex_under_cursor"
+        ],
+        "synctex_under_cursor": [
+            "toggle_synctex",
+            "synctex_under_ruler"
+        ],
+        "synctex_under_ruler": [],
+        "sync_current_file_location": [
+            "resume_to_server"
+        ],
+        "toggle_text_mark-move_text_mark_forward-move_text_mark_backward-move_text_mark_forward_word-move_text_mark_backward_word-move_text_mark_down-move_text_mark_up": [
+            "keyboard_select",
+            "select_ruler_text"
+        ],
+        "toggle_custom_color": [],
+        "toggle_dark_mode": [],
+        "toggle_drawing_mask": [
+            "toggle_freehand_drawing_mode",
+            "toggle_pen_drawing_mode",
+            "set_freehand_type",
+            "turn_on_all_drawings",
+            "turn_off_all_drawings"
+        ],
+        "toggle_freehand_drawing_mode": [
+            "set_freehand_thickness",
+            "set_freehand_type",
+            "toggle_pen_drawing_mode"
+        ],
+        "toggle_fullscreen": [
+            "toggle_statusbar",
+            "toggle_sidebar"
+        ],
+        "toggle_highlight_links": [],
+        "toggle_horizontal_scroll_lock": [],
+        "toggle_line_select_cursor": [
+            "select_ruler_text"
+        ],
+        "toggle_mouse_drag_mode": [],
+        "toggle_pdf_annotations": [],
+        "toggle_pen_drawing_mode": [
+            "set_freehand_thickness",
+            "set_freehand_type",
+            "toggle_freehand_drawing_mode"
+        ],
+        "toggle_presentation_mode-turn_on_presentation_mode": [],
+        "toggle_rect_hints": [],
+        "toggle_ruler_scroll_mode-toggle_visual_scroll": [
+            "keyboard_select_line",
+            "ruler_under_cursor"
+        ],
+        "toggle_scratchpad_mode": [
+            "save_scratchpad",
+            "load_scratchpad",
+            "copy_drawings_from_scratchpad",
+            "copy_screenhot_to_scratchpad"
+        ],
+        "toggle_scrollbar": [],
+        "toggle_select_highlight": [
+            "add_highlight",
+            "set_select_highlight_type"
+        ],
+        "toggle_statusbar": [],
+        "toggle_synctex-turn_on_synctex": [],
+        "toggle_titlebar": [],
+        "toggle_two_page_mode": [],
+        "toggle_window_configuration": [
+            "portal"
+        ],
+        "turn_on_all_drawings-turn_off_all_drawings": [
+            "toggle_freehand_drawing_mode",
+            "toggle_pen_drawing_mode",
+            "set_freehand_type",
+            "toggle_drawing_mask"
+        ],
+        "undo_drawing": [
+            "toggle_freehand_drawing_mode",
+            "toggle_pen_drawing_mode"
+        ],
+        "upload_current_file": [
+            "delete_current_file_from_server"
+        ],
+        "wait": [],
+        "wait_for_renders_to_finish-wait_for_search_to_finish-wait_for_indexing_to_finish-wait_for_downloads_to_finish": [],
+        "write_annotations_file": [
+            "load_annotations_file"
+        ],
+        "zoom_in-zoom_out-zoom_in_cursor-zoom_out_cursor": [
+            "zoom_in_overview",
+            "zoom_out_overview",
+            "fit_to_page_width"
+        ],
+        "zoom_in_overview-zoom_out_overview": [
+            "zoom_in",
+            "zoom_out"
+        ]
+    },
+    "command_related_configs_map": {
+        "add_annot_to_highlight": [],
+        "add_bookmark": [],
+        "add_freetext_bookmark": [],
+        "add_highlight": [],
+        "add_highlight_with_current_type": [],
+        "add_keybind": [],
+        "add_marked_bookmark": [],
+        "change_highlight": [],
+        "clear_current_page_drawings-clear_current_document_drawings": [],
+        "clear_scratchpad": [],
+        "close_overview": [],
+        "close_window": [],
+        "command": [],
+        "command_palette": [],
+        "copy": [],
+        "copy_drawings_from_scratchpad": [],
+        "copy_link": [],
+        "copy_screenshot_to_clipboard": [],
+        "copy_screenshot_to_scratchpad": [],
+        "create_fulltext_index_for_current_document": [],
+        "create_visible_portal": [],
+        "delete_current_file_from_server": [],
+        "delete_freehand_drawings": [],
+        "delete_highlight_under_cursor": [],
+        "delete_portal-delete_bookmark-delete_highlight": [],
+        "delete_visible_bookmark": [],
+        "donate": [],
+        "download_paper_with_url-download_clipboard_url": [],
+        "download_link": [],
+        "download_overview_paper-download_overview_paper_no_prompt": [],
+        "download_paper_under_cursor": [],
+        "download_paper_with_name": [],
+        "download_unsynced_files": [],
+        "edit_portal": [],
+        "edit_selected_bookmark": [],
+        "edit_selected_highlight": [],
+        "edit_visible_bookmark": [],
+        "embed_annotations": [],
+        "enter_password": [],
+        "escape": [],
+        "execute-execute_shell_command": [],
+        "execute_macro": [],
+        "exit_ruler_mode-close_visual_mark": [],
+        "export": [],
+        "external_search": [],
+        "extract_table-extract_table_with_prompt": [],
+        "fit_epub_to_window": [],
+        "fit_to_page_width_ratio": [
+            "fit_to_page_width_ratio"
+        ],
+        "fit_to_page_width-fit_to_page_height-fit_to_page_width_smart-fit_to_page_height_smart-fit_to_page_smart": [],
+        "focus_text": [],
+        "force_download_annotations": [],
+        "framebuffer_screenshot": [],
+        "generic_delete": [],
+        "generic_select": [],
+        "goto_beginning-goto_end": [],
+        "goto_bookmark-goto_bookmark_g": [],
+        "goto_definition": [],
+        "goto_highlight-goto_highlight_g": [],
+        "goto_left-goto_right-goto_left_smart-goto_right_smart": [],
+        "goto_mark": [],
+        "goto_next_highlight-goto_prev_highlight": [],
+        "goto_next_highlight_of_type-goto_prev_highlight_of_type": [],
+        "goto_overview": [],
+        "goto_portal": [],
+        "goto_selected_text": [],
+        "goto_toc": [],
+        "goto_top_of_page-goto_bottom_of_page": [],
+        "goto_window": [],
+        "import": [],
+        "import_annotations": [],
+        "import_local_database-import_shared_database": [],
+        "increase_freetext_font_size-decrease_freetext_font_size": [],
+        "keyboard_overview": [],
+        "keyboard_select": [],
+        "keyboard_select_line": [],
+        "keyboard_smart_jump": [],
+        "keys": [],
+        "keys_user": [],
+        "keys_user_all": [],
+        "load_annotations_file-import_annotations_file_sync_deleted": [],
+        "load_scratchpad": [],
+        "login": [],
+        "login_using_access_token": [],
+        "logout": [],
+        "maximize": [],
+        "move_left-move_right-move_down-move_up": [],
+        "move_left_in_overview-move_right_in_overview": [],
+        "move_ruler_up-move_ruler_down-move_visual_mark_up-move_visual_mark_down": [],
+        "move_ruler_to_next_block-move_ruler_to_prev_block": [],
+        "move_ruler_next-move_ruler_prev-move_visual_mark_next-move_visual_mark_prev": [],
+        "new_window": [],
+        "next_overview-previous_overview": [],
+        "next_chapter-prev_chapter": [],
+        "next_item-previous_item": [],
+        "next_page-previous_page": [],
+        "next_state-prev_state": [],
+        "noop": [],
+        "open_containing_folder": [],
+        "open_document": [],
+        "open_document_embedded": [],
+        "open_document_embedded_from_current_path": [],
+        "open_external_text_editor": [],
+        "open_last_document": [],
+        "open_link": [],
+        "open_local_database_containing_folder-open_shared_database_containing_folder": [],
+        "open_prev_doc": [],
+        "open_server_only_file": [],
+        "overview_definition": [],
+        "overview_link": [],
+        "overview_next_item-overview_prev_item": [],
+        "overview_to_portal": [],
+        "overview_to_ruler_portal-goto_ruler_portal": [],
+        "overview_under_cursor": [],
+        "portal": [],
+        "portal_to_definition": [],
+        "portal_to_link": [],
+        "portal_to_overview": [],
+        "prefs": [],
+        "prefs_user": [],
+        "prefs_user_all": [],
+        "quit": [],
+        "regex_search": [],
+        "reload": [],
+        "reload_config": [],
+        "reload_no_flicker": [],
+        "resume_to_server": [
+            "document_location_mismatch_strategy"
+        ],
+        "resync_document": [],
+        "rotate_clockwise-rotate_counterclockwise": [],
+        "ruler_under_cursor-visual_mark_under_cursor": [],
+        "save_scratchpad": [],
+        "screenshot": [],
+        "screen_down-screen_up": [],
+        "search-chapter_search": [],
+        "search_all_indexed_documents": [],
+        "select_current_search_match": [],
+        "select_freehand_drawings": [],
+        "select_ruler_text": [],
+        "semantic_search": [],
+        "semantic_search_extractive": [],
+        "set_mark": [],
+        "set_select_highlight_type": [],
+        "set_status_string-clear_status_string": [],
+        "show_context_menu": [],
+        "show_touch_draw_controls": [],
+        "show_touch_highlight_type_select": [],
+        "show_touch_main_menu": [],
+        "show_touch_page_select": [],
+        "show_touch_settings_menu": [],
+        "smart_jump_under_cursor": [],
+        "move_down_smooth-move_up_smooth": [],
+        "start_reading-stop_reading": [],
+        "start_reading_high_quality": [],
+        "synchronize": [],
+        "synctex_forward_search": [],
+        "synctex_under_cursor": [],
+        "synctex_under_ruler": [],
+        "sync_current_file_location": [],
+        "toggle_text_mark-move_text_mark_forward-move_text_mark_backward-move_text_mark_forward_word-move_text_mark_backward_word-move_text_mark_down-move_text_mark_up": [],
+        "toggle_custom_color": [
+            "custom_text_color",
+            "custom_background_color",
+            "custom_color_mode_empty_background_color"
+        ],
+        "toggle_dark_mode": [],
+        "toggle_drawing_mask": [],
+        "toggle_freehand_drawing_mode": [],
+        "toggle_fullscreen": [],
+        "toggle_highlight_links": [],
+        "toggle_horizontal_scroll_lock": [],
+        "toggle_line_select_cursor": [],
+        "toggle_mouse_drag_mode": [],
+        "toggle_pdf_annotations": [],
+        "toggle_pen_drawing_mode": [],
+        "toggle_presentation_mode-turn_on_presentation_mode": [],
+        "toggle_rect_hints": [],
+        "toggle_ruler_scroll_mode-toggle_visual_scroll": [],
+        "toggle_scratchpad_mode": [],
+        "toggle_scrollbar": [],
+        "toggle_select_highlight": [],
+        "toggle_statusbar": [],
+        "toggle_synctex-turn_on_synctex": [],
+        "toggle_titlebar": [],
+        "toggle_two_page_mode": [],
+        "toggle_window_configuration": [],
+        "turn_on_all_drawings-turn_off_all_drawings": [],
+        "undo_drawing": [],
+        "upload_current_file": [],
+        "wait": [],
+        "wait_for_renders_to_finish-wait_for_search_to_finish-wait_for_indexing_to_finish-wait_for_downloads_to_finish": [],
+        "write_annotations_file": [],
+        "zoom_in-zoom_out-zoom_in_cursor-zoom_out_cursor": [],
+        "zoom_in_overview-zoom_out_overview": []
+    },
+    "config_related_commands_map": {
+        "adjust_annotation_colors_for_dark_mode": [
+            "add_highlight",
+            "add_freetext_bookmark"
+        ],
+        "align_link_dst_to_top": [],
+        "allow_horizontal_drag_when_document_is_small": [],
+        "allow_main_view_scroll_while_in_overview": [],
+        "annotations_directory": [
+            "toggle_freehand_drawing_mode",
+            "write_annotations_file"
+        ],
+        "autocenter_ruler": [
+            "ruler_under_cursor",
+            "toggle_ruler_scroll_mode"
+        ],
+        "automatically_download_matching_paper_name": [
+            "download_link",
+            "download_overview_paper"
+        ],
+        "automatically_index_documents_for_fulltext_search": [
+            "create_fulltext_index_for_current_document",
+            "search_all_indexed_documents"
+        ],
+        "automatically_update_checksum_when_document_is_changed": [],
+        "automatically_upload_portal_destination_for_synced_documents": [],
+        "auto_login_on_startup": [],
+        "auto_rename_downloaded_papers": [
+            "download_link",
+            "download_overview_paper"
+        ],
+        "background_bookmarks_pixel_budget": [],
+        "background_color-custom_color_mode_empty_background_color-dark_mode_background_color": [],
+        "case_sensitive_search": [
+            "search"
+        ],
+        "check_for_updates_on_startup": [],
+        "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command": [],
+        "collapsed_toc": [
+            "goto_toc"
+        ],
+        "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview": [
+            "show_context_menu",
+            "right_click_context_menu"
+        ],
+        "create_table_of_contents_if_not_exists": [],
+        "custom_text_color-custom_background_color": [
+            "toggle_custom_color"
+        ],
+        "dark_mode_contrast": [
+            "toggle_dark_mode"
+        ],
+        "default_open_file_path": [],
+        "documentation_font_size": [],
+        "document_location_mismatch_strategy": [
+            "resume_to_server"
+        ],
+        "dont_center_if_synctex_rect_is_visible": [
+            "toggle_synctex"
+        ],
+        "epub_css": [],
+        "epub_width-epub_height-epub_font_size": [],
+        "exact_highlight_select": [
+            "add_highlight"
+        ],
+        "external_text_editor_command": [
+            "open_external_text_editor"
+        ],
+        "extract_table_prompt": [
+            "extract_table"
+        ],
+        "fill_textbar_with_selected_text": [
+            "search"
+        ],
+        "fit_to_page_width_ratio": [
+            "fit_to_page_width_ratio"
+        ],
+        "flat_toc": [
+            "goto_toc"
+        ],
+        "font_size": [],
+        "freetext_bookmark_color": [
+            "add_freetext_bookmark"
+        ],
+        "freetext_bookmark_font_size": [
+            "add_freetext_bookmark"
+        ],
+        "fuzzy_searching": [],
+        "gamma": [],
+        "hide_overlapping_link_labels": [
+            "open_link"
+        ],
+        "highlight_color_[a-z]": [
+            "add_highlight"
+        ],
+        "highlight_links": [],
+        "highlight_middle_click": [
+            "add_highlight",
+            "add_highlight_with_current_type",
+            "set_select_highlight_type"
+        ],
+        "hover_overview": [],
+        "ignore_scroll_events": [],
+        "ignore_whitespace_in_presentation_mode": [
+            "toggle_presentation_mode"
+        ],
+        "incremental_search": [
+            "search"
+        ],
+        "initial_snapped_dragging": [],
+        "inverse_search_command": [
+            "toggle_synctex",
+            "synctex_under_cursor",
+            "synctex_under_ruler"
+        ],
+        "inverted_horizontal_scrolling": [],
+        "invert_selected_text": [],
+        "keyboard_point_selection": [],
+        "keyboard_select_background_color-keyboard_select_text_color-keyboard_selected_tag_background_color-keyboard_selected_tag_text_color": [
+            "open_link",
+            "keyboard_select"
+        ],
+        "keyboard_select_font_size": [
+            "open_link",
+            "keyboard_select"
+        ],
+        "linear_filter": [],
+        "link_highlight_color": [
+            "open_link",
+            "toggle_highlight_links"
+        ],
+        "max_created_toc_size": [],
+        "menu_matched_search_highlight": [],
+        "menu_screen_width_ratio-menu_screen_height_ratio": [
+            "command",
+            "goto_prev_doc",
+            "goto_highlight",
+            "goto_bookmark"
+        ],
+        "middle_click_search_engine-shift_middle_click_search_engine": [
+            "search_url_[a-z]"
+        ],
+        "move_screen_ratio": [
+            "screen_down",
+            "screen_up"
+        ],
+        "numeric_tags": [
+            "keyboard_select"
+        ],
+        "num_cached_pages": [],
+        "num_prerendered_next_slides-num_prerendered_prev_slides": [
+            "toggle_presentation_mode"
+        ],
+        "num_two_page_columns": [
+            "toggle_two_page_mode"
+        ],
+        "overview_reference_highlight_color": [
+            "overview_definition",
+            "download_overview_paper"
+        ],
+        "page_separator_width-page_separator_color": [],
+        "page_space_x-page_space_y": [
+            "toggle_two_page_mode"
+        ],
+        "papers_folder_path": [],
+        "paper_download_should_create_portal": [
+            "download_link",
+            "download_overview_paper"
+        ],
+        "paper_download_should_detect_paper_name": [
+            "download_link",
+            "download_overview_paper"
+        ],
+        "prerendered_page_count": [],
+        "prerender_next_page_presentation": [
+            "toggle_presentation_mode"
+        ],
+        "preserve_image_colors_in_dark_mode-inverted_preserved_image_colors": [
+            "toggle_dark_mode",
+            "toggle_custom_color"
+        ],
+        "question_bookmark_background_color-question_bookmark_text_color": [],
+        "real_page_separation": [],
+        "reload_interval_miliseconds": [],
+        "render_freetext_borders": [
+            "add_freetext_bookmark"
+        ],
+        "render_pdf_annotations": [
+            "toggle_pdf_annotations"
+        ],
+        "resize_command": [],
+        "right_click_context_menu": [
+            "add_highlight",
+            "add_freetext_bookmark",
+            "show_context_menu"
+        ],
+        "ruler_auto_move_threshold_distance": [],
+        "ruler_color": [
+            "keyboard_select_line"
+        ],
+        "ruler_display_mode": [
+            "ruler_under_cursor"
+        ],
+        "ruler_marker_color": [
+            "keyboard_select_line",
+            "move_ruler_next",
+            "move_ruler_prev"
+        ],
+        "ruler_next_page_end_pos-ruler_next_page_begin_pos": [
+            "move_ruler_down",
+            "move_ruler_up",
+            "toggle_ruler_scroll_mode"
+        ],
+        "ruler_padding-ruler_x_padding": [
+            "keyboard_select_line"
+        ],
+        "ruler_pixel_width": [
+            "ruler_under_cursor",
+            "focus_text"
+        ],
+        "ruler_slit_color": [
+            "keyboard_select_line",
+            "ruler_under_cursor"
+        ],
+        "save_externally_edited_text_on_focus": [
+            "open_external_text_editor"
+        ],
+        "scrollview_sensitivity": [
+            "overview_definition"
+        ],
+        "search_highlight_color": [
+            "search",
+            "regex_search",
+            "semantic_search",
+            "semantic_search_extractive"
+        ],
+        "search_url_[a-z]": [],
+        "server_and_local_document_mismatch_threshold": [
+            "resume_to_server"
+        ],
+        "shared_database_path": [],
+        "should_highlight_unselected_search": [
+            "search"
+        ],
+        "should_launch_new_window": [],
+        "should_load_tutorial_when_no_other_file": [],
+        "should_warn_about_user_key_override": [],
+        "show_most_recent_commands_first": [
+            "command"
+        ],
+        "show_reference_overview_highlights": [
+            "overview_link",
+            "overview_definition"
+        ],
+        "single_click_selects_words": [],
+        "sliced_rendering": [],
+        "smartcase_search": [
+            "search"
+        ],
+        "smooth_move_max_velocity": [
+            "move_down_smooth",
+            "move_up_smooth"
+        ],
+        "sort_bookmarks_by_location": [
+            "goto_bookmark"
+        ],
+        "startup_commands": [],
+        "status_bar_color-status_bar_text_color": [
+            "toggle_statusbar"
+        ],
+        "status_bar_font_size": [],
+        "status_bar_format-right_status_bar_format-status_*_command": [],
+        "status_custom_message_[a-d]": [],
+        "status_font": [],
+        "strike_line_width": [
+            "add_highlight"
+        ],
+        "super_fast_search": [
+            "search",
+            "regex_search"
+        ],
+        "synctex_highlght_timeout": [],
+        "synctex_highlight_color": [
+            "synctex_under_cursor",
+            "synctex_under_ruler",
+            "toggle_synctex"
+        ],
+        "synctex_highlight_timeout": [
+            "synctex_under_cursor",
+            "synctex_under_ruler",
+            "toggle_synctex"
+        ],
+        "table_extract_behaviour": [
+            "extract_table"
+        ],
+        "tag_font_face": [
+            "open_link",
+            "keyboard_select"
+        ],
+        "text_highlight_color": [
+            "keyboard_select"
+        ],
+        "toc_jump_align_top": [],
+        "touchpad_sensitivity": [
+            "move_down",
+            "move_up",
+            "move_left",
+            "move_right"
+        ],
+        "touch_mode": [],
+        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command": [],
+        "tts_rate": [
+            "start_reading",
+            "start_reading_high_quality"
+        ],
+        "ui_font": [],
+        "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect": [],
+        "ui_text_color-ui_background_color-ui_selected_text_color-ui_selected_background_color": [],
+        "unselected_search_highlight_color": [
+            "search",
+            "regex_search",
+            "semantic_search",
+            "semantic_search_extractive"
+        ],
+        "use_ruler_to_highlight_synctex_line": [
+            "toggle_synctex"
+        ],
+        "use_system_theme-use_custom_color_as_dark_system_theme": [],
+        "vertical_move_amount-horizontal_move_amount": [
+            "move_down",
+            "move_up",
+            "move_left",
+            "move_right",
+            "move_ruler_down",
+            "move_ruler_up"
+        ],
+        "wheel_zoom_in_cursor": [],
+        "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": [],
+        "zoom_inc_factor": [
+            "zoom_in",
+            "zoom_out",
+            "zoom_in_cursor",
+            "zoom_out_cursor"
+        ]
+    },
+    "config_related_configs_map": {
+        "adjust_annotation_colors_for_dark_mode": [],
+        "align_link_dst_to_top": [],
+        "allow_horizontal_drag_when_document_is_small": [],
+        "allow_main_view_scroll_while_in_overview": [],
+        "annotations_directory": [],
+        "autocenter_ruler": [],
+        "automatically_download_matching_paper_name": [],
+        "automatically_index_documents_for_fulltext_search": [],
+        "automatically_update_checksum_when_document_is_changed": [],
+        "automatically_upload_portal_destination_for_synced_documents": [],
+        "auto_login_on_startup": [],
+        "auto_rename_downloaded_papers": [],
+        "background_bookmarks_pixel_budget": [],
+        "background_color-custom_color_mode_empty_background_color-dark_mode_background_color": [],
+        "case_sensitive_search": [
+            "smartcase_search"
+        ],
+        "check_for_updates_on_startup": [],
+        "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command": [],
+        "collapsed_toc": [],
+        "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview": [],
+        "create_table_of_contents_if_not_exists": [],
+        "custom_text_color-custom_background_color": [],
+        "dark_mode_contrast": [],
+        "default_open_file_path": [],
+        "documentation_font_size": [],
+        "document_location_mismatch_strategy": [],
+        "dont_center_if_synctex_rect_is_visible": [
+            "synctex_highlight_timeout",
+            "synctex_highlight_color"
+        ],
+        "epub_css": [],
+        "epub_width-epub_height-epub_font_size": [],
+        "exact_highlight_select": [],
+        "external_text_editor_command": [],
+        "extract_table_prompt": [],
+        "fill_textbar_with_selected_text": [],
+        "fit_to_page_width_ratio": [],
+        "flat_toc": [],
+        "font_size": [
+            "status_bar_font_size"
+        ],
+        "freetext_bookmark_color": [
+            "freetext_bookmark_font_size"
+        ],
+        "freetext_bookmark_font_size": [
+            "freetext_bookmark_color"
+        ],
+        "fuzzy_searching": [],
+        "gamma": [],
+        "hide_overlapping_link_labels": [],
+        "highlight_color_[a-z]": [],
+        "highlight_links": [],
+        "highlight_middle_click": [],
+        "hover_overview": [],
+        "ignore_scroll_events": [],
+        "ignore_whitespace_in_presentation_mode": [],
+        "incremental_search": [],
+        "initial_snapped_dragging": [],
+        "inverse_search_command": [],
+        "inverted_horizontal_scrolling": [],
+        "invert_selected_text": [],
+        "keyboard_point_selection": [],
+        "keyboard_select_background_color-keyboard_select_text_color-keyboard_selected_tag_background_color-keyboard_selected_tag_text_color": [
+            "tag_font_face",
+            "keyboard_point_selection",
+            "keyboard_select_font_size"
+        ],
+        "keyboard_select_font_size": [
+            "tag_font_face",
+            "keyboard_point_selection"
+        ],
+        "linear_filter": [],
+        "link_highlight_color": [],
+        "max_created_toc_size": [
+            "create_table_of_contents_if_not_exists"
+        ],
+        "menu_matched_search_highlight": [],
+        "menu_screen_width_ratio-menu_screen_height_ratio": [],
+        "middle_click_search_engine-shift_middle_click_search_engine": [],
+        "move_screen_ratio": [],
+        "numeric_tags": [],
+        "num_cached_pages": [],
+        "num_prerendered_next_slides-num_prerendered_prev_slides": [
+            "prerender_next_page_presentation"
+        ],
+        "num_two_page_columns": [],
+        "overview_reference_highlight_color": [],
+        "page_separator_width-page_separator_color": [],
+        "page_space_x-page_space_y": [],
+        "papers_folder_path": [],
+        "paper_download_should_create_portal": [],
+        "paper_download_should_detect_paper_name": [],
+        "prerendered_page_count": [],
+        "prerender_next_page_presentation": [],
+        "preserve_image_colors_in_dark_mode-inverted_preserved_image_colors": [],
+        "question_bookmark_background_color-question_bookmark_text_color": [],
+        "real_page_separation": [
+            "page_separator_width"
+        ],
+        "reload_interval_miliseconds": [],
+        "render_freetext_borders": [],
+        "render_pdf_annotations": [],
+        "resize_command": [],
+        "right_click_context_menu": [],
+        "ruler_auto_move_threshold_distance": [],
+        "ruler_color": [],
+        "ruler_display_mode": [],
+        "ruler_marker_color": [],
+        "ruler_next_page_end_pos-ruler_next_page_begin_pos": [],
+        "ruler_padding-ruler_x_padding": [
+            "ruler_display_mode"
+        ],
+        "ruler_pixel_width": [
+            "ruler_display_mode"
+        ],
+        "ruler_slit_color": [
+            "ruler_display_mode"
+        ],
+        "save_externally_edited_text_on_focus": [],
+        "scrollview_sensitivity": [],
+        "search_highlight_color": [],
+        "search_url_[a-z]": [],
+        "server_and_local_document_mismatch_threshold": [],
+        "shared_database_path": [],
+        "should_highlight_unselected_search": [
+            "unselected_search_highlight_color"
+        ],
+        "should_launch_new_window": [],
+        "should_load_tutorial_when_no_other_file": [],
+        "should_warn_about_user_key_override": [],
+        "show_most_recent_commands_first": [],
+        "show_reference_overview_highlights": [],
+        "single_click_selects_words": [],
+        "sliced_rendering": [],
+        "smartcase_search": [],
+        "smooth_move_max_velocity": [],
+        "sort_bookmarks_by_location": [],
+        "startup_commands": [],
+        "status_bar_color-status_bar_text_color": [],
+        "status_bar_font_size": [],
+        "status_bar_format-right_status_bar_format-status_*_command": [],
+        "status_custom_message_[a-d]": [],
+        "status_font": [],
+        "strike_line_width": [],
+        "super_fast_search": [],
+        "synctex_highlght_timeout": [],
+        "synctex_highlight_color": [
+            "use_ruler_to_highlight_synctex_line",
+            "synctex_highlight_timeout",
+            "synctex_highlight_timeout"
+        ],
+        "synctex_highlight_timeout": [
+            "synctex_highlight_color"
+        ],
+        "table_extract_behaviour": [],
+        "tag_font_face": [],
+        "text_highlight_color": [],
+        "toc_jump_align_top": [],
+        "touchpad_sensitivity": [
+            "vertical_move_amount",
+            "horizontal_move_amount"
+        ],
+        "touch_mode": [],
+        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command": [],
+        "tts_rate": [],
+        "ui_font": [],
+        "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect": [
+            "touch_rect_commands"
+        ],
+        "ui_text_color-ui_background_color-ui_selected_text_color-ui_selected_background_color": [],
+        "unselected_search_highlight_color": [
+            "should_highlight_unselected_search"
+        ],
+        "use_ruler_to_highlight_synctex_line": [],
+        "use_system_theme-use_custom_color_as_dark_system_theme": [],
+        "vertical_move_amount-horizontal_move_amount": [
+            "touchpad_sensitivity"
+        ],
+        "wheel_zoom_in_cursor": [],
+        "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": [],
+        "zoom_inc_factor": []
     }
 }
