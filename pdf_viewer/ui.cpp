@@ -3130,6 +3130,7 @@ FulltextSearchWidget::~FulltextSearchWidget() {
 }
 
 void FulltextSearchWidget::on_text_changed(const QString& text) {
+
     if (result_model) {
         delete result_model;
         result_model = nullptr;
@@ -3140,7 +3141,11 @@ void FulltextSearchWidget::on_text_changed(const QString& text) {
         get_view()->setModel(result_model);
     }
     else {
-        std::vector<FulltextSearchResult> results = db_manager->perform_fulltext_search(text.toStdWString() + L"*");
+        QString query = text;
+        query = query.replace("\"", "\\\""); // escape the "s
+        query = "\"" + query + "\"" + "*";
+
+        std::vector<FulltextSearchResult> results = db_manager->perform_fulltext_search(query.toStdWString());
         for (int i = 0; i < results.size(); i++) {
             results[i].document_title = main_widget->document_manager->get_path_from_hash(results[i].document_checksum).value_or(L"");
             if (results[i].document_title.size() > 0) {
