@@ -3082,6 +3082,26 @@ bool DatabaseManager::is_document_indexed(std::string document_checksum) {
     return false;
 }
 
+std::vector<std::string> DatabaseManager::get_all_fulltext_indexed_checksums() {
+    std::wstringstream ss;
+    std::vector<std::string> res;
+    ss << "SELECT DISTINCT file_checksum FROM indexed_documents;";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), string_select_callback, &res, &error_message);
+    return res;
+}
+
+void DatabaseManager::delete_checksum_from_fulltext_index(std::wstring file_checksum) {
+    std::wstringstream ss;
+    ss << "DELETE FROM indexed_documents WHERE file_checksum='" << file_checksum << "';";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), nullptr, nullptr, &error_message);
+
+    std::wstringstream ss2;
+    ss2 << L"DELETE FROM full_text_search WHERE file_checksum='" << file_checksum << L"';";
+    error_code = sqlite3_exec(local_db, utf8_encode(ss2.str()).c_str(), nullptr, nullptr, &error_message);
+}
+
 void DatabaseManager::index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices) {
     std::wstringstream ss;
 

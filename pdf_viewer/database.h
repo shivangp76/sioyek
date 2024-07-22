@@ -213,6 +213,8 @@ public:
     void index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices);
     bool is_document_indexed(std::string document_checksum);
     std::vector<FulltextSearchResult> perform_fulltext_search(const std::wstring& query, std::wstring file_checksum=L"");
+    std::vector<std::string> get_all_fulltext_indexed_checksums();
+    void delete_checksum_from_fulltext_index(std::wstring file_checksum);
 };
 
 

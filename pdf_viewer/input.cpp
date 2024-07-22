@@ -6399,6 +6399,20 @@ public:
 
 };
 
+class DeleteDocumentFromFulltextSearchIndex : public Command {
+public:
+    static inline const std::string cname = "delete_document_from_fulltext_search_index";
+    static inline const std::string hname = "Delete a document from fulltext search index";
+
+    DeleteDocumentFromFulltextSearchIndex(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_delete_document_from_fulltext_search_index();
+    }
+
+
+};
+
 class CreateFulltextIndexForCurrentDocumentCommand : public Command {
 public:
     static inline const std::string cname = "create_fulltext_index_for_current_document";
@@ -7864,6 +7878,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DebugCommand>();
     register_command<FulltextSearchCommand>();
     register_command<FulltextSearchCurrentDocumentCommand>();
+    register_command<DeleteDocumentFromFulltextSearchIndex>();
     register_command<CreateFulltextIndexForCurrentDocumentCommand>();
     register_command<ExportPythonApiCommand>();
     register_command<ExportDefaultConfigFile>();

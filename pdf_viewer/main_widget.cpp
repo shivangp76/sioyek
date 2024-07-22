@@ -13055,3 +13055,33 @@ MainWidget* MainWidget::get_widget_with_id(int window_id){
 bool MainWidget::is_current_document_fulltext_indexed() {
     return db_manager->is_document_indexed(doc()->get_checksum());
 }
+
+void MainWidget::handle_delete_document_from_fulltext_search_index() {
+    std::vector<std::string> indexed_checksums = db_manager->get_all_fulltext_indexed_checksums();
+    std::vector<std::wstring> corresponding_paths;
+    for (int i = 0; i < indexed_checksums.size(); i++) {
+        //qDebug() << QString::fromStdString(indexed_checksums[i]);
+        corresponding_paths.push_back(
+            document_manager->get_path_from_hash(indexed_checksums[i]).value_or(utf8_decode(indexed_checksums[i]))
+        );
+    }
+
+    std::vector<std::vector<std::wstring>> columns = { corresponding_paths };
+
+    set_filtered_select_menu<std::string>(this, true, false, columns, indexed_checksums, -1,
+        [this](std::string* val) {
+            std::wstring path = document_manager->get_path_from_hash(*val).value_or(L"");
+            if (path.size() > 0) {
+                int res = show_option_buttons(L"Are you sure you want to delete " + path + L" from the index?", { L"Yes", L"Cancel" });
+                if (res == 0) {
+                    db_manager->delete_checksum_from_fulltext_index(utf8_decode(*val));
+                }
+            }
+
+        },
+        [](std::string* val) {
+
+        });
+    show_current_widget();
+
+}

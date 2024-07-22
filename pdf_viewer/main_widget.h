@@ -721,6 +721,7 @@ public:
     void index_current_document_for_fulltext_search(bool async=false);
     void on_super_fast_search_index_computed();
     bool is_current_document_fulltext_indexed();
+    void handle_delete_document_from_fulltext_search_index();
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
     AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);
