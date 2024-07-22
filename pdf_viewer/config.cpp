@@ -89,6 +89,7 @@ std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
 std::wstring PAPERS_FOLDER_PATH = L"";
 #ifndef SIOYEK_MOBILE
 std::wstring STATUS_BAR_FORMAT = L"[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}%{rect_select}%{custom_message}%{download}%{download_button}%{network_status}%{tts_status}%{tts_rate}";
+std::wstring TITLEBAR_FORMAT = L"";
 std::wstring RIGHT_STATUS_BAR_FORMAT = L"";
 #else
 std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_results}%{search_progress}%{link_status}%{indexing}%{current_requirement_desc}";
@@ -1184,6 +1185,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"annotations_directory", &ANNOTATIONS_DIR_PATH);
     add_string(L"status_bar_format", &STATUS_BAR_FORMAT)->set_change_fn([](MainWidget* w){
         w->left_status_string_generator = std::move(compile_status_string(QString::fromStdWString(STATUS_BAR_FORMAT), w));
+    });
+    add_string(L"titlebar_format", &TITLEBAR_FORMAT)->set_change_fn([](MainWidget* w){
+        w->titlebar_generator = std::move(compile_status_string(QString::fromStdWString(TITLEBAR_FORMAT), w));
     });
     add_string(L"right_status_bar_format", &RIGHT_STATUS_BAR_FORMAT);
     add_string(L"epub_css", &EPUB_CSS);

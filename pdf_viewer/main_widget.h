@@ -204,9 +204,11 @@ public:
     std::unique_ptr<Command> last_performed_command;
 
     std::vector<int> last_status_string_ids;
+    std::wstring last_titlebar_string = L"";
 
     std::optional<std::function<std::pair<QString, std::vector<int>>()>> left_status_string_generator = {};
     std::optional<std::function<std::pair<QString, std::vector<int>>()>> right_status_string_generator = {};
+    std::optional<std::function<std::pair<QString, std::vector<int>>()>> titlebar_generator = {};
 
     DocumentView* main_document_view = nullptr;
     ScratchPad* scratchpad = nullptr;
@@ -441,6 +443,7 @@ public:
     void persist(bool persist_drawings = false);
     bool is_pending_link_source_filled();
     std::wstring get_status_string(bool is_right);
+    std::wstring get_title_string();
     void handle_escape();
     bool is_waiting_for_symbol();
     void key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat = false);

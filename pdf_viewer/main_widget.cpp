@@ -165,6 +165,7 @@ extern float SMALL_PIXMAP_SCALE;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
 
+extern std::wstring TITLEBAR_FORMAT;
 extern Path standard_data_path;
 extern Path default_config_path;
 extern Path default_keys_path;
@@ -1480,6 +1481,15 @@ std::wstring MainWidget::get_status_string(bool is_right) {
     }
 }
 
+std::wstring MainWidget::get_title_string() {
+    if (!titlebar_generator.has_value()) {
+        titlebar_generator = std::move(compile_status_string(QString::fromStdWString(TITLEBAR_FORMAT), this));
+    }
+    auto [str, ids] = (*titlebar_generator)();
+    return str.toStdWString();
+}
+
+
 QString MainWidget::get_login_status_string() {
     //QString login_status;
     //QString document_status;
@@ -1763,6 +1773,15 @@ void MainWidget::validate_ui() {
 
     status_label_left->setText(QString::fromStdWString(get_status_string(false)));
     status_label_right->setText(QString::fromStdWString(get_status_string(true)));
+
+    if (TITLEBAR_FORMAT.size() > 0) {
+        std::wstring new_titlebar_string = get_title_string();
+        if (new_titlebar_string != last_titlebar_string) {
+            last_titlebar_string = new_titlebar_string;
+            setWindowTitle(QString::fromStdWString(new_titlebar_string));
+        }
+    }
+
     server_actions_button->setText(get_login_status_string());
     is_ui_invalidated = false;
 }
