@@ -353,7 +353,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
 
     QRegularExpression expr("%\\{[a-z_]+\\}");
     QRegularExpressionMatchIterator matches = expr.globalMatch(status_string);
-    int prev_match_end_index = 0;
+    int prev_match_end_index = -1;
 
     std::vector<std::variant<QString, std::pair<int, std::function<QString()>>>> parts;
 
@@ -373,7 +373,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         prev_match_end_index = match.capturedEnd();
     }
     if (prev_match_end_index < status_string.size() - 1) {
-        parts.push_back(status_string.right(status_string.size() - 1 - prev_match_end_index));
+        parts.push_back(status_string.right(status_string.size() - prev_match_end_index));
     }
 
     auto generator = [name_to_generator=std::move(name_to_generator), parts=std::move(parts)]() {
