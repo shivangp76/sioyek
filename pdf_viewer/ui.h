@@ -1338,15 +1338,17 @@ private:
         DatabaseManager* manager,
         QAbstractItemView* view,
         QAbstractItemModel* model,
-        MainWidget* parent
+        MainWidget* parent,
+        std::wstring checksum=L""
     );
     ~FulltextSearchWidget();
 
     DatabaseManager* db_manager = nullptr;
     MainWidget* main_widget = nullptr;
+    std::wstring maybe_file_checksum = L"";
 public:
 
-    static FulltextSearchWidget* create(MainWidget* parent);
+    static FulltextSearchWidget* create(MainWidget* parent, std::wstring checksum=L"");
 
     void on_text_changed(const QString& text) override;
     virtual void on_select(const QModelIndex& value) override;

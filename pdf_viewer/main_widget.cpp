@@ -7539,9 +7539,9 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 
-void MainWidget::handle_fulltext_search() {
+void MainWidget::handle_fulltext_search(std::wstring maybe_file_checksum) {
 
-    auto search_widget = FulltextSearchWidget::create(this);
+    auto search_widget = FulltextSearchWidget::create(this, maybe_file_checksum);
     search_widget->set_select_fn([&, search_widget](int index) {
             FulltextSearchResult result = search_widget->result_model->search_results[index];
             std::wstring document_path = document_manager->get_path_from_hash(result.document_checksum).value_or(L"");
@@ -13050,4 +13050,8 @@ void MainWidget::ensure_titlebar_colors_match_color_mode(){
 
 MainWidget* MainWidget::get_widget_with_id(int window_id){
     return get_window_with_window_id(window_id);
+}
+
+bool MainWidget::is_current_document_fulltext_indexed() {
+    return db_manager->is_document_indexed(doc()->get_checksum());
 }

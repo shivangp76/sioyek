@@ -6377,6 +6377,28 @@ public:
 
 };
 
+class FulltextSearchCurrentDocumentCommand : public Command {
+public:
+    static inline const std::string cname = "fulltext_search_current_document";
+    static inline const std::string hname = "Perform a fulltext search on current document";
+
+    FulltextSearchCurrentDocumentCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        if (!widget->is_current_document_fulltext_indexed()) {
+            show_error_message(
+                L"Current document is not indexed, first index using create_fulltext_index_for_current_document"
+            );
+            return;
+        }
+
+        std::wstring file_checksum = utf8_decode(widget->doc()->get_checksum());
+        widget->handle_fulltext_search(file_checksum);
+    }
+
+
+};
+
 class CreateFulltextIndexForCurrentDocumentCommand : public Command {
 public:
     static inline const std::string cname = "create_fulltext_index_for_current_document";
@@ -7841,6 +7863,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowTouchDrawingMenu>();
     register_command<DebugCommand>();
     register_command<FulltextSearchCommand>();
+    register_command<FulltextSearchCurrentDocumentCommand>();
     register_command<CreateFulltextIndexForCurrentDocumentCommand>();
     register_command<ExportPythonApiCommand>();
     register_command<ExportDefaultConfigFile>();

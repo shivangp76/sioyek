@@ -211,7 +211,8 @@ public:
 
     bool generic_prepared_statement_run(sqlite3* db, sqlite3_stmt** stmt, const std::string& query, std::function<void()> on_init,std::function<void()> bind_params, std::function<void()> on_row);
     void index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices);
-    std::vector<FulltextSearchResult> perform_fulltext_search(const std::wstring& query);
+    bool is_document_indexed(std::string document_checksum);
+    std::vector<FulltextSearchResult> perform_fulltext_search(const std::wstring& query, std::wstring file_checksum=L"");
 };
 
 

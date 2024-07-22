@@ -707,7 +707,7 @@ public:
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
     void handle_debug_command();
-    void handle_fulltext_search();
+    void handle_fulltext_search(std::wstring maybe_file_checksum=L"");
     void handle_add_marked_data();
     void handle_undo_marked_data();
     void handle_remove_marked_data();
@@ -720,6 +720,7 @@ public:
     void auto_login();
     void index_current_document_for_fulltext_search(bool async=false);
     void on_super_fast_search_index_computed();
+    bool is_current_document_fulltext_indexed();
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
     AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);

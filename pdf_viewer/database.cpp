@@ -3070,6 +3070,18 @@ bool DatabaseManager::import_shared(QString shared_database_file_path) {
     return false;
 }
 
+bool DatabaseManager::is_document_indexed(std::string document_checksum) {
+    std::wstringstream ss;
+    int count = -1;
+    ss << "SELECT COUNT(file_checksum) FROM indexed_documents WHERE file_checksum='" << esc(document_checksum) << "';";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
+    if (error_code == SQLITE_OK) {
+        return count > 0;
+    }
+    return false;
+}
+
 void DatabaseManager::index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices) {
     std::wstringstream ss;
 
@@ -3083,55 +3095,61 @@ void DatabaseManager::index_document(std::string document_checksum, const std::w
         return QString::fromStdWString(super_fast_search_index.substr(start_index, end_index - start_index)).toStdString();
         };
 
-    bool is_document_indexed = false;
-    int count = -1;
-    ss << "SELECT COUNT(file_checksum) FROM indexed_documents WHERE file_checksum='" << esc(document_checksum) << "';";
+    bool is_indexed = is_document_indexed(document_checksum);
+    //int count = -1;
+    //ss << "SELECT COUNT(file_checksum) FROM indexed_documents WHERE file_checksum='" << esc(document_checksum) << "';";
     char* error_message = nullptr;
-    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
-    if (error_code == SQLITE_OK) {
-        if (count == 0) {
-            std::string insert_page_index_query = "INSERT INTO full_text_search (file_checksum, page_number, content) VALUES (?, ?, ?);";
-            sqlite3_stmt* insert_page_index_stmt = nullptr;
-            int is_ok = sqlite3_prepare_v2(local_db, insert_page_index_query.c_str(), insert_page_index_query.size(), &insert_page_index_stmt, nullptr);
-            // begin the transaction
-            if (is_ok == SQLITE_OK) {
-                sqlite3_exec(local_db, "BEGIN TRANSACTION;", nullptr, nullptr, &error_message);
+    //int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
+    //if (error_code == SQLITE_OK) {
+    if (!is_indexed) {
+        std::string insert_page_index_query = "INSERT INTO full_text_search (file_checksum, page_number, content) VALUES (?, ?, ?);";
+        sqlite3_stmt* insert_page_index_stmt = nullptr;
+        int is_ok = sqlite3_prepare_v2(local_db, insert_page_index_query.c_str(), insert_page_index_query.size(), &insert_page_index_stmt, nullptr);
+        // begin the transaction
+        if (is_ok == SQLITE_OK) {
+            sqlite3_exec(local_db, "BEGIN TRANSACTION;", nullptr, nullptr, &error_message);
 
-                // insert into indexed documents
-                std::string insert_indexed_document_query = "INSERT INTO indexed_documents (file_checksum) VALUES ('"+ document_checksum + "');";
-                sqlite3_exec(local_db, insert_indexed_document_query.c_str(), nullptr, nullptr, &error_message);
+            // insert into indexed documents
+            std::string insert_indexed_document_query = "INSERT INTO indexed_documents (file_checksum) VALUES ('" + document_checksum + "');";
+            sqlite3_exec(local_db, insert_indexed_document_query.c_str(), nullptr, nullptr, &error_message);
 
-                for (int page = 0; page < page_indices.size(); page++) {
-                    std::string encoded_page_string = get_page_string(page);
-                    sqlite3_reset(insert_page_index_stmt);
+            for (int page = 0; page < page_indices.size(); page++) {
+                std::string encoded_page_string = get_page_string(page);
+                sqlite3_reset(insert_page_index_stmt);
 
-                    sqlite3_bind_text(insert_page_index_stmt, 1, document_checksum.c_str(), document_checksum.size(), SQLITE_STATIC);
-                    sqlite3_bind_int(insert_page_index_stmt, 2, page);
-                    sqlite3_bind_text(insert_page_index_stmt, 3, encoded_page_string.c_str(), encoded_page_string.size(), SQLITE_TRANSIENT);
+                sqlite3_bind_text(insert_page_index_stmt, 1, document_checksum.c_str(), document_checksum.size(), SQLITE_STATIC);
+                sqlite3_bind_int(insert_page_index_stmt, 2, page);
+                sqlite3_bind_text(insert_page_index_stmt, 3, encoded_page_string.c_str(), encoded_page_string.size(), SQLITE_TRANSIENT);
 
 
-                    sqlite3_step(insert_page_index_stmt);
-                }
-                sqlite3_exec(local_db, "END TRANSACTION;", nullptr, nullptr, &error_message);
-
-                sqlite3_finalize(insert_page_index_stmt);
+                sqlite3_step(insert_page_index_stmt);
             }
-            else {
-                qDebug() << "Failed to prepare statement: " << sqlite3_errmsg(local_db);
-            }
-             
+            sqlite3_exec(local_db, "END TRANSACTION;", nullptr, nullptr, &error_message);
 
+            sqlite3_finalize(insert_page_index_stmt);
         }
+        else {
+            qDebug() << "Failed to prepare statement: " << sqlite3_errmsg(local_db);
+        }
+
+
     }
-    else {
-    }
+    //}
+    //else {
+    //}
 
 
 }
 
-std::vector<FulltextSearchResult> DatabaseManager::perform_fulltext_search(const std::wstring& query) {
+std::vector<FulltextSearchResult> DatabaseManager::perform_fulltext_search(const std::wstring& query, std::wstring file_checksum) {
     std::wstringstream ss;
-    ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' ORDER BY rank LIMIT 10;";
+    // file_checksum
+    if (file_checksum.size() == 0) {
+        ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' ORDER BY rank LIMIT 10;";
+    }
+    else {
+        ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' AND file_checksum='" << file_checksum << "' ORDER BY rank LIMIT 10;";
+    }
     std::vector<FulltextSearchResult> results;
 
     char* error_message = nullptr;
