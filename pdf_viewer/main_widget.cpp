@@ -10943,7 +10943,7 @@ QString MainWidget::get_config_documentation_with_title(QString config, QString 
             QString current_value_string = QString::fromStdWString(
                 config.toStdWString() + L" " + config_manager->get_config_value_string(config.toStdWString())
                 );
-            QString res = doc_string + "\n\n" + "#### current value:\n\n`" + current_value_string + "`\n\n";
+            QString res = doc_string + "\n\n" + "<hr/>\n\n#### current value:\n\n`" + current_value_string + "`\n\n";
             res += "[open config file in text editor](changeconfig-" + config + ")\n\n";
             res += "[temporarily change in sioyek](setconfig-" + config + ")\n\n";
             res += "[permanently change in sioyek](setsaveconfig-" + config + ")\n\n";
