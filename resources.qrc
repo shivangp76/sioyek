@@ -196,5 +196,11 @@
         <file>microtex_resources/greek/mappings_greek.xml</file>
         <file>microtex_resources/greek/symbols_greek.xml</file>
 
+        <file>python_api/pyproject.toml</file>
+        <file>python_api/LICENSE.txt</file>
+        <file>python_api/README.md</file>
+        <file>python_api/src/sioyek/sioyek.py</file>
+        <file>python_api/src/sioyek/__init__.py</file>
+
     </qresource>
 </RCC>

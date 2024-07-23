@@ -134,6 +134,7 @@ Path sioyek_json_data_path(L"");
 Path shader_path(L"");
 Path auto_config_path(L"");
 Path downloaded_papers_path(L"");
+Path python_api_base_path(L"");
 Path cached_tts_path(L"");
 ScratchPad global_scratchpad;
 
@@ -232,6 +233,7 @@ void configure_paths_android() {
     android_config_path = standard_data_path.slash(L"saved.config");
     tutorial_path = Path(L":/tutorial.pdf");
     downloaded_papers_path = standard_data_path.slash(L"downloads");
+    python_api_base_path = standard_data_path.slash(L"python_api");
     cached_tts_path = standard_data_path.slash(L"tts");
 }
 #endif
@@ -260,6 +262,7 @@ void configure_paths_ios() {
     android_config_path = standard_data_path.slash(L"saved.config");
     tutorial_path = Path(L":/tutorial.pdf");
     downloaded_papers_path = standard_data_path.slash(L"downloads");
+    python_api_base_path = standard_data_path.slash(L"python_api");
     cached_tts_path = standard_data_path.slash(L"tts");
 }
 #endif
@@ -393,6 +396,7 @@ void configure_paths() {
     sioyek_access_token_path = standard_data_path.slash(L"access_token.sioyek");
     // user_config_paths.insert(user_config_paths.begin(), auto_config_path);
     downloaded_papers_path = standard_data_path.slash(L"downloads");
+    python_api_base_path = standard_data_path.slash(L"python_api");
     cached_tts_path = standard_data_path.slash(L"tts");
 #endif
 

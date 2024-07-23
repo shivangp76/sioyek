@@ -11,7 +11,6 @@
 // why does BookState have a uuid?
 // make page range in search command 1-indexed
 // make the action of download and clipboard paper configurable
-// api should handle commands with multiple arguments more cleanly (f(x1, x2) instead of f([x1, x2]))
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -268,6 +267,7 @@ extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 extern std::wstring DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern int NUM_PAGE_COLUMNS;
+extern Path python_api_base_path;
 
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
@@ -7636,6 +7636,7 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
+    qDebug() << python_api_base_path.get_path();
 }
 
 void MainWidget::show_command_menu() {
@@ -9888,6 +9889,12 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
     return res;
 }
 
+bool remove_file(QString path) {
+    QFile file(path);
+    file.setPermissions(QFile::WriteOwner | QFile::ReadOwner | QFile::ExeOwner | QFile::WriteUser | QFile::ReadUser | QFile::ExeUser | QFile::WriteGroup | QFile::ReadGroup | QFile::ExeGroup | QFile::WriteOther | QFile::ReadOther | QFile::ExeOther);
+    return file.remove();
+}
+
 void MainWidget::export_python_api() {
 #ifndef SIOYEK_MOBILE
     QString res;
@@ -9908,9 +9915,9 @@ void MainWidget::export_python_api() {
             res += INDENT + "def " + command_name_ + "(self";
             auto requirement = command->next_requirement(this);
             if (requirement) {
-                res += ", arg, focus=False, wait=True, window_id=None):\n";
+                res += ", *args, focus=False, wait=True, window_id=None):\n";
                 res += INDENT + INDENT;
-                res += "return self.run_command(\"" + command_name + "\", text=arg, focus=focus, wait=wait, window_id=window_id)\n\n";
+                res += "return self.run_command(\"" + command_name + "\", text=args, focus=focus, wait=wait, window_id=window_id)\n\n";
             }
             else {
                 res += ", focus=False, wait=True, window_id=None):\n";
@@ -9920,24 +9927,66 @@ void MainWidget::export_python_api() {
         }
 
     }
+    // ensure python_api_base_path/src/sioyek folder structure exists using Qt
+    QString sioyek_python_lib_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").get_path());
+    QDir dir(sioyek_python_lib_path);
+    bool dir_exists = false;
 
-
-    char* sioyek_python_base_path = std::getenv("SIOYEK_LIB_PYTHON_BASE_PATH");
-    char* sioyek_python_path = std::getenv("SIOYEK_LIB_PYTHON_PATH");
-    char* python_interpreter_path = std::getenv("SIOYEK_PYTHON_INTERPRETER_PATH");
-    if ((sioyek_python_base_path == nullptr) || (sioyek_python_path == nullptr) || (python_interpreter_path == nullptr)){
-        show_error_message(L"You should set SIOYEK_LIB_PYTHON_BASE_PATH, SIOYEK_LIB_PYTHON_PATH and SIOYEK_PYTHON_INTERPRETER_PATH environment variables for export to work");
-        return;
+    if (!dir.exists()) {
+        dir_exists = dir.mkpath(".");
     }
-    QFile output(sioyek_python_base_path);
-
-    if (output.open(QIODevice::WriteOnly)) {
-        output.write(res.toUtf8());
+    else {
+        dir_exists = true;
     }
-    output.close();
 
-    std::string command = std::string(python_interpreter_path) + " -m pip install " + std::string(sioyek_python_path);
-    std::system(command.c_str());
+    if (dir_exists) {
+        // copy qrc:/python_api/LICENSE.txt and qrc:/python_api/pyproject.toml to python_api_base_path
+        QString license_path = QString::fromStdWString(python_api_base_path.slash(L"LICENSE.txt").get_path());
+        remove_file(license_path);
+        QFile::copy(":/python_api/LICENSE.txt", license_path);
+
+        QString readme_path = QString::fromStdWString(python_api_base_path.slash(L"README.md").get_path());
+        remove_file(readme_path);
+        QFile::copy(":/python_api/README.md", readme_path);
+
+        QString pyproject_path = QString::fromStdWString(python_api_base_path.slash(L"pyproject.toml").get_path());
+        remove_file(pyproject_path);
+        QFile::copy(":/python_api/pyproject.toml", pyproject_path);
+
+        QString sioyekpy = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"sioyek.py").get_path());
+        remove_file(sioyekpy);
+        QFile::copy(":/python_api/src/sioyek/sioyek.py", sioyekpy);
+
+        //QString sioyekpy2 = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"sioyek2.py").get_path());
+        //QFile::remove(sioyekpy2);
+        //QFile::copy(":/python_api/src/sioyek/sioyek.py", sioyekpy2);
+
+        QString init_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"__init__.py").get_path());
+        remove_file(init_path);
+        QFile::copy(":/python_api/src/sioyek/__init__.py", init_path);
+
+
+        char* python_interpreter_path = std::getenv("SIOYEK_PYTHON_INTERPRETER_PATH");
+        if (python_interpreter_path == nullptr) {
+            show_error_message(L"You should set SIOYEK_PYTHON_INTERPRETER_PATH environment variables for export to work");
+            return;
+        }
+        QString base_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"base.py").get_path());
+
+        QFile output(base_path);
+
+        if (output.open(QIODevice::WriteOnly)) {
+            output.write(res.toUtf8());
+        }
+        output.close();
+
+
+        //QDesktopServices::openUrl(QString::fromStdWString(python_api_base_path.get_path()));
+        std::string command = std::string(python_interpreter_path) + " -m pip install " + python_api_base_path.get_path_utf8();
+        std::system(command.c_str());
+    }
+
+
 #endif
 }
 
