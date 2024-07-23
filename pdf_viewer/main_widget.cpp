@@ -8,8 +8,6 @@
 // continue high quality tts on ios and android when the app is minimized
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
-// why does BookState have a uuid?
-// make page range in search command 1-indexed
 // make the action of download and clipboard paper configurable
 
 #include "platform/qt/graphic_qt.h"
@@ -5861,26 +5859,25 @@ void MainWidget::handle_goto_bookmark_global() {
     if (TOUCH_MODE) {
         std::vector<std::wstring> descs;
         std::vector<std::wstring> file_names_wstring;
-        std::vector<BookState> book_states;
+        std::vector<std::pair<BookState, std::string>> book_states;
         for (int i = 0; i < bookmarks.size(); i++) {
             descs.push_back(bookmarks[i].description);
             file_names_wstring.push_back(file_names[i].toStdWString());
             BookState book_state;
             book_state.document_path = file_checksums[i].toStdWString();
             book_state.offset_y = bookmarks[i].get_y_offset();
-            book_state.uuid = bookmarks[i].uuid;
-            book_states.push_back(book_state);
+            book_states.push_back(std::make_pair(book_state, bookmarks[i].uuid));
         }
 
-        set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
-            [&, handle_select_fn](BookState* book_state) {
-                QString path = QString::fromStdWString(book_state->document_path);
+        set_filtered_select_menu<std::pair<BookState, std::string>>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
+            [&, handle_select_fn](std::pair<BookState, std::string>* book_state) {
+                QString path = QString::fromStdWString(book_state->first.document_path);
 
-                handle_select_fn(path, book_state->offset_y);
+                handle_select_fn(path, book_state->first.offset_y);
 
             },
-            [&, handle_delete_fn](BookState* book_state) {
-                handle_delete_fn(book_state->uuid);
+            [&, handle_delete_fn](std::pair<BookState, std::string>* book_state) {
+                handle_delete_fn(book_state->second);
             }
         );
         show_current_widget();

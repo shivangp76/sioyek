@@ -82,7 +82,6 @@ struct OpenedBookInfo {
 struct BookState {
     std::wstring document_path;
     float offset_y;
-    std::string uuid;
 };
 
 struct RulerLineIndexInfo {
