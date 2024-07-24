@@ -238,21 +238,30 @@ bool BookMark::is_question() const {
     return description.size() >= 2 && description.substr(0, 2) == L"? ";
 }
 
-QString BookMark::get_question_markdown() const{
-    QString res = QString::fromStdWString(description);
-    res = res.mid(2); // skip the "? "
-    int first_newline_index = res.indexOf("\n");
-    if (first_newline_index == -1) {
-        res = res.insert(0, "<i><b>");
-        res = res.insert(res.size(), "</b></i>");
-    }
-    else {
-        // make the question text bold
-        res = res.insert(first_newline_index, "</b></i>");
-        res = res.insert(0, "<i><b>");
-    }
+bool BookMark::is_summary() const {
+    return QString::fromStdWString(description).startsWith("#summarize");
+}
 
-    return res;
+QString BookMark::get_question_or_summary_markdown() const{
+    QString res = QString::fromStdWString(description);
+    if (res.startsWith("#summarize")) { // summary
+        return res.mid(10);
+    }
+    else { // question
+        res = res.mid(2); // skip the "? "
+        int first_newline_index = res.indexOf("\n");
+        if (first_newline_index == -1) {
+            res = res.insert(0, "<i><b>");
+            res = res.insert(res.size(), "</b></i>");
+        }
+        else {
+            // make the question text bold
+            res = res.insert(first_newline_index, "</b></i>");
+            res = res.insert(0, "<i><b>");
+        }
+
+        return res;
+    }
 }
 
 QJsonObject Highlight::to_json(std::string doc_checksum) const

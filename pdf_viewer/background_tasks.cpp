@@ -131,11 +131,11 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
     }
     else {
-        if (bookmark.is_question()) {
+        if (bookmark.is_question() || bookmark.is_summary()) {
             QColor question_text_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_TEXT_COLOR);
             painter->setPen(question_text_color);
             //painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
-            draw_markdown_text(*painter, bookmark.get_question_markdown(), window_qrect, font);
+            draw_markdown_text(*painter, bookmark.get_question_or_summary_markdown(), window_qrect, font);
         }
         else {
             int flags = Qt::TextWordWrap;

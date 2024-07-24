@@ -705,6 +705,8 @@ public:
     void handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already=false);
     std::wstring handle_freetext_bookmark_perform(const std::wstring& text, int pending_index);
     void handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid);
+    void add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk);
+    void handle_bookmark_summarize_query(std::wstring bookmark_uuid);
     void read_current_line();
     void download_paper_under_cursor(bool use_last_touch_pos = false);
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);

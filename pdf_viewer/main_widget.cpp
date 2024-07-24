@@ -9,6 +9,7 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
+// when automatically expanding bookamrk when chunks are being filled, set a maximum height for the bookmark so we don't run out of memory in case of a very long response (possibly allow scrolling the bookmark)
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -7636,7 +7637,11 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << python_api_base_path.get_path();
+    sioyek_network_manager->summarize(this, doc()->get_super_fast_index(), [](QString chunk) {
+        qDebug() << chunk;
+        },
+        []() {
+        });
 }
 
 void MainWidget::show_command_menu() {
@@ -7682,26 +7687,45 @@ void MainWidget::show_command_menu() {
     show_current_widget();
 }
 
+void MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk) {
+    int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+    if (bookmark_index >= 0) {
+        BookMark& bm = document->get_bookmarks()[bookmark_index];
+        bm.description += chunk.toStdWString();
+        // if the new description doesn't fit, increase the height of the bookmark
+        QSizeF new_size = get_bookmark_text_size(bm);
+        QRect current_window_rect = bm.get_rectangle().to_window(dv()).to_qrect();
+        if (current_window_rect.height() < new_size.height()) {
+            float diff = new_size.height() - current_window_rect.height();
+            float absolute_diff = diff / dv()->get_zoom_level();
+            bm.end_y += absolute_diff;
+        }
+        invalidate_render();
+    }
+}
+
+void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
+    const std::wstring& index = doc()->get_super_fast_index();
+    std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
+    int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
+    doc()->get_bookmarks()[ind].description += L"\n\n";
+    sioyek_network_manager->summarize(this,  index, [this, bookmark_uuid, document=doc()](QString chunk) {
+        add_chunk_to_bookmark(document, bookmark_uuid, chunk);
+        },
+        [this, bookmark_uuid, document=doc()]() {
+            int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+            BookMark& bm = document->get_bookmarks()[bookmark_index];
+            document->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
+        });
+}
+
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
     const std::wstring& index = doc()->get_super_fast_index();
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
     int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
     doc()->get_bookmarks()[ind].description += L"\n\n";
     sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, [this, bookmark_uuid, document=doc()](QString chunk) {
-        int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
-        if (bookmark_index >= 0) {
-            BookMark& bm = document->get_bookmarks()[bookmark_index];
-            bm.description += chunk.toStdWString();
-            // if the new description doesn't fit, increase the height of the bookmark
-            QSizeF new_size = get_bookmark_text_size(bm);
-            QRect current_window_rect = bm.get_rectangle().to_window(dv()).to_qrect();
-            if (current_window_rect.height() < new_size.height()) {
-                float diff = new_size.height() - current_window_rect.height();
-                float absolute_diff = diff / dv()->get_zoom_level();
-                bm.end_y += absolute_diff;
-            }
-            invalidate_render();
-        }
+        add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         },
         [this, bookmark_uuid, document=doc()]() {
             int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
@@ -7722,7 +7746,7 @@ QSizeF MainWidget::get_bookmark_text_size(const BookMark& bookmark) {
     auto formats = td.allFormats();
     QTextCharFormat old_format = formats[0].toCharFormat();
 
-    td.setMarkdown(bookmark.get_question_markdown(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
+    td.setMarkdown(bookmark.get_question_or_summary_markdown(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
 
     QRect window_qrect = bookmark.get_rectangle().to_window(dv()).to_qrect();
     td.setTextWidth(window_qrect.width());
@@ -7748,6 +7772,9 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
         set_selected_bookmark_index(-1);
         if (text.size() > 2 && text.substr(0, 2) == L"? ") {
             handle_bookmark_ask_query(text.substr(2, text.size()-2), result);
+        }
+        else if (QString::fromStdWString(text).startsWith("#summarize")) {
+            handle_bookmark_summarize_query(result);
         }
     }
     else {

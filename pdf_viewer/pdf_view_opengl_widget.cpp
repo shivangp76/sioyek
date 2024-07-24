@@ -1082,7 +1082,7 @@ void PdfViewOpenGLWidget::my_render() {
         }
 
         for (int i = 0; i < bookmarks.size(); i++) {
-            if (bookmarks[i].begin_y > -1) {
+            if (bookmarks[i].begin_y != -1) {
                 if (bookmarks[i].end_x == -1) {
 
                     NormalizedWindowPos bookmark_window_pos = dv()->absolute_to_window_pos(
@@ -1130,7 +1130,7 @@ void PdfViewOpenGLWidget::my_render() {
                         painter.restore();
                     }
 
-                    if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#markdown") || desc_qstring.startsWith("#latex"))) {
+                    if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#markdown") || desc_qstring.startsWith("#latex") || desc_qstring.startsWith("#summarize"))) {
 
                         QString box_text = desc_qstring.split(' ')[0];
                         std::optional<char> bm_type = bookmarks[i].get_type();
@@ -1148,7 +1148,7 @@ void PdfViewOpenGLWidget::my_render() {
                     }
                     else {
                         static int count = 0;
-                        if (bookmarks[i].is_question()) {
+                        if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
 
                             QColor question_background_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_BACKGROUND_COLOR);
                             QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
