@@ -11084,67 +11084,60 @@ QString MainWidget::get_command_documentation(QString command_name, QString* out
 }
 
 void MainWidget::print_undocumented_configs(){
-    //load_command_docs();
-    //std::vector<Config> all_configs = config_manager->get_configs();
-    //std::vector<QString> all_config_names;
-    //std::set<QString> already_added;
-    //auto documented_config_names = config_doc_json_document.object().keys();
+    load_sioyek_documentation();
+    std::vector<Config> all_configs = config_manager->get_configs();
+    std::vector<QRegularExpression> regex_config_titles; // some documentation config titles are regexes e.g.: "highlight_type_[a-z]"
 
-    //auto translate_config_name = [](QString config_name){
-    //    if (config_name[config_name.size()-2] == '_'){
-    //        config_name[config_name.size()-1] = '*';
-    //        return config_name;
-    //    }
-    //    return config_name;
-    //};
 
-    //for (auto config : all_configs){
-    //    all_config_names.push_back(QString::fromStdWString(config.name));
-    //}
+    for (auto key : sioyek_documentation_json_document["config_name_to_title_map"].toObject().keys()) {
+        if ((key.indexOf("[") >= 0)){
+            regex_config_titles.push_back(QRegularExpression(key));
+        }
+        else if (key.indexOf("*") >= 0) {
+            key = key.replace("*", "[a-z_]*");
+            regex_config_titles.push_back(QRegularExpression(key));
+        }
+    }
 
-    //int index = 0;
-    //for (auto config : all_config_names){
-    //    bool found = false;
-    //    for (auto doc_config : documented_config_names){
-    //        if (config == doc_config){
-    //            found = true;
-    //            break;
-    //        }
-    //    }
-    //    if (!found){
-    //        QString translated_config_name = translate_config_name(config);
-    //        if (already_added.find(translated_config_name) == already_added.end()){
-    //            qDebug() << index << ": " << translated_config_name;
-    //            already_added.insert(translated_config_name);
-    //            index++;
-    //        }
-    //    }
-    //}
+    for (auto& config : all_configs) {
+        QString config_name = QString::fromStdWString(config.name);
+        if (sioyek_documentation_json_document["config_name_to_title_map"][config_name].toString().size() == 0) {
+            // don't print configs like highlight_type_a to highlight_type_z
+            if (config_name.size() > 2 && config_name[config_name.size() - 2] == '_') {
+                continue;
+            }
+            if ((config_name.indexOf("visual_mark") >= 0) || (config_name.indexOf("vertical_line") >= 0)) {
+                // old names replaced with ruler_ commands
+                continue;
+            }
+
+            bool found_regex = false;
+            for (auto regex : regex_config_titles) {
+                if (regex.match(config_name).hasMatch()) {
+                    found_regex = true;
+                }
+            }
+            if (found_regex) {
+                continue;
+            }
+            qDebug() << config_name;
+
+        }
+    }
+
 }
 
 void MainWidget::print_undocumented_commands(){
-    //load_command_docs();
-    //auto is_unimportant_command = [](QString command_name){
-    //    return command_name[0] == '_' || command_name.startsWith("setconfig_") || command_name.startsWith("toggleconfig_");
-    //};
+    load_sioyek_documentation();
 
-    //auto keys = commands_doc_json_document.object().keys();
-    //auto all_commands = command_manager->get_all_command_names();
-    //int index = 0;
-    //for (auto command : all_commands){
-    //    bool found = false;
-    //    if (is_unimportant_command(command)) continue;
-    //    for (auto documented_command : keys){
-    //        if (command == documented_command){
-    //            found = true;
-    //            break;
-    //        }
-    //    }
-    //    if (!found){
-    //        qDebug() << index << ": " << command;
-    //        index++;
-    //    }
-    //}
+    auto all_commands = command_manager->get_all_command_names();
+    for (auto& command : all_commands) {
+        if (sioyek_documentation_json_document["command_name_to_title_map"][command].toString().size() == 0) {
+            if (command.indexOf("config_") == -1) {
+                qDebug() << command;
+            }
+        }
+    }
 }
 
 void MainWidget::print_non_default_configs(){
