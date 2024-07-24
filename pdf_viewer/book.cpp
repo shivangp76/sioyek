@@ -211,7 +211,7 @@ BookMark BookMark::from_json(const QJsonObject& json_object)
 }
 
 bool BookMark::is_freetext() const {
-    return (begin_y > -1) && (end_y > -1);
+    return (begin_y != -1) && (end_y != -1);
 }
 
 std::optional<char> BookMark::get_type() const{
