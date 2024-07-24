@@ -22,7 +22,7 @@ private:
     std::optional<QDateTime> last_server_sync_time;
     std::optional<QJsonObject> sioyek_json_data = {};
 public:
-    QNetworkAccessManager network_manager;
+    QNetworkAccessManager* network_manager_ = nullptr;
     std::string ACCESS_TOKEN;
     const std::wstring SIOYEK_HOST = L"http://192.168.1.23:8081/";
     const std::wstring SIOYEK_TOKEN_URL = SIOYEK_HOST + L"token";
@@ -122,6 +122,7 @@ public:
     void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
     void download_new_annotations(QObject* parent, QDateTime last_update_time, bool force=false);
     void search_all_documents(QObject* parentm, QString query, std::function<void(std::vector<QString>)> on_done);
+    QNetworkAccessManager* get_network_manager();
 };
 
 void block_for_send(QNetworkReply* reply);

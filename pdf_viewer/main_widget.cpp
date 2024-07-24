@@ -1512,8 +1512,11 @@ QString MainWidget::get_login_status_string() {
         }
     }
     else {
-        if (sioyek_network_manager->status == ServerStatus::NotLoggedIn) {
+        if (sioyek_network_manager->network_manager_ == nullptr) {
             server_status_string = "OFFLINE";
+        }
+        else if (sioyek_network_manager->status == ServerStatus::NotLoggedIn) {
+            server_status_string = "NOT LOGGED IN";
         }
         else if (sioyek_network_manager->status == ServerStatus::ServerOffline) {
             server_status_string = "SERVER OFFLINE";
@@ -8340,7 +8343,11 @@ void MainWidget::show_download_paper_menu(
 
 
 bool MainWidget::is_network_manager_running(bool* is_downloading) {
-    auto children = sioyek_network_manager->network_manager.findChildren<QNetworkReply*>();
+    if (sioyek_network_manager->network_manager_ == nullptr) {
+        return false;
+    }
+
+    auto children = sioyek_network_manager->network_manager_->findChildren<QNetworkReply*>();
     bool running = false;
     for (int i = 0; i < children.size(); i++) {
         if (children.at(i)->isRunning()) {
@@ -9463,7 +9470,11 @@ void MainWidget::cleanup_expired_pending_portals() {
     std::vector<int> indices_to_delete;
 
     if ((pending_download_portals.size() > 0) && (current_widget_stack.size() == 0)) {
-        auto children_ = findChildren<QNetworkReply*>() + sioyek_network_manager->network_manager.findChildren<QNetworkReply*>();
+        if (sioyek_network_manager->network_manager_ == nullptr) {
+            return;
+        }
+
+        auto children_ = findChildren<QNetworkReply*>() + sioyek_network_manager->network_manager_->findChildren<QNetworkReply*>();
 
         for (int i = 0; i < pending_download_portals.size(); i++) {
             auto paper_name = pending_download_portals[i].paper_name;
@@ -10888,10 +10899,10 @@ QByteArray MainWidget::perform_network_request(QString url, QString method, QStr
             }
             QNetworkReply* reply = nullptr;
             if (method == "get") {
-                reply = sioyek_network_manager->network_manager.get(req);
+                reply = sioyek_network_manager->get_network_manager()->get(req);
             }
             else if (method == "post") {
-                reply = sioyek_network_manager->network_manager.post(req, json_data.toUtf8());
+                reply = sioyek_network_manager->get_network_manager()->post(req, json_data.toUtf8());
             }
 
             if (reply) {

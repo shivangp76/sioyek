@@ -26,12 +26,20 @@ extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
 extern std::wstring EXTRACT_TABLE_PROMPT;
 extern Path sioyek_json_data_path;
 
+QNetworkAccessManager* SioyekNetworkManager::get_network_manager() {
+    if (network_manager_) {
+        return network_manager_;
+    }
+    network_manager_ = new QNetworkAccessManager();
+    QObject::connect(network_manager_, &QNetworkAccessManager::finished, [](QNetworkReply* reply) {
+        reply->deleteLater();
+        });
+    return network_manager_;
+}
+
 SioyekNetworkManager::SioyekNetworkManager(DatabaseManager* db_manager_, BackgroundTaskManager* task_manager, DocumentManager* doc_manager, QObject* parent) :
    db_manager(db_manager_), background_task_manager(task_manager) , document_manager(doc_manager) {
     last_document_location_upload_time = QDateTime::currentDateTime();
-    QObject::connect(&network_manager, &QNetworkAccessManager::finished, [](QNetworkReply* reply) {
-        reply->deleteLater();
-        });
 }
 
 void SioyekNetworkManager::login(std::wstring username, std::wstring password) {
@@ -41,7 +49,7 @@ void SioyekNetworkManager::login(std::wstring username, std::wstring password) {
     QUrlQuery params;
     params.addQueryItem("username", QString::fromStdWString(username));
     params.addQueryItem("password", QString::fromStdWString(password));
-    QNetworkReply* reply = network_manager.post(req, params.query().toUtf8());
+    QNetworkReply* reply = get_network_manager()->post(req, params.query().toUtf8());
 
     reply->setProperty("sioyek_handled", true);
 
@@ -126,7 +134,7 @@ void SioyekNetworkManager::load_access_token() {
             QNetworkRequest req;
             authorize_request(&req);
             req.setUrl(url);
-            auto reply = network_manager.get(req);
+            auto reply = get_network_manager()->get(req);
             reply->setProperty("sioyek_handled", true);
             //
             status = ServerStatus::LoggingIn;
@@ -161,7 +169,7 @@ void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash
     QNetworkRequest req;
     authorize_request(&req);
     req.setUrl(url);
-    QNetworkReply* reply = network_manager.get(req);
+    QNetworkReply* reply = get_network_manager()->get(req);
     reply->setProperty("sioyek_handled", true);
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, hash, fn=std::move(fn)]() {
@@ -219,7 +227,7 @@ QNetworkReply* SioyekNetworkManager::get_user_file_hash_set_reply() {
     QNetworkRequest req;
     authorize_request(&req);
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_USER_FILE_HASH_SET_URL)));
-    QNetworkReply* reply = network_manager.get(req);
+    QNetworkReply* reply = get_network_manager()->get(req);
     reply->setProperty("sioyek_handled", true);
     return reply;
 }
@@ -259,7 +267,7 @@ void SioyekNetworkManager::upload_file(QObject * parent, QString path, QString h
         parts->setBoundary(create_random_string().toUtf8());
         req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
 
-        QNetworkReply* reply = network_manager.post(req, parts);
+        QNetworkReply* reply = get_network_manager()->post(req, parts);
         reply->setProperty("sioyek_handled", true);
         reply->setParent(parent);
 
@@ -324,7 +332,7 @@ void SioyekNetworkManager::update_checksum(QObject* parent, QString path, QStrin
         parts->setBoundary(create_random_string().toUtf8());
         req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
 
-        QNetworkReply* reply = network_manager.post(req, parts);
+        QNetworkReply* reply = get_network_manager()->post(req, parts);
         reply->setProperty("sioyek_handled", true);
         reply->setParent(parent);
 
@@ -405,7 +413,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, c
     req.setRawHeader("User-Agent", user_agent_string.c_str());
     req.setUrl(url);
     authorize_request(&req);
-    auto reply = network_manager.get(req);
+    auto reply = get_network_manager()->get(req);
     reply->setProperty("sioyek_paper_name", QString::fromStdWString(name));
     reply->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
     reply->setProperty("sioyek_downloading", true);
@@ -566,7 +574,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_url(std::wstring paper_
         req.setRawHeader("User-Agent", user_agent_string.c_str());
     }
 
-    auto res = network_manager.get(req);
+    auto res = get_network_manager()->get(req);
     res->setProperty("sioyek_archive_url", QString::fromStdWString(paper_url_));
     res->setProperty("sioyek_finish_action", get_paper_download_finish_action_string(action));
     //qDebug() <<  "res:" << res;
@@ -604,7 +612,7 @@ QNetworkReply* SioyekNetworkManager::sync_file_location(QString hash, QString do
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
 
     reply->setProperty("sioyek_handled", true);
 
@@ -625,7 +633,7 @@ QNetworkReply* SioyekNetworkManager::get_opened_book_data_from_checksum(QObject*
     QNetworkRequest req;
     req.setUrl(url);
     authorize_request(&req);
-    auto reply = network_manager.get(req);
+    auto reply = get_network_manager()->get(req);
 
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
         if (handle_network_reply_if_error(reply, false)) {
@@ -672,7 +680,7 @@ void SioyekNetworkManager::download_opened_files_info(QObject* parent, std::func
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.get(req);
+    QNetworkReply* reply = get_network_manager()->get(req);
 
     if (parent) reply->setParent(parent);
 
@@ -761,7 +769,7 @@ void SioyekNetworkManager::upload_annot(
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_success=std::move(on_success), on_fail=std::move(on_fail)]() {
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status_code == 200) {
@@ -804,7 +812,7 @@ void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pi
 
     multipart->append(image_part);
 
-    QNetworkReply* reply = network_manager.post(req, multipart);
+    QNetworkReply* reply = get_network_manager()->post(req, multipart);
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "extracting data from image");
 
@@ -835,7 +843,7 @@ void SioyekNetworkManager::delete_annot(QObject* parent, const QString& file_che
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, on_fail=std::move(on_fail), on_success=std::move(on_success)]() {
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -857,7 +865,7 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
     QNetworkRequest req;
     req.setUrl(url);
     authorize_request(&req);
-    auto reply = network_manager.get(req);
+    auto reply = get_network_manager()->get(req);
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
 
@@ -969,7 +977,7 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent,
 
         authorize_request(&req);
 
-        QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+        QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
         QObject::connect(reply, &QNetworkReply::finished, [
                 this,
                 checksum,
@@ -1030,7 +1038,7 @@ void SioyekNetworkManager::delete_file_with_checksum(const QString& checksum) {
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
 }
 
 void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const std::string& document_checksum, int page, float rate, std::function<void(QString, std::vector<float>)> on_done) {
@@ -1075,7 +1083,7 @@ void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const 
         QJsonDocument json_doc(obj);
         authorize_request(&req);
 
-        QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+        QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
         reply->setParent(parent);
         reply->setProperty("sioyek_network_status_string", "Creating audio");
         QObject::connect(reply, &QNetworkReply::finished, [reply, file_path, timestamps_file_path, on_done = std::move(on_done)]() {
@@ -1133,7 +1141,7 @@ void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done)
     QJsonDocument json_doc(obj);
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "debug netowkr erquest");
     QObject::connect(reply, &QNetworkReply::finished, [on_done=std::move(on_done)]() {
@@ -1158,7 +1166,7 @@ void SioyekNetworkManager::semantic_search_extractive(QObject* parent, const QSt
     QJsonDocument json_doc(obj);
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "performing semantic search");
     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
@@ -1189,7 +1197,7 @@ void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query
     QJsonDocument json_doc(obj);
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "performing semantic search");
     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
@@ -1219,7 +1227,7 @@ void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, c
     QJsonDocument json_doc(obj);
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "performing semantic search");
     QObject::connect(reply, &QNetworkReply::downloadProgress, [reply, on_chunk=std::move(on_chunk)]() {
@@ -1249,7 +1257,7 @@ void SioyekNetworkManager::upload_document_index(QObject* parent, const std::wst
     QJsonDocument json_doc(obj);
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "creating semantic index");
     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
@@ -1276,7 +1284,7 @@ void SioyekNetworkManager::delete_file_from_server(QObject* parent, std::string 
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, checksum, on_done=std::move(on_done)]() {
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -1324,7 +1332,7 @@ QNetworkReply* SioyekNetworkManager::upload_drawings(QObject* parent, std::strin
         parts->setBoundary(create_random_string().toUtf8());
         req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
 
-        QNetworkReply* reply = network_manager.post(req, parts);
+        QNetworkReply* reply = get_network_manager()->post(req, parts);
         reply->setProperty("sioyek_handled", true);
         reply->setParent(parent);
 
@@ -1363,7 +1371,7 @@ void SioyekNetworkManager::get_last_drawing_modification_time(QObject* parent, s
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, pdf_file_checksum, on_done=std::move(on_done)]() {
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -1396,7 +1404,7 @@ void SioyekNetworkManager::download_drawings(QObject* parent, std::string checks
 
     authorize_request(&req);
 
-    QNetworkReply* reply = network_manager.post(req, json_doc.toJson());
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [reply, target_path, on_done=std::move(on_done)]() {
         int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -1448,7 +1456,7 @@ void SioyekNetworkManager::get_annotations_after(QObject* parent, QDateTime last
 
     req.setUrl(url);
     authorize_request(&req);
-    auto reply = network_manager.post(req, json_doc.toJson());
+    auto reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
 
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
@@ -1724,7 +1732,7 @@ void SioyekNetworkManager::search_all_documents(QObject* parent, QString q, std:
     QNetworkRequest req;
     authorize_request(&req);
     req.setUrl(url);
-    QNetworkReply* reply = network_manager.get(req);
+    QNetworkReply* reply = get_network_manager()->get(req);
     reply->setProperty("sioyek_handled", true);
     reply->setParent(parent);
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, q, on_done = std::move(on_done)]() {
