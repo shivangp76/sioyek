@@ -1149,8 +1149,7 @@ void PdfViewOpenGLWidget::my_render() {
                     else {
                         static int count = 0;
                         if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
-
-                            QColor question_background_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_BACKGROUND_COLOR);
+                            QColor question_background_color = qcc3(QUESTION_BOOKMARK_BACKGROUND_COLOR);
                             QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                             painter.fillRect(fill_rect, question_background_color);
 
