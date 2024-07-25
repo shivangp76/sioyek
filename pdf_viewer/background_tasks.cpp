@@ -33,7 +33,7 @@ void BackgroundBookmarkRenderer::initialize_latex() {
 
 }
 
-void BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, float scroll_amount, bool is_from_main_thread, const QFont& font) {
+float BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, float scroll_amount, bool is_from_main_thread, const QFont& font) {
     painter.save();
     QPoint top_left = QPoint(window_qrect.topLeft().x(), window_qrect.topLeft().y() - scroll_amount);
     QPoint clip_top_left = QPoint(window_qrect.topLeft().x(), window_qrect.topLeft().y());
@@ -62,6 +62,7 @@ void BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString t
     QSizeF size = td.documentLayout()->documentSize();
 
     painter.restore();
+    return size.height();
 }
 
 void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float scroll_amount, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread) {
@@ -82,7 +83,8 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
     if (desc_qstring.startsWith("#markdown")) {
 
-        draw_markdown_text(*painter, desc_qstring.mid(9).trimmed(), window_qrect, scroll_amount, is_from_main_thread, font);
+        float height = draw_markdown_text(*painter, desc_qstring.mid(9).trimmed(), window_qrect, scroll_amount, is_from_main_thread, font);
+        cached_bookmark_heights[bookmark.uuid] = height;
     }
     else if (desc_qstring.startsWith("#latex")) {
 
@@ -121,6 +123,7 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
             r->draw(g2, window_qrect.x(), window_qrect.y());
             painter->restore();
+            cached_bookmark_heights[bookmark.uuid] = r->getHeight();
 
             delete r;
         }
@@ -137,7 +140,8 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
             QColor question_text_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_TEXT_COLOR);
             painter->setPen(question_text_color);
             //painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
-            draw_markdown_text(*painter, bookmark.get_question_or_summary_markdown(), window_qrect, scroll_amount, is_from_main_thread, font);
+            float height = draw_markdown_text(*painter, bookmark.get_question_or_summary_markdown(), window_qrect, scroll_amount, is_from_main_thread, font);
+            cached_bookmark_heights[bookmark.uuid] = height;
         }
         else {
             int flags = Qt::TextWordWrap;
@@ -152,7 +156,10 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
             QRect r = QRect(window_qrect.left(), window_qrect.top() - scroll_amount, window_qrect.width(), window_qrect.height() + scroll_amount);
 
-            painter->drawText(r, flags, QString::fromStdWString(bookmark.description));
+            QRect bounding_rect;
+            painter->drawText(r, flags, QString::fromStdWString(bookmark.description), &bounding_rect);
+            cached_bookmark_heights[bookmark.uuid] = bounding_rect.height();
+
             painter->restore();
         }
     }
@@ -560,4 +567,12 @@ void BackgroundBookmarkRenderer::erase_request_with_id(int id) {
         rendered_bookmarks.erase(rendered_bookmarks.begin() + index);
     }
     rendered_bookmarks_mutex.unlock();
+}
+
+float BackgroundBookmarkRenderer::get_cached_bookmark_height(const std::string& uuid) {
+    auto it = cached_bookmark_heights.find(uuid);
+    if (it != cached_bookmark_heights.end()) {
+        return it->second;
+    }
+    return 0;
 }

@@ -945,6 +945,7 @@ int main(int argc, char* args[]) {
         &checksummer,
         &sioyek_network_manager,
         &background_task_manager,
+        &bookmark_renderer,
         &quit);
     main_widget->auto_login();
     sioyek_network_manager.handle_one_time_network_operations();

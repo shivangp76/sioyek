@@ -9,6 +9,7 @@
 #include <qobject.h>
 #include <qdatetime.h>
 #include <atomic>
+#include <unordered_map>
 
 #include "book.h"
 
@@ -54,6 +55,8 @@ private:
     std::mutex latex_lock;
     std::atomic<int> next_request_id = 0;
 
+    std::unordered_map<std::string, float> cached_bookmark_heights;
+
     bool are_bookmarks_the_same_for_render(const BookMark& bm1, const BookMark& bm2);
     std::vector<int> get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, float scroll_amount, ColorPalette palette, bool compare_zoom_level=true);
     bool does_request_exist(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, float scroll_amount, ColorPalette palette);
@@ -66,11 +69,12 @@ public:
     BackgroundBookmarkRenderer(BackgroundTaskManager* background_task_manager);
 
     std::pair<QPixmap*, bool> request_rendered_bookmark(const BookMark& bm, float zoom_level, float scroll_amount, float pixel_ratio, ColorPalette palette);
-    void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, float scroll_amount, bool is_from_main_thread, const QFont& font);
+    float draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, float scroll_amount, bool is_from_main_thread, const QFont& font);
     void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float scroll_amount, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread=false);
     void release_cache();
     std::optional<RenderedBookmark> get_request_with_id(int id);
     void erase_request_with_id(int id);
+    float get_cached_bookmark_height(const std::string& uuid);
 
 signals:
     void bookmark_rendered();

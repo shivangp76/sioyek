@@ -165,8 +165,9 @@ public:
     DocumentManager* document_manager = nullptr;
     CommandManager* command_manager = nullptr;
     ConfigManager* config_manager = nullptr;
-    SioyekNetworkManager* sioyek_network_manager;
-    BackgroundTaskManager* background_task_manager;
+    SioyekNetworkManager* sioyek_network_manager = nullptr;
+    BackgroundTaskManager* background_task_manager = nullptr;
+    BackgroundBookmarkRenderer* background_bookmark_renderer = nullptr;
     PdfRenderer* pdf_renderer = nullptr;
     InputHandler* input_handler = nullptr;
     CachedChecksummer* checksummer = nullptr;
@@ -545,6 +546,7 @@ public:
         CachedChecksummer* checksummer,
         SioyekNetworkManager* sioyek_network_manager,
         BackgroundTaskManager* task_manger,
+        BackgroundBookmarkRenderer* bookmark_renderer,
         bool* should_quit_ptr,
         QWidget* parent = nullptr
     );

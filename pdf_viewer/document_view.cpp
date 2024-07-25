@@ -3658,5 +3658,8 @@ float DocumentView::get_bookmark_scroll_amount(const std::string& uuid) {
 }
 
 void DocumentView::set_bookmark_scroll_amount(const std::string& uuid, float amount) {
+    if (amount < 0) {
+        amount = 0;
+    }
     bookmark_scroll_amounts[uuid] = amount;
 }

@@ -984,7 +984,20 @@ void MainWidget::closeEvent(QCloseEvent* close_event) {
     handle_close_event();
 }
 
-MainWidget::MainWidget(MainWidget* other) : MainWidget(other->mupdf_context, other->pdf_renderer, other->db_manager, other->document_manager, other->config_manager, other->command_manager, other->input_handler, other->checksummer, other->sioyek_network_manager, other->background_task_manager, other->should_quit) {
+MainWidget::MainWidget(MainWidget* other) :
+    MainWidget(
+        other->mupdf_context,
+        other->pdf_renderer,
+        other->db_manager,
+        other->document_manager,
+        other->config_manager,
+        other->command_manager,
+        other->input_handler,
+        other->checksummer,
+        other->sioyek_network_manager,
+        other->background_task_manager,
+        other->background_bookmark_renderer,
+        other->should_quit) {
 
 }
 
@@ -998,6 +1011,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     CachedChecksummer* checksummer,
     SioyekNetworkManager* sioyek_network_manager_,
     BackgroundTaskManager* task_manager,
+    BackgroundBookmarkRenderer* bookmark_renderer,
     bool* should_quit_ptr,
     QWidget* parent) :
 #ifdef SIOYEK_MOBILE
@@ -1015,6 +1029,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     sioyek_network_manager(sioyek_network_manager_),
     should_quit(should_quit_ptr),
     background_task_manager(task_manager),
+    background_bookmark_renderer(bookmark_renderer),
     command_manager(command_manager)
 {
     //main_widget->quickWindow()->setGraphicsApi(QSGRendererInterface::OpenGL);
@@ -6443,6 +6458,7 @@ MainWidget* MainWidget::handle_new_window() {
         checksummer,
         sioyek_network_manager,
         background_task_manager,
+        background_bookmark_renderer,
         should_quit);
     new_widget->open_document(main_document_view->get_state());
     new_widget->show();
@@ -13196,9 +13212,17 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 
 void MainWidget::scroll_bookmark_with_index(int bookmark_index, int amount) {
     if (bookmark_index >= 0) {
-        std::string uuid = doc()->get_bookmarks()[bookmark_index].uuid;
+        const BookMark& bookmark = doc()->get_bookmarks()[bookmark_index];
+        std::string uuid = bookmark.uuid;
         float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
-        dv()->set_bookmark_scroll_amount(uuid, dv()->get_bookmark_scroll_amount(uuid) + scroll_amount);
+        float current_scroll = dv()->get_bookmark_scroll_amount(uuid);
+        float new_scroll = current_scroll + scroll_amount;
+        float height = background_bookmark_renderer->get_cached_bookmark_height(uuid);
+
+        if (new_scroll > (height - bookmark.get_rectangle().height() * dv()->get_zoom_level())) {
+            new_scroll = height - bookmark.get_rectangle().height() * dv()->get_zoom_level();
+        }
+        dv()->set_bookmark_scroll_amount(uuid, new_scroll);
     }
 }
 
