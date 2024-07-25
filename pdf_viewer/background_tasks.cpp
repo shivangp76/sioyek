@@ -68,7 +68,8 @@ float BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString 
 void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float scroll_amount, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread) {
     QString desc_qstring = QString::fromStdWString(bookmark.description);
 
-    painter->setPen(convert_float3_to_qcolor(&bookmark.color[0]));
+    //painter->setPen(convert_float3_to_qcolor(&bookmark.color[0]));
+    painter->setPen(qconvert_color3(bookmark.color, palette));
 
     if (is_from_main_thread) {
         float bookmark_color[3];
@@ -137,7 +138,8 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
     }
     else {
         if (bookmark.is_question() || bookmark.is_summary()) {
-            QColor question_text_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_TEXT_COLOR);
+            //QColor question_text_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_TEXT_COLOR);
+            QColor question_text_color = qconvert_color3(QUESTION_BOOKMARK_TEXT_COLOR, palette);
             painter->setPen(question_text_color);
             //painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
             float height = draw_markdown_text(*painter, bookmark.get_question_or_summary_markdown(), window_qrect, scroll_amount, is_from_main_thread, font);
@@ -327,7 +329,11 @@ std::pair<QPixmap*, bool> BackgroundBookmarkRenderer::request_rendered_bookmark(
                         render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.scroll_amount, req.pixel_ratio, rendered_pixmap->rect(), req.color_palette);
                     }
 
-                    if (req.color_palette != ColorPalette::Normal) {
+                    bool is_latex = req.bookmark.is_latex();
+
+                    // we can't set the text and background color using microtex (?)
+                    // so here we convert the pixels directly
+                    if (is_latex && (req.color_palette != ColorPalette::Normal)) {
 
 
                         QImage image = rendered_pixmap->toImage();

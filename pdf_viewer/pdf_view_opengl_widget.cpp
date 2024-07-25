@@ -2220,9 +2220,7 @@ std::array<float, 4> PdfViewOpenGLWidget::cc4(const float* input_color) {
 }
 
 QColor PdfViewOpenGLWidget::qcc3(const float* input_color) {
-    std::array<float, 3> result;
-    get_color_for_current_mode(input_color, &result[0]);
-    return convert_float3_to_qcolor(&result[0]);
+    return qconvert_color3(input_color, document_view->color_mode);
 }
 
 QColor PdfViewOpenGLWidget::qcc4(const float* input_color) {

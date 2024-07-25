@@ -4763,3 +4763,8 @@ bool is_alpha_only(const std::wstring& str) {
     return true;
 }
 
+QColor qconvert_color3(const float* input_color, ColorPalette palette) {
+    std::array<float, 3> result;
+    get_color_for_mode(palette, input_color, &result[0]);
+    return convert_float3_to_qcolor(&result[0]);
+}

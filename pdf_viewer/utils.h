@@ -929,3 +929,4 @@ float similarity_score(const T& haystack, const T& needle, int* out_begin = null
 }
 
 bool is_alpha_only(const std::wstring& str);
+QColor qconvert_color3(const float* input_color, ColorPalette palette);
