@@ -3648,3 +3648,15 @@ void DocumentView::focus_page_text(int page, const std::wstring& text) {
         qDebug() << "could not find string";
     }
 }
+
+float DocumentView::get_bookmark_scroll_amount(const std::string& uuid) {
+    auto index = bookmark_scroll_amounts.find(uuid);
+    if (index != bookmark_scroll_amounts.end()) {
+        return index->second;
+    }
+    return 0;
+}
+
+void DocumentView::set_bookmark_scroll_amount(const std::string& uuid, float amount) {
+    bookmark_scroll_amounts[uuid] = amount;
+}

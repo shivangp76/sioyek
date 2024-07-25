@@ -10,7 +10,6 @@
 // batch the todos
 // make the action of download and clipboard paper configurable
 // when automatically expanding bookamrk when chunks are being filled, set a maximum height for the bookmark so we don't run out of memory in case of a very long response (possibly allow scrolling the bookmark)
-// BookmarkSearchItemDelegate::sizeHint's setHtml or setPlainText or setMarkdown must match paint's
 // handle the case when document is too large e.g. in e.g. summary etc.
 
 #include "platform/qt/graphic_qt.h"
@@ -7639,13 +7638,13 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    sioyek_network_manager->does_index_exist(this, doc()->get_super_fast_index(), [](bool exists) {
-        qDebug() << "index exists = " << exists;
-        });
-    //sioyek_network_manager->summarize(this, doc()->get_super_fast_index(), [](QString chunk) {
-    //    qDebug() << chunk;
-    //    },
-    //    []() {
+    auto bookmarks = doc()->get_bookmarks();
+    for (auto bookmark : bookmarks) {
+        dv()->set_bookmark_scroll_amount(bookmark.uuid, 200);
+    }
+
+    //sioyek_network_manager->does_index_exist(this, doc()->get_super_fast_index(), [](bool exists) {
+    //    qDebug() << "index exists = " << exists;
     //    });
 }
 
@@ -13184,5 +13183,15 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 
         });
     show_current_widget();
+
+}
+
+void MainWidget::scroll_selected_bookmark(int amount) {
+    int bookmark_index = get_selected_bookmark_index();
+    if (bookmark_index >= 0) {
+        std::string uuid = doc()->get_bookmarks()[bookmark_index].uuid;
+        float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
+        dv()->set_bookmark_scroll_amount(uuid, dv()->get_bookmark_scroll_amount(uuid) + scroll_amount);
+    }
 
 }

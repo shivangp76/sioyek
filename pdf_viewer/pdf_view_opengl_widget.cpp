@@ -1111,6 +1111,7 @@ void PdfViewOpenGLWidget::my_render() {
 
                     QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
 
+                    float scroll_amount = document_view->get_bookmark_scroll_amount(bookmarks[i].uuid);
 
                     if (RENDER_FREETEXT_BORDERS) {
                         painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
@@ -1155,8 +1156,12 @@ void PdfViewOpenGLWidget::my_render() {
 
                         }
 
-                        auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), devicePixelRatioF(), dv()->color_mode);
+                        auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->color_mode);
                         if (pixmap && (was_exact || bookmarks[i].is_latex())) {
+                            //qDebug() << window_qrect.height() << " " << pixmap->height();
+                            //if (window_qrect.height() < pixmap->height()) {
+                            //    window_qrect.moveTop(window_qrect.top() - scroll_amount);
+                            //}
                             painter.drawPixmap(window_qrect, *pixmap);
                         }
                         else {
@@ -1164,6 +1169,7 @@ void PdfViewOpenGLWidget::my_render() {
                                 bookmarks[i],
                                 &painter,
                                 dv()->get_zoom_level(),
+                                scroll_amount,
                                 devicePixelRatioF(),
                                 window_qrect,
                                 dv()->color_mode,

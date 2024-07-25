@@ -727,6 +727,7 @@ public:
     void on_super_fast_search_index_computed();
     bool is_current_document_fulltext_indexed();
     void handle_delete_document_from_fulltext_search_index();
+    void scroll_selected_bookmark(int amount);
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
     AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);

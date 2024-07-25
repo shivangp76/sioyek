@@ -35,6 +35,7 @@ struct RenderedBookmark {
     BookMark bookmark;
     float zoom_level;
     float pixel_ratio;
+    float scroll_amount;
     ColorPalette color_palette = ColorPalette::Normal;
     QPixmap* pixmap = nullptr;
     QDateTime last_access_time;
@@ -54,9 +55,9 @@ private:
     std::atomic<int> next_request_id = 0;
 
     bool are_bookmarks_the_same_for_render(const BookMark& bm1, const BookMark& bm2);
-    std::vector<int> get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, ColorPalette palette, bool compare_zoom_level=true);
-    bool does_request_exist(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, ColorPalette palette);
-    QPixmap* get_rendered_bookmark(const BookMark& bm, float zoom_level, ColorPalette palette);
+    std::vector<int> get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, float scroll_amount, ColorPalette palette, bool compare_zoom_level=true);
+    bool does_request_exist(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, float scroll_amount, ColorPalette palette);
+    QPixmap* get_rendered_bookmark(const BookMark& bm, float zoom_level, float scroll_amount, ColorPalette palette);
     void cleanup_bookmarks();
     void initialize_latex();
     void copy_microtex_files();
@@ -64,9 +65,9 @@ private:
 public:
     BackgroundBookmarkRenderer(BackgroundTaskManager* background_task_manager);
 
-    std::pair<QPixmap*, bool> request_rendered_bookmark(const BookMark& bm, float zoom_level, float pixel_ratio, ColorPalette palette);
-    void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, const QFont& font);
-    void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread=false);
+    std::pair<QPixmap*, bool> request_rendered_bookmark(const BookMark& bm, float zoom_level, float scroll_amount, float pixel_ratio, ColorPalette palette);
+    void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, float scroll_amount, bool is_from_main_thread, const QFont& font);
+    void render_freetext_bookmark(const BookMark& bookmark, QPainter* painter, float zoom_level, float scroll_amount, float pixel_ratio, QRect window_qrect, ColorPalette palette, bool is_from_main_thread=false);
     void release_cache();
     std::optional<RenderedBookmark> get_request_with_id(int id);
     void erase_request_with_id(int id);

@@ -6497,6 +6497,28 @@ public:
 
 };
 
+class ScrollSelectedBookmarkDown : public Command {
+public:
+    static inline const std::string cname = "scroll_selected_bookmark_down";
+    static inline const std::string hname = "";
+    ScrollSelectedBookmarkDown(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->scroll_selected_bookmark(1);
+    }
+};
+
+class ScrollSelectedBookmarkUp : public Command {
+public:
+    static inline const std::string cname = "scroll_selected_bookmark_up";
+    static inline const std::string hname = "";
+    ScrollSelectedBookmarkUp(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->scroll_selected_bookmark(-1);
+    }
+};
+
 class SelectCurrentSearchMatchCommand : public Command {
 public:
     static inline const std::string cname = "select_current_search_match";
@@ -7881,6 +7903,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DeleteDocumentFromFulltextSearchIndex>();
     register_command<CreateFulltextIndexForCurrentDocumentCommand>();
     register_command<ExportPythonApiCommand>();
+    register_command<ScrollSelectedBookmarkDown>();
+    register_command<ScrollSelectedBookmarkUp>();
     register_command<ExportDefaultConfigFile>();
     register_command<ExportCommandNamesCommand>();
     register_command<ExportConfigNamesCommand>();

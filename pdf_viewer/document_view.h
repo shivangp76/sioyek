@@ -117,6 +117,8 @@ public:
     std::optional<AbsoluteRect> wrong_character_rect = {};
     bool show_control_rect;
 
+    std::unordered_map<std::string, float> bookmark_scroll_amounts;
+
     std::optional<AbsoluteDocumentPos> underline = {};
     std::vector<DocumentRect> overview_highlights;
 
@@ -442,6 +444,9 @@ public:
     float get_page_space_x();
     float get_page_space_y();
     bool fast_coordinates();
+
+    float get_bookmark_scroll_amount(const std::string& uuid);
+    void set_bookmark_scroll_amount(const std::string& uuid, float amount);
 
     void select_ruler_text();
     void toggle_line_select_mode();
