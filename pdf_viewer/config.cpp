@@ -303,6 +303,7 @@ float PAGE_SPACE_X = 10.0f;
 float PAGE_SPACE_Y = 10.0f;
 bool USE_KEYBOARD_POINT_SELECTION = false;
 std::wstring TAG_FONT_FACE = L"";
+std::wstring BOOKMARK_FONT_FACE = L"";
 //UIRect TEST_UI_RECT = {true, -0.1f, 0.1f, -0.1f, 0.1f};
 
 bool PAPER_DOWNLOAD_CREATE_PORTAL = true;
@@ -1192,6 +1193,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"right_status_bar_format", &RIGHT_STATUS_BAR_FORMAT);
     add_string(L"epub_css", &EPUB_CSS);
     add_string(L"tag_font_face", &TAG_FONT_FACE);
+    add_string(L"bookmark_font_face", &BOOKMARK_FONT_FACE);
     add_string(L"status_custom_message_a", &STATUS_STRING_CUSTOM_MESSAGE_A_STR);
     add_string(L"status_custom_message_b", &STATUS_STRING_CUSTOM_MESSAGE_B_STR);
     add_string(L"status_custom_message_c", &STATUS_STRING_CUSTOM_MESSAGE_C_STR);

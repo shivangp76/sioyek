@@ -116,6 +116,10 @@
         <file>data/command_docs.json</file>
         <file>data/config_docs.json</file>
         <file>resources/fonts/JetBrainsMono.ttf</file>
+        <file>resources/fonts/ComputerModern/cmu.concrete-bold.ttf</file>
+        <file>resources/fonts/ComputerModern/cmu.concrete-bolditalic.ttf</file>
+        <file>resources/fonts/ComputerModern/cmu.concrete-italic.ttf</file>
+        <file>resources/fonts/ComputerModern/cmu.concrete-roman.ttf</file>
 
         <file>microtex_resources/.clatexmath-res_root</file>
         <file>microtex_resources/RES_README</file>

@@ -141,6 +141,7 @@ ScratchPad global_scratchpad;
 int next_window_id = 0;
 std::vector<MainWidget*> windows;
 QString global_font_family;
+QString computer_modern_font_family;
 
 extern bool VERBOSE;
 extern bool USE_SYSTEM_THEME;
@@ -765,7 +766,14 @@ int main(int argc, char* args[]) {
     OpenWithApplication app(argc, args);
 
     int font_id = QFontDatabase::addApplicationFont(":/resources/fonts/JetBrainsMono.ttf");
+
+    int computer_modern_font_id1 = QFontDatabase::addApplicationFont(":/resources/fonts/ComputerModern/cmu.concrete-bold.ttf");
+    int computer_modern_font_id2 = QFontDatabase::addApplicationFont(":/resources/fonts/ComputerModern/cmu.concrete-bolditalic.ttf");
+    int computer_modern_font_id3 = QFontDatabase::addApplicationFont(":/resources/fonts/ComputerModern/cmu.concrete-italic.ttf");
+    int computer_modern_font_id4 = QFontDatabase::addApplicationFont(":/resources/fonts/ComputerModern/cmu.concrete-roman.ttf");
+
     global_font_family = QFontDatabase::applicationFontFamilies(font_id).at(0);
+    computer_modern_font_family = QFontDatabase::applicationFontFamilies(computer_modern_font_id1).at(0);
     if (TAG_FONT_FACE.size() == 0) {
         TAG_FONT_FACE = global_font_family.toStdWString();
     }

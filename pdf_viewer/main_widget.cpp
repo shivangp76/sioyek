@@ -9,8 +9,9 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
-// when automatically expanding bookamrk when chunks are being filled, set a maximum height for the bookmark so we don't run out of memory in case of a very long response (possibly allow scrolling the bookmark)
 // handle the case when document is too large e.g. in e.g. summary etc.
+// autogenerate a corresponding color config for dark and custom color of every color config
+// use qthread for worker thread (maybe fixes the warning)
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -7662,14 +7663,18 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    auto bookmarks = doc()->get_bookmarks();
-    for (auto bookmark : bookmarks) {
-        dv()->set_bookmark_scroll_amount(bookmark.uuid, 200);
-    }
+    //QFontDatabase db;
+    //auto font_from_db = db.font("lsdlfkn Modern", "", 12);
+    //qDebug() << font_from_db.exactMatch();
+    //QFont font("Computer Modern", 10);
+    //auto bookmarks = doc()->get_bookmarks();
+    //for (auto bookmark : bookmarks) {
+    //    dv()->set_bookmark_scroll_amount(bookmark.uuid, 200);
+    //}
 
-    //sioyek_network_manager->does_index_exist(this, doc()->get_super_fast_index(), [](bool exists) {
-    //    qDebug() << "index exists = " << exists;
-    //    });
+    ////sioyek_network_manager->does_index_exist(this, doc()->get_super_fast_index(), [](bool exists) {
+    ////    qDebug() << "index exists = " << exists;
+    ////    });
 }
 
 void MainWidget::show_command_menu() {

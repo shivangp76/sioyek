@@ -6,6 +6,7 @@
 #include <qtextcursor.h>
 #include <qabstracttextdocumentlayout.h>
 #include <qdir.h>
+#include <qthread.h>
 
 #include "background_tasks.h"
 #include "utils.h"
@@ -20,6 +21,8 @@ extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
 extern bool VERBOSE;
 extern Path standard_data_path;
 
+extern QString computer_modern_font_family;
+extern std::wstring BOOKMARK_FONT_FACE;
 extern int BACKGROUND_BOOKMARKS_PIXEL_BUDGET;
 
 
@@ -77,7 +80,13 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
         painter->setPen(convert_float3_to_qcolor(&bookmark_color[0]));
     }
 
-    QFont font = painter->font();
+    //QFont font = bookmark.font_face.size() > 0 ?
+    //    QFont(QString::fromStdWString(bookmark.font_face)) :
+    //    (BOOKMARK_FONT_FACE.size() > 0 ? QString::fromStdWString(BOOKMARK_FONT_FACE) : painter->font());
+
+    QFont font = bookmark.font_face.size() > 0 ?
+        QFont(QString::fromStdWString(bookmark.font_face)) :
+        (BOOKMARK_FONT_FACE.size() > 0 ? QFont(QString::fromStdWString(BOOKMARK_FONT_FACE)) : QFont(computer_modern_font_family));
     float font_size = bookmark.font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmark.font_size;
     font.setPointSizeF(font_size * zoom_level * 0.75);
     painter->setFont(font);
