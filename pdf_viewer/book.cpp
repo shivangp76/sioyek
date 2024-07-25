@@ -242,12 +242,19 @@ bool BookMark::is_summary() const {
     return QString::fromStdWString(description).startsWith("#summarize");
 }
 
-QString BookMark::get_question_or_summary_markdown() const{
-    QString res = QString::fromStdWString(description);
+QString BookMark::get_question_or_summary_markdown() const {
+    return BookMark::get_display_markdown_or_text(QString::fromStdWString(description));
+}
+
+QString BookMark::get_display_markdown_or_text(QString res){
+    //QString res = QString::fromStdWString(description);
     if (res.startsWith("#summarize")) { // summary
         return res.mid(10);
     }
-    else { // question
+    else if (res.startsWith("#markdown")) {
+        return res.mid(9);
+    }
+    else if (res.startsWith("? ")) { // question
         res = res.mid(2); // skip the "? "
         int first_newline_index = res.indexOf("\n");
         if (first_newline_index == -1) {
@@ -260,6 +267,9 @@ QString BookMark::get_question_or_summary_markdown() const{
             res = res.insert(0, "<i><b>");
         }
 
+        return res;
+    }
+    else {
         return res;
     }
 }
@@ -631,4 +641,8 @@ bool BookMark::is_latex() const {
 
 bool BookMark::is_markdown() const {
     return QString::fromStdWString(description).startsWith("#markdown");
+}
+
+bool BookMark::should_be_displayed_as_markdown(QString bookmark_text) {
+    return bookmark_text.startsWith("#markdown") || bookmark_text.startsWith("#summarize") || bookmark_text.startsWith("? ");
 }

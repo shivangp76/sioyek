@@ -193,6 +193,7 @@ struct BookMark : Annotation {
     std::wstring font_face;
 
     QString get_question_or_summary_markdown() const;
+    static QString get_display_markdown_or_text(QString bookmark_desc);
     AbsoluteDocumentPos begin_pos();
     AbsoluteDocumentPos end_pos();
     AbsoluteRect rect();
@@ -207,6 +208,7 @@ struct BookMark : Annotation {
     bool is_summary() const;
     bool is_latex() const;
     bool is_markdown() const;
+    static bool should_be_displayed_as_markdown(QString bookmark_text);
     std::optional<char> get_type() const;
 
     AbsoluteRect get_rectangle() const;

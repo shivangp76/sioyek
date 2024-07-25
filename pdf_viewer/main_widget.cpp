@@ -11,7 +11,7 @@
 // make the action of download and clipboard paper configurable
 // when automatically expanding bookamrk when chunks are being filled, set a maximum height for the bookmark so we don't run out of memory in case of a very long response (possibly allow scrolling the bookmark)
 // BookmarkSearchItemDelegate::sizeHint's setHtml or setPlainText or setMarkdown must match paint's
-// todo: send the entire document text instead of relying on cached index in semantic_search commands
+// handle the case when document is too large e.g. in e.g. summary etc.
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"

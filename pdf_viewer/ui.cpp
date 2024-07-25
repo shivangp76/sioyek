@@ -2663,17 +2663,22 @@ QSize BookmarkSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option, c
 
     BookMark bookmark = index.siblingAtColumn(BookmarkModel::bookmark).data().value<BookMark>();
 
+    QString bookmark_text = QString::fromStdWString(bookmark.description);
+    bool is_markdown = BookMark::should_be_displayed_as_markdown(bookmark_text);
+    bookmark_text = BookMark::get_display_markdown_or_text(bookmark_text);
+
     bookmark_document.setTextWidth(option.rect.width());
-    bookmark_document.setPlainText(QString::fromStdWString(bookmark.description));
+    if (is_markdown) {
+        bookmark_document.setMarkdown(bookmark_text);
+    }
+    else {
+        bookmark_document.setHtml(bookmark_text);
+    }
 
     QSize res = bookmark_document.size().toSize();
-    //qDebug() << option.rect.width() << " " << res;
-
-    //auto something = source_index.model().columnCount();
     int col_count = index.model()->columnCount();
     bool is_global = index.model()->columnCount() == BookmarkModel::max_columns;
 
-    //if (is_global) {
     file_name_document.setTextWidth(option.rect.width());
     file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
     res = QSize(res.width(), res.height() + file_name_document.size().toSize().height());
@@ -2697,13 +2702,10 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
 
     bookmark_document.setTextWidth(option.rect.width());
 
+
     QString bookmark_text = index.data().toString();
-    if (!bookmark.is_markdown()) {
-        bookmark_text = bookmark_text.toHtmlEscaped();
-    }
-    else {
-        bookmark_text = bookmark_text.mid(10);
-    }
+    bool is_markdown = BookMark::should_be_displayed_as_markdown(bookmark_text);
+    bookmark_text = BookMark::get_display_markdown_or_text(bookmark_text);
 
     int text_highlight_begin = -1, text_highlight_end=-1;
     int text_similarity = similarity_score(bookmark_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
@@ -2712,7 +2714,7 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
         bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
     }
 
-    if (bookmark.is_markdown()) {
+    if (is_markdown) {
         bookmark_document.setMarkdown(bookmark_text);
     }
     else{
@@ -2733,6 +2735,8 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
 
     painter->translate(option.rect.topLeft());
     painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
+    //qDebug() << "size in paint is :" << bookmark_document.toPlainText().size() << " " << index;
+
     bookmark_document.documentLayout()->draw(painter, ctx);
 
     //if (is_global) {
