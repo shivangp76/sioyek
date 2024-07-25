@@ -2667,6 +2667,7 @@ QSize BookmarkSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option, c
     bookmark_document.setPlainText(QString::fromStdWString(bookmark.description));
 
     QSize res = bookmark_document.size().toSize();
+    //qDebug() << option.rect.width() << " " << res;
 
     //auto something = source_index.model().columnCount();
     int col_count = index.model()->columnCount();

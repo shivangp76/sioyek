@@ -1151,16 +1151,12 @@ void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done)
 }
 
 void SioyekNetworkManager::semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
-
-    QString index_qstring = QString::fromStdWString(index); // todo: performance: we should prevent this as much as possible
-    std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
-
     QNetworkRequest req;
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_ASK_GEMINI_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
-    obj["content_checksum"] = QString::fromStdString(content_checksum);
+    obj["document_content"] = QString::fromStdWString(index);
     obj["query"] = query;
 
     QJsonDocument json_doc(obj);
@@ -1182,16 +1178,12 @@ void SioyekNetworkManager::semantic_search_extractive(QObject* parent, const QSt
 }
 
 void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
-
-    QString index_qstring = QString::fromStdWString(index); // todo: performance: we should prevent this as much as possible
-    std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
-
     QNetworkRequest req;
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_SEARCH_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
-    obj["content_checksum"] = QString::fromStdString(content_checksum);
+    obj["document_content"] = QString::fromStdWString(index);
     obj["query"] = query;
 
     QJsonDocument json_doc(obj);
@@ -1212,16 +1204,44 @@ void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query
 
 }
 
-void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
-    QString index_qstring = QString::fromStdWString(index); // todo: performance: we should prevent this as much as possible
+void SioyekNetworkManager::does_index_exist(QObject* parent, const std::wstring& index, std::function<void(bool)> on_done) {
+    QString index_qstring = QString::fromStdWString(index);
     std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
 
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DOES_INDEX_EXIST_URL)));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject obj;
+    obj["content_checksum"] = QString::fromStdString(content_checksum);
+
+    QJsonDocument json_doc(obj);
+    authorize_request(&req);
+
+    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
+    reply->setParent(parent);
+    reply->setProperty("sioyek_network_status_string", "searching for document index");
+    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code == 200) {
+            auto json_doc = QJsonDocument::fromJson(reply->readAll());
+            if (json_doc["status"].toString() == "EXISTS") {
+                on_done(true);
+            }
+            else {
+                on_done(false);
+            }
+        }
+        });
+}
+
+void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
     QNetworkRequest req;
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_ASK_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
-    obj["content_checksum"] = QString::fromStdString(content_checksum);
+    obj["document_content"] = QString::fromStdWString(index);
     obj["query"] = query;
 
     QJsonDocument json_doc(obj);
@@ -1231,8 +1251,11 @@ void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, c
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "performing semantic search");
     QObject::connect(reply, &QNetworkReply::downloadProgress, [reply, on_chunk=std::move(on_chunk)]() {
-        QString chunk = QString::fromUtf8(reply->readAll());
-        on_chunk(chunk);
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code == 200){
+            QString chunk = QString::fromUtf8(reply->readAll());
+            on_chunk(chunk);
+        }
         });
     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();

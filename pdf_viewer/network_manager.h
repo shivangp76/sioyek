@@ -57,6 +57,7 @@ public:
     const std::wstring SIOYEK_DOWNLOAD_DRAWINGS_URL = SIOYEK_HOST + L"download_drawings";
     const std::wstring SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL = SIOYEK_HOST + L"last_drawing_modification_time";
     const std::wstring SIOYEK_GET_NEW_ANNOTATIONS_URL = SIOYEK_HOST + L"get_annotations_after";
+    const std::wstring SIOYEK_DOES_INDEX_EXIST_URL = SIOYEK_HOST + L"does_index_exist";
     const std::wstring SIOYEK_API_SEARCH_URL = SIOYEK_HOST + L"/api/search";
 
     bool server_hashes_loaded = false;
@@ -109,6 +110,7 @@ public:
     void semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done);
     void semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done);
     void semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
+    void does_index_exist(QObject* parent, const std::wstring& index, std::function<void(bool)> on_done);
     void summarize(QObject* parent, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
     void upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done);
     void extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt = {});

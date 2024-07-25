@@ -10,6 +10,8 @@
 // batch the todos
 // make the action of download and clipboard paper configurable
 // when automatically expanding bookamrk when chunks are being filled, set a maximum height for the bookmark so we don't run out of memory in case of a very long response (possibly allow scrolling the bookmark)
+// BookmarkSearchItemDelegate::sizeHint's setHtml or setPlainText or setMarkdown must match paint's
+// todo: send the entire document text instead of relying on cached index in semantic_search commands
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -7637,11 +7639,14 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    sioyek_network_manager->summarize(this, doc()->get_super_fast_index(), [](QString chunk) {
-        qDebug() << chunk;
-        },
-        []() {
+    sioyek_network_manager->does_index_exist(this, doc()->get_super_fast_index(), [](bool exists) {
+        qDebug() << "index exists = " << exists;
         });
+    //sioyek_network_manager->summarize(this, doc()->get_super_fast_index(), [](QString chunk) {
+    //    qDebug() << chunk;
+    //    },
+    //    []() {
+    //    });
 }
 
 void MainWidget::show_command_menu() {
@@ -10629,7 +10634,7 @@ void MainWidget::handle_semantic_search_extractive(const std::wstring& query, bo
             const std::wstring& local_index = document->get_super_fast_index();
             if (has_tried_already == false) {
                 sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, query](QJsonObject res) {
-                    handle_semantic_search(query, true);
+                    handle_semantic_search_extractive(query, true);
                     });
             }
         }
