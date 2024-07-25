@@ -7720,14 +7720,20 @@ void MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_
     if (bookmark_index >= 0) {
         BookMark& bm = document->get_bookmarks()[bookmark_index];
         bm.description += chunk.toStdWString();
-        // if the new description doesn't fit, increase the height of the bookmark
-        QSizeF new_size = get_bookmark_text_size(bm);
-        QRect current_window_rect = bm.get_rectangle().to_window(dv()).to_qrect();
-        if (current_window_rect.height() < new_size.height()) {
-            float diff = new_size.height() - current_window_rect.height();
-            float absolute_diff = diff / dv()->get_zoom_level();
-            bm.end_y += absolute_diff;
+
+        if (false) {
+            // we don't need this anymore because bookmarks can be scrolled, we keep this code for future reference (maybe can be enabled with a config option?)
+
+            // if the new description doesn't fit, increase the height of the bookmark
+            QSizeF new_size = get_bookmark_text_size(bm);
+            QRect current_window_rect = bm.get_rectangle().to_window(dv()).to_qrect();
+            if (current_window_rect.height() < new_size.height()) {
+                float diff = new_size.height() - current_window_rect.height();
+                float absolute_diff = diff / dv()->get_zoom_level();
+                bm.end_y += absolute_diff;
+            }
         }
+
         invalidate_render();
     }
 }
