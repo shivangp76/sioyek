@@ -3129,6 +3129,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 #endif
 
     WindowPos mouse_window_pos = { x, y };
+    AbsoluteDocumentPos mouse_abs_pos = mouse_window_pos.to_absolute(dv());
     auto [normal_x, normal_y] = main_document_view->window_to_normalized_window_pos(mouse_window_pos);
 
 #ifdef SIOYEK_QT6
@@ -3153,7 +3154,14 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
 
     if ((!is_control_pressed) && (!is_shift_pressed)) {
-        if (main_document_view->get_overview_page()) {
+        std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
+        if (object_under_cursor.has_value() && object_under_cursor->object_type == VisibleObjectType::Bookmark) {
+            int bookmark_index = object_under_cursor->index;
+            float amount = -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 120.0f;
+            scroll_bookmark_with_index(bookmark_index, amount);
+            validate_render();
+        }
+        else if (main_document_view->get_overview_page()) {
             if (main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
                 if (is_touchpad){
                     if (wevent->angleDelta().y() > 0) {
@@ -13186,12 +13194,15 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 
 }
 
-void MainWidget::scroll_selected_bookmark(int amount) {
-    int bookmark_index = get_selected_bookmark_index();
+void MainWidget::scroll_bookmark_with_index(int bookmark_index, int amount) {
     if (bookmark_index >= 0) {
         std::string uuid = doc()->get_bookmarks()[bookmark_index].uuid;
         float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
         dv()->set_bookmark_scroll_amount(uuid, dv()->get_bookmark_scroll_amount(uuid) + scroll_amount);
     }
+}
 
+void MainWidget::scroll_selected_bookmark(int amount) {
+    int bookmark_index = get_selected_bookmark_index();
+    scroll_bookmark_with_index(bookmark_index, amount);
 }
