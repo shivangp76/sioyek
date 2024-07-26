@@ -231,8 +231,8 @@ void BackgroundTaskManager::add_task(std::function<void()>&& fn, QObject* parent
 bool BackgroundBookmarkRenderer::are_bookmarks_the_same_for_render(const BookMark& bm1, const BookMark& bm2) {
     return (bm1.uuid == bm2.uuid) &&
         (bm1.description == bm2.description) &&
-        (bm1.get_rectangle().width() == bm2.get_rectangle().width()) &&
-        (bm1.get_rectangle().height() == bm2.get_rectangle().height());
+        (std::abs(bm1.get_rectangle().width() - bm2.get_rectangle().width()) < 0.001f) &&
+        (std::abs(bm1.get_rectangle().height() - bm2.get_rectangle().height()) < 0.001f);
 }
 
 std::vector<int> BackgroundBookmarkRenderer::get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, float scroll_amount, ColorPalette palette, bool compare_zoom_level) {
