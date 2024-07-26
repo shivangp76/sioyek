@@ -473,6 +473,8 @@ public:
     int find_reference_page_with_reference_text(std::wstring query);
     std::optional<DocumentPos> find_abbreviation(std::wstring abbr, std::vector<DocumentRect>& overview_highlight_rects);
 
+    std::pair<float, float> get_min_max_bookmark_x_for_page(int page);
+
     int get_page_merged_line_index_from_unmerged_index(int page, int unmerged_index);
     bool super_fast_search_index_is_new();
 

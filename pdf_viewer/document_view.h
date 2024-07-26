@@ -166,9 +166,9 @@ public:
     //void set_opened_book_state(const OpenedBookState& state);
     void handle_escape();
     void set_book_state(OpenedBookState state);
-    virtual bool set_offsets(float new_offset_x, float new_offset_y, bool force = false);
+    virtual bool set_offsets(float new_offset_x, float new_offset_y, bool force = false, bool is_dragging=false);
     bool set_pos(AbsoluteDocumentPos pos);
-    void set_virtual_pos(VirtualPos pos);
+    void set_virtual_pos(VirtualPos pos, bool is_dragging=false);
     Document* get_document();
     bool is_ruler_mode();
     void exit_ruler_mode();

@@ -123,16 +123,16 @@ bool DocumentView::set_pos(AbsoluteDocumentPos pos) {
     return set_offsets(pos.x, pos.y);
 }
 
-void DocumentView::set_virtual_pos(VirtualPos pos) {
+void DocumentView::set_virtual_pos(VirtualPos pos, bool is_dragging) {
     if (!fast_coordinates()) {
         offset = pos;
     }
     else {
-        set_offsets(pos.x, pos.y);
+        set_offsets(pos.x, pos.y, false, is_dragging);
     }
 }
 
-bool DocumentView::set_offsets(float new_offset_x, float new_offset_y, bool force) {
+bool DocumentView::set_offsets(float new_offset_x, float new_offset_y, bool force, bool is_dragging) {
 
     // if move was truncated
     bool truncated = false;
@@ -152,7 +152,7 @@ bool DocumentView::set_offsets(float new_offset_x, float new_offset_y, bool forc
     float min_x_offset = is_relenting ? min_x_offset_relenting : min_x_offset_normal;
     float relent_threshold = view_width / 4 / zoom_level;
 
-    if (TOUCH_MODE) {
+    if (TOUCH_MODE || is_dragging) {
         if ((new_offset_x - max_x_offset_normal > relent_threshold) || (min_x_offset_normal - new_offset_x > relent_threshold)) {
             is_relenting = true;
         }
@@ -1231,23 +1231,37 @@ void DocumentView::set_page_offset(int new_offset) {
 }
 
 float DocumentView::get_max_valid_x(bool relenting) {
-    float page_width = current_document->get_page_width(get_center_page_number());
+    int page_number = get_center_page_number();
+    float page_width = current_document->get_page_width(page_number);
+
+    auto [min_x, _] = current_document->get_min_max_bookmark_x_for_page(page_number);
+    min_x += view_width / zoom_level / 2;
+    float res = 0;
+
     if (!relenting){
-        return std::abs(-view_width / zoom_level / 2 + page_width / 2);
+        res = std::abs(-view_width / zoom_level / 2 + page_width / 2);
     }
     else{
-        return std::abs(-view_width / zoom_level / 2 + 3 * page_width / 2);
+        res = std::abs(-view_width / zoom_level / 2 + 3 * page_width / 2);
     }
+    return std::max(-min_x, res);
 }
 
 float DocumentView::get_min_valid_x(bool relenting) {
-    float page_width = current_document->get_page_width(get_center_page_number());
+    int page_number = get_center_page_number();
+    float page_width = current_document->get_page_width(page_number);
+    auto [_, max_x] = current_document->get_min_max_bookmark_x_for_page(page_number);
+    max_x -= view_width / zoom_level / 2;
+    float res = 0;
+
     if (!relenting){
-        return -std::abs(-view_width / zoom_level / 2 + page_width / 2);
+        res = -std::abs(-view_width / zoom_level / 2 + page_width / 2);
     }
     else{
-        return -std::abs(-view_width / zoom_level / 2 + 3 * page_width / 2);
+        res = -std::abs(-view_width / zoom_level / 2 + 3 * page_width / 2);
     }
+
+    return std::min(-max_x, res);
 }
 
 void DocumentView::rotate() {

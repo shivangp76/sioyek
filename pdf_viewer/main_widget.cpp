@@ -938,7 +938,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             }
         }
         //dv()->set_pos(last_mouse_down_document_offset + diff_doc);
-        dv()->set_virtual_pos(last_mouse_down_document_virtual_offset + diff_doc);
+        dv()->set_virtual_pos(last_mouse_down_document_virtual_offset + diff_doc, true);
 
         validate_render();
     }
