@@ -1162,11 +1162,7 @@ void PdfViewOpenGLWidget::my_render() {
                         }
 
                         auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->color_mode);
-                        if (pixmap && (was_exact || bookmarks[i].is_latex())) {
-                            //qDebug() << window_qrect.height() << " " << pixmap->height();
-                            //if (window_qrect.height() < pixmap->height()) {
-                            //    window_qrect.moveTop(window_qrect.top() - scroll_amount);
-                            //}
+                        if (pixmap && (was_exact || bookmarks[i].is_latex() || (!ALWAYS_RENDER_BOOKMARKS))) {
                             painter.drawPixmap(window_qrect, *pixmap);
                         }
                         else {

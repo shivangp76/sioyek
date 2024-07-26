@@ -12,7 +12,6 @@
 // handle the case when document is too large e.g. in e.g. summary etc.
 // autogenerate a corresponding color config for dark and custom color of every color config
 // use qthread for worker thread (maybe fixes the warning)
-// allow moving the document when there are bookmakrs outside the page
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
