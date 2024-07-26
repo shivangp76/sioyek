@@ -3172,7 +3172,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     if ((!is_control_pressed) && (!is_shift_pressed)) {
         std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
-        if (object_under_cursor.has_value() && object_under_cursor->object_type == VisibleObjectType::Bookmark) {
+        if (object_under_cursor.has_value() && (!visible_object_move_data.has_value()) && object_under_cursor->object_type == VisibleObjectType::Bookmark) {
             int bookmark_index = object_under_cursor->index;
             float amount = -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 120.0f;
             scroll_bookmark_with_index(bookmark_index, amount);
