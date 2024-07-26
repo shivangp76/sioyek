@@ -91,7 +91,7 @@ extern float DEFAULT_TEXT_HIGHLIGHT_COLOR[3];
 extern float DEFAULT_VERTICAL_LINE_COLOR[4];
 extern float KEYBOARD_SELECTED_TAG_TEXT_COLOR[4];
 extern float KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO[4];
-extern float QUESTION_BOOKMARK_BACKGROUND_COLOR[3];
+extern float QUESTION_BOOKMARK_BACKGROUND_COLOR[4];
 extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
 extern float OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[3];
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
@@ -1151,7 +1151,7 @@ void PdfViewOpenGLWidget::my_render() {
                     else {
                         static int count = 0;
                         if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
-                            QColor question_background_color = qcc3(QUESTION_BOOKMARK_BACKGROUND_COLOR);
+                            QColor question_background_color = qcc4(QUESTION_BOOKMARK_BACKGROUND_COLOR);
                             QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                             painter.fillRect(fill_rect, question_background_color);
 

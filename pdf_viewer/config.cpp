@@ -29,7 +29,7 @@ float UI_BACKGROUND_COLOR[3] = { 0.0f, 0.0f, 0.0f };
 float UI_SELECTED_TEXT_COLOR[3] = { 0.0f, 0.0f, 0.0f };
 float UI_SELECTED_BACKGROUND_COLOR[3] = { 1.0f, 1.0f, 1.0f };
 float UNSELECTED_SEARCH_HIGHLIGHT_COLOR[3] = { 0.0f, 0.5f, 0.5f };
-float QUESTION_BOOKMARK_BACKGROUND_COLOR[3] = { 1.0f, 97.0f, 0.90f };
+float QUESTION_BOOKMARK_BACKGROUND_COLOR[4] = { 1.0f, 0.97f, 0.90f, 0.98f};
 float QUESTION_BOOKMARK_TEXT_COLOR[3] = { 0.0f, 0.0f, 0.0f };
 float GAMMA = 1.0f;
 bool DEBUG_DISPLAY_FREEHAND_POINTS = false;
@@ -1005,7 +1005,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"ui_background_color", UI_BACKGROUND_COLOR);
     add_color3(L"ui_selected_text_color", UI_SELECTED_TEXT_COLOR);
     //add_color3(L"ui_background_color", STATUS_BAR_COLOR);
-    add_color3(L"question_bookmark_background_color", QUESTION_BOOKMARK_BACKGROUND_COLOR);
+    //add_color3(L"question_bookmark_background_color", QUESTION_BOOKMARK_BACKGROUND_COLOR);
     add_color3(L"question_bookmark_text_color", QUESTION_BOOKMARK_TEXT_COLOR)->set_change_fn([](MainWidget* w){
         w->pdf_renderer->get_bookmark_renderer()->release_cache();
     });
@@ -1017,6 +1017,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color4(L"keyboard_select_text_color", KEYBOARD_SELECT_TEXT_COLOR);
     add_color4(L"keyboard_selected_tag_text_color", KEYBOARD_SELECTED_TAG_TEXT_COLOR);
     add_color4(L"keyboard_selected_tag_background_color", KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO);
+    add_color4(L"question_bookmark_background_color", QUESTION_BOOKMARK_BACKGROUND_COLOR);
 
     add_float(L"synctex_highlight_timeout", &HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT, FloatExtras{-1.0f, 100.0f});
     add_float(L"dark_mode_contrast", &DARK_MODE_CONTRAST, FloatExtras{0.0f, 1.0f});
