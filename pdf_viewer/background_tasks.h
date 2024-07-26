@@ -10,13 +10,34 @@
 #include <qdatetime.h>
 #include <atomic>
 #include <unordered_map>
+#include <qthread.h>
 
 #include "book.h"
+
+class MyThread : public QThread {
+    Q_OBJECT
+public:
+    bool* should_stop;
+    std::mutex* pending_tasks_mutex;
+    std::condition_variable* pending_taks_cv;
+    std::deque<std::pair<QObject*, std::function<void()>>>* pending_tasks;
+    QObject** current_task_parent;
+
+    MyThread(
+        bool* should_stop_,
+        std::mutex* pending_task_mutex_,
+        std::condition_variable* pending_task_cv_,
+        std::deque<std::pair<QObject*, std::function<void()>>>* pending_tasks_,
+        QObject** current_task_parent_);
+
+    void run() override;
+};
 
 class BackgroundTaskManager {
 private:
     bool is_worker_thread_started = false;
-    std::thread worker_thread;
+    //std::thread worker_thread;
+    std::unique_ptr<MyThread> worker_thread = nullptr;
     bool should_stop = false;
 
     std::mutex pending_tasks_mutex;
@@ -43,6 +64,7 @@ struct RenderedBookmark {
     bool canceled = false;
     int request_id;
 };
+
 
 class BackgroundBookmarkRenderer : public QObject{
     Q_OBJECT

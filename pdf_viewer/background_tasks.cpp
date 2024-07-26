@@ -176,31 +176,49 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
     }
 }
 
+
 void BackgroundTaskManager::start_worker_thread() {
-    worker_thread = std::thread([&]() {
-        while (!should_stop) {
-            std::unique_lock<std::mutex> lock(pending_tasks_mutex);
-            pending_taks_cv.wait(lock, [&]{
-                return pending_tasks.size() > 0 || should_stop;
-                });
-            if (should_stop) {
-                break;
-            }
-            auto [parent, task] = std::move(pending_tasks.front());
-            pending_tasks.pop_front();
-            current_task_parent = parent;
-            lock.unlock();
-            task();
-            current_task_parent = nullptr;
-        }
-        });
+
+    //MyThread(
+    //    bool* should_stop_,
+    //    std::mutex* pending_task_mutex_,
+    //    std::condition_variable* pending_task_cv_,
+    //    std::deque<std::pair<QObject*, std::function<void()>>>* pending_tasks_,
+    //    QObject** current_task_parent_);
+    worker_thread = std::make_unique<MyThread>(
+        &should_stop,
+        &pending_tasks_mutex,
+        &pending_taks_cv,
+        &pending_tasks,
+        &current_task_parent);
+    worker_thread->start();
+
+    //worker_thread = std::thread([&]() {
+    //    while (!should_stop) {
+    //        std::unique_lock<std::mutex> lock(pending_tasks_mutex);
+    //        pending_taks_cv.wait(lock, [&]{
+    //            return pending_tasks.size() > 0 || should_stop;
+    //            });
+    //        if (should_stop) {
+    //            break;
+    //        }
+    //        auto [parent, task] = std::move(pending_tasks.front());
+    //        pending_tasks.pop_front();
+    //        current_task_parent = parent;
+    //        lock.unlock();
+    //        task();
+    //        current_task_parent = nullptr;
+    //    }
+    //    });
 }
 
 BackgroundTaskManager::~BackgroundTaskManager() {
     if (is_worker_thread_started) {
         should_stop = true;
         pending_taks_cv.notify_one();
-        worker_thread.join();
+        worker_thread->wait();
+        //worker_thread->join
+        //worker_thread.join();
     }
 }
 
@@ -590,4 +608,35 @@ float BackgroundBookmarkRenderer::get_cached_bookmark_height(const std::string& 
         return it->second;
     }
     return 0;
+}
+
+MyThread::MyThread(
+    bool* should_stop_,
+    std::mutex* pending_task_mutex_,
+    std::condition_variable* pending_task_cv_,
+    std::deque<std::pair<QObject*, std::function<void()>>>* pending_tasks_,
+    QObject** current_task_parent_) {
+    should_stop = should_stop_;
+    pending_tasks_mutex = pending_task_mutex_;
+    pending_taks_cv = pending_task_cv_;
+    pending_tasks = pending_tasks_;
+    current_task_parent = current_task_parent_;
+
+}
+void MyThread::run() {
+    while (!(*should_stop)) {
+        std::unique_lock<std::mutex> lock(*pending_tasks_mutex);
+        pending_taks_cv->wait(lock, [&] {
+            return pending_tasks->size() > 0 || (*should_stop);
+            });
+        if ((*should_stop)) {
+            break;
+        }
+        auto [parent, task] = std::move(pending_tasks->front());
+        pending_tasks->pop_front();
+        *current_task_parent = parent;
+        lock.unlock();
+        task();
+        *current_task_parent = nullptr;
+    }
 }

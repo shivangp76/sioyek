@@ -7663,18 +7663,8 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    //QFontDatabase db;
-    //auto font_from_db = db.font("lsdlfkn Modern", "", 12);
-    //qDebug() << font_from_db.exactMatch();
-    //QFont font("Computer Modern", 10);
-    //auto bookmarks = doc()->get_bookmarks();
-    //for (auto bookmark : bookmarks) {
-    //    dv()->set_bookmark_scroll_amount(bookmark.uuid, 200);
-    //}
-
-    ////sioyek_network_manager->does_index_exist(this, doc()->get_super_fast_index(), [](bool exists) {
-    ////    qDebug() << "index exists = " << exists;
-    ////    });
+    //SampleThread* thread = new SampleThread();
+    //thread->start();
 }
 
 void MainWidget::show_command_menu() {
