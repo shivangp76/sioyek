@@ -96,6 +96,7 @@ extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
 extern float OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[3];
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
+extern bool ALWAYS_RENDER_BOOKMARKS;
 
 extern int RULER_UNDERLINE_PIXEL_WIDTH;
 extern UIRect PORTRAIT_EDIT_PORTAL_UI_RECT;
@@ -1165,15 +1166,19 @@ void PdfViewOpenGLWidget::my_render() {
                             painter.drawPixmap(window_qrect, *pixmap);
                         }
                         else {
-                            pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
-                                bookmarks[i],
-                                &painter,
-                                dv()->get_zoom_level(),
-                                scroll_amount,
-                                devicePixelRatioF(),
-                                window_qrect,
-                                dv()->color_mode,
-                                true);
+                            if (ALWAYS_RENDER_BOOKMARKS) {
+                                // rendering bookmarks on the main thrad can prevent flickering, but may
+                                // cause the UI to slow down a little e.g. when zooming
+                                pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
+                                    bookmarks[i],
+                                    &painter,
+                                    dv()->get_zoom_level(),
+                                    scroll_amount,
+                                    devicePixelRatioF(),
+                                    window_qrect,
+                                    dv()->color_mode,
+                                    true);
+                            }
                         }
                     }
 
