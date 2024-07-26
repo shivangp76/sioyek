@@ -1123,12 +1123,16 @@ void PdfViewOpenGLWidget::my_render() {
 
                     if (i == document_view->get_selected_bookmark_index()) {
                         painter.save();
-                        float temp_color[3] = { 0.5f, 0.5f, 0.5f };
-                        painter.setPen(convert_float3_to_qcolor(&temp_color[0]));
-                        painter.setPen(Qt::DashLine);
+                        float temp_color[3] = { 0.7f, 0.7f, 0.7f };
+                        QColor pen_color = convert_float3_to_qcolor(&temp_color[0]);
+                        int pen_size = 2;
+                        painter.setPen(QPen(pen_color, pen_size, Qt::DotLine));
+                        //painter.setPen(Qt::DashLine);
+                        //QPen()
                         QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
-                        painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        //painter.drawRect(fill_rect);
+                        painter.drawRect(window_rect.x0 - pen_size / 2, window_rect.y0 - pen_size / 2, fz_irect_width(window_rect)+pen_size, fz_irect_height(window_rect)+pen_size);
                         painter.restore();
                     }
 
