@@ -11,7 +11,6 @@
 // make the action of download and clipboard paper configurable
 // handle the case when document is too large e.g. in e.g. summary etc.
 // autogenerate a corresponding color config for dark and custom color of every color config
-// use qthread for worker thread (maybe fixes the warning)
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -3911,6 +3910,7 @@ void MainWidget::toggle_dark_mode() {
     if (helper_opengl_widget_) {
         helper_document_view_->toggle_dark_mode();
     }
+    config_manager->handle_set_color_palette(this, main_document_view->color_mode);
 }
 
 void MainWidget::toggle_custom_color_mode() {
@@ -3920,6 +3920,7 @@ void MainWidget::toggle_custom_color_mode() {
     if (helper_opengl_widget_) {
         helper_document_view_->toggle_custom_color_mode();
     }
+    config_manager->handle_set_color_palette(this, main_document_view->color_mode);
 }
 
 
@@ -7663,8 +7664,6 @@ QVariantMap MainWidget::get_color_mapping() {
 }
 
 void MainWidget::handle_debug_command() {
-    //SampleThread* thread = new SampleThread();
-    //thread->start();
 }
 
 void MainWidget::show_command_menu() {
@@ -7882,10 +7881,10 @@ void MainWidget::export_command_names(std::wstring file_path){
 void MainWidget::export_config_names(std::wstring file_path){
     QFile output_file(QString::fromStdWString(file_path));
     if (output_file.open(QIODeviceBase::WriteOnly)){
-        std::vector<Config> configs = config_manager->get_configs();
+        std::vector<Config*> configs = config_manager->get_configs();
         //QStringList command_names = command_manager->get_all_command_names();
         for (auto config : configs){
-            output_file.write((QString::fromStdWString(config.name) + "\n").toUtf8());
+            output_file.write((QString::fromStdWString(config->name) + "\n").toUtf8());
         }
 
         output_file.close();
@@ -7899,9 +7898,9 @@ void MainWidget::export_default_config_file(std::wstring file_path){
 
     QFile output_file(QString::fromStdWString(file_path));
     if (output_file.open(QIODeviceBase::WriteOnly)){
-        std::vector<Config> configs = config_manager->get_configs();
+        std::vector<Config*> configs = config_manager->get_configs();
         for (auto config : configs){
-            QString config_name = QString::fromStdWString(config.name);
+            QString config_name = QString::fromStdWString(config->name);
             //QString config_doc = QTextDocumentFragment::fromHtml(config_docs[config_name].toString()).toPlainText();
             //if (config_doc.size() > 0){
             //    QStringList lines = config_doc.split("\n");
@@ -7910,11 +7909,11 @@ void MainWidget::export_default_config_file(std::wstring file_path){
             //    }
             //}
 
-            if (config.default_value_string.size() > 0){
-                output_file.write((config_name + " " + QString::fromStdWString(config.default_value_string) + "\n\n").toUtf8());
+            if (config->default_value_string.size() > 0){
+                output_file.write((config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
             }
             else{
-                output_file.write(("# " + config_name + " " + QString::fromStdWString(config.default_value_string) + "\n\n").toUtf8());
+                output_file.write(("# " + config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
             }
 
             /* output_file.write((QString::fromStdWString(config.name) + "\n").toUtf8()); */
@@ -11152,7 +11151,7 @@ QString MainWidget::get_command_documentation(QString command_name, QString* out
 
 void MainWidget::print_undocumented_configs(){
     load_sioyek_documentation();
-    std::vector<Config> all_configs = config_manager->get_configs();
+    std::vector<Config*> all_configs = config_manager->get_configs();
     std::vector<QRegularExpression> regex_config_titles; // some documentation config titles are regexes e.g.: "highlight_type_[a-z]"
 
 
@@ -11167,7 +11166,7 @@ void MainWidget::print_undocumented_configs(){
     }
 
     for (auto& config : all_configs) {
-        QString config_name = QString::fromStdWString(config.name);
+        QString config_name = QString::fromStdWString(config->name);
         if (sioyek_documentation_json_document["config_name_to_title_map"][config_name].toString().size() == 0) {
             // don't print configs like highlight_type_a to highlight_type_z
             if (config_name.size() > 2 && config_name[config_name.size() - 2] == '_') {
@@ -11210,11 +11209,11 @@ void MainWidget::print_undocumented_commands(){
 void MainWidget::print_non_default_configs(){
     auto configs = config_manager->get_configs();
     for (auto conf : configs){
-        if (conf.has_changed_from_default()){
+        if (conf->has_changed_from_default()){
             qDebug() << "___________";
-            qDebug() << "name: " << conf.name;
-            qDebug() << "default: " << conf.default_value_string;
-            qDebug() << "current: " << conf.get_current_string();
+            qDebug() << "name: " << conf->name;
+            qDebug() << "default: " << conf->default_value_string;
+            qDebug() << "current: " << conf->get_current_string();
         }
     }
 }

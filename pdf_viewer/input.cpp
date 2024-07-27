@@ -1702,10 +1702,10 @@ public:
         for (auto confname : config_name_list) {
 
             for (int i = 0; i < configs->size(); i++) {
-                if ((*configs)[i].name == confname.toStdWString()) {
-                    output << (*configs)[i].get_type_string();
+                if ((*configs)[i]->name == confname.toStdWString()) {
+                    output << (*configs)[i]->get_type_string();
                     output << L" ";
-                    (*configs)[i].serialize((*configs)[i].value, output);
+                    (*configs)[i]->serialize((*configs)[i]->value, output);
                     if (i < configs->size() - 1) {
                         output.put(L'\n');
                     }
@@ -1926,9 +1926,9 @@ public:
     void perform() {
         auto configs = widget->config_manager->get_configs_ptr();
         for (int i = 0; i < configs->size(); i++) {
-            if ((*configs)[i].name == text.value()) {
+            if ((*configs)[i]->name == text.value()) {
                 std::wstringstream ssr;
-                (*configs)[i].serialize((*configs)[i].value, ssr);
+                (*configs)[i]->serialize((*configs)[i]->value, ssr);
                 show_error_message(ssr.str());
             }
         }
@@ -7951,28 +7951,37 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
         command_required_prefixes[QString::fromStdString(command_name)] = "_";
     }
 
-    std::vector<Config> configs = config_manager->get_configs();
+    std::vector<Config*> configs = config_manager->get_configs();
 
     for (auto conf : configs) {
 
-        std::string confname = utf8_encode(conf.name);
+        std::string confname = utf8_encode(conf->name);
+        QString qconfname = QString::fromStdString(confname);
+        QString extra_prefix = "";
+        if (qconfname.startsWith("DARK")) {
+            extra_prefix = "DARK";
+        }
+        if (qconfname.startsWith("CUSTOM")) {
+            extra_prefix = "CUSTOM";
+        }
+
         std::string config_set_command_name = "setconfig_" + confname;
         new_commands[config_set_command_name] = [confname, config_manager](MainWidget* w) {return std::make_unique<ConfigCommand>(w, confname, config_manager); };
-        command_required_prefixes[QString::fromStdString(config_set_command_name)] = "setconfig_";
+        command_required_prefixes[QString::fromStdString(config_set_command_name)] = "setconfig_" + extra_prefix;
 
         std::string config_setsave_command_name = "setsaveconfig_" + confname;
         new_commands[config_setsave_command_name] = [confname, config_manager](MainWidget* w) {return std::make_unique<ConfigCommand>(w, confname, config_manager, true); };
-        command_required_prefixes[QString::fromStdString(config_setsave_command_name)] = "setsaveconfig_";
+        command_required_prefixes[QString::fromStdString(config_setsave_command_name)] = "setsaveconfig_" + extra_prefix;
 
         std::string config_save_command_name = "saveconfig_" + confname;
         new_commands[config_save_command_name] = [confname, config_manager](MainWidget* w) {return std::make_unique<SaveConfigCommand>(w, confname); };
-        command_required_prefixes[QString::fromStdString(config_save_command_name)] = "saveconfig_";
+        command_required_prefixes[QString::fromStdString(config_save_command_name)] = "saveconfig_" + extra_prefix;
 
         std::string config_delete_command_name = "deleteconfig_" + confname;
         new_commands[config_delete_command_name] = [confname, config_manager](MainWidget* w) {return std::make_unique<DeleteConfigCommand>(w, confname); };
-        command_required_prefixes[QString::fromStdString(config_delete_command_name)] = "deleteconfig_";
+        command_required_prefixes[QString::fromStdString(config_delete_command_name)] = "deleteconfig_" + extra_prefix;
 
-        if (conf.config_type == ConfigType::Bool) {
+        if (conf->config_type == ConfigType::Bool) {
             std::string config_toggle_command_name = "toggleconfig_" + confname;
             new_commands[config_toggle_command_name] = [confname, config_manager](MainWidget* w) {return std::make_unique<ToggleConfigCommand>(w, confname); };
             command_required_prefixes[QString::fromStdString(config_toggle_command_name)] = "toggleconfig_";

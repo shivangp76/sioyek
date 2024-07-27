@@ -617,7 +617,7 @@ std::wstring ConfigManager::get_config_value_string(std::wstring config_name) {
 
 Config* ConfigManager::get_mut_config_with_name(std::wstring config_name) {
     for (auto& it : configs) {
-        if (it.name == config_name) return &it;
+        if (it->name == config_name) return it;
     }
     return nullptr;
 }
@@ -733,7 +733,7 @@ private:
     std::function<void(void*, std::wstringstream&)> serialize = nullptr;
     std::function<void*(std::wstringstream&, void* res, bool* changed)> deserialize = nullptr;
     std::function<bool(const std::wstring& value)> validator = nullptr;
-    std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras = EmptyExtras{};
+    Extras extras = EmptyExtras{};
     bool is_auto = false;
     std::optional<std::function<void(MainWidget*)>> on_change = {};
 
@@ -868,7 +868,7 @@ public:
         return *this;
     }
 
-    ConfigBuilder extra(std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras_){
+    ConfigBuilder extra(Extras extras_){
         this->extras = extras_;
         return *this;
     }
@@ -878,17 +878,17 @@ public:
         return *this;
     }
 
-    Config build(){
-        Config res;
-        res.name = name;
-        res.config_type = config_type;
-        res.value = value;
-        res.serialize = get_serializer();
-        res.deserialize = get_deserializer();
-        res.validator = get_validator();
-        res.extras = extras;
-        res.is_auto = is_auto;
-        res.load_default();
+    Config* build(){
+        Config* res = new Config;
+        res->name = name;
+        res->config_type = config_type;
+        res->value = value;
+        res->serialize = get_serializer();
+        res->deserialize_ = get_deserializer();
+        res->validator = get_validator();
+        res->extras = extras;
+        res->is_auto = is_auto;
+        res->load_default();
         return res;
     }
 
@@ -902,81 +902,118 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
     user_config_paths = user_paths;
 
+    auto add_color_extras = [&](Config* config) {
+        ColorExtras* extras = std::get_if<ColorExtras>(&config->extras);
+        int n_channels = config->config_type == ConfigType::Color3 ? 3 : 4;
+
+        if (extras) {
+            if (n_channels == 3) {
+                configs.push_back(
+                    ConfigBuilder::color3(L"DARK_" + config->name, extras->dark_mode).extra(ColorExtras{}).build()
+                );
+                configs.push_back(
+                    ConfigBuilder::color3(L"CUSTOM_" + config->name, extras->custom_mode).extra(ColorExtras{}).build()
+                );
+            }
+            else {
+                configs.push_back(
+                    ConfigBuilder::color4(L"DARK_" + config->name, extras->dark_mode).extra(ColorExtras{}).build()
+                );
+                configs.push_back(
+                    ConfigBuilder::color4(L"CUSTOM_" + config->name, extras->custom_mode).extra(ColorExtras{}).build()
+                );
+            }
+
+            for (int i = 0; i < n_channels; i++) {
+                extras->light_mode[i] = ((float*)(config->value))[i];
+            }
+        }
+        };
+
     auto add_color3 = [&](std::wstring name, float* location){
         configs.push_back(
-            ConfigBuilder::color3(name, location).build()
+            ConfigBuilder::color3(name, location).extra(ColorExtras{}).build()
             );
-        return &configs.back();
+        auto res = configs.back();
+
+        add_color_extras(res);
+
+        return res;
     };
 
     auto add_color4 = [&](std::wstring name, float* location){
+
         configs.push_back(
-            ConfigBuilder::color4(name, location).build()
+            ConfigBuilder::color4(name, location).extra(ColorExtras{}).build()
             );
-        return &configs.back();
+        auto res = configs.back();
+
+        add_color_extras(res);
+
+        return res;
     };
 
     auto add_bool = [&](std::wstring name, bool* location){
         configs.push_back(
             ConfigBuilder::boolean(name, location).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_string = [&](std::wstring name, std::wstring* location){
         configs.push_back(
             ConfigBuilder::string(name, location).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_macro = [&](std::wstring name, std::wstring* location){
         configs.push_back(
             ConfigBuilder::macro(name, location).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_ivec2 = [&](std::wstring name, int* location){
         configs.push_back(
             ConfigBuilder::ivec2(name, location).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_fvec2 = [&](std::wstring name, float* location){
         configs.push_back(
             ConfigBuilder::fvec2(name, location).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_rect = [&](std::wstring name, UIRect* location){
         configs.push_back(
             ConfigBuilder::rect(name, location).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_float = [&](std::wstring name, float* location, FloatExtras extras){
         configs.push_back(
             ConfigBuilder::floatc(name, location, extras).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_enum = [&](std::wstring name, std::wstring* location, EnumExtras extras){
         configs.push_back(
             ConfigBuilder::enumeration(name, location, extras).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     auto add_int = [&](std::wstring name, int* location, IntExtras extras){
         configs.push_back(
             ConfigBuilder::intc(name, location, extras).build()
             );
-        return &configs.back();
+        return configs.back();
     };
 
     add_color3(L"text_highlight_color", DEFAULT_TEXT_HIGHLIGHT_COLOR);
@@ -1310,8 +1347,16 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         search_url_config_string[search_url_config_string.size() - 1] = letter;
         execute_command_config_string[execute_command_config_string.size() - 1] = letter;
 
-        configs.push_back({ highlight_config_string, ConfigType::Color3, &HIGHLIGHT_COLORS[(letter - 'a') * 3], vec3_serializer, color3_deserializer, color_3_validator });
-        configs.push_back({ search_url_config_string, ConfigType::String, &SEARCH_URLS[letter - 'a'], string_serializer, string_deserializer, nullptr });
+        add_color3(highlight_config_string, &HIGHLIGHT_COLORS[(letter - 'a') * 3]);
+
+        configs.push_back(new Config{
+            search_url_config_string,
+            ConfigType::String,
+            &SEARCH_URLS[letter - 'a'],
+            string_serializer,
+            string_deserializer,
+            nullptr
+            });
         // configs.push_back({ execute_command_config_string, ConfigType::String, &EXECUTE_COMMANDS[letter - 'a'], string_serializer, string_deserializer, nullptr });
     }
 
@@ -1320,7 +1365,14 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         if (STATUS_BAR_COMMANDS.find(config_name) == STATUS_BAR_COMMANDS.end()) {
             STATUS_BAR_COMMANDS[config_name] = L"";
         }
-        configs.push_back({ config_name, ConfigType::Macro, &STATUS_BAR_COMMANDS[STATUS_STRING_PARTS[i].toStdWString()], string_serializer, string_deserializer, nullptr});
+        configs.push_back(new Config{
+            config_name,
+            ConfigType::Macro,
+            &STATUS_BAR_COMMANDS[STATUS_STRING_PARTS[i].toStdWString()],
+            string_serializer,
+            string_deserializer,
+            nullptr
+            });
     }
 
 
@@ -1371,18 +1423,18 @@ void ConfigManager::serialize_auto_configs(std::wofstream& stream) {
         };
 
     for (auto& conf : configs) {
-        if (conf.is_auto && (!is_exception(conf.name))) {
-            if (conf.is_empty_string()) {
+        if (conf->is_auto && (!is_exception(conf->name))) {
+            if (conf->is_empty_string()) {
                 continue;
             }
-            if (!conf.has_changed_from_default()) {
+            if (!conf->has_changed_from_default()) {
                 continue;
             }
 
             std::wstringstream ss;
-            stream << conf.name << " ";
-            if (conf.get_value()) {
-                conf.serialize(conf.get_value(), ss);
+            stream << conf->name << " ";
+            if (conf->get_value()) {
+                conf->serialize(conf->get_value(), ss);
             }
             stream << ss.str() << std::endl;
         }
@@ -1394,17 +1446,17 @@ void ConfigManager::serialize(const Path& path) {
 
     for (auto it : configs) {
 
-        if (it.is_empty_string()) {
+        if (it->is_empty_string()) {
             continue;
         }
-        if (!it.has_changed_from_default()){
+        if (!it->has_changed_from_default()){
             continue;
         }
 
         std::wstringstream ss;
-        file << it.name << " ";
-        if (it.get_value()) {
-            it.serialize(it.get_value(), ss);
+        file << it->name << " ";
+        if (it->get_value()) {
+            it->serialize(it->get_value(), ss);
         }
         file << ss.str() << std::endl;
     }
@@ -1591,20 +1643,19 @@ std::vector<Path> ConfigManager::get_all_user_config_files() {
     return  res;
 }
 
-std::vector<Config> ConfigManager::get_configs() {
+std::vector<Config*> ConfigManager::get_configs() {
     return configs;
 }
 
 
-std::vector<Config>* ConfigManager::get_configs_ptr() {
+std::vector<Config*>* ConfigManager::get_configs_ptr() {
     return &configs;
 }
 
 bool ConfigManager::deserialize_config(std::string config_name, std::wstring config_value) {
 
-    std::wstringstream config_value_stream(config_value);
     Config* conf = get_mut_config_with_name(utf8_decode(config_name));
-
+    std::wstringstream config_value_stream(config_value);
     if (conf->validator) {
         if (!conf->validator(config_value)) {
             qDebug() << "Error: " << QString::fromStdWString(config_value) << " is not a valid " << QString::fromStdString(config_name) << " value";
@@ -1625,9 +1676,10 @@ bool ConfigManager::deserialize_config(std::string config_name, std::wstring con
         conf->value = deserialization_result;
     }
     return changed;
+
 }
 
-ConfigModel::ConfigModel(std::vector<Config>* configs, QObject* parent) : QAbstractTableModel(parent), configs(configs) {
+ConfigModel::ConfigModel(std::vector<Config*>* configs, QObject* parent) : QAbstractTableModel(parent), configs(configs) {
 }
 
 int ConfigModel::rowCount(const QModelIndex& parent) const {
@@ -1646,7 +1698,7 @@ QVariant ConfigModel::data(const QModelIndex& index, int role) const {
             return QVariant::fromValue(QString(""));
         }
 
-        const Config* conf = &((*configs)[row]);
+        const Config* conf = (*configs)[row];
         ConfigType config_type = conf->config_type;
         std::wstring config_name = conf->name;
         if (col == 0) {
@@ -1719,13 +1771,13 @@ void Config::save_value_into_default() {
 void Config::load_default() {
     if (default_value_string.size() > 0) {
         std::wstringstream default_value_string_stream(default_value_string);
-        deserialize(default_value_string_stream, value, nullptr);
+        deserialize_(default_value_string_stream, value, nullptr);
     }
 }
 
 void ConfigManager::restore_defaults_in_memory() {
     for (auto& config : configs) {
-        config.load_default();
+        config->load_default();
     }
 }
 
@@ -1768,8 +1820,8 @@ std::vector<std::wstring> ConfigManager::get_auto_config_names() {
     std::vector<std::wstring> res;
 
     for (auto& c : configs) {
-        if (c.is_auto) {
-            res.push_back(c.name);
+        if (c->is_auto) {
+            res.push_back(c->name);
         }
     }
     return res;
@@ -1782,4 +1834,71 @@ bool Config::is_empty_string() {
         }
     }
     return false;
+}
+
+void* Config::deserialize(std::wstringstream& stream, void* res, bool* changed){
+
+    void* result = this->deserialize_(stream, res, changed);
+
+    // we save the default light mode value here, because if a DARK_* or CUSTOM_*
+    // overwrites it, we need to original value in order to be able to restore it
+    if (config_type == ConfigType::Color3 || config_type == ConfigType::Color4) {
+        ColorExtras* color_extras = std::get_if<ColorExtras>(&extras);
+        if (color_extras) {
+            for (int i = 0; i < 4; i++) {
+                color_extras->light_mode[i] = ((float*)(res))[i];
+            }
+        }
+    }
+
+    return result;
+}
+
+void ConfigManager::handle_set_color_palette(MainWidget* w, ColorPalette palette) {
+    // if a DARK_ or CUSTOM_ override exists, we change the value of the corresponding config
+    for (auto& config : configs) {
+        if (config->config_type == ConfigType::Color3 || config->config_type == ConfigType::Color4) {
+            int n_channels = config->config_type == ConfigType::Color4 ? 4 : 3;
+
+            QString config_name = QString::fromStdWString(config->name);
+            if ((!config_name.startsWith("DARK_") && (!config_name.startsWith("CUSTOM_")))) {
+
+                ColorExtras* color_extras = std::get_if<ColorExtras>(&config->extras);
+                if (!color_extras) continue;
+
+                bool config_changed = false;
+                if (palette == ColorPalette::Normal) {
+                    if (color_extras->light_mode[0] >= 0) {
+                        for (int i = 0; i < n_channels; i++) {
+                            if (((float*)(config->value))[i] != color_extras->light_mode[i]) {
+                                config_changed = true;
+                            }
+                            ((float*)(config->value))[i] = color_extras->light_mode[i];
+                        }
+                    }
+                }
+                else if (palette == ColorPalette::Dark) {
+                    if (color_extras->dark_mode[0] >= 0) {
+                        config_changed = true;
+                        for (int i = 0; i < n_channels; i++) {
+                            ((float*)(config->value))[i] = color_extras->dark_mode[i];
+                        }
+                    }
+                }
+                else if (palette == ColorPalette::Custom) {
+                    if (color_extras->custom_mode[0] >= 0) {
+                        config_changed = true;
+                        for (int i = 0; i < n_channels; i++) {
+                            ((float*)(config->value))[i] = color_extras->custom_mode[i];
+                        }
+                    }
+                }
+                if (config_changed && config->on_change.has_value()) {
+
+                    config->on_change.value()(w);
+                }
+            }
+        }
+    }
+
 }

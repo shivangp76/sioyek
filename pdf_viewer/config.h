@@ -14,6 +14,7 @@
 
 #include "path.h"
 #include "coordinates.h"
+#include "book.h"
 
 //#include <main_widget.h>
 
@@ -59,6 +60,12 @@ struct FloatExtras {
     float max_val;
 };
 
+struct ColorExtras {
+    float light_mode[4] = {-1, -1, -1, -1};
+    float dark_mode[4] = {-1, -1, -1, -1};
+    float custom_mode[4] = {-1, -1, -1, -1};
+};
+
 struct IntExtras {
     int min_val;
     int max_val;
@@ -82,24 +89,25 @@ struct AdditionalKeymapData {
 //	} rest;
 //};
 
+using Extras = std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras, ColorExtras>;
+
 struct Config {
 
     std::wstring name;
     ConfigType config_type;
     void* value = nullptr;
     std::function<void(void*, std::wstringstream&)> serialize = nullptr;
-    std::function<void*(std::wstringstream&, void* res, bool* changed)> deserialize = nullptr;
+    std::function<void*(std::wstringstream&, void* res, bool* changed)> deserialize_ = nullptr;
     std::function<bool(const std::wstring& value)> validator = nullptr;
     std::optional<std::function<void(MainWidget*)>> on_change = {};
-    std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras> extras = EmptyExtras{};
+    Extras extras = EmptyExtras{};
     std::wstring default_value_string;
     bool is_auto = false;
 
     std::wstring definition_file = L"";
     int definition_line = -1;
 
-    //    QWidget* (*configurator_ui)(MainWidget* main_widget, void* location);
-
+    void* deserialize(std::wstringstream&, void* res, bool* changed);
     void* get_value();
     void save_value_into_default();
     void load_default();
@@ -113,7 +121,7 @@ struct Config {
 
 class ConfigManager {
 
-    std::vector<Config> configs;
+    std::vector<Config*> configs;
 
 
     std::vector<Path> user_config_paths;
@@ -142,20 +150,21 @@ public:
     }
     std::optional<Path> get_or_create_user_config_file();
     std::vector<Path> get_all_user_config_files();
-    std::vector<Config> get_configs();
-    std::vector<Config>* get_configs_ptr();
+    std::vector<Config*> get_configs();
+    std::vector<Config*>* get_configs_ptr();
     bool deserialize_config(std::string config_name, std::wstring config_value);
     void restore_defaults_in_memory();
     std::vector<std::wstring> get_auto_config_names();
+    void handle_set_color_palette(MainWidget* w, ColorPalette palette);
 };
 
 class ConfigModel : public QAbstractTableModel {
 
 private:
-    std::vector<Config>* configs;
+    std::vector<Config*>* configs;
 
 public:
-    explicit ConfigModel(std::vector<Config>* configs, QObject* parent = nullptr);
+    explicit ConfigModel(std::vector<Config*>* configs, QObject* parent = nullptr);
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     int columnCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;

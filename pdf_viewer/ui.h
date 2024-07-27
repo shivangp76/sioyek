@@ -1146,12 +1146,14 @@ private:
     //    MainWidget* parent
     //);
 
+    MainWidget* w;
     CommandSelectorWidget(
         QAbstractItemView* view,
         std::unordered_map<QString, QAbstractItemModel*> prefix_model,
         MainWidget* parent
     );
-    inline static const std::vector<QString> special_prefixes = {"setconfig_", "toggleconfig_", "setsaveconfig_", "saveconfig_", "deleteconfig_", ""};
+    std::vector<QString> special_prefixes;
+
 public:
 
     std::unordered_map<QString, QAbstractItemModel*> prefix_command_model;

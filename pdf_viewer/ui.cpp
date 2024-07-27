@@ -2420,35 +2420,39 @@ QString BaseCustomDelegate::highlight_pattern(QString txt) const{
 CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString> commands, std::vector<QStringList> keybinds, MainWidget* parent) {
 
 
+    std::unordered_map<QString, QStringList> command_to_keybind_map;
     std::unordered_map<QString, std::vector<QString>> prefix_command_names;
     std::unordered_map<QString, std::vector<QStringList>> prefix_keybinds;
     std::unordered_map<QString, QAbstractItemModel*> prefix_models;
 
-    for (auto prefix : special_prefixes) {
-        prefix_command_names[prefix] = {};
-        prefix_keybinds[prefix] = {};
-    }
-
-
     for (int i = 0; i < commands.size(); i++) {
-        QString current_prefix = "";
-        for (auto prefix : special_prefixes) {
-            if (commands[i].startsWith(prefix)) {
-                current_prefix = prefix;
-                break;
-            }
-        }
-        prefix_command_names[current_prefix].push_back(commands[i]);
-        prefix_keybinds[current_prefix].push_back(keybinds[i]);
+        command_to_keybind_map[commands[i]] = keybinds[i];
     }
 
+    auto& required_prefixes = parent->command_manager->command_required_prefixes;
+    for (auto command_name : commands) {
+        QString required_prefix = "";
 
-    for (auto prefix : special_prefixes) {
+        if (required_prefixes.find(command_name) != required_prefixes.end()) {
+            required_prefix = required_prefixes[command_name];
+        }
+
+        if (prefix_command_names.find(required_prefix) == prefix_command_names.end()) {
+            prefix_command_names[required_prefix] = {};
+            prefix_keybinds[required_prefix] = {};
+        }
+
+        prefix_command_names[required_prefix].push_back(command_name);
+        prefix_keybinds[required_prefix].push_back(QStringList());
+        if (command_to_keybind_map.find(command_name) != command_to_keybind_map.end()) {
+            prefix_keybinds[required_prefix].back() = command_to_keybind_map[command_name];
+        }
+
+    }
+
+    for (auto [prefix, commands] : prefix_command_names) {
         prefix_models[prefix] = new CommandModel(prefix_command_names[prefix], prefix_keybinds[prefix]);
     }
-
-
-    //CommandModel* command_model = new CommandModel(std::move(commands), std::move(keybinds));
 
     QListView* list_view = new QListView();
     list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
@@ -2459,10 +2463,8 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString>
         model->setParent(command_selector_widget);
     }
 
-    //command_model->setParent(command_selector_widget);
     list_view->setParent(command_selector_widget);
 
-    // command_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
     command_selector_widget->on_resize();
     command_selector_widget->set_filter_column_index(-1);
 
@@ -2507,10 +2509,14 @@ CommandSelectorWidget::CommandSelectorWidget(
     QAbstractItemView* view,
     std::unordered_map<QString, QAbstractItemModel*> prefix_model,
     MainWidget* parent) : BaseCustomSelectorWidget(view, prefix_model[""], parent) {
-    //command_model = dynamic_cast<CommandModel*>(model);
-
+    w = parent;
 
     prefix_command_model = prefix_model;
+
+    for (auto [prefix, _] : prefix_model) {
+        special_prefixes.push_back(prefix);
+    }
+
     if (lv) {
         lv->setItemDelegate(new CommandItemDelegate());
         lv->setCurrentIndex(lv->model()->index(0, 0));
@@ -2536,8 +2542,9 @@ bool CommandSelectorWidget::on_text_change(const QString& txt) {
     QString prefix = "";
     for (auto p : special_prefixes) {
         if (text.startsWith(p)) {
-            prefix = p;
-            break;
+            if (p.size() > prefix.size()) {
+                prefix = p;
+            }
         }
     }
     if (prefix != last_prefix) {
