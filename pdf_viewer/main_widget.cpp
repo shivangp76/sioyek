@@ -8282,6 +8282,9 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
     for (int i = 0; i < config_names->size(); i++){
         std::wstring confname = QString::fromStdString((*config_names)[i]).toStdWString();
         Config* conf = config_manager->get_mut_config_with_name(confname);
+        if (conf->alias_for.size() > 0) {
+            (*config_names)[i] = utf8_encode(conf->alias_for);
+        }
         if (conf->on_change){
             conf->on_change.value()(this);
         }
@@ -8290,6 +8293,30 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
 
     for (int i = 0; i < config_names->size(); i++) {
         QString confname = QString::fromStdString((*config_names)[i]);
+
+        // if we are setting the dark/custom variant a color config which matches the current color mode
+        // then we should also update the current value of that config
+        if (confname.startsWith("DARK_") && (main_document_view->color_mode == ColorPalette::Dark)) {
+            Config* this_config = config_manager->get_mut_config_with_name(confname.toStdWString());
+            Config* base_config = config_manager->get_mut_config_with_name(confname.mid(5).toStdWString());
+            int n_channels = base_config->config_type == ConfigType::Color3 ? 3 : 4;
+            if (base_config) {
+                for (int c = 0; c < n_channels; c++) {
+                    ((float*)base_config->value)[c] = ((float*)this_config->value)[c];
+                }
+            }
+        }
+
+        if (confname.startsWith("CUSTOM_") && (main_document_view->color_mode == ColorPalette::Custom)) {
+            Config* this_config = config_manager->get_mut_config_with_name(confname.toStdWString());
+            Config* base_config = config_manager->get_mut_config_with_name(confname.mid(7).toStdWString());
+            int n_channels = base_config->config_type == ConfigType::Color3 ? 3 : 4;
+            if (base_config) {
+                for (int c = 0; c < n_channels; c++) {
+                    ((float*)base_config->value)[c] = ((float*)this_config->value)[c];
+                }
+            }
+        }
 
         if (confname.startsWith("epub")) {
             should_reflow = true;

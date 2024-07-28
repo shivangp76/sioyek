@@ -930,25 +930,45 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         }
         };
 
-    auto add_color3 = [&](std::wstring name, float* location){
-        configs.push_back(
-            ConfigBuilder::color3(name, location).extra(ColorExtras{}).build()
+    auto add_color3 = [&](std::wstring name, float* location, float add_extras=true){
+        if (add_extras) {
+            configs.push_back(
+                ConfigBuilder::color3(name, location).extra(ColorExtras{}).build()
             );
+        }
+        else {
+            configs.push_back(
+                ConfigBuilder::color3(name, location).build()
+            );
+        }
+
         auto res = configs.back();
 
-        add_color_extras(res);
+        if (add_extras) {
+            add_color_extras(res);
+        }
 
         return res;
     };
 
-    auto add_color4 = [&](std::wstring name, float* location){
+    auto add_color4 = [&](std::wstring name, float* location, bool add_extras=true){
 
-        configs.push_back(
-            ConfigBuilder::color4(name, location).extra(ColorExtras{}).build()
+        if (add_extras) {
+            configs.push_back(
+                ConfigBuilder::color4(name, location).extra(ColorExtras{}).build()
             );
+        }
+        else {
+            configs.push_back(
+                ConfigBuilder::color4(name, location).build()
+            );
+        }
+
         auto res = configs.back();
 
-        add_color_extras(res);
+        if (add_extras) {
+            add_color_extras(res);
+        }
 
         return res;
     };
@@ -1025,9 +1045,10 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"overview_reference_highlight_color", OVERVIEW_REFERENCE_HIGHLIGHT_COLOR);
     add_color3(L"ruler_color", RULER_COLOR);
     add_color3(L"ruler_marker_color", RULER_MARKER_COLOR);
-    add_color3(L"background_color", BACKGROUND_COLOR);
-    add_color3(L"dark_mode_background_color", DARK_MODE_BACKGROUND_COLOR);
-    add_color3(L"custom_color_mode_empty_background_color", CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR);
+    Config* background_color_config = add_color3(L"background_color", BACKGROUND_COLOR);
+    //add_color3(L"dark_mode_background_color", DARK_MODE_BACKGROUND_COLOR);
+
+
     add_color3(L"custom_background_color", CUSTOM_BACKGROUND_COLOR)->set_change_fn([](MainWidget* w){
         w->pdf_renderer->get_bookmark_renderer()->release_cache();
     });
@@ -1325,6 +1346,20 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({ {L"local", L"server", L"ask", L"show_button"}}));
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below"}}));
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
+
+    Config* dark_mode_background_config = add_color3(L"dark_mode_background_color", std::get<ColorExtras>(background_color_config->extras).dark_mode, false);
+    Config* custom_mode_background_config = add_color3(L"custom_color_mode_empty_background_color", std::get<ColorExtras>(background_color_config->extras).custom_mode, false);
+
+    // set the default value of dark and custom color mode background colors
+    ((float*)(dark_mode_background_config->value))[0] = 0.0f;
+    ((float*)(dark_mode_background_config->value))[1] = 0.0f;
+    ((float*)(dark_mode_background_config->value))[2] = 0.0f;
+    ((float*)(custom_mode_background_config->value))[0] = 0.0f;
+    ((float*)(custom_mode_background_config->value))[1] = 0.0f;
+    ((float*)(custom_mode_background_config->value))[2] = 0.0f;
+
+    dark_mode_background_config->alias_for = L"DARK_background_color";
+    custom_mode_background_config->alias_for = L"CUSTOM_background_color";
 
 #ifdef Q_OS_MACOS
     add_color3(L"macos_titlebar_color", MACOS_TITLEBAR_COLOR)->set_change_fn([](MainWidget* w){

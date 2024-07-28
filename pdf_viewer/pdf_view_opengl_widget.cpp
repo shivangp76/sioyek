@@ -37,8 +37,6 @@ extern bool DEBUG_SMOOTH_FREEHAND_DRAWINGS;
 extern Path shader_path;
 extern float GAMMA;
 extern float BACKGROUND_COLOR[3];
-extern float DARK_MODE_BACKGROUND_COLOR[3];
-extern float CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR[3];
 extern float DARK_MODE_CONTRAST;
 extern float ZOOM_INC_FACTOR;
 extern float VERTICAL_MOVE_AMOUNT;
@@ -2353,17 +2351,7 @@ bool PdfViewOpenGLWidget::can_use_cached_scratchpad_framebuffer() {
 }
 
 void PdfViewOpenGLWidget::clear_background_color() {
-    float* color = nullptr;
-
-    if (document_view->color_mode == ColorPalette::Dark) {
-        color = DARK_MODE_BACKGROUND_COLOR;
-    }
-    else if (document_view->color_mode == ColorPalette::Custom) {
-        color = CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR;
-    }
-    else {
-        color = BACKGROUND_COLOR;
-    }
+    float* color = BACKGROUND_COLOR;
 
     // for some reason clearing the stencil buffer tanks the performance on android 
     // so we only clear it if we absolutely need it

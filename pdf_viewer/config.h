@@ -104,6 +104,8 @@ struct Config {
     std::wstring default_value_string;
     bool is_auto = false;
 
+    std::wstring alias_for = L"";
+
     std::wstring definition_file = L"";
     int definition_line = -1;
 
