@@ -9,8 +9,6 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
-// handle the case when document is too large e.g. in e.g. summary etc.
-// autogenerate a corresponding color config for dark and custom color of every color config
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -2855,7 +2853,28 @@ void MainWidget::handle_click(WindowPos click_pos) {
         set_selected_highlight_index(selected_index);
     }
     else if ((selected_index = doc()->get_bookmark_index_at_pos(mouse_abspos)) >= 0) {
-        set_selected_bookmark_index(selected_index);
+        const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
+
+        bool was_bookmark_anchor_link_click = false;
+
+        if (selected_index < bookmarks.size()) {
+            if (BookMark::should_be_displayed_as_markdown(QString::fromStdWString(bookmarks[selected_index].description))) {
+                QString anchor_string = get_markdown_bookmark_anchor_text_under_cursor();
+                if (anchor_string.size() > 0) {
+                    was_bookmark_anchor_link_click = true;
+                    if (!anchor_string.startsWith("sioyek://")) {
+                        open_web_url(anchor_string.toStdWString());
+                    }
+                    else {
+                        //todo: handle special functionality
+                        qDebug() << anchor_string;
+                    }
+                }
+            }
+        }
+        if (!was_bookmark_anchor_link_click) {
+            set_selected_bookmark_index(selected_index);
+        }
     }
     else if ((selected_index = doc()->get_portal_index_at_pos(mouse_abspos)) >= 0) {
         set_selected_portal_index(selected_index);
@@ -7661,6 +7680,156 @@ QVariantMap MainWidget::get_color_mapping() {
     }
     color_map["_"] = QVariant::fromValue(Qt::black);
     return color_map;
+}
+
+std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction) {
+    std::unordered_map<std::wstring, int> n_gram_remaining_counts;
+    std::unordered_map<std::wstring, int> n_gram_required_counts;
+
+    int NGRAMS_TO_MATCH = 0;
+
+    for (int i = 0; i < needle.size() - N + 1; i++) {
+        std::wstring n_gram = needle.substr(i, N);
+        if ((n_gram.find(L" ") != -1) || (n_gram.find(L"\n") != -1)) {
+            continue;
+        }
+        if (n_gram_remaining_counts.find(n_gram) == n_gram_remaining_counts.end()) {
+            n_gram_remaining_counts[n_gram] = 1;
+            n_gram_required_counts[n_gram] = 1;
+        }
+        else {
+            n_gram_remaining_counts[n_gram]++;
+            n_gram_required_counts[n_gram]++;
+        }
+        NGRAMS_TO_MATCH++;
+    }
+
+    int begin_index = 0;
+    int end_index = N - 1;
+    int n_matches_in_span = 0;
+
+    float MAX_MATCH_FRACTION = 2;
+    int best_start_index = -1;
+    int best_end_index = -1;
+    //int best_size = haystack.size() + 1; // inf
+    int best_score = -100000;
+    int haystack_size = haystack.size();
+
+    auto move_end_until_match = [&]() {
+        if (begin_index < (haystack.size() - 1000)) {
+            if (QString::fromStdWString(haystack.substr(begin_index, 100)).startsWith("We show that")) {
+                int a = 2;
+            }
+        }
+        //bool already_matches = false;
+        if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
+            return true;
+        }
+
+        //if (n_matches_in_span >= NGRAMS_TO_MATCH) {
+        //    return true;
+        //}
+        while (end_index < haystack.size() - 1) {
+            end_index++;
+            std::wstring current_ngram = haystack.substr(end_index - N, N);
+
+            for (int i = 0; i < N; i++) {
+                if (current_ngram[i] >= 30 && current_ngram[i] <= 128) {
+                    current_ngram[i] = std::tolower(current_ngram[i]);
+                }
+            }
+
+            auto remaining_it = n_gram_remaining_counts.find(current_ngram);
+            if (remaining_it != n_gram_remaining_counts.end()) {
+                if (remaining_it->second > 0) {
+                    n_matches_in_span++;
+                }
+                remaining_it->second--;
+            }
+            else {
+                if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+
+        };
+    auto move_begin_forward_one = [&]() {
+        if ((end_index - begin_index) < 2) {
+            int a = 2;
+        }
+        std::wstring current_substring = haystack.substr(begin_index, N);
+
+        for (int i = 0; i < N; i++) {
+            if (current_substring[i] >= 30 && current_substring[i] <= 128) {
+                current_substring[i] = std::tolower(current_substring[i]);
+            }
+        }
+
+        auto it = n_gram_remaining_counts.find(current_substring);
+        if ((it != n_gram_remaining_counts.end())) {
+            if (it->second >= 0) {
+                n_matches_in_span--;
+            }
+            it->second++;
+        }
+        begin_index++;
+        };
+
+    while (true) {
+        bool finished = !move_end_until_match();
+        if (finished) break;
+
+        int current_match_size = end_index - begin_index + 1;
+        //if (current_match_size < best_size) {
+
+        if (current_match_size < MAX_MATCH_FRACTION * needle.size()) {
+            int lcs_size = lcs(haystack.substr(begin_index, current_match_size), needle, current_match_size, needle.size());
+            int current_score = lcs_size * 3 - current_match_size;
+            //if (lcs_size > (fraction * needle.size())) {
+            if (current_score > best_score) {
+                // possibly we could use a different fraction constant from the other fraction here?
+                best_score = current_score;
+                best_end_index = end_index;
+                best_start_index = begin_index;
+            }
+        }
+        //}
+        move_begin_forward_one();
+        //if (current_match_size < )
+    }
+    //for (int i = 0)
+    return std::make_pair(best_start_index, best_end_index-1);
+
+}
+
+QString MainWidget::get_markdown_bookmark_anchor_text_under_cursor() {
+    QPoint cursor_pos = mapFromGlobal(QCursor::pos());
+    AbsoluteDocumentPos cursor_abspos = get_cursor_abspos();
+
+    std::optional<VisibleObjectIndex> visible_object = get_visible_object_at_pos(cursor_abspos);
+    if (visible_object.has_value() && visible_object->object_type == VisibleObjectType::Bookmark) {
+        BookMark bookmark = doc()->get_bookmarks()[visible_object->index];
+        QString bookmark_text = QString::fromStdWString(bookmark.description);
+
+        if (BookMark::should_be_displayed_as_markdown(bookmark_text)) {
+            QFont font = bookmark.get_font(dv()->get_zoom_level());
+            QRect window_qrect = bookmark.get_rectangle().to_window(dv()).to_qrect();
+            float scroll_amount = dv()->get_bookmark_scroll_amount(bookmark.uuid);
+
+
+            QTextDocument td;
+            prepare_text_document_for_bookmark_markdown(td, BookMark::get_display_markdown_or_text(bookmark_text), window_qrect, font);
+
+            QPoint cursor_in_bookmark_pos = cursor_pos - window_qrect.topLeft();
+            cursor_in_bookmark_pos.setY(cursor_in_bookmark_pos.y() + scroll_amount);
+
+            return td.documentLayout()->anchorAt(cursor_in_bookmark_pos);
+
+        }
+    }
+    return "";
 }
 
 void MainWidget::handle_debug_command() {
@@ -13256,4 +13425,54 @@ void MainWidget::scroll_bookmark_with_index(int bookmark_index, int amount) {
 void MainWidget::scroll_selected_bookmark(int amount) {
     int bookmark_index = get_selected_bookmark_index();
     scroll_bookmark_with_index(bookmark_index, amount);
+}
+
+
+void MainWidget::perform_fuzzy_search(std::wstring query) {
+    QStringList parts = QString::fromStdWString(query).split("...");
+
+    std::vector<SearchResult> search_results;
+
+    for (int i = 0; i < parts.size(); i++) {
+        std::wstring text = parts.at(i).toLower().toStdWString();
+
+        int begin_page = -1;
+        int end_page = -1;
+
+        //similarity_score(doc()->get_super_fast_index(), text, &begin, &end, 0.7f);
+        auto [begin, end] = find_smallest_substring_containing_fraction_of_n_grams(doc()->get_super_fast_index(), text, 2, 0.5f);
+
+        int begin_index = doc()->absolute_to_page_index(begin, begin_page);
+        int end_index = doc()->absolute_to_page_index(end, end_page);
+
+        if (begin != -1) {
+
+            if (begin_page == end_page) {
+                SearchResult result;
+                result.begin_index_in_page = begin_index;
+                result.end_index_in_page = end_index;
+                result.page = begin_page;
+                search_results.push_back(result);
+                //main_document_view->set_search_results({ result });
+                //goto_search_result(0);
+
+
+            }
+            else {
+                SearchResult result;
+                result.begin_index_in_page = begin_index;
+                result.end_index_in_page = doc()->get_page_offset_into_super_fast_index(begin_page + 1) - 1 - begin_index;
+                result.page = begin_page;
+                search_results.push_back(result);
+                //main_document_view->set_search_results({ result });
+                //goto_search_result(0);
+
+                // todo: maybe instead of page index we should be using absolute index in 
+                // SearchResult?
+            }
+        }
+    }
+
+    main_document_view->set_search_results(std::move(search_results));
+    goto_search_result(0);
 }

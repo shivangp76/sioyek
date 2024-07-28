@@ -11,8 +11,13 @@
 #include <atomic>
 #include <unordered_map>
 #include <qthread.h>
+#include <qrect.h>
+#include <qstring.h>
 
 #include "book.h"
+
+class QTextDocument;
+class QFont;
 
 class MyThread : public QThread {
     Q_OBJECT
@@ -101,3 +106,5 @@ public:
 signals:
     void bookmark_rendered();
 };
+
+void prepare_text_document_for_bookmark_markdown(QTextDocument& td, QString text, QRect window_qrect, const QFont& font);

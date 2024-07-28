@@ -662,6 +662,7 @@ public:
     void advance_command(std::unique_ptr<Command> command, std::wstring* result = nullptr);
     void add_search_term(const std::wstring& term);
     void perform_search(std::wstring text, bool is_regex = false, bool is_incremental = false);
+    void perform_fuzzy_search(std::wstring text);
     void overview_to_definition();
     void portal_to_definition();
     void move_visual_mark_command(int amount);
@@ -1180,6 +1181,8 @@ public:
     void handle_type_text_into_input(QString txt);
     void send_symbol_to_last_command(char symbol);
     void ensure_titlebar_colors_match_color_mode();
+
+    QString get_markdown_bookmark_anchor_text_under_cursor();
 
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);

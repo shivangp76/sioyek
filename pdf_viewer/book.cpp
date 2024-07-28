@@ -4,6 +4,11 @@
 
 extern float BOOKMARK_RECT_SIZE;
 
+extern float FREETEXT_BOOKMARK_FONT_SIZE;
+extern QString computer_modern_font_family;
+extern std::wstring BOOKMARK_FONT_FACE;
+extern int BACKGROUND_BOOKMARKS_PIXEL_BUDGET;
+
 bool operator==(const DocumentViewState& lhs, const DocumentViewState& rhs)
 {
     return (lhs.book_state.offset_x == rhs.book_state.offset_x) &&
@@ -645,4 +650,14 @@ bool BookMark::is_markdown() const {
 
 bool BookMark::should_be_displayed_as_markdown(QString bookmark_text) {
     return bookmark_text.startsWith("#markdown") || bookmark_text.startsWith("#summarize") || bookmark_text.startsWith("? ");
+}
+
+
+QFont BookMark::get_font(float zoom_level) const {
+    QFont font = font_face.size() > 0 ?
+        QFont(QString::fromStdWString(font_face)) :
+        (BOOKMARK_FONT_FACE.size() > 0 ? QFont(QString::fromStdWString(BOOKMARK_FONT_FACE)) : QFont(computer_modern_font_family));
+    float size = font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : font_size;
+    font.setPointSizeF(size * zoom_level * 0.75);
+    return font;
 }

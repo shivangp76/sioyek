@@ -36,6 +36,17 @@ void BackgroundBookmarkRenderer::initialize_latex() {
 
 }
 
+void prepare_text_document_for_bookmark_markdown(QTextDocument& td, QString text, QRect window_qrect, const QFont& font) {
+    auto formats = td.allFormats();
+    QTextCharFormat old_format = formats[0].toCharFormat();
+
+    td.setMarkdown(text, QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
+
+    td.setTextWidth(window_qrect.width());
+    td.setDefaultFont(font);
+
+}
+
 float BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, float scroll_amount, bool is_from_main_thread, const QFont& font) {
     painter.save();
     QPoint top_left = QPoint(window_qrect.topLeft().x(), window_qrect.topLeft().y() - scroll_amount);
@@ -46,14 +57,15 @@ float BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString 
     painter.translate(top_left);
 
     QTextDocument td;
+    prepare_text_document_for_bookmark_markdown(td, text, window_qrect, font);
 
-    auto formats = td.allFormats();
-    QTextCharFormat old_format = formats[0].toCharFormat();
+    //auto formats = td.allFormats();
+    //QTextCharFormat old_format = formats[0].toCharFormat();
 
-    td.setMarkdown(text, QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
+    //td.setMarkdown(text, QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
 
-    td.setTextWidth(window_qrect.width());
-    td.setDefaultFont(font);
+    //td.setTextWidth(window_qrect.width());
+    //td.setDefaultFont(font);
 
     QTextCursor cursor(&td);
     QTextCharFormat format;
@@ -62,6 +74,7 @@ float BackgroundBookmarkRenderer::draw_markdown_text(QPainter& painter, QString 
     window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
     ctx.palette.setColor(QPalette::ColorRole::Text, painter.pen().color());
     td.documentLayout()->draw(&painter, ctx);
+    //td.documentLayout().ob
     QSizeF size = td.documentLayout()->documentSize();
 
     painter.restore();
@@ -80,15 +93,7 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
         painter->setPen(convert_float3_to_qcolor(&bookmark_color[0]));
     }
 
-    //QFont font = bookmark.font_face.size() > 0 ?
-    //    QFont(QString::fromStdWString(bookmark.font_face)) :
-    //    (BOOKMARK_FONT_FACE.size() > 0 ? QString::fromStdWString(BOOKMARK_FONT_FACE) : painter->font());
-
-    QFont font = bookmark.font_face.size() > 0 ?
-        QFont(QString::fromStdWString(bookmark.font_face)) :
-        (BOOKMARK_FONT_FACE.size() > 0 ? QFont(QString::fromStdWString(BOOKMARK_FONT_FACE)) : QFont(computer_modern_font_family));
-    float font_size = bookmark.font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmark.font_size;
-    font.setPointSizeF(font_size * zoom_level * 0.75);
+    QFont font = bookmark.get_font(zoom_level);
     painter->setFont(font);
 
     if (desc_qstring.startsWith("#markdown")) {
@@ -623,6 +628,7 @@ MyThread::MyThread(
     current_task_parent = current_task_parent_;
 
 }
+
 void MyThread::run() {
     while (!(*should_stop)) {
         std::unique_lock<std::mutex> lock(*pending_tasks_mutex);

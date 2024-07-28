@@ -710,6 +710,7 @@ std::pair<int, int> find_smallest_containing_substring_unicode(const T& haystack
     std::unordered_map<int, int> chars_left;
     for (auto ch : needle) {
         if (ch == delimeter) continue;
+        if (ch == '\n') continue;
 
         auto it = chars_left.find(ch);
         if (it == chars_left.end()) {

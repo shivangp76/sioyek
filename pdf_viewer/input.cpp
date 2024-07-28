@@ -1425,7 +1425,7 @@ class SearchCommand : public TextCommand {
 public:
     static inline const std::string cname = "search";
     static inline const std::string hname = "Search";
-    SearchCommand(MainWidget* w) : TextCommand(cname, w) {
+    SearchCommand(MainWidget* w, std::string override_cname="") : TextCommand(override_cname.size() > 0 ? override_cname : cname, w) {
     };
 
     void on_text_change(const QString& new_text) override {
@@ -1446,7 +1446,7 @@ public:
         }
     }
 
-    void perform() {
+    virtual void perform() {
         // this search is not incremental even if incremental search is activated
         // (for example it should update the search terms list)
         widget->perform_search(this->text.value(), false, false);
@@ -1472,6 +1472,20 @@ public:
 
     std::string text_requirement_name() {
         return "Search Term";
+    }
+
+};
+
+class FuzzySearchCommand : public SearchCommand {
+public:
+    static inline const std::string cname = "fuzzy_search";
+    static inline const std::string hname = "Fuzzy Search";
+
+    FuzzySearchCommand(MainWidget* w) : SearchCommand(w, cname) {
+    };
+
+    virtual void perform() {
+        widget->perform_fuzzy_search(text.value());
     }
 
 };
@@ -7640,6 +7654,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<EditSelectedBookmarkCommand>();
     register_command<EditSelectedHighlightCommand>();
     register_command<SearchCommand>();
+    register_command<FuzzySearchCommand>();
     register_command<SemanticSearchCommand>();
     register_command<SemanticSearchExtractiveCommand>();
     register_command<DownloadPaperWithUrlCommand>();

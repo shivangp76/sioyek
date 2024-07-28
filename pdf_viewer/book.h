@@ -201,6 +201,7 @@ struct BookMark : Annotation {
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
     float get_y_offset() const;
 
+    QFont get_font(float zoom_level) const;
     bool is_freetext() const;
     bool is_box() const;
     bool is_marked() const;
