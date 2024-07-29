@@ -4768,3 +4768,262 @@ QColor qconvert_color3(const float* input_color, ColorPalette palette) {
     get_color_for_mode(palette, input_color, &result[0]);
     return convert_float3_to_qcolor(&result[0]);
 }
+
+//std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams_unoptimized(const std::wstring& haystack, const std::wstring& needle, int N, float fraction) {
+//    std::unordered_map<std::wstring_view, int> n_gram_remaining_counts;
+//    std::unordered_map<std::wstring_view, int> n_gram_required_counts;
+// 
+//    int NGRAMS_TO_MATCH = 0;
+//
+//    for (int i = 0; i < needle.size() - N + 1; i++) {
+//        std::wstring_view n_gram = std::wstring_view(needle.data() + i, N);
+//
+//        if ((n_gram.find(L" ") != -1) || (n_gram.find(L"\n") != -1)) {
+//            continue;
+//        }
+//        if (n_gram_remaining_counts.find(n_gram) == n_gram_remaining_counts.end()) {
+//            n_gram_remaining_counts[n_gram] = 1;
+//            n_gram_required_counts[n_gram] = 1;
+//        }
+//        else {
+//            n_gram_remaining_counts[n_gram]++;
+//            n_gram_required_counts[n_gram]++;
+//        }
+//        NGRAMS_TO_MATCH++;
+//    }
+//
+//    int begin_index = 0;
+//    int end_index = N - 1;
+//    int n_matches_in_span = 0;
+//
+//    float MAX_MATCH_FRACTION = 2;
+//    int best_start_index = -1;
+//    int best_end_index = -1;
+//    //int best_size = haystack.size() + 1; // inf
+//    int best_score = -100000;
+//    int haystack_size = haystack.size();
+//
+//    auto move_end_until_match = [&]() {
+//        //bool already_matches = false;
+//        if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
+//            return true;
+//        }
+//
+//        while (end_index < haystack.size() - 1) {
+//            end_index++;
+//
+//            std::wstring_view current_ngram = std::wstring_view(haystack.data() + end_index - N, N);
+//
+//            auto remaining_it = n_gram_remaining_counts.find(current_ngram);
+//            if (remaining_it != n_gram_remaining_counts.end()) {
+//                if (remaining_it->second > 0) {
+//                    n_matches_in_span++;
+//                }
+//                remaining_it->second--;
+//            }
+//            else {
+//                if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//
+//        };
+//
+//    auto move_begin_forward_one = [&]() {
+//        std::wstring_view current_substring = std::wstring_view(haystack.data() + begin_index, N);
+//
+//        auto it = n_gram_remaining_counts.find(current_substring);
+//        if ((it != n_gram_remaining_counts.end())) {
+//            if (it->second >= 0) {
+//                n_matches_in_span--;
+//            }
+//            it->second++;
+//        }
+//        begin_index++;
+//        };
+//
+//
+//    while (true) {
+//        bool finished = !move_end_until_match();
+//        if (finished) break;
+//
+//        int current_match_size = end_index - begin_index + 1;
+//        //if (current_match_size < best_size) {
+//
+//        if (current_match_size < MAX_MATCH_FRACTION * needle.size()) {
+//            //int lcs_size = lcs(haystack.substr(begin_index, current_match_size), needle, current_match_size, needle.size());
+//            //int current_score = lcs_size * 3 - current_match_size;
+//
+//            int current_score = n_matches_in_span * 3 - current_match_size;
+//
+//            //if (lcs_size > (fraction * needle.size())) {
+//            if (current_score > best_score) {
+//                // possibly we could use a different fraction constant from the other fraction here?
+//                best_score = current_score;
+//                best_end_index = end_index;
+//                best_start_index = begin_index;
+//            }
+//        }
+//        //}
+//        move_begin_forward_one();
+//        //if (current_match_size < )
+//    }
+//    //for (int i = 0)
+//    return std::make_pair(best_start_index, best_end_index-1);
+//
+//}
+
+std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction) {
+    // optimized version of find_smallest_substring_containing_fraction_of_n_grams_unoptimized
+
+    int n_gram_remaining_counts[256][256] = {0};
+    int n_gram_required_counts[256][256] = {0};
+
+    std::unordered_map<std::wstring_view, int> n_gram_remaining_counts_unicode;
+    std::unordered_map<std::wstring_view, int> n_gram_required_counts_unicode;
+ 
+    int NGRAMS_TO_MATCH = 0;
+
+    for (int i = 0; i < needle.size() - N + 1; i++) {
+        std::wstring_view n_gram = std::wstring_view(needle.data() + i, N);
+
+        if ((n_gram.find(L" ") != -1) || (n_gram.find(L"\n") != -1)) {
+            continue;
+        }
+
+        if (n_gram[0] < 256 && n_gram[1] < 256) {
+            n_gram_remaining_counts[n_gram[0]][n_gram[1]]++;
+            n_gram_required_counts[n_gram[0]][n_gram[1]]++;
+        }
+        else {
+            if (n_gram_remaining_counts_unicode.find(n_gram) == n_gram_remaining_counts_unicode.end()) {
+                n_gram_remaining_counts_unicode[n_gram] = 1;
+                n_gram_required_counts_unicode[n_gram] = 1;
+            }
+            else {
+                n_gram_remaining_counts_unicode[n_gram]++;
+                n_gram_required_counts_unicode[n_gram]++;
+            }
+        }
+
+        NGRAMS_TO_MATCH++;
+    }
+
+    int begin_index = 0;
+    int end_index = N - 1;
+    int n_matches_in_span = 0;
+
+    float MAX_MATCH_FRACTION = 2;
+    int best_start_index = -1;
+    int best_end_index = -1;
+    //int best_size = haystack.size() + 1; // inf
+    int best_score = -100000;
+    int haystack_size = haystack.size();
+
+    auto move_end_until_match = [&]() {
+        //bool already_matches = false;
+        if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
+            return true;
+        }
+
+        while (end_index < haystack.size() - 1) {
+            end_index++;
+
+            std::wstring_view current_ngram = std::wstring_view(haystack.data() + end_index - N, N);
+
+
+            if (current_ngram[0] > 255 || current_ngram[1] > 255) {
+                auto remaining_it = n_gram_remaining_counts_unicode.find(current_ngram);
+                if (remaining_it != n_gram_remaining_counts_unicode.end()) {
+                    if (remaining_it->second > 0) {
+                        n_matches_in_span++;
+                    }
+                    remaining_it->second--;
+                }
+                else {
+                    if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
+                        return true;
+                    }
+                }
+            }
+            else {
+                int* remaining_it = &n_gram_remaining_counts[current_ngram[0]][current_ngram[1]];
+                int required = n_gram_required_counts[current_ngram[0]][current_ngram[1]];
+                //auto remaining_it = n_gram_remaining_counts.find(current_ngram);
+                if (required) {
+                    if ((*remaining_it) > 0) {
+                        n_matches_in_span++;
+                    }
+                    *remaining_it = (*remaining_it) - 1;
+                }
+                else {
+                    if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
+                        return true;
+                    }
+                }
+            }
+
+        }
+        return false;
+
+        };
+
+    auto move_begin_forward_one = [&]() {
+        std::wstring_view current_substring = std::wstring_view(haystack.data() + begin_index, N);
+        if (current_substring[0] > 255 || current_substring[1] > 255) {
+            auto it = n_gram_remaining_counts_unicode.find(current_substring);
+            if ((it != n_gram_remaining_counts_unicode.end())) {
+                if (it->second >= 0) {
+                    n_matches_in_span--;
+                }
+                it->second++;
+            }
+            begin_index++;
+        }
+        else {
+            int* remaining_it = &n_gram_remaining_counts[current_substring[0]][current_substring[1]];
+            int required = n_gram_required_counts[current_substring[0]][current_substring[1]];
+
+            if (required) {
+                if ((*remaining_it) >= 0) {
+                    n_matches_in_span--;
+                }
+                *remaining_it = (*remaining_it) + 1;
+            }
+            begin_index++;
+        }
+
+        };
+
+
+    while (true) {
+        bool finished = !move_end_until_match();
+        if (finished) break;
+
+        int current_match_size = end_index - begin_index + 1;
+        //if (current_match_size < best_size) {
+
+        if (current_match_size < MAX_MATCH_FRACTION * needle.size()) {
+            //int lcs_size = lcs(haystack.substr(begin_index, current_match_size), needle, current_match_size, needle.size());
+            //int current_score = lcs_size * 3 - current_match_size;
+
+            int current_score = n_matches_in_span * 3 - current_match_size;
+
+            //if (lcs_size > (fraction * needle.size())) {
+            if (current_score > best_score) {
+                // possibly we could use a different fraction constant from the other fraction here?
+                best_score = current_score;
+                best_end_index = end_index;
+                best_start_index = begin_index;
+            }
+        }
+        //}
+        move_begin_forward_one();
+        //if (current_match_size < )
+    }
+    //for (int i = 0)
+    return std::make_pair(best_start_index, best_end_index-1);
+
+}

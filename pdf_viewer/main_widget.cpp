@@ -2866,8 +2866,16 @@ void MainWidget::handle_click(WindowPos click_pos) {
                         open_web_url(anchor_string.toStdWString());
                     }
                     else {
-                        //todo: handle special functionality
-                        qDebug() << anchor_string;
+                        QString url_encoded = anchor_string.mid(9);
+                        QString decoded = QString(QUrl::fromPercentEncoding(url_encoded.toUtf8()));
+                        if (decoded.size() > 1) {
+                            if (decoded[0] == '\"' && decoded[decoded.size() - 1] == '\"') {
+                                decoded = decoded.mid(1, decoded.size() - 2);
+                            }
+                            decoded = decoded.trimmed();
+                            push_state();
+                            perform_fuzzy_search(decoded.toStdWString());
+                        }
                     }
                 }
             }
@@ -7682,128 +7690,6 @@ QVariantMap MainWidget::get_color_mapping() {
     return color_map;
 }
 
-std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction) {
-    std::unordered_map<std::wstring, int> n_gram_remaining_counts;
-    std::unordered_map<std::wstring, int> n_gram_required_counts;
-
-    int NGRAMS_TO_MATCH = 0;
-
-    for (int i = 0; i < needle.size() - N + 1; i++) {
-        std::wstring n_gram = needle.substr(i, N);
-        if ((n_gram.find(L" ") != -1) || (n_gram.find(L"\n") != -1)) {
-            continue;
-        }
-        if (n_gram_remaining_counts.find(n_gram) == n_gram_remaining_counts.end()) {
-            n_gram_remaining_counts[n_gram] = 1;
-            n_gram_required_counts[n_gram] = 1;
-        }
-        else {
-            n_gram_remaining_counts[n_gram]++;
-            n_gram_required_counts[n_gram]++;
-        }
-        NGRAMS_TO_MATCH++;
-    }
-
-    int begin_index = 0;
-    int end_index = N - 1;
-    int n_matches_in_span = 0;
-
-    float MAX_MATCH_FRACTION = 2;
-    int best_start_index = -1;
-    int best_end_index = -1;
-    //int best_size = haystack.size() + 1; // inf
-    int best_score = -100000;
-    int haystack_size = haystack.size();
-
-    auto move_end_until_match = [&]() {
-        if (begin_index < (haystack.size() - 1000)) {
-            if (QString::fromStdWString(haystack.substr(begin_index, 100)).startsWith("We show that")) {
-                int a = 2;
-            }
-        }
-        //bool already_matches = false;
-        if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
-            return true;
-        }
-
-        //if (n_matches_in_span >= NGRAMS_TO_MATCH) {
-        //    return true;
-        //}
-        while (end_index < haystack.size() - 1) {
-            end_index++;
-            std::wstring current_ngram = haystack.substr(end_index - N, N);
-
-            for (int i = 0; i < N; i++) {
-                if (current_ngram[i] >= 30 && current_ngram[i] <= 128) {
-                    current_ngram[i] = std::tolower(current_ngram[i]);
-                }
-            }
-
-            auto remaining_it = n_gram_remaining_counts.find(current_ngram);
-            if (remaining_it != n_gram_remaining_counts.end()) {
-                if (remaining_it->second > 0) {
-                    n_matches_in_span++;
-                }
-                remaining_it->second--;
-            }
-            else {
-                if (((end_index - begin_index) > needle.size()) && (n_matches_in_span > (fraction * NGRAMS_TO_MATCH))) {
-                    return true;
-                }
-            }
-        }
-        return false;
-
-        };
-    auto move_begin_forward_one = [&]() {
-        if ((end_index - begin_index) < 2) {
-            int a = 2;
-        }
-        std::wstring current_substring = haystack.substr(begin_index, N);
-
-        for (int i = 0; i < N; i++) {
-            if (current_substring[i] >= 30 && current_substring[i] <= 128) {
-                current_substring[i] = std::tolower(current_substring[i]);
-            }
-        }
-
-        auto it = n_gram_remaining_counts.find(current_substring);
-        if ((it != n_gram_remaining_counts.end())) {
-            if (it->second >= 0) {
-                n_matches_in_span--;
-            }
-            it->second++;
-        }
-        begin_index++;
-        };
-
-    while (true) {
-        bool finished = !move_end_until_match();
-        if (finished) break;
-
-        int current_match_size = end_index - begin_index + 1;
-        //if (current_match_size < best_size) {
-
-        if (current_match_size < MAX_MATCH_FRACTION * needle.size()) {
-            int lcs_size = lcs(haystack.substr(begin_index, current_match_size), needle, current_match_size, needle.size());
-            int current_score = lcs_size * 3 - current_match_size;
-            //if (lcs_size > (fraction * needle.size())) {
-            if (current_score > best_score) {
-                // possibly we could use a different fraction constant from the other fraction here?
-                best_score = current_score;
-                best_end_index = end_index;
-                best_start_index = begin_index;
-            }
-        }
-        //}
-        move_begin_forward_one();
-        //if (current_match_size < )
-    }
-    //for (int i = 0)
-    return std::make_pair(best_start_index, best_end_index-1);
-
-}
-
 QString MainWidget::get_markdown_bookmark_anchor_text_under_cursor() {
     QPoint cursor_pos = mapFromGlobal(QCursor::pos());
     AbsoluteDocumentPos cursor_abspos = get_cursor_abspos();
@@ -7832,7 +7718,45 @@ QString MainWidget::get_markdown_bookmark_anchor_text_under_cursor() {
     return "";
 }
 
+std::wstring replace_verbatim_links(std::wstring input) {
+    // convert '@verbatim(string)' in input to '[ref](string)'
+    std::wstring result;
+    std::wstring::size_type start = 0;
+    std::wstring::size_type end = 0;
+    int index = 1;
+
+    while (start < input.size()) {
+        start = input.find(L"@verbatim(", start);
+        if (start == std::wstring::npos) {
+            result += input.substr(end);
+            break;
+        }
+        result += input.substr(end, start - end);
+        end = input.find(L")", start);
+        if (end == std::wstring::npos) {
+            result += input.substr(start);
+            break;
+        }
+        std::wstring link = input.substr(start + 10, end - start - 10);
+        link = QString(QUrl::toPercentEncoding(QString::fromStdWString(link))).toStdWString();
+        result += L"[[" + QString::number(index).toStdWString() + L"]](sioyek://" + link + L")";
+        start = end + 1;
+        end = start;
+        index++;
+    }
+    return result;
+}
+
 void MainWidget::handle_debug_command() {
+
+    //std::wstring original = L"this is some text @verbatim(some link) and this is more @verbatim(another link) and more";
+    // encode original for url
+    //std::wstring url_encoded = QUrl::toPercentEncoding();
+
+    //std::wstring replaced = replace_verbatim_links(original);
+    //copy_to_clipboard(replaced);
+    // qDebug() << replaced;
+    //replace_verbatim_links()
 }
 
 void MainWidget::show_command_menu() {
@@ -7901,6 +7825,7 @@ void MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_
     }
 }
 
+
 void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
     const std::wstring& index = doc()->get_super_fast_index();
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
@@ -7912,6 +7837,7 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
         [this, bookmark_uuid, document=doc()]() {
             int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
             BookMark& bm = document->get_bookmarks()[bookmark_index];
+            bm.description = replace_verbatim_links(bm.description);
             document->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
         });
 }
@@ -13429,18 +13355,33 @@ void MainWidget::scroll_selected_bookmark(int amount) {
 
 
 void MainWidget::perform_fuzzy_search(std::wstring query) {
+    if (doc()->get_super_fast_index().size() == 0) {
+        show_error_message(L"Super fast search index is not ready");
+        return;
+    }
+
+    const std::wstring& super_fast_index = doc()->get_super_fast_index();
+    std::wstring lower_index = super_fast_index;
+
+    for (int i = 0; i < lower_index.size(); i++) {
+        if (lower_index[i] > 30 && lower_index[i] < 130) {
+            lower_index[i] = std::tolower(lower_index[i]);
+        }
+    }
+
+
     QStringList parts = QString::fromStdWString(query).split("...");
 
     std::vector<SearchResult> search_results;
 
     for (int i = 0; i < parts.size(); i++) {
         std::wstring text = parts.at(i).toLower().toStdWString();
+        if (parts.at(i).size() < 5) continue;
 
         int begin_page = -1;
         int end_page = -1;
 
-        //similarity_score(doc()->get_super_fast_index(), text, &begin, &end, 0.7f);
-        auto [begin, end] = find_smallest_substring_containing_fraction_of_n_grams(doc()->get_super_fast_index(), text, 2, 0.5f);
+        auto [begin, end] = find_smallest_substring_containing_fraction_of_n_grams(lower_index, text, 2, 0.5f);
 
         int begin_index = doc()->absolute_to_page_index(begin, begin_page);
         int end_index = doc()->absolute_to_page_index(end, end_page);
