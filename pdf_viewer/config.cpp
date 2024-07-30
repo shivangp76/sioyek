@@ -77,7 +77,7 @@ std::wstring SEARCH_URLS[26];
 //std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
 //std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 
-std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a markdown table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns.";
+std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a markdown table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns. Only reply with the raw markdown, do not include any extra text.";
 // std::wstring PAPER_SEARCH_URL = L"https://scholar.google.com/scholar?oi=gsr-r&output=gsb&q=%{query}";
 
 // std::wstring PAPER_SEARCH_URL_PATH = L"r[].u";

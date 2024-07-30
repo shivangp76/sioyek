@@ -2340,6 +2340,7 @@ public:
     }
 };
 
+
 class ExtractTableWithPromptCommand : public Command {
 
 public:
@@ -2347,12 +2348,17 @@ public:
     static inline const std::string hname = "Extract the selected table's data";
 
     std::optional<AbsoluteRect> rect_;
+    std::optional<QString> bookmark_type_;
     std::optional<QString> prompt_;
 
     ExtractTableWithPromptCommand(MainWidget* w) : Command(cname, w) {};
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
 
+        if (!bookmark_type_.has_value()) {
+            Requirement req = { RequirementType::Text, "Boomark Type" };
+            return req;
+        }
         if (!prompt_.has_value()) {
             Requirement req = { RequirementType::Text, "prompt" };
             return req;
@@ -2369,7 +2375,12 @@ public:
     }
 
     void set_text_requirement(std::wstring value) {
-        prompt_ = QString::fromStdWString(value);
+        if (!bookmark_type_.has_value()) {
+            bookmark_type_ = QString::fromStdWString(value);
+        }
+        else {
+            prompt_ = QString::fromStdWString(value);
+        }
     }
 
     void perform() {
@@ -2391,14 +2402,14 @@ public:
 
         MainWidget* w = widget;
         AbsoluteRect r = rect_.value();
-        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, this](QString data) {
+        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, bookmark_type_=bookmark_type_](QString data) {
             if (TABLE_EXTRACT_BEHAVIOUR == L"copy") {
 
                 copy_to_clipboard(data.toStdWString());
                 show_error_message(L"The result was copied to your clipboard");
             }
             else if (TABLE_EXTRACT_BEHAVIOUR == L"bookmark") {
-                std::wstring desc = ("#markdown\n" + data).toStdWString();
+                std::wstring desc = ("#" + bookmark_type_.value() + "\n" + data).toStdWString();
                 w->doc()->add_freetext_bookmark(desc, r);
                 w->invalidate_render();
             }
@@ -2406,6 +2417,41 @@ public:
 
     }
 };
+
+
+class ConvertToLatexCommand : public Command {
+
+public:
+    static inline const std::string cname = "convert_to_latex";
+    static inline const std::string hname = "Convert the selected image into latex";
+
+    std::optional<AbsoluteRect> rect_;
+
+    ConvertToLatexCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+
+        if (!rect_.has_value()) {
+            Requirement req = { RequirementType::Rect, "table rect" };
+            return req;
+        }
+        return {};
+    }
+
+    void set_rect_requirement(AbsoluteRect value) {
+        rect_ = value;
+    }
+
+    void perform() {
+
+        std::unique_ptr<Command> cmd = widget->command_manager->get_command_with_name(widget, "extract_table_with_prompt");
+        cmd->set_text_requirement(L"latex");
+        cmd->set_text_requirement(L"Convert the image into latex. Just reply with raw latex, do not include any extra text.");
+        cmd->set_rect_requirement(rect_.value());
+        widget->advance_command(std::move(cmd));
+    }
+};
+
 class ExtractTableCommand : public Command {
 
 public:
@@ -2432,6 +2478,7 @@ public:
     void perform() {
 
         std::unique_ptr<Command> cmd = widget->command_manager->get_command_with_name(widget, "extract_table_with_prompt");
+        cmd->set_text_requirement(L"markdown");
         cmd->set_text_requirement(EXTRACT_TABLE_PROMPT);
         cmd->set_rect_requirement(rect_.value());
         widget->advance_command(std::move(cmd));
@@ -7720,6 +7767,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<AddBookmarkFreetextCommand>();
     register_command<CopyDrawingsFromScratchpadCommand>();
     register_command<CopyScreenshotToScratchpad>();
+    register_command<ConvertToLatexCommand>();
     register_command<ExtractTableWithPromptCommand>();
     register_command<ExtractTableCommand>();
     register_command<CopyScreenshotToClipboard>();

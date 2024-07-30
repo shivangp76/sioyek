@@ -52,6 +52,7 @@ public:
     const std::wstring SIOYEK_UPLOAD_INDEX_URL = SIOYEK_HOST + L"upload_index";
     const std::wstring SIOYEK_STREAM_TEST_URL = SIOYEK_HOST + L"stream";
     const std::wstring SIOYEK_EXTRACT_TABLE_URL = SIOYEK_HOST + L"extract_table";
+    //const std::wstring SIOYEK_CONVERT_TO_LATEX_URL = SIOYEK_HOST + L"convert_to_latex";
     const std::wstring SIOYEK_DELETE_FILE_CHECKSUM_URL = SIOYEK_HOST + L"delete_checksum";
     const std::wstring SIOYEK_UPLOAD_DRAWINGS_URL = SIOYEK_HOST + L"upload_drawings";
     const std::wstring SIOYEK_DOWNLOAD_DRAWINGS_URL = SIOYEK_HOST + L"download_drawings";
