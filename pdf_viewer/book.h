@@ -338,6 +338,13 @@ struct BookmarkResizeData {
     OverviewSide side_index;
 };
 
+struct BookmarkScrollData {
+    int bookmark_index;
+    float original_scroll_amount;
+    AbsoluteDocumentPos original_mouse_pos;
+};
+
+
 struct OverviewMoveData {
     fvec2 original_offsets;
     NormalizedWindowPos original_normal_mouse_pos;

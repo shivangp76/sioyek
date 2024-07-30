@@ -9,6 +9,9 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
+// fix network status display message
+// add a command to convert handwriting to latex or markdown
+// allow defining custom LLM commands
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -811,6 +814,18 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         }
     }
 
+    if (bookmark_scroll_data) {
+        int index = bookmark_scroll_data->bookmark_index;
+        if (index < doc()->get_bookmarks().size()) {
+            auto& target_bookmark = doc()->get_bookmarks()[index];
+            //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
+            dv()->set_bookmark_scroll_amount(target_bookmark.uuid,
+                -(abs_mpos.y - bookmark_scroll_data->original_mouse_pos.y) * dv()->get_zoom_level() + bookmark_scroll_data->original_scroll_amount);
+            validate_render();
+            return;
+        }
+    }
+
     if (overview_resize_data) {
         // if we are resizing overview page, set the selected side of the overview window to the mosue position
         fvec2 offset_diff = normal_mpos - overview_resize_data->original_normal_mouse_pos;
@@ -934,6 +949,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             }
         }
         //dv()->set_pos(last_mouse_down_document_offset + diff_doc);
+
         dv()->set_virtual_pos(last_mouse_down_document_virtual_offset + diff_doc, true);
 
         validate_render();
@@ -2557,19 +2573,34 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         // after the mouse has moved a certain amount in mouseMoveEvent
         if (visible_object) {
             if (visible_object->object_type == VisibleObjectType::Bookmark) {
-
-                int index = visible_object->index;
-                auto bookmark = doc()->get_bookmarks()[index];
-                std::optional<OverviewSide> bookmark_resize_side = bookmark.get_resize_side_containing_point(abs_doc_pos);
-                if (bookmark_resize_side) {
-                    BookmarkResizeData brd;
-                    brd.bookmark_index = index;
-                    brd.side_index = bookmark_resize_side.value();
-                    brd.original_mouse_pos = abs_doc_pos;
-                    brd.original_rect = bookmark.rect();
-                    bookmark_resize_data = brd;
-                    return;
+                // in touch mode swiping over the selected bookmark should move the bookmark content
+                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->index == selected_object_index->index)) {
+                    auto bookmark_ = doc()->get_bookmark_with_index(visible_object->index);
+                    if (bookmark_) {
+                        BookMark bookmark = bookmark_.value();
+                        BookmarkScrollData new_bookmark_scroll_data;
+                        new_bookmark_scroll_data.bookmark_index = visible_object->index;
+                        new_bookmark_scroll_data.original_scroll_amount = dv()->get_bookmark_scroll_amount(bookmark.uuid);
+                        new_bookmark_scroll_data.original_mouse_pos = abs_doc_pos;
+                        bookmark_scroll_data = new_bookmark_scroll_data;
+                        return;
+                    }
                 }
+                else {
+                    int index = visible_object->index;
+                    auto bookmark = doc()->get_bookmarks()[index];
+                    std::optional<OverviewSide> bookmark_resize_side = bookmark.get_resize_side_containing_point(abs_doc_pos);
+                    if (bookmark_resize_side) {
+                        BookmarkResizeData brd;
+                        brd.bookmark_index = index;
+                        brd.side_index = bookmark_resize_side.value();
+                        brd.original_mouse_pos = abs_doc_pos;
+                        brd.original_rect = bookmark.rect();
+                        bookmark_resize_data = brd;
+                        return;
+                    }
+                }
+
             }
 
             last_mouse_down = abs_doc_pos;
@@ -2649,6 +2680,11 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         if (bookmark_resize_data) {
             update_bookmark_with_index(bookmark_resize_data->bookmark_index);
             bookmark_resize_data = {};
+            return;
+        }
+
+        if (bookmark_scroll_data) {
+            bookmark_scroll_data = {};
             return;
         }
 
@@ -7243,6 +7279,9 @@ bool MainWidget::is_flicking(QPointF* out_velocity) {
         return false;
     }
     if (main_document_view->get_overview_page()) {
+        return false;
+    }
+    if (bookmark_scroll_data) {
         return false;
     }
 

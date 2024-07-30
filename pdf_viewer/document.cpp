@@ -5050,3 +5050,10 @@ std::pair<float, float> Document::get_min_max_bookmark_x_for_page(int page) {
     }
     return std::make_pair(min_bookmark_x, max_bookmark_x);
 }
+
+std::optional<BookMark> Document::get_bookmark_with_index(int index) {
+    if ((index >= 0) && (index < bookmarks.size())) {
+        return bookmarks[index];
+    }
+    return {};
+}

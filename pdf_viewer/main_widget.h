@@ -406,6 +406,7 @@ public:
     std::optional<OverviewResizeData> overview_resize_data = {};
 
     std::optional<BookmarkResizeData> bookmark_resize_data = {};
+    std::optional<BookmarkScrollData> bookmark_scroll_data = {};
 
     std::vector<PendingDownloadPortal> pending_download_portals;
 
