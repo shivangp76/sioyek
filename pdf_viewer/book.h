@@ -213,6 +213,7 @@ struct BookMark : Annotation {
     std::optional<char> get_type() const;
 
     AbsoluteRect get_rectangle() const;
+    AbsoluteRect get_selection_rectangle() const;
     std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
     void set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos);
 };

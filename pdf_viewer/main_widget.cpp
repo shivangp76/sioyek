@@ -2557,6 +2557,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         // after the mouse has moved a certain amount in mouseMoveEvent
         if (visible_object) {
             if (visible_object->object_type == VisibleObjectType::Bookmark) {
+
                 int index = visible_object->index;
                 auto bookmark = doc()->get_bookmarks()[index];
                 std::optional<OverviewSide> bookmark_resize_side = bookmark.get_resize_side_containing_point(abs_doc_pos);

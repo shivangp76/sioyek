@@ -3880,16 +3880,17 @@ int Document::get_bookmark_index_at_pos(AbsoluteDocumentPos abspos) {
             if (bookmarks[i].end_y == -1) {
 
                 //if (fz_is_point_inside_rect({abspos.x, abspos.y}, bookmarks[i].get_rectangle())) {
-                if (bookmarks[i].get_rectangle().contains(abspos)) {
+                if (bookmarks[i].get_selection_rectangle().contains(abspos)) {
                     return i;
                 }
             }
             else {
-                AbsoluteRect bookmark_rect;
-                bookmark_rect.x0 = bookmarks[i].begin_x;
-                bookmark_rect.y0 = bookmarks[i].begin_y;
-                bookmark_rect.x1 = bookmarks[i].end_x;
-                bookmark_rect.y1 = bookmarks[i].end_y;
+                //AbsoluteRect bookmark_rect;
+                //bookmark_rect.x0 = bookmarks[i].begin_x;
+                //bookmark_rect.y0 = bookmarks[i].begin_y;
+                //bookmark_rect.x1 = bookmarks[i].end_x;
+                //bookmark_rect.y1 = bookmarks[i].end_y;
+                AbsoluteRect bookmark_rect = bookmarks[i].get_selection_rectangle();
 
                 if (fz_is_point_inside_rect({ abspos.x, abspos.y }, bookmark_rect)) {
                     return i;

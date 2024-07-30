@@ -519,6 +519,17 @@ void BookMark::set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos) {
     }
 }
 
+AbsoluteRect BookMark::get_selection_rectangle() const {
+    AbsoluteRect rect = get_rectangle();
+    if (is_freetext()) {
+        rect.x0 -= 5;
+        rect.x1 += 5;
+        rect.y0 -= 5;
+        rect.y1 += 5;
+    }
+    return rect;
+}
+
 AbsoluteRect BookMark::get_rectangle() const{
     if (end_y > -1) {
 
