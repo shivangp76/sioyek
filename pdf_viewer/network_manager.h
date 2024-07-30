@@ -111,7 +111,7 @@ public:
     void semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done);
     void semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
     void does_index_exist(QObject* parent, const std::wstring& index, std::function<void(bool)> on_done);
-    void summarize(QObject* parent, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
+    void summarize(QObject* parent, const std::wstring& index, int first_page_end_index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
     void upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done);
     void extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt = {});
     void sync_document_annotations_to_server(QObject* parent, Document* doc, std::function<void()> on_done);

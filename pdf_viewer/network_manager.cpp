@@ -1265,7 +1265,7 @@ void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, c
         });
 }
 
-void SioyekNetworkManager::summarize(QObject* parent, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
+void SioyekNetworkManager::summarize(QObject* parent, const std::wstring& index, int first_page_end_index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
     QString index_qstring = QString::fromStdWString(index);
     //std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
 
@@ -1275,6 +1275,7 @@ void SioyekNetworkManager::summarize(QObject* parent, const std::wstring& index,
 
     QJsonObject obj;
     obj["document_content"] = index_qstring;
+    obj["first_page_end_index"] = first_page_end_index;
 
     QJsonDocument json_doc(obj);
     authorize_request(&req);
@@ -1283,14 +1284,32 @@ void SioyekNetworkManager::summarize(QObject* parent, const std::wstring& index,
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "summarizing");
     QObject::connect(reply, &QNetworkReply::downloadProgress, [reply, on_chunk=std::move(on_chunk)]() {
-        QString chunk = QString::fromUtf8(reply->readAll());
-        on_chunk(chunk);
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
+        if (status_code == 200) {
+            QString chunk = QString::fromUtf8(reply->readAll());
+            on_chunk(chunk);
+        }
+
         });
     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
         if (status_code == 200) {
             on_done();
         }
+        else {
+            if (status_code == 400) {
+                auto content = reply->readAll();
+                QJsonDocument json_doc = QJsonDocument::fromJson(content);
+                QString status_string = json_doc["status"].toString();
+                if (status_string == "TOO_LONG") {
+                    show_error_message(L"Document is too long for summarization");
+                }
+
+            }
+        }
+
         });
 }
 

@@ -732,6 +732,7 @@ public:
     void handle_delete_document_from_fulltext_search_index();
     void scroll_selected_bookmark(int amount);
     void scroll_bookmark_with_index(int index, int amount);
+    bool ensure_super_fast_search_index();
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
     AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);

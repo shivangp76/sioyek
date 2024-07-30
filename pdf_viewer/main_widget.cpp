@@ -7726,18 +7726,18 @@ std::wstring replace_verbatim_links(std::wstring input) {
     int index = 1;
 
     while (start < input.size()) {
-        start = input.find(L"@verbatim(", start);
+        start = input.find(L"@verbatim({", start);
         if (start == std::wstring::npos) {
             result += input.substr(end);
             break;
         }
         result += input.substr(end, start - end);
-        end = input.find(L")", start);
+        end = input.find(L"})", start);
         if (end == std::wstring::npos) {
             result += input.substr(start);
             break;
         }
-        std::wstring link = input.substr(start + 10, end - start - 10);
+        std::wstring link = input.substr(start + 11, end - start - 11);
         link = QString(QUrl::toPercentEncoding(QString::fromStdWString(link))).toStdWString();
         result += L"[[" + QString::number(index).toStdWString() + L"]](sioyek://" + link + L")";
         start = end + 1;
@@ -7825,13 +7825,38 @@ void MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_
     }
 }
 
+bool MainWidget::ensure_super_fast_search_index() {
+    if (doc()->get_super_fast_index().size() > 0) {
+        return true;
+    }
+
+    if (!SUPER_FAST_SEARCH) {
+        show_error_message(L"This feature requires super_fast_search to be enabled.");
+    }
+    else if (doc()->get_is_indexing()) {
+        show_error_message(L"Super fast index is not ready yet.");
+    }
+    else {
+        show_error_message(L"Super fast index not available for unknown reason.");
+    }
+
+
+    return false;
+}
 
 void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
+    if (!ensure_super_fast_search_index()) {
+        return;
+    }
+
+
     const std::wstring& index = doc()->get_super_fast_index();
+    int first_page_end_index = doc()->get_super_fast_page_begin_indices()[1] - 1;
+
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
     int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
     doc()->get_bookmarks()[ind].description += L"\n\n";
-    sioyek_network_manager->summarize(this,  index, [this, bookmark_uuid, document=doc()](QString chunk) {
+    sioyek_network_manager->summarize(this,  index, first_page_end_index, [this, bookmark_uuid, document=doc()](QString chunk) {
         add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         },
         [this, bookmark_uuid, document=doc()]() {
