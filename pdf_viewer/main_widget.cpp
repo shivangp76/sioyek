@@ -2397,7 +2397,6 @@ void MainWidget::download_and_portal_to_highlighted_overview_paper() {
 }
 
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
-
     if (is_rotated()) {
         return;
     }
@@ -2582,6 +2581,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                         new_bookmark_scroll_data.bookmark_index = visible_object->index;
                         new_bookmark_scroll_data.original_scroll_amount = dv()->get_bookmark_scroll_amount(bookmark.uuid);
                         new_bookmark_scroll_data.original_mouse_pos = abs_doc_pos;
+                        last_mouse_down_window_pos = click_pos;
                         bookmark_scroll_data = new_bookmark_scroll_data;
                         return;
                     }
@@ -2685,7 +2685,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
         if (bookmark_scroll_data) {
             bookmark_scroll_data = {};
-            return;
+            //return;
         }
 
         bool was_resizing_overview =
@@ -7788,6 +7788,9 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
+    sioyek_network_manager->debug(this, [this]() {
+        invalidate_render();
+        });
 
     //std::wstring original = L"this is some text @verbatim(some link) and this is more @verbatim(another link) and more";
     // encode original for url

@@ -1143,7 +1143,7 @@ void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done)
 
     QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
-    reply->setProperty("sioyek_network_status_string", "debug netowkr erquest");
+    reply->setProperty("sioyek_network_status_string", "Peforming debug operation");
     QObject::connect(reply, &QNetworkReply::finished, [on_done=std::move(on_done)]() {
         on_done();
         });
