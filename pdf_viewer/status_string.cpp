@@ -252,7 +252,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         return "";
         };
     auto network_status_fn = [widget=main_widget]() {
-        return widget->get_network_status_string();
+        return " [ " + widget->get_network_status_string() + " ]";
         };
 
     auto tts_status_fn = [widget=main_widget]() {
