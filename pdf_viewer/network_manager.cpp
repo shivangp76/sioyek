@@ -782,6 +782,57 @@ void SioyekNetworkManager::upload_annot(
 }
 
 
+void SioyekNetworkManager::perform_generic_llm_request(QObject* parent, const QString& system_prompt, const QString& user_prompt, const QPixmap* pixmap, std::function<void(QString)> on_done) {
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_GENERIC_LLM_URL)));
+    authorize_request(&req);
+
+    QHttpMultiPart* multipart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+    if (pixmap) {
+        QByteArray image_data;
+        QBuffer image_buffer(&image_data);
+        image_buffer.open(QIODevice::WriteOnly);
+        pixmap->save(&image_buffer, "PNG");
+
+        QHttpPart image_part;
+        image_part.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("image/png"));
+        image_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"image\"; filename=\"image.png\""));
+        image_part.setBody(image_data);
+        multipart->append(image_part);
+    }
+
+    QJsonDocument json_doc;
+    QJsonObject root_object;
+    root_object["system_prompt"] = system_prompt;
+    root_object["user_prompt"] = user_prompt;
+    //root_object["prompt"] = prompt.value_or(QString::fromStdWString(EXTRACT_TABLE_PROMPT));
+    json_doc.setObject(root_object);
+
+
+    QHttpPart data_part;
+    data_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"sioyek_data\""));
+    data_part.setBody(json_doc.toJson(QJsonDocument::JsonFormat::Compact));
+    multipart->append(data_part);
+
+
+    QNetworkReply* reply = get_network_manager()->post(req, multipart);
+    reply->setParent(parent);
+    reply->setProperty("sioyek_network_status_string", "extracting data from image");
+
+    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+        auto data = reply->readAll();
+        QJsonObject result_object = QJsonDocument::fromJson(data).object();
+        QString status = result_object["status"].toString();
+        if (status == "OK") {
+            on_done(result_object["result"].toString());
+        }
+        });
+
+
+}
+
 void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt) {
     QByteArray image_data;
     QBuffer image_buffer(&image_data);

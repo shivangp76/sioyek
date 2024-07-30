@@ -135,6 +135,9 @@ struct ParseState {
                     if (ch == '\\') {
                         arg.push_back('\\');
                     }
+                    if (ch == 'n') {
+                        arg.push_back('\n');
+                    }
                     is_prev_char_backslash = false;
                 }
                 else {
@@ -265,7 +268,7 @@ private:
     //    }
     //}
 
-    std::optional<std::wstring> get_result() override{
+    std::optional<std::wstring> get_result() override {
         if (actual_command) {
             return actual_command->get_result();
         }
@@ -455,7 +458,7 @@ public:
     }
 
 
-    std::optional<std::wstring> get_result() override{
+    std::optional<std::wstring> get_result() override {
         if (commands.size() > 0) {
             return commands.back()->get_result();
         }
@@ -855,7 +858,7 @@ public:
         }
     }
 
-    std::string get_human_readable_name() override{
+    std::string get_human_readable_name() override {
         if (name.size() > 0 || commands.size() == 0) {
             return name;
         }
@@ -1425,7 +1428,7 @@ class SearchCommand : public TextCommand {
 public:
     static inline const std::string cname = "search";
     static inline const std::string hname = "Search";
-    SearchCommand(MainWidget* w, std::string override_cname="") : TextCommand(override_cname.size() > 0 ? override_cname : cname, w) {
+    SearchCommand(MainWidget* w, std::string override_cname = "") : TextCommand(override_cname.size() > 0 ? override_cname : cname, w) {
     };
 
     void on_text_change(const QString& new_text) override {
@@ -1440,7 +1443,7 @@ public:
         }
     }
 
-    virtual void on_cancel() override{
+    virtual void on_cancel() override {
         if (INCREMENTAL_SEARCH) {
             widget->goto_mark('/');
         }
@@ -1599,7 +1602,7 @@ public:
         return "Action";
     }
 
-    bool requires_document(){
+    bool requires_document() {
         return false;
     }
 
@@ -1649,6 +1652,111 @@ public:
 
     std::string text_requirement_name() {
         return "State String";
+    }
+
+};
+
+class LlmCommand : public Command {
+private:
+    std::optional<std::wstring> system_prompt = {};
+    std::optional<std::wstring> user_prompt = {};
+    std::optional<AbsoluteRect> selected_rect = {};
+public:
+    static inline const std::string cname = "llm_command";
+    static inline const std::string hname = "";
+    LlmCommand(MainWidget* w) : Command(cname, w) {};
+
+    void set_text_requirement(std::wstring value) {
+        if (!system_prompt.has_value()) {
+            system_prompt = value;
+        }
+        else {
+            user_prompt = value;
+        }
+    }
+
+    bool requires_image() {
+        if (selected_rect.has_value()) {
+            return false;
+        }
+
+        if (system_prompt.has_value() && user_prompt.has_value()) {
+            return  (system_prompt->find(L"%{selected_image}") != -1) || (user_prompt->find(L"%{selected_image}") != -1);
+        }
+        return false;
+    }
+
+
+    void set_rect_requirement(AbsoluteRect value) {
+        selected_rect = value;
+    }
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+        if (!system_prompt.has_value()) {
+            return Requirement{ RequirementType::Text, "System Prompt" };
+        }
+        if (!user_prompt.has_value()) {
+            return Requirement{ RequirementType::Text, "User Prompt" };
+        }
+        if (requires_image() && (!selected_rect.has_value())) {
+            return Requirement{ RequirementType::Rect, "Selected Image" };
+        }
+        return {};
+    }
+
+    QString process_prompt(std::wstring prompt) {
+        QString result = QString::fromStdWString(prompt);
+
+        if (result.indexOf("%{selected_text}") != -1) {
+            result = result.replace("%{selected_text}", QString::fromStdWString(widget->get_selected_text()));
+        }
+
+        if (result.indexOf("%{document_text}") != -1) {
+            result = result.replace("%{document_text}", QString::fromStdWString(widget->doc()->get_super_fast_index()));
+        }
+
+
+        result.replace("%{selected_image}", "the provided image");
+
+        return result;
+
+    }
+
+    void perform() {
+        QString processed_user_prompt = process_prompt(user_prompt.value());
+        QString processed_system_prompt = process_prompt(system_prompt.value());
+
+        QPixmap pixmap;
+        if (selected_rect) {
+            WindowRect window_rect = selected_rect->to_window(widget->main_document_view);
+            window_rect.y0 += 1;
+            QRect window_qrect = QRect(window_rect.x0, window_rect.y0, window_rect.width(), window_rect.height());
+
+            float ratio = QGuiApplication::primaryScreen()->devicePixelRatio();
+            pixmap = QPixmap(static_cast<int>(window_qrect.width() * ratio), static_cast<int>(window_qrect.height() * ratio));
+            pixmap.setDevicePixelRatio(ratio);
+
+            //widget->render(&pixmap, QPoint(), QRegion(widget->rect()));
+            widget->render(&pixmap, QPoint(), QRegion(window_qrect));
+
+            widget->dv()->clear_selected_rectangle();
+            widget->set_rect_select_mode(false);
+            widget->invalidate_render();
+        }
+        widget->sioyek_network_manager->perform_generic_llm_request(
+            widget,
+            processed_system_prompt,
+            processed_user_prompt,
+            selected_rect.has_value() ? &pixmap : nullptr, [selected_rect=selected_rect, w=widget](QString data) {
+                if (selected_rect.has_value()) {
+                    std::wstring desc = data.toStdWString();
+                    w->doc()->add_freetext_bookmark(desc, selected_rect.value());
+                    w->invalidate_render();
+                }
+                else {
+                    copy_to_clipboard(data.toStdWString());
+                }
+            });
     }
 
 };
@@ -1743,10 +1851,10 @@ public:
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
         if (!prompt_title.has_value()) {
-            return Requirement { RequirementType::Text, "Prompt Title" };
+            return Requirement{ RequirementType::Text, "Prompt Title" };
         }
         if (!result.has_value()) {
-            return Requirement{ RequirementType::Text, utf8_encode(prompt_title.value())};
+            return Requirement{ RequirementType::Text, utf8_encode(prompt_title.value()) };
         }
         return {};
     }
@@ -1877,10 +1985,10 @@ public:
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
         if (options.size() == 0) {
-            return Requirement { RequirementType::Text, "options" };
+            return Requirement{ RequirementType::Text, "options" };
         }
         if (!selected_option.has_value()) {
-            return Requirement { RequirementType::Generic, "selected" };
+            return Requirement{ RequirementType::Generic, "selected" };
         }
         return {};
     }
@@ -2402,7 +2510,7 @@ public:
 
         MainWidget* w = widget;
         AbsoluteRect r = rect_.value();
-        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, bookmark_type_=bookmark_type_](QString data) {
+        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, bookmark_type_ = bookmark_type_](QString data) {
             if (TABLE_EXTRACT_BEHAVIOUR == L"copy") {
 
                 copy_to_clipboard(data.toStdWString());
@@ -2694,7 +2802,7 @@ public:
                 widget->main_document_view->goto_page(page);
             }
             else {
-                widget->main_document_view->goto_offset_within_page(page,  y_offset);
+                widget->main_document_view->goto_offset_within_page(page, y_offset);
             }
             if (TOC_JUMP_ALIGN_TOP) {
                 widget->main_document_view->scroll_mid_to_top();
@@ -2853,7 +2961,7 @@ public:
         // Create [HKEY_CLASSES_ROOT\duck\shell\open\command]
         CreateRegistryKey(HKEY_CLASSES_ROOT, "sioyek\\shell\\open\\command", NULL, val.c_str());
 #endif
-        
+
     }
 
     bool requires_document() { return false; }
@@ -3079,7 +3187,7 @@ public:
 
     virtual bool is_ready() = 0;
 
-    void handle_generic_requirement() override{
+    void handle_generic_requirement() override {
         if (finished) return;
 
         timer = new QTimer();
@@ -3399,7 +3507,7 @@ public:
     std::optional<std::wstring> entry_point = {};
     bool is_async;
 
-    JavascriptCommand(std::string command_name, std::wstring code_, std::optional<std::wstring> entry_point_, bool is_async_, MainWidget* w) :  Command(command_name, w), command_name(command_name) {
+    JavascriptCommand(std::string command_name, std::wstring code_, std::optional<std::wstring> entry_point_, bool is_async_, MainWidget* w) : Command(command_name, w), command_name(command_name) {
         code = code_;
         entry_point = entry_point_;
         is_async = is_async_;
@@ -3420,7 +3528,7 @@ public:
     std::string command_name;
     std::wstring funcall;
 
-    JsCallCommand(std::string command_name, std::wstring func_, MainWidget* widget) : Command(command_name, widget){
+    JsCallCommand(std::string command_name, std::wstring func_, MainWidget* widget) : Command(command_name, widget) {
         funcall = func_ + L"()";
     };
 
@@ -3934,7 +4042,7 @@ public:
         visible_objects = widget->dv()->get_generic_visible_item_indices();
     };
 
-    int get_selected_item_index() override{
+    int get_selected_item_index() override {
         return -1;
         //return widget->selected_highlight_index;
     }
@@ -3987,7 +4095,7 @@ public:
         visible_objects = widget->dv()->get_generic_visible_item_indices();
     };
 
-    int get_selected_item_index() override{
+    int get_selected_item_index() override {
         return -1;
         //return widget->selected_highlight_index;
     }
@@ -4043,7 +4151,7 @@ class GenericHighlightCommand : public GenericVisibleSelectCommand {
 public:
     GenericHighlightCommand(std::string name, MainWidget* w) : GenericVisibleSelectCommand(name, w) {};
 
-    int get_selected_item_index() override{
+    int get_selected_item_index() override {
         return widget->get_selected_highlight_index();
     }
 
@@ -4075,7 +4183,7 @@ class GenericVisibleBookmarkCommand : public GenericVisibleSelectCommand {
 public:
     GenericVisibleBookmarkCommand(std::string name, MainWidget* w) : GenericVisibleSelectCommand(name, w) {};
 
-    int get_selected_item_index() override{
+    int get_selected_item_index() override {
         return widget->get_selected_bookmark_index();
     }
 
@@ -4548,10 +4656,10 @@ public:
     std::optional<Requirement> next_requirement(MainWidget* widget) {
 
         if (!file_path.has_value()) {
-            return Requirement { RequirementType::File, "File Path" };
+            return Requirement{ RequirementType::File, "File Path" };
         }
         if (!line.has_value()) {
-            return Requirement { RequirementType::Text, "Line number" };
+            return Requirement{ RequirementType::Text, "Line number" };
         }
         return {};
     }
@@ -4732,10 +4840,10 @@ public:
 
     virtual std::optional<Requirement> next_requirement(MainWidget* widget) {
         if (!menu_name.has_value()) {
-            return Requirement{ RequirementType::Text, "Menu Name"};
+            return Requirement{ RequirementType::Text, "Menu Name" };
         }
         if (!commands.has_value()) {
-            return Requirement{ RequirementType::Text, "Commands"};
+            return Requirement{ RequirementType::Text, "Commands" };
         }
         return {};
     }
@@ -5194,7 +5302,7 @@ void KeyboardSelectPointCommand::pre_perform() {
 std::string KeyboardSelectPointCommand::get_name() {
     return "keyboard_point_select";
 }
- 
+
 
 void KeyboardSelectPointCommand::set_symbol_requirement(char value) {
     if (text.has_value()) {
@@ -5252,7 +5360,7 @@ public:
             PdfLinkTextInfo link_info = widget->doc()->get_pdf_link_text(link.value());
             AbsoluteRect link_source_rect = DocumentRect{ link->rects[0], link->source_page }.to_absolute(widget->doc());
 
-            std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> reftext = widget->doc()->get_page_bib_with_reference(uri.page-1, link_info.link_text);
+            std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> reftext = widget->doc()->get_page_bib_with_reference(uri.page - 1, link_info.link_text);
             if (reftext.has_value()) {
                 QString paper_name = get_paper_name_from_reference_text(reftext->first);
                 widget->download_and_portal(paper_name.toStdWString(), link_source_rect.center());
@@ -5600,7 +5708,7 @@ public:
         return {};
     }
 
-    virtual void set_point_requirement(AbsoluteDocumentPos value){
+    virtual void set_point_requirement(AbsoluteDocumentPos value) {
         point_ = value;
     }
 
@@ -5631,7 +5739,7 @@ public:
         return {};
     }
 
-    virtual void set_point_requirement(AbsoluteDocumentPos value){
+    virtual void set_point_requirement(AbsoluteDocumentPos value) {
         point_ = value;
     }
 
@@ -7227,53 +7335,53 @@ public:
 
 
 class ToggleConfigCommand : public Command {
-	std::string config_name;
+    std::string config_name;
 public:
-	ToggleConfigCommand(MainWidget* widget, std::string config_name_) : Command("toggleconfig_" + config_name_, widget) {
-		config_name = config_name_;
-	}
+    ToggleConfigCommand(MainWidget* widget, std::string config_name_) : Command("toggleconfig_" + config_name_, widget) {
+        config_name = config_name_;
+    }
 
-	void perform() {
+    void perform() {
         //widget->config_manager->deserialize_config(config_name, text.value());
         auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
         *(bool*)conf->value = !*(bool*)conf->value;
         widget->on_config_changed(config_name);
-	}
+    }
 
-	bool requires_document() { return false; }
+    bool requires_document() { return false; }
 };
 
 class SaveConfigCommand : public Command {
-	std::string config_name;
+    std::string config_name;
 public:
-	SaveConfigCommand(MainWidget* widget, std::string config_name_) : Command("saveconfig_" + config_name_, widget) {
-		config_name = config_name_;
-	}
+    SaveConfigCommand(MainWidget* widget, std::string config_name_) : Command("saveconfig_" + config_name_, widget) {
+        config_name = config_name_;
+    }
 
-	void perform() {
+    void perform() {
         auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
         conf->is_auto = true;
         widget->save_auto_config();
-	}
+    }
 
-	bool requires_document() { return false; }
+    bool requires_document() { return false; }
 };
 
 
 class DeleteConfigCommand : public Command {
-	std::string config_name;
+    std::string config_name;
 public:
-	DeleteConfigCommand(MainWidget* widget, std::string config_name_) : Command("deleteconfig_" + config_name_, widget) {
-		config_name = config_name_;
-	}
+    DeleteConfigCommand(MainWidget* widget, std::string config_name_) : Command("deleteconfig_" + config_name_, widget) {
+        config_name = config_name_;
+    }
 
-	void perform() {
+    void perform() {
         auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
         conf->is_auto = false;
         widget->save_auto_config();
-	}
+    }
 
-	bool requires_document() { return false; }
+    bool requires_document() { return false; }
 };
 
 
@@ -7287,7 +7395,7 @@ public:
         MainWidget* widget_,
         std::string config_name_,
         ConfigManager* config_manager_,
-        bool save_after_set_=false) :
+        bool save_after_set_ = false) :
         Command((save_after_set_ ? "setsaveconfig_" : "setconfig_") + config_name_, widget_), config_manager(config_manager_) {
 
         save_after_set = save_after_set_;
@@ -7720,6 +7828,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ExecuteMacroCommand>();
     register_command<ControlMenuCommand>();
     register_command<SetViewStateCommand>();
+    register_command<LlmCommand>();
     register_command<GetConfigCommand>();
     register_command<GetConfigNoDialogCommand>();
     register_command<ShowOptionsCommand>();
@@ -8080,27 +8189,27 @@ void CommandManager::update_command_last_use(std::string command_name) {
 }
 
 void CommandManager::handle_new_javascript_command(std::wstring command_name_, JsCommandInfo info, bool is_async) {
-        std::string command_name = utf8_encode(command_name_);
-        auto [command_parent_file_path, command_file_path, entry_point] = info;
+    std::string command_name = utf8_encode(command_name_);
+    auto [command_parent_file_path, command_file_path, entry_point] = info;
 
-        QDir parent_dir = QFileInfo(QString::fromStdWString(command_parent_file_path)).dir();
-        QFileInfo javascript_file_info(QString::fromStdWString(command_file_path));
-        QString absolute_file_path;
+    QDir parent_dir = QFileInfo(QString::fromStdWString(command_parent_file_path)).dir();
+    QFileInfo javascript_file_info(QString::fromStdWString(command_file_path));
+    QString absolute_file_path;
 
-        if (javascript_file_info.isRelative()){
-            absolute_file_path = parent_dir.absoluteFilePath(javascript_file_info.filePath());
-        }
-        else{
-            absolute_file_path = javascript_file_info.absoluteFilePath();
-        }
-        QFile code_file(absolute_file_path);
-        if (code_file.open(QIODevice::ReadOnly)) {
-            QTextStream in(&code_file);
-            QString code = in.readAll();
-            new_commands[command_name] = [command_name, code, entry_point=entry_point, is_async, this](MainWidget* w) {
-                return std::make_unique<JavascriptCommand>(command_name, code.toStdWString(), entry_point, is_async, w);
-                };
-        }
+    if (javascript_file_info.isRelative()) {
+        absolute_file_path = parent_dir.absoluteFilePath(javascript_file_info.filePath());
+    }
+    else {
+        absolute_file_path = javascript_file_info.absoluteFilePath();
+    }
+    QFile code_file(absolute_file_path);
+    if (code_file.open(QIODevice::ReadOnly)) {
+        QTextStream in(&code_file);
+        QString code = in.readAll();
+        new_commands[command_name] = [command_name, code, entry_point = entry_point, is_async, this](MainWidget* w) {
+            return std::make_unique<JavascriptCommand>(command_name, code.toStdWString(), entry_point, is_async, w);
+            };
+    }
 }
 
 std::unique_ptr<Command> CommandManager::get_command_with_name(MainWidget* w, std::string name) {
@@ -8271,13 +8380,13 @@ void get_tokens(std::wstring line, std::vector<std::wstring>& tokens) {
     }
 }
 
-bool is_command_incomplete_macro(const std::vector<std::string>& commands){
+bool is_command_incomplete_macro(const std::vector<std::string>& commands) {
 
-    for (auto com : commands){
-        if (com.find("[") == -1){
+    for (auto com : commands) {
+        if (com.find("[") == -1) {
             return false;
         }
-        if (com.find("[]") != -1){
+        if (com.find("[]") != -1) {
             return false;
         }
     }
@@ -8391,7 +8500,7 @@ bool parse_line(
                 std::wstring code = L"(" + command_name_qstr.mid(9).toStdWString() + L")()";
                 std::optional<std::wstring> entry = {};
                 parent_node->generator = [command_manager, entry, code](MainWidget* w) {return std::make_unique<JavascriptCommand>("", code, entry, true, w); };
-    //JavascriptCommand(std::string command_name, std::wstring code_, std::optional<std::wstring> entry_point_, bool is_async_, MainWidget* w) :  Command(command_name, w), command_name(command_name) {
+                //JavascriptCommand(std::string command_name, std::wstring code_, std::optional<std::wstring> entry_point_, bool is_async_, MainWidget* w) :  Command(command_name, w), command_name(command_name) {
 
             }
             else if (command_names.size() == 1 && (command_names[0].find("[") == -1) && (command_names[0].find("(") == -1)) {
@@ -8629,10 +8738,10 @@ void get_keys_file_lines(const Path& file_path,
         QString line_string = QString::fromStdWString(line).trimmed();
         int last_space_index = line_string.lastIndexOf(' ');
 
-        if (last_space_index >= 0){
+        if (last_space_index >= 0) {
             std::wstring command_name = line_string.left(last_space_index).trimmed().toStdWString();
             std::wstring command_key = line_string.right(line_string.size() - last_space_index - 1).trimmed().toStdWString();
-            
+
             command_strings.push_back(command_name);
             command_keys.push_back(command_key);
             command_files.push_back(default_path_name);
@@ -8697,7 +8806,7 @@ std::unique_ptr<Command> InputHandler::get_menu_command(MainWidget* w, QKeyEvent
     // support key melodies so we just check the children of the root if they match
     int key = get_event_key(key_event, &shift_pressed, &control_pressed, &command_pressed, &alt_pressed);
     for (auto child : root->children) {
-        if (child->is_final && child->matches(key, shift_pressed, control_pressed, command_pressed, alt_pressed)){
+        if (child->is_final && child->matches(key, shift_pressed, control_pressed, command_pressed, alt_pressed)) {
             if (child->generator.has_value()) {
                 return child->generator.value()(w);
             }
@@ -9023,7 +9132,7 @@ std::unique_ptr<Command> CommandManager::create_macro_command(MainWidget* w, std
     return std::make_unique<MacroCommand>(w, this, name, macro_string);
 }
 
-std::unique_ptr<Command> CommandManager::create_macro_command_with_args(MainWidget* w, std::string name, QString command, QStringList args){
+std::unique_ptr<Command> CommandManager::create_macro_command_with_args(MainWidget* w, std::string name, QString command, QStringList args) {
     return std::make_unique<MacroCommand>(w, this, name, command, args);
 }
 
@@ -9035,7 +9144,7 @@ void Command::on_result_computed() {
     if (dynamic_cast<LazyCommand*>(this)) {
         return;
     }
-    if (result_socket && result_socket->isOpen()){
+    if (result_socket && result_socket->isOpen()) {
         if (!result.has_value()) {
             result_socket->write("<NULL>");
             return;

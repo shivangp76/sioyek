@@ -52,6 +52,7 @@ public:
     const std::wstring SIOYEK_UPLOAD_INDEX_URL = SIOYEK_HOST + L"upload_index";
     const std::wstring SIOYEK_STREAM_TEST_URL = SIOYEK_HOST + L"stream";
     const std::wstring SIOYEK_EXTRACT_TABLE_URL = SIOYEK_HOST + L"extract_table";
+    const std::wstring SIOYEK_GENERIC_LLM_URL = SIOYEK_HOST + L"generic_llm";
     //const std::wstring SIOYEK_CONVERT_TO_LATEX_URL = SIOYEK_HOST + L"convert_to_latex";
     const std::wstring SIOYEK_DELETE_FILE_CHECKSUM_URL = SIOYEK_HOST + L"delete_checksum";
     const std::wstring SIOYEK_UPLOAD_DRAWINGS_URL = SIOYEK_HOST + L"upload_drawings";
@@ -115,6 +116,7 @@ public:
     void summarize(QObject* parent, const std::wstring& index, int first_page_end_index, std::function<void(QString)> on_chunk, std::function<void()> on_done);
     void upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done);
     void extract_table_data(QObject* parent, const QPixmap& pixmap, std::function<void(QString)> on_done, std::optional<QString> prompt = {});
+    void perform_generic_llm_request(QObject* parent, const QString& system_prompt, const QString& user_prompt, const QPixmap* pixmap, std::function<void(QString)> on_done);
     void sync_document_annotations_to_server(QObject* parent, Document* doc, std::function<void()> on_done);
     void download_annotations_since_last_sync(bool force_all=false);
     std::optional<QDateTime> get_last_server_sync_time();
