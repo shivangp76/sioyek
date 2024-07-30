@@ -4302,6 +4302,16 @@ public:
                     copy_to_clipboard(overview_paper_name->toStdWString());
                 }
             }
+            else if (widget->selected_object_index.has_value()) {
+                VisibleObjectIndex selected_object = widget->selected_object_index.value();
+                if (selected_object.object_type == VisibleObjectType::Bookmark) {
+                    auto bookmark = widget->doc()->get_bookmark_with_index(selected_object.index);
+                    if (bookmark.has_value()) {
+                        copy_to_clipboard(bookmark->description);
+                    }
+                }
+
+            }
         }
         else {
             copy_to_clipboard(selected_text);

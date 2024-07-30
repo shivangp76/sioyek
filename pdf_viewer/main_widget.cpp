@@ -9,9 +9,7 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
-// add a command to convert handwriting to latex or markdown
 // allow defining custom LLM commands
-// pressing C-c while a bookmark selected should copy the bookmark
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
