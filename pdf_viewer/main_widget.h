@@ -717,6 +717,7 @@ public:
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
     void handle_debug_command();
     void handle_fulltext_search(std::wstring maybe_file_checksum=L"");
+    void handle_documentation_search();
     void handle_add_marked_data();
     void handle_undo_marked_data();
     void handle_remove_marked_data();
@@ -987,6 +988,7 @@ public:
     QString get_command_documentation_with_title(QString command_name);
     QString get_config_documentation_with_title(QString config, QString command_name);
     void show_command_documentation(QString command_name);
+    void show_documentation_with_title(QString doctype, QString title);
     QString get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs);
 
     QString handle_action_in_menu(std::wstring action);

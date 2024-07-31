@@ -1335,7 +1335,10 @@ public:
 };
 
 class FulltextSearchWidget : public BaseCustomSelectorWidget{
-private:
+public:
+    DatabaseManager* db_manager = nullptr;
+    MainWidget* main_widget = nullptr;
+    std::wstring maybe_file_checksum = L"";
     FulltextSearchWidget(
         DatabaseManager* manager,
         QAbstractItemView* view,
@@ -1345,18 +1348,26 @@ private:
     );
     ~FulltextSearchWidget();
 
-    DatabaseManager* db_manager = nullptr;
-    MainWidget* main_widget = nullptr;
-    std::wstring maybe_file_checksum = L"";
-public:
-
     static FulltextSearchWidget* create(MainWidget* parent, std::wstring checksum=L"");
 
-    void on_text_changed(const QString& text) override;
+    virtual void on_text_changed(const QString& text) override;
     virtual void on_select(const QModelIndex& value) override;
     virtual void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
 
     //QStringListModel* result_model = nullptr;
     FulltextResultModel* result_model = nullptr;
+};
+
+class DocumentationSearchWidget : public FulltextSearchWidget {
+public:
+    DocumentationSearchWidget(
+        DatabaseManager* manager,
+        QAbstractItemView* view,
+        QAbstractItemModel* model,
+        MainWidget* parent
+    );
+
+    static DocumentationSearchWidget* create(MainWidget* parent);
+    virtual void on_text_changed(const QString& text) override;
 };
 

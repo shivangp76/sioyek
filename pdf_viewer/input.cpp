@@ -6556,6 +6556,19 @@ public:
 
 };
 
+class DocumentationSearchCommand : public Command {
+public:
+    static inline const std::string cname = "documentation_search";
+    static inline const std::string hname = "Search sioyek's documentation";
+
+    DocumentationSearchCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_documentation_search();
+    }
+
+};
+
 class FulltextSearchCurrentDocumentCommand : public Command {
 public:
     static inline const std::string cname = "fulltext_search_current_document";
@@ -8081,6 +8094,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowTouchDrawingMenu>();
     register_command<DebugCommand>();
     register_command<FulltextSearchCommand>();
+    register_command<DocumentationSearchCommand>();
     register_command<FulltextSearchCurrentDocumentCommand>();
     register_command<DeleteDocumentFromFulltextSearchIndex>();
     register_command<CreateFulltextIndexForCurrentDocumentCommand>();

@@ -9,7 +9,6 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
-// allow defining custom LLM commands
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -7480,18 +7479,53 @@ void MainWidget::update_highlight_buttons_position() {
 }
 
 
-void MainWidget::show_command_documentation(QString command_name) {
-    //QTextEdit* text_edit = new QTextEdit(this);
+void MainWidget::show_documentation_with_title(QString doctype, QString title) {
+    load_sioyek_documentation();
     SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
     text_edit->setStyleSheet(get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE));
     text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
 
-    /* text_edit->setFontSiz */
-    /* text_edit->setTextBackgroundColor(QColor(0, 0, 0)); */
-    /* text_edit->setTextColor(QColor(255, 255, 255)); */
     int w = width() / 2;
     int h = height() / 2;
-    // make text_edit links clickable
+    text_edit->setReadOnly(true);
+    text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
+    text_edit->resize(w, h);
+
+    QString documentation_url = "";
+    QString doc;
+
+    const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
+    const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
+    //for (auto key : command_title_to_documentation_map.keys()) {
+    //    qDebug() << key;
+    //    qDebug() << (key == title);
+    //}
+
+    if (doctype == "command") {
+        if (command_title_to_documentation_map.contains(title)) {
+            doc = command_title_to_documentation_map[title].toString();
+        }
+    }
+    else if (doctype == "config") {
+        if (config_title_to_documentation_map.contains(title)) {
+            doc = config_title_to_documentation_map[title].toString();
+        }
+    }
+
+    text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
+    
+    text_edit->setMarkdown(doc);
+    push_current_widget(text_edit);
+    text_edit->show();
+}
+
+void MainWidget::show_command_documentation(QString command_name) {
+    SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
+    text_edit->setStyleSheet(get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE));
+    text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+
+    int w = width() / 2;
+    int h = height() / 2;
     text_edit->setReadOnly(true);
     text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
     text_edit->resize(w, h);
@@ -7651,6 +7685,27 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 }
 
 
+void MainWidget::handle_documentation_search() {
+
+    auto search_widget = DocumentationSearchWidget::create(this);
+    search_widget->set_select_fn([&, search_widget](int index) {
+            FulltextSearchResult result = search_widget->result_model->search_results[index];
+            QStringList parts = QString::fromStdWString(result.document_title).split("/");
+
+            pop_current_widget();
+            if (parts[0] == "command") {
+                show_documentation_with_title("command", parts[1]);
+            }
+            else if (parts[0] == "config") {
+
+                show_documentation_with_title("config", parts[1]);
+            }
+            //qDebug() << result.document_title;
+        });
+
+    set_current_widget(search_widget);
+    show_current_widget();
+}
 void MainWidget::handle_fulltext_search(std::wstring maybe_file_checksum) {
 
     auto search_widget = FulltextSearchWidget::create(this, maybe_file_checksum);
@@ -7786,18 +7841,12 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
-    sioyek_network_manager->debug(this, [this]() {
-        invalidate_render();
-        });
+    load_sioyek_documentation();
+    bool is_documentation_indexed = db_manager->is_documentation_indexed();
+    qDebug() << "is documentation indexed = " << is_documentation_indexed;
+    //db_manager->delete_documentation_search_index();
 
-    //std::wstring original = L"this is some text @verbatim(some link) and this is more @verbatim(another link) and more";
-    // encode original for url
-    //std::wstring url_encoded = QUrl::toPercentEncoding();
-
-    //std::wstring replaced = replace_verbatim_links(original);
-    //copy_to_clipboard(replaced);
-    // qDebug() << replaced;
-    //replace_verbatim_links()
+    db_manager->index_documentation(sioyek_documentation_json_document);
 }
 
 void MainWidget::show_command_menu() {

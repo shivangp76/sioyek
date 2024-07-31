@@ -3110,6 +3110,10 @@ QString SearchItemDelegate::get_location_string(const QModelIndex& index) const{
     int page_number = index.siblingAtColumn(FulltextResultModel::page).data().toInt();
     QString location_string = "<div align=\"right\"><code>" + document_name + " P. " + QString::number(page_number) + "</code></div>";
 
+    if (page_number < 0) {
+        location_string = "<div align=\"right\"><code>" + document_name + "</code></div>";
+    }
+
     return location_string;
 }
 
@@ -3292,4 +3296,80 @@ void TouchDelegateListView::set_select_fn(std::function<void(int)>&& fn) {
 
 void TouchDelegateListView::set_delete_fn(std::function<void(int)>&& fn) {
     on_delete = fn;
+}
+
+DocumentationSearchWidget::DocumentationSearchWidget(
+    DatabaseManager* manager,
+    QAbstractItemView* view,
+    QAbstractItemModel* model,
+    MainWidget* parent
+) : FulltextSearchWidget(manager, view, model, parent) {
+
+}
+
+void DocumentationSearchWidget::on_text_changed(const QString& text) {
+
+    if (result_model) {
+        delete result_model;
+        result_model = nullptr;
+
+    }
+    if (text.size() == 0) {
+        result_model = new FulltextResultModel({}, this);
+        get_view()->setModel(result_model);
+    }
+    else {
+        QString query = text;
+        query = query.replace("\"", "\\\""); // escape the "s
+        query = "\"" + query + "\"" + "*";
+
+        std::vector<DocumentationSearchResult> results = db_manager->perform_documentation_search(query.toStdWString());
+        std::vector<FulltextSearchResult> fulltext_results;
+        for (auto docres : results) {
+            FulltextSearchResult fts_result;
+            fts_result.document_title = docres.item_type + L"/" + docres.item_title;
+            fts_result.document_checksum = "";
+            fts_result.page = -1;
+            fts_result.snippet = docres.snippet;
+            fulltext_results.push_back(fts_result);
+        }
+        //for (int i = 0; i < results.size(); i++) {
+        //    results[i].document_title = main_widget->document_manager->get_path_from_hash(results[i].document_checksum).value_or(L"");
+        //    if (results[i].document_title.size() > 0) {
+        //        results[i].document_title = Path(results[i].document_title).filename().value_or(L"");
+        //    }
+        //}
+
+        //QStringList snippets;
+
+        //for (auto& result : results) {
+        //    snippets.append(QString::fromStdWString(result.snippet));
+        //}
+
+        //result_model->setStringList(snippets);
+        result_model = new FulltextResultModel(std::move(fulltext_results), this);
+        get_view()->setModel(result_model);
+
+    }
+    //qDebug() << "text changed to " << text;
+}
+
+DocumentationSearchWidget* DocumentationSearchWidget::create(MainWidget* parent) {
+
+    //DocumentNameModel* document_model = new DocumentNameModel(std::move(docs));
+    QStringListModel* res_model = new QStringListModel();
+
+    QListView* list_view = new QListView();
+
+    DocumentationSearchWidget* fulltext_search_widget = new DocumentationSearchWidget(parent->db_manager, list_view, res_model, parent);
+
+    res_model->setParent(fulltext_search_widget);
+    list_view->setParent(fulltext_search_widget);
+    list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+    fulltext_search_widget->on_resize();
+    fulltext_search_widget->set_filter_column_index(-1);
+
+    fulltext_search_widget->update_render();
+    return fulltext_search_widget;
 }

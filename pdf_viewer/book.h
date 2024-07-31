@@ -532,3 +532,9 @@ struct FulltextSearchResult {
     std::wstring snippet;
     std::wstring document_title = L"";
 };
+
+struct DocumentationSearchResult {
+    std::wstring snippet;
+    std::wstring item_title = L"";
+    std::wstring item_type = L"";
+};

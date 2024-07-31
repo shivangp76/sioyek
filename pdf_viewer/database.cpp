@@ -153,6 +153,27 @@ static int fulltext_search_callback(void* res_vector, int argc, char** argv, cha
     res->push_back(search_result);
     return 0;
 }
+
+static int documentation_search_callback(void* res_vector, int argc, char** argv, char** col_name) {
+
+    std::vector<DocumentationSearchResult>* res = (std::vector<DocumentationSearchResult>*)res_vector;
+    assert(argc == 3);
+
+    //std::string file_checksum = argv[0];
+
+    std::wstring item_title = utf8_decode(argv[0]);
+    std::wstring item_type = utf8_decode(argv[1]);
+    std::wstring snippet = utf8_decode(argv[2]);
+
+    DocumentationSearchResult search_result;
+    search_result.item_title = item_title;
+    search_result.item_type = item_type;
+    search_result.snippet = snippet;
+
+    res->push_back(search_result);
+    return 0;
+}
+
 static int mark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 
     std::vector<Mark>* res = (std::vector<Mark>*)res_vector;
@@ -759,6 +780,20 @@ bool DatabaseManager::create_document_hash_table() {
     int error_code = sqlite3_exec(local_db, create_document_hash_sql, null_callback, 0, &error_message);
     return handle_error(
         "create_document_hash_table",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::create_documentation_search_table() {
+    const char* create_fts_sql = "CREATE VIRTUAL TABLE IF NOT EXISTS documentation_search USING fts5("\
+        "item_type,"\
+        "item_title,"\
+        "content);";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, create_fts_sql, null_callback, 0, &error_message);
+    return handle_error(
+        "create_documentation_search_table",
         error_code,
         error_message);
 }
@@ -1749,6 +1784,7 @@ void DatabaseManager::create_tables() {
     create_links_table();
     create_document_hash_table();
     create_full_text_search_table();
+    create_documentation_search_table();
     create_document_fulltext_indexed_table();
     create_server_update_time_table();
     create_unsynced_deletions_table();
@@ -3082,6 +3118,18 @@ bool DatabaseManager::is_document_indexed(std::string document_checksum) {
     return false;
 }
 
+bool DatabaseManager::is_documentation_indexed() {
+    std::wstringstream ss;
+    int count = -1;
+    ss << "SELECT COUNT(item_title) FROM documentation_search;";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
+    if (error_code == SQLITE_OK) {
+        return count > 0;
+    }
+    return false;
+}
+
 std::vector<std::string> DatabaseManager::get_all_fulltext_indexed_checksums() {
     std::wstringstream ss;
     std::vector<std::string> res;
@@ -3102,6 +3150,74 @@ void DatabaseManager::delete_checksum_from_fulltext_index(std::wstring file_chec
     error_code = sqlite3_exec(local_db, utf8_encode(ss2.str()).c_str(), nullptr, nullptr, &error_message);
 }
 
+void DatabaseManager::delete_documentation_search_index() {
+    char* error_message = nullptr;
+    std::wstringstream ss2;
+    ss2 << L"DELETE FROM documentation_search;";
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss2.str()).c_str(), nullptr, nullptr, &error_message);
+}
+
+void DatabaseManager::index_documentation(const QJsonDocument& documentation){
+    const QJsonObject& config_title_to_documentation_map = documentation["config_title_to_documentation_map"].toObject();
+    const QJsonObject& command_title_to_documentation_map = documentation["command_title_to_documentation_map"].toObject();
+    std::wstringstream ss;
+
+    bool is_indexed = is_documentation_indexed();
+    //int count = -1;
+    //ss << "SELECT COUNT(file_checksum) FROM indexed_documents WHERE file_checksum='" << esc(document_checksum) << "';";
+    char* error_message = nullptr;
+    //int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
+    //if (error_code == SQLITE_OK) {
+    if (!is_indexed) {
+        std::string insert_page_index_query = "INSERT INTO documentation_search (item_title, item_type, content) VALUES (?, ?, ?);";
+        sqlite3_stmt* insert_page_index_stmt = nullptr;
+        int is_ok = sqlite3_prepare_v2(local_db, insert_page_index_query.c_str(), insert_page_index_query.size(), &insert_page_index_stmt, nullptr);
+        // begin the transaction
+        if (is_ok == SQLITE_OK) {
+            sqlite3_exec(local_db, "BEGIN TRANSACTION;", nullptr, nullptr, &error_message);
+
+
+            for (QString key : config_title_to_documentation_map.keys()) {
+                QString value = config_title_to_documentation_map[key].toString();
+                std::string key_string = key.toStdString();
+                std::string value_string = value.toStdString();
+                std::string type_string = "config";
+
+                sqlite3_reset(insert_page_index_stmt);
+                sqlite3_bind_text(insert_page_index_stmt, 1, key_string.c_str(), key_string.size(), SQLITE_TRANSIENT);
+                sqlite3_bind_text(insert_page_index_stmt, 2, type_string.c_str(), type_string.size(), SQLITE_TRANSIENT);
+                sqlite3_bind_text(insert_page_index_stmt, 3, value_string.c_str(), value_string.size(), SQLITE_TRANSIENT);
+
+                sqlite3_step(insert_page_index_stmt);
+            }
+
+            for (QString key : command_title_to_documentation_map.keys()) {
+                QString value = command_title_to_documentation_map[key].toString();
+                std::string key_string = key.toStdString();
+                std::string value_string = value.toStdString();
+                std::string type_string = "command";
+
+                sqlite3_reset(insert_page_index_stmt);
+                sqlite3_bind_text(insert_page_index_stmt, 1, key_string.c_str(), key_string.size(), SQLITE_TRANSIENT);
+                sqlite3_bind_text(insert_page_index_stmt, 2, type_string.c_str(), type_string.size(), SQLITE_TRANSIENT);
+                sqlite3_bind_text(insert_page_index_stmt, 3, value_string.c_str(), value_string.size(), SQLITE_TRANSIENT);
+
+                sqlite3_step(insert_page_index_stmt);
+            }
+
+            sqlite3_exec(local_db, "END TRANSACTION;", nullptr, nullptr, &error_message);
+
+            sqlite3_finalize(insert_page_index_stmt);
+        }
+        else {
+            qDebug() << "Failed to prepare statement: " << sqlite3_errmsg(local_db);
+        }
+
+
+    }
+
+
+}
 void DatabaseManager::index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices) {
     std::wstringstream ss;
 
@@ -3176,6 +3292,20 @@ std::vector<FulltextSearchResult> DatabaseManager::perform_fulltext_search(const
     int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), fulltext_search_callback, &results, &error_message);
     if (error_code != SQLITE_OK) 
         qDebug() << "Error executing fulltext search: " << error_message;{
+    }
+    return results;
+}
+
+std::vector<DocumentationSearchResult> DatabaseManager::perform_documentation_search(const std::wstring& query) {
+    std::wstringstream ss;
+    // file_checksum
+    ss << "SELECT item_title, item_type, snippet(documentation_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM documentation_search WHERE content MATCH '" << esc(query) << "' ORDER BY rank LIMIT 20;";
+    std::vector<DocumentationSearchResult> results;
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), documentation_search_callback, &results, &error_message);
+    if (error_code != SQLITE_OK) 
+        qDebug() << "Error executing documentation fulltext search: " << error_message;{
     }
     return results;
 }
