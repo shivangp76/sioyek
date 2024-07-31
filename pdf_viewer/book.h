@@ -401,6 +401,10 @@ struct OverviewState {
     std::optional<std::string> overview_type;
     std::vector<DocumentRect> highlight_rects;
     std::optional<Portal> source_portal = {};
+    std::optional<AbsoluteRect> source_rect = {};
+    std::optional<float> original_zoom_level;
+
+    float get_zoom_level(DocumentView* dv);
 };
 
 bool operator==(const DocumentViewState& lhs, const DocumentViewState& rhs);

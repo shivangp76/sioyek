@@ -327,15 +327,15 @@ public:
 
     void set_overview_page(std::optional<OverviewState> overview);
     std::optional<OverviewState> get_overview_page();
-    Document* get_current_overview_document();
-    float get_overview_zoom_level();
+    Document* get_current_overview_document(std::optional<OverviewState> maybe_overview = {});
+    float get_overview_zoom_level(std::optional<OverviewState> maybe_overview = {});
     DocumentPos window_pos_to_overview_pos(NormalizedWindowPos window_pos);
-    NormalizedWindowPos document_to_overview_pos(DocumentPos pos);
-    NormalizedWindowRect document_to_overview_rect(DocumentRect doc_rect);
+    NormalizedWindowPos document_to_overview_pos(DocumentPos pos, std::optional<OverviewState> maybe_overview = {});
+    NormalizedWindowRect document_to_overview_rect(DocumentRect doc_rect, std::optional<OverviewState> maybe_overview = {});
     void zoom_overview(float scale);
     void zoom_in_overview();
     void zoom_out_overview();
-    NormalizedWindowRect get_overview_rect();
+    NormalizedWindowRect get_overview_rect(std::optional<OverviewState> maybe_overview = {});
     NormalizedWindowRect get_overview_rect_pixel_perfect(int widget_width, int widget_height, int view_width, int view_height);
     std::vector<NormalizedWindowRect> get_overview_border_rects();
     WindowRect get_overview_download_rect();

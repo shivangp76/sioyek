@@ -212,6 +212,7 @@ protected:
     void prepare_initial_render_pipeline();
     void prepare_link_highlight_state();
 public:
+    //std::vector<OverviewState> persisted_overviews;
     bool is_helper_waiting_for_render = false;
 
 
@@ -222,7 +223,7 @@ public:
 
     bool valid_document();
     void render_overview(OverviewState overview);
-    void render_page(int page_number, bool in_overview=false, ColorPalette forced_palette=ColorPalette::None, bool stencils_allowed=true);
+    void render_page(int page_number, std::optional<OverviewState> overview = {}, ColorPalette forced_palette = ColorPalette::None, bool stencils_allowed = true);
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
     void mousePressEvent(QMouseEvent* mevent) override;
     void mouseReleaseEvent(QMouseEvent* mevent) override;
@@ -230,11 +231,11 @@ public:
     void register_on_link_edit_listener(std::function<void(const OpenedBookState&)> listener);
     void draw_empty_helper_message(QString message);
     std::vector<NormalizedWindowRect> get_overview_border_rects();
-    Document* doc(bool overview=false);
+    Document* doc(std::optional<OverviewState> overview = {});
     DocumentView* dv();
 
     void setup_text_painter();
-    void get_overview_window_vertices(float out_vertices[2 * 4]);
+    void get_overview_window_vertices(float out_vertices[2 * 4], std::optional<OverviewState> maybe_overview = {});
 
     void clear_all_selections();
     Document* get_current_overview_document();
@@ -252,8 +253,8 @@ public:
     QColor qcc3(const float* input_color);
     QColor qcc4(const float* input_color);
     bool needs_stencil_buffer();
-    void draw_overview_background();
-    void draw_overview_border();
+    void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
+    void draw_overview_border(std::optional<OverviewState> maybe_overview = {});
     //void draw_markdown_text(QString text, QRect window_rect, const QFont& font);
 
     void render_selected_rectangle();

@@ -263,3 +263,21 @@ AbsoluteDocumentPos AbsoluteDocumentPos::y_shift(float amount) {
     res.y += amount;
     return res;
 }
+
+WindowRect NormalizedWindowRect::to_window(DocumentView* document_view) const {
+    return document_view->normalized_to_window_rect(*this);
+}
+
+WindowRect::WindowRect(WindowPos top_left, WindowPos bottom_right) : EnhancedRect<fz_irect, WindowPos>(top_left, bottom_right) {
+
+}
+
+WindowRect::WindowRect() {
+
+}
+
+AbsoluteRect WindowRect::to_absolute(DocumentView* dv) {
+    AbsoluteDocumentPos abs_top_left = dv->window_to_absolute_document_pos(top_left());
+    AbsoluteDocumentPos abs_bottom_right = dv->window_to_absolute_document_pos(bottom_right());
+    return AbsoluteRect(abs_top_left, abs_bottom_right);
+}

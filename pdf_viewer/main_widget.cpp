@@ -7709,6 +7709,7 @@ void MainWidget::handle_documentation_search() {
     set_current_widget(search_widget);
     show_current_widget();
 }
+
 void MainWidget::handle_fulltext_search(std::wstring maybe_file_checksum) {
 
     auto search_widget = FulltextSearchWidget::create(this, maybe_file_checksum);
@@ -7844,12 +7845,14 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
-    load_sioyek_documentation();
-    bool is_documentation_indexed = db_manager->is_documentation_indexed();
-    qDebug() << "is documentation indexed = " << is_documentation_indexed;
-    db_manager->delete_documentation_search_index();
-
-    //db_manager->index_documentation(sioyek_documentation_json_document);
+    //if (dv()->overview_page.has_value()) {
+    //    OverviewState state = dv()->overview_page.value();
+    //    AbsoluteRect current_overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
+    //    state.source_rect = current_overview_rect;
+    //    state.original_zoom_level = dv()->get_zoom_level();
+    //    //dv()->window_to_abs
+    //    opengl_widget->persisted_overviews.push_back(state);
+    //}
 }
 
 void MainWidget::show_command_menu() {

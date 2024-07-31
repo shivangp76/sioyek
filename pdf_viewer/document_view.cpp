@@ -468,7 +468,7 @@ WindowPos DocumentView::document_to_window_pos_in_pixels_banded(DocumentPos doc_
 WindowRect DocumentView::document_to_window_irect(DocumentRect doc_rect) {
     WindowPos top_left = doc_rect.top_left().to_window(this);
     WindowPos bottom_right = doc_rect.bottom_right().to_window(this);
-    return WindowRect(top_left, bottom_right);
+    return WindowRect( top_left, bottom_right );
 }
 
 NormalizedWindowRect DocumentView::document_to_window_rect(DocumentRect doc_rect) {
@@ -2591,7 +2591,15 @@ std::optional<OverviewState> DocumentView::get_overview_page() {
     return overview_page;
 }
 
-Document* DocumentView::get_current_overview_document() {
+Document* DocumentView::get_current_overview_document(std::optional<OverviewState> maybe_overview) {
+    if (maybe_overview.has_value()) {
+        if (maybe_overview->doc != nullptr) {
+            return maybe_overview->doc;
+        }
+        else {
+            return get_document();
+        }
+    }
     if (overview_page) {
         if (overview_page.value().doc) {
             return overview_page->doc;
@@ -2606,7 +2614,10 @@ Document* DocumentView::get_current_overview_document() {
 
 }
 
-float DocumentView::get_overview_zoom_level(){
+float DocumentView::get_overview_zoom_level(std::optional<OverviewState> maybe_overview){
+    if (maybe_overview) {
+        return maybe_overview->zoom_level;
+    }
 
     if (overview_page->zoom_level > 0){
         return overview_page->zoom_level;
@@ -2618,37 +2629,59 @@ float DocumentView::get_overview_zoom_level(){
 
 }
 
-NormalizedWindowPos DocumentView::document_to_overview_pos(DocumentPos pos) {
+NormalizedWindowPos DocumentView::document_to_overview_pos(DocumentPos pos, std::optional<OverviewState> maybe_overview) {
     NormalizedWindowPos res;
+    if (!maybe_overview.has_value() && !overview_page.has_value()) {
+        return res;
+    }
 
-    if (overview_page) {
-        OverviewState overview = overview_page.value();
-        Document* target_doc = get_current_overview_document();
-        /* DocumentPos docpos = target_doc->absolute_to_page_pos_uncentered({ 0, overview.absolute_offset_y }); */
+    if (!maybe_overview.has_value()) {
+        maybe_overview = overview_page.value();
+    }
 
-        AbsoluteDocumentPos abspos = target_doc->document_to_absolute_pos(pos);
+    OverviewState overview = maybe_overview.has_value() ? maybe_overview.value() : overview_page.value();
+    Document* target_doc = get_current_overview_document(maybe_overview);
 
-        float overview_zoom_level = get_overview_zoom_level() / get_view_width() * 2;
+    AbsoluteDocumentPos abspos = target_doc->document_to_absolute_pos(pos);
 
-        float relative_x = abspos.x * overview_zoom_level + overview.absolute_offset_x * overview_zoom_level;
-        float aspect = static_cast<float>(view_width) / static_cast<float>(view_height);
-        float relative_y = (abspos.y - overview.absolute_offset_y) * overview_zoom_level * aspect;
-        //float left = overview_offset_x - overview_half_width;
+    float overview_zoom_level = get_overview_zoom_level(maybe_overview) / get_view_width() * 2;
+
+    if (overview.original_zoom_level) {
+        overview_zoom_level *= (zoom_level / overview.original_zoom_level.value());
+    }
+
+    float relative_x = abspos.x * overview_zoom_level + overview.absolute_offset_x * overview_zoom_level;
+    float aspect = static_cast<float>(view_width) / static_cast<float>(view_height);
+    float relative_y = (abspos.y - overview.absolute_offset_y) * overview_zoom_level * aspect;
+    //float left = overview_offset_x - overview_half_width;
+    if (!overview.source_rect.has_value()) {
         float top = overview_offset_y;
         return { overview_offset_x + relative_x, top - relative_y };
-
-        return res;
     }
     else {
-        return res;
+        NormalizedWindowRect overview_source_rect = overview.source_rect->to_window_normalized(this);
+
+        float local_overview_offset_y = overview_source_rect.center().y;
+        float local_overview_offset_x = overview_source_rect.center().x;
+
+        float top = local_overview_offset_y;
+        return { local_overview_offset_x + relative_x, top - relative_y };
+        //float top = overview_source_rect.y0;
+        //return { overview_source_rect.x0 + relative_x, top - relative_y };
     }
+
+    //return res;
+    //}
+    //else {
+    //    return res;
+    //}
 }
 
-NormalizedWindowRect DocumentView::document_to_overview_rect(DocumentRect doc_rect) {
+NormalizedWindowRect DocumentView::document_to_overview_rect(DocumentRect doc_rect, std::optional<OverviewState> maybe_overview) {
     DocumentPos top_left = doc_rect.top_left();
     DocumentPos bottom_right = doc_rect.bottom_right();
-    NormalizedWindowPos top_left_pos = document_to_overview_pos(top_left);
-    NormalizedWindowPos bottom_right_pos = document_to_overview_pos(bottom_right);
+    NormalizedWindowPos top_left_pos = document_to_overview_pos(top_left, maybe_overview);
+    NormalizedWindowPos bottom_right_pos = document_to_overview_pos(bottom_right, maybe_overview);
     return NormalizedWindowRect(top_left_pos, bottom_right_pos);
 }
 
@@ -2670,7 +2703,10 @@ void DocumentView::zoom_out_overview(){
     zoom_overview(1.0f / ZOOM_INC_FACTOR);
 }
 
-NormalizedWindowRect DocumentView::get_overview_rect() {
+NormalizedWindowRect DocumentView::get_overview_rect(std::optional<OverviewState> maybe_overview) {
+    if (maybe_overview.has_value() && maybe_overview->source_rect.has_value()) {
+        return maybe_overview->source_rect->to_window_normalized(this);
+    }
     NormalizedWindowRect res;
     res.x0 = overview_offset_x - overview_half_width;
     res.y0 = overview_offset_y - overview_half_height;

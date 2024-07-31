@@ -214,7 +214,14 @@ struct EnhancedRect : public R {
 
 
 using PagelessDocumentRect = EnhancedRect<fz_rect, PagelessDocumentPos>;
-using WindowRect = EnhancedRect<fz_irect, WindowPos>;
+//using WindowRect = EnhancedRect<fz_irect, WindowPos>;
+
+struct WindowRect : public EnhancedRect<fz_irect, WindowPos> {
+    WindowRect(WindowPos top_left, WindowPos bottom_right);
+    WindowRect();
+
+    AbsoluteRect to_absolute(DocumentView* dv);
+};
 
 template<typename R, typename T>
 bool operator ==(const EnhancedRect<R, T>& lhs, const EnhancedRect<R, T>& rhs) {
@@ -246,6 +253,7 @@ struct NormalizedWindowRect : public EnhancedRect<fz_rect, NormalizedWindowPos> 
 
 
     bool is_visible(float tolerance=0.0f);
+    WindowRect to_window(DocumentView* document_view) const;
 };
 
 

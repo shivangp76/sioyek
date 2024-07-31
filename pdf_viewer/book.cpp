@@ -1,6 +1,7 @@
 #include "book.h"
 #include "utils.h"
 #include "document.h"
+#include "document_view.h"
 
 extern float BOOKMARK_RECT_SIZE;
 
@@ -671,4 +672,14 @@ QFont BookMark::get_font(float zoom_level) const {
     float size = font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : font_size;
     font.setPointSizeF(size * zoom_level * 0.75);
     return font;
+}
+
+float OverviewState::get_zoom_level(DocumentView* dv) {
+    if (original_zoom_level.has_value()) {
+        return zoom_level * dv->get_zoom_level() / original_zoom_level.value();
+    }
+    else {
+        return zoom_level;
+    }
+
 }

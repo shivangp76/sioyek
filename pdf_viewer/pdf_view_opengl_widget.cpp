@@ -449,6 +449,9 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
         view_height);
     window_rect.y0 = -window_rect.y0;
     window_rect.y1 = -window_rect.y1;
+    if (overview.source_rect.has_value()) {
+        window_rect = overview.source_rect->to_window_normalized(document_view);
+    }
 
 #ifdef SIOYEK_OPENGL_BACKEND
     render_overview_opengl_backend(window_rect, overview);
@@ -472,10 +475,10 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
 }
 
 
-void PdfViewOpenGLWidget::draw_overview_background(){
+void PdfViewOpenGLWidget::draw_overview_background(std::optional<OverviewState> maybe_overview){
 
     float border_vertices[4 * 2];
-    get_overview_window_vertices(border_vertices);
+    get_overview_window_vertices(border_vertices, maybe_overview);
 
     float bg_color[] = { 1.0f, 1.0f, 1.0f };
     get_background_color(bg_color);
@@ -496,12 +499,12 @@ void PdfViewOpenGLWidget::draw_overview_background(){
 #endif
 }
 
-void PdfViewOpenGLWidget::draw_overview_border(){
+void PdfViewOpenGLWidget::draw_overview_border(std::optional<OverviewState> maybe_overview){
     float border_color[3] = {0.5f, 0.5f, 0.5f};
 #ifdef SIOYEK_OPENGL_BACKEND
     glUseProgram(shared_gl_objects.highlight_program);
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, border_color);
-    render_highlight_window(document_view->get_overview_rect(), HRF_BORDER);
+    render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
 #else
 
     set_highlight_color(border_color, 1);
@@ -509,30 +512,28 @@ void PdfViewOpenGLWidget::draw_overview_border(){
 #endif
 }
 
-Document* PdfViewOpenGLWidget::doc(bool overview){
+Document* PdfViewOpenGLWidget::doc(std::optional<OverviewState> overview){
     if (overview){
-        if (document_view->overview_page){
-            if (document_view->overview_page->doc){
-                return document_view->overview_page->doc;
-            }
+        if (overview->doc != nullptr) {
+            return overview->doc;
         }
     }
 
     return dv()->get_document();
 }
 
-void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPalette forced_color_palette, bool stencils_allowed) {
+void PdfViewOpenGLWidget::render_page(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) {
     if (!valid_document()) return;
 
     int nh, nv;
 
-    float page_width = doc(in_overview)->get_page_width(page_number);
-    float page_height = doc(in_overview)->get_page_height(page_number);
+    float page_width = doc(overview)->get_page_width(page_number);
+    float page_height = doc(overview)->get_page_height(page_number);
     PagelessDocumentRect page_rect({ 0, 0, page_width, page_height });
 
     if ((page_width < 0) || (page_height < 0)) return;
 
-    float zoom_level = in_overview ? document_view->get_overview_zoom_level() : dv()->get_zoom_level();
+    float zoom_level = overview.has_value() ? overview->get_zoom_level(dv()) : dv()->get_zoom_level();
 
     bool is_sliced = num_slices_for_page_rect(page_rect, &nh, &nv);
 
@@ -551,8 +552,8 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
         }
 
         // todo: just replace this with page_width and page_height from above
-        float slice_document_width = doc(in_overview)->get_page_width(page_number);
-        float slice_document_height = doc(in_overview)->get_page_height(page_number);
+        float slice_document_width = doc(overview)->get_page_width(page_number);
+        float slice_document_height = doc(overview)->get_page_height(page_number);
         PagelessDocumentRect slice_document_rect;
         slice_document_rect.x0 = 0;
         slice_document_rect.x1 = slice_document_width;
@@ -560,7 +561,7 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
         slice_document_rect.y1 = slice_document_height;
         slice_document_rect = get_index_rect(slice_document_rect, i, nh, nv);
 
-        NormalizedWindowRect slice_window_rect = in_overview ?
+        NormalizedWindowRect slice_window_rect = overview.has_value() ?
              document_view->document_to_overview_rect(DocumentRect(slice_document_rect, page_number)) :
              DocumentRect(slice_document_rect, page_number).to_window_normalized(dv());
 
@@ -576,10 +577,10 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
             continue;
         }
 
-        auto texture = pdf_renderer->find_rendered_page(doc(in_overview)->get_path(),
+        auto texture = pdf_renderer->find_rendered_page(doc(overview)->get_path(),
             page_number,
             actual_color_palette,
-            doc(in_overview)->should_render_pdf_annotations(),
+            doc(overview)->should_render_pdf_annotations(),
             index,
             nh,
             nv,
@@ -603,18 +604,24 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
         }
 
         float page_vertices[4 * 2];
-        float slice_height = doc(in_overview)->get_page_height(page_number) / nv_;
-        float slice_width = doc(in_overview)->get_page_width(page_number) / nh_;
+        float slice_height = doc(overview)->get_page_height(page_number) / nv_;
+        float slice_width = doc(overview)->get_page_width(page_number) / nh_;
 
         PagelessDocumentRect page_rect;
         PagelessDocumentRect full_page_rect({ 0,
                 0,
-                 doc(in_overview)->get_page_width(page_number),
-                 doc(in_overview)->get_page_height(page_number)
+                 doc(overview)->get_page_width(page_number),
+                 doc(overview)->get_page_height(page_number)
         });
 
-        WindowRect full_page_irect = fz_round_rect(fz_transform_rect(full_page_rect,
+        fz_irect irect = fz_round_rect(fz_transform_rect(full_page_rect,
             fz_scale(zoom_level, zoom_level)));
+        WindowRect full_page_irect;
+        full_page_irect.x0 = irect.x0;
+        full_page_irect.x1 = irect.x1;
+        full_page_irect.y0 = irect.y0;
+        full_page_irect.y1 = irect.y1;
+
         PagelessDocumentRect page_content = full_page_rect;
         if (dv()->get_page_space_x() < 0) {
             if (page_number % NUM_PAGE_COLUMNS > 0) {
@@ -702,8 +709,12 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
         //     is_not_exact = false;
         // }
 
-        NormalizedWindowRect window_rect = in_overview ?
-            document_view->document_to_overview_rect(DocumentRect(page_rect, page_number)) :
+        if (overview && (page_number == 3)) {
+
+            NormalizedWindowRect overview_rect = document_view->document_to_overview_rect(DocumentRect(page_rect, page_number), overview);
+        }
+        NormalizedWindowRect window_rect = overview.has_value() ?
+            document_view->document_to_overview_rect(DocumentRect(page_rect, page_number), overview) :
             dv()->document_to_window_rect_pixel_perfect(DocumentRect(page_rect, page_number),
             static_cast<int>(rendered_width / device_pixel_ratio),
             static_cast<int>(rendered_height / device_pixel_ratio), is_sliced);
@@ -718,7 +729,7 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
 
 #ifdef SIOYEK_OPENGL_BACKEND
         if ((document_view->get_current_color_mode() != ColorPalette::Normal) &&
-            (PRESERVE_IMAGE_COLORS) && (!in_overview) &&
+            (PRESERVE_IMAGE_COLORS) && (!overview.has_value()) &&
             (forced_color_palette == ColorPalette::None) &&
             (stencils_allowed)) {
             // render images in forced palette mode
@@ -735,20 +746,20 @@ void PdfViewOpenGLWidget::render_page(int page_number, bool in_overview, ColorPa
                 target_palette = ColorPalette::Dark;
             }
 
-            render_page(page_number, in_overview, target_palette, false);
+            render_page(page_number, overview, target_palette, false);
             disable_stencil();
         }
 
-        if (!dv()->is_presentation_mode() && (!in_overview) && (!dv()->is_two_page_mode())){
+        if (!dv()->is_presentation_mode() && (!overview.has_value()) && (!dv()->is_two_page_mode())){
 
             // render page separator
             glUseProgram(shared_gl_objects.separator_program);
 
             PagelessDocumentRect separator_rect({
                 0,
-                doc(in_overview)->get_page_height(page_number) - PAGE_SEPARATOR_WIDTH / 2,
-                doc(in_overview)->get_page_width(page_number),
-                doc(in_overview)->get_page_height(page_number) + PAGE_SEPARATOR_WIDTH / 2
+                doc(overview)->get_page_height(page_number) - PAGE_SEPARATOR_WIDTH / 2,
+                doc(overview)->get_page_width(page_number),
+                doc(overview)->get_page_height(page_number) + PAGE_SEPARATOR_WIDTH / 2
                 });
 
 
@@ -1329,9 +1340,14 @@ void PdfViewOpenGLWidget::my_render() {
         render_ruler_thresholds();
     }
 
+    //for (auto overview : persisted_overviews) {
+    //    render_overview(overview);
+    //}
+
     if (document_view->overview_page) {
         render_overview(document_view->overview_page.value());
     }
+
     end_native_painting();
 }
 
@@ -1633,21 +1649,36 @@ void PdfViewOpenGLWidget::setup_text_painter() {
     painter.setFont(font);
 }
 
-void PdfViewOpenGLWidget::get_overview_window_vertices(float out_vertices[2 * 4]) {
+void PdfViewOpenGLWidget::get_overview_window_vertices(float out_vertices[2 * 4], std::optional<OverviewState> maybe_overview) {
 
-    float overview_offset_x = document_view->overview_offset_x;
-    float overview_offset_y = document_view->overview_offset_y;
-    float overview_half_width = document_view->overview_half_width;
-    float overview_half_height = document_view->overview_half_height;
 
-    out_vertices[0] = overview_offset_x - overview_half_width;
-    out_vertices[1] = overview_offset_y + overview_half_height;
-    out_vertices[2] = overview_offset_x - overview_half_width;
-    out_vertices[3] = overview_offset_y - overview_half_height;
-    out_vertices[4] = overview_offset_x + overview_half_width;
-    out_vertices[5] = overview_offset_y - overview_half_height;
-    out_vertices[6] = overview_offset_x + overview_half_width;
-    out_vertices[7] = overview_offset_y + overview_half_height;
+    if (maybe_overview && maybe_overview->source_rect) {
+        NormalizedWindowRect normalized_rect = maybe_overview->source_rect->to_window_normalized(document_view);
+        out_vertices[0] = normalized_rect.x0;
+        out_vertices[1] = normalized_rect.y0;
+        out_vertices[2] = normalized_rect.x0;
+        out_vertices[3] = normalized_rect.y1;
+        out_vertices[4] = normalized_rect.x1;
+        out_vertices[5] = normalized_rect.y0;
+        out_vertices[6] = normalized_rect.x1;
+        out_vertices[7] = normalized_rect.y1;
+    }
+    else {
+        float overview_offset_x = document_view->overview_offset_x;
+        float overview_offset_y = document_view->overview_offset_y;
+        float overview_half_width = document_view->overview_half_width;
+        float overview_half_height = document_view->overview_half_height;
+        out_vertices[0] = overview_offset_x - overview_half_width;
+        out_vertices[1] = overview_offset_y + overview_half_height;
+        out_vertices[2] = overview_offset_x - overview_half_width;
+        out_vertices[3] = overview_offset_y - overview_half_height;
+        out_vertices[4] = overview_offset_x + overview_half_width;
+        out_vertices[5] = overview_offset_y - overview_half_height;
+        out_vertices[6] = overview_offset_x + overview_half_width;
+        out_vertices[7] = overview_offset_y + overview_half_height;
+    }
+
+
 }
 
 
@@ -2968,14 +2999,14 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
     draw_stencil_rects({ window_rect });
     use_stencil_to_write(true);
 
-    int page = AbsoluteDocumentPos{0, document_view->overview_page->absolute_offset_y}.to_document(doc(true)).page;
+    int page = AbsoluteDocumentPos{0, overview.absolute_offset_y}.to_document(doc(overview)).page;
 
-    draw_overview_background();
+    draw_overview_background(overview);
 
 
-    render_page(page, true, ColorPalette::None, false);
-    render_page(page-1, true, ColorPalette::None, false);
-    render_page(page+1, true, ColorPalette::None, false);
+    render_page(page, overview, ColorPalette::None, false);
+    render_page(page-1, overview, ColorPalette::None, false);
+    render_page(page+1, overview, ColorPalette::None, false);
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
     // highlight the overview search result
@@ -3003,7 +3034,7 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
     }
 
     disable_stencil();
-    draw_overview_border();
+    draw_overview_border(overview);
 
     return;
 }
