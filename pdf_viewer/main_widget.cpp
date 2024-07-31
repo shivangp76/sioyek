@@ -7687,6 +7687,9 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
 
 void MainWidget::handle_documentation_search() {
 
+    load_sioyek_documentation();
+    db_manager->index_documentation(sioyek_documentation_json_document);
+
     auto search_widget = DocumentationSearchWidget::create(this);
     search_widget->set_select_fn([&, search_widget](int index) {
             FulltextSearchResult result = search_widget->result_model->search_results[index];
@@ -7844,9 +7847,9 @@ void MainWidget::handle_debug_command() {
     load_sioyek_documentation();
     bool is_documentation_indexed = db_manager->is_documentation_indexed();
     qDebug() << "is documentation indexed = " << is_documentation_indexed;
-    //db_manager->delete_documentation_search_index();
+    db_manager->delete_documentation_search_index();
 
-    db_manager->index_documentation(sioyek_documentation_json_document);
+    //db_manager->index_documentation(sioyek_documentation_json_document);
 }
 
 void MainWidget::show_command_menu() {
