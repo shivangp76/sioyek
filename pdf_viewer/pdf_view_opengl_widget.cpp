@@ -456,6 +456,9 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
 #ifdef SIOYEK_OPENGL_BACKEND
     render_overview_opengl_backend(window_rect, overview);
 #else
+    if (window_rect.height() > 0) {
+        std::swap(window_rect.y0, window_rect.y1);
+    }
     render_overview_qpainter_backend(window_rect, overview);
 #endif
 
@@ -508,7 +511,7 @@ void PdfViewOpenGLWidget::draw_overview_border(std::optional<OverviewState> mayb
 #else
 
     set_highlight_color(border_color, 1);
-    render_highlight_window(document_view->get_overview_rect(), HRF_BORDER);
+    render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
 #endif
 }
 
@@ -1340,9 +1343,9 @@ void PdfViewOpenGLWidget::my_render() {
         render_ruler_thresholds();
     }
 
-    //for (auto overview : persisted_overviews) {
-    //    render_overview(overview);
-    //}
+    for (auto overview : persisted_overviews) {
+        render_overview(overview);
+    }
 
     if (document_view->overview_page) {
         render_overview(document_view->overview_page.value());
@@ -3310,32 +3313,37 @@ void PdfViewOpenGLWidget::render_overview_qpainter_backend(NormalizedWindowRect 
     QRegion overview_region = QRegion(overview_rect);
     painter.setClipRegion(overview_region);
 
-    int page = AbsoluteDocumentPos{0, document_view->overview_page->absolute_offset_y}.to_document(doc(true)).page;
+    //qDebug() << "before";
+    //if (overview.source_rect && (!document_view->overview_page.has_value())) {
+    //    int a = 2;
+    //}
+    int page = AbsoluteDocumentPos{0, overview.absolute_offset_y}.to_document(doc(overview)).page;
+    //qDebug() << "after";
 
     draw_overview_background();
 
-    render_page(page, true, ColorPalette::None, false);
-    render_page(page-1, true, ColorPalette::None, false);
-    render_page(page+1, true, ColorPalette::None, false);
+    render_page(page, overview, ColorPalette::None, false);
+    render_page(page-1, overview, ColorPalette::None, false);
+    render_page(page+1, overview, ColorPalette::None, false);
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
     if (highlighted_result) {
 
         set_highlight_color(&DEFAULT_SEARCH_HIGHLIGHT_COLOR[0], 0.3f);
         for (auto rect : highlighted_result->rects) {
-            NormalizedWindowRect target = document_view->document_to_overview_rect(DocumentRect{ rect, highlighted_result->page });
+            NormalizedWindowRect target = document_view->document_to_overview_rect(DocumentRect{ rect, highlighted_result->page }, overview);
             render_highlight_window(target, HRF_FILL | HRF_BORDER);
         }
     }
     if (document_view->overview_highlights.size() > 0) {
         set_highlight_color(&OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0], 0.3f);
         for (auto rect : document_view->overview_highlights) {
-            NormalizedWindowRect target = document_view->document_to_overview_rect(rect);
+            NormalizedWindowRect target = document_view->document_to_overview_rect(rect, overview);
             render_highlight_window(target, HRF_FILL);
         }
     }
     painter.setClipRect(rect());
-    draw_overview_border();
+    draw_overview_border(overview);
 }
 
 void PdfViewOpenGLWidget::resizeEvent(QResizeEvent* event){

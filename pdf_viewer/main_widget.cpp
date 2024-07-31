@@ -7845,14 +7845,14 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
-    //if (dv()->overview_page.has_value()) {
-    //    OverviewState state = dv()->overview_page.value();
-    //    AbsoluteRect current_overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
-    //    state.source_rect = current_overview_rect;
-    //    state.original_zoom_level = dv()->get_zoom_level();
-    //    //dv()->window_to_abs
-    //    opengl_widget->persisted_overviews.push_back(state);
-    //}
+    if (dv()->overview_page.has_value()) {
+        OverviewState state = dv()->overview_page.value();
+        AbsoluteRect current_overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
+        state.source_rect = current_overview_rect;
+        state.original_zoom_level = dv()->get_zoom_level();
+        //dv()->window_to_abs
+        opengl_widget->persisted_overviews.push_back(state);
+    }
 }
 
 void MainWidget::show_command_menu() {

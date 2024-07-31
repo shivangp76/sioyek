@@ -212,7 +212,7 @@ protected:
     void prepare_initial_render_pipeline();
     void prepare_link_highlight_state();
 public:
-    //std::vector<OverviewState> persisted_overviews;
+    std::vector<OverviewState> persisted_overviews;
     bool is_helper_waiting_for_render = false;
 
 
