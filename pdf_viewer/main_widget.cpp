@@ -3235,13 +3235,29 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     if ((!is_control_pressed) && (!is_shift_pressed)) {
         std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
-        if (object_under_cursor.has_value() && (!visible_object_move_data.has_value()) && object_under_cursor->object_type == VisibleObjectType::Bookmark) {
-            int bookmark_index = object_under_cursor->index;
-            float amount = -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 120.0f;
-            scroll_bookmark_with_index(bookmark_index, amount);
-            validate_render();
+        if (object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
+            if (object_under_cursor->object_type == VisibleObjectType::Bookmark) {
+                float amount = -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 120.0f;
+                int bookmark_index = object_under_cursor->index;
+                scroll_bookmark_with_index(bookmark_index, amount);
+                validate_render();
+                return;
+            }
+            if (
+                (object_under_cursor->object_type == VisibleObjectType::PinnedPortal) &&
+                selected_object_index.has_value() &&
+                (selected_object_index->object_type == VisibleObjectType::PinnedPortal) &&
+                (selected_object_index->index == object_under_cursor->index)) {
+
+                float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                Portal& portal = doc()->get_portals()[object_under_cursor->index];
+                portal.dst.book_state.offset_y += amount;
+                validate_render();
+                return;
+            }
         }
-        else if (main_document_view->get_overview_page()) {
+
+        if (main_document_view->get_overview_page()) {
             if (main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
                 if (is_touchpad){
                     if (wevent->angleDelta().y() > 0) {
