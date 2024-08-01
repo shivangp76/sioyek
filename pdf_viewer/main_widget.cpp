@@ -9412,7 +9412,21 @@ void MainWidget::update_bookmark_with_index(int index) {
 void MainWidget::update_portal_with_index(int index) {
     if (index < doc()->get_portals().size()) {
         Portal& portal = doc()->get_portals()[index];
-        doc()->update_portal(portal);
+        if (portal.is_pinned()) {
+            doc()->update_portal_src_position(index,
+                AbsoluteDocumentPos{portal.src_offset_x.value(), portal.src_offset_y},
+                AbsoluteDocumentPos{portal.src_offset_end_x.value(), portal.src_offset_end_y.value()}
+            );
+        }
+        else {
+            if (portal.src_offset_end_x.has_value()) {
+                doc()->update_portal_src_position(index,
+                    AbsoluteDocumentPos{ portal.src_offset_x.value(), portal.src_offset_y },
+                    {}
+                );
+            }
+        }
+        //doc()->update_portal(portal);
         on_portal_edited(portal.uuid);
     }
 }
