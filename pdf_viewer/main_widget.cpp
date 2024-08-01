@@ -812,6 +812,15 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
                 return;
             }
         }
+        if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
+            int index = visible_object_resize_data->object_index;
+            if (index < doc()->get_portals().size()) {
+                auto& target_portal = doc()->get_portals()[index];
+                target_portal.set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+                validate_render();
+                return;
+            }
+        }
     }
 
     if (bookmark_scroll_data) {
@@ -2607,6 +2616,19 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             }
 
             if (visible_object->object_type == VisibleObjectType::PinnedPortal) {
+                int index = visible_object->index;
+                auto pinned_portal = doc()->get_portals()[index];
+                std::optional<OverviewSide> resize_side = pinned_portal.get_resize_side_containing_point(abs_doc_pos);
+                if (resize_side) {
+                    VisibleObjectResizeData prd;
+                    prd.type = VisibleObjectType::PinnedPortal;
+                    prd.object_index = index;
+                    prd.side_index = resize_side.value();
+                    prd.original_mouse_pos = abs_doc_pos;
+                    prd.original_rect = pinned_portal.get_rectangle().value();
+                    visible_object_resize_data = prd;
+                    return;
+                }
             }
 
             last_mouse_down = abs_doc_pos;
@@ -2686,6 +2708,11 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         if (visible_object_resize_data) {
             if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
                 update_bookmark_with_index(visible_object_resize_data->object_index);
+                visible_object_resize_data = {};
+                return;
+            }
+            if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
+                update_portal_with_index(visible_object_resize_data->object_index);
                 visible_object_resize_data = {};
                 return;
             }
@@ -9377,6 +9404,14 @@ void MainWidget::update_bookmark_with_index(int index) {
         BookMark& bm = doc()->get_bookmarks()[index];
         doc()->update_bookmark_position(index, { bm.begin_x, bm.begin_y }, { bm.end_x, bm.end_y });
         on_bookmark_edited(bm.uuid);
+    }
+}
+
+void MainWidget::update_portal_with_index(int index) {
+    if (index < doc()->get_portals().size()) {
+        Portal& portal = doc()->get_portals()[index];
+        doc()->update_portal(portal);
+        on_portal_edited(portal.uuid);
     }
 }
 

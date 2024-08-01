@@ -738,3 +738,20 @@ std::optional<OverviewSide> Annotation::get_resize_side_containing_point(Absolut
 
     return {};
 }
+
+void Portal::set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos) {
+    if (is_pinned()) {
+        if (side == OverviewSide::left) {
+            src_offset_x = pos.x;
+        }
+        if (side == OverviewSide::right) {
+            src_offset_end_x = pos.x;
+        }
+        if (side == OverviewSide::top) {
+            src_offset_end_y = pos.y;
+        }
+        if (side == OverviewSide::bottom) {
+            src_offset_y = pos.y;
+        }
+    }
+}
