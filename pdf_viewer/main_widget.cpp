@@ -3289,6 +3289,8 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                 float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
                 Portal& portal = doc()->get_portals()[object_under_cursor->index];
                 portal.dst.book_state.offset_y += amount;
+
+                schedule_update_link_with_opened_book_state(portal, portal.dst.book_state);
                 validate_render();
                 return;
             }
