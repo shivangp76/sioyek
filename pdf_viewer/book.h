@@ -344,8 +344,9 @@ struct VisibleObjectResizeData {
     OverviewSide side_index;
 };
 
-struct BookmarkScrollData {
-    int bookmark_index;
+struct VisibleObjectScrollData {
+    VisibleObjectType type;
+    int object_index;
     float original_scroll_amount;
     AbsoluteDocumentPos original_mouse_pos;
 };

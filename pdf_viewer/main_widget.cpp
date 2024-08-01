@@ -823,15 +823,29 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         }
     }
 
-    if (bookmark_scroll_data) {
-        int index = bookmark_scroll_data->bookmark_index;
-        if (index < doc()->get_bookmarks().size()) {
-            auto& target_bookmark = doc()->get_bookmarks()[index];
-            //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
-            dv()->set_bookmark_scroll_amount(target_bookmark.uuid,
-                -(abs_mpos.y - bookmark_scroll_data->original_mouse_pos.y) * dv()->get_zoom_level() + bookmark_scroll_data->original_scroll_amount);
-            validate_render();
-            return;
+    if (visible_object_scroll_data) {
+        int index = visible_object_scroll_data->object_index;
+        if (visible_object_scroll_data->type == VisibleObjectType::Bookmark) {
+            if (index < doc()->get_bookmarks().size()) {
+                auto& target_bookmark = doc()->get_bookmarks()[index];
+                //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
+                dv()->set_bookmark_scroll_amount(target_bookmark.uuid,
+                    -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * dv()->get_zoom_level() + visible_object_scroll_data->original_scroll_amount);
+                validate_render();
+                return;
+            }
+        }
+        if (visible_object_scroll_data->type == VisibleObjectType::PinnedPortal) {
+            if (index < doc()->get_portals().size()) {
+                auto& target_portal = doc()->get_portals()[index];
+                //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
+                target_portal.dst.book_state.offset_y = -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) + visible_object_scroll_data->original_scroll_amount;
+                schedule_update_link_with_opened_book_state(target_portal, target_portal.dst.book_state);
+                //(target_portal.uuid,
+                //    
+                validate_render();
+                return;
+            }
         }
     }
 
@@ -2586,12 +2600,13 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                     auto bookmark_ = doc()->get_bookmark_with_index(visible_object->index);
                     if (bookmark_) {
                         BookMark bookmark = bookmark_.value();
-                        BookmarkScrollData new_bookmark_scroll_data;
-                        new_bookmark_scroll_data.bookmark_index = visible_object->index;
+                        VisibleObjectScrollData new_bookmark_scroll_data;
+                        new_bookmark_scroll_data.type = VisibleObjectType::Bookmark;
+                        new_bookmark_scroll_data.object_index = visible_object->index;
                         new_bookmark_scroll_data.original_scroll_amount = dv()->get_bookmark_scroll_amount(bookmark.uuid);
                         new_bookmark_scroll_data.original_mouse_pos = abs_doc_pos;
                         last_mouse_down_window_pos = click_pos;
-                        bookmark_scroll_data = new_bookmark_scroll_data;
+                        visible_object_scroll_data = new_bookmark_scroll_data;
                         return;
                     }
                 }
@@ -2617,17 +2632,30 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
             if (visible_object->object_type == VisibleObjectType::PinnedPortal) {
                 int index = visible_object->index;
-                auto pinned_portal = doc()->get_portals()[index];
-                std::optional<OverviewSide> resize_side = pinned_portal.get_resize_side_containing_point(abs_doc_pos);
-                if (resize_side) {
-                    VisibleObjectResizeData prd;
-                    prd.type = VisibleObjectType::PinnedPortal;
-                    prd.object_index = index;
-                    prd.side_index = resize_side.value();
-                    prd.original_mouse_pos = abs_doc_pos;
-                    prd.original_rect = pinned_portal.get_rectangle().value();
-                    visible_object_resize_data = prd;
+                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->index == selected_object_index->index)) {
+                    auto portal = doc()->get_portals()[index];
+                    VisibleObjectScrollData new_portal_scroll_data;
+                    new_portal_scroll_data.type = VisibleObjectType::PinnedPortal;
+                    new_portal_scroll_data.object_index = visible_object->index;
+                    new_portal_scroll_data.original_scroll_amount = portal.dst.book_state.offset_y;
+                    new_portal_scroll_data.original_mouse_pos = abs_doc_pos;
+                    last_mouse_down_window_pos = click_pos;
+                    visible_object_scroll_data = new_portal_scroll_data;
                     return;
+                }
+                else {
+                    auto pinned_portal = doc()->get_portals()[index];
+                    std::optional<OverviewSide> resize_side = pinned_portal.get_resize_side_containing_point(abs_doc_pos);
+                    if (resize_side) {
+                        VisibleObjectResizeData prd;
+                        prd.type = VisibleObjectType::PinnedPortal;
+                        prd.object_index = index;
+                        prd.side_index = resize_side.value();
+                        prd.original_mouse_pos = abs_doc_pos;
+                        prd.original_rect = pinned_portal.get_rectangle().value();
+                        visible_object_resize_data = prd;
+                        return;
+                    }
                 }
             }
 
@@ -2718,8 +2746,8 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             }
         }
 
-        if (bookmark_scroll_data) {
-            bookmark_scroll_data = {};
+        if (visible_object_scroll_data) {
+            visible_object_scroll_data = {};
             //return;
         }
 
@@ -7337,7 +7365,7 @@ bool MainWidget::is_flicking(QPointF* out_velocity) {
     if (main_document_view->get_overview_page()) {
         return false;
     }
-    if (bookmark_scroll_data) {
+    if (visible_object_scroll_data) {
         return false;
     }
 
