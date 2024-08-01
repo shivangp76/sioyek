@@ -3308,42 +3308,46 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
 
-    if ( (!is_shift_pressed)) {
-        std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
-        if (object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
-            if (object_under_cursor->object_type == VisibleObjectType::Bookmark) {
-                float amount = -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 120.0f;
-                int bookmark_index = object_under_cursor->index;
-                scroll_bookmark_with_index(bookmark_index, amount);
-                validate_render();
-                return;
-            }
-            if (
-                (object_under_cursor->object_type == VisibleObjectType::PinnedPortal) &&
-                selected_object_index.has_value() &&
-                (selected_object_index->object_type == VisibleObjectType::PinnedPortal) &&
-                (selected_object_index->index == object_under_cursor->index)) {
+    std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
+    if (object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
+        if (object_under_cursor->object_type == VisibleObjectType::Bookmark) {
+            float amount = -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 120.0f;
+            int bookmark_index = object_under_cursor->index;
+            scroll_bookmark_with_index(bookmark_index, amount);
+            validate_render();
+            return;
+        }
+        if (
+            (object_under_cursor->object_type == VisibleObjectType::PinnedPortal) &&
+            selected_object_index.has_value() &&
+            (selected_object_index->object_type == VisibleObjectType::PinnedPortal) &&
+            (selected_object_index->index == object_under_cursor->index)) {
 
-                Portal& portal = doc()->get_portals()[object_under_cursor->index];
-                if (is_control_pressed) {
-                    //float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
-                    if (wevent->angleDelta().y() > 0) {
-                        portal.dst.book_state.zoom_level *= zoom_factor;
-                    }
-                    else {
-                        portal.dst.book_state.zoom_level /= zoom_factor;
-                    }
+            Portal& portal = doc()->get_portals()[object_under_cursor->index];
+            if (is_control_pressed) {
+                //float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                if (wevent->angleDelta().y() > 0) {
+                    portal.dst.book_state.zoom_level *= zoom_factor;
                 }
                 else {
-                    float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
-                    portal.dst.book_state.offset_y += amount;
+                    portal.dst.book_state.zoom_level /= zoom_factor;
                 }
-
-                schedule_update_link_with_opened_book_state(portal, portal.dst.book_state);
-                validate_render();
-                return;
             }
+            else if (is_shift_pressed) {
+                float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                portal.dst.book_state.offset_x += amount;
+            }
+            else {
+                float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                portal.dst.book_state.offset_y += amount;
+            }
+
+            schedule_update_link_with_opened_book_state(portal, portal.dst.book_state);
+            validate_render();
+            return;
         }
+    }
+    if ( (!is_shift_pressed) && (!is_control_pressed)) {
 
         if (main_document_view->get_overview_page()) {
             if (main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
