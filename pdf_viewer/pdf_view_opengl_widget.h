@@ -256,7 +256,7 @@ public:
     QColor qcc4(const float* input_color);
     bool needs_stencil_buffer();
     void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
-    void draw_overview_border(std::optional<OverviewState> maybe_overview = {});
+    void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
     //void draw_markdown_text(QString text, QRect window_rect, const QFont& font);
 
     void render_selected_rectangle();

@@ -503,11 +503,11 @@ void PdfViewOpenGLWidget::draw_overview_background(std::optional<OverviewState> 
 #endif
 }
 
-void PdfViewOpenGLWidget::draw_overview_border(std::optional<OverviewState> maybe_overview){
+void PdfViewOpenGLWidget::draw_overview_border(std::optional<OverviewState> maybe_overview, float* color){
     float border_color[3] = {0.5f, 0.5f, 0.5f};
 #ifdef SIOYEK_OPENGL_BACKEND
     glUseProgram(shared_gl_objects.highlight_program);
-    glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, border_color);
+    glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, color ? color : border_color);
     render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
 #else
 
@@ -1077,6 +1077,8 @@ void PdfViewOpenGLWidget::my_render() {
 
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].is_pinned()) {
+            bool is_portal_selected = dv()->get_selected_pinned_portal_index() == i;
+            float selected_border_color[] = {1, 0, 0};
             OverviewState portal_overview_state;
 
             portal_overview_state.source_rect = portals[i].get_rectangle();
@@ -1092,6 +1094,7 @@ void PdfViewOpenGLWidget::my_render() {
                 }
 
                 render_overview(portal_overview_state);
+                draw_overview_border(portal_overview_state, is_portal_selected ? selected_border_color : nullptr);
             }
         }
     }

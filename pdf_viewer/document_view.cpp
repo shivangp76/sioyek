@@ -3666,6 +3666,13 @@ int DocumentView::get_selected_portal_index() {
     return -1;
 }
 
+int DocumentView::get_selected_pinned_portal_index() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
+        return selected_object_index->index;
+    }
+    return -1;
+}
+
 void DocumentView::focus_page_text(int page, const std::wstring& text) {
 
     std::wstring page_text;

@@ -215,6 +215,7 @@ public:
     void clear_underline();
 
     int get_selected_highlight_index();
+    int get_selected_pinned_portal_index();
     int get_selected_bookmark_index();
     int get_selected_portal_index();
 

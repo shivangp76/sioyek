@@ -1075,7 +1075,7 @@ public:
 
     void set_selected_highlight_index(int index);
     void set_selected_bookmark_index(int index);
-    void set_selected_portal_index(int index);
+    void set_selected_portal_index(int index, bool is_pinned=false);
     void clear_selected_object();
 
     int get_selected_highlight_index();

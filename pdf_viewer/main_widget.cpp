@@ -2920,7 +2920,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
         }
     }
     else if ((selected_index = doc()->get_pinned_portal_index_at_pos(mouse_abspos)) >= 0) {
-        //todo:
+        set_selected_portal_index(selected_index, true);
     }
     else if ((selected_index = doc()->get_icon_portal_index_at_pos(mouse_abspos)) >= 0) {
         set_selected_portal_index(selected_index);
@@ -7849,6 +7849,7 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
+    //qDebug() << selected_object_index->index;
     //if (dv()->overview_page.has_value()) {
     //    OverviewState state = dv()->overview_page.value();
     //    AbsoluteRect current_overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
@@ -11746,8 +11747,10 @@ void MainWidget::clear_current_document_drawings() {
     doc()->delete_all_drawings();
 }
 
-void MainWidget::set_selected_portal_index(int index) {
-    selected_object_index = VisibleObjectIndex{VisibleObjectType::Portal, index};
+void MainWidget::set_selected_portal_index(int index, bool is_pinned) {
+    selected_object_index = VisibleObjectIndex{
+        is_pinned ? VisibleObjectType::PinnedPortal : VisibleObjectType::Portal,
+        index};
     dv()->set_selected_object_index(selected_object_index.value());
 }
 
