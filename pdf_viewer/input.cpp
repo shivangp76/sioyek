@@ -3589,8 +3589,13 @@ public:
     static inline const std::string hname = "Zoom in";
     ZoomInCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->main_document_view->zoom_in();
-        widget->last_smart_fit_page = {};
+        if (widget->is_pinned_portal_selected()) {
+            widget->zoom_pinned_portal(true);
+        }
+        else {
+            widget->main_document_view->zoom_in();
+            widget->last_smart_fit_page = {};
+        }
     }
 };
 
@@ -3694,8 +3699,13 @@ public:
     ZoomOutCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->main_document_view->zoom_out();
-        widget->last_smart_fit_page = {};
+        if (widget->is_pinned_portal_selected()) {
+            widget->zoom_pinned_portal(false);
+        }
+        else {
+            widget->main_document_view->zoom_out();
+            widget->last_smart_fit_page = {};
+        }
     }
 };
 

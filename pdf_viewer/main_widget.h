@@ -1191,6 +1191,7 @@ public:
     void send_symbol_to_last_command(char symbol);
     void ensure_titlebar_colors_match_color_mode();
     void pin_current_overview_as_portal();
+    void zoom_pinned_portal(bool zoom_in);
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
 

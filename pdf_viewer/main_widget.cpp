@@ -13763,3 +13763,18 @@ void MainWidget::move_pinned_portal(float horizontal_amount, float vertical_amou
         }
     }
 }
+
+void MainWidget::zoom_pinned_portal(bool zoom_in) {
+    if (is_pinned_portal_selected()) {
+        Portal* pinned_portal = get_pinned_portal();
+        if (pinned_portal) {
+            if (zoom_in) {
+                pinned_portal->dst.book_state.zoom_level *= ZOOM_INC_FACTOR;
+            }
+            else {
+                pinned_portal->dst.book_state.zoom_level /= ZOOM_INC_FACTOR;
+            }
+        }
+    }
+}
+
