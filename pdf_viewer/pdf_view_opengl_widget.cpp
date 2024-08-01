@@ -380,11 +380,12 @@ void PdfViewOpenGLWidget::render_scratchpad() {
 
 
 #ifdef SIOYEK_OPENGL_BACKEND
-PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer, bool is_helper_, QWidget* parent) :
+PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper_, QWidget* parent) :
     QOpenGLWidget(parent),
     painter(this),
     document_view(document_view_),
     pdf_renderer(pdf_renderer),
+    document_manager(docman),
     is_helper(is_helper_)
 #else
 PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer, bool is_helper, QWidget* parent) :
@@ -1081,15 +1082,17 @@ void PdfViewOpenGLWidget::my_render() {
             portal_overview_state.source_rect = portals[i].get_rectangle();
             portal_overview_state.absolute_offset_x = portals[i].dst.book_state.offset_x;
             portal_overview_state.absolute_offset_y = portals[i].dst.book_state.offset_y;
-
-            //todo: should set doc
-            portal_overview_state.doc = dv()->get_document();
-
             portal_overview_state.zoom_level = portals[i].dst.book_state.zoom_level * dv()->get_zoom_level();
             portal_overview_state.source_portal = portals[i];
 
-            render_overview(portal_overview_state);
-            //render_portal_rect(portals[i].get_rectangle(), false, {});
+            portal_overview_state.doc = document_manager->get_document_with_checksum(portals[i].dst.document_checksum);
+            if (portal_overview_state.doc) {
+                if (!portal_overview_state.doc->get_is_opened()) {
+                    portal_overview_state.doc->open(nullptr, true);
+                }
+
+                render_overview(portal_overview_state);
+            }
         }
     }
 
@@ -1677,9 +1680,9 @@ void PdfViewOpenGLWidget::get_overview_window_vertices(float out_vertices[2 * 4]
     if (maybe_overview && maybe_overview->source_rect) {
         NormalizedWindowRect normalized_rect = maybe_overview->source_rect->to_window_normalized(document_view);
         out_vertices[0] = normalized_rect.x0;
-        out_vertices[1] = normalized_rect.y0;
+        out_vertices[1] = normalized_rect.y1;
         out_vertices[2] = normalized_rect.x0;
-        out_vertices[3] = normalized_rect.y1;
+        out_vertices[3] = normalized_rect.y0;
         out_vertices[4] = normalized_rect.x1;
         out_vertices[5] = normalized_rect.y0;
         out_vertices[6] = normalized_rect.x1;

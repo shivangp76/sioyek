@@ -1080,6 +1080,7 @@ void Document::reload(std::string password) {
 }
 
 bool Document::open(bool* invalid_flag, bool force_load_dimensions, std::string password, bool temp) {
+    is_opened = true;
     load_extras();
 
     last_update_time = QDateTime::currentDateTime();
@@ -5057,4 +5058,8 @@ std::optional<BookMark> Document::get_bookmark_with_index(int index) {
         return bookmarks[index];
     }
     return {};
+}
+
+bool Document::get_is_opened() {
+    return is_opened;
 }

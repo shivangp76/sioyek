@@ -75,6 +75,7 @@ class Document {
 
 private:
 
+    bool is_opened = false;
     std::mutex drawings_mutex;
     std::mutex highlights_mutex;
 
@@ -262,6 +263,8 @@ public:
     int find_closest_bookmark_index(const std::vector<BookMark>& sorted_bookmarks, float to_offset_y) const;
     int find_closest_portal_index(const std::vector<Portal>& sorted_bookmarks, float to_offset_y) const;
     int find_closest_highlight_index(const std::vector<Highlight>& sorted_highlights, float to_offset_y) const;
+
+    bool get_is_opened();
 
     void update_annotation_with_server_annotation(const Annotation* server_annotation);
 

@@ -36,6 +36,7 @@ class DocumentView;
 class PdfRenderer;
 class ConfigManager;
 class ScratchPad;
+class DocumentManager;
 
 enum HighlightRenderFlags
 {
@@ -116,6 +117,7 @@ private:
     DocumentView* document_view = nullptr;
     ScratchPad* scratchpad = nullptr;
     PdfRenderer* pdf_renderer = nullptr;
+    DocumentManager* document_manager = nullptr;
 
     std::unique_ptr<CachedScratchpadPixmapData> cached_scratchpad_pixmap = {};
     bool is_helper = false;
@@ -216,7 +218,7 @@ public:
     bool is_helper_waiting_for_render = false;
 
 
-    PdfViewOpenGLWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, bool is_helper, QWidget* parent = nullptr);
+    PdfViewOpenGLWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
     ~PdfViewOpenGLWidget();
 
     void handle_escape();
