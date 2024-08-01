@@ -5829,7 +5829,7 @@ void MainWidget::move_visual_mark_command(int amount) {
         move_visual_mark(amount);
     }
     else if (is_pinned_portal_selected()) {
-        move_pinned_portal_vertical(amount * 72 * VERTICAL_MOVE_AMOUNT);
+        move_pinned_portal(0, amount * 72 * VERTICAL_MOVE_AMOUNT);
     }
     else {
         move_document(0.0f, 72.0f * amount * VERTICAL_MOVE_AMOUNT);
@@ -5857,6 +5857,9 @@ void MainWidget::handle_vertical_move(int amount) {
 void MainWidget::handle_horizontal_move(int amount) {
     if (main_document_view->get_overview_page()) {
         return;
+    }
+    else if (is_pinned_portal_selected()) {
+        move_pinned_portal(amount * 72 * VERTICAL_MOVE_AMOUNT, 0);
     }
     else if (main_document_view->is_presentation_mode()) {
         main_document_view->move_pages(-amount);
@@ -13751,11 +13754,12 @@ Portal* MainWidget::get_pinned_portal() {
     return nullptr;
 }
 
-void MainWidget::move_pinned_portal_vertical(float amount) {
+void MainWidget::move_pinned_portal(float horizontal_amount, float vertical_amount) {
     if (is_pinned_portal_selected()) {
         Portal* pinned_portal = get_pinned_portal();
         if (pinned_portal) {
-            pinned_portal->dst.book_state.offset_y += amount;
+            pinned_portal->dst.book_state.offset_x += horizontal_amount;
+            pinned_portal->dst.book_state.offset_y += vertical_amount;
         }
     }
 }

@@ -439,7 +439,7 @@ public:
     void toggle_statusbar();
     void toggle_titlebar();
 
-    void move_pinned_portal_vertical(float amount);
+    void move_pinned_portal(float horizontal_amount, float vertical_amount);
     Portal* get_pinned_portal();
 
     // search the `paper_name` in one of the configurable when middle-click or shift+middle-clicking on paper's name
