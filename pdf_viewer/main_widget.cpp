@@ -802,13 +802,15 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     std::optional<PdfLink> link = {};
 
 
-    if (bookmark_resize_data) {
-        int index = bookmark_resize_data->bookmark_index;
-        if (index < doc()->get_bookmarks().size()) {
-            auto& target_bookmark = doc()->get_bookmarks()[index];
-            target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
-            validate_render();
-            return;
+    if (visible_object_resize_data) {
+        if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
+            int index = visible_object_resize_data->object_index;
+            if (index < doc()->get_bookmarks().size()) {
+                auto& target_bookmark = doc()->get_bookmarks()[index];
+                target_bookmark.set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+                validate_render();
+                return;
+            }
         }
     }
 
@@ -2587,18 +2589,24 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                 else {
                     int index = visible_object->index;
                     auto bookmark = doc()->get_bookmarks()[index];
-                    std::optional<OverviewSide> bookmark_resize_side = bookmark.get_resize_side_containing_point(abs_doc_pos);
-                    if (bookmark_resize_side) {
-                        BookmarkResizeData brd;
-                        brd.bookmark_index = index;
-                        brd.side_index = bookmark_resize_side.value();
-                        brd.original_mouse_pos = abs_doc_pos;
-                        brd.original_rect = bookmark.rect();
-                        bookmark_resize_data = brd;
-                        return;
+                    if (bookmark.is_freetext()) {
+                        std::optional<OverviewSide> bookmark_resize_side = bookmark.get_resize_side_containing_point(abs_doc_pos);
+                        if (bookmark_resize_side) {
+                            VisibleObjectResizeData brd;
+                            brd.type = VisibleObjectType::Bookmark;
+                            brd.object_index = index;
+                            brd.side_index = bookmark_resize_side.value();
+                            brd.original_mouse_pos = abs_doc_pos;
+                            brd.original_rect = bookmark.rect();
+                            visible_object_resize_data = brd;
+                            return;
+                        }
                     }
                 }
 
+            }
+
+            if (visible_object->object_type == VisibleObjectType::PinnedPortal) {
             }
 
             last_mouse_down = abs_doc_pos;
@@ -2675,10 +2683,12 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         is_selecting = false;
         is_dragging = false;
 
-        if (bookmark_resize_data) {
-            update_bookmark_with_index(bookmark_resize_data->bookmark_index);
-            bookmark_resize_data = {};
-            return;
+        if (visible_object_resize_data) {
+            if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
+                update_bookmark_with_index(visible_object_resize_data->object_index);
+                visible_object_resize_data = {};
+                return;
+            }
         }
 
         if (bookmark_scroll_data) {
@@ -4429,7 +4439,7 @@ void MainWidget::highlight_ruler_portals() {
 
     std::vector<DocumentRect> portal_rect_pages;
     for (auto portal : portals) {
-        DocumentRect doc_rect = portal.get_rectangle().to_document(doc());
+        DocumentRect doc_rect = portal.get_rectangle()->to_document(doc());
         portal_rect_pages.push_back(doc_rect);
     }
 
@@ -7818,7 +7828,7 @@ QString MainWidget::get_markdown_bookmark_anchor_text_under_cursor() {
 
         if (BookMark::should_be_displayed_as_markdown(bookmark_text)) {
             QFont font = bookmark.get_font(dv()->get_zoom_level());
-            QRect window_qrect = bookmark.get_rectangle().to_window(dv()).to_qrect();
+            QRect window_qrect = bookmark.get_rectangle()->to_window(dv()).to_qrect();
             float scroll_amount = dv()->get_bookmark_scroll_amount(bookmark.uuid);
 
 
@@ -7930,7 +7940,7 @@ void MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_
 
             // if the new description doesn't fit, increase the height of the bookmark
             QSizeF new_size = get_bookmark_text_size(bm);
-            QRect current_window_rect = bm.get_rectangle().to_window(dv()).to_qrect();
+            QRect current_window_rect = bm.get_rectangle()->to_window(dv()).to_qrect();
             if (current_window_rect.height() < new_size.height()) {
                 float diff = new_size.height() - current_window_rect.height();
                 float absolute_diff = diff / dv()->get_zoom_level();
@@ -8013,7 +8023,7 @@ QSizeF MainWidget::get_bookmark_text_size(const BookMark& bookmark) {
 
     td.setMarkdown(bookmark.get_question_or_summary_markdown(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
 
-    QRect window_qrect = bookmark.get_rectangle().to_window(dv()).to_qrect();
+    QRect window_qrect = bookmark.get_rectangle()->to_window(dv()).to_qrect();
     td.setTextWidth(window_qrect.width());
     td.setDefaultFont(some_font);
 
@@ -9441,8 +9451,8 @@ void MainWidget::handle_portal_move() {
         Portal& portal = doc()->get_portals()[index];
 
         if (portal.is_pinned()) {
-            float width = portal.get_rectangle().width();
-            float height = portal.get_rectangle().height();
+            float width = portal.get_rectangle()->width();
+            float height = portal.get_rectangle()->height();
 
             portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
             portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
@@ -9794,7 +9804,7 @@ void MainWidget::update_opengl_pending_download_portals() {
     for (auto pending_portal : pending_download_portals) {
 
         if (pending_portal.source_document_path == doc()->get_path()) {
-            AbsoluteRect rect = pending_portal.pending_portal.get_rectangle();
+            AbsoluteRect rect = pending_portal.pending_portal.get_rectangle().value();
             pending_rects_and_completion_ratio.push_back(std::make_pair(rect, pending_portal.downloaded_fraction));
         }
 
@@ -9846,7 +9856,7 @@ void MainWidget::cleanup_expired_pending_portals() {
 int MainWidget::get_pending_portal_index_at_pos(AbsoluteDocumentPos abspos) {
 
     for (int i = 0; i < pending_download_portals.size(); i++) {
-        AbsoluteRect rect = pending_download_portals[i].pending_portal.get_rectangle();
+        AbsoluteRect rect = pending_download_portals[i].pending_portal.get_rectangle().value();
 
         if (rect.contains(abspos)) {
             return i;
@@ -9899,7 +9909,7 @@ void MainWidget::handle_overview_to_ruler_portal() {
             SmartViewCandidate smc;
             smc.doc = document_manager->get_document_with_checksum(candid.dst.document_checksum);
             smc.doc->open(&is_render_invalidated, true);
-            smc.source_rect = candid.get_rectangle();
+            smc.source_rect = candid.get_rectangle().value();
             smc.target_pos = AbsoluteDocumentPos{ 0, candid.dst.book_state.offset_y };
             dv()->smart_view_candidates.push_back(smc);
         }
@@ -13508,8 +13518,8 @@ void MainWidget::scroll_bookmark_with_index(int bookmark_index, int amount) {
         float new_scroll = current_scroll + scroll_amount;
         float height = background_bookmark_renderer->get_cached_bookmark_height(uuid);
 
-        if (new_scroll > (height - bookmark.get_rectangle().height() * dv()->get_zoom_level())) {
-            new_scroll = height - bookmark.get_rectangle().height() * dv()->get_zoom_level();
+        if (new_scroll > (height - bookmark.get_rectangle()->height() * dv()->get_zoom_level())) {
+            new_scroll = height - bookmark.get_rectangle()->height() * dv()->get_zoom_level();
         }
         dv()->set_bookmark_scroll_amount(uuid, new_scroll);
     }

@@ -127,6 +127,10 @@ struct Annotation {
 
     void update_creation_time();
     void update_modification_time();
+
+    virtual std::optional<AbsoluteRect> get_rectangle() const;
+    std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
+
 };
 
 /*
@@ -213,9 +217,9 @@ struct BookMark : Annotation {
     static bool should_be_displayed_as_markdown(QString bookmark_text);
     std::optional<char> get_type() const;
 
-    AbsoluteRect get_rectangle() const;
-    AbsoluteRect get_selection_rectangle() const;
-    std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
+    std::optional<AbsoluteRect> get_rectangle() const override;
+    std::optional<AbsoluteRect> get_selection_rectangle() const;
+    //std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
     void set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos);
 };
 
@@ -332,8 +336,9 @@ struct OverviewResizeData {
     OverviewSide side_index;
 };
 
-struct BookmarkResizeData {
-    int bookmark_index;
+struct VisibleObjectResizeData {
+    VisibleObjectType type;
+    int object_index;
     AbsoluteRect original_rect;
     AbsoluteDocumentPos original_mouse_pos;
     OverviewSide side_index;
@@ -397,7 +402,7 @@ struct Portal : Annotation {
     QJsonObject to_json(std::string doc_checksum) const;
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
 
-    AbsoluteRect get_rectangle() const;
+    std::optional<AbsoluteRect> get_rectangle() const override;
     AbsoluteRect get_actual_rectangle() const;
     void update_merged_rect(Document* doc) const;
 };

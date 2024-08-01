@@ -1069,7 +1069,7 @@ void PdfViewOpenGLWidget::my_render() {
                     portals[i].is_merged_rect_valid = true;
                 }
                 if (portals[i].merged_rect) {
-                    render_highlight_absolute(portals[i].get_rectangle(), HRF_FILL | HRF_INVERTED);
+                    render_highlight_absolute(portals[i].get_rectangle().value(), HRF_FILL | HRF_INVERTED);
                 }
             }
         }
@@ -1110,7 +1110,7 @@ void PdfViewOpenGLWidget::my_render() {
         for (int i = 0; i < portals.size(); i++) {
             if (portals[i].is_icon()) {
                 if (!portals[i].merged_rect) {
-                    render_portal_rect(portals[i].get_rectangle(), false, {});
+                    render_portal_rect(portals[i].get_rectangle().value(), false, {});
                 }
             }
         }
@@ -1130,7 +1130,7 @@ void PdfViewOpenGLWidget::my_render() {
                     if (bookmark_window_pos.x > -1.5f && bookmark_window_pos.x < 1.5f &&
                         bookmark_window_pos.y > -1.5f && bookmark_window_pos.y < 1.5f) {
 
-                        NormalizedWindowRect bookmark_normalized_window_rect = bookmarks[i].get_rectangle().to_window_normalized(dv());
+                        NormalizedWindowRect bookmark_normalized_window_rect = bookmarks[i].get_rectangle()->to_window_normalized(dv());
 
                         fz_irect window_rect = dv()->normalized_to_window_rect(bookmark_normalized_window_rect);
                         QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
@@ -1141,8 +1141,8 @@ void PdfViewOpenGLWidget::my_render() {
                     }
                 }
                 else {
-                    WindowRect window_rect = bookmarks[i].get_rectangle().to_window(dv());
-                    NormalizedWindowRect window_rect_normalized = bookmarks[i].get_rectangle().to_window_normalized(dv());
+                    WindowRect window_rect = bookmarks[i].get_rectangle()->to_window(dv());
+                    NormalizedWindowRect window_rect_normalized = bookmarks[i].get_rectangle()->to_window_normalized(dv());
                     if (!window_rect_normalized.is_visible()) {
                         continue;
                     }

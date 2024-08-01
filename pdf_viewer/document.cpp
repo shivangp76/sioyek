@@ -3867,7 +3867,7 @@ void Document::update_highlight_type(int index, char new_type) {
 int Document::get_icon_portal_index_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].src_offset_x.has_value() && (!portals[i].src_offset_end_x.has_value())) {
-            if (portals[i].get_rectangle().contains(abspos)) {
+            if (portals[i].get_rectangle()->contains(abspos)) {
                 return i;
             }
         }
@@ -3878,7 +3878,7 @@ int Document::get_icon_portal_index_at_pos(AbsoluteDocumentPos abspos) {
 int Document::get_pinned_portal_index_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].is_pinned()) {
-            AbsoluteRect rectangle = portals[i].get_rectangle();
+            AbsoluteRect rectangle = portals[i].get_rectangle().value();
             if (rectangle.contains(abspos)) {
                 return i;
             }
@@ -3893,7 +3893,7 @@ int Document::get_bookmark_index_at_pos(AbsoluteDocumentPos abspos) {
             if (bookmarks[i].end_y == -1) {
 
                 //if (fz_is_point_inside_rect({abspos.x, abspos.y}, bookmarks[i].get_rectangle())) {
-                if (bookmarks[i].get_selection_rectangle().contains(abspos)) {
+                if (bookmarks[i].get_selection_rectangle()->contains(abspos)) {
                     return i;
                 }
             }
@@ -3903,7 +3903,7 @@ int Document::get_bookmark_index_at_pos(AbsoluteDocumentPos abspos) {
                 //bookmark_rect.y0 = bookmarks[i].begin_y;
                 //bookmark_rect.x1 = bookmarks[i].end_x;
                 //bookmark_rect.y1 = bookmarks[i].end_y;
-                AbsoluteRect bookmark_rect = bookmarks[i].get_selection_rectangle();
+                AbsoluteRect bookmark_rect = bookmarks[i].get_selection_rectangle().value();
 
                 if (fz_is_point_inside_rect({ abspos.x, abspos.y }, bookmark_rect)) {
                     return i;
@@ -4850,7 +4850,7 @@ std::vector<DocumentRect> Document::get_rects_for_bookmark_indices(const std::ve
     std::vector<DocumentRect> res;
     for (auto index : indices) {
         if (index < bookmarks.size() && (bookmarks[index].is_marked() || bookmarks[index].is_freetext())) {
-            DocumentRect rect = bookmarks[index].get_rectangle().to_document(this);
+            DocumentRect rect = bookmarks[index].get_rectangle().value().to_document(this);
             res.push_back(rect);
         }
         else {
@@ -4864,7 +4864,7 @@ std::vector <DocumentRect> Document::get_rects_for_portal_indices(const std::vec
     std::vector<DocumentRect> res;
     for (auto index : indices) {
         if (index < portals.size() && portals[index].is_visible()) {
-            res.push_back(portals[index].get_rectangle().to_document(this));
+            res.push_back(portals[index].get_rectangle()->to_document(this));
         }
         else {
             res.push_back(DocumentRect(fz_empty_rect, -1));

@@ -2024,7 +2024,7 @@ std::vector<int> DocumentView::get_visible_bookmark_indices() {
     std::vector<int> res;
     for (int i = 0; i < bookmarks.size(); i++) {
         if (bookmarks[i].is_marked() || bookmarks[i].is_freetext()) {
-            if (bookmarks[i].get_rectangle().to_window_normalized(this).is_visible()) {
+            if (bookmarks[i].get_rectangle()->to_window_normalized(this).is_visible()) {
                 res.push_back(i);
             }
         }
@@ -2036,7 +2036,7 @@ std::vector<int> DocumentView::get_visible_portal_indices() {
     const std::vector<Portal>& portals = get_document()->get_portals();
     std::vector<int> res;
     for (int i = 0; i < portals.size(); i++) {
-        if (portals[i].is_visible() && portals[i].get_rectangle().to_window_normalized(this).is_visible()) {
+        if (portals[i].is_visible() && portals[i].get_rectangle()->to_window_normalized(this).is_visible()) {
             res.push_back(i);
         }
     }
