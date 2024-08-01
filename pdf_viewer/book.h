@@ -380,10 +380,18 @@ struct Portal : Annotation {
     static inline const QString SRC_OFFSET_X_COLUMN_NAME = "src_offset_x";
     std::optional<float> src_offset_x = {};
 
+    static inline const QString SRC_OFFSET_END_X_COLUMN_NAME = "src_offset_end_x";
+    std::optional<float> src_offset_end_x = {};
+
+    static inline const QString SRC_OFFSET_END_Y_COLUMN_NAME = "src_offset_end_y";
+    std::optional<float> src_offset_end_y = {};
+
     mutable bool is_merged_rect_valid = false;
     mutable std::optional<AbsoluteRect> merged_rect = {};
 
     bool is_visible() const;
+    bool is_icon() const;
+    bool is_pinned() const;
 
     QJsonObject to_json(std::string doc_checksum) const;
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;

@@ -72,6 +72,7 @@ public:
     bool insert_bookmark_freetext(const std::string& checksum, const BookMark& bm);
     bool insert_bookmark_synced(const std::string& checksum, const BookMark& bm);
     bool insert_or_update_bookmark_synced(bool or_update, const std::string& checksum, const BookMark& bm);
+    bool insert_portal(const std::string& checksum, const Portal& portal, bool is_synced);
     bool insert_portal_synced(const std::string& checksum, const Portal& portal);
     bool insert_or_update_portal_synced(bool or_udpate, const std::string& checksum, const Portal& portal);
     bool select_bookmark(const std::string& checksum, std::vector<BookMark>& out_result);

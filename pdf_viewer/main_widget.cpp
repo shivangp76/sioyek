@@ -9,6 +9,7 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
+// when bookmarks reach the end scroll events should be forwarded to main widget
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -7845,14 +7846,14 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
-    if (dv()->overview_page.has_value()) {
-        OverviewState state = dv()->overview_page.value();
-        AbsoluteRect current_overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
-        state.source_rect = current_overview_rect;
-        state.original_zoom_level = dv()->get_zoom_level();
-        //dv()->window_to_abs
-        opengl_widget->persisted_overviews.push_back(state);
-    }
+    //if (dv()->overview_page.has_value()) {
+    //    OverviewState state = dv()->overview_page.value();
+    //    AbsoluteRect current_overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
+    //    state.source_rect = current_overview_rect;
+    //    state.original_zoom_level = dv()->get_zoom_level();
+    //    //dv()->window_to_abs
+    //    opengl_widget->persisted_overviews.push_back(state);
+    //}
 }
 
 void MainWidget::show_command_menu() {
@@ -13537,4 +13538,26 @@ void MainWidget::perform_fuzzy_search(std::wstring query) {
 
     main_document_view->set_search_results(std::move(search_results));
     goto_search_result(0);
+}
+
+void MainWidget::pin_current_overview_as_portal() {
+    if (dv()->overview_page.has_value()) {
+        OverviewState state = dv()->overview_page.value();
+        AbsoluteRect overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
+
+        PortalViewState dst;
+        dst.document_checksum = state.doc ? state.doc->get_checksum() : doc()->get_checksum();
+        dst.book_state.offset_x = state.absolute_offset_x;
+        dst.book_state.offset_y = state.absolute_offset_y;
+        dst.book_state.zoom_level = state.zoom_level / dv()->get_zoom_level();
+
+        Portal new_portal;
+        new_portal.src_offset_x = overview_rect.x0;
+        new_portal.src_offset_y = overview_rect.y0;
+        new_portal.src_offset_end_x = overview_rect.x1;
+        new_portal.src_offset_end_y = overview_rect.y1;
+        new_portal.dst = dst;
+        add_portal(doc()->get_path(), new_portal);
+
+    }
 }

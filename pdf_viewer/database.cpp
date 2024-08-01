@@ -587,6 +587,14 @@ bool DatabaseManager::open(const std::wstring& local_db_file_path, const std::ws
 
     QString old_local_file_path = local_db_file_info.dir().filePath("local.db");
     QString old_global_file_path = global_db_file_info.dir().filePath("shared.db");
+    for (int i = 0; i < DATABASE_VERSION; i++) {
+        QFileInfo local_file_info = QFileInfo(local_db_file_info.dir().filePath(QString("local_v%1.db").arg(i)));
+        QFileInfo global_file_info = QFileInfo(local_db_file_info.dir().filePath(QString("shared_v%1.db").arg(i)));
+        if (local_file_info.exists()) {
+            old_local_file_path = local_file_info.filePath();
+            old_global_file_path = global_file_info.filePath();
+        }
+    }
 
     bool db_exists = local_db_file_info.exists() && global_db_file_info.exists();
 
@@ -835,6 +843,8 @@ bool DatabaseManager::create_links_table() {
         "dst_document TEXT,"\
         "src_offset_y REAL,"\
         "src_offset_x REAL,"\
+        "src_offset_end_x REAL,"\
+        "src_offset_end_y REAL,"\
         "dst_offset_x REAL,"\
         "dst_offset_y REAL,"\
         "dst_zoom_level REAL);";
@@ -1050,19 +1060,25 @@ bool DatabaseManager::insert_or_update_portal_synced(bool or_update, const std::
         error_message);
 }
 
-bool DatabaseManager::insert_portal_synced(const std::string& document_path, const Portal& portal) {
+bool DatabaseManager::insert_portal(const std::string& document_path, const Portal& portal, bool is_synced) {
+    auto get_optional_string = [](std::optional<float> val) {
+        return val ? QString::number(val.value()).toStdWString() : L"NULL";
+        };
 
-    std::wstring src_offset_x_string = portal.src_offset_x ? QString::number(portal.src_offset_x.value()).toStdWString() : L"NULL";
+    //std::wstring src_offset_x_string = portal.src_offset_x ? QString::number(portal.src_offset_x.value()).toStdWString() : L"NULL";
     std::wstringstream ss;
-    ss << "INSERT INTO links (src_document, dst_document, src_offset_x, src_offset_y, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced) VALUES ('"
+    std::string sync_string = is_synced ? "1" : "0";
+    ss << "INSERT INTO links (src_document, dst_document, src_offset_x, src_offset_y, src_offset_end_x, src_offset_end_y, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced) VALUES ('"
         << esc(document_path) << "', '"
         << esc(portal.dst.document_checksum) << "', "
-        << src_offset_x_string << " , "
+        << get_optional_string(portal.src_offset_x) << " , "
         << portal.src_offset_y << " , "
+        << get_optional_string(portal.src_offset_end_x) << " , "
+        << get_optional_string(portal.src_offset_end_y) << " , "
         << portal.dst.book_state.offset_x << " , "
         << portal.dst.book_state.offset_y << ", "
         << portal.dst.book_state.zoom_level << ", '"
-        << esc(portal.uuid) << "', '" << esc(portal.creation_time) << "', '" << esc(portal.modification_time) << "', 1);";
+        << esc(portal.uuid) << "', '" << esc(portal.creation_time) << "', '" << esc(portal.modification_time) << "', " << sync_string.c_str() << ");";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
@@ -1070,6 +1086,11 @@ bool DatabaseManager::insert_portal_synced(const std::string& document_path, con
         "insert_bookmark_freetext",
         error_code,
         error_message);
+}
+
+bool DatabaseManager::insert_portal_synced(const std::string& document_path, const Portal& portal) {
+
+    return insert_portal(document_path, portal, true);
 }
 
 bool DatabaseManager::insert_highlight(const std::string& document_path,
@@ -1732,7 +1753,7 @@ bool DatabaseManager::global_select_bookmark(std::vector<std::pair<std::string, 
 }
 
 bool DatabaseManager::select_links(const std::string& src_document_path, std::vector<Portal>& out_result) {
-    std::string query = "select dst_document, src_offset_y, src_offset_x, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced from links where src_document =:src_document;";
+    std::string query = "select dst_document, src_offset_y, src_offset_x, dst_offset_x, dst_offset_y, dst_zoom_level, uuid, creation_time, modification_time, is_synced, src_offset_end_x, src_offset_end_y  from links where src_document =:src_document;";
     return generic_prepared_statement_run(global_db, &select_document_portals_stmt, query,
         [&]() { // on init
             select_document_portals_stmt_src_document_index = sqlite3_bind_parameter_index(select_document_portals_stmt, ":src_document");
@@ -1761,6 +1782,12 @@ bool DatabaseManager::select_links(const std::string& src_document_path, std::ve
             row.creation_time = column_std_string(select_document_portals_stmt, 7);
             row.modification_time = column_std_string(select_document_portals_stmt, 8);
             row.is_synced = sqlite3_column_int(select_document_portals_stmt, 9);
+            if (sqlite3_column_type(select_document_portals_stmt, 10) != SQLITE_NULL) {
+                row.src_offset_end_x = sqlite3_column_double(select_document_portals_stmt, 10);
+            }
+            if (sqlite3_column_type(select_document_portals_stmt, 11) != SQLITE_NULL) {
+                row.src_offset_end_y = sqlite3_column_double(select_document_portals_stmt, 11);
+            }
             out_result.push_back(row);
 
         });
@@ -2941,6 +2968,7 @@ void migrate_table(sqlite3* src_db, sqlite3* dst_db, std::string table_name) {
     default_value_generator["is_synced"] = []() { return "0"; };
 
     sqlite3_stmt* insert_values_statement = nullptr;
+    qDebug() << "migrating " << old_values.size() << " rows from " << table_name.c_str();
     is_ok = sqlite3_prepare_v2(dst_db, insert_values_query.c_str(), insert_values_query.size(), &insert_values_statement, nullptr);
     if (is_ok == SQLITE_OK) {
         for (int i = 0; i < old_values.size(); i++) {

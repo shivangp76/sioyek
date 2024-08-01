@@ -1185,6 +1185,7 @@ public:
     void handle_type_text_into_input(QString txt);
     void send_symbol_to_last_command(char symbol);
     void ensure_titlebar_colors_match_color_mode();
+    void pin_current_overview_as_portal();
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
 

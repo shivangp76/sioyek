@@ -353,6 +353,14 @@ QJsonObject Portal::to_json(std::string doc_checksum) const
         res[Portal::SRC_OFFSET_X_COLUMN_NAME] = src_offset_x.value();
     }
 
+    if (src_offset_end_x) {
+        res[Portal::SRC_OFFSET_END_X_COLUMN_NAME] = src_offset_end_x.value();
+    }
+
+    if (src_offset_end_y) {
+        res[Portal::SRC_OFFSET_END_Y_COLUMN_NAME] = src_offset_end_x.value();
+    }
+
     res["same"] = (doc_checksum == dst.document_checksum);
     add_metadata_to_json(res);
     return res;
@@ -384,6 +392,14 @@ Portal Portal::from_json(const QJsonObject& json_object)
 
             res.src_offset_x = json_object[Portal::SRC_OFFSET_X_COLUMN_NAME].toDouble();
         }
+
+        if (json_object.contains(Portal::SRC_OFFSET_END_X_COLUMN_NAME)) {
+            res.src_offset_end_x = json_object[Portal::SRC_OFFSET_END_X_COLUMN_NAME].toDouble();
+        }
+
+        if (json_object.contains(Portal::SRC_OFFSET_END_Y_COLUMN_NAME)) {
+            res.src_offset_end_y = json_object[Portal::SRC_OFFSET_END_Y_COLUMN_NAME].toDouble();
+        }
     }
 
     res.load_metadata_from_json(json_object);
@@ -396,8 +412,17 @@ void Portal::add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) {
     tuples.push_back({ Portal::DST_OFFSET_X_COLUMN_NAME, dst.book_state.offset_x });
     tuples.push_back({ Portal::DST_OFFSET_Y_COLUMN_NAME, dst.book_state.offset_y });
     tuples.push_back({ Portal::DST_ZOOM_LEVEL_COLUMN_NAME, dst.book_state.zoom_level });
+
     if (src_offset_x) {
         tuples.push_back({ Portal::SRC_OFFSET_X_COLUMN_NAME, src_offset_x.value() });
+    }
+
+    if (src_offset_end_x) {
+        tuples.push_back({ Portal::SRC_OFFSET_END_X_COLUMN_NAME, src_offset_end_x.value() });
+    }
+
+    if (src_offset_end_y) {
+        tuples.push_back({ Portal::SRC_OFFSET_END_Y_COLUMN_NAME, src_offset_end_y.value() });
     }
 
 }
@@ -478,6 +503,14 @@ bool Portal::is_visible() const {
     return src_offset_x.has_value();
 }
 
+bool Portal::is_pinned() const {
+    return src_offset_end_x.has_value() && src_offset_end_y.has_value();
+}
+
+bool Portal::is_icon() const {
+    return is_visible() && !is_pinned();
+}
+
 std::optional<OverviewSide> BookMark::get_resize_side_containing_point(AbsoluteDocumentPos point) const {
     if (is_freetext()) {
 
@@ -549,15 +582,23 @@ AbsoluteRect BookMark::get_rectangle() const{
 
 AbsoluteRect Portal::get_actual_rectangle() const{
 
-    return AbsoluteRect(
-        AbsoluteDocumentPos{ src_offset_x.value() - BOOKMARK_RECT_SIZE, src_offset_y - BOOKMARK_RECT_SIZE},
-        AbsoluteDocumentPos{ src_offset_x.value() + BOOKMARK_RECT_SIZE, src_offset_y + BOOKMARK_RECT_SIZE}
-    );
+    if (is_pinned()) {
+        return AbsoluteRect(
+            AbsoluteDocumentPos{ src_offset_x.value(), src_offset_y },
+            AbsoluteDocumentPos{ src_offset_end_x.value(), src_offset_end_y.value()}
+        );
+    }
+    else {
+        return AbsoluteRect(
+            AbsoluteDocumentPos{ src_offset_x.value() - BOOKMARK_RECT_SIZE, src_offset_y - BOOKMARK_RECT_SIZE },
+            AbsoluteDocumentPos{ src_offset_x.value() + BOOKMARK_RECT_SIZE, src_offset_y + BOOKMARK_RECT_SIZE }
+        );
+    }
 }
 
 AbsoluteRect Portal::get_rectangle() const{
 
-    if (merged_rect) return merged_rect.value();
+    if (merged_rect && is_icon()) return merged_rect.value();
     return get_actual_rectangle();
 
 }

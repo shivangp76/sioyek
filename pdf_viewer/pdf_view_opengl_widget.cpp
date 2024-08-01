@@ -1062,7 +1062,7 @@ void PdfViewOpenGLWidget::my_render() {
     set_highlight_color(color, 0.3f);
     if (doc()->can_use_highlights()) {
         for (int i = 0; i < portals.size(); i++) {
-            if (portals[i].is_visible()) {
+            if (portals[i].is_icon()) {
                 if (!portals[i].is_merged_rect_valid) {
                     portals[i].update_merged_rect(doc());
                     portals[i].is_merged_rect_valid = true;
@@ -1071,6 +1071,25 @@ void PdfViewOpenGLWidget::my_render() {
                     render_highlight_absolute(portals[i].get_rectangle(), HRF_FILL | HRF_INVERTED);
                 }
             }
+        }
+    }
+
+    for (int i = 0; i < portals.size(); i++) {
+        if (portals[i].is_pinned()) {
+            OverviewState portal_overview_state;
+
+            portal_overview_state.source_rect = portals[i].get_rectangle();
+            portal_overview_state.absolute_offset_x = portals[i].dst.book_state.offset_x;
+            portal_overview_state.absolute_offset_y = portals[i].dst.book_state.offset_y;
+
+            //todo: should set doc
+            portal_overview_state.doc = dv()->get_document();
+
+            portal_overview_state.zoom_level = portals[i].dst.book_state.zoom_level * dv()->get_zoom_level();
+            portal_overview_state.source_portal = portals[i];
+
+            render_overview(portal_overview_state);
+            //render_portal_rect(portals[i].get_rectangle(), false, {});
         }
     }
 
@@ -1083,7 +1102,7 @@ void PdfViewOpenGLWidget::my_render() {
             render_portal_rect(document_view->pending_download_portals[i].first, true, document_view->pending_download_portals[i].second);
         }
         for (int i = 0; i < portals.size(); i++) {
-            if (portals[i].is_visible()) {
+            if (portals[i].is_icon()) {
                 if (!portals[i].merged_rect) {
                     render_portal_rect(portals[i].get_rectangle(), false, {});
                 }
@@ -1343,9 +1362,9 @@ void PdfViewOpenGLWidget::my_render() {
         render_ruler_thresholds();
     }
 
-    for (auto overview : persisted_overviews) {
-        render_overview(overview);
-    }
+    //for (auto overview : persisted_overviews) {
+    //    render_overview(overview);
+    //}
 
     if (document_view->overview_page) {
         render_overview(document_view->overview_page.value());

@@ -420,27 +420,28 @@ std::string Document::add_portal(Portal portal, bool insert_into_database) {
     portals.push_back(portal);
     int index = portals.size() - 1;
     if (insert_into_database) {
-        if (portal.is_visible()) {
-            bool res = db_manager->insert_visible_portal(
-                get_checksum(),
-                portal.dst.document_checksum,
-                portal.dst.book_state.offset_x,
-                portal.dst.book_state.offset_y,
-                portal.dst.book_state.zoom_level,
-                portal.src_offset_x.value(),
-                portal.src_offset_y,
-                utf8_decode(portal.uuid));
-        }
-        else {
-            db_manager->insert_portal(
-                get_checksum(),
-                portal.dst.document_checksum,
-                portal.dst.book_state.offset_x,
-                portal.dst.book_state.offset_y,
-                portal.dst.book_state.zoom_level,
-                portal.src_offset_y,
-                utf8_decode(portal.uuid));
-        }
+        //if (portal.is_visible()) {
+        //    bool res = db_manager->insert_visible_portal(
+        //        get_checksum(),
+        //        portal.dst.document_checksum,
+        //        portal.dst.book_state.offset_x,
+        //        portal.dst.book_state.offset_y,
+        //        portal.dst.book_state.zoom_level,
+        //        portal.src_offset_x.value(),
+        //        portal.src_offset_y,
+        //        utf8_decode(portal.uuid));
+        //}
+        //else {
+        //    db_manager->insert_portal(
+        //        get_checksum(),
+        //        portal.dst.document_checksum,
+        //        portal.dst.book_state.offset_x,
+        //        portal.dst.book_state.offset_y,
+        //        portal.dst.book_state.zoom_level,
+        //        portal.src_offset_y,
+        //        utf8_decode(portal.uuid));
+        //}
+        db_manager->insert_portal(get_checksum(), portal, false);
         is_annotations_dirty = true;
     }
     portals[index].update_merged_rect(this);

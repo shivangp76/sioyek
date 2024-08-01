@@ -2306,6 +2306,22 @@ public:
 
 };
 
+class PinOverviewAsPortalCommand : public Command {
+
+public:
+    static inline const std::string cname = "pin_overview_as_portal";
+    static inline const std::string hname = "";
+
+    std::optional<AbsoluteDocumentPos> point_;
+
+    PinOverviewAsPortalCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->pin_current_overview_as_portal();
+    }
+
+};
+
 class CopyDrawingsFromScratchpadCommand : public Command {
 
 public:
@@ -7914,6 +7930,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<GotoHighlightGlobalCommand>();
     register_command<PortalCommand>();
     register_command<CreateVisiblePortalCommand>();
+    register_command<PinOverviewAsPortalCommand>();
     register_command<NextStateCommand>();
     register_command<PrevStateCommand>();
     register_command<DeletePortalCommand>();

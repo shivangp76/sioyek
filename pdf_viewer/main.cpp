@@ -93,7 +93,7 @@
 
 
 std::string APPLICATION_VERSION = "2.0.0";
-int DATABASE_VERSION = 3;
+int DATABASE_VERSION = 4;
 
 std::wstring LOCAL_DATABASE_FILE_NAME = L"local_v" + std::to_wstring(DATABASE_VERSION) + L".db";
 std::wstring SHARED_DATABASE_FILE_NAME = L"shared_v" + std::to_wstring(DATABASE_VERSION) + L".db";
