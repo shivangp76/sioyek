@@ -2597,18 +2597,26 @@ bool DatabaseManager::update_bookmark_change_position(const std::string& uuid, A
         });
 }
 
-bool DatabaseManager::update_portal_change_src_position(const std::string& uuid, AbsoluteDocumentPos new_pos){
+bool DatabaseManager::update_portal_change_src_position(const std::string& uuid, AbsoluteDocumentPos new_pos, std::optional<AbsoluteDocumentPos> new_end_pos){
     std::wstringstream ss;
+
+    std::vector<std::pair<QString, QVariant>> new_values = {
+            {"src_offset_x", new_pos.x},
+            {"src_offset_y", new_pos.y},
+            {"modification_time", "CURRENT_TIMESTAMP"},
+    };
+
+    if (new_end_pos.has_value()) {
+        new_values.push_back({ "src_offset_end_x", new_end_pos->x });
+        new_values.push_back({ "src_offset_end_y", new_end_pos->y });
+    }
 
     return generic_update_run_query("links",
         {
             {"uuid", QString::fromStdString(uuid)},
         },
-        {
-            {"src_offset_x", new_pos.x},
-            {"src_offset_y", new_pos.y},
-            {"modification_time", "CURRENT_TIMESTAMP"},
-        });
+        new_values
+        );
 
 }
 std::wstring encode_variant(QVariant var) {

@@ -584,8 +584,8 @@ AbsoluteRect Portal::get_actual_rectangle() const{
 
     if (is_pinned()) {
         return AbsoluteRect(
-            AbsoluteDocumentPos{ src_offset_x.value(), src_offset_y },
-            AbsoluteDocumentPos{ src_offset_end_x.value(), src_offset_end_y.value()}
+            AbsoluteDocumentPos{ src_offset_x.value(), src_offset_end_y.value()},
+            AbsoluteDocumentPos{ src_offset_end_x.value(), src_offset_y}
         );
     }
     else {

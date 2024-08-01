@@ -3864,11 +3864,22 @@ void Document::update_highlight_type(int index, char new_type) {
     highlights[index].update_modification_time();
 }
 
-int Document::get_portal_index_at_pos(AbsoluteDocumentPos abspos) {
+int Document::get_icon_portal_index_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < portals.size(); i++) {
-        if (portals[i].src_offset_x.has_value()) {
-            //if (fz_is_point_inside_rect({abspos.x, abspos.y}, portals[i].get_rectangle())) {
+        if (portals[i].src_offset_x.has_value() && (!portals[i].src_offset_end_x.has_value())) {
             if (portals[i].get_rectangle().contains(abspos)) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+int Document::get_pinned_portal_index_at_pos(AbsoluteDocumentPos abspos) {
+    for (int i = 0; i < portals.size(); i++) {
+        if (portals[i].is_pinned()) {
+            AbsoluteRect rectangle = portals[i].get_rectangle();
+            if (rectangle.contains(abspos)) {
                 return i;
             }
         }
@@ -3927,11 +3938,17 @@ void Document::update_bookmark_position(int index, AbsoluteDocumentPos new_begin
     }
 }
 
-void Document::update_portal_src_position(int index, AbsoluteDocumentPos new_position){
+void Document::update_portal_src_position(int index, AbsoluteDocumentPos new_position, std::optional<AbsoluteDocumentPos> new_end_position){
     if ((index >= 0) && (index < portals.size())) {
-        if (db_manager->update_portal_change_src_position(portals[index].uuid, new_position)) {
+        if (db_manager->update_portal_change_src_position(portals[index].uuid, new_position, new_end_position)) {
             portals[index].src_offset_x = new_position.x;
             portals[index].src_offset_y = new_position.y;
+
+            if (new_end_position) {
+                portals[index].src_offset_end_x = new_end_position->x;
+                portals[index].src_offset_end_y = new_end_position->y;
+            }
+
             portals[index].update_modification_time();
             is_annotations_dirty = true;
         }

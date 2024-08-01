@@ -108,7 +108,7 @@ public:
     bool update_highlight_type(const std::string& uuid, char new_type);
     bool update_bookmark_change_text(const std::string& uuid, const std::wstring& new_text, float new_font_size);
     bool update_bookmark_change_position(const std::string& uuid, AbsoluteDocumentPos new_begin, AbsoluteDocumentPos new_end);
-    bool update_portal_change_src_position(const std::string& uuid, AbsoluteDocumentPos new_pos);
+    bool update_portal_change_src_position(const std::string& uuid, AbsoluteDocumentPos new_pos, std::optional<AbsoluteDocumentPos> new_end_pos);
     bool select_opened_books_path_values(std::vector<std::wstring>& out_result);
     //bool select_opened_books_path_and_doc_names(std::vector<std::pair<std::wstring, std::wstring>>& out_result);
     bool select_opened_books(std::vector<OpenedBookInfo>& out_result);

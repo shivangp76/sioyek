@@ -20,6 +20,7 @@ class MainWidget;
 
 enum class VisibleObjectType {
     Portal,
+    PinnedPortal,
     PendingPortal,
     Bookmark,
     Highlight

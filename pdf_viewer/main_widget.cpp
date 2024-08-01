@@ -2919,7 +2919,10 @@ void MainWidget::handle_click(WindowPos click_pos) {
             set_selected_bookmark_index(selected_index);
         }
     }
-    else if ((selected_index = doc()->get_portal_index_at_pos(mouse_abspos)) >= 0) {
+    else if ((selected_index = doc()->get_pinned_portal_index_at_pos(mouse_abspos)) >= 0) {
+        //todo:
+    }
+    else if ((selected_index = doc()->get_icon_portal_index_at_pos(mouse_abspos)) >= 0) {
         set_selected_portal_index(selected_index);
     }
     else {
@@ -6932,7 +6935,7 @@ bool MainWidget::event(QEvent* event) {
                         return true;
                     }
 
-                    int portal_index = doc()->get_portal_index_at_pos(hold_abspos);
+                    int portal_index = doc()->get_icon_portal_index_at_pos(hold_abspos);
                     if (portal_index >= 0) {
                         begin_portal_move(portal_index, hold_abspos, false);
                         set_selected_portal_index(portal_index);
@@ -9359,7 +9362,15 @@ void MainWidget::handle_portal_move_finish() {
     if (!(visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
         int index = visible_object_move_data->index.index;
         Portal& portal = doc()->get_portals()[index];
-        doc()->update_portal_src_position(index, { portal.src_offset_x.value(), portal.src_offset_y });
+        if (portal.is_pinned()) {
+            doc()->update_portal_src_position(index,
+                AbsoluteDocumentPos{ portal.src_offset_x.value(), portal.src_offset_y },
+                AbsoluteDocumentPos{portal.src_offset_end_x.value(), portal.src_offset_end_y.value()}
+            );
+        }
+        else {
+            doc()->update_portal_src_position(index, { portal.src_offset_x.value(), portal.src_offset_y }, {});
+        }
     }
 }
 
@@ -9412,10 +9423,20 @@ void MainWidget::handle_portal_move() {
     else {
         Portal& portal = doc()->get_portals()[index];
 
-        portal.update_merged_rect(doc());
+        if (portal.is_pinned()) {
+            float width = portal.get_rectangle().width();
+            float height = portal.get_rectangle().height();
 
-        portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
-        portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+            portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
+            portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+            portal.src_offset_end_x = portal.src_offset_x.value() + width;
+            portal.src_offset_end_y = portal.src_offset_y - height;
+        }
+        else {
+            portal.update_merged_rect(doc());
+            portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
+            portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+        }
 
     }
 }
@@ -9726,7 +9747,7 @@ std::optional<Portal> MainWidget::get_portal_under_window_pos(WindowPos pos, int
 
 std::optional<Portal> MainWidget::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos, int* out_index) {
     std::vector<Portal>& portals = doc()->get_portals();
-    int index = doc()->get_portal_index_at_pos(abspos);
+    int index = doc()->get_icon_portal_index_at_pos(abspos);
     if (index >= 0) {
         if (out_index) *out_index = index;
         return portals[index];
@@ -12876,9 +12897,14 @@ std::optional<VisibleObjectIndex> MainWidget::get_visible_object_at_pos(Absolute
     if (bookmark_index >= 0) {
         return VisibleObjectIndex{VisibleObjectType::Bookmark, bookmark_index};
     }
-    int portal_index = doc()->get_portal_index_at_pos(pos);
+    int portal_index = doc()->get_icon_portal_index_at_pos(pos);
     if (portal_index >= 0) {
         return VisibleObjectIndex{VisibleObjectType::Portal, portal_index};
+    }
+
+    int pinned_portal_index = doc()->get_pinned_portal_index_at_pos(pos);
+    if (pinned_portal_index >= 0) {
+        return VisibleObjectIndex{VisibleObjectType::PinnedPortal, pinned_portal_index};
     }
 
     int pending_portal_index = get_pending_portal_index_at_pos(pos);
@@ -12894,7 +12920,7 @@ void VisibleObjectIndex::handle_move_begin(MainWidget* widget, AbsoluteDocumentP
     if (object_type == VisibleObjectType::Bookmark) {
         widget->begin_bookmark_move(index, mouse_pos);
     }
-    else if (object_type == VisibleObjectType::Portal) {
+    else if ((object_type == VisibleObjectType::Portal) || (object_type == VisibleObjectType::PinnedPortal)) {
         widget->begin_portal_move(index, mouse_pos, false);
     }
     else if (object_type == VisibleObjectType::PendingPortal) {
@@ -12907,7 +12933,7 @@ void VisibleObjectMoveData::handle_move(MainWidget* widget){
         if (index.object_type == VisibleObjectType::Bookmark) {
             widget->handle_bookmark_move();
         }
-        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal)) {
+        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal) || (index.object_type == VisibleObjectType::PinnedPortal)) {
             widget->handle_portal_move();
         }
     }
