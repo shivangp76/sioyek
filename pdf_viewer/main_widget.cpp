@@ -16,6 +16,7 @@
 // generic_select does not work with pinned portals
 // make selected portal graphics look nicer
 // selected object index should index objects using UUID not integer index
+// allow moving the pinned portal using middle mouse drag
 
 
 #include "platform/qt/graphic_qt.h"
@@ -13758,8 +13759,8 @@ void MainWidget::move_pinned_portal(float horizontal_amount, float vertical_amou
     if (is_pinned_portal_selected()) {
         Portal* pinned_portal = get_pinned_portal();
         if (pinned_portal) {
-            pinned_portal->dst.book_state.offset_x += horizontal_amount;
-            pinned_portal->dst.book_state.offset_y += vertical_amount;
+            pinned_portal->dst.book_state.offset_x += horizontal_amount / (pinned_portal->dst.book_state.zoom_level * dv()->get_zoom_level());
+            pinned_portal->dst.book_state.offset_y += vertical_amount / (pinned_portal->dst.book_state.zoom_level * dv()->get_zoom_level());
         }
     }
 }
