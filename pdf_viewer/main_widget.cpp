@@ -847,6 +847,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
                 auto& target_portal = doc()->get_portals()[index];
                 //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
                 target_portal.dst.book_state.offset_y = -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) + visible_object_scroll_data->original_scroll_amount;
+                target_portal.dst.book_state.offset_x = (abs_mpos.x - visible_object_scroll_data->original_mouse_pos.x) + visible_object_scroll_data->original_scroll_amount_x.value();
                 schedule_update_link_with_opened_book_state(target_portal, target_portal.dst.book_state);
                 //(target_portal.uuid,
                 //    
@@ -2644,6 +2645,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                     VisibleObjectScrollData new_portal_scroll_data;
                     new_portal_scroll_data.type = VisibleObjectType::PinnedPortal;
                     new_portal_scroll_data.object_index = visible_object->index;
+                    new_portal_scroll_data.original_scroll_amount_x = portal.dst.book_state.offset_x;
                     new_portal_scroll_data.original_scroll_amount = portal.dst.book_state.offset_y;
                     new_portal_scroll_data.original_mouse_pos = abs_doc_pos;
                     last_mouse_down_window_pos = click_pos;

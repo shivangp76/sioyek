@@ -348,6 +348,7 @@ struct VisibleObjectScrollData {
     VisibleObjectType type;
     int object_index;
     float original_scroll_amount;
+    std::optional<float> original_scroll_amount_x = {};
     AbsoluteDocumentPos original_mouse_pos;
 };
 
