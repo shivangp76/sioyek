@@ -10,6 +10,13 @@
 // batch the todos
 // make the action of download and clipboard paper configurable
 // when bookmarks reach the end scroll events should be forwarded to main widget
+// allow zooming in pinned portals (both using scroll wheel and pinch gesture)
+// factorize click, scroll, etc. handling code
+// allow horizontal scrolling in pinned portls
+// add keyboard commands to control pinned portals
+// generic_select does not work with pinned portals
+// make selected portal graphics look nicer
+
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -3281,6 +3288,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     int num_repeats = abs(wevent->angleDelta().y() / 120);
     float num_repeats_f_y = abs(wevent->angleDelta().y() / 120.0);
     float num_repeats_f_x = abs(wevent->angleDelta().x() / 120.0);
+    float zoom_factor = 1.0f + num_repeats_f_y * (ZOOM_INC_FACTOR - 1.0f);
     if (std::abs(num_repeats_f_x) > std::abs(num_repeats_f_y)){
         num_repeats_f_y = 0;
     }
@@ -3298,7 +3306,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
 
-    if ((!is_control_pressed) && (!is_shift_pressed)) {
+    if ( (!is_shift_pressed)) {
         std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
         if (object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
             if (object_under_cursor->object_type == VisibleObjectType::Bookmark) {
@@ -3314,9 +3322,20 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                 (selected_object_index->object_type == VisibleObjectType::PinnedPortal) &&
                 (selected_object_index->index == object_under_cursor->index)) {
 
-                float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
                 Portal& portal = doc()->get_portals()[object_under_cursor->index];
-                portal.dst.book_state.offset_y += amount;
+                if (is_control_pressed) {
+                    //float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                    if (wevent->angleDelta().y() > 0) {
+                        portal.dst.book_state.zoom_level *= zoom_factor;
+                    }
+                    else {
+                        portal.dst.book_state.zoom_level /= zoom_factor;
+                    }
+                }
+                else {
+                    float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                    portal.dst.book_state.offset_y += amount;
+                }
 
                 schedule_update_link_with_opened_book_state(portal, portal.dst.book_state);
                 validate_render();
@@ -3446,7 +3465,6 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
             return;
         }
         else {
-            float zoom_factor = 1.0f + num_repeats_f_y * (ZOOM_INC_FACTOR - 1.0f);
             zoom(mouse_window_pos, zoom_factor, wevent->angleDelta().y() > 0);
             return;
         }
