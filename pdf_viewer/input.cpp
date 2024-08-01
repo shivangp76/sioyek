@@ -3362,13 +3362,8 @@ public:
     virtual bool is_down() = 0;
 
     void perform() {
-        if (widget->main_document_view->is_ruler_mode()) {
-            if (is_down()) {
-                widget->move_visual_mark_next();
-            }
-            else {
-                widget->move_visual_mark_prev();
-            }
+        if (widget->main_document_view->is_ruler_mode() || widget->is_pinned_portal_selected()) {
+            widget->move_visual_mark_command(is_down() ? 1 : -1);
         }
         else {
             widget->handle_move_smooth_hold(is_down());
@@ -3382,7 +3377,7 @@ public:
 
     bool is_holdable() {
 
-        if (widget->main_document_view->is_ruler_mode()) {
+        if (widget->main_document_view->is_ruler_mode() || widget->is_pinned_portal_selected()) {
             return false;
         }
         else {
@@ -4094,6 +4089,9 @@ public:
             if (object_index.object_type == VisibleObjectType::Portal) {
                 widget->set_selected_portal_index(object_index.index);
             }
+            if (object_index.object_type == VisibleObjectType::PinnedPortal) {
+                widget->set_selected_portal_index(object_index.index, true);
+            }
 
         }
 
@@ -4146,7 +4144,7 @@ public:
                 widget->set_selected_bookmark_index(object_index.index);
                 widget->handle_delete_selected_bookmark();
             }
-            if (object_index.object_type == VisibleObjectType::Portal) {
+            if ((object_index.object_type == VisibleObjectType::Portal) || (object_index.object_type == VisibleObjectType::PendingPortal)) {
                 widget->set_selected_portal_index(object_index.index);
                 widget->handle_delete_selected_portal();
             }

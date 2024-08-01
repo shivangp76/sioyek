@@ -5816,6 +5816,7 @@ void MainWidget::portal_to_definition() {
 }
 
 void MainWidget::move_visual_mark_command(int amount) {
+
     if (main_document_view->get_overview_page()) {
         if (amount > 0) {
             scroll_overview(amount);
@@ -5827,12 +5828,17 @@ void MainWidget::move_visual_mark_command(int amount) {
     else if (is_visual_mark_mode()) {
         move_visual_mark(amount);
     }
+    else if (is_pinned_portal_selected()) {
+        move_pinned_portal_vertical(amount * 72 * VERTICAL_MOVE_AMOUNT);
+    }
     else {
         move_document(0.0f, 72.0f * amount * VERTICAL_MOVE_AMOUNT);
     }
     if (AUTOCENTER_VISUAL_SCROLL) {
         return_to_last_visual_mark();
     }
+    //}
+
     validate_render();
 }
 
@@ -11935,7 +11941,7 @@ void MainWidget::handle_generic_tags_pre_perform(const std::vector<VisibleObject
     for (const VisibleObjectIndex& obj : visible_objects) {
         if (obj.object_type == VisibleObjectType::Highlight) highlight_indices.push_back(obj.index);
         if (obj.object_type == VisibleObjectType::Bookmark) bookmark_indices.push_back(obj.index);
-        if (obj.object_type == VisibleObjectType::Portal) portal_indices.push_back(obj.index);
+        if ((obj.object_type == VisibleObjectType::Portal) || (obj.object_type == VisibleObjectType::PinnedPortal)) portal_indices.push_back(obj.index);
     }
     std::vector<DocumentRect> highlight_rects = doc()->get_rects_for_highlight_indices(highlight_indices);
     std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(bookmark_indices);
@@ -13725,5 +13731,31 @@ void MainWidget::pin_current_overview_as_portal() {
         new_portal.dst = dst;
         add_portal(doc()->get_path(), new_portal);
 
+    }
+}
+
+bool MainWidget::is_pinned_portal_selected() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
+        return true;
+    }
+    return false;
+}
+
+Portal* MainWidget::get_pinned_portal() {
+    if (is_pinned_portal_selected()) {
+        std::vector<Portal>& all_portals = doc()->get_portals();
+        if (selected_object_index->index < all_portals.size()) {
+            return &all_portals[selected_object_index->index];
+        }
+    }
+    return nullptr;
+}
+
+void MainWidget::move_pinned_portal_vertical(float amount) {
+    if (is_pinned_portal_selected()) {
+        Portal* pinned_portal = get_pinned_portal();
+        if (pinned_portal) {
+            pinned_portal->dst.book_state.offset_y += amount;
+        }
     }
 }

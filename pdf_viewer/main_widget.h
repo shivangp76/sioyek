@@ -439,6 +439,9 @@ public:
     void toggle_statusbar();
     void toggle_titlebar();
 
+    void move_pinned_portal_vertical(float amount);
+    Portal* get_pinned_portal();
+
     // search the `paper_name` in one of the configurable when middle-click or shift+middle-clicking on paper's name
     void handle_search_paper_name(QString paper_name, bool is_shift_pressed);
 
@@ -1142,6 +1145,7 @@ public:
     void handle_sync_open_document();
 
     void handle_server_document_location_mismatch(float local_offset_y, float server_offset_y);
+    bool is_pinned_portal_selected();
 
     std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
 

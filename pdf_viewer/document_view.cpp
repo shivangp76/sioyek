@@ -2057,8 +2057,15 @@ std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices()
         res.push_back(VisibleObjectIndex{ VisibleObjectType::Bookmark, index });
     }
 
+    const std::vector<Portal>& portals = current_document->get_portals();
+
     for (auto index : visible_portal_indices) {
-        res.push_back(VisibleObjectIndex{ VisibleObjectType::Portal, index });
+        if (portals[index].is_pinned()) {
+            res.push_back(VisibleObjectIndex{ VisibleObjectType::PinnedPortal, index });
+        }
+        else {
+            res.push_back(VisibleObjectIndex{ VisibleObjectType::Portal, index });
+        }
     }
 
     return res;
