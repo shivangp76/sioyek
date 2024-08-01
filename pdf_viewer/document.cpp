@@ -5077,6 +5077,13 @@ std::optional<BookMark> Document::get_bookmark_with_index(int index) {
     return {};
 }
 
+std::optional<Portal> Document::get_portal_with_index(int index) {
+    if ((index >= 0) && (index < portals.size())) {
+        return portals[index];
+    }
+    return {};
+}
+
 bool Document::get_is_opened() {
     return is_opened;
 }

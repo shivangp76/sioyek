@@ -10,12 +10,12 @@
 // batch the todos
 // make the action of download and clipboard paper configurable
 // when bookmarks reach the end scroll events should be forwarded to main widget
-// allow zooming in pinned portals (both using scroll wheel and pinch gesture)
-// factorize click, scroll, etc. handling code
 // allow horizontal scrolling in pinned portls
+// factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
 // generic_select does not work with pinned portals
 // make selected portal graphics look nicer
+// selected object index should index objects using UUID not integer index
 
 
 #include "platform/qt/graphic_qt.h"
@@ -7124,6 +7124,14 @@ bool MainWidget::event(QEvent* event) {
 
                     if (main_document_view->get_overview_page()){
                         main_document_view->zoom_overview(scale);
+                    }
+                    else if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
+                        // todo: this is not testes, I should test this on a touch screen
+                        if (doc()->get_portals().size() < selected_object_index->index) {
+                            Portal& portal = doc()->get_portals()[selected_object_index->index];
+                            portal.dst.book_state.zoom_level *= scale;
+                            schedule_update_link_with_opened_book_state(portal, portal.dst.book_state);
+                        }
                     }
                     else{
                         dv()->set_zoom_level(dv()->get_zoom_level() * scale, true);

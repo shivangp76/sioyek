@@ -420,6 +420,7 @@ public:
     std::string get_bookmark_index_uuid(int index);
 
     std::optional<BookMark> get_bookmark_with_index(int index);
+    std::optional<Portal> get_portal_with_index(int index);
 
     //void create_table_of_contents(std::vector<TocNode*>& top_nodes);
     int add_stext_page_to_created_toc(fz_stext_page* stext_page,
