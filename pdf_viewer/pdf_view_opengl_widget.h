@@ -157,7 +157,7 @@ protected:
     void paintEvent(QPaintEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
-    void render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview);
+    void render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true);
 #endif
 
 

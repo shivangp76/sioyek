@@ -391,11 +391,12 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
     document_manager(docman),
     is_helper(is_helper_)
 #else
-PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer, bool is_helper, QWidget* parent) :
+PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent) :
     QWidget(parent),
     painter(this),
     document_view(document_view_),
     pdf_renderer(pdf_renderer),
+    document_manager(docman),
     is_helper(is_helper)
 #endif
 {
@@ -463,7 +464,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview, bool draw_bord
     if (window_rect.height() > 0) {
         std::swap(window_rect.y0, window_rect.y1);
     }
-    render_overview_qpainter_backend(window_rect, overview);
+    render_overview_qpainter_backend(window_rect, overview, draw_border);
 #endif
 
     if (dv()->overview_page && (dv()->overview_page->highlight_rects.size() > 0)) {
@@ -3357,7 +3358,7 @@ void PdfViewOpenGLWidget::render_highlight_window_qpainter_backend(NormalizedWin
     }
 }
 
-void PdfViewOpenGLWidget::render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview){
+void PdfViewOpenGLWidget::render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
 
     QRect overview_rect = document_view->normalized_to_window_qrect(window_rect);
     QRegion overview_region = QRegion(overview_rect);
@@ -3393,7 +3394,10 @@ void PdfViewOpenGLWidget::render_overview_qpainter_backend(NormalizedWindowRect 
         }
     }
     painter.setClipRect(rect());
-    draw_overview_border(overview);
+
+    if (draw_border) {
+        draw_overview_border(overview);
+    }
 }
 
 void PdfViewOpenGLWidget::resizeEvent(QResizeEvent* event){

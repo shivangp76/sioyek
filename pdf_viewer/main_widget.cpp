@@ -13,8 +13,6 @@
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
 // reduce extra page renders in render_overview if not necessary
-// remove database delete etc. functions from document_view e.g. main_document_view->delete_highlight_with_index
-
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
