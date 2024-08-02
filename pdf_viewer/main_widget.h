@@ -1203,6 +1203,7 @@ public:
     void handle_overview_download_button_click(AbsoluteDocumentPos abs_doc_pos);
     bool handle_overview_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos);
     bool handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object);
+    bool handle_visible_object_resize_finish();
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
     PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);

@@ -2688,6 +2688,20 @@ bool MainWidget::handle_overview_click(WindowPos click_pos, AbsoluteDocumentPos 
     return false;
 }
 
+bool MainWidget::handle_visible_object_resize_finish() {
+    if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
+        update_bookmark_with_uuid(visible_object_resize_data->object_uuid);
+        visible_object_resize_data = {};
+        return true;
+    }
+    if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
+        update_portal_with_uuid(visible_object_resize_data->object_uuid);
+        visible_object_resize_data = {};
+        return true;
+    }
+    return false;
+}
+
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
     if (is_rotated()) {
         // we don't support selection, etc. when document is rotated
@@ -2748,15 +2762,10 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
 
         dv()->selection_begin = abs_doc_pos;
-        //selection_begin_x = x_;
-        //selection_begin_y = y_;
 
         last_mouse_down = abs_doc_pos;
         last_mouse_down_window_pos = click_pos;
         last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
-
-        //last_mouse_down_window_x = x;
-        //last_mouse_down_window_y = y;
 
         if (!TOUCH_MODE) {
             main_document_view->selected_character_rects.clear();
@@ -2782,16 +2791,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         is_dragging = false;
 
         if (visible_object_resize_data) {
-            if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
-                update_bookmark_with_uuid(visible_object_resize_data->object_uuid);
-                visible_object_resize_data = {};
-                return;
-            }
-            if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
-                update_portal_with_uuid(visible_object_resize_data->object_uuid);
-                visible_object_resize_data = {};
-                return;
-            }
+            if (handle_visible_object_resize_finish()) return;
         }
 
         if (visible_object_scroll_data) {
@@ -2811,14 +2811,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         overview_touch_move_data = {};
         overview_resize_data = {};
 
-        //if (was_overview_mode) {
-        //    return;
-        //}
-
         if ((!was_resizing_overview) && (!TOUCH_MODE) && (!mouse_drag_mode) && (manhattan_distance(fvec2(last_mouse_down), fvec2(abs_doc_pos)) > 5)) {
-
-            //fz_point selection_begin = { last_mouse_down_x, last_mouse_down_y };
-            //fz_point selection_end = { x_, y_ };
 
             main_document_view->get_text_selection(last_mouse_down,
                 abs_doc_pos,
