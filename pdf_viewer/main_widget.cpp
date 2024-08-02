@@ -2645,6 +2645,49 @@ bool MainWidget::handle_visible_object_click(WindowPos click_pos, AbsoluteDocume
     return true;
 }
 
+bool MainWidget::handle_overview_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos) {
+    NormalizedWindowPos click_normalized_window_pos = click_pos.to_window_normalized(dv());
+    bool is_in_overview = main_document_view->is_window_point_in_overview(click_normalized_window_pos);
+    bool is_in_download = dv()->get_overview_download_rect().contains(click_pos);
+    if (!TOUCH_MODE && is_in_overview && is_in_download) {
+        handle_overview_download_button_click(abs_doc_pos);
+        return true;
+    }
+
+    OverviewSide border_index = static_cast<OverviewSide>(-1);
+    if (!is_in_download && main_document_view->is_window_point_in_overview_border(click_normalized_window_pos, &border_index)) {
+        OverviewResizeData resize_data;
+        resize_data.original_normal_mouse_pos = click_normalized_window_pos;
+        resize_data.original_rect = main_document_view->get_overview_rect();
+        resize_data.side_index = border_index;
+        overview_resize_data = resize_data;
+        return true;
+    }
+    if (is_in_overview) {
+        float original_offset_x, original_offset_y;
+
+        if (TOUCH_MODE) {
+            OverviewTouchMoveData touch_move_data;
+            //touch_move_data.original_mouse_offset_y = doc()->document_to_absolute_pos(opengl_widget->window_pos_to_overview_pos({ normal_x, normal_y })).y;
+            touch_move_data.original_mouse_normalized_pos = click_normalized_window_pos;
+            float overview_offset_y = main_document_view->get_overview_page()->absolute_offset_y;
+            float overview_offset_x = main_document_view->get_overview_page()->absolute_offset_x;
+            touch_move_data.overview_original_pos_absolute = AbsoluteDocumentPos{ overview_offset_x, overview_offset_y };
+            overview_touch_move_data = touch_move_data;
+        }
+        else {
+            OverviewMoveData move_data;
+            main_document_view->get_overview_offsets(&original_offset_x, &original_offset_y);
+            move_data.original_normal_mouse_pos = click_normalized_window_pos;
+            move_data.original_offsets = fvec2{ original_offset_x, original_offset_y };
+            overview_move_data = move_data;
+        }
+
+        return true;
+    }
+    return false;
+}
+
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
     if (is_rotated()) {
         // we don't support selection, etc. when document is rotated
@@ -2693,14 +2736,8 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
     if (down == true) {
 
-        bool is_in_overview = main_document_view->is_window_point_in_overview(click_normalized_window_pos);
-        bool is_in_download = dv()->get_overview_download_rect().contains(click_pos);
-        OverviewSide border_index = static_cast<OverviewSide>(-1);
+        if (handle_overview_click(click_pos, abs_doc_pos)) return;
 
-        if (!TOUCH_MODE && is_in_overview && is_in_download) {
-            handle_overview_download_button_click(abs_doc_pos);
-            return;
-        }
         auto visible_object = get_visible_object_at_pos(abs_doc_pos);
 
         if (visible_object) {
@@ -2709,36 +2746,6 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             }
         }
 
-        if (!is_in_download && main_document_view->is_window_point_in_overview_border(click_normalized_window_pos, &border_index)) {
-            OverviewResizeData resize_data;
-            resize_data.original_normal_mouse_pos = click_normalized_window_pos;
-            resize_data.original_rect = main_document_view->get_overview_rect();
-            resize_data.side_index = border_index;
-            overview_resize_data = resize_data;
-            return;
-        }
-        if (is_in_overview) {
-            float original_offset_x, original_offset_y;
-
-            if (TOUCH_MODE) {
-                OverviewTouchMoveData touch_move_data;
-                //touch_move_data.original_mouse_offset_y = doc()->document_to_absolute_pos(opengl_widget->window_pos_to_overview_pos({ normal_x, normal_y })).y;
-                touch_move_data.original_mouse_normalized_pos = click_normalized_window_pos;
-                float overview_offset_y = main_document_view->get_overview_page()->absolute_offset_y;
-                float overview_offset_x = main_document_view->get_overview_page()->absolute_offset_x;
-                touch_move_data.overview_original_pos_absolute = AbsoluteDocumentPos{overview_offset_x, overview_offset_y};
-                overview_touch_move_data = touch_move_data;
-            }
-            else {
-                OverviewMoveData move_data;
-                main_document_view->get_overview_offsets(&original_offset_x, &original_offset_y);
-                move_data.original_normal_mouse_pos = click_normalized_window_pos;
-                move_data.original_offsets = fvec2{ original_offset_x, original_offset_y };
-                overview_move_data = move_data;
-            }
-
-            return;
-        }
 
         dv()->selection_begin = abs_doc_pos;
         //selection_begin_x = x_;
