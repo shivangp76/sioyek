@@ -2643,14 +2643,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                 int index = visible_object->index;
                 if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->index == selected_object_index->index)) {
                     auto portal = doc()->get_portals()[index];
-                    VisibleObjectScrollData new_portal_scroll_data;
-                    new_portal_scroll_data.type = VisibleObjectType::PinnedPortal;
-                    new_portal_scroll_data.object_index = visible_object->index;
-                    new_portal_scroll_data.original_scroll_amount_x = portal.dst.book_state.offset_x;
-                    new_portal_scroll_data.original_scroll_amount = portal.dst.book_state.offset_y;
-                    new_portal_scroll_data.original_mouse_pos = abs_doc_pos;
-                    last_mouse_down_window_pos = click_pos;
-                    visible_object_scroll_data = new_portal_scroll_data;
+                    begin_portal_scroll();
                     return;
                 }
                 else {
@@ -3077,6 +3070,8 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         return;
     }
 
+    visible_object_scroll_data = {};
+
     if (mevent->button() == Qt::MouseButton::LeftButton) {
 
         if (is_shift_pressed) {
@@ -3238,7 +3233,10 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
         last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
 
         AbsoluteDocumentPos abs_mpos = dv()->window_to_absolute_document_pos(last_mouse_down_window_pos);
-        if (!visible_object_move_data.has_value()) {
+        if (is_pinned_portal_selected()) {
+            begin_portal_scroll();
+        }
+        else if (!visible_object_move_data.has_value()) {
             auto visible_object_index = get_visible_object_at_pos(abs_mpos);
             if (visible_object_index.has_value()) {
                 visible_object_index->handle_move_begin(this, abs_mpos);
@@ -13779,3 +13777,19 @@ void MainWidget::zoom_pinned_portal(bool zoom_in) {
     }
 }
 
+void MainWidget::begin_portal_scroll() {
+    QPoint mouse_pos = mapFromGlobal(QCursor::pos());
+    WindowPos window_mpos = { mouse_pos.x(), mouse_pos.y() };
+    AbsoluteDocumentPos abs_mpos = window_mpos.to_absolute(dv());
+    
+
+    VisibleObjectScrollData scroll_data;
+    Portal& portal = doc()->get_portals()[selected_object_index->index];
+    scroll_data.type = VisibleObjectType::PinnedPortal;
+    scroll_data.object_index = selected_object_index->index;
+    scroll_data.original_scroll_amount_x = portal.dst.book_state.offset_x;
+    scroll_data.original_scroll_amount = portal.dst.book_state.offset_y;
+    scroll_data.original_mouse_pos = abs_mpos;
+    last_mouse_down_window_pos = last_mouse_down_window_pos;
+    visible_object_scroll_data = scroll_data;
+}

@@ -1192,6 +1192,7 @@ public:
     void ensure_titlebar_colors_match_color_mode();
     void pin_current_overview_as_portal();
     void zoom_pinned_portal(bool zoom_in);
+    void begin_portal_scroll();
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
 
