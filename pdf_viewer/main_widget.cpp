@@ -12830,7 +12830,7 @@ void MainWidget::delete_current_document_highlight_with_uuid(const std::string& 
 
 void MainWidget::delete_current_document_highlight(Highlight* hl) {
     std::string uuid = hl->uuid;
-    main_document_view->delete_highlight(*hl);
+    doc()->delete_highlight(*hl);
     on_highlight_deleted(uuid);
 }
 

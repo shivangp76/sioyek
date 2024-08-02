@@ -4167,17 +4167,12 @@ public:
                 widget->set_selected_bookmark_uuid(object_index.uuid);
                 widget->handle_delete_selected_bookmark();
             }
-            if ((object_index.object_type == VisibleObjectType::Portal) || (object_index.object_type == VisibleObjectType::PendingPortal)) {
+            if ((object_index.object_type == VisibleObjectType::Portal) || (object_index.object_type == VisibleObjectType::PinnedPortal)) {
                 widget->set_selected_portal_uuid(object_index.uuid);
                 widget->handle_delete_selected_portal();
             }
 
         }
-        //if (index) {
-        //    if (index < visible_item_indices.size()) {
-        //        widget->set_selected_highlight_index(visible_item_indices[index.value()]);
-        //    }
-        //}
 
     }
 

@@ -251,27 +251,6 @@ std::string DocumentView::delete_closest_bookmark() {
     return "";
 }
 
-// todo: these should be in Document not here
-Highlight DocumentView::get_highlight_with_index(int index) {
-    return current_document->get_highlights()[index];
-}
-
-std::string DocumentView::delete_highlight_with_index(int index) {
-    return current_document->delete_highlight_with_index(index);
-}
-
-std::string DocumentView::delete_bookmark_with_index(int index) {
-    return current_document->delete_bookmark_with_index(index);
-}
-
-std::string DocumentView::delete_portal_with_index(int index) {
-    return current_document->delete_portal_with_index(index);
-}
-
-void DocumentView::delete_highlight(Highlight hl) {
-    current_document->delete_highlight(hl);
-}
-
 std::string DocumentView::delete_closest_bookmark_to_offset(float offset) {
     return current_document->delete_closest_bookmark(offset);
 }
