@@ -1194,6 +1194,9 @@ public:
     void zoom_pinned_portal(bool zoom_in);
     void begin_portal_scroll();
     void set_mouse_cursor_for_side_resize(std::optional<OverviewSide> side);
+    bool handle_freehand_drawing_click_event();
+    bool handle_left_press_touch_mode(WindowPos click_pos);
+    bool handle_left_release_touch_mode(WindowPos click_pos);
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
     PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);

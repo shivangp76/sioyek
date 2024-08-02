@@ -9,9 +9,10 @@
 // make sure pop_current_widget is called on all show_filtered_select_menus
 // batch the todos
 // make the action of download and clipboard paper configurable
-// when bookmarks reach the end scroll events should be forwarded to main widget
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
+// pinned portals outside of page boundary are displayed weirdly in two page mode
+// in touch mode if menu button and a visible object overlap, bad things happen
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -2433,105 +2434,118 @@ void MainWidget::download_and_portal_to_highlighted_overview_paper() {
     }
 }
 
+bool MainWidget::handle_freehand_drawing_click_event() {
+    AbsoluteDocumentPos mpos_absolute = get_window_abspos(WindowPos(mapFromGlobal(QCursor::pos())));
+
+    if (selected_freehand_drawings->selection_absrect.contains(mpos_absolute)) {
+        handle_freehand_drawing_selection_click(mpos_absolute);
+        return true;
+    }
+    else {
+        selected_freehand_drawings = {};
+    }
+    return false;
+}
+
+bool MainWidget::handle_left_press_touch_mode(WindowPos click_pos) {
+    was_last_mouse_down_in_ruler_next_rect = false;
+    was_last_mouse_down_in_ruler_prev_rect = false;
+
+    last_press_point = mapFromGlobal(QCursor::pos());
+    last_press_msecs = QDateTime::currentMSecsSinceEpoch();
+    velocity_x = 0;
+    velocity_y = 0;
+    is_pressed = true;
+
+    if (current_widget_stack.size() > 0 && (dynamic_cast<AndroidSelector*>(current_widget_stack.back()))) {
+        return true;
+    }
+
+    int window_width = width();
+    int window_height = height();
+
+    NormalizedWindowPos nwp = main_document_view->window_to_normalized_window_pos(click_pos);
+
+    if (is_visual_mark_mode()) {
+        if (screen()->orientation() == Qt::PortraitOrientation) {
+            if (PORTRAIT_VISUAL_MARK_NEXT.enabled && PORTRAIT_VISUAL_MARK_NEXT.contains(nwp)) {
+                move_visual_mark_next();
+                was_last_mouse_down_in_ruler_next_rect = true;
+                ruler_moving_last_window_pos = click_pos;
+
+            }
+            else if (PORTRAIT_VISUAL_MARK_PREV.enabled && PORTRAIT_VISUAL_MARK_PREV.contains(nwp)) {
+                move_visual_mark_prev();
+                was_last_mouse_down_in_ruler_prev_rect = true;
+                ruler_moving_last_window_pos = click_pos;
+            }
+        }
+        else {
+            if (LANDSCAPE_VISUAL_MARK_NEXT.enabled && LANDSCAPE_VISUAL_MARK_NEXT.contains(nwp)) {
+                move_visual_mark_next();
+                was_last_mouse_down_in_ruler_next_rect = true;
+                ruler_moving_last_window_pos = click_pos;
+            }
+            else if (LANDSCAPE_VISUAL_MARK_PREV.enabled && LANDSCAPE_VISUAL_MARK_PREV.contains(nwp)) {
+                move_visual_mark_prev();
+                was_last_mouse_down_in_ruler_prev_rect = true;
+                ruler_moving_last_window_pos = click_pos;
+            }
+
+        }
+    }
+    return false;
+
+}
+
+bool MainWidget::handle_left_release_touch_mode(WindowPos click_pos) {
+    is_pressed = false;
+    QPoint current_pos = mapFromGlobal(QCursor::pos());
+    qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+    QPointF vel;
+    if (((current_pos - last_press_point).manhattanLength() < 10) && ((current_time - last_press_msecs) < 500)) {
+        if (handle_quick_tap(click_pos)) {
+            is_dragging = false;
+            invalidate_render();
+            return true;
+        }
+    }
+    else if (is_flicking(&vel)) {
+        velocity_x = -vel.x();
+        velocity_y = vel.y();
+        if (is_dragging_snapped) {
+            velocity_x = 0;
+        }
+        if (is_moving()) {
+            validation_interval_timer->setInterval(0);
+        }
+        last_speed_update_time = QTime::currentTime();
+    }
+    return false;
+}
+
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
     if (is_rotated()) {
         return;
     }
     if (is_shift_pressed || is_control_pressed || is_alt_pressed || is_command_pressed) {
+        // these will be handled on mouseReleaseEvent
         return;
     }
+
     if (selected_freehand_drawings) {
-
-        //AbsoluteDocumentPos mpos_absolute = WindowPos(mapFromGlobal(QCursor::pos())).to_absolute(main_document_view);
-        AbsoluteDocumentPos mpos_absolute = get_window_abspos(WindowPos(mapFromGlobal(QCursor::pos())));
-
-        if (selected_freehand_drawings->selection_absrect.contains(mpos_absolute)) {
-            handle_freehand_drawing_selection_click(mpos_absolute);
+        if (handle_freehand_drawing_click_event()) {
             return;
         }
-        else {
-            selected_freehand_drawings = {};
-        }
-
     }
 
     if (TOUCH_MODE) {
-        was_last_mouse_down_in_ruler_next_rect = false;
-        was_last_mouse_down_in_ruler_prev_rect = false;
         if (down) {
-            last_press_point = mapFromGlobal(QCursor::pos());
-            last_press_msecs = QDateTime::currentMSecsSinceEpoch();
-            velocity_x = 0;
-            velocity_y = 0;
-            is_pressed = true;
+            if (handle_left_press_touch_mode(click_pos)) return;
         }
-        if (!down) {
-            is_pressed = false;
-            QPoint current_pos = mapFromGlobal(QCursor::pos());
-            qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-            QPointF vel;
-            if (((current_pos - last_press_point).manhattanLength() < 10) && ((current_time - last_press_msecs) < 500)) {
-                if (handle_quick_tap(click_pos)) {
-                    is_dragging = false;
-                    invalidate_render();
-                    return;
-                }
-            }
-            else if (is_flicking(&vel)) {
-                //            float time_msecs = current_time - last_press_msecs;
-                //            QPoint diff_vector = current_pos - last_press_point;
-                //            QPoint velocity = diff_vector / (time_msecs / 1000.0f) * 2;
-                velocity_x = -vel.x();
-                velocity_y = vel.y();
-                if (is_dragging_snapped) {
-                    velocity_x = 0;
-                }
-                if (is_moving()) {
-                    validation_interval_timer->setInterval(0);
-                }
-                last_speed_update_time = QTime::currentTime();
-            }
+        else {
+            if (handle_left_release_touch_mode(click_pos)) return;
         }
-
-        if (current_widget_stack.size() > 0 && (dynamic_cast<AndroidSelector*>(current_widget_stack.back()))) {
-            return;
-        }
-
-        int window_width = width();
-        int window_height = height();
-
-        NormalizedWindowPos nwp = main_document_view->window_to_normalized_window_pos(click_pos);
-
-        if (down && is_visual_mark_mode()) {
-            if (screen()->orientation() == Qt::PortraitOrientation) {
-                if (PORTRAIT_VISUAL_MARK_NEXT.enabled && PORTRAIT_VISUAL_MARK_NEXT.contains(nwp)) {
-                    move_visual_mark_next();
-                    was_last_mouse_down_in_ruler_next_rect = true;
-                    ruler_moving_last_window_pos = click_pos;
-
-                }
-                else if (PORTRAIT_VISUAL_MARK_PREV.enabled && PORTRAIT_VISUAL_MARK_PREV.contains(nwp)) {
-                    move_visual_mark_prev();
-                    was_last_mouse_down_in_ruler_prev_rect = true;
-                    ruler_moving_last_window_pos = click_pos;
-                }
-            }
-            else {
-                if (LANDSCAPE_VISUAL_MARK_NEXT.enabled && LANDSCAPE_VISUAL_MARK_NEXT.contains(nwp)) {
-                    move_visual_mark_next();
-                    was_last_mouse_down_in_ruler_next_rect = true;
-                    ruler_moving_last_window_pos = click_pos;
-                }
-                else if (LANDSCAPE_VISUAL_MARK_PREV.enabled && LANDSCAPE_VISUAL_MARK_PREV.contains(nwp)) {
-                    move_visual_mark_prev();
-                    was_last_mouse_down_in_ruler_prev_rect = true;
-                    ruler_moving_last_window_pos = click_pos;
-                }
-
-            }
-
-        }
-
     }
 
     AbsoluteDocumentPos abs_doc_pos = get_window_abspos(click_pos);
