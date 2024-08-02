@@ -2397,6 +2397,25 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
 
 }
 
+std::vector<int> PdfViewOpenGLWidget::get_overview_visible_pages(const OverviewState& overview) {
+
+    std::vector<int> visible_pages;
+
+    if (overview.source_rect) {
+
+        float y_begin = overview.absolute_offset_y - overview.source_rect->height() / 2 * dv()->get_zoom_level() / overview.zoom_level;
+        float y_end = overview.absolute_offset_y + overview.source_rect->height() / 2 * dv()->get_zoom_level() / overview.zoom_level;
+        doc()->get_visible_pages(y_begin, y_end, visible_pages);
+        return visible_pages;
+    }
+    else {
+        int page = AbsoluteDocumentPos{ 0, overview.absolute_offset_y }.to_document(doc(overview)).page;
+        visible_pages.push_back(page - 1);
+        visible_pages.push_back(page);
+        visible_pages.push_back(page + 1);
+        return visible_pages;
+    }
+}
 
 bool PdfViewOpenGLWidget::needs_stencil_buffer() {
     return document_view->fastread_mode || document_view->selected_rectangle.has_value() || dv()->overview_page.has_value();
@@ -3040,6 +3059,7 @@ void PdfViewOpenGLWidget::paintGL() {
     do_paint();
 }
 
+
 void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border) {
 
     glDisable(GL_CULL_FACE);
@@ -3050,14 +3070,11 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
     draw_stencil_rects({ window_rect });
     use_stencil_to_write(true);
 
-    int page = AbsoluteDocumentPos{0, overview.absolute_offset_y}.to_document(doc(overview)).page;
-
     draw_overview_background(overview);
 
-
-    render_page(page, overview, ColorPalette::None, false);
-    render_page(page-1, overview, ColorPalette::None, false);
-    render_page(page+1, overview, ColorPalette::None, false);
+    for (auto visible_page : get_overview_visible_pages(overview)) {
+        render_page(visible_page, overview, ColorPalette::None, false);
+    }
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
     // highlight the overview search result
@@ -3364,18 +3381,11 @@ void PdfViewOpenGLWidget::render_overview_qpainter_backend(NormalizedWindowRect 
     QRegion overview_region = QRegion(overview_rect);
     painter.setClipRegion(overview_region);
 
-    //qDebug() << "before";
-    //if (overview.source_rect && (!document_view->overview_page.has_value())) {
-    //    int a = 2;
-    //}
-    int page = AbsoluteDocumentPos{0, overview.absolute_offset_y}.to_document(doc(overview)).page;
-    //qDebug() << "after";
-
     draw_overview_background();
 
-    render_page(page, overview, ColorPalette::None, false);
-    render_page(page-1, overview, ColorPalette::None, false);
-    render_page(page+1, overview, ColorPalette::None, false);
+    for (auto page : get_overview_visible_pages(overview)) {
+        render_page(page, overview, ColorPalette::None, false);
+    }
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
     if (highlighted_result) {

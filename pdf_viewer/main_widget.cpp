@@ -12,7 +12,6 @@
 // when bookmarks reach the end scroll events should be forwarded to main widget
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
-// reduce extra page renders in render_overview if not necessary
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"

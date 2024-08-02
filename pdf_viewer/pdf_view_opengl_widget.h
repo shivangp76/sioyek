@@ -224,6 +224,7 @@ public:
     void handle_escape();
 
     bool valid_document();
+    std::vector<int> get_overview_visible_pages(const OverviewState& overview);
     void render_overview(OverviewState overview, bool draw_border=true);
     void render_page(int page_number, std::optional<OverviewState> overview = {}, ColorPalette forced_palette = ColorPalette::None, bool stencils_allowed = true);
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
