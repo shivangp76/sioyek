@@ -146,7 +146,7 @@ protected:
     void render_line_window_opengl_backend(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {});
     void render_highlight_window_opengl_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
     void compile_drawings_opengl_backend(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
-    void render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview);
+    void render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true);
     CompiledDrawingData compile_drawings_into_vertex_and_index_buffers(const std::vector<float>& line_coordinates,
         const std::vector<unsigned int>& indices,
         const std::vector<GLint>& line_type_indices,
@@ -224,7 +224,7 @@ public:
     void handle_escape();
 
     bool valid_document();
-    void render_overview(OverviewState overview);
+    void render_overview(OverviewState overview, bool draw_border=true);
     void render_page(int page_number, std::optional<OverviewState> overview = {}, ColorPalette forced_palette = ColorPalette::None, bool stencils_allowed = true);
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
     void mousePressEvent(QMouseEvent* mevent) override;

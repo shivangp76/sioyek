@@ -16,7 +16,7 @@
 // generic_select does not work with pinned portals
 // make selected portal graphics look nicer
 // selected object index should index objects using UUID not integer index
-// allow moving the pinned portal using middle mouse drag
+// reduce extra page renders in render_overview if not necessary
 
 
 #include "platform/qt/graphic_qt.h"

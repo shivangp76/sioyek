@@ -134,6 +134,9 @@ extern std::wstring TOP_CENTER_TAP_COMMAND;
 extern std::wstring TOP_CENTER_HOLD_COMMAND;
 extern std::wstring TAG_FONT_FACE;
 
+const int SELECTED_BORDER_PEN_SIZE = 2;
+const float SELECTED_BORDER_COLOR[3] = { 0.7f, 0.7f, 0.7f };
+
 GLfloat g_quad_vertex[] = {
     -1.0f, -1.0f,
     1.0f, -1.0f,
@@ -437,7 +440,7 @@ bool PdfViewOpenGLWidget::valid_document() {
     return false;
 }
 
-void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
+void PdfViewOpenGLWidget::render_overview(OverviewState overview, bool draw_border) {
     if (!valid_document()) return;
 
     float view_width = static_cast<int>(dv()->get_view_width() * dv()->overview_half_width);
@@ -455,7 +458,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
     }
 
 #ifdef SIOYEK_OPENGL_BACKEND
-    render_overview_opengl_backend(window_rect, overview);
+    render_overview_opengl_backend(window_rect, overview, draw_border);
 #else
     if (window_rect.height() > 0) {
         std::swap(window_rect.y0, window_rect.y1);
@@ -1093,8 +1096,22 @@ void PdfViewOpenGLWidget::my_render() {
                     portal_overview_state.doc->open(nullptr, true);
                 }
 
-                render_overview(portal_overview_state);
-                draw_overview_border(portal_overview_state, is_portal_selected ? selected_border_color : nullptr);
+                render_overview(portal_overview_state, !is_portal_selected);
+                if (is_portal_selected) {
+                    //draw_overview_border(portal_overview_state, selected_border_color);
+                    end_native_painting();
+
+                    WindowRect window_rect = portal_overview_state.source_rect->to_window(dv());
+                    QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
+                    painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
+                    painter.drawRect(
+                        window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2 - 1,
+                        window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2 + 1,
+                        fz_irect_width(window_rect) + SELECTED_BORDER_PEN_SIZE + 1,
+                        fz_irect_height(window_rect) + SELECTED_BORDER_PEN_SIZE + 1
+                    );
+                    begin_native_painting();
+                }
             }
         }
     }
@@ -1160,16 +1177,16 @@ void PdfViewOpenGLWidget::my_render() {
 
                     if (i == document_view->get_selected_bookmark_index()) {
                         painter.save();
-                        float temp_color[3] = { 0.7f, 0.7f, 0.7f };
-                        QColor pen_color = convert_float3_to_qcolor(&temp_color[0]);
-                        int pen_size = 2;
-                        painter.setPen(QPen(pen_color, pen_size, Qt::DotLine));
-                        //painter.setPen(Qt::DashLine);
-                        //QPen()
+                        QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
+                        painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
                         QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
-                        //painter.drawRect(fill_rect);
-                        painter.drawRect(window_rect.x0 - pen_size / 2, window_rect.y0 - pen_size / 2, fz_irect_width(window_rect)+pen_size, fz_irect_height(window_rect)+pen_size);
+                        painter.drawRect(
+                            window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2,
+                            window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2,
+                            fz_irect_width(window_rect)+SELECTED_BORDER_PEN_SIZE,
+                            fz_irect_height(window_rect)+SELECTED_BORDER_PEN_SIZE
+                        );
                         painter.restore();
                     }
 
@@ -3017,7 +3034,7 @@ void PdfViewOpenGLWidget::paintGL() {
     do_paint();
 }
 
-void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview) {
+void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border) {
 
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
@@ -3062,7 +3079,10 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
     }
 
     disable_stencil();
-    draw_overview_border(overview);
+
+    if (draw_border) {
+        draw_overview_border(overview);
+    }
 
     return;
 }
