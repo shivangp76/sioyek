@@ -2564,8 +2564,90 @@ void MainWidget::handle_rect_selection_point_release(AbsoluteDocumentPos abs_doc
     }
 }
 
+void MainWidget::handle_overview_download_button_click(AbsoluteDocumentPos abs_doc_pos) {
+    last_mouse_down = abs_doc_pos;
+    download_and_portal_to_highlighted_overview_paper();
+    close_overview();
+}
+
+bool MainWidget::handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object) {
+    // if we click on a visilbe object, we consider it as a potential for drag-move
+    // we don't start it now though (hence is_moving=false) because the user might just
+    // be clicking on an object to select it rather than drag it, we start dragging
+    // after the mouse has moved a certain amount in mouseMoveEvent
+    if (visible_object->object_type == VisibleObjectType::Bookmark) {
+        // in touch mode swiping over the selected bookmark should move the bookmark content
+        if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
+            BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
+            if (bookmark) {
+                VisibleObjectScrollData new_bookmark_scroll_data;
+                new_bookmark_scroll_data.type = VisibleObjectType::Bookmark;
+                new_bookmark_scroll_data.object_uuid = visible_object->uuid;
+                new_bookmark_scroll_data.original_scroll_amount = dv()->get_bookmark_scroll_amount(bookmark->uuid);
+                new_bookmark_scroll_data.original_mouse_pos = abs_doc_pos;
+                last_mouse_down_window_pos = click_pos;
+                visible_object_scroll_data = new_bookmark_scroll_data;
+                return true;
+            }
+        }
+        else {
+            //std::string uuid = visible_object->uui;
+            BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
+            if (bookmark && bookmark->is_freetext()) {
+                std::optional<OverviewSide> bookmark_resize_side = bookmark->get_resize_side_containing_point(abs_doc_pos);
+                if (bookmark_resize_side) {
+                    VisibleObjectResizeData brd;
+                    brd.type = VisibleObjectType::Bookmark;
+                    brd.object_uuid = bookmark->uuid;
+                    brd.side_index = bookmark_resize_side.value();
+                    brd.original_mouse_pos = abs_doc_pos;
+                    brd.original_rect = bookmark->rect();
+                    visible_object_resize_data = brd;
+                    return true;
+                }
+            }
+        }
+
+    }
+
+    if (visible_object->object_type == VisibleObjectType::PinnedPortal) {
+        std::string uuid = visible_object->uuid;
+        if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
+            //auto portal = doc()->get_portals()[index];
+            //Portal* portal = doc()->get_portal_with_uuid(uuid);
+            begin_portal_scroll();
+            return true;
+        }
+        else {
+            Portal* pinned_portal = doc()->get_portal_with_uuid(uuid);
+            if (pinned_portal) {
+                std::optional<OverviewSide> resize_side = pinned_portal->get_resize_side_containing_point(abs_doc_pos);
+                if (resize_side) {
+                    VisibleObjectResizeData prd;
+                    prd.type = VisibleObjectType::PinnedPortal;
+                    prd.object_uuid = uuid;
+                    prd.side_index = resize_side.value();
+                    prd.original_mouse_pos = abs_doc_pos;
+                    prd.original_rect = pinned_portal->get_rectangle().value();
+                    visible_object_resize_data = prd;
+                    return true;
+                }
+            }
+        }
+    }
+
+    last_mouse_down = abs_doc_pos;
+    last_mouse_down_window_pos = click_pos;
+    last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
+
+    visible_object->handle_move_begin(this, abs_doc_pos);
+    visible_object_move_data->is_moving = false;
+    return true;
+}
+
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
     if (is_rotated()) {
+        // we don't support selection, etc. when document is rotated
         return;
     }
     if (is_shift_pressed || is_control_pressed || is_alt_pressed || is_command_pressed) {
@@ -2616,88 +2698,15 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         OverviewSide border_index = static_cast<OverviewSide>(-1);
 
         if (!TOUCH_MODE && is_in_overview && is_in_download) {
-            last_mouse_down = abs_doc_pos;
-            download_and_portal_to_highlighted_overview_paper();
-            close_overview();
-
-            //execute_macro_if_enabled(L"download_overview_paper");
+            handle_overview_download_button_click(abs_doc_pos);
             return;
         }
         auto visible_object = get_visible_object_at_pos(abs_doc_pos);
 
-        // if we click on a visilbe object, we consider it as a potential for drag-move
-        // we don't start it now though (hence is_moving=false) because the user might just
-        // be clicking on an object to select it rather than drag it, we start dragging
-        // after the mouse has moved a certain amount in mouseMoveEvent
         if (visible_object) {
-            if (visible_object->object_type == VisibleObjectType::Bookmark) {
-                // in touch mode swiping over the selected bookmark should move the bookmark content
-                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
-                    BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
-                    if (bookmark) {
-                        VisibleObjectScrollData new_bookmark_scroll_data;
-                        new_bookmark_scroll_data.type = VisibleObjectType::Bookmark;
-                        new_bookmark_scroll_data.object_uuid = visible_object->uuid;
-                        new_bookmark_scroll_data.original_scroll_amount = dv()->get_bookmark_scroll_amount(bookmark->uuid);
-                        new_bookmark_scroll_data.original_mouse_pos = abs_doc_pos;
-                        last_mouse_down_window_pos = click_pos;
-                        visible_object_scroll_data = new_bookmark_scroll_data;
-                        return;
-                    }
-                }
-                else {
-                    //std::string uuid = visible_object->uui;
-                    BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
-                    if (bookmark && bookmark->is_freetext()) {
-                        std::optional<OverviewSide> bookmark_resize_side = bookmark->get_resize_side_containing_point(abs_doc_pos);
-                        if (bookmark_resize_side) {
-                            VisibleObjectResizeData brd;
-                            brd.type = VisibleObjectType::Bookmark;
-                            brd.object_uuid = bookmark->uuid;
-                            brd.side_index = bookmark_resize_side.value();
-                            brd.original_mouse_pos = abs_doc_pos;
-                            brd.original_rect = bookmark->rect();
-                            visible_object_resize_data = brd;
-                            return;
-                        }
-                    }
-                }
-
+            if (handle_visible_object_click(click_pos, abs_doc_pos, visible_object)) {
+                return;
             }
-
-            if (visible_object->object_type == VisibleObjectType::PinnedPortal) {
-                std::string uuid = visible_object->uuid;
-                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
-                    //auto portal = doc()->get_portals()[index];
-                    //Portal* portal = doc()->get_portal_with_uuid(uuid);
-                    begin_portal_scroll();
-                    return;
-                }
-                else {
-                    Portal* pinned_portal = doc()->get_portal_with_uuid(uuid);
-                    if (pinned_portal) {
-                        std::optional<OverviewSide> resize_side = pinned_portal->get_resize_side_containing_point(abs_doc_pos);
-                        if (resize_side) {
-                            VisibleObjectResizeData prd;
-                            prd.type = VisibleObjectType::PinnedPortal;
-                            prd.object_uuid = uuid;
-                            prd.side_index = resize_side.value();
-                            prd.original_mouse_pos = abs_doc_pos;
-                            prd.original_rect = pinned_portal->get_rectangle().value();
-                            visible_object_resize_data = prd;
-                            return;
-                        }
-                    }
-                }
-            }
-
-            last_mouse_down = abs_doc_pos;
-            last_mouse_down_window_pos = click_pos;
-            last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
-
-            visible_object->handle_move_begin(this, abs_doc_pos);
-            visible_object_move_data->is_moving = false;
-            return;
         }
 
         if (!is_in_download && main_document_view->is_window_point_in_overview_border(click_normalized_window_pos, &border_index)) {

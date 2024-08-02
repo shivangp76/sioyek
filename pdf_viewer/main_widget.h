@@ -1200,6 +1200,8 @@ public:
     bool handle_left_click_point_select(AbsoluteDocumentPos abs_doc_pos);
     void handle_rect_selection_point_press(AbsoluteDocumentPos abs_doc_pos);
     void handle_rect_selection_point_release(AbsoluteDocumentPos abs_doc_pos);
+    void handle_overview_download_button_click(AbsoluteDocumentPos abs_doc_pos);
+    bool handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object);
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
     PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);
