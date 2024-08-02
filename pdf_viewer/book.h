@@ -408,6 +408,7 @@ struct Portal : Annotation {
     AbsoluteRect get_actual_rectangle() const;
     void update_merged_rect(Document* doc) const;
     void set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos);
+    std::optional<AbsoluteRect> get_selection_rectangle() const;
 };
 
 struct OverviewState {

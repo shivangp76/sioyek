@@ -546,6 +546,23 @@ std::optional<AbsoluteRect> BookMark::get_selection_rectangle() const {
     return {};
 }
 
+std::optional<AbsoluteRect> Portal::get_selection_rectangle() const {
+
+    std::optional<AbsoluteRect> rect_ = get_rectangle();
+    if (rect_.has_value()) {
+        AbsoluteRect rect = rect_.value();
+
+        if (is_pinned()) {
+            rect.x0 -= 5;
+            rect.x1 += 5;
+            rect.y0 -= 5;
+            rect.y1 += 5;
+        }
+        return rect;
+    }
+    return {};
+}
+
 std::optional<AbsoluteRect> BookMark::get_rectangle() const{
     if (end_y > -1) {
 

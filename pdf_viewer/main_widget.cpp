@@ -10,13 +10,11 @@
 // batch the todos
 // make the action of download and clipboard paper configurable
 // when bookmarks reach the end scroll events should be forwarded to main widget
-// allow horizontal scrolling in pinned portls
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
-// generic_select does not work with pinned portals
-// make selected portal graphics look nicer
 // selected object index should index objects using UUID not integer index
 // reduce extra page renders in render_overview if not necessary
+// show resize mouse icon when hovering over the edge of pinned portals and freetext bookmarks
 
 
 #include "platform/qt/graphic_qt.h"
@@ -909,18 +907,25 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             else {
                 OverviewSide border_side;
                 if (dv()->is_window_point_in_overview_border(normal_mpos, &border_side)) {
-                    if (border_side == OverviewSide::bottom || border_side == OverviewSide::top) {
-                        setCursor(Qt::SizeVerCursor);
-                    }
-                    else {
-                        setCursor(Qt::SizeHorCursor);
-                    }
+                    set_mouse_cursor_for_side_resize(border_side);
                 }
                 else {
                     setCursor(Qt::ArrowCursor);
                 }
             }
 
+            return;
+        }
+        else if (selected_object_index.has_value() && (selected_object_index->object_type == VisibleObjectType::Bookmark)) {
+            BookMark& selected_bookmark = doc()->get_bookmarks()[selected_object_index->index];
+            if (selected_bookmark.is_freetext()) {
+                set_mouse_cursor_for_side_resize(selected_bookmark.get_resize_side_containing_point(abs_mpos));
+                return;
+            }
+        }
+        else if (is_pinned_portal_selected()) {
+            Portal& selected_portal = doc()->get_portals()[selected_object_index->index];
+            set_mouse_cursor_for_side_resize(selected_portal.get_resize_side_containing_point(abs_mpos));
             return;
         }
 
@@ -13792,4 +13797,18 @@ void MainWidget::begin_portal_scroll() {
     scroll_data.original_mouse_pos = abs_mpos;
     last_mouse_down_window_pos = last_mouse_down_window_pos;
     visible_object_scroll_data = scroll_data;
+}
+
+void MainWidget::set_mouse_cursor_for_side_resize(std::optional<OverviewSide> side){
+    if (side) {
+        if ((side.value() == OverviewSide::left) || (side.value() == OverviewSide::right)) {
+            setCursor(Qt::SizeHorCursor);
+            return;
+        }
+        if ((side.value() == OverviewSide::top) || (side.value() == OverviewSide::bottom)) {
+            setCursor(Qt::SizeVerCursor);
+            return;
+        }
+    }
+    setCursor(Qt::ArrowCursor);
 }

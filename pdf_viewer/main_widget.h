@@ -1193,6 +1193,7 @@ public:
     void pin_current_overview_as_portal();
     void zoom_pinned_portal(bool zoom_in);
     void begin_portal_scroll();
+    void set_mouse_cursor_for_side_resize(std::optional<OverviewSide> side);
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
 

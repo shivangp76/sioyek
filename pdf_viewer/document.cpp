@@ -3878,7 +3878,7 @@ int Document::get_icon_portal_index_at_pos(AbsoluteDocumentPos abspos) {
 int Document::get_pinned_portal_index_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].is_pinned()) {
-            AbsoluteRect rectangle = portals[i].get_rectangle().value();
+            AbsoluteRect rectangle = portals[i].get_selection_rectangle().value();
             if (rectangle.contains(abspos)) {
                 return i;
             }
