@@ -1197,6 +1197,9 @@ public:
     bool handle_freehand_drawing_click_event();
     bool handle_left_press_touch_mode(WindowPos click_pos);
     bool handle_left_release_touch_mode(WindowPos click_pos);
+    bool handle_left_click_point_select(AbsoluteDocumentPos abs_doc_pos);
+    void handle_rect_selection_point_press(AbsoluteDocumentPos abs_doc_pos);
+    void handle_rect_selection_point_release(AbsoluteDocumentPos abs_doc_pos);
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
     PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);

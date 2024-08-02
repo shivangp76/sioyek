@@ -2524,6 +2524,46 @@ bool MainWidget::handle_left_release_touch_mode(WindowPos click_pos) {
     return false;
 }
 
+bool MainWidget::handle_left_click_point_select(AbsoluteDocumentPos abs_doc_pos) {
+    if (pending_command_instance) {
+        pending_command_instance->set_point_requirement(abs_doc_pos);
+        advance_command(std::move(pending_command_instance));
+    }
+
+    is_selecting = false;
+    this->point_select_mode = false;
+    main_document_view->clear_selected_rectangle();
+    return true;
+}
+
+void MainWidget::MainWidget::handle_rect_selection_point_press(AbsoluteDocumentPos abs_doc_pos) {
+    if (rect_select_end.has_value()) {
+        //clicked again after selecting, we should clear the selected rectangle
+        clear_selected_rect();
+    }
+    else {
+        rect_select_begin = abs_doc_pos;
+    }
+}
+
+void MainWidget::handle_rect_selection_point_release(AbsoluteDocumentPos abs_doc_pos) {
+    if (rect_select_begin.has_value() && rect_select_end.has_value()) {
+        rect_select_end = abs_doc_pos;
+        AbsoluteRect selected_rectangle = AbsoluteRect(rect_select_begin.value(), rect_select_end.value());
+        main_document_view->set_selected_rectangle(selected_rectangle);
+
+        // is pending rect command
+        if (pending_command_instance) {
+            pending_command_instance->set_rect_requirement(selected_rectangle);
+            advance_command(std::move(pending_command_instance));
+        }
+
+        this->rect_select_mode = false;
+        this->rect_select_begin = {};
+        this->rect_select_end = {};
+    }
+}
+
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
     if (is_rotated()) {
         return;
@@ -2549,49 +2589,17 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
     }
 
     AbsoluteDocumentPos abs_doc_pos = get_window_abspos(click_pos);
-
     NormalizedWindowPos click_normalized_window_pos = main_document_view->window_to_normalized_window_pos(click_pos);
 
-
-
     if (point_select_mode && (down == false)) {
-        if (pending_command_instance) {
-            pending_command_instance->set_point_requirement(abs_doc_pos);
-            advance_command(std::move(pending_command_instance));
-        }
-
-        is_selecting = false;
-        this->point_select_mode = false;
-        main_document_view->clear_selected_rectangle();
-        return;
+        if (handle_left_click_point_select(abs_doc_pos)) return;
     }
     if (rect_select_mode) {
         if (down == true) {
-            if (rect_select_end.has_value()) {
-                //clicked again after selecting, we should clear the selected rectangle
-                clear_selected_rect();
-            }
-            else {
-                rect_select_begin = abs_doc_pos;
-            }
+            handle_rect_selection_point_press(abs_doc_pos);
         }
         else {
-            if (rect_select_begin.has_value() && rect_select_end.has_value()) {
-                rect_select_end = abs_doc_pos;
-                AbsoluteRect selected_rectangle = AbsoluteRect(rect_select_begin.value(), rect_select_end.value());
-                main_document_view->set_selected_rectangle(selected_rectangle);
-
-                // is pending rect command
-                if (pending_command_instance) {
-                    pending_command_instance->set_rect_requirement(selected_rectangle);
-                    advance_command(std::move(pending_command_instance));
-                }
-
-                this->rect_select_mode = false;
-                this->rect_select_begin = {};
-                this->rect_select_end = {};
-            }
-
+            handle_rect_selection_point_release(abs_doc_pos);
         }
         return;
     }
