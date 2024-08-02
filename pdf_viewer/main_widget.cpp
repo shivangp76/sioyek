@@ -12,9 +12,8 @@
 // when bookmarks reach the end scroll events should be forwarded to main widget
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
-// selected object index should index objects using UUID not integer index
 // reduce extra page renders in render_overview if not necessary
-// show resize mouse icon when hovering over the edge of pinned portals and freetext bookmarks
+// remove database delete etc. functions from document_view e.g. main_document_view->delete_highlight_with_index
 
 
 #include "platform/qt/graphic_qt.h"
@@ -810,19 +809,19 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
     if (visible_object_resize_data) {
         if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
-            int index = visible_object_resize_data->object_index;
-            if (index < doc()->get_bookmarks().size()) {
-                auto& target_bookmark = doc()->get_bookmarks()[index];
-                target_bookmark.set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+            std::string uuid = visible_object_resize_data->object_uuid;
+            if (uuid.size() > 0) {
+                BookMark* target_bookmark = doc()->get_bookmark_with_uuid(uuid);
+                target_bookmark->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
                 validate_render();
                 return;
             }
         }
         if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
-            int index = visible_object_resize_data->object_index;
-            if (index < doc()->get_portals().size()) {
-                auto& target_portal = doc()->get_portals()[index];
-                target_portal.set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+            std::string uuid = visible_object_resize_data->object_uuid;
+            Portal* target_portal = doc()->get_portal_with_uuid(uuid);
+            if (target_portal) {
+                target_portal->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
                 validate_render();
                 return;
             }
@@ -830,24 +829,24 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     }
 
     if (visible_object_scroll_data) {
-        int index = visible_object_scroll_data->object_index;
+        std::string uuid = visible_object_scroll_data->object_uuid;
         if (visible_object_scroll_data->type == VisibleObjectType::Bookmark) {
-            if (index < doc()->get_bookmarks().size()) {
-                auto& target_bookmark = doc()->get_bookmarks()[index];
+            BookMark* target_bookmark = doc()->get_bookmark_with_uuid(uuid);
+            if (target_bookmark) {
                 //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
-                dv()->set_bookmark_scroll_amount(target_bookmark.uuid,
+                dv()->set_bookmark_scroll_amount(target_bookmark->uuid,
                     -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * dv()->get_zoom_level() + visible_object_scroll_data->original_scroll_amount);
                 validate_render();
                 return;
             }
         }
         if (visible_object_scroll_data->type == VisibleObjectType::PinnedPortal) {
-            if (index < doc()->get_portals().size()) {
-                auto& target_portal = doc()->get_portals()[index];
+            Portal* target_portal = doc()->get_portal_with_uuid(uuid);
+            if (target_portal) {
                 //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
-                target_portal.dst.book_state.offset_y = -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) + visible_object_scroll_data->original_scroll_amount;
-                target_portal.dst.book_state.offset_x = (abs_mpos.x - visible_object_scroll_data->original_mouse_pos.x) + visible_object_scroll_data->original_scroll_amount_x.value();
-                schedule_update_link_with_opened_book_state(target_portal, target_portal.dst.book_state);
+                target_portal->dst.book_state.offset_y = -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) + visible_object_scroll_data->original_scroll_amount;
+                target_portal->dst.book_state.offset_x = (abs_mpos.x - visible_object_scroll_data->original_mouse_pos.x) + visible_object_scroll_data->original_scroll_amount_x.value();
+                schedule_update_link_with_opened_book_state(*target_portal, target_portal->dst.book_state);
                 //(target_portal.uuid,
                 //    
                 validate_render();
@@ -917,15 +916,19 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             return;
         }
         else if (selected_object_index.has_value() && (selected_object_index->object_type == VisibleObjectType::Bookmark)) {
-            BookMark& selected_bookmark = doc()->get_bookmarks()[selected_object_index->index];
-            if (selected_bookmark.is_freetext()) {
-                set_mouse_cursor_for_side_resize(selected_bookmark.get_resize_side_containing_point(abs_mpos));
+            //BookMark& selected_bookmark = doc()->get_bookmarks()[selected_object_index->index];
+            BookMark* selected_bookmark = doc()->get_bookmark_with_uuid(selected_object_index->uuid);
+            if (selected_bookmark && selected_bookmark->is_freetext()) {
+                set_mouse_cursor_for_side_resize(selected_bookmark->get_resize_side_containing_point(abs_mpos));
                 return;
             }
         }
         else if (is_pinned_portal_selected()) {
-            Portal& selected_portal = doc()->get_portals()[selected_object_index->index];
-            set_mouse_cursor_for_side_resize(selected_portal.get_resize_side_containing_point(abs_mpos));
+            //Portal& selected_portal = doc()->get_portals()[selected_object_index->index];
+            Portal* selected_portal = doc()->get_portal_with_uuid(selected_object_index->uuid);
+            if (selected_portal) {
+                set_mouse_cursor_for_side_resize(selected_portal->get_resize_side_containing_point(abs_mpos));
+            }
             return;
         }
 
@@ -2610,14 +2613,13 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         if (visible_object) {
             if (visible_object->object_type == VisibleObjectType::Bookmark) {
                 // in touch mode swiping over the selected bookmark should move the bookmark content
-                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->index == selected_object_index->index)) {
-                    auto bookmark_ = doc()->get_bookmark_with_index(visible_object->index);
-                    if (bookmark_) {
-                        BookMark bookmark = bookmark_.value();
+                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
+                    BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
+                    if (bookmark) {
                         VisibleObjectScrollData new_bookmark_scroll_data;
                         new_bookmark_scroll_data.type = VisibleObjectType::Bookmark;
-                        new_bookmark_scroll_data.object_index = visible_object->index;
-                        new_bookmark_scroll_data.original_scroll_amount = dv()->get_bookmark_scroll_amount(bookmark.uuid);
+                        new_bookmark_scroll_data.object_uuid = visible_object->uuid;
+                        new_bookmark_scroll_data.original_scroll_amount = dv()->get_bookmark_scroll_amount(bookmark->uuid);
                         new_bookmark_scroll_data.original_mouse_pos = abs_doc_pos;
                         last_mouse_down_window_pos = click_pos;
                         visible_object_scroll_data = new_bookmark_scroll_data;
@@ -2625,17 +2627,17 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                     }
                 }
                 else {
-                    int index = visible_object->index;
-                    auto bookmark = doc()->get_bookmarks()[index];
-                    if (bookmark.is_freetext()) {
-                        std::optional<OverviewSide> bookmark_resize_side = bookmark.get_resize_side_containing_point(abs_doc_pos);
+                    //std::string uuid = visible_object->uui;
+                    BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
+                    if (bookmark && bookmark->is_freetext()) {
+                        std::optional<OverviewSide> bookmark_resize_side = bookmark->get_resize_side_containing_point(abs_doc_pos);
                         if (bookmark_resize_side) {
                             VisibleObjectResizeData brd;
                             brd.type = VisibleObjectType::Bookmark;
-                            brd.object_index = index;
+                            brd.object_uuid = bookmark->uuid;
                             brd.side_index = bookmark_resize_side.value();
                             brd.original_mouse_pos = abs_doc_pos;
-                            brd.original_rect = bookmark.rect();
+                            brd.original_rect = bookmark->rect();
                             visible_object_resize_data = brd;
                             return;
                         }
@@ -2645,24 +2647,27 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             }
 
             if (visible_object->object_type == VisibleObjectType::PinnedPortal) {
-                int index = visible_object->index;
-                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->index == selected_object_index->index)) {
-                    auto portal = doc()->get_portals()[index];
+                std::string uuid = visible_object->uuid;
+                if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
+                    //auto portal = doc()->get_portals()[index];
+                    //Portal* portal = doc()->get_portal_with_uuid(uuid);
                     begin_portal_scroll();
                     return;
                 }
                 else {
-                    auto pinned_portal = doc()->get_portals()[index];
-                    std::optional<OverviewSide> resize_side = pinned_portal.get_resize_side_containing_point(abs_doc_pos);
-                    if (resize_side) {
-                        VisibleObjectResizeData prd;
-                        prd.type = VisibleObjectType::PinnedPortal;
-                        prd.object_index = index;
-                        prd.side_index = resize_side.value();
-                        prd.original_mouse_pos = abs_doc_pos;
-                        prd.original_rect = pinned_portal.get_rectangle().value();
-                        visible_object_resize_data = prd;
-                        return;
+                    Portal* pinned_portal = doc()->get_portal_with_uuid(uuid);
+                    if (pinned_portal) {
+                        std::optional<OverviewSide> resize_side = pinned_portal->get_resize_side_containing_point(abs_doc_pos);
+                        if (resize_side) {
+                            VisibleObjectResizeData prd;
+                            prd.type = VisibleObjectType::PinnedPortal;
+                            prd.object_uuid = uuid;
+                            prd.side_index = resize_side.value();
+                            prd.original_mouse_pos = abs_doc_pos;
+                            prd.original_rect = pinned_portal->get_rectangle().value();
+                            visible_object_resize_data = prd;
+                            return;
+                        }
                     }
                 }
             }
@@ -2743,12 +2748,12 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
         if (visible_object_resize_data) {
             if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
-                update_bookmark_with_index(visible_object_resize_data->object_index);
+                update_bookmark_with_uuid(visible_object_resize_data->object_uuid);
                 visible_object_resize_data = {};
                 return;
             }
             if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
-                update_portal_with_index(visible_object_resize_data->object_index);
+                update_portal_with_uuid(visible_object_resize_data->object_uuid);
                 visible_object_resize_data = {};
                 return;
             }
@@ -2956,17 +2961,16 @@ void MainWidget::handle_click(WindowPos click_pos) {
 
     auto link = main_document_view->get_link_in_pos(click_pos);
 
-    int selected_index = -1;
-    if ((selected_index = main_document_view->get_highlight_index_in_pos(click_pos)) >= 0) {
-        set_selected_highlight_index(selected_index);
+    std::string selected_uuid = main_document_view->get_highlight_uuid_in_pos(click_pos);
+    if (selected_uuid.size() > 0) {
+        set_selected_highlight_uuid(selected_uuid);
     }
-    else if ((selected_index = doc()->get_bookmark_index_at_pos(mouse_abspos)) >= 0) {
-        const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
-
+    else if ((selected_uuid = doc()->get_bookmark_uuid_at_pos(mouse_abspos)).size() > 0) {
         bool was_bookmark_anchor_link_click = false;
+        BookMark* bookmark = doc()->get_bookmark_with_uuid(selected_uuid);
 
-        if (selected_index < bookmarks.size()) {
-            if (BookMark::should_be_displayed_as_markdown(QString::fromStdWString(bookmarks[selected_index].description))) {
+        if (bookmark) {
+            if (BookMark::should_be_displayed_as_markdown(QString::fromStdWString(bookmark->description))) {
                 QString anchor_string = get_markdown_bookmark_anchor_text_under_cursor();
                 if (anchor_string.size() > 0) {
                     was_bookmark_anchor_link_click = true;
@@ -2989,31 +2993,34 @@ void MainWidget::handle_click(WindowPos click_pos) {
             }
         }
         if (!was_bookmark_anchor_link_click) {
-            set_selected_bookmark_index(selected_index);
+            set_selected_bookmark_uuid(selected_uuid);
         }
     }
-    else if ((selected_index = doc()->get_pinned_portal_index_at_pos(mouse_abspos)) >= 0) {
-        set_selected_portal_index(selected_index, true);
+    else if ((selected_uuid = doc()->get_pinned_portal_uuid_at_pos(mouse_abspos)).size() > 0) {
+        set_selected_portal_uuid(selected_uuid, true);
     }
-    else if ((selected_index = doc()->get_icon_portal_index_at_pos(mouse_abspos)) >= 0) {
-        set_selected_portal_index(selected_index);
+    else if ((selected_uuid = doc()->get_icon_portal_uuid_at_pos(mouse_abspos)).size() > 0) {
+        set_selected_portal_uuid(selected_uuid);
     }
     else {
         clear_selected_object();
     }
 
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Portal) {
-        Portal portal = doc()->get_portals()[selected_object_index->index];
+        Portal* portal = doc()->get_portal_with_uuid(selected_object_index->uuid);
 
-        push_state();
-        if (document_manager->get_document_with_checksum(portal.dst.document_checksum)) {
-            open_document(portal.dst);
-        }
-        else if (sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
-            sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal.dst.document_checksum), [this, portal](QString path) {
-    //void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
-                open_document(path.toStdWString(), &is_render_invalidated, false, portal.dst.book_state);
-                });
+        if (portal) {
+
+            push_state();
+            if (document_manager->get_document_with_checksum(portal->dst.document_checksum)) {
+                open_document(portal->dst);
+            }
+            else if (sioyek_network_manager->is_checksum_available_on_server(portal->dst.document_checksum)) {
+                sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal->dst.document_checksum), [this, portal](QString path) {
+                    //void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
+                    open_document(path.toStdWString(), &is_render_invalidated, false, portal->dst.book_state);
+                    });
+            }
         }
 
 
@@ -3021,7 +3028,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
     }
 
 
-    if (TOUCH_MODE && (get_selected_highlight_index() != -1)) {
+    if (TOUCH_MODE && (get_selected_highlight_uuid().size() > 0)) {
         show_highlight_buttons();
     }
 
@@ -3189,16 +3196,16 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
 
         WindowPos click_pos = { mevent->pos().x(), mevent->pos().y() };
         AbsoluteDocumentPos mouse_abspos = main_document_view->window_to_absolute_document_pos(click_pos);
-        int bookmark_index = doc()->get_bookmark_index_at_pos(mouse_abspos);
-        int highlight_index = main_document_view->get_highlight_index_in_pos(click_pos);
+        std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(mouse_abspos);
+        std::string highlight_uuid = main_document_view->get_highlight_uuid_in_pos(click_pos);
 
-        if (bookmark_index != -1) {
-            set_selected_bookmark_index(bookmark_index);
+        if (bookmark_uuid.size() > 0) {
+            set_selected_bookmark_uuid(bookmark_uuid);
             handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
             return;
         }
-        if (highlight_index != -1) {
-            set_selected_highlight_index(highlight_index);
+        if (highlight_uuid.size() > 0) {
+            set_selected_highlight_uuid(highlight_uuid);
             handle_command_types(command_manager->get_command_with_name(this, "add_annot_to_highlight"), 0);
         }
     }
@@ -3316,8 +3323,8 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     if (object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
         if (object_under_cursor->object_type == VisibleObjectType::Bookmark) {
             float amount = -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 120.0f;
-            int bookmark_index = object_under_cursor->index;
-            scroll_bookmark_with_index(bookmark_index, amount);
+            std::string bookmark_uuid = object_under_cursor->uuid;
+            scroll_bookmark_with_uuid(bookmark_uuid, amount);
             validate_render();
             return;
         }
@@ -3325,30 +3332,33 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
             (object_under_cursor->object_type == VisibleObjectType::PinnedPortal) &&
             selected_object_index.has_value() &&
             (selected_object_index->object_type == VisibleObjectType::PinnedPortal) &&
-            (selected_object_index->index == object_under_cursor->index)) {
+            (selected_object_index->uuid == object_under_cursor->uuid)) {
 
-            Portal& portal = doc()->get_portals()[object_under_cursor->index];
-            if (is_control_pressed) {
-                //float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
-                if (wevent->angleDelta().y() > 0) {
-                    portal.dst.book_state.zoom_level *= zoom_factor;
+            //Portal* portal = doc()->get_portals()[object_under_cursor->index];
+            Portal* portal = doc()->get_portal_with_uuid(object_under_cursor->uuid);
+            if (portal) {
+                if (is_control_pressed) {
+                    //float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                    if (wevent->angleDelta().y() > 0) {
+                        portal->dst.book_state.zoom_level *= zoom_factor;
+                    }
+                    else {
+                        portal->dst.book_state.zoom_level /= zoom_factor;
+                    }
+                }
+                else if (is_shift_pressed) {
+                    float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                    portal->dst.book_state.offset_x += amount;
                 }
                 else {
-                    portal.dst.book_state.zoom_level /= zoom_factor;
+                    float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
+                    portal->dst.book_state.offset_y += amount;
                 }
-            }
-            else if (is_shift_pressed) {
-                float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
-                portal.dst.book_state.offset_x += amount;
-            }
-            else {
-                float amount = 72.0 * -VERTICAL_MOVE_AMOUNT * wevent->angleDelta().y() / 360;
-                portal.dst.book_state.offset_y += amount;
-            }
 
-            schedule_update_link_with_opened_book_state(portal, portal.dst.book_state);
-            validate_render();
-            return;
+                schedule_update_link_with_opened_book_state(*portal, portal->dst.book_state);
+                validate_render();
+                return;
+            }
         }
     }
     if ( (!is_shift_pressed) && (!is_control_pressed)) {
@@ -3786,24 +3796,24 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
     dv()->smart_view_candidates.clear();
     dv()->index_into_candidates = 0;
 
-    int portal_index = -1;
-    std::optional<Portal> portal = get_portal_under_window_pos(pos, &portal_index);
+    //std::string portal_uuid = -1;
+    Portal* portal = get_portal_under_window_pos(pos);
     if (portal) {
-        Document* dst_doc = document_manager->get_document_with_checksum(portal.value().dst.document_checksum);
+        Document* dst_doc = document_manager->get_document_with_checksum(portal->dst.document_checksum);
         if (dst_doc) {
-            set_selected_portal_index(portal_index);
+            set_selected_portal_uuid(portal->uuid);
 
-            open_overview_to_portal(dst_doc, portal.value());
+            open_overview_to_portal(dst_doc, *portal);
 
             invalidate_render();
             return true;
         }
         else if (sioyek_network_manager->is_checksum_available_on_server(portal->dst.document_checksum)) { // check if the document is available on server
             sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal->dst.document_checksum),
-                [this, portal_index, portal_v=portal.value()](QString path) {
+                [this, portal_v=*portal](QString path) {
                 Document* downloaded_dst_doc = document_manager->get_document(path.toStdWString());
                 if (downloaded_dst_doc) {
-                    set_selected_portal_index(portal_index);
+                    set_selected_portal_uuid(portal_v.uuid);
                     open_overview_to_portal(downloaded_dst_doc, portal_v);
                     invalidate_render();
                 }
@@ -5973,7 +5983,7 @@ void MainWidget::handle_goto_bookmark() {
         };
 
     auto handle_edit_fn = [&](BookMark bm) {
-        set_selected_bookmark_index(doc()->get_bookmark_index_with_uuid(bm.uuid));
+        set_selected_bookmark_uuid(bm.uuid);
         pop_current_widget();
         handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
         };
@@ -6154,22 +6164,25 @@ std::wstring MainWidget::handle_add_highlight(char symbol) {
     }
     else {
         change_selected_highlight_type(symbol);
-        return utf8_decode(doc()->get_highlight_index_uuid(get_selected_highlight_index()));
+        return utf8_decode(get_selected_highlight_uuid());
     }
 }
 
 void MainWidget::change_selected_highlight_type(char new_type) {
-    int selected_highlight_index = get_selected_highlight_index();
-    if (selected_highlight_index != -1) {
-        doc()->update_highlight_type(selected_highlight_index, new_type);
-        on_highlight_type_edited(doc()->get_highlights()[selected_highlight_index].uuid);
+    std::string selected_highlight_uuid = get_selected_highlight_uuid();
+    if (selected_highlight_uuid.size() > 0) {
+        doc()->update_highlight_type(selected_highlight_uuid, new_type);
+        on_highlight_type_edited(selected_highlight_uuid);
     }
 }
 
 char MainWidget::get_current_selected_highlight_type() {
-    int selected_highlight_index = get_selected_highlight_index();
-    if (selected_highlight_index != -1) {
-        return main_document_view->get_highlight_with_index(selected_highlight_index).type;
+    std::string selected_highlight_uuid = get_selected_highlight_uuid();
+    if (selected_highlight_uuid.size() > 0) {
+        Highlight* highlight = doc()->get_highlight_with_uuid(selected_highlight_uuid);
+        if (highlight) {
+            return highlight->type;
+        }
     }
     return 'a';
 }
@@ -6196,7 +6209,7 @@ void MainWidget::handle_goto_highlight() {
         };
 
     auto handle_edit_fn = [&](Highlight hl) {
-        set_selected_highlight_index(doc()->get_highlight_index_with_uuid(hl.uuid));
+        set_selected_highlight_uuid(hl.uuid);
         pop_current_widget();
 
         std::unique_ptr<Command> cmd = command_manager->get_command_with_name(this, "edit_selected_highlight");
@@ -6894,42 +6907,39 @@ void MainWidget::handle_toggle_typing_mode() {
 void MainWidget::handle_delete_highlight_under_cursor() {
     QPoint mouse_pos = mapFromGlobal(cursor_pos());
     WindowPos window_pos = WindowPos{ mouse_pos.x(), mouse_pos.y() };
-    int sel_highlight = main_document_view->get_highlight_index_in_pos(window_pos);
-    if (sel_highlight != -1) {
-        if (get_selected_highlight_index() == sel_highlight) {
+    std::string sel_highlight = main_document_view->get_highlight_uuid_in_pos(window_pos);
+    if (sel_highlight.size() > 0) {
+        if (get_selected_highlight_uuid() == sel_highlight) {
             clear_selected_object();
         }
-        delete_current_document_highlight_with_index(sel_highlight);
+        delete_current_document_highlight_with_uuid(sel_highlight);
     }
 }
 
 void MainWidget::handle_delete_selected_highlight() {
-    int selected_highlight_index = get_selected_highlight_index();
-    if (selected_highlight_index != -1) {
-        int sel_index = selected_highlight_index;
-        set_selected_highlight_index(-1);
-        delete_current_document_highlight_with_index(sel_index);
+    std::string selected_highlight_uuid = get_selected_highlight_uuid();
+    if (selected_highlight_uuid.size() > 0) {
+        set_selected_highlight_uuid("");
+        delete_current_document_highlight_with_uuid(selected_highlight_uuid);
     }
     validate_render();
 }
 
 void MainWidget::handle_delete_selected_bookmark() {
-    int selected_bookmark_index = get_selected_bookmark_index();
-    if (selected_bookmark_index != -1) {
-        int sel_index = selected_bookmark_index;
-        set_selected_bookmark_index(-1);
-        delete_current_document_bookmark(sel_index);
+    std::string selected_bookmark_uuid = get_selected_bookmark_uuid();
+    if (selected_bookmark_uuid.size() > 0) {
+        set_selected_bookmark_uuid("");
+        delete_current_document_bookmark(selected_bookmark_uuid);
     }
     validate_render();
 }
 
 void MainWidget::handle_delete_selected_portal() {
-    int selected_portal_index = get_selected_portal_index();
-    if (selected_portal_index != -1) {
-        int sel_index = selected_portal_index;
+    std::string selected_portal_uuid = get_selected_portal_uuid();
+    if (selected_portal_uuid.size() > 0) {
         clear_selected_object();
-        std::string uuid = main_document_view->delete_portal_with_index(sel_index);
-        on_portal_deleted(uuid);
+        doc()->delete_portal_with_uuid(selected_portal_uuid);
+        on_portal_deleted(selected_portal_uuid);
     }
     validate_render();
 }
@@ -7029,18 +7039,18 @@ bool MainWidget::event(QEvent* event) {
                 WindowPos window_pos = WindowPos{ last_hold_point.x(), last_hold_point.y() };
                 AbsoluteDocumentPos hold_abspos = main_document_view->window_to_absolute_document_pos(window_pos);
                 if (doc()) {
-                    int bookmark_index = doc()->get_bookmark_index_at_pos(hold_abspos);
+                    std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(hold_abspos);
 
-                    if (bookmark_index >= 0) {
-                        begin_bookmark_move(bookmark_index, hold_abspos);
-                        set_selected_bookmark_index(bookmark_index);
+                    if (bookmark_uuid.size() > 0) {
+                        begin_bookmark_move(bookmark_uuid, hold_abspos);
+                        set_selected_bookmark_uuid(bookmark_uuid);
                         show_touch_buttons({ L"Delete", L"Edit" }, {}, [this](int index, std::wstring name) {
 
-                            int selected_bookmark_index = get_selected_bookmark_index();
-                            if (selected_bookmark_index > -1) {
+                            std::string selected_bookmark_uuid = get_selected_bookmark_uuid();
+                            if (selected_bookmark_uuid.size() > 0) {
                                 if (name == L"Delete") {
-                                    delete_current_document_bookmark(selected_bookmark_index);
-                                    set_selected_bookmark_index(-1);
+                                    delete_current_document_bookmark(selected_bookmark_uuid);
+                                    set_selected_bookmark_uuid("");
                                     pop_current_widget();
                                     invalidate_render();
                                 }
@@ -7055,17 +7065,17 @@ bool MainWidget::event(QEvent* event) {
                         return true;
                     }
 
-                    int portal_index = doc()->get_icon_portal_index_at_pos(hold_abspos);
-                    if (portal_index >= 0) {
-                        begin_portal_move(portal_index, hold_abspos, false);
-                        set_selected_portal_index(portal_index);
+                    std::string portal_uuid = doc()->get_icon_portal_uuid_at_pos(hold_abspos);
+                    if (portal_uuid.size()) {
+                        begin_portal_move(portal_uuid, hold_abspos, false);
+                        set_selected_portal_uuid(portal_uuid);
                         show_touch_buttons({ L"Delete" }, {}, [this](int index, std::wstring name) {
-                            if (get_selected_portal_index() > -1) {
-                                int del_index = get_selected_portal_index();
+                            if (get_selected_portal_uuid().size() > 0) {
+                                std::string del_uuid = get_selected_portal_uuid();
                                 clear_selected_object();
-                                std::string uuid = doc()->get_portals()[del_index].uuid;
-                                doc()->delete_portal_with_uuid(uuid);
-                                on_portal_deleted(uuid);
+                                //std::string uuid = doc()->get_portals()[del_index].uuid;
+                                doc()->delete_portal_with_uuid(del_uuid);
+                                on_portal_deleted(del_uuid);
                                 pop_current_widget();
                                 invalidate_render();
                             }
@@ -7146,10 +7156,10 @@ bool MainWidget::event(QEvent* event) {
                     }
                     else if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
                         // todo: this is not testes, I should test this on a touch screen
-                        if (doc()->get_portals().size() < selected_object_index->index) {
-                            Portal& portal = doc()->get_portals()[selected_object_index->index];
-                            portal.dst.book_state.zoom_level *= scale;
-                            schedule_update_link_with_opened_book_state(portal, portal.dst.book_state);
+                        Portal* portal = doc()->get_portal_with_uuid(selected_object_index->uuid);
+                        if (portal) {
+                            portal->dst.book_state.zoom_level *= scale;
+                            schedule_update_link_with_opened_book_state(*portal, portal->dst.book_state);
                         }
                     }
                     else{
@@ -7597,16 +7607,18 @@ void MainWidget::set_color_mode_to_system_theme() {
 }
 
 void MainWidget::update_highlight_buttons_position() {
-    int selected_highlight_index = get_selected_highlight_index();
-    if (selected_highlight_index != -1) {
-        Highlight hl = main_document_view->get_highlight_with_index(selected_highlight_index);
-        AbsoluteDocumentPos hlpos;
-        hlpos.x = hl.selection_begin.x;
-        hlpos.y = hl.selection_begin.y;
-        DocumentPos docpos = doc()->absolute_to_page_pos_uncentered(hlpos);
+    std::string selected_highlight_uuid = get_selected_highlight_uuid();
+    if (selected_highlight_uuid.size() > 0) {
+        Highlight* hl = doc()->get_highlight_with_uuid(selected_highlight_uuid);
+        if (hl) {
+            AbsoluteDocumentPos hlpos;
+            hlpos.x = hl->selection_begin.x;
+            hlpos.y = hl->selection_begin.y;
+            DocumentPos docpos = doc()->absolute_to_page_pos_uncentered(hlpos);
 
-        WindowPos windowpos = main_document_view->document_to_window_pos_in_pixels_uncentered(docpos);
-        get_highlight_buttons()->move(get_highlight_buttons()->pos().x(), windowpos.y - get_highlight_buttons()->height());
+            WindowPos windowpos = main_document_view->document_to_window_pos_in_pixels_uncentered(docpos);
+            get_highlight_buttons()->move(get_highlight_buttons()->pos().x(), windowpos.y - get_highlight_buttons()->height());
+        }
     }
 }
 
@@ -7697,18 +7709,18 @@ bool MainWidget::show_contextual_context_menu(QString default_context_menu) {
         }
     }
     else {
-        int sel_highlight = main_document_view->get_highlight_index_in_pos(window_pos);
-        int sel_bookmark = doc()->get_bookmark_index_at_pos(abs_pos);
+        std::string sel_highlight = main_document_view->get_highlight_uuid_in_pos(window_pos);
+        std::string sel_bookmark = doc()->get_bookmark_uuid_at_pos(abs_pos);
 
-        if (sel_highlight != -1) {
-            set_selected_highlight_index(sel_highlight);
+        if (sel_highlight.size() > 0) {
+            set_selected_highlight_uuid(sel_highlight);
             if (CONTEXT_MENU_ITEMS_FOR_HIGHLIGHTS.size() > 0) {
                 show_context_menu(QString::fromStdWString(CONTEXT_MENU_ITEMS_FOR_HIGHLIGHTS));
                 return true;
             }
         }
-        if (sel_bookmark != -1) {
-            set_selected_bookmark_index(sel_bookmark);
+        if (sel_bookmark.size() > 0) {
+            set_selected_bookmark_uuid(sel_bookmark);
             if (CONTEXT_MENU_ITEMS_FOR_BOOKMARKS.size() > 0) {
                 show_context_menu(QString::fromStdWString(CONTEXT_MENU_ITEMS_FOR_BOOKMARKS));
                 return true;
@@ -7925,23 +7937,26 @@ QString MainWidget::get_markdown_bookmark_anchor_text_under_cursor() {
 
     std::optional<VisibleObjectIndex> visible_object = get_visible_object_at_pos(cursor_abspos);
     if (visible_object.has_value() && visible_object->object_type == VisibleObjectType::Bookmark) {
-        BookMark bookmark = doc()->get_bookmarks()[visible_object->index];
-        QString bookmark_text = QString::fromStdWString(bookmark.description);
+        BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
 
-        if (BookMark::should_be_displayed_as_markdown(bookmark_text)) {
-            QFont font = bookmark.get_font(dv()->get_zoom_level());
-            QRect window_qrect = bookmark.get_rectangle()->to_window(dv()).to_qrect();
-            float scroll_amount = dv()->get_bookmark_scroll_amount(bookmark.uuid);
+        if (bookmark) {
+            QString bookmark_text = QString::fromStdWString(bookmark->description);
+
+            if (BookMark::should_be_displayed_as_markdown(bookmark_text)) {
+                QFont font = bookmark->get_font(dv()->get_zoom_level());
+                QRect window_qrect = bookmark->get_rectangle()->to_window(dv()).to_qrect();
+                float scroll_amount = dv()->get_bookmark_scroll_amount(bookmark->uuid);
 
 
-            QTextDocument td;
-            prepare_text_document_for_bookmark_markdown(td, BookMark::get_display_markdown_or_text(bookmark_text), window_qrect, font);
+                QTextDocument td;
+                prepare_text_document_for_bookmark_markdown(td, BookMark::get_display_markdown_or_text(bookmark_text), window_qrect, font);
 
-            QPoint cursor_in_bookmark_pos = cursor_pos - window_qrect.topLeft();
-            cursor_in_bookmark_pos.setY(cursor_in_bookmark_pos.y() + scroll_amount);
+                QPoint cursor_in_bookmark_pos = cursor_pos - window_qrect.topLeft();
+                cursor_in_bookmark_pos.setY(cursor_in_bookmark_pos.y() + scroll_amount);
 
-            return td.documentLayout()->anchorAt(cursor_in_bookmark_pos);
+                return td.documentLayout()->anchorAt(cursor_in_bookmark_pos);
 
+            }
         }
     }
     return "";
@@ -8089,10 +8104,12 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
         add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         },
         [this, bookmark_uuid, document=doc()]() {
-            int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
-            BookMark& bm = document->get_bookmarks()[bookmark_index];
-            bm.description = replace_verbatim_links(bm.description);
-            document->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
+            //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+            BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
+            if (bm) {
+                bm->description = replace_verbatim_links(bm->description);
+                document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
+            }
         });
 }
 
@@ -8105,9 +8122,11 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
         add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         },
         [this, bookmark_uuid, document=doc()]() {
-            int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
-            BookMark& bm = document->get_bookmarks()[bookmark_index];
-            document->update_bookmark_text(bookmark_index, bm.description, bm.font_size);
+            //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+            BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
+            if (bm) {
+                document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
+            }
         });
 }
 
@@ -8140,13 +8159,13 @@ QSizeF MainWidget::get_bookmark_text_size(const BookMark& bookmark) {
 }
 
 
-std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& text, int pending_index) {
+std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid) {
     std::wstring result = L"";
     if (text.size() > 0) {
-        std::string uuid = doc()->add_pending_bookmark(pending_index, text);
+        std::string uuid = doc()->add_pending_bookmark(pending_uuid, text);
         on_new_bookmark_added(uuid);
         result = utf8_decode(uuid);
-        set_selected_bookmark_index(-1);
+        set_selected_bookmark_uuid("");
         if (text.size() > 2 && text.substr(0, 2) == L"? ") {
             handle_bookmark_ask_query(text.substr(2, text.size()-2), result);
         }
@@ -8155,7 +8174,7 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
         }
     }
     else {
-        doc()->undo_pending_bookmark(pending_index);
+        doc()->undo_pending_bookmark(pending_uuid);
         result = L"";
     }
 
@@ -9252,15 +9271,18 @@ bool MainWidget::ensure_internet_permission() {
 }
 
 void MainWidget::change_selected_bookmark_text(const std::wstring& new_text) {
-    int selected_bookmark_index = get_selected_bookmark_index();
-    if (selected_bookmark_index != -1) {
-        if (new_text.size() > 0) {
-            float new_font_size = doc()->get_bookmarks()[selected_bookmark_index].font_size;
-            doc()->update_bookmark_text(selected_bookmark_index, new_text, new_font_size);
-            on_bookmark_edited(doc()->get_bookmarks()[selected_bookmark_index].uuid);
-        }
-        else {
-            delete_current_document_bookmark(selected_bookmark_index);
+    std::string selected_bookmark_uuid = get_selected_bookmark_uuid();
+    if (selected_bookmark_uuid.size() > 0) {
+        BookMark* selected_bookmark = doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
+        if (selected_bookmark) {
+            if (new_text.size() > 0) {
+                float new_font_size = selected_bookmark->font_size;
+                doc()->update_bookmark_text(selected_bookmark_uuid, new_text, new_font_size);
+                on_bookmark_edited(selected_bookmark->uuid);
+            }
+            else {
+                delete_current_document_bookmark(selected_bookmark_uuid);
+            }
         }
     }
 }
@@ -9270,8 +9292,8 @@ void MainWidget::update_highlight_annot_with_uuid(const std::string& uuid, const
     on_highlight_annotation_edited(uuid);
 }
 
-void MainWidget::delete_current_document_bookmark(int index) {
-    std::string uuid = main_document_view->delete_bookmark_with_index(index);
+void MainWidget::delete_current_document_bookmark(const std::string& uuid) {
+    doc()->delete_bookmark_with_uuid(uuid);
     on_bookmark_deleted(uuid);
 }
 
@@ -9281,9 +9303,9 @@ void MainWidget::delete_global_bookmark(const std::string& uuid) {
 }
 
 void MainWidget::change_selected_highlight_text_annot(const std::wstring& new_text) {
-    int selected_highlight_index = get_selected_highlight_index();
-    if (selected_highlight_index != -1) {
-        update_highlight_annot_with_uuid(doc()->get_highlight_index_uuid(selected_highlight_index), new_text);
+    std::string selected_highlight_uuid = get_selected_highlight_uuid();
+    if (selected_highlight_uuid.size() > 0) {
+        update_highlight_annot_with_uuid(selected_highlight_uuid, new_text);
     }
 }
 
@@ -9323,11 +9345,12 @@ void MainWidget::handle_command_text_change(const QString& new_text) {
 }
 
 void MainWidget::update_selected_bookmark_font_size() {
-    int selected_bookmark_index = get_selected_bookmark_index();
-    if (selected_bookmark_index != -1) {
-        BookMark& selected_bookmark = doc()->get_bookmarks()[selected_bookmark_index];
-        if (selected_bookmark.font_size != -1) {
-            selected_bookmark.font_size = FREETEXT_BOOKMARK_FONT_SIZE;
+    std::string selected_bookmark_uuid = get_selected_bookmark_uuid();
+    if (selected_bookmark_uuid.size() > 0) {
+        BookMark* selected_bookmark = doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
+
+        if (selected_bookmark->font_size != -1) {
+            selected_bookmark->font_size = FREETEXT_BOOKMARK_FONT_SIZE;
             pdf_renderer->get_bookmark_renderer()->release_cache();
         }
     }
@@ -9474,53 +9497,64 @@ TextToSpeechHandler* MainWidget::get_tts() {
     return tts;
 }
 
-void MainWidget::update_bookmark_with_index(int index) {
-    if (index < doc()->get_bookmarks().size()) {
-        BookMark& bm = doc()->get_bookmarks()[index];
-        doc()->update_bookmark_position(index, { bm.begin_x, bm.begin_y }, { bm.end_x, bm.end_y });
-        on_bookmark_edited(bm.uuid);
+void MainWidget::update_bookmark_with_uuid(const std::string& uuid) {
+    if (uuid.size() > 0) {
+        //BookMark& bm = doc()->get_bookmarks()[index];
+        BookMark* bm = doc()->get_bookmark_with_uuid(uuid);
+        if (bm) {
+            doc()->update_bookmark_position(uuid, { bm->begin_x, bm->begin_y }, { bm->end_x, bm->end_y });
+            on_bookmark_edited(bm->uuid);
+        }
     }
 }
 
-void MainWidget::update_portal_with_index(int index) {
-    if (index < doc()->get_portals().size()) {
-        Portal& portal = doc()->get_portals()[index];
-        if (portal.is_pinned()) {
-            doc()->update_portal_src_position(index,
-                AbsoluteDocumentPos{portal.src_offset_x.value(), portal.src_offset_y},
-                AbsoluteDocumentPos{portal.src_offset_end_x.value(), portal.src_offset_end_y.value()}
-            );
-        }
-        else {
-            if (portal.src_offset_end_x.has_value()) {
-                doc()->update_portal_src_position(index,
-                    AbsoluteDocumentPos{ portal.src_offset_x.value(), portal.src_offset_y },
-                    {}
+void MainWidget::update_portal_with_uuid(const std::string& uuid) {
+    if (uuid.size() > 0) {
+        //Portal& portal = doc()->get_portals()[index];
+        Portal* portal = doc()->get_portal_with_uuid(uuid);
+
+        if (portal) {
+            if (portal->is_pinned()) {
+                doc()->update_portal_src_position(uuid,
+                    AbsoluteDocumentPos{ portal->src_offset_x.value(), portal->src_offset_y },
+                    AbsoluteDocumentPos{ portal->src_offset_end_x.value(), portal->src_offset_end_y.value() }
                 );
             }
+            else {
+                if (portal->src_offset_end_x.has_value()) {
+                    doc()->update_portal_src_position(uuid,
+                        AbsoluteDocumentPos{ portal->src_offset_x.value(), portal->src_offset_y },
+                        {}
+                    );
+                }
+            }
+            //doc()->update_portal(portal);
+            on_portal_edited(uuid);
         }
-        //doc()->update_portal(portal);
-        on_portal_edited(portal.uuid);
     }
 }
 
 void MainWidget::handle_bookmark_move_finish() {
-    int index = visible_object_move_data->index.index;
-    update_bookmark_with_index(index);
+    std::string uuid = visible_object_move_data->index.uuid;
+    update_bookmark_with_uuid(uuid);
 }
 
 void MainWidget::handle_portal_move_finish() {
     if (!(visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
-        int index = visible_object_move_data->index.index;
-        Portal& portal = doc()->get_portals()[index];
-        if (portal.is_pinned()) {
-            doc()->update_portal_src_position(index,
-                AbsoluteDocumentPos{ portal.src_offset_x.value(), portal.src_offset_y },
-                AbsoluteDocumentPos{portal.src_offset_end_x.value(), portal.src_offset_end_y.value()}
-            );
-        }
-        else {
-            doc()->update_portal_src_position(index, { portal.src_offset_x.value(), portal.src_offset_y }, {});
+        std::string uuid = visible_object_move_data->index.uuid;
+        //Portal& portal = doc()->get_portals()[index];
+        Portal* portal = doc()->get_portal_with_uuid(uuid);
+
+        if (portal) {
+            if (portal->is_pinned()) {
+                doc()->update_portal_src_position(uuid,
+                    AbsoluteDocumentPos{ portal->src_offset_x.value(), portal->src_offset_y },
+                    AbsoluteDocumentPos{ portal->src_offset_end_x.value(), portal->src_offset_end_y.value() }
+                );
+            }
+            else {
+                doc()->update_portal_src_position(uuid, { portal->src_offset_x.value(), portal->src_offset_y }, {});
+            }
         }
     }
 }
@@ -9543,17 +9577,21 @@ void MainWidget::handle_bookmark_move() {
     float diff_x = current_mouse_abspos.x - visible_object_move_data->initial_mouse_position.x;
     float diff_y = current_mouse_abspos.y - visible_object_move_data->initial_mouse_position.y;
 
-    BookMark& bookmark = doc()->get_bookmarks()[visible_object_move_data->index.index];
+    //BookMark& bookmark = doc()->get_bookmarks()[visible_object_move_data->index.index];
+    BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object_move_data->index.uuid);
 
-    auto bm_width = bookmark.rect().width();
-    auto bm_height = bookmark.rect().height();
+    if (bookmark) {
 
-    bookmark.begin_x = visible_object_move_data->initial_position.x + diff_x;
-    bookmark.begin_y = visible_object_move_data->initial_position.y + diff_y;
+        auto bm_width = bookmark->rect().width();
+        auto bm_height = bookmark->rect().height();
 
-    if (bookmark.is_freetext()) {
-        bookmark.end_x = bookmark.begin_x + bm_width;
-        bookmark.end_y = bookmark.begin_y + bm_height;
+        bookmark->begin_x = visible_object_move_data->initial_position.x + diff_x;
+        bookmark->begin_y = visible_object_move_data->initial_position.y + diff_y;
+
+        if (bookmark->is_freetext()) {
+            bookmark->end_x = bookmark->begin_x + bm_width;
+            bookmark->end_y = bookmark->begin_y + bm_height;
+        }
     }
 }
 
@@ -9563,30 +9601,33 @@ void MainWidget::handle_portal_move() {
     float diff_x = current_mouse_abspos.x - visible_object_move_data->initial_mouse_position.x;
     float diff_y = current_mouse_abspos.y - visible_object_move_data->initial_mouse_position.y;
 
-    int index = visible_object_move_data->index.index;
+    std::string uuid = visible_object_move_data->index.uuid;
     if (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal) {
-        if (pending_download_portals.size() > index) {
-            pending_download_portals[index].pending_portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
-            pending_download_portals[index].pending_portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+        PendingDownloadPortal* pending_portal = get_pending_portal_with_uuid(uuid);
+        if (pending_portal) {
+            pending_portal->pending_portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
+            pending_portal->pending_portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
             update_opengl_pending_download_portals();
         }
     }
     else {
-        Portal& portal = doc()->get_portals()[index];
+        Portal* portal = doc()->get_portal_with_uuid(uuid);
 
-        if (portal.is_pinned()) {
-            float width = portal.get_rectangle()->width();
-            float height = portal.get_rectangle()->height();
+        if (portal) {
+            if (portal->is_pinned()) {
+                float width = portal->get_rectangle()->width();
+                float height = portal->get_rectangle()->height();
 
-            portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
-            portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
-            portal.src_offset_end_x = portal.src_offset_x.value() + width;
-            portal.src_offset_end_y = portal.src_offset_y - height;
-        }
-        else {
-            portal.update_merged_rect(doc());
-            portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
-            portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+                portal->src_offset_x = visible_object_move_data->initial_position.x + diff_x;
+                portal->src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+                portal->src_offset_end_x = portal->src_offset_x.value() + width;
+                portal->src_offset_end_y = portal->src_offset_y - height;
+            }
+            else {
+                portal->update_merged_rect(doc());
+                portal->src_offset_x = visible_object_move_data->initial_position.x + diff_x;
+                portal->src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+            }
         }
 
     }
@@ -9596,28 +9637,33 @@ bool MainWidget::is_middle_click_being_used() {
     return visible_object_move_data.has_value() || overview_touch_move_data.has_value() || is_dragging;
 }
 
-void MainWidget::begin_bookmark_move(int index, AbsoluteDocumentPos begin_cursor_pos) {
+void MainWidget::begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos) {
     VisibleObjectMoveData move_data;
-    move_data.index.index = index;
+    move_data.index.uuid = uuid;
     move_data.index.object_type = VisibleObjectType::Bookmark;
 
-    move_data.initial_position.x = doc()->get_bookmarks()[index].begin_x;
-    move_data.initial_position.y = doc()->get_bookmarks()[index].begin_y;
+    BookMark* bookmark = doc()->get_bookmark_with_uuid(uuid);
+    if (bookmark) {
+        move_data.initial_position.x = bookmark->begin_x;
+        move_data.initial_position.y = bookmark->begin_y;
 
-    move_data.initial_mouse_position = begin_cursor_pos;
-    visible_object_move_data = move_data;
+        move_data.initial_mouse_position = begin_cursor_pos;
+        visible_object_move_data = move_data;
+    }
 }
 
 
-void MainWidget::begin_portal_move(int index, AbsoluteDocumentPos begin_cursor_pos, bool is_pending) {
+void MainWidget::begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending) {
     VisibleObjectMoveData move_data;
-    move_data.index.index = index;
+    move_data.index.uuid = uuid;
 
     if (is_pending) {
         move_data.index.object_type = VisibleObjectType::PendingPortal;
-        if (index < pending_download_portals.size()) {
-            move_data.initial_position.x = pending_download_portals[index].pending_portal.src_offset_x.value();
-            move_data.initial_position.y = pending_download_portals[index].pending_portal.src_offset_y;
+        PendingDownloadPortal* pending_portal = get_pending_portal_with_uuid(uuid);
+
+        if (pending_portal) {
+            move_data.initial_position.x = pending_portal->pending_portal.src_offset_x.value();
+            move_data.initial_position.y = pending_portal->pending_portal.src_offset_y;
 
             move_data.initial_mouse_position = begin_cursor_pos;
             visible_object_move_data = move_data;
@@ -9625,9 +9671,10 @@ void MainWidget::begin_portal_move(int index, AbsoluteDocumentPos begin_cursor_p
     }
     else {
         move_data.index.object_type = VisibleObjectType::Portal;
-        if (doc()->get_portals()[index].src_offset_x) {
-            move_data.initial_position.x = doc()->get_portals()[index].src_offset_x.value();
-            move_data.initial_position.y = doc()->get_portals()[index].src_offset_y;
+        Portal* portal = doc()->get_portal_with_uuid(uuid);
+        if (portal) {
+            move_data.initial_position.x = portal->src_offset_x.value();
+            move_data.initial_position.y = portal->src_offset_y;
 
             move_data.initial_mouse_position = begin_cursor_pos;
             visible_object_move_data = move_data;
@@ -9852,14 +9899,14 @@ std::optional<QString> MainWidget::get_overview_paper_name() {
 
 void MainWidget::finish_pending_download_portal(std::wstring download_paper_name, std::wstring downloaded_file_path) {
     std::string checksum = checksummer->get_checksum(downloaded_file_path);
-    int pending_index = -1;
+    std::string pending_uuid = "";
     for (int i = 0; i < pending_download_portals.size(); i++) {
 
         Portal pending_portal = pending_download_portals[i].pending_portal;
         std::wstring pending_paper_name = pending_download_portals[i].paper_name;
 
         if (pending_paper_name == download_paper_name) {
-            pending_index = i;
+            pending_uuid = pending_download_portals[i].handle;
             pending_portal.dst.document_checksum = checksum;
             Document* src_doc = document_manager->get_document(pending_download_portals[i].source_document_path);
             PagelessDocumentRect downloaded_page_size = get_first_page_size(mupdf_context, downloaded_file_path);
@@ -9873,37 +9920,35 @@ void MainWidget::finish_pending_download_portal(std::wstring download_paper_name
                 db_manager->insert_document_hash(downloaded_file_path, checksum);
                 std::string portal_uuid = src_doc->add_portal(pending_portal, true);
                 on_new_portal_added(portal_uuid);
-                int portal_index = src_doc->get_portal_index_with_uuid(portal_uuid);
+                //int portal_uuid = src_doc->get_portal_index_with_uuid(portal_uuid);
+
                 // when a download is finished while we are moving the pending portal, convert the
                 // pending portal move to the actual portal move
                 if (visible_object_move_data
                     && (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)
-                    && visible_object_move_data->index.index == i) {
+                    && visible_object_move_data->index.uuid == pending_uuid) {
                     visible_object_move_data->index.object_type = VisibleObjectType::Portal;
-                    visible_object_move_data->index.index = portal_index;
+                    visible_object_move_data->index.uuid = portal_uuid;
                 }
             }
         }
     }
-    if (pending_index != -1) {
+    if (pending_uuid.size() > 0) {
+        int pending_index = get_pending_portal_index_with_handle(pending_uuid);
+        //pending_download_portals
         pending_download_portals.erase(pending_download_portals.begin() + pending_index);
         update_opengl_pending_download_portals();
     }
 }
 
-std::optional<Portal> MainWidget::get_portal_under_window_pos(WindowPos pos, int* out_index) {
+Portal* MainWidget::get_portal_under_window_pos(WindowPos pos) {
     AbsoluteDocumentPos abspos = main_document_view->window_to_absolute_document_pos(pos);
-    return get_portal_under_absolute_pos(abspos, out_index);
+    return get_portal_under_absolute_pos(abspos);
 }
 
-std::optional<Portal> MainWidget::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos, int* out_index) {
-    std::vector<Portal>& portals = doc()->get_portals();
-    int index = doc()->get_icon_portal_index_at_pos(abspos);
-    if (index >= 0) {
-        if (out_index) *out_index = index;
-        return portals[index];
-    }
-    return {};
+Portal* MainWidget::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos) {
+    std::string uuid = doc()->get_icon_portal_uuid_at_pos(abspos);
+    return doc()->get_portal_with_uuid(uuid);
 }
 
 AbsoluteDocumentPos MainWidget::get_cursor_abspos() {
@@ -9913,12 +9958,13 @@ AbsoluteDocumentPos MainWidget::get_cursor_abspos() {
 }
 
 std::optional<Portal> MainWidget::get_target_portal(bool limit) {
-    int selected_portal_index = get_selected_portal_index();
-    if ((selected_portal_index >= 0) && (main_document_view->get_overview_page().has_value())) {
-        std::vector<Portal>& portals = doc()->get_portals();
-        if (portals.size() > selected_portal_index) {
-            return portals[selected_portal_index];
+    std::string selected_portal_uuid = get_selected_portal_uuid();
+    if ((selected_portal_uuid.size() > 0) && (main_document_view->get_overview_page().has_value())) {
+        Portal* p = doc()->get_portal_with_uuid(selected_portal_uuid);
+        if (p) {
+            return *p;
         }
+        return {};
     }
     return main_document_view->find_closest_portal(limit);
 }
@@ -9968,7 +10014,7 @@ void MainWidget::cleanup_expired_pending_portals() {
         }
     }
     if (indices_to_delete.size() > 0) {
-        update_pending_portal_indices_after_removed_indices(indices_to_delete);
+        //update_pending_portal_indices_after_removed_indices(indices_to_delete);
         for (int i = indices_to_delete.size() - 1; i >= 0; i--) {
             pending_download_portals.erase(pending_download_portals.begin() + indices_to_delete[i]);
         }
@@ -9977,39 +10023,40 @@ void MainWidget::cleanup_expired_pending_portals() {
 
 }
 
-int MainWidget::get_pending_portal_index_at_pos(AbsoluteDocumentPos abspos) {
+std::string MainWidget::get_pending_portal_uuid_at_pos(AbsoluteDocumentPos abspos) {
 
     for (int i = 0; i < pending_download_portals.size(); i++) {
         AbsoluteRect rect = pending_download_portals[i].pending_portal.get_rectangle().value();
 
         if (rect.contains(abspos)) {
-            return i;
+            return pending_download_portals[i].handle;
         }
 
     }
-    return -1;
+    return "";
 }
 
-void MainWidget::update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices) {
+//void MainWidget::update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices) {
+//
+//    int index_diff = 0;
+//    if (visible_object_move_data && (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
+//        for (int i = 0; i < removed_indices.size(); i++) {
+//            int index = removed_indices[i];
+//
+//            if (index == visible_object_move_data->index.index) {
+//                visible_object_move_data = {};
+//                return;
+//            }
+//            if (index < visible_object_move_data->index.index) {
+//                index_diff++;
+//            }
+//        }
+//        visible_object_move_data->index.index -= index_diff;
+//    }
+//
+//
+//}
 
-    int index_diff = 0;
-    if (visible_object_move_data && (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
-        for (int i = 0; i < removed_indices.size(); i++) {
-            int index = removed_indices[i];
-
-            if (index == visible_object_move_data->index.index) {
-                visible_object_move_data = {};
-                return;
-            }
-            if (index < visible_object_move_data->index.index) {
-                index_diff++;
-            }
-        }
-        visible_object_move_data->index.index -= index_diff;
-    }
-
-
-}
 void MainWidget::close_overview() {
     set_overview_page({}, false);
 }
@@ -11289,8 +11336,8 @@ void MainWidget::hide_command_line_edit(){
 }
 
 void MainWidget::deselect_document_indices(){
-    set_selected_highlight_index(-1);
-    set_selected_bookmark_index(-1);
+    set_selected_highlight_uuid("");
+    set_selected_bookmark_uuid("");
     clear_selected_object();
 }
 
@@ -11897,10 +11944,10 @@ void MainWidget::clear_current_document_drawings() {
     doc()->delete_all_drawings();
 }
 
-void MainWidget::set_selected_portal_index(int index, bool is_pinned) {
+void MainWidget::set_selected_portal_uuid(std::string uuid, bool is_pinned) {
     selected_object_index = VisibleObjectIndex{
         is_pinned ? VisibleObjectType::PinnedPortal : VisibleObjectType::Portal,
-        index};
+        uuid};
     dv()->set_selected_object_index(selected_object_index.value());
 }
 
@@ -11909,50 +11956,51 @@ void MainWidget::clear_selected_object() {
     dv()->set_selected_object_index({});
 }
 
-void MainWidget::set_selected_highlight_index(int index) {
-    selected_object_index = VisibleObjectIndex{VisibleObjectType::Highlight, index};
+void MainWidget::set_selected_highlight_uuid(std::string uuid) {
+    selected_object_index = VisibleObjectIndex{VisibleObjectType::Highlight, uuid};
     dv()->set_selected_object_index(selected_object_index.value());
 }
 
-void MainWidget::set_selected_bookmark_index(int index) {
-    selected_object_index = VisibleObjectIndex{VisibleObjectType::Bookmark, index};
+void MainWidget::set_selected_bookmark_uuid(std::string uuid) {
+    selected_object_index = VisibleObjectIndex{VisibleObjectType::Bookmark, uuid};
     dv()->set_selected_object_index(selected_object_index.value());
 }
 
-int MainWidget::get_selected_highlight_index() {
+std::string MainWidget::get_selected_highlight_uuid() {
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Highlight) {
-        return selected_object_index->index;
+        return selected_object_index->uuid;
     }
-    return -1;
+
+    return "";
 }
 
-int MainWidget::get_selected_portal_index() {
+std::string MainWidget::get_selected_portal_uuid() {
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Portal) {
-        return selected_object_index->index;
+        return selected_object_index->uuid;
     }
-    return -1;
+    return "";
 }
 
-int MainWidget::get_selected_bookmark_index() {
+std::string MainWidget::get_selected_bookmark_uuid() {
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Bookmark) {
-        return selected_object_index->index;
+        return selected_object_index->uuid;
     }
-    return -1;
+    return "";
 }
 
 void MainWidget::handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects){
-    std::vector<int> highlight_indices;
-    std::vector<int> bookmark_indices;
-    std::vector<int> portal_indices;
+    std::vector<std::string> highlight_uuids;
+    std::vector<std::string> bookmark_uuids;
+    std::vector<std::string> portal_uuids;
 
     for (const VisibleObjectIndex& obj : visible_objects) {
-        if (obj.object_type == VisibleObjectType::Highlight) highlight_indices.push_back(obj.index);
-        if (obj.object_type == VisibleObjectType::Bookmark) bookmark_indices.push_back(obj.index);
-        if ((obj.object_type == VisibleObjectType::Portal) || (obj.object_type == VisibleObjectType::PinnedPortal)) portal_indices.push_back(obj.index);
+        if (obj.object_type == VisibleObjectType::Highlight) highlight_uuids.push_back(obj.uuid);
+        if (obj.object_type == VisibleObjectType::Bookmark) bookmark_uuids.push_back(obj.uuid);
+        if ((obj.object_type == VisibleObjectType::Portal) || (obj.object_type == VisibleObjectType::PinnedPortal)) portal_uuids.push_back(obj.uuid);
     }
-    std::vector<DocumentRect> highlight_rects = doc()->get_rects_for_highlight_indices(highlight_indices);
-    std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(bookmark_indices);
-    std::vector<DocumentRect> portal_rects = doc()->get_rects_for_portal_indices(portal_indices);
+    std::vector<DocumentRect> highlight_rects = doc()->get_rects_for_highlight_indices(highlight_uuids);
+    std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(bookmark_uuids);
+    std::vector<DocumentRect> portal_rects = doc()->get_rects_for_portal_indices(portal_uuids);
 
     std::vector<DocumentRect> merged_rects;
     merged_rects.insert(merged_rects.end(), highlight_rects.begin(), highlight_rects.end());
@@ -11964,20 +12012,20 @@ void MainWidget::handle_generic_tags_pre_perform(const std::vector<VisibleObject
 
 }
 
-void MainWidget::handle_highlight_tags_pre_perform(const std::vector<int>& visible_highlight_indices) {
+void MainWidget::handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids) {
     const std::vector<Highlight>& highlights = doc()->get_highlights();
 
-    std::vector<DocumentRect> highlight_rects = doc()->get_rects_for_highlight_indices(visible_highlight_indices);
+    std::vector<DocumentRect> highlight_rects = doc()->get_rects_for_highlight_indices(visible_highlight_uuids);
 
     main_document_view->set_highlight_words(highlight_rects);
     main_document_view->set_should_highlight_words(true);
 
 }
 
-void MainWidget::handle_visible_bookmark_tags_pre_perform(const std::vector<int>& visible_bookmark_indices){
+void MainWidget::handle_visible_bookmark_tags_pre_perform(const std::vector<std::string>& visible_bookmark_uuids){
     const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
 
-    std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(visible_bookmark_indices);
+    std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(visible_bookmark_uuids);
 
     main_document_view->set_highlight_words(bookmark_rects);
     main_document_view->set_should_highlight_words(true);
@@ -12226,22 +12274,23 @@ AbsoluteDocumentPos MainWidget::get_mouse_abspos() {
 }
 
 void MainWidget::move_selected_bookmark_to_mouse_cursor() {
-    int selected_bookmark_index = get_selected_bookmark_index();
-    if ((selected_bookmark_index != -1) && (selected_bookmark_index < doc()->get_bookmarks().size())) {
+    std::string selected_bookmark_uuid = get_selected_bookmark_uuid();
+    BookMark* bm = doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
+    if (bm) {
 
         AbsoluteDocumentPos mouse_abspos = get_mouse_abspos();
-        BookMark& bm = doc()->get_bookmarks()[selected_bookmark_index];
-        if (bm.end_x == -1) {
-            bm.begin_x = mouse_abspos.x;
-            bm.begin_y = mouse_abspos.y;
+        //BookMark& bm = doc()->get_bookmarks()[selected_bookmark_index];
+        if (bm->end_x == -1) {
+            bm->begin_x = mouse_abspos.x;
+            bm->begin_y = mouse_abspos.y;
         }
         else{
-            float width = bm.end_x - bm.begin_x;
-            float height = bm.end_y - bm.begin_y;
-            bm.begin_x = mouse_abspos.x;
-            bm.begin_y = mouse_abspos.y;
-            bm.end_x = bm.begin_x + width;
-            bm.end_y = bm.begin_y + height;
+            float width = bm->end_x - bm->begin_x;
+            float height = bm->end_y - bm->begin_y;
+            bm->begin_x = mouse_abspos.x;
+            bm->begin_y = mouse_abspos.y;
+            bm->end_x = bm->begin_x + width;
+            bm->end_y = bm->begin_y + height;
         }
 
     }
@@ -12771,8 +12820,8 @@ void MainWidget::delete_highlight_with_uuid(const std::string& uuid) {
     on_highlight_deleted(uuid);
 }
 
-void MainWidget::delete_current_document_highlight_with_index(int index) {
-    std::string uuid = main_document_view->delete_highlight_with_index(index);
+void MainWidget::delete_current_document_highlight_with_uuid(const std::string& uuid) {
+    doc()->delete_highlight_with_uuid(uuid);
     on_highlight_deleted(uuid);
 }
 
@@ -12783,11 +12832,7 @@ void MainWidget::delete_current_document_highlight(Highlight* hl) {
 }
 
 void MainWidget::delete_current_document_bookmark_with_bookmark(BookMark* bm) {
-    std::string uuid = bm->uuid;
-    int index = doc()->get_bookmark_index_with_uuid(bm->uuid);
-    if (index >= 0) {
-        delete_current_document_bookmark(index);
-    }
+    delete_current_document_bookmark(bm->uuid);
 }
 
 void MainWidget::on_bookmark_edited(const std::string& uuid) {
@@ -13046,23 +13091,23 @@ void MainWidget::handle_server_document_location_mismatch(float local_offset_y, 
 std::optional<VisibleObjectIndex> MainWidget::get_visible_object_at_pos(AbsoluteDocumentPos pos) {
     if (!doc()) return {};
 
-    int bookmark_index = doc()->get_bookmark_index_at_pos(pos);
-    if (bookmark_index >= 0) {
-        return VisibleObjectIndex{VisibleObjectType::Bookmark, bookmark_index};
+    std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(pos);
+    if (bookmark_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::Bookmark, bookmark_uuid};
     }
-    int portal_index = doc()->get_icon_portal_index_at_pos(pos);
-    if (portal_index >= 0) {
-        return VisibleObjectIndex{VisibleObjectType::Portal, portal_index};
-    }
-
-    int pinned_portal_index = doc()->get_pinned_portal_index_at_pos(pos);
-    if (pinned_portal_index >= 0) {
-        return VisibleObjectIndex{VisibleObjectType::PinnedPortal, pinned_portal_index};
+    std::string portal_uuid = doc()->get_icon_portal_uuid_at_pos(pos);
+    if (portal_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::Portal, portal_uuid};
     }
 
-    int pending_portal_index = get_pending_portal_index_at_pos(pos);
-    if (pending_portal_index >= 0) {
-        return VisibleObjectIndex{VisibleObjectType::PendingPortal, pending_portal_index};
+    std::string pinned_portal_uuid = doc()->get_pinned_portal_uuid_at_pos(pos);
+    if (pinned_portal_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::PinnedPortal, pinned_portal_uuid};
+    }
+
+    std::string pending_portal_uuid = get_pending_portal_uuid_at_pos(pos);
+    if (pending_portal_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::PendingPortal, pending_portal_uuid};
     }
 
     return {};
@@ -13071,13 +13116,13 @@ std::optional<VisibleObjectIndex> MainWidget::get_visible_object_at_pos(Absolute
 void VisibleObjectIndex::handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos) {
 
     if (object_type == VisibleObjectType::Bookmark) {
-        widget->begin_bookmark_move(index, mouse_pos);
+        widget->begin_bookmark_move(uuid, mouse_pos);
     }
     else if ((object_type == VisibleObjectType::Portal) || (object_type == VisibleObjectType::PinnedPortal)) {
-        widget->begin_portal_move(index, mouse_pos, false);
+        widget->begin_portal_move(uuid, mouse_pos, false);
     }
     else if (object_type == VisibleObjectType::PendingPortal) {
-        widget->begin_portal_move(index, mouse_pos, true);
+        widget->begin_portal_move(uuid, mouse_pos, true);
     }
 }
 
@@ -13633,25 +13678,27 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 
 }
 
-void MainWidget::scroll_bookmark_with_index(int bookmark_index, int amount) {
-    if (bookmark_index >= 0) {
-        const BookMark& bookmark = doc()->get_bookmarks()[bookmark_index];
-        std::string uuid = bookmark.uuid;
-        float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
-        float current_scroll = dv()->get_bookmark_scroll_amount(uuid);
-        float new_scroll = current_scroll + scroll_amount;
-        float height = background_bookmark_renderer->get_cached_bookmark_height(uuid);
+void MainWidget::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount) {
+    if (bookmark_uuid.size() > 0) {
+        BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
+        if (bookmark) {
+            std::string uuid = bookmark->uuid;
+            float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
+            float current_scroll = dv()->get_bookmark_scroll_amount(uuid);
+            float new_scroll = current_scroll + scroll_amount;
+            float height = background_bookmark_renderer->get_cached_bookmark_height(uuid);
 
-        if (new_scroll > (height - bookmark.get_rectangle()->height() * dv()->get_zoom_level())) {
-            new_scroll = height - bookmark.get_rectangle()->height() * dv()->get_zoom_level();
+            if (new_scroll > (height - bookmark->get_rectangle()->height() * dv()->get_zoom_level())) {
+                new_scroll = height - bookmark->get_rectangle()->height() * dv()->get_zoom_level();
+            }
+            dv()->set_bookmark_scroll_amount(uuid, new_scroll);
         }
-        dv()->set_bookmark_scroll_amount(uuid, new_scroll);
     }
 }
 
 void MainWidget::scroll_selected_bookmark(int amount) {
-    int bookmark_index = get_selected_bookmark_index();
-    scroll_bookmark_with_index(bookmark_index, amount);
+    std::string bookmark_uuid = get_selected_bookmark_uuid();
+    scroll_bookmark_with_uuid(bookmark_uuid, amount);
 }
 
 
@@ -13750,10 +13797,7 @@ bool MainWidget::is_pinned_portal_selected() {
 
 Portal* MainWidget::get_pinned_portal() {
     if (is_pinned_portal_selected()) {
-        std::vector<Portal>& all_portals = doc()->get_portals();
-        if (selected_object_index->index < all_portals.size()) {
-            return &all_portals[selected_object_index->index];
-        }
+        return doc()->get_portal_with_uuid(selected_object_index->uuid);
     }
     return nullptr;
 }
@@ -13789,11 +13833,13 @@ void MainWidget::begin_portal_scroll() {
     
 
     VisibleObjectScrollData scroll_data;
-    Portal& portal = doc()->get_portals()[selected_object_index->index];
+    //Portal& portal = doc()->get_portals()[selected_object_index->index];
+    Portal* portal = doc()->get_portal_with_uuid(selected_object_index->uuid);
+
     scroll_data.type = VisibleObjectType::PinnedPortal;
-    scroll_data.object_index = selected_object_index->index;
-    scroll_data.original_scroll_amount_x = portal.dst.book_state.offset_x;
-    scroll_data.original_scroll_amount = portal.dst.book_state.offset_y;
+    scroll_data.object_uuid = selected_object_index->uuid;
+    scroll_data.original_scroll_amount_x = portal->dst.book_state.offset_x;
+    scroll_data.original_scroll_amount = portal->dst.book_state.offset_y;
     scroll_data.original_mouse_pos = abs_mpos;
     last_mouse_down_window_pos = last_mouse_down_window_pos;
     visible_object_scroll_data = scroll_data;
@@ -13811,4 +13857,12 @@ void MainWidget::set_mouse_cursor_for_side_resize(std::optional<OverviewSide> si
         }
     }
     setCursor(Qt::ArrowCursor);
+}
+
+PendingDownloadPortal* MainWidget::get_pending_portal_with_uuid(const std::string& uuid) {
+    for (int i = 0; i < pending_download_portals.size(); i++) {
+        if (pending_download_portals[i].handle == uuid) return &pending_download_portals[i];
+    }
+
+    return nullptr;
 }

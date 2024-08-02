@@ -1080,7 +1080,7 @@ void PdfViewOpenGLWidget::my_render() {
 
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].is_pinned()) {
-            bool is_portal_selected = dv()->get_selected_pinned_portal_index() == i;
+            bool is_portal_selected = dv()->get_selected_pinned_portal_uuid() == portals[i].uuid;
             float selected_border_color[] = {1, 0, 0};
             OverviewState portal_overview_state;
 
@@ -1151,7 +1151,8 @@ void PdfViewOpenGLWidget::my_render() {
 
                         fz_irect window_rect = dv()->normalized_to_window_rect(bookmark_normalized_window_rect);
                         QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        bool is_highlighted = i == document_view->get_selected_bookmark_index();
+                        //bool is_highlighted = i == document_view->get_selected_bookmark_index();
+                        bool is_highlighted = document_view->get_selected_bookmark_uuid() == bookmarks[i].uuid;
 
                         render_ui_icon_for_current_color_mode(bookmark_icon, bookmark_icon_white, window_qrect, is_highlighted);
 
@@ -1175,7 +1176,7 @@ void PdfViewOpenGLWidget::my_render() {
 
                     QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
 
-                    if (i == document_view->get_selected_bookmark_index()) {
+                    if (bookmarks[i].uuid == document_view->get_selected_bookmark_uuid()) {
                         painter.save();
                         QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
                         painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
@@ -2359,33 +2360,37 @@ void PdfViewOpenGLWidget::render_text_highlights(){
 void PdfViewOpenGLWidget::render_highlight_annotations(){
     if (doc()->can_use_highlights()) {
         const std::vector<Highlight>& highlights = doc()->get_highlights();
-        std::vector<int> visible_highlight_indices = dv()->get_visible_highlight_indices();
+        std::vector<std::string> visible_highlight_uuids = dv()->get_visible_highlight_uuids();
 
-        for (size_t ind = 0; ind < visible_highlight_indices.size(); ind++) {
-            int i = visible_highlight_indices[ind];
-                for (size_t j = 0; j < highlights[i].highlight_rects.size(); j++) {
-                    //glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &HIGHLIGHT_COLORS[(highlights[i].type - 'a') * 3]);
-                    auto adjusted_highlight_color = cc3(get_highlight_type_color(highlights[i].type));
-                    get_color_for_current_mode(get_highlight_type_color(highlights[i].type), &adjusted_highlight_color[0]);
+        for (size_t ind = 0; ind < visible_highlight_uuids.size(); ind++) {
+            std::string uuid = visible_highlight_uuids[ind];
+            Highlight* highlight = doc()->get_highlight_with_uuid(uuid);
 
-                    set_highlight_color(&adjusted_highlight_color[0], 0.3f);
-                    int flags = 0;
-                    if (std::isupper(highlights[i].type)) {
-                        flags |= HRF_UNDERLINE;
-                    }
-                    if (highlights[i].type == '_') {
-                        flags |= HRF_STRIKE;
-                    }
-                    if (flags == 0) {
-                        flags |= HRF_FILL;
+            if (!highlight) continue;
 
-                        if (i == document_view->get_selected_highlight_index()) {
-                            flags |= HRF_BORDER;
-                        }
-                    }
-                    render_highlight_absolute(highlights[i].highlight_rects[j],
-                            flags);
+            for (size_t j = 0; j < highlight->highlight_rects.size(); j++) {
+                //glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &HIGHLIGHT_COLORS[(highlights[i].type - 'a') * 3]);
+                auto adjusted_highlight_color = cc3(get_highlight_type_color(highlight->type));
+                get_color_for_current_mode(get_highlight_type_color(highlight->type), &adjusted_highlight_color[0]);
+
+                set_highlight_color(&adjusted_highlight_color[0], 0.3f);
+                int flags = 0;
+                if (std::isupper(highlight->type)) {
+                    flags |= HRF_UNDERLINE;
                 }
+                if (highlight->type == '_') {
+                    flags |= HRF_STRIKE;
+                }
+                if (flags == 0) {
+                    flags |= HRF_FILL;
+
+                    if (highlight->uuid == document_view->get_selected_highlight_uuid()) {
+                        flags |= HRF_BORDER;
+                    }
+                }
+                render_highlight_absolute(highlight->highlight_rects[j],
+                    flags);
+            }
         }
     }
 

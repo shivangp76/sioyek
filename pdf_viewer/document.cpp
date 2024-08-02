@@ -227,20 +227,26 @@ std::string Document::add_marked_bookmark(const std::wstring& desc, AbsoluteDocu
     return bookmark.uuid;
 }
 
-int Document::add_incomplete_bookmark(BookMark incomplete_bookmark){
+std::string Document::add_incomplete_bookmark(BookMark incomplete_bookmark){
     incomplete_bookmark.uuid = new_uuid_utf8();
     bookmarks.push_back(incomplete_bookmark);
-    return bookmarks.size() - 1;
+    return incomplete_bookmark.uuid;
 }
 
-std::string Document::add_pending_bookmark(int index, const std::wstring& desc) {
+std::string Document::add_pending_bookmark(const std::string& uuid, const std::wstring& desc) {
+    int index = get_bookmark_index_with_uuid(uuid);
+
+    if (index < 0 || index >= bookmarks.size()) {
+        return "";
+    }
+
     BookMark& bookmark = bookmarks[index];
     bookmark.description = desc;
     bookmark.font_size = FREETEXT_BOOKMARK_FONT_SIZE;
     bookmark.update_creation_time();
 
     if (!db_manager->insert_bookmark_freetext(get_checksum(), bookmark)) {
-        undo_pending_bookmark(index);
+        undo_pending_bookmark(uuid);
     }
     else {
         is_annotations_dirty = true;
@@ -248,7 +254,8 @@ std::string Document::add_pending_bookmark(int index, const std::wstring& desc) 
     return bookmark.uuid;
 }
 
-void Document::undo_pending_bookmark(int index) {
+void Document::undo_pending_bookmark(const std::string& uuid) {
+    int index = get_bookmark_index_with_uuid(uuid);
     if (index >= 0 && index < bookmarks.size()) {
         bookmarks.erase(bookmarks.begin() + index);
     }
@@ -3853,48 +3860,53 @@ void Document::update_highlight_add_text_annotation(const std::string& uuid, con
     }
 }
 
+//void Document::update_highlight_type(const std::string& uuid, char new_type) {
+//    db_manager->update_highlight_type(uuid, new_type);
+//    is_annotations_dirty = true;
+//}
+
 void Document::update_highlight_type(const std::string& uuid, char new_type) {
+    //update_highlight_type(uuid, new_type);
     db_manager->update_highlight_type(uuid, new_type);
     is_annotations_dirty = true;
+    Highlight* highlight = get_highlight_with_uuid(uuid);
+    if (highlight) {
+        highlight->type = new_type;
+        highlight->update_modification_time();
+    }
 }
 
-void Document::update_highlight_type(int index, char new_type) {
-    update_highlight_type(highlights[index].uuid, new_type);
-    highlights[index].type = new_type;
-    highlights[index].update_modification_time();
-}
-
-int Document::get_icon_portal_index_at_pos(AbsoluteDocumentPos abspos) {
+std::string Document::get_icon_portal_uuid_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].src_offset_x.has_value() && (!portals[i].src_offset_end_x.has_value())) {
             if (portals[i].get_rectangle()->contains(abspos)) {
-                return i;
+                return portals[i].uuid;
             }
         }
     }
-    return -1;
+    return "";
 }
 
-int Document::get_pinned_portal_index_at_pos(AbsoluteDocumentPos abspos) {
+std::string Document::get_pinned_portal_uuid_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].is_pinned()) {
             AbsoluteRect rectangle = portals[i].get_selection_rectangle().value();
             if (rectangle.contains(abspos)) {
-                return i;
+                return portals[i].uuid;
             }
         }
     }
-    return -1;
+    return "";
 }
 
-int Document::get_bookmark_index_at_pos(AbsoluteDocumentPos abspos) {
+std::string Document::get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < bookmarks.size(); i++) {
         if (bookmarks[i].begin_y != -1) {
             if (bookmarks[i].end_y == -1) {
 
                 //if (fz_is_point_inside_rect({abspos.x, abspos.y}, bookmarks[i].get_rectangle())) {
                 if (bookmarks[i].get_selection_rectangle()->contains(abspos)) {
-                    return i;
+                    return bookmarks[i].uuid;
                 }
             }
             else {
@@ -3906,51 +3918,60 @@ int Document::get_bookmark_index_at_pos(AbsoluteDocumentPos abspos) {
                 AbsoluteRect bookmark_rect = bookmarks[i].get_selection_rectangle().value();
 
                 if (fz_is_point_inside_rect({ abspos.x, abspos.y }, bookmark_rect)) {
-                    return i;
+                    return bookmarks[i].uuid;
                 }
             }
         }
     }
-    return -1;
+    return "";
 }
 
-void Document::update_bookmark_text(int index, const std::wstring& new_text, float new_font_size) {
-    if ((index >= 0) && (index < bookmarks.size())) {
-        if (db_manager->update_bookmark_change_text(bookmarks[index].uuid, new_text, new_font_size)) {
-            bookmarks[index].description = new_text;
-            bookmarks[index].update_modification_time();
-            is_annotations_dirty = true;
-        }
-    }
-}
-
-void Document::update_bookmark_position(int index, AbsoluteDocumentPos new_begin_position, AbsoluteDocumentPos new_end_position) {
-    if ((index >= 0) && (index < bookmarks.size())) {
-        if (db_manager->update_bookmark_change_position(bookmarks[index].uuid, new_begin_position, new_end_position)) {
-            bookmarks[index].y_offset_ = new_begin_position.y;
-            bookmarks[index].begin_x = new_begin_position.x;
-            bookmarks[index].begin_y = new_begin_position.y;
-            bookmarks[index].end_x = new_end_position.x;
-            bookmarks[index].end_y = new_end_position.y;
-            bookmarks[index].update_modification_time();
-            is_annotations_dirty = true;
-        }
-    }
-}
-
-void Document::update_portal_src_position(int index, AbsoluteDocumentPos new_position, std::optional<AbsoluteDocumentPos> new_end_position){
-    if ((index >= 0) && (index < portals.size())) {
-        if (db_manager->update_portal_change_src_position(portals[index].uuid, new_position, new_end_position)) {
-            portals[index].src_offset_x = new_position.x;
-            portals[index].src_offset_y = new_position.y;
-
-            if (new_end_position) {
-                portals[index].src_offset_end_x = new_end_position->x;
-                portals[index].src_offset_end_y = new_end_position->y;
+void Document::update_bookmark_text(const std::string& uuid, const std::wstring& new_text, float new_font_size) {
+    if (uuid.size() > 0) {
+        BookMark* bookmark = get_bookmark_with_uuid(uuid);
+        if (bookmark) {
+            if (db_manager->update_bookmark_change_text(uuid, new_text, new_font_size)) {
+                bookmark->description = new_text;
+                bookmark->update_modification_time();
+                is_annotations_dirty = true;
             }
+        }
+    }
+}
 
-            portals[index].update_modification_time();
-            is_annotations_dirty = true;
+void Document::update_bookmark_position(const std::string& uuid, AbsoluteDocumentPos new_begin_position, AbsoluteDocumentPos new_end_position) {
+    if (uuid.size() > 0) {
+        BookMark* bookmark = get_bookmark_with_uuid(uuid);
+        if (bookmark) {
+            if (db_manager->update_bookmark_change_position(uuid, new_begin_position, new_end_position)) {
+                bookmark->y_offset_ = new_begin_position.y;
+                bookmark->begin_x = new_begin_position.x;
+                bookmark->begin_y = new_begin_position.y;
+                bookmark->end_x = new_end_position.x;
+                bookmark->end_y = new_end_position.y;
+                bookmark->update_modification_time();
+                is_annotations_dirty = true;
+            }
+        }
+    }
+}
+
+void Document::update_portal_src_position(const std::string& uuid, AbsoluteDocumentPos new_position, std::optional<AbsoluteDocumentPos> new_end_position){
+    if (uuid.size() > 0) {
+        Portal* portal = get_portal_with_uuid(uuid);
+        if (portal) {
+            if (db_manager->update_portal_change_src_position(uuid, new_position, new_end_position)) {
+                portal->src_offset_x = new_position.x;
+                portal->src_offset_y = new_position.y;
+
+                if (new_end_position) {
+                    portal->src_offset_end_x = new_end_position->x;
+                    portal->src_offset_end_y = new_end_position->y;
+                }
+
+                portal->update_modification_time();
+                is_annotations_dirty = true;
+            }
         }
     }
 }
@@ -4055,6 +4076,24 @@ void Document::get_page_freehand_drawings_with_indices(int page, const std::vect
     //return results;
 }
 
+Portal* Document::get_portal_with_uuid(const std::string& uuid) {
+    int index = get_portal_index_with_uuid(uuid);
+    if (index >= 0) return &portals[index];
+    return nullptr;
+}
+
+BookMark* Document::get_bookmark_with_uuid(const std::string& uuid) {
+    int index = get_bookmark_index_with_uuid(uuid);
+    if (index >= 0) return &bookmarks[index];
+    return nullptr;
+}
+
+Highlight* Document::get_highlight_with_uuid(const std::string& uuid) {
+    int index = get_highlight_index_with_uuid(uuid);
+    if (index >= 0) return &highlights[index];
+    return nullptr;
+}
+
 Annotation* Document::get_annot_with_uuid(const std::string& annot_type, const std::string& uuid){
 
     if (annot_type == "highlight") {
@@ -4068,9 +4107,7 @@ Annotation* Document::get_annot_with_uuid(const std::string& annot_type, const s
         return nullptr;
     }
     if (annot_type == "portal") {
-        int index = get_portal_index_with_uuid(uuid);
-        if (index >= 0) return &portals[index];
-        return nullptr;
+        return get_portal_with_uuid(uuid);
     }
 
     return nullptr;
@@ -4833,11 +4870,13 @@ int Document::get_first_line_before_block(int page, int before_index) {
     return -1;
 }
 
-std::vector<DocumentRect> Document::get_rects_for_highlight_indices(const std::vector<int>& indices) {
+std::vector<DocumentRect> Document::get_rects_for_highlight_indices(const std::vector<std::string>& uuids) {
     std::vector<DocumentRect> res;
-    for (auto index : indices) {
-        if (index < highlights.size() && highlights[index].highlight_rects.size() > 0) {
-            res.push_back(highlights[index].highlight_rects[0].to_document(this));
+    for (auto uuid : uuids) {
+        Highlight* highlight = get_highlight_with_uuid(uuid);
+
+        if (highlight && highlight->highlight_rects.size() > 0) {
+            res.push_back(highlight->highlight_rects[0].to_document(this));
         }
         else {
             res.push_back(DocumentRect(fz_empty_rect, -1));
@@ -4846,11 +4885,12 @@ std::vector<DocumentRect> Document::get_rects_for_highlight_indices(const std::v
     return res;
 }
 
-std::vector<DocumentRect> Document::get_rects_for_bookmark_indices(const std::vector<int>& indices) {
+std::vector<DocumentRect> Document::get_rects_for_bookmark_indices(const std::vector<std::string>& uuids) {
     std::vector<DocumentRect> res;
-    for (auto index : indices) {
-        if (index < bookmarks.size() && (bookmarks[index].is_marked() || bookmarks[index].is_freetext())) {
-            DocumentRect rect = bookmarks[index].get_rectangle().value().to_document(this);
+    for (auto uuid : uuids) {
+        BookMark* bookmark = get_bookmark_with_uuid(uuid);
+        if (bookmark && (bookmark->is_marked() || bookmark->is_freetext())) {
+            DocumentRect rect = bookmark->get_rectangle().value().to_document(this);
             res.push_back(rect);
         }
         else {
@@ -4860,11 +4900,12 @@ std::vector<DocumentRect> Document::get_rects_for_bookmark_indices(const std::ve
     return res;
 }
 
-std::vector <DocumentRect> Document::get_rects_for_portal_indices(const std::vector<int>& indices) {
+std::vector <DocumentRect> Document::get_rects_for_portal_indices(const std::vector<std::string>& uuids) {
     std::vector<DocumentRect> res;
-    for (auto index : indices) {
-        if (index < portals.size() && portals[index].is_visible()) {
-            res.push_back(portals[index].get_rectangle()->to_document(this));
+    for (auto uuid : uuids) {
+        Portal* portal = get_portal_with_uuid(uuid);
+        if (portal && portal->is_visible()) {
+            res.push_back(portal->get_rectangle()->to_document(this));
         }
         else {
             res.push_back(DocumentRect(fz_empty_rect, -1));

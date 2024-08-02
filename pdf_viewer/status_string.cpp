@@ -235,10 +235,10 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         return QString("");
         };
     auto selected_highlight_fn = [widget=main_widget]() {
-        int selected_highlight_index = widget->get_selected_highlight_index();
-        if (selected_highlight_index != -1) {
-            Highlight hl = widget->main_document_view->get_highlight_with_index(selected_highlight_index);
-            return " [ " + QString::fromStdWString(hl.text_annot) + " ]";
+        std::string selected_highlight_uuid = widget->get_selected_highlight_uuid();
+        if (selected_highlight_uuid.size() > 0) {
+            Highlight* hl = widget->doc()->get_highlight_with_uuid(selected_highlight_uuid);
+            return " [ " + QString::fromStdWString(hl->text_annot) + " ]";
         }
         return QString("");
         };

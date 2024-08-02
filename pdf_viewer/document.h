@@ -206,9 +206,9 @@ public:
     void load_document_metadata_from_db();
     std::string add_bookmark(const std::wstring& desc, float y_offset);
     std::string add_marked_bookmark(const std::wstring& desc, AbsoluteDocumentPos pos);
-    int add_incomplete_bookmark(BookMark incomplete_bookmark);
-    std::string add_pending_bookmark(int index, const std::wstring& desc);
-    void undo_pending_bookmark(int index);
+    std::string add_incomplete_bookmark(BookMark incomplete_bookmark);
+    std::string add_pending_bookmark(const std::string& uuid, const std::wstring& desc);
+    void undo_pending_bookmark(const std::string& uuid);
     void add_freetext_bookmark(const std::wstring& desc, AbsoluteRect absrect);
     void add_freetext_bookmark_with_color(const std::wstring& desc, AbsoluteRect absrect, float* color, float font_size = -1);
     std::string add_highlight_with_existing_uuid(const Highlight& highlight);
@@ -222,9 +222,9 @@ public:
     std::string delete_portal_with_index(int index);
     bool delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     void delete_highlight(Highlight hl);
-    int get_bookmark_index_at_pos(AbsoluteDocumentPos abspos);
-    int get_pinned_portal_index_at_pos(AbsoluteDocumentPos abspos);
-    int get_icon_portal_index_at_pos(AbsoluteDocumentPos abspos);
+    std::string get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos);
+    std::string get_pinned_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
+    std::string get_icon_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
     bool should_render_pdf_annotations();
     void set_should_render_pdf_annotations(bool val);
     bool get_should_render_pdf_annotations();
@@ -401,10 +401,10 @@ public:
     int reflow(int page);
     void update_highlight_add_text_annotation(const std::string& uuid, const std::wstring& text_annot);
     void update_highlight_type(const std::string& uuid, char new_type);
-    void update_highlight_type(int index, char new_type);
-    void update_bookmark_text(int index, const std::wstring& new_text, float new_font_size);
-    void update_bookmark_position(int index, AbsoluteDocumentPos new_begin_position, AbsoluteDocumentPos new_end_position);
-    void update_portal_src_position(int index, AbsoluteDocumentPos new_position, std::optional<AbsoluteDocumentPos> new_end_position);
+    //void update_highlight_type(const std::string& uuid, char new_type);
+    void update_bookmark_text(const std::string& uuid, const std::wstring& new_text, float new_font_size);
+    void update_bookmark_position(const std::string& uuid, AbsoluteDocumentPos new_begin_position, AbsoluteDocumentPos new_end_position);
+    void update_portal_src_position(const std::string& uuid, AbsoluteDocumentPos new_position, std::optional<AbsoluteDocumentPos> new_end_position);
 
     bool needs_password();
     bool needs_authentication();
@@ -421,6 +421,10 @@ public:
 
     std::optional<BookMark> get_bookmark_with_index(int index);
     std::optional<Portal> get_portal_with_index(int index);
+
+    Portal* get_portal_with_uuid(const std::string& uuid);
+    BookMark* get_bookmark_with_uuid(const std::string& uuid);
+    Highlight* get_highlight_with_uuid(const std::string& uuid);
 
     //void create_table_of_contents(std::vector<TocNode*>& top_nodes);
     int add_stext_page_to_created_toc(fz_stext_page* stext_page,
@@ -485,9 +489,9 @@ public:
     int get_page_merged_line_index_from_unmerged_index(int page, int unmerged_index);
     bool super_fast_search_index_is_new();
 
-    std::vector<DocumentRect> get_rects_for_highlight_indices(const std::vector<int>& indices);
-    std::vector <DocumentRect> get_rects_for_bookmark_indices(const std::vector<int>& indices);
-    std::vector <DocumentRect> get_rects_for_portal_indices(const std::vector<int>& indices);
+    std::vector<DocumentRect> get_rects_for_highlight_indices(const std::vector<std::string>& indices);
+    std::vector <DocumentRect> get_rects_for_bookmark_indices(const std::vector<std::string>& indices);
+    std::vector <DocumentRect> get_rects_for_portal_indices(const std::vector<std::string>& indices);
 
     QJsonArray get_bookmarks_json();
     QJsonArray get_highlights_json();

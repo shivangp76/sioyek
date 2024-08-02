@@ -327,7 +327,7 @@ std::optional<PdfLink> DocumentView::get_link_in_pos(WindowPos pos) {
     return current_document->get_link_in_pos(doc_pos);
 }
 
-int DocumentView::get_highlight_index_in_pos(WindowPos window_pos) {
+std::string DocumentView::get_highlight_uuid_in_pos(WindowPos window_pos) {
     //auto [view_x, view_y] = window_to_absolute_document_pos(window_pos);
 
     //fz_point pos = { view_x, view_y };
@@ -335,7 +335,7 @@ int DocumentView::get_highlight_index_in_pos(WindowPos window_pos) {
 
     // if multiple highlights contain the position, we return the smallest highlight
     // see: https://github.com/ahrm/sioyek/issues/773
-    int smallest_containing_highlight_index = -1;
+    std::string smallest_containing_highlight_uuid = "";
     int min_length = INT_MAX;
 
     if (current_document->can_use_highlights()) {
@@ -348,13 +348,13 @@ int DocumentView::get_highlight_index_in_pos(WindowPos window_pos) {
                     int length = highlights[i].description.size();
                     if (length < min_length) {
                         min_length = length;
-                        smallest_containing_highlight_index = i;
+                        smallest_containing_highlight_uuid = highlights[i].uuid;
                     }
                 }
             }
         }
     }
-    return smallest_containing_highlight_index;
+    return smallest_containing_highlight_uuid;
 }
 
 std::string DocumentView::add_mark(char symbol) {
@@ -2019,34 +2019,34 @@ bool ScratchPad::is_compile_invalid() {
 #endif
 }
 
-std::vector<int> DocumentView::get_visible_bookmark_indices() {
+std::vector<std::string> DocumentView::get_visible_bookmark_uuids() {
     const std::vector<BookMark>& bookmarks = get_document()->get_bookmarks();
-    std::vector<int> res;
+    std::vector<std::string> res;
     for (int i = 0; i < bookmarks.size(); i++) {
         if (bookmarks[i].is_marked() || bookmarks[i].is_freetext()) {
             if (bookmarks[i].get_rectangle()->to_window_normalized(this).is_visible()) {
-                res.push_back(i);
+                res.push_back(bookmarks[i].uuid);
             }
         }
     }
     return res;
 }
 
-std::vector<int> DocumentView::get_visible_portal_indices() {
+std::vector<std::string> DocumentView::get_visible_portal_uuids() {
     const std::vector<Portal>& portals = get_document()->get_portals();
-    std::vector<int> res;
+    std::vector<std::string> res;
     for (int i = 0; i < portals.size(); i++) {
         if (portals[i].is_visible() && portals[i].get_rectangle()->to_window_normalized(this).is_visible()) {
-            res.push_back(i);
+            res.push_back(portals[i].uuid);
         }
     }
     return res;
 }
 
 std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices() {
-    std::vector<int> visible_highlight_indices = get_visible_highlight_indices();
-    std::vector<int> visible_bookmark_indices = get_visible_bookmark_indices();
-    std::vector<int> visible_portal_indices = get_visible_portal_indices();
+    std::vector<std::string> visible_highlight_indices = get_visible_highlight_uuids();
+    std::vector<std::string> visible_bookmark_indices = get_visible_bookmark_uuids();
+    std::vector<std::string> visible_portal_indices = get_visible_portal_uuids();
 
     std::vector<VisibleObjectIndex> res;
     for (auto index : visible_highlight_indices) {
@@ -2059,12 +2059,15 @@ std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices()
 
     const std::vector<Portal>& portals = current_document->get_portals();
 
-    for (auto index : visible_portal_indices) {
-        if (portals[index].is_pinned()) {
-            res.push_back(VisibleObjectIndex{ VisibleObjectType::PinnedPortal, index });
-        }
-        else {
-            res.push_back(VisibleObjectIndex{ VisibleObjectType::Portal, index });
+    for (auto uuid : visible_portal_indices) {
+        Portal* portal = current_document->get_portal_with_uuid(uuid);
+        if (portal) {
+            if (portal->is_pinned()) {
+                res.push_back(VisibleObjectIndex{ VisibleObjectType::PinnedPortal, uuid });
+            }
+            else {
+                res.push_back(VisibleObjectIndex{ VisibleObjectType::Portal, uuid });
+            }
         }
     }
 
@@ -2072,11 +2075,11 @@ std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices()
 
 }
 
-std::vector<int> DocumentView::get_visible_highlight_indices() {
+std::vector<std::string> DocumentView::get_visible_highlight_uuids() {
 
     const std::vector<Highlight>& highlights = get_document()->get_highlights();
 
-    std::vector<int> res;
+    std::vector<std::string> res;
 
     for (size_t i = 0; i < highlights.size(); i++) {
 
@@ -2092,7 +2095,7 @@ std::vector<int> DocumentView::get_visible_highlight_indices() {
             std::swap(selection_begin_window_pos.y, selection_end_window_pos.y);
         }
         if (range_intersects(selection_begin_window_pos.y, selection_end_window_pos.y, -1.0f, 1.0f)) {
-            res.push_back(i);
+            res.push_back(highlights[i].uuid);
         }
     }
 
@@ -3652,32 +3655,32 @@ void DocumentView::debug() {
     qDebug() << ruler_line_index->unmerged_indices;
 }
 
-int DocumentView::get_selected_highlight_index() {
+std::string DocumentView::get_selected_highlight_uuid() {
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Highlight) {
-        return selected_object_index->index;
+        return selected_object_index->uuid;
     }
-    return -1;
+    return "";
 }
 
-int DocumentView::get_selected_bookmark_index() {
+std::string DocumentView::get_selected_bookmark_uuid() {
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Bookmark) {
-        return selected_object_index->index;
+        return selected_object_index->uuid;
     }
-    return -1;
+    return "";
 }
 
-int DocumentView::get_selected_portal_index() {
+std::string DocumentView::get_selected_portal_uuid() {
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::Portal) {
-        return selected_object_index->index;
+        return selected_object_index->uuid;
     }
-    return -1;
+    return "";
 }
 
-int DocumentView::get_selected_pinned_portal_index() {
+std::string DocumentView::get_selected_pinned_portal_uuid() {
     if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
-        return selected_object_index->index;
+        return selected_object_index->uuid;
     }
-    return -1;
+    return "";
 }
 
 void DocumentView::focus_page_text(int page, const std::wstring& text) {

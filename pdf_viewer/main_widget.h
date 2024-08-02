@@ -710,7 +710,7 @@ public:
     void handle_pause();
     void handle_semantic_search(const std::wstring& query, bool has_tried_already=false);
     void handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already=false);
-    std::wstring handle_freetext_bookmark_perform(const std::wstring& text, int pending_index);
+    std::wstring handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid);
     void handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid);
     void add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk);
     void handle_bookmark_summarize_query(std::wstring bookmark_uuid);
@@ -736,7 +736,7 @@ public:
     bool is_current_document_fulltext_indexed();
     void handle_delete_document_from_fulltext_search_index();
     void scroll_selected_bookmark(int amount);
-    void scroll_bookmark_with_index(int index, int amount);
+    void scroll_bookmark_with_uuid(const std::string& uuid, int amount);
     bool ensure_super_fast_search_index();
 
     DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
@@ -908,8 +908,8 @@ public:
     bool ensure_internet_permission();
     void handle_command_text_change(const QString& new_text);
     TextToSpeechHandler* get_tts();
-    void update_bookmark_with_index(int index);
-    void update_portal_with_index(int index);
+    void update_bookmark_with_uuid(const std::string& uuid);
+    void update_portal_with_uuid(const std::string& uuid);
     void handle_bookmark_move_finish();
     void handle_portal_move_finish();
 
@@ -918,8 +918,8 @@ public:
     void handle_portal_move();
 
     bool is_middle_click_being_used();
-    void begin_bookmark_move(int index, AbsoluteDocumentPos begin_cursor_pos);
-    void begin_portal_move(int index, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
+    void begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos);
+    void begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
     bool should_drag();
     void handle_freehand_drawing_move_finish();
     void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
@@ -931,15 +931,15 @@ public:
     void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
     void finish_pending_download_portal(std::wstring download_paper_name, std::wstring downloaded_file_path);
 
-    std::optional<Portal> get_portal_under_absolute_pos(AbsoluteDocumentPos abspos, int* index=nullptr);
-    std::optional<Portal> get_portal_under_window_pos(WindowPos pos, int* index=nullptr);
+    Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
+    Portal* get_portal_under_window_pos(WindowPos pos);
     std::optional<Portal> get_target_portal(bool limit);
 
     AbsoluteDocumentPos get_cursor_abspos();
     void update_opengl_pending_download_portals();
     void cleanup_expired_pending_portals();
-    int get_pending_portal_index_at_pos(AbsoluteDocumentPos abspos);
-    void update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices);
+    std::string get_pending_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
+    //void update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices);
     void close_overview();
     std::vector<Portal> get_ruler_portals();
     void handle_overview_to_ruler_portal();
@@ -1077,18 +1077,18 @@ public:
     void clear_current_page_drawings();
     void clear_current_document_drawings();
 
-    void set_selected_highlight_index(int index);
-    void set_selected_bookmark_index(int index);
-    void set_selected_portal_index(int index, bool is_pinned=false);
+    void set_selected_highlight_uuid(std::string uuid);
+    void set_selected_bookmark_uuid(std::string uuid);
+    void set_selected_portal_uuid(std::string uuid, bool is_pinned=false);
     void clear_selected_object();
 
-    int get_selected_highlight_index();
-    int get_selected_portal_index();
-    int get_selected_bookmark_index();
+    std::string get_selected_highlight_uuid();
+    std::string get_selected_portal_uuid();
+    std::string get_selected_bookmark_uuid();
 
     void handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects);
-    void handle_highlight_tags_pre_perform(const std::vector<int>& visible_highlight_indices);
-    void handle_visible_bookmark_tags_pre_perform(const std::vector<int>& visible_bookmark_indices);
+    void handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids);
+    void handle_visible_bookmark_tags_pre_perform(const std::vector<std::string>& visible_bookmark_uuids);
     void clear_keyboard_select_highlights();
     void handle_goto_link_with_page_and_offset(int page, float y_offset);
     std::optional<std::wstring> get_search_suggestion_with_index(int index);
@@ -1132,7 +1132,7 @@ public:
     void on_highlight_annotation_edited(const std::string& uuid);
     void on_highlight_type_edited(const std::string& uuid);
     void delete_highlight_with_uuid(const std::string& uuid);
-    void delete_current_document_highlight_with_index(int index);
+    void delete_current_document_highlight_with_uuid(const std::string& uuid);
     void delete_current_document_highlight(Highlight* hl);
     void on_new_portal_added(const std::string& uuid);
     void on_portal_deleted(const std::string& uuid);
@@ -1151,7 +1151,7 @@ public:
 
 
     void update_highlight_annot_with_uuid(const std::string& uuid, const std::wstring& new_annot);
-    void delete_current_document_bookmark(int index);
+    void delete_current_document_bookmark(const std::string& uuid);
     void delete_current_document_bookmark_with_bookmark(BookMark* bm);
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
@@ -1196,6 +1196,7 @@ public:
     void set_mouse_cursor_for_side_resize(std::optional<OverviewSide> side);
 
     QString get_markdown_bookmark_anchor_text_under_cursor();
+    PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);
 
 
     std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);

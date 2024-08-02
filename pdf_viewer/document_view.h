@@ -214,10 +214,10 @@ public:
     void set_underline(AbsoluteDocumentPos abspos);
     void clear_underline();
 
-    int get_selected_highlight_index();
-    int get_selected_pinned_portal_index();
-    int get_selected_bookmark_index();
-    int get_selected_portal_index();
+    std::string get_selected_highlight_uuid();
+    std::string get_selected_pinned_portal_uuid();
+    std::string get_selected_bookmark_uuid();
+    std::string get_selected_portal_uuid();
 
     void set_selected_object_index(VisibleObjectIndex index);
     //void set_selected_bookmark_index(int index);
@@ -252,7 +252,7 @@ public:
     void set_offset_x(float new_offset_x);
     void set_offset_y(float new_offset_y);
     std::optional<PdfLink> get_link_in_pos(WindowPos pos);
-    int get_highlight_index_in_pos(WindowPos pos);
+    std::string get_highlight_uuid_in_pos(WindowPos pos);
     void get_text_selection(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, bool is_word_selection, std::deque<AbsoluteRect>& selected_characters, std::wstring& text_selection);
     std::string add_mark(char symbol);
     std::string add_bookmark(std::wstring desc);
@@ -424,9 +424,11 @@ public:
     std::deque<AbsoluteRect>* get_selected_character_rects();
 
     std::vector<VisibleObjectIndex> get_generic_visible_item_indices();
-    std::vector<int> get_visible_highlight_indices();
-    std::vector<int> get_visible_bookmark_indices();
-    std::vector<int> get_visible_portal_indices();
+
+    std::vector<std::string> get_visible_highlight_uuids();
+    std::vector<std::string> get_visible_bookmark_uuids();
+    std::vector<std::string> get_visible_portal_uuids();
+
     void set_presentation_page_number(std::optional<int> page);
     std::optional<int> get_presentation_page_number();
     bool is_presentation_mode();

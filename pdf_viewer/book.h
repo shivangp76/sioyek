@@ -28,7 +28,8 @@ enum class VisibleObjectType {
 
 struct VisibleObjectIndex {
     VisibleObjectType object_type;
-    int index;
+    std::string uuid;
+    //int index;
 
     void handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos);
 };
@@ -338,7 +339,7 @@ struct OverviewResizeData {
 
 struct VisibleObjectResizeData {
     VisibleObjectType type;
-    int object_index;
+    std::string object_uuid;
     AbsoluteRect original_rect;
     AbsoluteDocumentPos original_mouse_pos;
     OverviewSide side_index;
@@ -346,7 +347,7 @@ struct VisibleObjectResizeData {
 
 struct VisibleObjectScrollData {
     VisibleObjectType type;
-    int object_index;
+    std::string object_uuid;
     float original_scroll_amount;
     std::optional<float> original_scroll_amount_x = {};
     AbsoluteDocumentPos original_mouse_pos;
