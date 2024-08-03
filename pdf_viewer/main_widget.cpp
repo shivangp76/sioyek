@@ -15,7 +15,6 @@
 // in touch mode if menu button and a visible object overlap, bad things happen
 // right clicking on bookmark summary links should work
 // portals outside the screen boundaries should allow scrolling horizontally (like with freetext bookmarks)
-// mouse being in overview should take precedence over mouse being in bookmark
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"

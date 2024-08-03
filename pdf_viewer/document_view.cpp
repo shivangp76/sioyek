@@ -1213,7 +1213,7 @@ float DocumentView::get_max_valid_x(bool relenting) {
     int page_number = get_center_page_number();
     float page_width = current_document->get_page_width(page_number);
 
-    auto [min_x, _] = current_document->get_min_max_bookmark_x_for_page(page_number);
+    auto [min_x, _] = current_document->get_min_max_annot_x_for_page(page_number);
     min_x += view_width / zoom_level / 2;
     float res = 0;
 
@@ -1229,7 +1229,7 @@ float DocumentView::get_max_valid_x(bool relenting) {
 float DocumentView::get_min_valid_x(bool relenting) {
     int page_number = get_center_page_number();
     float page_width = current_document->get_page_width(page_number);
-    auto [_, max_x] = current_document->get_min_max_bookmark_x_for_page(page_number);
+    auto [_, max_x] = current_document->get_min_max_annot_x_for_page(page_number);
     max_x -= view_width / zoom_level / 2;
     float res = 0;
 

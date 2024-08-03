@@ -5088,7 +5088,7 @@ std::vector<Portal>& Document::get_annots_mut<Portal>() {
     return portals;
 }
 
-std::pair<float, float> Document::get_min_max_bookmark_x_for_page(int page) {
+std::pair<float, float> Document::get_min_max_annot_x_for_page(int page) {
     //todo: performance: maybe we should have a map from page to bookmarks so that we
     // don't have to iterate over all bookmarks
 
@@ -5106,6 +5106,21 @@ std::pair<float, float> Document::get_min_max_bookmark_x_for_page(int page) {
         }
         if (bm.end_x > max_bookmark_x) {
             max_bookmark_x = bm.end_x;
+        }
+    }
+    for (auto& portal : portals){
+        if (portal.is_pinned()){
+            int portal_page = AbsoluteDocumentPos{ 0, portal.src_offset_y }.to_document(this).page;
+            if (portal_page != page) {
+                continue;
+            }
+            AbsoluteRect portal_rect = portal.get_rectangle().value();
+            if (portal_rect.x0 < min_bookmark_x) {
+                min_bookmark_x = portal_rect.x0;
+            }
+            if (portal_rect.x1 > max_bookmark_x) {
+                max_bookmark_x = portal_rect.x1;
+            }
         }
     }
     return std::make_pair(min_bookmark_x, max_bookmark_x);
