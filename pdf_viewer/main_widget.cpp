@@ -3337,6 +3337,12 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     }
 }
 
+bool MainWidget::is_mouse_cursor_in_overview(){
+    QPoint cursor_point = mapFromGlobal(QCursor::pos());
+    WindowPos cursor_pos = { cursor_point.x(), cursor_point.y() };
+    return dv()->is_window_point_in_overview(cursor_pos.to_window_normalized(dv()));
+}
+
 void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     if (IGNORE_SCROLL_EVENTS) return;
@@ -3388,9 +3394,10 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     }
 
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
+    bool is_in_overview = is_mouse_cursor_in_overview();
 
     std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
-    if (object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
+    if ((!is_in_overview) && object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
         if ((object_under_cursor->object_type == VisibleObjectType::Bookmark) &&
             selected_object_index.has_value() &&
             (selected_object_index->object_type == VisibleObjectType::Bookmark) &&

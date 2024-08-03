@@ -902,6 +902,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* mevent) override;
     void wheelEvent(QWheelEvent* wevent) override;
     bool event(QEvent* event);
+    bool is_mouse_cursor_in_overview();
 
 public:
 
