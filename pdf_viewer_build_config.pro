@@ -201,12 +201,12 @@ win32{
     RC_ICONS = pdf_viewer\icon2.ico
     
     CONFIG(Debug){
-        LIBS += -Lmupdf\platform\win32\x64\Debug -llibmupdf -Lzlib -lzlib
+        LIBS += -L$$PWD\mupdf\platform\win32\x64\Debug -llibmupdf -L$$PWD\zlib -lzlib
         DEFINES += SIOYEK_DEVELOPER
     }
     
     CONFIG(Release){
-        LIBS += -Lmupdf\platform\win32\x64\Release -llibmupdf -Lzlib -lzlib
+        LIBS += -L$$PWD\mupdf\platform\win32\x64\Release -llibmupdf -Lzlib -lzlib
     }
 
     # LIBS += -llibmupdf -Lzlib -lzlib

@@ -453,6 +453,8 @@ public:
     bool is_waiting_for_symbol();
     void key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat = false);
     void handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed);
+
+    bool handle_right_click_bookmark(WindowPos click_pos, BookMark* bookmark);
     void handle_right_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed);
     void on_config_changed(std::string config_name, bool should_save=false);
     void on_configs_changed(std::vector<std::string>* config_names);
@@ -666,6 +668,7 @@ public:
     void advance_command(std::unique_ptr<Command> command, std::wstring* result = nullptr);
     void add_search_term(const std::wstring& term);
     void perform_search(std::wstring text, bool is_regex = false, bool is_incremental = false);
+    std::vector<SearchResult> get_fuzzy_search_results(std::wstring text);
     void perform_fuzzy_search(std::wstring text);
     void overview_to_definition();
     void portal_to_definition();

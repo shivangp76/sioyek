@@ -2604,17 +2604,30 @@ Document* DocumentView::get_current_overview_document(std::optional<OverviewStat
 }
 
 float DocumentView::get_overview_zoom_level(std::optional<OverviewState> maybe_overview){
-    if (maybe_overview) {
+    if (maybe_overview && (maybe_overview->zoom_level > 0)) {
         return maybe_overview->zoom_level;
     }
 
     if (overview_page->zoom_level > 0){
         return overview_page->zoom_level;
     }
-    auto overview_doc = get_current_overview_document();
-    DocumentPos docpos = overview_doc->absolute_to_page_pos_uncentered({ 0, overview_page->absolute_offset_y });
-    overview_page->zoom_level = (get_view_width() * overview_half_width) / overview_doc->get_page_width(docpos.page);
-    return overview_page->zoom_level;
+    OverviewState* overview_ptr = nullptr;
+
+    if (maybe_overview.has_value()){
+        overview_ptr = &maybe_overview.value();
+    }
+    else if (overview_page.has_value()){
+        overview_ptr = &overview_page.value();
+    }
+
+    if (overview_ptr){
+        auto overview_doc = get_current_overview_document(maybe_overview);
+        DocumentPos docpos = overview_doc->absolute_to_page_pos_uncentered({ 0, overview_ptr->absolute_offset_y });
+        overview_ptr->zoom_level = (get_view_width() * overview_half_width) / overview_doc->get_page_width(docpos.page);
+        return overview_ptr->zoom_level;
+    }
+
+    return -1;
 
 }
 
@@ -3082,12 +3095,12 @@ void DocumentView::set_selected_object_index(VisibleObjectIndex index) {
 //    selected_bookmark_index = index;
 //}
 
-void DocumentView::set_overview_highlights(const std::vector<DocumentRect>& rects){
-    if (overview_page) {
-        overview_page->highlight_rects = rects;
-    }
-    overview_highlights = rects;
-}
+// void DocumentView::set_overview_highlights(const std::vector<DocumentRect>& rects){
+//     if (overview_page) {
+//         overview_page->highlight_rects = rects;
+//     }
+//     overview_highlights = rects;
+// }
 
 void DocumentView::set_selected_rectangle(AbsoluteRect selected) {
     selected_rectangle = selected;
@@ -3537,7 +3550,6 @@ void DocumentView::set_overview_link(PdfLink link) {
         }
 
         set_overview_position(page - 1, offset_y, is_reference > 0 ? "reflink" : "link", overview_highlight_rects);
-        //main_document_view->set_overview_highlights(overview_highlight_rects);
 
     }
 }
@@ -3557,7 +3569,7 @@ void DocumentView::set_overview_position(
         }
         overview_state.overview_type = overview_type;
         set_overview_page(overview_state);
-        set_overview_highlights(overview_state.highlight_rects);
+        // set_overview_highlights(overview_state.highlight_rects);
     }
 }
 

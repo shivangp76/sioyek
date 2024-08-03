@@ -120,7 +120,7 @@ public:
     std::unordered_map<std::string, float> bookmark_scroll_amounts;
 
     std::optional<AbsoluteDocumentPos> underline = {};
-    std::vector<DocumentRect> overview_highlights;
+    // std::vector<DocumentRect> overview_highlights;
 
     std::vector<std::pair<AbsoluteRect, float>> pending_download_portals;
     std::optional<AbsoluteRect> selected_rectangle = {};
@@ -222,7 +222,7 @@ public:
     void set_selected_object_index(VisibleObjectIndex index);
     //void set_selected_bookmark_index(int index);
 
-    void set_overview_highlights(const std::vector<DocumentRect>& rects);
+    // void set_overview_highlights(const std::vector<DocumentRect>& rects);
 
     void set_selected_rectangle(AbsoluteRect selected);
     void clear_selected_rectangle();

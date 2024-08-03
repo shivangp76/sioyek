@@ -454,9 +454,19 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview, bool draw_bord
         view_height);
     window_rect.y0 = -window_rect.y0;
     window_rect.y1 = -window_rect.y1;
+
     if (overview.source_rect.has_value()) {
         window_rect = overview.source_rect->to_window_normalized(document_view);
     }
+
+    if (!window_rect.is_visible()){
+        return;
+    }
+
+    // make sure overview zoom level is set (if it is -1, then we should fit it to page)
+    float zoom_level = dv()->get_overview_zoom_level(overview);
+    overview.zoom_level = zoom_level;
+    // overview.highlight_rects = overview.ge
 
 #ifdef SIOYEK_OPENGL_BACKEND
     render_overview_opengl_backend(window_rect, overview, draw_border);
@@ -716,11 +726,6 @@ void PdfViewOpenGLWidget::render_page(int page_number, std::optional<OverviewSta
         // if ((full_page_irect.y1 - full_page_irect.y0) % nv == 0) {
         //     is_not_exact = false;
         // }
-
-        if (overview && (page_number == 3)) {
-
-            NormalizedWindowRect overview_rect = document_view->document_to_overview_rect(DocumentRect(page_rect, page_number), overview);
-        }
         NormalizedWindowRect window_rect = overview.has_value() ?
             document_view->document_to_overview_rect(DocumentRect(page_rect, page_number), overview) :
             dv()->document_to_window_rect_pixel_perfect(DocumentRect(page_rect, page_number),
@@ -3090,12 +3095,23 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
         }
     }
 
-    if (document_view->overview_highlights.size() > 0) {
+    // if (document_view->overview_highlights.size() > 0) {
+    //     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
+    //     glUseProgram(shared_gl_objects.highlight_program);
+    //     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0]);
+    //     //glUniform3fv(g_shared_resources.highlight_color_uniform_location, 1, highlight_color_temp);
+    //     for (auto rect : document_view->overview_highlights) {
+    //         NormalizedWindowRect target = document_view->document_to_overview_rect(rect);
+    //         render_highlight_window(target, HRF_FILL);
+    //     }
+    // }
+
+    if (overview.highlight_rects.size() > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
         glUseProgram(shared_gl_objects.highlight_program);
         glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0]);
         //glUniform3fv(g_shared_resources.highlight_color_uniform_location, 1, highlight_color_temp);
-        for (auto rect : document_view->overview_highlights) {
+        for (auto rect : overview.highlight_rects) {
             NormalizedWindowRect target = document_view->document_to_overview_rect(rect);
             render_highlight_window(target, HRF_FILL);
         }

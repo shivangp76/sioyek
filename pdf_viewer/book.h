@@ -417,11 +417,11 @@ struct OverviewState {
     float absolute_offset_x = 0;
     float zoom_level = -1;
     Document* doc = nullptr;
-    std::optional<std::string> overview_type;
+    std::optional<std::string> overview_type = {};
     std::vector<DocumentRect> highlight_rects;
     std::optional<Portal> source_portal = {};
     std::optional<AbsoluteRect> source_rect = {};
-    std::optional<float> original_zoom_level;
+    std::optional<float> original_zoom_level = {};
 
     float get_zoom_level(DocumentView* dv);
 };
