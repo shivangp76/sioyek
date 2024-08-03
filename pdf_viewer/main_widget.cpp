@@ -13,6 +13,9 @@
 // add keyboard commands to control pinned portals
 // pinned portals outside of page boundary are displayed weirdly in two page mode
 // in touch mode if menu button and a visible object overlap, bad things happen
+// right clicking on bookmark summary links should work
+// portals outside the screen boundaries should allow scrolling horizontally (like with freetext bookmarks)
+// mouse being in overview should take precedence over mouse being in bookmark
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -114,6 +117,7 @@
 #ifdef SIOYEK_ANDROID
 #include <QtCore/private/qandroidextras_p.h>
 #endif
+
 
 
 extern "C" {
@@ -2358,7 +2362,36 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat
 
 }
 
+bool MainWidget::handle_right_click_bookmark(WindowPos click_pos, BookMark* bookmark){
+    if (bookmark){
+        // get the link under cursor
+        QString bookmark_text = get_markdown_bookmark_anchor_text_under_cursor();
+        std::vector<SearchResult> search_results = get_fuzzy_search_results(bookmark_text.toStdWString());
+
+        if (search_results.size() > 0){
+            search_results[0].fill(doc());
+            if (search_results[0].rects.size() > 0){
+                float doc_y = search_results[0].rects[0].y0;
+                int page = search_results[0].page;
+                float abs_y = doc()->document_to_absolute_y(page, doc_y);
+                OverviewState overview_state = { abs_y, 0, -1, nullptr };
+                for (int i = 0; i < search_results[0].rects.size(); i++){
+                    DocumentRect rect = DocumentRect{search_results[0].rects[i], page};
+                    overview_state.highlight_rects.push_back(rect);
+                }
+                dv()->set_overview_page(overview_state);
+
+                invalidate_render();
+            }
+        }
+
+    }
+    return true;
+}
+
 void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
+
+    AbsoluteDocumentPos click_abspos = click_pos.to_absolute(dv());
 
     if (is_scratchpad_mode()){
         return;
@@ -2385,6 +2418,15 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
         //main_document_view->set_line_index(-1);
         invalidate_render();
         return;
+    }
+
+    if (down==true){
+        std::optional<VisibleObjectIndex> visible_object_under_cursor = get_visible_object_at_pos(click_abspos);
+        if (visible_object_under_cursor.has_value() && visible_object_under_cursor->object_type == VisibleObjectType::Bookmark){
+            BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object_under_cursor->uuid);
+            if (handle_right_click_bookmark(click_pos, bookmark)) return;;
+        }
+
     }
 
     if ((main_document_view->get_document() != nullptr) && (opengl_widget != nullptr)) {
@@ -8023,6 +8065,7 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
+    // qDebug() << a;
     //qDebug() << selected_object_index->index;
     //if (dv()->overview_page.has_value()) {
     //    OverviewState state = dv()->overview_page.value();
@@ -9848,25 +9891,26 @@ HighlightButtons* MainWidget::get_highlight_buttons() {
 bool MainWidget::goto_ith_next_overview(int i) {
     if (dv()->smart_view_candidates.size() > 1) {
         dv()->index_into_candidates = mod((dv()->index_into_candidates + i), dv()->smart_view_candidates.size());
+
+        AbsoluteDocumentPos abspos;
+
         if (std::holds_alternative<DocumentPos>(dv()->smart_view_candidates[dv()->index_into_candidates].target_pos)) {
             DocumentPos docpos = std::get<DocumentPos>(dv()->smart_view_candidates[dv()->index_into_candidates].target_pos);
-            dv()->set_overview_position(
-                docpos.page,
-                docpos.y,
-                reference_type_string(dv()->smart_view_candidates[dv()->index_into_candidates].reference_type)
-            );
+            abspos = docpos.to_absolute(doc());
         }
-        else {
-            AbsoluteDocumentPos abspos = std::get<AbsoluteDocumentPos>(dv()->smart_view_candidates[dv()->index_into_candidates].target_pos);
-            Document* overview_doc = dv()->smart_view_candidates[dv()->index_into_candidates].doc;
-            if (overview_doc == nullptr) overview_doc = doc();
-            OverviewState state;
-            state.doc = overview_doc;
-            state.absolute_offset_y = abspos.y;
-            set_overview_page(state, true);
-            invalidate_render();
+        else{
+            abspos = std::get<AbsoluteDocumentPos>(dv()->smart_view_candidates[dv()->index_into_candidates].target_pos);
         }
-        dv()->set_overview_highlights(dv()->smart_view_candidates[dv()->index_into_candidates].get_highlight_rects());
+
+        Document* overview_doc = dv()->smart_view_candidates[dv()->index_into_candidates].doc;
+        if (overview_doc == nullptr) overview_doc = doc();
+        OverviewState state;
+        state.doc = overview_doc;
+        state.absolute_offset_y = abspos.y;
+        state.highlight_rects = dv()->smart_view_candidates[dv()->index_into_candidates].get_highlight_rects();
+        set_overview_page(state, true);
+        invalidate_render();
+
         on_overview_source_updated();
         return true;
     }
@@ -10299,12 +10343,12 @@ void MainWidget::update_touch_overview_buttons(const std::optional<OverviewState
 
 void MainWidget::set_overview_page(std::optional<OverviewState> overview, bool should_update_buttons) {
 
-    if (!overview){
-        main_document_view->set_overview_highlights({});
-    }
-    else {
-        main_document_view->set_overview_highlights(overview->highlight_rects);
-    }
+    // if (!overview){
+    //     main_document_view->set_overview_highlights({});
+    // }
+    // else {
+    //     main_document_view->set_overview_highlights(overview->highlight_rects);
+    // }
 
     if (should_update_buttons) {
         update_touch_overview_buttons(overview);
@@ -13732,11 +13776,9 @@ void MainWidget::scroll_selected_bookmark(int amount) {
     scroll_bookmark_with_uuid(bookmark_uuid, amount);
 }
 
-
-void MainWidget::perform_fuzzy_search(std::wstring query) {
+std::vector<SearchResult> MainWidget::get_fuzzy_search_results(std::wstring query){
     if (doc()->get_super_fast_index().size() == 0) {
-        show_error_message(L"Super fast search index is not ready");
-        return;
+        return {};
     }
 
     const std::wstring& super_fast_index = doc()->get_super_fast_index();
@@ -13792,6 +13834,16 @@ void MainWidget::perform_fuzzy_search(std::wstring query) {
             }
         }
     }
+    return search_results;
+}
+
+void MainWidget::perform_fuzzy_search(std::wstring query) {
+    if (doc()->get_super_fast_index().size() == 0) {
+        show_error_message(L"Super fast search index is not ready");
+        return;
+    }
+
+    std::vector<SearchResult> search_results = get_fuzzy_search_results(query);
 
     main_document_view->set_search_results(std::move(search_results));
     goto_search_result(0);
