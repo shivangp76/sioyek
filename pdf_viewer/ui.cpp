@@ -3373,3 +3373,69 @@ DocumentationSearchWidget* DocumentationSearchWidget::create(MainWidget* parent)
     fulltext_search_widget->update_render();
     return fulltext_search_widget;
 }
+
+SelectionIndicator::SelectionIndicator(
+    QWidget* parent,
+    bool begin,
+    MainWidget* w,
+    AbsoluteDocumentPos pos)
+        : QWidget(parent), is_begin(begin), main_widget(w) {
+    docpos = pos.to_document(w->doc());
+
+    //begin_icon = QIcon(":/icons/arrow-begin.svg");
+    //end_icon = QIcon(":/icons/arrow-end.svg");
+    begin_icon = QIcon(":/icons/selection-begin.svg");
+    end_icon = QIcon(":/icons/selection-end.svg");
+}
+
+void SelectionIndicator::update_pos() {
+    WindowPos wp = docpos.to_window(main_widget->main_document_view);
+    if (is_begin) {
+        move(wp.x - width(), wp.y - height());
+    }
+    else {
+        move(wp.x, wp.y);
+    }
+
+}
+
+void SelectionIndicator::mousePressEvent(QMouseEvent* mevent) {
+    is_dragging = true;
+    last_press_window_pos = mapToParent(mevent->pos());
+    last_press_widget_pos = pos();
+    docpos_needs_recompute = true;
+}
+
+void SelectionIndicator::mouseMoveEvent(QMouseEvent* mouse_event) {
+    if (is_dragging) {
+        QPoint mouse_pos = mapToParent(mouse_event->pos());
+        QPoint diff = mouse_pos - last_press_window_pos;
+        QPoint new_widget_pos = last_press_widget_pos + diff;
+        move(new_widget_pos);
+        docpos_needs_recompute = true;
+        main_widget->update_mobile_selection();
+    }
+}
+
+void SelectionIndicator::mouseReleaseEvent(QMouseEvent* mevent) {
+    is_dragging = false;
+}
+
+DocumentPos SelectionIndicator::get_docpos() {
+    if (!docpos_needs_recompute) return docpos;
+
+    if (is_begin) {
+        docpos = WindowPos{ x() + width(), y() + height() }.to_document(main_widget->main_document_view);
+    }
+    else {
+        docpos = WindowPos{x(), y()}.to_document(main_widget->main_document_view);
+    }
+
+    return docpos;
+
+}
+
+void SelectionIndicator::paintEvent(QPaintEvent* event) {
+    QPainter painter(this);
+    (is_begin ? &begin_icon : &end_icon)->paint(&painter, rect());
+}

@@ -13,8 +13,7 @@
 // add keyboard commands to control pinned portals
 // pinned portals outside of page boundary are displayed weirdly in two page mode
 // in touch mode if menu button and a visible object overlap, bad things happen
-// right clicking on bookmark summary links should work
-// portals outside the screen boundaries should allow scrolling horizontally (like with freetext bookmarks)
+
 
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
@@ -367,11 +366,12 @@ void set_filtered_select_menu(MainWidget* main_widget, bool fuzzy, bool multilin
 
         if (TOUCH_MODE) {
 
-            // we will set the parent of model to be the widget in the constructor, and it will delete
-            // the model when it is freed, so this is not a memory leak
+            // we will set the parent of model to be the widget in the constructor,
+            // and it will delete the model when it is freed, so this is not a memory leak
             QStandardItemModel* model = create_table_model(columns);
 
-            TouchFilteredSelectWidget<T>* widget = new TouchFilteredSelectWidget<T>(fuzzy, model, values, selected_index,
+            auto widget = new TouchFilteredSelectWidget<T>(
+                fuzzy, model, values, selected_index,
                 [&, main_widget, on_select = std::move(on_select)](T* val) {
                     if (val) {
                         on_select(val);
@@ -416,7 +416,8 @@ void set_filtered_select_menu(MainWidget* main_widget, bool fuzzy, bool multilin
 
         if (TOUCH_MODE) {
             // when will this be released?
-            TouchFilteredSelectWidget<T>* widget = new TouchFilteredSelectWidget<T>(fuzzy, columns[0], values, selected_index,
+            auto widget = new TouchFilteredSelectWidget<T>(
+                fuzzy, columns[0], values, selected_index,
                 [&, main_widget, on_select = std::move(on_select)](T* val) {
                     if (val) {
                         on_select(val);
@@ -452,80 +453,7 @@ void set_filtered_select_menu(MainWidget* main_widget, bool fuzzy, bool multilin
         }
     }
 }
-class SelectionIndicator : public QWidget {
-private:
-    bool is_dragging = false;
-    bool is_begin;
-    MainWidget* main_widget;
 
-    QIcon begin_icon;
-    QIcon end_icon;
-    QPoint last_press_window_pos;
-    QPoint last_press_widget_pos;
-    DocumentPos docpos;
-    bool docpos_needs_recompute = false;
-public:
-
-    SelectionIndicator(QWidget* parent, bool begin, MainWidget* w, AbsoluteDocumentPos pos) : QWidget(parent), is_begin(begin), main_widget(w) {
-        docpos = pos.to_document(w->doc());
-
-        //begin_icon = QIcon(":/icons/arrow-begin.svg");
-        //end_icon = QIcon(":/icons/arrow-end.svg");
-        begin_icon = QIcon(":/icons/selection-begin.svg");
-        end_icon = QIcon(":/icons/selection-end.svg");
-    }
-
-    void update_pos() {
-        WindowPos wp = docpos.to_window(main_widget->main_document_view);
-        if (is_begin) {
-            move(wp.x - width(), wp.y - height());
-        }
-        else {
-            move(wp.x, wp.y);
-        }
-
-    }
-    void mousePressEvent(QMouseEvent* mevent) {
-        is_dragging = true;
-        last_press_window_pos = mapToParent(mevent->pos());
-        last_press_widget_pos = pos();
-        docpos_needs_recompute = true;
-    }
-
-    void mouseMoveEvent(QMouseEvent* mouse_event) {
-        if (is_dragging) {
-            QPoint mouse_pos = mapToParent(mouse_event->pos());
-            QPoint diff = mouse_pos - last_press_window_pos;
-            QPoint new_widget_pos = last_press_widget_pos + diff;
-            move(new_widget_pos);
-            docpos_needs_recompute = true;
-            main_widget->update_mobile_selection();
-        }
-    }
-
-    void mouseReleaseEvent(QMouseEvent* mevent) {
-        is_dragging = false;
-    }
-
-    DocumentPos get_docpos() {
-        if (!docpos_needs_recompute) return docpos;
-
-        if (is_begin) {
-            docpos = WindowPos{ x() + width(), y() + height() }.to_document(main_widget->main_document_view);
-        }
-        else {
-            docpos = WindowPos{x(), y()}.to_document(main_widget->main_document_view);
-        }
-
-        return docpos;
-
-    }
-
-    void paintEvent(QPaintEvent* event) {
-        QPainter painter(this);
-        (is_begin ? &begin_icon : &end_icon)->paint(&painter, rect());
-    }
-};
 
 class SioyekDocumentationTextBrowser : public QTextBrowser {
 private:
@@ -8071,16 +7999,6 @@ std::wstring replace_verbatim_links(std::wstring input) {
 }
 
 void MainWidget::handle_debug_command() {
-    // qDebug() << a;
-    //qDebug() << selected_object_index->index;
-    //if (dv()->overview_page.has_value()) {
-    //    OverviewState state = dv()->overview_page.value();
-    //    AbsoluteRect current_overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
-    //    state.source_rect = current_overview_rect;
-    //    state.original_zoom_level = dv()->get_zoom_level();
-    //    //dv()->window_to_abs
-    //    opengl_widget->persisted_overviews.push_back(state);
-    //}
 }
 
 void MainWidget::show_command_menu() {

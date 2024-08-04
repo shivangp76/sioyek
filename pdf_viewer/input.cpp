@@ -32,7 +32,6 @@ extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
 extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
 extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 extern std::wstring SEARCH_URLS[26];
-// extern bool ALPHABETIC_LINK_TAGS;
 extern bool NUMERIC_TAGS;
 extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 extern std::wstring TABLE_EXTRACT_BEHAVIOUR;

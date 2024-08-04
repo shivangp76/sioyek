@@ -1371,3 +1371,28 @@ public:
     virtual void on_text_changed(const QString& text) override;
 };
 
+
+class SelectionIndicator : public QWidget {
+    // touch mode text selection indicator widgets
+private:
+    bool is_dragging = false;
+    bool is_begin;
+    MainWidget* main_widget;
+
+    QIcon begin_icon;
+    QIcon end_icon;
+    QPoint last_press_window_pos;
+    QPoint last_press_widget_pos;
+    DocumentPos docpos;
+    bool docpos_needs_recompute = false;
+public:
+
+    SelectionIndicator(QWidget* parent, bool begin, MainWidget* w, AbsoluteDocumentPos pos);
+
+    void update_pos();
+    void mousePressEvent(QMouseEvent* mevent);
+    void mouseMoveEvent(QMouseEvent* mouse_event);
+    void mouseReleaseEvent(QMouseEvent* mevent);
+    DocumentPos get_docpos();
+    void paintEvent(QPaintEvent* event);
+};
