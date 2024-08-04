@@ -558,6 +558,27 @@ bool MainWidget::handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs
     }
     return false;
 }
+
+bool MainWidget::handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpos){
+    if (selected_object_index.has_value() && (selected_object_index->object_type == VisibleObjectType::Bookmark)) {
+        //BookMark& selected_bookmark = doc()->get_bookmarks()[selected_object_index->index];
+        BookMark* selected_bookmark = doc()->get_bookmark_with_uuid(selected_object_index->uuid);
+        if (selected_bookmark && selected_bookmark->is_freetext()) {
+            set_mouse_cursor_for_side_resize(selected_bookmark->get_resize_side_containing_point(abs_mpos));
+            return true;
+        }
+    }
+    else if (is_pinned_portal_selected()) {
+        //Portal& selected_portal = doc()->get_portals()[selected_object_index->index];
+        Portal* selected_portal = doc()->get_portal_with_uuid(selected_object_index->uuid);
+        if (selected_portal) {
+            set_mouse_cursor_for_side_resize(selected_portal->get_resize_side_containing_point(abs_mpos));
+        }
+        return true;
+    }
+    return false;
+}
+
 bool MainWidget::handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos){
     if (visible_object_resize_data){
         if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
@@ -767,21 +788,8 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
             return;
         }
-        else if (selected_object_index.has_value() && (selected_object_index->object_type == VisibleObjectType::Bookmark)) {
-            //BookMark& selected_bookmark = doc()->get_bookmarks()[selected_object_index->index];
-            BookMark* selected_bookmark = doc()->get_bookmark_with_uuid(selected_object_index->uuid);
-            if (selected_bookmark && selected_bookmark->is_freetext()) {
-                set_mouse_cursor_for_side_resize(selected_bookmark->get_resize_side_containing_point(abs_mpos));
-                return;
-            }
-        }
-        else if (is_pinned_portal_selected()) {
-            //Portal& selected_portal = doc()->get_portals()[selected_object_index->index];
-            Portal* selected_portal = doc()->get_portal_with_uuid(selected_object_index->uuid);
-            if (selected_portal) {
-                set_mouse_cursor_for_side_resize(selected_portal->get_resize_side_containing_point(abs_mpos));
-            }
-            return;
+        else {
+            if (handle_visible_object_cursor_update(abs_mpos)) return;
         }
 
         if (main_document_view && (link = main_document_view->get_link_in_pos(mpos))) {

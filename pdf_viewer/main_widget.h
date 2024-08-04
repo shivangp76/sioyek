@@ -887,6 +887,7 @@ protected:
 
     bool handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos);
     bool handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos);
+    bool handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpos);
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
 
     // we already handle drag and drop on macos elsewhere
