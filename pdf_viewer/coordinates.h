@@ -349,6 +349,14 @@ struct Vec {
         return sqrt(norm_squared);
     }
 
+    float manhattan(){
+        float sum = 0;
+        for (int i = 0; i < dim; i++) {
+            sum += std::abs(values[i]);
+        }
+        return sum;
+    }
+
     NormalizedWindowPos to_normalized_window_pos() {
         return NormalizedWindowPos{ values[0], values[1] };
     }

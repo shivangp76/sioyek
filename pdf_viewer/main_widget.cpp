@@ -354,7 +354,11 @@ bool MainWidget::main_document_view_has_document()
 
 
 template<typename T>
-void set_filtered_select_menu(MainWidget* main_widget, bool fuzzy, bool multiline, std::vector<std::vector<std::wstring>> columns,
+void set_filtered_select_menu(
+    MainWidget* main_widget,
+     bool fuzzy,
+     bool multiline,
+     std::vector<std::vector<std::wstring>> columns,
     std::vector<T> values,
     int selected_index,
     std::function<void(T*)> on_select,
@@ -453,12 +457,9 @@ void set_filtered_select_menu(MainWidget* main_widget, bool fuzzy, bool multilin
     }
 }
 
-
-
 bool MainWidget::is_current_document_available_on_server() {
     return sioyek_network_manager->is_document_available_on_server(doc());
 }
-
 
 void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     QWidget::resizeEvent(resize_event);
@@ -470,12 +471,19 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     main_window_height = size().height();
 
     if (scratchpad) {
-        scratchpad->on_view_size_change(resize_event->size().width(), resize_event->size().height());
+        scratchpad->on_view_size_change(
+            resize_event->size().width(),
+            resize_event->size().height()
+        );
         invalidate_render();
     }
     if (main_document_view->get_is_auto_resize_mode()) {
+        // when a document is newly opened, we fit it to the page width
+        // and make sure the top of the page is aligned with the top of the window
         main_document_view->fit_to_page_width();
-        main_document_view->set_offset_y(main_window_height / 2 / main_document_view->get_zoom_level());
+        main_document_view->set_offset_y(
+            main_window_height / 2 / main_document_view->get_zoom_level()
+        );
     }
 
     int status_bar_height = get_status_bar_height();
@@ -493,7 +501,7 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
         }
     }
 
-    if ((main_document_view->get_document() != nullptr) && (main_document_view->get_zoom_level() == 0)) {
+    if ((doc() != nullptr) && (main_document_view->get_zoom_level() == 0)) {
         main_document_view->fit_to_page_width();
         update_current_history_index();
     }
@@ -522,9 +530,6 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 
 }
 
-
-
-
 void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     if (is_pinching){
         // no need to handle move events when a pinch to zoom is in progress
@@ -532,8 +537,8 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     }
 
     if (is_rotated()) {
-        // we don't handle mouse events while document is rotated becausae proper handling
-        // would increase the code complexity too much to be worth it
+        // we don't handle mouse events while document is rotated because proper
+        // handling would increase the code complexity too much to be worth it
         return;
     }
 
@@ -550,7 +555,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     // we start moving visible objects when the mouse has moved for some distance after clicking
     // so we can distinguish between single-click selects and mouse drags
     if (visible_object_move_data && !visible_object_move_data->is_moving) {
-        if (manhattan_distance(visible_object_move_data->initial_mouse_position, abs_mpos) > 5) {
+        if ((visible_object_move_data->initial_mouse_position - abs_mpos).manhattan() > 5) {
             visible_object_move_data->is_moving = true;
         }
     }
