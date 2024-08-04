@@ -31,7 +31,7 @@ struct VisibleObjectIndex {
     std::string uuid;
     //int index;
 
-    void handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos);
+    void handle_move_begin(DocumentView* view, AbsoluteDocumentPos mouse_pos);
 };
 
 enum OverviewSide {

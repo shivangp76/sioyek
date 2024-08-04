@@ -741,6 +741,11 @@ void DocumentView::reset_doc_state() {
     search_results_mutex.lock();
     cancel_search();
     search_results_mutex.unlock();
+    selected_object_index = {};
+
+    visible_object_resize_data = {};
+    visible_object_scroll_data = {};
+    visible_object_move_data = {};
 
     overview_page = {};
     synctex_highlights.clear();
@@ -3091,9 +3096,9 @@ void DocumentView::clear_underline() {
     underline = {};
 }
 
-void DocumentView::set_selected_object_index(VisibleObjectIndex index) {
-    selected_object_index = index;
-}
+// void DocumentView::set_selected_object_index(VisibleObjectIndex index) {
+//     selected_object_index = index;
+// }
 
 //void DocumentView::set_selected_highlight_index(int index) {
 //    selected_highlight_index = index;
@@ -4100,4 +4105,284 @@ PendingDownloadPortal* DocumentView::get_pending_portal_with_uuid(const std::str
     }
 
     return nullptr;
+}
+
+bool DocumentView::handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object) {
+    // if we click on a visilbe object, we consider it as a potential for drag-move
+    // we don't start it now though (hence is_moving=false) because the user might just
+    // be clicking on an object to select it rather than drag it, we start dragging
+    // after the mouse has moved a certain amount in mouseMoveEvent
+    if (visible_object->object_type == VisibleObjectType::Bookmark) {
+        // in touch mode swiping over the selected bookmark should move the bookmark content
+        if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
+            BookMark* bookmark = current_document->get_bookmark_with_uuid(visible_object->uuid);
+            if (bookmark) {
+                VisibleObjectScrollData new_bookmark_scroll_data;
+                new_bookmark_scroll_data.type = VisibleObjectType::Bookmark;
+                new_bookmark_scroll_data.object_uuid = visible_object->uuid;
+                new_bookmark_scroll_data.original_scroll_amount = get_bookmark_scroll_amount(bookmark->uuid);
+                new_bookmark_scroll_data.original_mouse_pos = abs_doc_pos;
+                // last_mouse_down_window_pos = click_pos;
+                visible_object_scroll_data = new_bookmark_scroll_data;
+                return true;
+            }
+        }
+        else {
+            //std::string uuid = visible_object->uui;
+            BookMark* bookmark = current_document->get_bookmark_with_uuid(visible_object->uuid);
+            if (bookmark && bookmark->is_freetext()) {
+                std::optional<OverviewSide> bookmark_resize_side = bookmark->get_resize_side_containing_point(abs_doc_pos);
+                if (bookmark_resize_side) {
+                    VisibleObjectResizeData brd;
+                    brd.type = VisibleObjectType::Bookmark;
+                    brd.object_uuid = bookmark->uuid;
+                    brd.side_index = bookmark_resize_side.value();
+                    brd.original_mouse_pos = abs_doc_pos;
+                    brd.original_rect = bookmark->rect();
+                    visible_object_resize_data = brd;
+                    return true;
+                }
+            }
+        }
+
+    }
+
+    if (visible_object->object_type == VisibleObjectType::PinnedPortal) {
+        std::string uuid = visible_object->uuid;
+        if (TOUCH_MODE && selected_object_index.has_value() && (visible_object->uuid == selected_object_index->uuid)) {
+            //auto portal = doc()->get_portals()[index];
+            //Portal* portal = doc()->get_portal_with_uuid(uuid);
+            begin_portal_scroll(click_pos);
+            return true;
+        }
+        else {
+            Portal* pinned_portal = current_document->get_portal_with_uuid(uuid);
+            if (pinned_portal) {
+                std::optional<OverviewSide> resize_side = pinned_portal->get_resize_side_containing_point(abs_doc_pos);
+                if (resize_side) {
+                    VisibleObjectResizeData prd;
+                    prd.type = VisibleObjectType::PinnedPortal;
+                    prd.object_uuid = uuid;
+                    prd.side_index = resize_side.value();
+                    prd.original_mouse_pos = abs_doc_pos;
+                    prd.original_rect = pinned_portal->get_rectangle().value();
+                    visible_object_resize_data = prd;
+                    return true;
+                }
+            }
+        }
+    }
+
+
+    visible_object->handle_move_begin(this, abs_doc_pos);
+    visible_object_move_data->is_moving = false;
+    return true;
+}
+
+void DocumentView::begin_portal_scroll(WindowPos window_mpos) {
+    AbsoluteDocumentPos abs_mpos = window_mpos.to_absolute(this);
+    
+
+    VisibleObjectScrollData scroll_data;
+    //Portal& portal = doc()->get_portals()[selected_object_index->index];
+    Portal* portal = current_document->get_portal_with_uuid(selected_object_index->uuid);
+
+    scroll_data.type = VisibleObjectType::PinnedPortal;
+    scroll_data.object_uuid = selected_object_index->uuid;
+    scroll_data.original_scroll_amount_x = portal->dst.book_state.offset_x;
+    scroll_data.original_scroll_amount = portal->dst.book_state.offset_y;
+    scroll_data.original_mouse_pos = abs_mpos;
+    visible_object_scroll_data = scroll_data;
+}
+
+void DocumentView::begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos) {
+    VisibleObjectMoveData move_data;
+    move_data.index.uuid = uuid;
+    move_data.index.object_type = VisibleObjectType::Bookmark;
+
+    BookMark* bookmark = current_document->get_bookmark_with_uuid(uuid);
+    if (bookmark) {
+        move_data.initial_position.x = bookmark->begin_x;
+        move_data.initial_position.y = bookmark->begin_y;
+
+        move_data.initial_mouse_position = begin_cursor_pos;
+        visible_object_move_data = move_data;
+    }
+}
+
+void DocumentView::begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending) {
+    VisibleObjectMoveData move_data;
+    move_data.index.uuid = uuid;
+
+    if (is_pending) {
+        move_data.index.object_type = VisibleObjectType::PendingPortal;
+        PendingDownloadPortal* pending_portal = get_pending_portal_with_uuid(uuid);
+
+        if (pending_portal) {
+            move_data.initial_position.x = pending_portal->pending_portal.src_offset_x.value();
+            move_data.initial_position.y = pending_portal->pending_portal.src_offset_y;
+
+            move_data.initial_mouse_position = begin_cursor_pos;
+            visible_object_move_data = move_data;
+        }
+    }
+    else {
+        move_data.index.object_type = VisibleObjectType::Portal;
+        Portal* portal = current_document->get_portal_with_uuid(uuid);
+        if (portal) {
+            move_data.initial_position.x = portal->src_offset_x.value();
+            move_data.initial_position.y = portal->src_offset_y;
+
+            move_data.initial_mouse_position = begin_cursor_pos;
+            visible_object_move_data = move_data;
+        }
+    }
+}
+
+std::string DocumentView::finish_pending_download_portal(std::wstring download_paper_name, std::wstring downloaded_file_path) {
+    std::string checksum = checksummer->get_checksum(downloaded_file_path);
+    std::string pending_uuid = "";
+    std::string retval = "";
+    for (int i = 0; i < pending_download_portals.size(); i++) {
+
+        Portal pending_portal = pending_download_portals[i].pending_portal;
+        std::wstring pending_paper_name = pending_download_portals[i].paper_name;
+
+        if (pending_paper_name == download_paper_name) {
+            pending_uuid = pending_download_portals[i].handle;
+            pending_portal.dst.document_checksum = checksum;
+            Document* src_doc = document_manager->get_document(pending_download_portals[i].source_document_path);
+            PagelessDocumentRect downloaded_page_size = get_first_page_size(current_document->get_mupdf_context(), downloaded_file_path);
+
+            float zoom_level = static_cast<float>(get_view_width()) / (downloaded_page_size.x1 - downloaded_page_size.x0);
+            float offset_y = (static_cast<float>(get_view_height()) / 2) / zoom_level;
+            pending_portal.dst.book_state.zoom_level = zoom_level;
+            pending_portal.dst.book_state.offset_y = offset_y;
+
+            if (src_doc) {
+                db_manager->insert_document_hash(downloaded_file_path, checksum);
+                std::string portal_uuid = src_doc->add_portal(pending_portal, true);
+                retval = portal_uuid;
+                // on_new_portal_added(portal_uuid);
+                //int portal_uuid = src_doc->get_portal_index_with_uuid(portal_uuid);
+
+                // when a download is finished while we are moving the pending portal, convert the
+                // pending portal move to the actual portal move
+                if (visible_object_move_data
+                    && (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)
+                    && visible_object_move_data->index.uuid == pending_uuid) {
+                    visible_object_move_data->index.object_type = VisibleObjectType::Portal;
+                    visible_object_move_data->index.uuid = portal_uuid;
+                }
+            }
+        }
+    }
+    if (pending_uuid.size() > 0) {
+        int pending_index = get_pending_portal_index_with_handle(pending_uuid);
+        //pending_download_portals
+        pending_download_portals.erase(pending_download_portals.begin() + pending_index);
+        // update_opengl_pending_download_portals();
+    }
+    return retval;
+}
+
+void DocumentView::set_selected_portal_uuid(std::string uuid, bool is_pinned) {
+    selected_object_index = VisibleObjectIndex{
+        is_pinned ? VisibleObjectType::PinnedPortal : VisibleObjectType::Portal,
+        uuid};
+}
+
+void DocumentView::clear_selected_object() {
+    selected_object_index = {};
+}
+
+void DocumentView::set_selected_highlight_uuid(std::string uuid) {
+    selected_object_index = VisibleObjectIndex{VisibleObjectType::Highlight, uuid};
+}
+
+void DocumentView::set_selected_bookmark_uuid(std::string uuid) {
+    selected_object_index = VisibleObjectIndex{VisibleObjectType::Bookmark, uuid};
+}
+
+bool DocumentView::handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos){
+    if (visible_object_scroll_data) {
+        std::string uuid = visible_object_scroll_data->object_uuid;
+        if (visible_object_scroll_data->type == VisibleObjectType::Bookmark) {
+            BookMark* target_bookmark = current_document->get_bookmark_with_uuid(uuid);
+            if (target_bookmark) {
+                set_bookmark_scroll_amount(target_bookmark->uuid,
+                    -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * get_zoom_level() + visible_object_scroll_data->original_scroll_amount);
+                // validate_render();
+                return true;
+            }
+        }
+        if (visible_object_scroll_data->type == VisibleObjectType::PinnedPortal) {
+            Portal* target_portal = current_document->get_portal_with_uuid(uuid);
+            if (target_portal) {
+                float target_zoom_level = 1.0f / target_portal->dst.book_state.zoom_level;
+                target_portal->dst.book_state.offset_y = -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * target_zoom_level
+                                                        + visible_object_scroll_data->original_scroll_amount;
+                target_portal->dst.book_state.offset_x = (abs_mpos.x - visible_object_scroll_data->original_mouse_pos.x) * target_zoom_level
+                                                        + visible_object_scroll_data->original_scroll_amount_x.value();
+                schedule_update_link_with_opened_book_state(*target_portal, target_portal->dst.book_state);
+                // validate_render();
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void DocumentView::schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state) {
+    ScheduledPortalUpdate update;
+    update.portal = lnk;
+    update.state = new_state;
+    scheduled_portal_update = update;
+}
+
+void VisibleObjectIndex::handle_move_begin(DocumentView* view, AbsoluteDocumentPos mouse_pos) {
+
+    if (object_type == VisibleObjectType::Bookmark) {
+        view->begin_bookmark_move(uuid, mouse_pos);
+    }
+    else if ((object_type == VisibleObjectType::Portal) || (object_type == VisibleObjectType::PinnedPortal)) {
+        view->begin_portal_move(uuid, mouse_pos, false);
+    }
+    else if (object_type == VisibleObjectType::PendingPortal) {
+        view->begin_portal_move(uuid, mouse_pos, true);
+    }
+}
+
+
+Portal* DocumentView::get_portal_under_window_pos(WindowPos pos) {
+    AbsoluteDocumentPos abspos = window_to_absolute_document_pos(pos);
+    return get_portal_under_absolute_pos(abspos);
+}
+
+Portal* DocumentView::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos) {
+    std::string uuid = current_document->get_icon_portal_uuid_at_pos(abspos);
+    return current_document->get_portal_with_uuid(uuid);
+}
+
+
+bool DocumentView::handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos){
+    if (visible_object_resize_data){
+        if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
+            std::string uuid = visible_object_resize_data->object_uuid;
+            if (uuid.size() > 0) {
+                BookMark* target_bookmark = current_document->get_bookmark_with_uuid(uuid);
+                target_bookmark->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+                return true;
+            }
+        }
+        if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
+            std::string uuid = visible_object_resize_data->object_uuid;
+            Portal* target_portal = current_document->get_portal_with_uuid(uuid);
+            if (target_portal) {
+                target_portal->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+                return true;
+            }
+        }
+    }
+    return false;
 }

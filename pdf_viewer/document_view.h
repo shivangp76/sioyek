@@ -38,6 +38,21 @@ struct LineSelectBeginData {
     RulerLineIndexInfo index_info;
 };
 
+struct ScheduledPortalUpdate {
+    Portal portal;
+    OpenedBookState state;
+};
+
+struct VisibleObjectMoveData {
+    VisibleObjectIndex index;
+    AbsoluteDocumentPos initial_position;
+    AbsoluteDocumentPos initial_mouse_position;
+    bool is_moving = true;
+
+    void handle_move(MainWidget* widget);
+    void handle_move_end(MainWidget* widget);
+};
+
 struct PendingDownloadPortal {
     Portal pending_portal;
     std::wstring paper_name;
@@ -128,6 +143,17 @@ public:
     std::optional<AbsoluteRect> wrong_character_rect = {};
     bool show_control_rect;
 
+    // the index of highlight in doc()->get_highlights() that is selected. This is used to
+    // delete/edit highlights e.g. by selecting a highlight by clicking on it and then executing `delete_highlight`
+    std::optional<VisibleObjectIndex> selected_object_index = {};
+
+    std::optional<VisibleObjectResizeData> visible_object_resize_data = {};
+    std::optional<VisibleObjectScrollData> visible_object_scroll_data = {};
+
+    std::optional<VisibleObjectMoveData> visible_object_move_data = {};
+
+    std::optional<ScheduledPortalUpdate> scheduled_portal_update = {};
+
     // last page to be fit when we are in smart fit mode
     // this value not being `{}` indicates that we are in smart fit mode
     // which means that every time page is changed, we execute `fit_to_page_width_smart`
@@ -157,7 +183,7 @@ public:
 
     //int selected_highlight_index = -1;
     //int selected_bookmark_index = -1;
-    std::optional<VisibleObjectIndex> selected_object_index = {};
+    // std::optional<VisibleObjectIndex> selected_object_index = {};
 
     bool visible_drawing_mask[26];
     FreehandDrawing current_drawing;
@@ -237,7 +263,7 @@ public:
     std::string get_selected_bookmark_uuid();
     std::string get_selected_portal_uuid();
 
-    void set_selected_object_index(VisibleObjectIndex index);
+    // void set_selected_object_index(VisibleObjectIndex index);
     //void set_selected_bookmark_index(int index);
 
     // void set_overview_highlights(const std::vector<DocumentRect>& rects);
@@ -403,7 +429,7 @@ public:
         std::optional<std::string> overview_type,
         std::optional<std::vector<DocumentRect>> overview_highlights = {}
     );
-    bool overview_under_pos(WindowPos pos);
+    // bool overview_under_pos(WindowPos pos);
 
     //float get_vertical_line_window_y();
     float get_ruler_window_y();
@@ -486,6 +512,22 @@ public:
     std::string create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name);
     int get_pending_portal_index_with_handle(const std::string& handle);
     PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);
+    bool handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object);
+    void begin_portal_scroll(WindowPos window_mpos);
+    void begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos);
+    void begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
+    std::string finish_pending_download_portal(std::wstring download_paper_name, std::wstring downloaded_file_path);
+
+    void set_selected_portal_uuid(std::string uuid, bool is_pinned=false);
+    void clear_selected_object();
+    void set_selected_highlight_uuid(std::string uuid);
+    void set_selected_bookmark_uuid(std::string uuid);
+    bool handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos);
+    void schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
+    // bool overview_under_pos(WindowPos pos);
+    Portal* get_portal_under_window_pos(WindowPos pos);
+    Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
+    bool handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos);
 };
 
 

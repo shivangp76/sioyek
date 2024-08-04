@@ -51,6 +51,7 @@ public:
     virtual std::optional<Requirement> next_requirement(MainWidget* widget);
     virtual std::optional<std::wstring> get_result();
 
+    DocumentView* dv();
     virtual void set_text_requirement(std::wstring value);
     virtual void set_symbol_requirement(char value);
     virtual void set_file_requirement(std::wstring value);

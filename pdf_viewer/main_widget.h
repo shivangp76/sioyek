@@ -86,29 +86,12 @@ struct SelectedDrawings {
 };
 
 
-struct ScheduledPortalUpdate {
-    Portal portal;
-    OpenedBookState state;
-};
-
-
-
-struct VisibleObjectMoveData {
-    VisibleObjectIndex index;
-    AbsoluteDocumentPos initial_position;
-    AbsoluteDocumentPos initial_mouse_position;
-    bool is_moving = true;
-
-    void handle_move(MainWidget* widget);
-    void handle_move_end(MainWidget* widget);
-};
 
 struct FreehandDrawingMoveData {
     std::vector<FreehandDrawing> initial_drawings;
     std::vector<PixmapDrawing> initial_pixmaps;
     AbsoluteDocumentPos initial_mouse_position;
 };
-
 
 struct RecentlyUpdatedPortalState {
     std::string uuid;
@@ -258,7 +241,6 @@ public:
     std::optional<AbsoluteDocumentPos> rect_select_begin = {};
     std::optional<AbsoluteDocumentPos> rect_select_end = {};
 
-    std::optional<VisibleObjectMoveData> visible_object_move_data = {};
 
     // when set, mouse wheel moves the ruler
     bool visual_scroll_mode = false;
@@ -300,10 +282,6 @@ public:
     // when we go back to the original location by jumping back in history, the portal will be edited
     // to be the new document view state
     std::optional<Portal> portal_to_edit = {};
-
-    // the index of highlight in doc()->get_highlights() that is selected. This is used to
-    // delete/edit highlights e.g. by selecting a highlight by clicking on it and then executing `delete_highlight`
-    std::optional<VisibleObjectIndex> selected_object_index = {};
 
     std::optional<SelectedDrawings> selected_freehand_drawings = {};
     std::optional<FreehandDrawingMoveData> freehand_drawing_move_data = {};
@@ -392,14 +370,11 @@ public:
     std::optional<OverviewTouchMoveData> overview_touch_move_data = {};
     std::optional<OverviewResizeData> overview_resize_data = {};
 
-    std::optional<VisibleObjectResizeData> visible_object_resize_data = {};
-    std::optional<VisibleObjectScrollData> visible_object_scroll_data = {};
 
     // when selecting text, we update the rendering faster, this timer is used 
     // so that we don't update the rendering too fast
     QTime last_text_select_time = QTime::currentTime();
 
-    std::optional<ScheduledPortalUpdate> scheduled_portal_update = {};
 
     // last time we updated `smooth_scroll_speed` 
     QTime last_speed_update_time = QTime::currentTime();
@@ -582,7 +557,7 @@ public:
     void do_synctex_forward_search(const Path& pdf_file_path, const Path& latex_file_path, int line, int column);
     //void handle_args(const QStringList &arguments);
     void update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state, bool async=false);
-    void schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
+    // void schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
     void update_closest_link_with_opened_book_state(const OpenedBookState& new_state);
     void set_current_widget(QWidget* new_widget);
     void push_current_widget(QWidget* new_widget);
@@ -864,8 +839,8 @@ protected:
     void on_ios_resume();
 #endif
 
-    bool handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos);
-    bool handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos);
+    // bool handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos);
+    // bool handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos);
     bool handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpos);
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
 
@@ -904,8 +879,8 @@ public:
     void handle_portal_move();
 
     bool is_middle_click_being_used();
-    void begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos);
-    void begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
+    // void begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos);
+    // void begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
     bool should_drag();
     void handle_freehand_drawing_move_finish();
     void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
@@ -915,7 +890,7 @@ public:
     std::optional<AbsoluteRect> get_overview_source_rect();
 
     void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
-    void finish_pending_download_portal(std::wstring download_paper_name, std::wstring downloaded_file_path);
+    // void finish_pending_download_portal(std::wstring download_paper_name, std::wstring downloaded_file_path);
 
     Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
     Portal* get_portal_under_window_pos(WindowPos pos);
@@ -1060,14 +1035,14 @@ public:
     void clear_current_page_drawings();
     void clear_current_document_drawings();
 
-    void set_selected_highlight_uuid(std::string uuid);
-    void set_selected_bookmark_uuid(std::string uuid);
-    void set_selected_portal_uuid(std::string uuid, bool is_pinned=false);
-    void clear_selected_object();
+    // void set_selected_highlight_uuid(std::string uuid);
+    // void set_selected_bookmark_uuid(std::string uuid);
+    // void set_selected_portal_uuid(std::string uuid, bool is_pinned=false);
+    // void clear_selected_object();
 
-    std::string get_selected_highlight_uuid();
-    std::string get_selected_portal_uuid();
-    std::string get_selected_bookmark_uuid();
+    // std::string get_selected_highlight_uuid();
+    // std::string get_selected_portal_uuid();
+    // std::string get_selected_bookmark_uuid();
 
     void handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects);
     void handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids);
@@ -1173,7 +1148,7 @@ public:
     void ensure_titlebar_colors_match_color_mode();
     void pin_current_overview_as_portal();
     void zoom_pinned_portal(bool zoom_in);
-    void begin_portal_scroll();
+    // void begin_portal_scroll();
     void set_mouse_cursor_for_side_resize(std::optional<OverviewSide> side);
     bool handle_freehand_drawing_click_event();
     bool handle_left_press_touch_mode(WindowPos click_pos);
@@ -1183,7 +1158,7 @@ public:
     void handle_rect_selection_point_release(AbsoluteDocumentPos abs_doc_pos);
     void handle_overview_download_button_click(AbsoluteDocumentPos abs_doc_pos);
     bool handle_overview_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos);
-    bool handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object);
+    // bool handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object);
     bool handle_visible_object_resize_finish();
 
 

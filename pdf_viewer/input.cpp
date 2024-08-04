@@ -890,6 +890,15 @@ void Command::on_text_change(const QString& new_text) {
 
 }
 
+DocumentView* Command::dv(){
+
+    if (widget){
+        return widget->main_document_view;
+    }
+
+    return nullptr;
+}
+
 bool Command::is_holdable() {
     return false;
 }
@@ -2251,7 +2260,7 @@ public:
         incomplete_bookmark.begin_y = value.y;
 
         pending_uuid = widget->doc()->add_incomplete_bookmark(incomplete_bookmark);
-        widget->set_selected_bookmark_uuid(pending_uuid);
+        dv()->set_selected_bookmark_uuid(pending_uuid);
         widget->invalidate_render();
     }
 
@@ -2267,7 +2276,7 @@ public:
             widget->on_new_bookmark_added(uuid);
             widget->invalidate_render();
             result = utf8_decode(uuid);
-            widget->set_selected_bookmark_uuid("");
+            dv()->set_selected_bookmark_uuid("");
         }
         else {
             widget->doc()->undo_pending_bookmark(pending_uuid);
@@ -2621,7 +2630,7 @@ public:
     AddBookmarkFreetextCommand(MainWidget* w) : Command(cname, w) {};
 
     void on_text_change(const QString& new_text) override {
-        std::string selected_bookmark_uuid = widget->get_selected_bookmark_uuid();
+        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
         BookMark* bookmark = widget->doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
 
         if (bookmark) {
@@ -2659,7 +2668,7 @@ public:
         incomplete_bookmark.color[2] = FREETEXT_BOOKMARK_COLOR[2];
 
         pending_uuid = widget->doc()->add_incomplete_bookmark(incomplete_bookmark);
-        widget->set_selected_bookmark_uuid(pending_uuid);
+        dv()->set_selected_bookmark_uuid(pending_uuid);
 
         widget->clear_selected_rect();
         widget->validate_render();
@@ -3849,12 +3858,12 @@ public:
     MoveSelectedBookmarkCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        std::string selected_bookmark_uuid = widget->get_selected_bookmark_uuid();
+        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
         if (selected_bookmark_uuid.size() > 0) {
 
             AbsoluteDocumentPos mouse_abspos = widget->get_mouse_abspos();
             widget->move_selected_bookmark_to_mouse_cursor();
-            widget->begin_bookmark_move(selected_bookmark_uuid, mouse_abspos);
+            dv()->begin_bookmark_move(selected_bookmark_uuid, mouse_abspos);
         }
 
     }
@@ -3872,7 +3881,7 @@ public:
     EditSelectedBookmarkCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void on_text_change(const QString& new_text) override {
-        std::string selected_bookmark_uuid = widget->get_selected_bookmark_uuid();
+        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
         //widget->doc()->get_bookmarks()[selected_bookmark_index].description = new_text.toStdWString();
         BookMark* bookmark = widget->doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
         if (bookmark) {
@@ -3882,7 +3891,7 @@ public:
 
     void pre_perform() {
 
-        std::string selected_bookmark_uuid = widget->get_selected_bookmark_uuid();
+        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
         BookMark* bookmark = widget->doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
         if (bookmark) {
             initial_text = bookmark->description;
@@ -3914,13 +3923,13 @@ public:
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
-        std::string selected_bookmark_uuid = widget->get_selected_bookmark_uuid();
+        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
         if (selected_bookmark_uuid.size() == 0) return {};
         return TextCommand::next_requirement(widget);
     }
 
     void perform() {
-        std::string selected_bookmark_uuid = widget->get_selected_bookmark_uuid();
+        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
         if (selected_bookmark_uuid.size() > 0) {
             std::wstring text_ = text.value();
             widget->change_selected_bookmark_text(text_);
@@ -3946,7 +3955,7 @@ public:
     EditSelectedHighlightCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void pre_perform() {
-        uuid = widget->get_selected_highlight_uuid();
+        uuid = dv()->get_selected_highlight_uuid();
 
         if (uuid.size() > 0) {
             Highlight* hl = widget->doc()->get_highlight_with_uuid(uuid);
@@ -4103,16 +4112,16 @@ public:
         if (index && index.value() < visible_objects.size()) {
             VisibleObjectIndex object_index = visible_objects[index.value()];
             if (object_index.object_type == VisibleObjectType::Highlight) {
-                widget->set_selected_highlight_uuid(object_index.uuid);
+                dv()->set_selected_highlight_uuid(object_index.uuid);
             }
             if (object_index.object_type == VisibleObjectType::Bookmark) {
-                widget->set_selected_bookmark_uuid(object_index.uuid);
+                dv()->set_selected_bookmark_uuid(object_index.uuid);
             }
             if (object_index.object_type == VisibleObjectType::Portal) {
-                widget->set_selected_portal_uuid(object_index.uuid);
+                dv()->set_selected_portal_uuid(object_index.uuid);
             }
             if (object_index.object_type == VisibleObjectType::PinnedPortal) {
-                widget->set_selected_portal_uuid(object_index.uuid, true);
+                dv()->set_selected_portal_uuid(object_index.uuid, true);
             }
 
         }
@@ -4159,15 +4168,15 @@ public:
         if (index && index.value() < visible_objects.size()) {
             VisibleObjectIndex object_index = visible_objects[index.value()];
             if (object_index.object_type == VisibleObjectType::Highlight) {
-                widget->set_selected_highlight_uuid(object_index.uuid);
+                dv()->set_selected_highlight_uuid(object_index.uuid);
                 widget->handle_delete_selected_highlight();
             }
             if (object_index.object_type == VisibleObjectType::Bookmark) {
-                widget->set_selected_bookmark_uuid(object_index.uuid);
+                dv()->set_selected_bookmark_uuid(object_index.uuid);
                 widget->handle_delete_selected_bookmark();
             }
             if ((object_index.object_type == VisibleObjectType::Portal) || (object_index.object_type == VisibleObjectType::PinnedPortal)) {
-                widget->set_selected_portal_uuid(object_index.uuid);
+                dv()->set_selected_portal_uuid(object_index.uuid);
                 widget->handle_delete_selected_portal();
             }
 
@@ -4183,7 +4192,7 @@ public:
     GenericHighlightCommand(std::string name, MainWidget* w) : GenericVisibleSelectCommand(name, w) {};
 
     std::string get_selected_item_uuid() override {
-        return widget->get_selected_highlight_uuid();
+        return dv()->get_selected_highlight_uuid();
     }
 
     std::vector<std::string> get_visible_item_uuids() override {
@@ -4200,7 +4209,7 @@ public:
     void perform_with_selected_index(std::optional<int> index) override {
         if (index) {
             if (index < visible_item_uuids.size()) {
-                widget->set_selected_highlight_uuid(visible_item_uuids[index.value()]);
+                dv()->set_selected_highlight_uuid(visible_item_uuids[index.value()]);
             }
         }
 
@@ -4215,7 +4224,7 @@ public:
     GenericVisibleBookmarkCommand(std::string name, MainWidget* w) : GenericVisibleSelectCommand(name, w) {};
 
     std::string get_selected_item_uuid() override {
-        return widget->get_selected_bookmark_uuid();
+        return dv()->get_selected_bookmark_uuid();
     }
 
     std::vector<std::string> get_visible_item_uuids() override {
@@ -4232,7 +4241,7 @@ public:
     void perform_with_selected_index(std::optional<int> index) override {
         if (index) {
             if (index < visible_item_uuids.size()) {
-                widget->set_selected_bookmark_uuid(visible_item_uuids[index.value()]);
+                dv()->set_selected_bookmark_uuid(visible_item_uuids[index.value()]);
             }
         }
 
@@ -4441,8 +4450,8 @@ public:
                     copy_to_clipboard(overview_paper_name->toStdWString());
                 }
             }
-            else if (widget->selected_object_index.has_value()) {
-                VisibleObjectIndex selected_object = widget->selected_object_index.value();
+            else if (dv()->selected_object_index.has_value()) {
+                VisibleObjectIndex selected_object = dv()->selected_object_index.value();
                 if (selected_object.object_type == VisibleObjectType::Bookmark) {
                     BookMark* bookmark = widget->doc()->get_bookmark_with_uuid(selected_object.uuid);
                     if (bookmark) {
