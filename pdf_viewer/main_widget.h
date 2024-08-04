@@ -801,9 +801,6 @@ public:
     int ruler_moving_distance_traveled = 0;
     std::optional<Portal> last_dispplayed_portal = {};
 
-    bool should_sync_current_document_to_server();
-
-
     void set_recently_updated_portal(const std::string& uuid);
     void update_highlight_buttons_position();
     void start_mobile_selection_under_point(AbsoluteDocumentPos point);
@@ -1163,7 +1160,6 @@ public:
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
     void upload_current_file();
-    QString get_login_status_string();
     void update_current_document_checksum(std::string checksum);
     bool is_current_document_available_on_server();
     void handle_login(std::wstring username, std::wstring password);

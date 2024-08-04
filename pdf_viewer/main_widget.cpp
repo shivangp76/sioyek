@@ -997,7 +997,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     status_label_right->setStyleSheet(get_status_stylesheet());
     status_label_right->setFont(label_font);
 
-    server_actions_button = new QPushButton(get_login_status_string());
+    server_actions_button = new QPushButton(sioyek_network_manager->get_login_status_string(doc()));
     server_actions_button->setCursor(Qt::PointingHandCursor);
 
     resume_to_server_position_button = new QPushButton("RESUME");
@@ -1418,51 +1418,6 @@ std::wstring MainWidget::get_title_string() {
     return str.toStdWString();
 }
 
-
-QString MainWidget::get_login_status_string() {
-    //QString login_status;
-    //QString document_status;
-    QString server_status_string;
-
-    if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
-        if (is_current_document_available_on_server()) {
-            if (doc()->get_is_synced()) {
-                server_status_string = "SYNCED";
-            }
-            else {
-                server_status_string = "DESYNCHRONIZED";
-            }
-        }
-        else {
-            if (should_sync_current_document_to_server()) {
-                server_status_string = "SYNC PENDING";
-            }
-            else {
-                server_status_string = "UNSYNCED";
-            }
-        }
-    }
-    else {
-        if (sioyek_network_manager->network_manager_ == nullptr) {
-            server_status_string = "OFFLINE";
-        }
-        else if (sioyek_network_manager->status == ServerStatus::NotLoggedIn) {
-            server_status_string = "NOT LOGGED IN";
-        }
-        else if (sioyek_network_manager->status == ServerStatus::ServerOffline) {
-            server_status_string = "SERVER OFFLINE";
-        }
-        else if (sioyek_network_manager->status == ServerStatus::InvalidCredentials) {
-            server_status_string = "EXPIRED/INVALID CREDENTIALS";
-        }
-        else if (sioyek_network_manager->status == ServerStatus::LoggingIn) {
-            server_status_string = "LOGGING IN";
-        }
-    }
-
-    return "[ " + server_status_string + " ]";
-}
-
 void MainWidget::handle_escape() {
 
     // add high escape priority to overview and search, if any of them are escaped, do not escape any further
@@ -1714,7 +1669,7 @@ void MainWidget::validate_ui() {
         }
     }
 
-    server_actions_button->setText(get_login_status_string());
+    server_actions_button->setText(sioyek_network_manager->get_login_status_string(doc()));
     is_ui_invalidated = false;
 }
 
@@ -12888,13 +12843,6 @@ void MainWidget::on_mark_added(const std::string& uuid, char type) {
         QString type_string = QString(QChar(type));
         call_async_js_function_with_args(add_mark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid) << type_string);
     }
-}
-
-bool MainWidget::should_sync_current_document_to_server() {
-    if (doc()) {
-        return doc()->get_is_synced();
-    }
-    return false;
 }
 
 void MainWidget::sync_newly_added_annot(const std::string& annot_type, const std::string& uuid) {

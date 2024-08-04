@@ -130,6 +130,8 @@ public:
     void download_new_annotations(QObject* parent, QDateTime last_update_time, bool force=false);
     void search_all_documents(QObject* parentm, QString query, std::function<void(std::vector<QString>)> on_done);
     QNetworkAccessManager* get_network_manager();
+    bool should_sync_document_to_server(Document* doc);
+    QString get_login_status_string(Document* current_document);
 };
 
 void block_for_send(QNetworkReply* reply);

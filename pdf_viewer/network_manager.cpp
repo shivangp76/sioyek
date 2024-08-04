@@ -1869,3 +1869,53 @@ void SioyekNetworkManager::search_all_documents(QObject* parent, QString q, std:
         on_done(matches);
         });
 }
+
+bool SioyekNetworkManager::should_sync_document_to_server(Document *doc) {
+
+    if (doc) {
+        return doc->get_is_synced();
+    }
+    return false;
+}
+
+QString SioyekNetworkManager::get_login_status_string(Document *current_document) {
+    QString server_status_string;
+
+    if (status == ServerStatus::LoggedIn) {
+        if (is_document_available_on_server(current_document)) {
+            if (current_document->get_is_synced()) {
+                server_status_string = "SYNCED";
+            }
+            else {
+                server_status_string = "DESYNCHRONIZED";
+            }
+        }
+        else {
+            if (should_sync_document_to_server(current_document)) {
+                server_status_string = "SYNC PENDING";
+            }
+            else {
+                server_status_string = "UNSYNCED";
+            }
+        }
+    }
+    else {
+        if (network_manager_ == nullptr) {
+            server_status_string = "OFFLINE";
+        }
+        else if (status == ServerStatus::NotLoggedIn) {
+            server_status_string = "NOT LOGGED IN";
+        }
+        else if (status == ServerStatus::ServerOffline) {
+            server_status_string = "SERVER OFFLINE";
+        }
+        else if (status == ServerStatus::InvalidCredentials) {
+            server_status_string = "EXPIRED/INVALID CREDENTIALS";
+        }
+        else if (status == ServerStatus::LoggingIn) {
+            server_status_string = "LOGGING IN";
+        }
+    }
+
+    return "[ " + server_status_string + " ]";
+}
