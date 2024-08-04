@@ -530,6 +530,30 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 
 }
 
+bool MainWidget::handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos){
+    if (visible_object_resize_data){
+        if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
+            std::string uuid = visible_object_resize_data->object_uuid;
+            if (uuid.size() > 0) {
+                BookMark* target_bookmark = doc()->get_bookmark_with_uuid(uuid);
+                target_bookmark->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+                validate_render();
+                return true;
+            }
+        }
+        if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
+            std::string uuid = visible_object_resize_data->object_uuid;
+            Portal* target_portal = doc()->get_portal_with_uuid(uuid);
+            if (target_portal) {
+                target_portal->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
+                validate_render();
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     if (is_pinching){
         // no need to handle move events when a pinch to zoom is in progress
@@ -559,13 +583,16 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             visible_object_move_data->is_moving = true;
         }
     }
+
     if (freehand_drawing_move_data) {
-        // update temp drawings of opengl widget
-        //AbsoluteDocumentPos mouse_abspos = WindowPos(mouse_event->pos()).to_absolute(main_document_view);
-        AbsoluteDocumentPos mouse_abspos = get_window_abspos(WindowPos(mouse_event->pos()));
+        // update temp drawings of document view
         main_document_view->moving_drawings.clear();
         main_document_view->moving_pixmaps.clear();
-        move_selected_drawings(mouse_abspos, main_document_view->moving_drawings, main_document_view->moving_pixmaps);
+        move_selected_drawings(
+            abs_mpos,
+            main_document_view->moving_drawings,
+            main_document_view->moving_pixmaps
+        );
         validate_render();
         return;
     }
@@ -573,7 +600,10 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     if (rect_select_mode) {
         if (rect_select_begin.has_value()) {
             rect_select_end = abs_mpos;
-            AbsoluteRect selected_rect(rect_select_begin.value(), rect_select_end.value());
+            AbsoluteRect selected_rect(
+                rect_select_begin.value(),
+                rect_select_end.value()
+            );
             main_document_view->set_selected_rectangle(selected_rect);
 
             validate_render();
@@ -592,11 +622,12 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             update_position_buffer();
         }
         if (was_last_mouse_down_in_ruler_next_rect || was_last_mouse_down_in_ruler_prev_rect) {
-            WindowPos current_window_pos = { mouse_event->pos().x(), mouse_event->pos().y() };
+            WindowPos current_window_pos(mouse_event->pos());
             int distance = current_window_pos.manhattan(ruler_moving_last_window_pos);
             ruler_moving_last_window_pos = current_window_pos;
             ruler_moving_distance_traveled += distance;
-            int num_next = ruler_moving_distance_traveled / static_cast<int>(std::max(RULER_AUTO_MOVE_SENSITIVITY, 1.0f));
+            int num_next = ruler_moving_distance_traveled /
+                static_cast<int>(std::max(RULER_AUTO_MOVE_SENSITIVITY, 1.0f));
             if (num_next > 0) {
                 ruler_moving_distance_traveled = 0;
             }
@@ -617,25 +648,20 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         }
     }
 
-
-
     if (visible_object_move_data) {
         visible_object_move_data->handle_move(this);
         validate_render();
     }
 
-    // if the mouse has moved too much when pressing middle mouse button, we assume that the user wants to drag
-    // instead of smart jump
+    // if the mouse has moved too much when pressing middle mouse button, we assume that
+    // the user wants to drag instead of smart jump
     if (QGuiApplication::mouseButtons() & Qt::MouseButton::MiddleButton) {
 
-
-        if (main_document_view->get_overview_page() && main_document_view->is_window_point_in_overview(normal_mpos)) {
+        if (main_document_view->is_window_point_in_overview(normal_mpos)) {
             if (!overview_touch_move_data.has_value()) {
                 OverviewTouchMoveData touch_move_data;
                 touch_move_data.original_mouse_normalized_pos = normal_mpos;
-                float overview_offset_y = main_document_view->get_overview_page()->absolute_offset_y;
-                float overview_offset_x = main_document_view->get_overview_page()->absolute_offset_x;
-                touch_move_data.overview_original_pos_absolute = AbsoluteDocumentPos{ overview_offset_x, overview_offset_y };
+                touch_move_data.overview_original_pos_absolute = main_document_view->get_overview_page()->get_absolute_pos();
                 overview_touch_move_data = touch_move_data;
             }
         }
@@ -648,29 +674,8 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         }
     }
 
-    std::optional<PdfLink> link = {};
 
-
-    if (visible_object_resize_data) {
-        if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
-            std::string uuid = visible_object_resize_data->object_uuid;
-            if (uuid.size() > 0) {
-                BookMark* target_bookmark = doc()->get_bookmark_with_uuid(uuid);
-                target_bookmark->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
-                validate_render();
-                return;
-            }
-        }
-        if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
-            std::string uuid = visible_object_resize_data->object_uuid;
-            Portal* target_portal = doc()->get_portal_with_uuid(uuid);
-            if (target_portal) {
-                target_portal->set_side_to_pos(visible_object_resize_data->side_index, abs_mpos);
-                validate_render();
-                return;
-            }
-        }
-    }
+    handle_visible_object_resize_mouse_move(abs_mpos);
 
     if (visible_object_scroll_data) {
         std::string uuid = visible_object_scroll_data->object_uuid;
@@ -741,6 +746,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
     }
 
+    std::optional<PdfLink> link = {};
     if (!is_scratchpad_mode()){
         if (main_document_view->is_window_point_in_overview(normal_mpos)) {
             link = doc()->get_link_in_pos(main_document_view->window_pos_to_overview_pos(normal_mpos));

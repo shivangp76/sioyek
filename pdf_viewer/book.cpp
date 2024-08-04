@@ -772,3 +772,7 @@ void Portal::set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos) {
         }
     }
 }
+
+AbsoluteDocumentPos OverviewState::get_absolute_pos() {
+    return AbsoluteDocumentPos{ absolute_offset_x, absolute_offset_y };
+}

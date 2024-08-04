@@ -424,6 +424,7 @@ struct OverviewState {
     std::optional<float> original_zoom_level = {};
 
     float get_zoom_level(DocumentView* dv);
+    AbsoluteDocumentPos get_absolute_pos();
 };
 
 bool operator==(const DocumentViewState& lhs, const DocumentViewState& rhs);
