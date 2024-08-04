@@ -530,6 +530,34 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 
 }
 
+bool MainWidget::handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos){
+    if (visible_object_scroll_data) {
+        std::string uuid = visible_object_scroll_data->object_uuid;
+        if (visible_object_scroll_data->type == VisibleObjectType::Bookmark) {
+            BookMark* target_bookmark = doc()->get_bookmark_with_uuid(uuid);
+            if (target_bookmark) {
+                dv()->set_bookmark_scroll_amount(target_bookmark->uuid,
+                    -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * dv()->get_zoom_level() + visible_object_scroll_data->original_scroll_amount);
+                validate_render();
+                return true;
+            }
+        }
+        if (visible_object_scroll_data->type == VisibleObjectType::PinnedPortal) {
+            Portal* target_portal = doc()->get_portal_with_uuid(uuid);
+            if (target_portal) {
+                float target_zoom_level = 1.0f / target_portal->dst.book_state.zoom_level;
+                target_portal->dst.book_state.offset_y = -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * target_zoom_level
+                                                        + visible_object_scroll_data->original_scroll_amount;
+                target_portal->dst.book_state.offset_x = (abs_mpos.x - visible_object_scroll_data->original_mouse_pos.x) * target_zoom_level
+                                                        + visible_object_scroll_data->original_scroll_amount_x.value();
+                schedule_update_link_with_opened_book_state(*target_portal, target_portal->dst.book_state);
+                validate_render();
+                return true;
+            }
+        }
+    }
+    return false;
+}
 bool MainWidget::handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos){
     if (visible_object_resize_data){
         if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
@@ -675,34 +703,8 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     }
 
 
-    handle_visible_object_resize_mouse_move(abs_mpos);
-
-    if (visible_object_scroll_data) {
-        std::string uuid = visible_object_scroll_data->object_uuid;
-        if (visible_object_scroll_data->type == VisibleObjectType::Bookmark) {
-            BookMark* target_bookmark = doc()->get_bookmark_with_uuid(uuid);
-            if (target_bookmark) {
-                //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
-                dv()->set_bookmark_scroll_amount(target_bookmark->uuid,
-                    -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * dv()->get_zoom_level() + visible_object_scroll_data->original_scroll_amount);
-                validate_render();
-                return;
-            }
-        }
-        if (visible_object_scroll_data->type == VisibleObjectType::PinnedPortal) {
-            Portal* target_portal = doc()->get_portal_with_uuid(uuid);
-            if (target_portal) {
-                //target_bookmark.set_side_to_pos(bookmark_resize_data->side_index, abs_mpos);
-                target_portal->dst.book_state.offset_y = -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) + visible_object_scroll_data->original_scroll_amount;
-                target_portal->dst.book_state.offset_x = (abs_mpos.x - visible_object_scroll_data->original_mouse_pos.x) + visible_object_scroll_data->original_scroll_amount_x.value();
-                schedule_update_link_with_opened_book_state(*target_portal, target_portal->dst.book_state);
-                //(target_portal.uuid,
-                //    
-                validate_render();
-                return;
-            }
-        }
-    }
+    if (handle_visible_object_resize_mouse_move(abs_mpos)) return;
+    if (handle_visible_object_scroll_mouse_move(abs_mpos)) return;
 
     if (overview_resize_data) {
         // if we are resizing overview page, set the selected side of the overview window to the mosue position
