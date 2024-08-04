@@ -39,7 +39,6 @@
 #include <qmenu.h>
 #include <qdesktopservices.h>
 #include <qtemporarydir.h>
-#include <qtextbrowser.h>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
@@ -455,95 +454,6 @@ void set_filtered_select_menu(MainWidget* main_widget, bool fuzzy, bool multilin
 }
 
 
-class SioyekDocumentationTextBrowser : public QTextBrowser {
-private:
-    MainWidget* main_widget = nullptr;
-public:
-    SioyekDocumentationTextBrowser(MainWidget* parent) : QTextBrowser(parent) {
-        main_widget = parent;
-    }
-
-    // prevent the click events to be propagated to the parent widget
-    void mousePressEvent(QMouseEvent* mevent) override {
-        QTextBrowser::mousePressEvent(mevent);
-        mevent->accept();
-    }
-
-    void mouseReleaseEvent(QMouseEvent* mevent) override {
-        QTextBrowser::mouseReleaseEvent(mevent);
-        mevent->accept();
-    }
-
-    void backward() override {
-        QTextBrowser::backward();
-        QUrl current_url = historyUrl(0);
-        doSetSource(current_url, QTextDocument::ResourceType::MarkdownResource);
-    }
-
-    void forward() override {
-        QTextBrowser::forward();
-        QUrl current_url = historyUrl(0);
-        doSetSource(current_url, QTextDocument::ResourceType::MarkdownResource);
-    }
-
-    void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override {
-        // push the previous state to history
-        QTextBrowser::doSetSource(url, type);
-
-        QString url_string = url.toString();
-        if (url_string.startsWith("commands.md")) {
-            QString documentation_title = url_string.mid(12).trimmed();
-            QString documentation = main_widget->get_command_documentation_with_title(documentation_title);
-            setMarkdown(documentation);
-        }
-        else if (url_string.startsWith("configs.md")) {
-            QString documentation_title = url_string.mid(11).trimmed();
-            QString documentation = main_widget->get_config_documentation_with_title("", documentation_title).trimmed();
-            setMarkdown(documentation);
-        }
-        else if (url_string.startsWith("setconfig")) {
-            QString config_name = url_string.split('-').at(1);
-            main_widget->pop_current_widget();
-            main_widget->execute_macro_if_enabled(L"setconfig_" + config_name.toStdWString());
-        }
-        else if (url_string.startsWith("setsaveconfig")) {
-            QString config_name = url_string.split('-').at(1);
-            main_widget->pop_current_widget();
-            main_widget->execute_macro_if_enabled(L"setsaveconfig_" + config_name.toStdWString());
-        }
-        else if (url_string.startsWith("changeconfig")){
-            QString config_name = url_string.split('-').at(1);
-            Config* config_obj = main_widget->config_manager->get_mut_config_with_name(config_name.toStdWString());
-            if (config_obj) {
-                if (EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
-                    show_error_message(L"external_text_editor_command config must be set for this to work");
-                }
-                main_widget->pop_current_widget();
-
-                if (config_obj->definition_file.size() > 0) {
-                    // if the config exists in a config file, open the location of the config
-                    std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND)
-                        .replace("%{file}", QString::fromStdWString(config_obj->definition_file))
-                        .replace("%{line}", QString::number(config_obj->definition_line))
-                        .toStdWString();
-                    main_widget->execute_command(command);
-                }
-                else {
-                    // if the config is not present in any config files, open the prefs_user
-                    // file so that the user can add it 
-                    main_widget->execute_macro_if_enabled(L"prefs_user");
-                }
-            }
-        }
-        else {
-            //qDebug() << "clicled on url:";
-            //qDebug() << url;
-            //QTextBrowser::doSetSource(url, type);
-        }
-    }
-
-
-};
 
 bool MainWidget::is_current_document_available_on_server() {
     return sioyek_network_manager->is_document_available_on_server(doc());

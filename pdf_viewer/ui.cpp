@@ -31,6 +31,7 @@ extern float TTS_RATE;
 extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
+extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 
 extern float UI_TEXT_COLOR[3];
 extern float UI_BACKGROUND_COLOR[3];
@@ -3438,4 +3439,87 @@ DocumentPos SelectionIndicator::get_docpos() {
 void SelectionIndicator::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     (is_begin ? &begin_icon : &end_icon)->paint(&painter, rect());
+}
+
+SioyekDocumentationTextBrowser::SioyekDocumentationTextBrowser(MainWidget* parent) : QTextBrowser(parent) {
+    main_widget = parent;
+}
+
+void SioyekDocumentationTextBrowser::mousePressEvent(QMouseEvent* mevent) {
+    // prevent the click events to be propagated to the parent widget
+    QTextBrowser::mousePressEvent(mevent);
+    mevent->accept();
+}
+
+void SioyekDocumentationTextBrowser::mouseReleaseEvent(QMouseEvent* mevent) {
+    QTextBrowser::mouseReleaseEvent(mevent);
+    mevent->accept();
+}
+
+void SioyekDocumentationTextBrowser::backward() {
+    QTextBrowser::backward();
+    QUrl current_url = historyUrl(0);
+    doSetSource(current_url, QTextDocument::ResourceType::MarkdownResource);
+}
+
+void SioyekDocumentationTextBrowser::forward() {
+    QTextBrowser::forward();
+    QUrl current_url = historyUrl(0);
+    doSetSource(current_url, QTextDocument::ResourceType::MarkdownResource);
+}
+
+void SioyekDocumentationTextBrowser::doSetSource(const QUrl& url, QTextDocument::ResourceType type) {
+    // push the previous state to history
+    QTextBrowser::doSetSource(url, type);
+
+    QString url_string = url.toString();
+    if (url_string.startsWith("commands.md")) {
+        QString documentation_title = url_string.mid(12).trimmed();
+        QString documentation = main_widget->get_command_documentation_with_title(documentation_title);
+        setMarkdown(documentation);
+    }
+    else if (url_string.startsWith("configs.md")) {
+        QString documentation_title = url_string.mid(11).trimmed();
+        QString documentation = main_widget->get_config_documentation_with_title("", documentation_title).trimmed();
+        setMarkdown(documentation);
+    }
+    else if (url_string.startsWith("setconfig")) {
+        QString config_name = url_string.split('-').at(1);
+        main_widget->pop_current_widget();
+        main_widget->execute_macro_if_enabled(L"setconfig_" + config_name.toStdWString());
+    }
+    else if (url_string.startsWith("setsaveconfig")) {
+        QString config_name = url_string.split('-').at(1);
+        main_widget->pop_current_widget();
+        main_widget->execute_macro_if_enabled(L"setsaveconfig_" + config_name.toStdWString());
+    }
+    else if (url_string.startsWith("changeconfig")){
+        QString config_name = url_string.split('-').at(1);
+        Config* config_obj = main_widget->config_manager->get_mut_config_with_name(config_name.toStdWString());
+        if (config_obj) {
+            if (EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
+                show_error_message(L"external_text_editor_command config must be set for this to work");
+            }
+            main_widget->pop_current_widget();
+
+            if (config_obj->definition_file.size() > 0) {
+                // if the config exists in a config file, open the location of the config
+                std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND)
+                    .replace("%{file}", QString::fromStdWString(config_obj->definition_file))
+                    .replace("%{line}", QString::number(config_obj->definition_line))
+                    .toStdWString();
+                main_widget->execute_command(command);
+            }
+            else {
+                // if the config is not present in any config files, open the prefs_user
+                // file so that the user can add it 
+                main_widget->execute_macro_if_enabled(L"prefs_user");
+            }
+        }
+    }
+    else {
+        //qDebug() << "clicled on url:";
+        //qDebug() << url;
+        //QTextBrowser::doSetSource(url, type);
+    }
 }

@@ -5,6 +5,7 @@
 #include <functional>
 #include <optional>
 #include <unordered_map>
+#include <qtextbrowser.h>
 
 #include <QListWidget>
 #include <QScroller>
@@ -1395,4 +1396,17 @@ public:
     void mouseReleaseEvent(QMouseEvent* mevent);
     DocumentPos get_docpos();
     void paintEvent(QPaintEvent* event);
+};
+
+class SioyekDocumentationTextBrowser : public QTextBrowser {
+private:
+    MainWidget* main_widget = nullptr;
+public:
+    SioyekDocumentationTextBrowser(MainWidget* parent);
+
+    void mousePressEvent(QMouseEvent* mevent) override;
+    void mouseReleaseEvent(QMouseEvent* mevent) override;
+    void backward() override;
+    void forward() override;
+    void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override;
 };
