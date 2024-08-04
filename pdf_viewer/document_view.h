@@ -38,6 +38,16 @@ struct LineSelectBeginData {
     RulerLineIndexInfo index_info;
 };
 
+struct PendingDownloadPortal {
+    Portal pending_portal;
+    std::wstring paper_name;
+    std::wstring source_document_path;
+    std::string handle;
+    float downloaded_fraction = -1.0f;
+    // the pending portal is marked for deletion
+    bool marked = false;
+};
+
 class DocumentView {
 protected:
 
@@ -128,7 +138,8 @@ public:
     std::optional<AbsoluteDocumentPos> underline = {};
     // std::vector<DocumentRect> overview_highlights;
 
-    std::vector<std::pair<AbsoluteRect, float>> pending_download_portals;
+    // std::vector<std::pair<AbsoluteRect, float>> pending_download_portals;
+    std::vector<PendingDownloadPortal> pending_download_portals;
     std::optional<AbsoluteRect> selected_rectangle = {};
 
     // selected text (using mouse cursor or other methods) which is used e.g. for copying or highlighting
@@ -234,7 +245,7 @@ public:
     void set_selected_rectangle(AbsoluteRect selected);
     void clear_selected_rectangle();
     std::optional<AbsoluteRect> get_selected_rectangle();
-    void set_pending_download_portals(std::vector<std::pair<AbsoluteRect, float>>&& portal_rects);
+    // void set_pending_download_portals(std::vector<std::pair<AbsoluteRect, float>>&& portal_rects);
 
     // find the closest portal to the current position
     // if limit is true, we only search for portals near the current location and not all portals
@@ -467,7 +478,14 @@ public:
     void goto_next_block();
     void goto_prev_block();
     void focus_on_character_offset_into_document(int character_offset_into_document);
-
+    bool handle_right_click_bookmark(WindowPos click_pos, BookMark* bookmark);
+    QString get_markdown_bookmark_anchor_text_under_pos(QPoint cursor_pos);
+    std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
+    std::string get_pending_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
+    std::vector<SearchResult> get_fuzzy_search_results(std::wstring query);
+    std::string create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name);
+    int get_pending_portal_index_with_handle(const std::string& handle);
+    PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);
 };
 
 

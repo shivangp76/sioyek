@@ -1128,7 +1128,10 @@ void PdfViewOpenGLWidget::my_render() {
     if (doc()->can_use_highlights()) {
 
         for (int i = 0; i < document_view->pending_download_portals.size(); i++) {
-            render_portal_rect(document_view->pending_download_portals[i].first, true, document_view->pending_download_portals[i].second);
+            auto pending_rect = document_view->pending_download_portals[i].pending_portal.get_rectangle();
+            if (pending_rect.has_value()){
+                render_portal_rect(pending_rect.value(), true, document_view->pending_download_portals[i].downloaded_fraction);
+            }
         }
         for (int i = 0; i < portals.size(); i++) {
             if (portals[i].is_icon()) {

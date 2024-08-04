@@ -13,6 +13,7 @@
 // add keyboard commands to control pinned portals
 // pinned portals outside of page boundary are displayed weirdly in two page mode
 // in touch mode if menu button and a visible object overlap, bad things happen
+// visible_object_move_data, etc. should be in document_view
 
 
 #include "platform/qt/graphic_qt.h"
@@ -2147,33 +2148,6 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat
 
 }
 
-bool MainWidget::handle_right_click_bookmark(WindowPos click_pos, BookMark* bookmark){
-    if (bookmark){
-        // get the link under cursor
-        QString bookmark_text = get_markdown_bookmark_anchor_text_under_cursor();
-        std::vector<SearchResult> search_results = get_fuzzy_search_results(bookmark_text.toStdWString());
-
-        if (search_results.size() > 0){
-            search_results[0].fill(doc());
-            if (search_results[0].rects.size() > 0){
-                float doc_y = search_results[0].rects[0].y0;
-                int page = search_results[0].page;
-                float abs_y = doc()->document_to_absolute_y(page, doc_y);
-                OverviewState overview_state = { abs_y, 0, -1, nullptr };
-                for (int i = 0; i < search_results[0].rects.size(); i++){
-                    DocumentRect rect = DocumentRect{search_results[0].rects[i], page};
-                    overview_state.highlight_rects.push_back(rect);
-                }
-                dv()->set_overview_page(overview_state);
-
-                invalidate_render();
-            }
-        }
-
-    }
-    return true;
-}
-
 void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
 
     AbsoluteDocumentPos click_abspos = click_pos.to_absolute(dv());
@@ -2206,10 +2180,14 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
     }
 
     if (down==true){
-        std::optional<VisibleObjectIndex> visible_object_under_cursor = get_visible_object_at_pos(click_abspos);
+        std::optional<VisibleObjectIndex> visible_object_under_cursor = main_document_view->get_visible_object_at_pos(click_abspos);
         if (visible_object_under_cursor.has_value() && visible_object_under_cursor->object_type == VisibleObjectType::Bookmark){
             BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object_under_cursor->uuid);
-            if (handle_right_click_bookmark(click_pos, bookmark)) return;;
+            if (main_document_view->handle_right_click_bookmark(click_pos, bookmark)){
+                invalidate_render();
+                return;
+            }
+
         }
 
     }
@@ -2579,7 +2557,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
         if (handle_overview_click(click_pos, abs_doc_pos)) return;
 
-        auto visible_object = get_visible_object_at_pos(abs_doc_pos);
+        auto visible_object = main_document_view->get_visible_object_at_pos(abs_doc_pos);
 
         if (visible_object) {
             if (handle_visible_object_click(click_pos, abs_doc_pos, visible_object)) {
@@ -2826,7 +2804,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
 
         if (bookmark) {
             if (BookMark::should_be_displayed_as_markdown(QString::fromStdWString(bookmark->description))) {
-                QString anchor_string = get_markdown_bookmark_anchor_text_under_cursor();
+                QString anchor_string = main_document_view->get_markdown_bookmark_anchor_text_under_pos(QPoint(click_pos.x, click_pos.y));
                 if (anchor_string.size() > 0) {
                     was_bookmark_anchor_link_click = true;
                     if (!anchor_string.startsWith("sioyek://")) {
@@ -3104,7 +3082,7 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
             begin_portal_scroll();
         }
         else if (!visible_object_move_data.has_value()) {
-            auto visible_object_index = get_visible_object_at_pos(abs_mpos);
+            auto visible_object_index = main_document_view->get_visible_object_at_pos(abs_mpos);
             if (visible_object_index.has_value()) {
                 visible_object_index->handle_move_begin(this, abs_mpos);
             }
@@ -3181,7 +3159,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
     bool is_in_overview = is_mouse_cursor_in_overview();
 
-    std::optional<VisibleObjectIndex> object_under_cursor = get_visible_object_at_pos(mouse_abs_pos);
+    std::optional<VisibleObjectIndex> object_under_cursor = main_document_view->get_visible_object_at_pos(mouse_abs_pos);
     if ((!is_in_overview) && object_under_cursor.has_value() && (!visible_object_move_data.has_value())) {
         if ((object_under_cursor->object_type == VisibleObjectType::Bookmark) &&
             selected_object_index.has_value() &&
@@ -7695,36 +7673,6 @@ QVariantMap MainWidget::get_color_mapping() {
     return color_map;
 }
 
-QString MainWidget::get_markdown_bookmark_anchor_text_under_cursor() {
-    QPoint cursor_pos = mapFromGlobal(QCursor::pos());
-    AbsoluteDocumentPos cursor_abspos = get_cursor_abspos();
-
-    std::optional<VisibleObjectIndex> visible_object = get_visible_object_at_pos(cursor_abspos);
-    if (visible_object.has_value() && visible_object->object_type == VisibleObjectType::Bookmark) {
-        BookMark* bookmark = doc()->get_bookmark_with_uuid(visible_object->uuid);
-
-        if (bookmark) {
-            QString bookmark_text = QString::fromStdWString(bookmark->description);
-
-            if (BookMark::should_be_displayed_as_markdown(bookmark_text)) {
-                QFont font = bookmark->get_font(dv()->get_zoom_level());
-                QRect window_qrect = bookmark->get_rectangle()->to_window(dv()).to_qrect();
-                float scroll_amount = dv()->get_bookmark_scroll_amount(bookmark->uuid);
-
-
-                QTextDocument td;
-                prepare_text_document_for_bookmark_markdown(td, BookMark::get_display_markdown_or_text(bookmark_text), window_qrect, font);
-
-                QPoint cursor_in_bookmark_pos = cursor_pos - window_qrect.topLeft();
-                cursor_in_bookmark_pos.setY(cursor_in_bookmark_pos.y() + scroll_amount);
-
-                return td.documentLayout()->anchorAt(cursor_in_bookmark_pos);
-
-            }
-        }
-    }
-    return "";
-}
 
 std::wstring replace_verbatim_links(std::wstring input) {
     // convert '@verbatim(string)' in input to '[ref](string)'
@@ -8092,7 +8040,7 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
                 source_position = doc_pos.to_absolute(doc());
             }
 
-            pending_portal_handle = create_pending_download_portal(source_position, bib_text.toStdWString());
+            pending_portal_handle = main_document_view->create_pending_download_portal(source_position, bib_text.toStdWString());
         }
         if (TOUCH_MODE) {
             show_text_prompt(bib_text.toStdWString(), [this, pending_portal_handle](std::wstring text) {
@@ -9329,11 +9277,11 @@ void MainWidget::handle_portal_move() {
 
     std::string uuid = visible_object_move_data->index.uuid;
     if (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal) {
-        PendingDownloadPortal* pending_portal = get_pending_portal_with_uuid(uuid);
+        PendingDownloadPortal* pending_portal = main_document_view->get_pending_portal_with_uuid(uuid);
         if (pending_portal) {
             pending_portal->pending_portal.src_offset_x = visible_object_move_data->initial_position.x + diff_x;
             pending_portal->pending_portal.src_offset_y = visible_object_move_data->initial_position.y + diff_y;
-            update_opengl_pending_download_portals();
+            // update_opengl_pending_download_portals();
         }
     }
     else {
@@ -9385,7 +9333,7 @@ void MainWidget::begin_portal_move(const std::string& uuid, AbsoluteDocumentPos 
 
     if (is_pending) {
         move_data.index.object_type = VisibleObjectType::PendingPortal;
-        PendingDownloadPortal* pending_portal = get_pending_portal_with_uuid(uuid);
+        PendingDownloadPortal* pending_portal = main_document_view->get_pending_portal_with_uuid(uuid);
 
         if (pending_portal) {
             move_data.initial_position.x = pending_portal->pending_portal.src_offset_x.value();
@@ -9627,15 +9575,15 @@ std::optional<QString> MainWidget::get_overview_paper_name() {
 void MainWidget::finish_pending_download_portal(std::wstring download_paper_name, std::wstring downloaded_file_path) {
     std::string checksum = checksummer->get_checksum(downloaded_file_path);
     std::string pending_uuid = "";
-    for (int i = 0; i < pending_download_portals.size(); i++) {
+    for (int i = 0; i < main_document_view->pending_download_portals.size(); i++) {
 
-        Portal pending_portal = pending_download_portals[i].pending_portal;
-        std::wstring pending_paper_name = pending_download_portals[i].paper_name;
+        Portal pending_portal = main_document_view->pending_download_portals[i].pending_portal;
+        std::wstring pending_paper_name = main_document_view->pending_download_portals[i].paper_name;
 
         if (pending_paper_name == download_paper_name) {
-            pending_uuid = pending_download_portals[i].handle;
+            pending_uuid = main_document_view->pending_download_portals[i].handle;
             pending_portal.dst.document_checksum = checksum;
-            Document* src_doc = document_manager->get_document(pending_download_portals[i].source_document_path);
+            Document* src_doc = document_manager->get_document(main_document_view->pending_download_portals[i].source_document_path);
             PagelessDocumentRect downloaded_page_size = get_first_page_size(mupdf_context, downloaded_file_path);
 
             float zoom_level = static_cast<float>(main_document_view->get_view_width()) / (downloaded_page_size.x1 - downloaded_page_size.x0);
@@ -9661,10 +9609,10 @@ void MainWidget::finish_pending_download_portal(std::wstring download_paper_name
         }
     }
     if (pending_uuid.size() > 0) {
-        int pending_index = get_pending_portal_index_with_handle(pending_uuid);
+        int pending_index = main_document_view->get_pending_portal_index_with_handle(pending_uuid);
         //pending_download_portals
-        pending_download_portals.erase(pending_download_portals.begin() + pending_index);
-        update_opengl_pending_download_portals();
+        main_document_view->pending_download_portals.erase(main_document_view->pending_download_portals.begin() + pending_index);
+        // update_opengl_pending_download_portals();
     }
 }
 
@@ -9696,32 +9644,18 @@ std::optional<Portal> MainWidget::get_target_portal(bool limit) {
     return main_document_view->find_closest_portal(limit);
 }
 
-void MainWidget::update_opengl_pending_download_portals() {
-    std::vector<std::pair<AbsoluteRect, float>> pending_rects_and_completion_ratio;
-    for (auto pending_portal : pending_download_portals) {
-
-        if (pending_portal.source_document_path == doc()->get_path()) {
-            AbsoluteRect rect = pending_portal.pending_portal.get_rectangle().value();
-            pending_rects_and_completion_ratio.push_back(std::make_pair(rect, pending_portal.downloaded_fraction));
-        }
-
-    }
-    main_document_view->set_pending_download_portals(std::move(pending_rects_and_completion_ratio));
-    invalidate_render();
-}
-
 void MainWidget::cleanup_expired_pending_portals() {
     std::vector<int> indices_to_delete;
 
-    if ((pending_download_portals.size() > 0) && (current_widget_stack.size() == 0)) {
+    if ((main_document_view->pending_download_portals.size() > 0) && (current_widget_stack.size() == 0)) {
         if (sioyek_network_manager->network_manager_ == nullptr) {
             return;
         }
 
         auto children_ = findChildren<QNetworkReply*>() + sioyek_network_manager->network_manager_->findChildren<QNetworkReply*>();
 
-        for (int i = 0; i < pending_download_portals.size(); i++) {
-            auto paper_name = pending_download_portals[i].paper_name;
+        for (int i = 0; i < main_document_view->pending_download_portals.size(); i++) {
+            auto paper_name = main_document_view->pending_download_portals[i].paper_name;
             bool still_pending = false;
             //network_manager.
             for (int i = 0; i < children_.size(); i++) {
@@ -9731,11 +9665,11 @@ void MainWidget::cleanup_expired_pending_portals() {
                 }
             }
             if (!still_pending) {
-                if (pending_download_portals[i].marked) {
+                if (main_document_view->pending_download_portals[i].marked) {
                     indices_to_delete.push_back(i);
                 }
                 else {
-                    pending_download_portals[i].marked = true;
+                    main_document_view->pending_download_portals[i].marked = true;
                 }
             }
         }
@@ -9743,46 +9677,12 @@ void MainWidget::cleanup_expired_pending_portals() {
     if (indices_to_delete.size() > 0) {
         //update_pending_portal_indices_after_removed_indices(indices_to_delete);
         for (int i = indices_to_delete.size() - 1; i >= 0; i--) {
-            pending_download_portals.erase(pending_download_portals.begin() + indices_to_delete[i]);
+            main_document_view->pending_download_portals.erase(main_document_view->pending_download_portals.begin() + indices_to_delete[i]);
         }
-        update_opengl_pending_download_portals();
+        // update_opengl_pending_download_portals();
     }
 
 }
-
-std::string MainWidget::get_pending_portal_uuid_at_pos(AbsoluteDocumentPos abspos) {
-
-    for (int i = 0; i < pending_download_portals.size(); i++) {
-        AbsoluteRect rect = pending_download_portals[i].pending_portal.get_rectangle().value();
-
-        if (rect.contains(abspos)) {
-            return pending_download_portals[i].handle;
-        }
-
-    }
-    return "";
-}
-
-//void MainWidget::update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices) {
-//
-//    int index_diff = 0;
-//    if (visible_object_move_data && (visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
-//        for (int i = 0; i < removed_indices.size(); i++) {
-//            int index = removed_indices[i];
-//
-//            if (index == visible_object_move_data->index.index) {
-//                visible_object_move_data = {};
-//                return;
-//            }
-//            if (index < visible_object_move_data->index.index) {
-//                index_diff++;
-//            }
-//        }
-//        visible_object_move_data->index.index -= index_diff;
-//    }
-//
-//
-//}
 
 void MainWidget::close_overview() {
     set_overview_page({}, false);
@@ -9888,26 +9788,8 @@ void MainWidget::download_selected_text() {
 void MainWidget::download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos) {
 
     std::wstring cleaned_paper_name = clean_bib_item(QString::fromStdWString(unclean_paper_name)).toStdWString();
-    std::string pending_portal_handle = create_pending_download_portal(source_pos, cleaned_paper_name);
+    std::string pending_portal_handle = main_document_view->create_pending_download_portal(source_pos, cleaned_paper_name);
     download_paper_with_name(cleaned_paper_name, PaperDownloadFinishedAction::Portal, pending_portal_handle);
-}
-
-std::string MainWidget::create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name) {
-    Portal pending_portal;
-    pending_portal.src_offset_x = source_position.x;
-    pending_portal.src_offset_y = source_position.y;
-
-    pending_portal.dst.book_state.offset_x = 0;
-    pending_portal.dst.book_state.offset_y = 0;
-    pending_portal.dst.book_state.zoom_level = -1;
-    PendingDownloadPortal pending_download_portal;
-    pending_download_portal.pending_portal = pending_portal;
-    pending_download_portal.source_document_path = doc()->get_path();
-    pending_download_portal.paper_name = paper_name;
-    pending_download_portal.handle = new_uuid_utf8();
-    pending_download_portals.push_back(pending_download_portal);
-    update_opengl_pending_download_portals();
-    return pending_download_portal.handle;
 }
 
 void MainWidget::show_text_prompt(std::wstring initial_value, std::function<void(std::wstring)> on_select) {
@@ -12782,31 +12664,6 @@ void MainWidget::handle_server_document_location_mismatch(float local_offset_y, 
 
 }
 
-std::optional<VisibleObjectIndex> MainWidget::get_visible_object_at_pos(AbsoluteDocumentPos pos) {
-    if (!doc()) return {};
-
-    std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(pos);
-    if (bookmark_uuid.size() > 0) {
-        return VisibleObjectIndex{VisibleObjectType::Bookmark, bookmark_uuid};
-    }
-    std::string portal_uuid = doc()->get_icon_portal_uuid_at_pos(pos);
-    if (portal_uuid.size() > 0) {
-        return VisibleObjectIndex{VisibleObjectType::Portal, portal_uuid};
-    }
-
-    std::string pinned_portal_uuid = doc()->get_pinned_portal_uuid_at_pos(pos);
-    if (pinned_portal_uuid.size() > 0) {
-        return VisibleObjectIndex{VisibleObjectType::PinnedPortal, pinned_portal_uuid};
-    }
-
-    std::string pending_portal_uuid = get_pending_portal_uuid_at_pos(pos);
-    if (pending_portal_uuid.size() > 0) {
-        return VisibleObjectIndex{VisibleObjectType::PendingPortal, pending_portal_uuid};
-    }
-
-    return {};
-}
-
 void VisibleObjectIndex::handle_move_begin(MainWidget* widget, AbsoluteDocumentPos mouse_pos) {
 
     if (object_type == VisibleObjectType::Bookmark) {
@@ -13261,24 +13118,11 @@ bool MainWidget::import_shared_database(std::wstring path) {
 void MainWidget::on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle) {
 
     QObject::connect(reply, &QNetworkReply::downloadProgress, [this, pending_portal_handle](qint64 received, qint64 total) {
-        int pending_index = get_pending_portal_index_with_handle(pending_portal_handle);
+        int pending_index = main_document_view->get_pending_portal_index_with_handle(pending_portal_handle);
         float ratio = static_cast<float>(received) / total;
-        pending_download_portals[pending_index].downloaded_fraction = ratio;
-        update_opengl_pending_download_portals();
+        main_document_view->pending_download_portals[pending_index].downloaded_fraction = ratio;
         invalidate_render();
         });
-}
-
-int MainWidget::get_pending_portal_index_with_handle(const std::string& handle) {
-    if (handle.size() == 0) return -1;
-
-    for (int i = 0; i < pending_download_portals.size(); i++) {
-        if (pending_download_portals[i].handle == handle) {
-            return i;
-        }
-    }
-    return -1;
-
 }
 
 QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action, std::string pending_portal_handle) {
@@ -13395,74 +13239,13 @@ void MainWidget::scroll_selected_bookmark(int amount) {
     scroll_bookmark_with_uuid(bookmark_uuid, amount);
 }
 
-std::vector<SearchResult> MainWidget::get_fuzzy_search_results(std::wstring query){
-    if (doc()->get_super_fast_index().size() == 0) {
-        return {};
-    }
-
-    const std::wstring& super_fast_index = doc()->get_super_fast_index();
-    std::wstring lower_index = super_fast_index;
-
-    for (int i = 0; i < lower_index.size(); i++) {
-        if (lower_index[i] > 30 && lower_index[i] < 130) {
-            lower_index[i] = std::tolower(lower_index[i]);
-        }
-    }
-
-
-    QStringList parts = QString::fromStdWString(query).split("...");
-
-    std::vector<SearchResult> search_results;
-
-    for (int i = 0; i < parts.size(); i++) {
-        std::wstring text = parts.at(i).toLower().toStdWString();
-        if (parts.at(i).size() < 5) continue;
-
-        int begin_page = -1;
-        int end_page = -1;
-
-        auto [begin, end] = find_smallest_substring_containing_fraction_of_n_grams(lower_index, text, 2, 0.5f);
-
-        int begin_index = doc()->absolute_to_page_index(begin, begin_page);
-        int end_index = doc()->absolute_to_page_index(end, end_page);
-
-        if (begin != -1) {
-
-            if (begin_page == end_page) {
-                SearchResult result;
-                result.begin_index_in_page = begin_index;
-                result.end_index_in_page = end_index;
-                result.page = begin_page;
-                search_results.push_back(result);
-                //main_document_view->set_search_results({ result });
-                //goto_search_result(0);
-
-
-            }
-            else {
-                SearchResult result;
-                result.begin_index_in_page = begin_index;
-                result.end_index_in_page = doc()->get_page_offset_into_super_fast_index(begin_page + 1) - 1 - begin_index;
-                result.page = begin_page;
-                search_results.push_back(result);
-                //main_document_view->set_search_results({ result });
-                //goto_search_result(0);
-
-                // todo: maybe instead of page index we should be using absolute index in 
-                // SearchResult?
-            }
-        }
-    }
-    return search_results;
-}
-
 void MainWidget::perform_fuzzy_search(std::wstring query) {
     if (doc()->get_super_fast_index().size() == 0) {
         show_error_message(L"Super fast search index is not ready");
         return;
     }
 
-    std::vector<SearchResult> search_results = get_fuzzy_search_results(query);
+    std::vector<SearchResult> search_results = main_document_view->get_fuzzy_search_results(query);
 
     main_document_view->set_search_results(std::move(search_results));
     goto_search_result(0);
@@ -13559,12 +13342,4 @@ void MainWidget::set_mouse_cursor_for_side_resize(std::optional<OverviewSide> si
         }
     }
     setCursor(Qt::ArrowCursor);
-}
-
-PendingDownloadPortal* MainWidget::get_pending_portal_with_uuid(const std::string& uuid) {
-    for (int i = 0; i < pending_download_portals.size(); i++) {
-        if (pending_download_portals[i].handle == uuid) return &pending_download_portals[i];
-    }
-
-    return nullptr;
 }

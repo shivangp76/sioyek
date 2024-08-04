@@ -85,15 +85,6 @@ struct SelectedDrawings {
     std::vector<SelectedObjectIndex> selected_indices;
 };
 
-struct PendingDownloadPortal {
-    Portal pending_portal;
-    std::wstring paper_name;
-    std::wstring source_document_path;
-    std::string handle;
-    float downloaded_fraction = -1.0f;
-    // the pending portal is marked for deletion
-    bool marked = false;
-};
 
 struct ScheduledPortalUpdate {
     Portal portal;
@@ -404,9 +395,6 @@ public:
     std::optional<VisibleObjectResizeData> visible_object_resize_data = {};
     std::optional<VisibleObjectScrollData> visible_object_scroll_data = {};
 
-    std::vector<PendingDownloadPortal> pending_download_portals;
-
-
     // when selecting text, we update the rendering faster, this timer is used 
     // so that we don't update the rendering too fast
     QTime last_text_select_time = QTime::currentTime();
@@ -450,7 +438,6 @@ public:
     void key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat = false);
     void handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed);
 
-    bool handle_right_click_bookmark(WindowPos click_pos, BookMark* bookmark);
     void handle_right_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed);
     void on_config_changed(std::string config_name, bool should_save=false);
     void on_configs_changed(std::vector<std::string>* config_names);
@@ -664,7 +651,6 @@ public:
     void advance_command(std::unique_ptr<Command> command, std::wstring* result = nullptr);
     void add_search_term(const std::wstring& term);
     void perform_search(std::wstring text, bool is_regex = false, bool is_incremental = false);
-    std::vector<SearchResult> get_fuzzy_search_results(std::wstring text);
     void perform_fuzzy_search(std::wstring text);
     void overview_to_definition();
     void portal_to_definition();
@@ -936,9 +922,7 @@ public:
     std::optional<Portal> get_target_portal(bool limit);
 
     AbsoluteDocumentPos get_cursor_abspos();
-    void update_opengl_pending_download_portals();
     void cleanup_expired_pending_portals();
-    std::string get_pending_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
     //void update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices);
     void close_overview();
     std::vector<Portal> get_ruler_portals();
@@ -948,7 +932,6 @@ public:
         std::vector<std::wstring> buttons,
         std::vector<std::wstring> tips,
         std::function<void(int, std::wstring)> on_select, bool top=true);
-    std::string create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name);
     void download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos);
     void download_selected_text();
     void smart_jump_to_selected_text();
@@ -1184,7 +1167,6 @@ public:
     bool import_shared_database(std::wstring path);
     void on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle);
     QNetworkReply* download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action = {}, std::string pending_portal_handle="");
-    int get_pending_portal_index_with_handle(const std::string& handle);
     QVariantMap get_color_mapping();
     void handle_type_text_into_input(QString txt);
     void send_symbol_to_last_command(char symbol);
@@ -1204,11 +1186,6 @@ public:
     bool handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object);
     bool handle_visible_object_resize_finish();
 
-    QString get_markdown_bookmark_anchor_text_under_cursor();
-    PendingDownloadPortal* get_pending_portal_with_uuid(const std::string& uuid);
-
-
-    std::optional<VisibleObjectIndex> get_visible_object_at_pos(AbsoluteDocumentPos pos);
 
 public slots:
 #ifdef SIOYEK_IOS

@@ -1,6 +1,10 @@
 #include <cmath>
 
+#include <qtextdocument.h>
+#include <qabstracttextdocumentlayout.h>
+
 #include "document_view.h"
+#include "background_tasks.h"
 #include "checksum.h"
 #include "database.h"
 #include "document.h"
@@ -3117,9 +3121,9 @@ std::optional<AbsoluteRect> DocumentView::get_selected_rectangle() {
     return selected_rectangle;
 }
 
-void DocumentView::set_pending_download_portals(std::vector<std::pair<AbsoluteRect, float>>&& portal_rects){
-    pending_download_portals = std::move(portal_rects);
-}
+// void DocumentView::set_pending_download_portals(std::vector<std::pair<AbsoluteRect, float>>&& portal_rects){
+//     pending_download_portals = std::move(portal_rects);
+// }
 
 void DocumentView::set_synctex_highlights(std::vector<DocumentRect> highlights) {
     synctex_highlight_time = QTime::currentTime();
@@ -3896,4 +3900,197 @@ void DocumentView::focus_on_character_offset_into_document(int character_offset_
     }
 
     focus_on_line_with_index(page, line_index);
+}
+
+bool DocumentView::handle_right_click_bookmark(WindowPos click_pos, BookMark* bookmark){
+    if (bookmark){
+        // get the link under cursor
+        QString bookmark_text = get_markdown_bookmark_anchor_text_under_pos(QPoint(click_pos.x, click_pos.y));
+        std::vector<SearchResult> search_results = get_fuzzy_search_results(bookmark_text.toStdWString());
+
+        if (search_results.size() > 0){
+            search_results[0].fill(current_document);
+            if (search_results[0].rects.size() > 0){
+                float doc_y = search_results[0].rects[0].y0;
+                int page = search_results[0].page;
+                float abs_y = current_document->document_to_absolute_y(page, doc_y);
+                OverviewState overview_state = { abs_y, 0, -1, nullptr };
+                for (int i = 0; i < search_results[0].rects.size(); i++){
+                    DocumentRect rect = DocumentRect{search_results[0].rects[i], page};
+                    overview_state.highlight_rects.push_back(rect);
+                }
+                set_overview_page(overview_state);
+            }
+        }
+
+    }
+    return true;
+}
+
+QString DocumentView::get_markdown_bookmark_anchor_text_under_pos(QPoint cursor_pos){
+    // QPoint cursor_pos = mapFromGlobal(QCursor::pos());
+    AbsoluteDocumentPos cursor_abspos = WindowPos(cursor_pos).to_absolute(this);
+
+    std::optional<VisibleObjectIndex> visible_object = get_visible_object_at_pos(cursor_abspos);
+    if (visible_object.has_value() && visible_object->object_type == VisibleObjectType::Bookmark) {
+        BookMark* bookmark = current_document->get_bookmark_with_uuid(visible_object->uuid);
+
+        if (bookmark) {
+            QString bookmark_text = QString::fromStdWString(bookmark->description);
+
+            if (BookMark::should_be_displayed_as_markdown(bookmark_text)) {
+                QFont font = bookmark->get_font(get_zoom_level());
+                QRect window_qrect = bookmark->get_rectangle()->to_window(this).to_qrect();
+                float scroll_amount = get_bookmark_scroll_amount(bookmark->uuid);
+
+
+                QTextDocument td;
+                prepare_text_document_for_bookmark_markdown(td, BookMark::get_display_markdown_or_text(bookmark_text), window_qrect, font);
+
+                QPoint cursor_in_bookmark_pos = cursor_pos - window_qrect.topLeft();
+                cursor_in_bookmark_pos.setY(cursor_in_bookmark_pos.y() + scroll_amount);
+
+                return td.documentLayout()->anchorAt(cursor_in_bookmark_pos);
+
+            }
+        }
+    }
+    return "";
+}
+
+std::optional<VisibleObjectIndex> DocumentView::get_visible_object_at_pos(AbsoluteDocumentPos pos) {
+    if (!current_document) return {};
+
+    std::string bookmark_uuid = current_document->get_bookmark_uuid_at_pos(pos);
+    if (bookmark_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::Bookmark, bookmark_uuid};
+    }
+    std::string portal_uuid = current_document->get_icon_portal_uuid_at_pos(pos);
+    if (portal_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::Portal, portal_uuid};
+    }
+
+    std::string pinned_portal_uuid = current_document->get_pinned_portal_uuid_at_pos(pos);
+    if (pinned_portal_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::PinnedPortal, pinned_portal_uuid};
+    }
+
+    std::string pending_portal_uuid = get_pending_portal_uuid_at_pos(pos);
+    if (pending_portal_uuid.size() > 0) {
+        return VisibleObjectIndex{VisibleObjectType::PendingPortal, pending_portal_uuid};
+    }
+
+    return {};
+}
+
+std::string DocumentView::get_pending_portal_uuid_at_pos(AbsoluteDocumentPos abspos) {
+
+    for (int i = 0; i < pending_download_portals.size(); i++) {
+        AbsoluteRect rect = pending_download_portals[i].pending_portal.get_rectangle().value();
+
+        if (rect.contains(abspos)) {
+            return pending_download_portals[i].handle;
+        }
+
+    }
+    return "";
+}
+
+std::vector<SearchResult> DocumentView::get_fuzzy_search_results(std::wstring query){
+    if (current_document->get_super_fast_index().size() == 0) {
+        return {};
+    }
+
+    const std::wstring& super_fast_index = current_document->get_super_fast_index();
+    std::wstring lower_index = super_fast_index;
+
+    for (int i = 0; i < lower_index.size(); i++) {
+        if (lower_index[i] > 30 && lower_index[i] < 130) {
+            lower_index[i] = std::tolower(lower_index[i]);
+        }
+    }
+
+
+    QStringList parts = QString::fromStdWString(query).split("...");
+
+    std::vector<SearchResult> search_results;
+
+    for (int i = 0; i < parts.size(); i++) {
+        std::wstring text = parts.at(i).toLower().toStdWString();
+        if (parts.at(i).size() < 5) continue;
+
+        int begin_page = -1;
+        int end_page = -1;
+
+        auto [begin, end] = find_smallest_substring_containing_fraction_of_n_grams(lower_index, text, 2, 0.5f);
+
+        int begin_index = current_document->absolute_to_page_index(begin, begin_page);
+        int end_index = current_document->absolute_to_page_index(end, end_page);
+
+        if (begin != -1) {
+
+            if (begin_page == end_page) {
+                SearchResult result;
+                result.begin_index_in_page = begin_index;
+                result.end_index_in_page = end_index;
+                result.page = begin_page;
+                search_results.push_back(result);
+                //main_document_view->set_search_results({ result });
+                //goto_search_result(0);
+
+
+            }
+            else {
+                SearchResult result;
+                result.begin_index_in_page = begin_index;
+                result.end_index_in_page = current_document->get_page_offset_into_super_fast_index(begin_page + 1) - 1 - begin_index;
+                result.page = begin_page;
+                search_results.push_back(result);
+                //main_document_view->set_search_results({ result });
+                //goto_search_result(0);
+
+                // todo: maybe instead of page index we should be using absolute index in 
+                // SearchResult?
+            }
+        }
+    }
+    return search_results;
+}
+
+std::string DocumentView::create_pending_download_portal(AbsoluteDocumentPos source_position, std::wstring paper_name) {
+    Portal pending_portal;
+    pending_portal.src_offset_x = source_position.x;
+    pending_portal.src_offset_y = source_position.y;
+
+    pending_portal.dst.book_state.offset_x = 0;
+    pending_portal.dst.book_state.offset_y = 0;
+    pending_portal.dst.book_state.zoom_level = -1;
+    PendingDownloadPortal pending_download_portal;
+    pending_download_portal.pending_portal = pending_portal;
+    pending_download_portal.source_document_path = current_document->get_path();
+    pending_download_portal.paper_name = paper_name;
+    pending_download_portal.handle = new_uuid_utf8();
+    pending_download_portals.push_back(pending_download_portal);
+    // update_opengl_pending_download_portals();
+    return pending_download_portal.handle;
+}
+
+int DocumentView::get_pending_portal_index_with_handle(const std::string& handle) {
+    if (handle.size() == 0) return -1;
+
+    for (int i = 0; i < pending_download_portals.size(); i++) {
+        if (pending_download_portals[i].handle == handle) {
+            return i;
+        }
+    }
+    return -1;
+
+}
+
+PendingDownloadPortal* DocumentView::get_pending_portal_with_uuid(const std::string& uuid) {
+    for (int i = 0; i < pending_download_portals.size(); i++) {
+        if (pending_download_portals[i].handle == uuid) return &pending_download_portals[i];
+    }
+
+    return nullptr;
 }
