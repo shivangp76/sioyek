@@ -1581,36 +1581,12 @@ void MainWidget::validate_render() {
     if (!isVisible()) {
         return;
     }
-    if (last_smart_fit_page) {
-        int current_page = get_current_page_number();
-        if (current_page != last_smart_fit_page) {
-            main_document_view->fit_to_page_width(true);
-            last_smart_fit_page = current_page;
-        }
+
+    if (main_document_view){
+        float status_label_height = status_label->isVisible() ? status_label->height() : 0;
+        main_document_view->handle_validate_render(status_label_height);
     }
-    if (main_document_view->is_presentation_mode()) {
-        int current_page = get_current_page_number();
-        if (current_page >= 0) {
-            main_document_view->set_presentation_page_number(current_page);
-            if (IGNORE_WHITESPACE_IN_PRESENTATION_MODE) {
-                main_document_view->set_offset_y(
-                    main_document_view->get_document()->get_accum_page_height(current_page) +
-                    main_document_view->get_document()->get_page_height(current_page) / 2);
-            }
-            else {
-                float statusbar_factor = status_label->isVisible() ? static_cast<float>(status_label->height() / 2 / main_document_view->get_zoom_level()) : 0;
-                main_document_view->set_offset_y(
-                    main_document_view->get_document()->get_accum_page_height(current_page) +
-                    main_document_view->get_document()->get_page_height(current_page) / 2 + statusbar_factor);
-            }
-            if (IGNORE_WHITESPACE_IN_PRESENTATION_MODE) {
-                main_document_view->fit_to_page_height(true);
-            }
-            else {
-                main_document_view->fit_to_page_height_width_minimum(status_label->isVisible() ? status_label->height() : 0);
-            }
-        }
-    }
+
 
     bool should_update_portal = false;
     if (main_document_view && main_document_view->get_document() && is_helper_visible()) {
@@ -1952,8 +1928,6 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
         main_document_view->set_zoom_level(zoom_level.value(), true);
     }
 
-    // reset smart fit when changing documents
-    last_smart_fit_page = {};
     show_password_prompt_if_required();
 
     if (main_document_view_has_document()) {
@@ -2010,8 +1984,6 @@ void MainWidget::open_document_at_location(const Path& path_,
         main_document_view->set_zoom_level(zoom_level.value(), true);
     }
 
-    // reset smart fit when changing documents
-    last_smart_fit_page = {};
     show_password_prompt_if_required();
 }
 
@@ -4160,7 +4132,7 @@ void MainWidget::move_vertical(float amount) {
 }
 
 void MainWidget::zoom(WindowPos pos, float zoom_factor, bool zoom_in) {
-    last_smart_fit_page = {};
+    dv()->last_smart_fit_page = {};
     if (zoom_in) {
         if (WHEEL_ZOOM_ON_CURSOR) {
             dv()->zoom_in_cursor(pos, zoom_factor);
@@ -5774,7 +5746,7 @@ void MainWidget::handle_horizontal_move(int amount) {
     }
     else {
         dv()->move(72.0f * amount * HORIZONTAL_MOVE_AMOUNT, 0.0f);
-        last_smart_fit_page = {};
+        dv()->last_smart_fit_page = {};
     }
 }
 
@@ -11094,11 +11066,11 @@ void MainWidget::handle_fit_to_page_width(bool smart) {
     if (smart) {
         int current_page = get_current_page_number();
         if (!main_document_view->is_two_page_mode()) {
-            last_smart_fit_page = current_page;
+            main_document_view->last_smart_fit_page = current_page;
         }
     }
     else {
-        last_smart_fit_page = {};
+        main_document_view->last_smart_fit_page = {};
     }
 }
 

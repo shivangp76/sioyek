@@ -391,10 +391,6 @@ public:
     // (I used it when recording sioyek's video tutorial to show the command being executed)
     bool should_show_last_command = false;
 
-    // last page to be fit when we are in smart fit mode
-    // this value not being `{}` indicates that we are in smart fit mode
-    // which means that every time page is changed, we execute `fit_to_page_width_smart`
-    std::optional<int> last_smart_fit_page = {};
 
     // the command used to perform synctex inverse searches
     std::wstring inverse_search_command;

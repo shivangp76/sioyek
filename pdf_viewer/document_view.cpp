@@ -27,6 +27,7 @@ extern float HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT;
 extern int PAGE_PADDINGS;
 extern int NUM_PAGE_COLUMNS;
 extern bool SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS;
+extern bool IGNORE_WHITESPACE_IN_PRESENTATION_MODE;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -728,6 +729,7 @@ void DocumentView::reset_doc_state() {
     set_offsets(0.0f, 0.0f);
     is_ruler_mode_ = false;
     presentation_page_number = {};
+    last_smart_fit_page = {};
     cached_virtual_rects.clear();
 
     search_results_mutex.lock();
@@ -3720,4 +3722,40 @@ void DocumentView::set_bookmark_scroll_amount(const std::string& uuid, float amo
         amount = 0;
     }
     bookmark_scroll_amounts[uuid] = amount;
+}
+
+
+void DocumentView::handle_validate_render(float status_label_height){
+    if (last_smart_fit_page) {
+        int current_page = get_current_page_number();
+        if (current_page != last_smart_fit_page) {
+            fit_to_page_width(true);
+            last_smart_fit_page = current_page;
+        }
+    }
+    if (is_presentation_mode()) {
+        int current_page = get_current_page_number();
+        if (current_page >= 0) {
+            set_presentation_page_number(current_page);
+            if (IGNORE_WHITESPACE_IN_PRESENTATION_MODE) {
+                set_offset_y(
+                    get_document()->get_accum_page_height(current_page) +
+                    get_document()->get_page_height(current_page) / 2);
+            }
+            else {
+                // float statusbar_factor = status_label->isVisible() ? static_cast<float>(status_label->height() / 2 / main_document_view->get_zoom_level()) : 0;
+                float statusbar_factor = status_label_height / 2 / zoom_level;
+
+                set_offset_y(
+                    get_document()->get_accum_page_height(current_page) +
+                    get_document()->get_page_height(current_page) / 2 + statusbar_factor);
+            }
+            if (IGNORE_WHITESPACE_IN_PRESENTATION_MODE) {
+                fit_to_page_height(true);
+            }
+            else {
+                fit_to_page_height_width_minimum(status_label_height);
+            }
+        }
+    }
 }

@@ -63,6 +63,7 @@ protected:
     int view_width = 0;
     int view_height = 0;
 
+
     // In touch mode normally we don't allow the user to scroll the document horizontally past the 
     // screen edges, however after the user tries to move the document past a certain distance, we
     // "relent" and allow the user to scroll horizontally past the screen edges.
@@ -117,6 +118,11 @@ public:
     std::optional<AbsoluteRect> wrong_character_rect = {};
     bool show_control_rect;
 
+    // last page to be fit when we are in smart fit mode
+    // this value not being `{}` indicates that we are in smart fit mode
+    // which means that every time page is changed, we execute `fit_to_page_width_smart`
+    std::optional<int> last_smart_fit_page = {};
+
     std::unordered_map<std::string, float> bookmark_scroll_amounts;
 
     std::optional<AbsoluteDocumentPos> underline = {};
@@ -165,6 +171,7 @@ public:
     PortalViewState get_checksum_state();
     //void set_opened_book_state(const OpenedBookState& state);
     void handle_escape();
+    void handle_validate_render(float status_label_height);
     void set_book_state(OpenedBookState state);
     virtual bool set_offsets(float new_offset_x, float new_offset_y, bool force = false, bool is_dragging=false);
     bool set_pos(AbsoluteDocumentPos pos);
@@ -498,6 +505,7 @@ public:
     void add_drawing(FreehandDrawing drawing);
     void clear();
     bool is_compile_invalid();
+
 
 };
 

@@ -16,6 +16,7 @@
 
 #include "database.h"
 #include "document.h"
+#include "document_view.h"
 #include "touchui/TouchSlider.h"
 #include "touchui/TouchConfigMenu.h"
 #include "touchui/TouchSettings.h"
@@ -169,7 +170,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     bool ruler = main_widget->is_visual_mark_mode();
     bool speaking = main_widget->is_reading;
     bool portaling = main_widget->is_pending_link_source_filled();
-    bool fit_mode = main_widget->last_smart_fit_page.has_value();
+    bool fit_mode = main_widget->main_document_view->last_smart_fit_page.has_value();
     bool is_logged_in = main_widget->is_logged_in();
     bool is_current_document_synced = main_widget->is_current_document_available_on_server();
 
@@ -438,8 +439,8 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
 
     QObject::connect(main_menu, &TouchMainMenu::fitToPageWidthClicked, [&]() {
 
-        if (main_widget->last_smart_fit_page) {
-            main_widget->last_smart_fit_page = {};
+        if (main_widget->main_document_view->last_smart_fit_page) {
+            main_widget->main_document_view->last_smart_fit_page = {};
             //main_widget->pop_current_widget();
             main_widget->invalidate_render();
         }
@@ -447,7 +448,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
             //main_widget->main_document_view->fit_to_page_width(true);
             main_widget->handle_fit_to_page_width(true);
             int current_page = main_widget->get_current_page_number();
-            main_widget->last_smart_fit_page = current_page;
+            main_widget->main_document_view->last_smart_fit_page = current_page;
 
             //main_widget->pop_current_widget();
             main_widget->invalidate_render();

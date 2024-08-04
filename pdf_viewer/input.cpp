@@ -3597,7 +3597,7 @@ public:
         }
         else {
             widget->main_document_view->zoom_in();
-            widget->last_smart_fit_page = {};
+            widget->main_document_view->last_smart_fit_page = {};
         }
     }
 };
@@ -3661,7 +3661,7 @@ public:
     FitToPageHeightCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
         widget->main_document_view->fit_to_page_height();
-        widget->last_smart_fit_page = {};
+        widget->main_document_view->last_smart_fit_page = {};
     }
 };
 
@@ -3707,7 +3707,7 @@ public:
         }
         else {
             widget->main_document_view->zoom_out();
-            widget->last_smart_fit_page = {};
+            widget->main_document_view->last_smart_fit_page = {};
         }
     }
 };
@@ -5625,7 +5625,7 @@ public:
 
     void perform() {
         widget->main_document_view->fit_to_page_width(false, true);
-        widget->last_smart_fit_page = {};
+        widget->main_document_view->last_smart_fit_page = {};
     }
 
 };
@@ -5814,7 +5814,7 @@ public:
     void perform() {
         QPoint mouse_pos = widget->mapFromGlobal(widget->cursor_pos());
         widget->main_document_view->zoom_in_cursor({ mouse_pos.x(), mouse_pos.y() });
-        widget->last_smart_fit_page = {};
+        widget->main_document_view->last_smart_fit_page = {};
     }
 
 };
@@ -5828,7 +5828,7 @@ public:
     void perform() {
         QPoint mouse_pos = widget->mapFromGlobal(widget->cursor_pos());
         widget->main_document_view->zoom_out_cursor({ mouse_pos.x(), mouse_pos.y() });
-        widget->last_smart_fit_page = {};
+        widget->main_document_view->last_smart_fit_page = {};
     }
 
 };
