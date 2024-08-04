@@ -3905,7 +3905,14 @@ void DocumentView::focus_on_character_offset_into_document(int character_offset_
 bool DocumentView::handle_right_click_bookmark(WindowPos click_pos, BookMark* bookmark){
     if (bookmark){
         // get the link under cursor
-        QString bookmark_text = get_markdown_bookmark_anchor_text_under_pos(QPoint(click_pos.x, click_pos.y));
+        QString bookmark_text_ = get_markdown_bookmark_anchor_text_under_pos(QPoint(click_pos.x, click_pos.y));
+        QString bookmark_text = QUrl::fromPercentEncoding(bookmark_text_.toUtf8());
+
+        if (!bookmark_text.startsWith("sioyek://")) {
+            return true;
+        }
+        bookmark_text = bookmark_text.mid(9); // skip sioyek://
+
         std::vector<SearchResult> search_results = get_fuzzy_search_results(bookmark_text.toStdWString());
 
         if (search_results.size() > 0){
