@@ -458,6 +458,15 @@ public:
     void toggle_line_select_mode();
     bool is_line_select_mode();
     void debug();
+    void focus_rect(DocumentRect rect);
+    void focus_on_line_with_index(int page, int index);
+    bool focus_on_visual_mark_pos(bool moving_down);
+    AbsoluteRect move_visual_mark(int offset);
+
+    void focus_text(int page, const std::wstring& text);
+    void goto_next_block();
+    void goto_prev_block();
+    void focus_on_character_offset_into_document(int character_offset_into_document);
 
 };
 

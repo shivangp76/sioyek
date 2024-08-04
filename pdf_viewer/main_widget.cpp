@@ -1747,7 +1747,7 @@ void MainWidget::do_synctex_forward_search(const Path& pdf_file_path, const Path
 
             if (!USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE) {
 
-                std::optional<AbsoluteRect> line_rect_absolute = get_page_intersecting_rect(highlight_rects[0]);
+                std::optional<AbsoluteRect> line_rect_absolute = doc()->get_page_intersecting_rect(highlight_rects[0]);
                 if (line_rect_absolute){
                     DocumentRect line_rect = line_rect_absolute->to_document(doc());
                     bool should_recenter = true;
@@ -1771,7 +1771,7 @@ void MainWidget::do_synctex_forward_search(const Path& pdf_file_path, const Path
             }
             else {
                 if (highlight_rects.size() > 0) {
-                    focus_rect(highlight_rects[0]);
+                    main_document_view->focus_rect(highlight_rects[0]);
                 }
             }
         }
@@ -3915,27 +3915,6 @@ void MainWidget::pop_current_widget(bool canceled) {
     }
 }
 
-bool MainWidget::focus_on_visual_mark_pos(bool moving_down) {
-    //float window_x, window_y;
-
-    if (!main_document_view->get_ruler_window_rect().has_value()) {
-        return false;
-    }
-
-    float thresh = 1 - VISUAL_MARK_NEXT_PAGE_THRESHOLD;
-    NormalizedWindowRect ruler_window_rect = main_document_view->get_ruler_window_rect().value();
-
-    if (ruler_window_rect.y0 < -1 || ruler_window_rect.y1 > 1) {
-        main_document_view->goto_vertical_line_pos();
-        return true;
-    }
-
-    if ((moving_down && (ruler_window_rect.y0 < -thresh)) || ((!moving_down) && (ruler_window_rect.y1 > thresh))) {
-        main_document_view->goto_vertical_line_pos();
-        return true;
-    }
-    return false;
-}
 
 void MainWidget::toggle_visual_scroll_mode() {
     visual_scroll_mode = !visual_scroll_mode;
@@ -4822,20 +4801,8 @@ void MainWidget::move_visual_mark_prev() {
 }
 
 AbsoluteRect MainWidget::move_visual_mark(int offset) {
-    bool moving_down = offset >= 0;
+    AbsoluteRect ruler_rect = main_document_view->move_visual_mark(offset);
 
-    int prev_line_index = main_document_view->get_line_index();
-    int new_line_index, new_page;
-    int vertical_line_page = main_document_view->get_vertical_line_page();
-    AbsoluteRect ruler_rect = doc()->get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, offset, true, &new_line_index, &new_page);
-    main_document_view->set_line_index(new_line_index, new_page);
-    //main_document_view->set_vertical_line_rect(ruler_rect);
-    if (focus_on_visual_mark_pos(moving_down)) {
-        if (!main_document_view->is_two_page_mode()) {
-            float distance = (main_document_view->get_view_height() / main_document_view->get_zoom_level()) * VISUAL_MARK_NEXT_PAGE_FRACTION / 2;
-            main_document_view->move_absolute(0, distance);
-        }
-    }
     if (is_reading || high_quality_play_state.has_value()) {
         read_current_line();
     }
@@ -4929,74 +4896,6 @@ void MainWidget::toggle_titlebar() {
 }
 
 
-std::optional<AbsoluteRect> MainWidget::get_page_intersecting_rect(DocumentRect rect) {
-    int index = get_page_intersecting_rect_index(rect);
-    if (index >= 0) {
-        std::vector<AbsoluteRect> line_rects = main_document_view->get_document()->get_page_lines(rect.page).merged_line_rects;
-        return line_rects[index];
-    }
-    return {};
-}
-
-int MainWidget::get_page_intersecting_rect_index(DocumentRect r) {
-    std::vector<AbsoluteRect> line_rects = main_document_view->get_document()->get_page_lines(r.page).merged_line_rects;
-    AbsoluteRect abs_rect = r.to_absolute(doc());
-    //rect = doc()->document_to_absolute_rect(page, rect);
-
-    if (abs_rect.y0 > abs_rect.y1) {
-        std::swap(abs_rect.y0, abs_rect.y1);
-    }
-
-    float max_area = 0;
-    int selected_index = -1;
-
-    for (int i = 0; i < line_rects.size(); i++) {
-        float area = rect_area(fz_intersect_rect(line_rects[i], abs_rect));
-        if (area > max_area * 2) {
-            max_area = area;
-            selected_index = i;
-        }
-    }
-    if (selected_index == -1) {
-        return line_rects.size() - 1;
-    }
-    return selected_index;
-}
-
-void MainWidget::focus_rect(DocumentRect rect) {
-    int selected_index = get_page_intersecting_rect_index(rect);
-
-    if (selected_index > -1) {
-        focus_on_line_with_index(rect.page, selected_index);
-    }
-}
-
-void MainWidget::focus_text(int page, const std::wstring& text) {
-    //std::vector<std::wstring> line_texts;
-    //std::vector<AbsoluteRect> line_rects;
-    const PageMergedLinesInfoAbsolute& line_info = main_document_view->get_document()->get_page_lines(page);
-    auto line_texts = line_info.merged_line_texts;
-    auto line_rects = line_info.merged_line_rects;
-
-    std::string encoded_text = utf8_encode(text);
-
-    int max_score = -1;
-    int max_index = -1;
-
-    for (int i = 0; i < line_texts.size(); i++) {
-        std::string encoded_line = utf8_encode(line_texts[i]);
-        int score = lcs(encoded_text.c_str(), encoded_line.c_str(), encoded_text.size(), encoded_line.size());
-        //fts::fuzzy_match(encoded_line.c_str(), encoded_text.c_str(), score);
-        if (score > max_score) {
-            max_index = i;
-            max_score = score;
-        }
-    }
-
-    if (max_index < line_rects.size()) {
-        focus_on_line_with_index(page, max_index);
-    }
-}
 
 int MainWidget::get_current_monitor_width() {
     if (this->window()->windowHandle() != nullptr) {
@@ -6689,11 +6588,11 @@ void MainWidget::handle_focus_text(const std::wstring& text) {
         int page_number;
         ss >> page_number;
         std::getline(ss, actual_text);
-        focus_text(page_number, actual_text);
+        main_document_view->focus_text(page_number, actual_text);
     }
     else {
         int page_number = main_document_view->get_center_page_number();
-        focus_text(page_number, text);
+        main_document_view->focus_text(page_number, text);
     }
     //opengl_widget->set_should_draw_vertical_line(true);
 }
@@ -8052,41 +7951,12 @@ void MainWidget::focus_on_high_quality_text_being_read() {
         if (index >= 0) {
             PagelessDocumentRect rect_to_focus = high_quality_play_state->line_rects[index];
             if (!(rect_to_focus == high_quality_play_state->last_focused_rect)) {
-                focus_rect(DocumentRect(rect_to_focus, high_quality_play_state->page_number));
+                main_document_view->focus_rect(DocumentRect(rect_to_focus, high_quality_play_state->page_number));
                 high_quality_play_state->last_focused_rect = rect_to_focus;
                 invalidate_render();
             }
         }
 
-    }
-}
-void MainWidget::handle_goto_next_block() {
-    int ruler_page = main_document_view->get_vertical_line_page();
-    //auto [line, block] = main_document_view->get_ruler_line_and_block();
-    std::vector<int> unmerged_line_indices = main_document_view->get_ruler_unmerged_line_indices();
-    if (unmerged_line_indices.size() > 0) {
-        int after_index = unmerged_line_indices.front();
-        int next_line_unmerged_index = doc()->get_first_line_index_after_block(ruler_page, after_index);
-        int merged_index = doc()->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
-        main_document_view->set_line_index(merged_index, ruler_page);
-
-        if (merged_index >= 0) {
-            focus_on_visual_mark_pos(true);
-        }
-    }
-}
-
-void MainWidget::handle_goto_prev_block() {
-    int ruler_page = main_document_view->get_vertical_line_page();
-    std::vector<int> unmerged_line_indices = main_document_view->get_ruler_unmerged_line_indices();
-    if (unmerged_line_indices.size() > 0) {
-        int after_index = unmerged_line_indices.front();
-        int next_line_unmerged_index = doc()->get_first_line_before_block(ruler_page, after_index);
-        int merged_index = doc()->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
-        main_document_view->set_line_index(merged_index, ruler_page);
-        if (merged_index >= 0) {
-            focus_on_visual_mark_pos(false);
-        }
     }
 }
 
@@ -9257,7 +9127,7 @@ TextToSpeechHandler* MainWidget::get_tts() {
                 DocumentRect line_being_read_document_rect = DocumentRect(line_being_read_rect, ruler_page);
                 WindowRect line_being_read_window_rect = line_being_read_document_rect.to_window(main_document_view);
                 NormalizedWindowRect line_being_read_normalized_window_rect = line_being_read_document_rect.to_window_normalized(main_document_view);
-                focus_rect(line_being_read_document_rect);
+                main_document_view->focus_rect(line_being_read_document_rect);
 
                 if (line_being_read_normalized_window_rect.x0 < -1) { // if the next line is out of view
                     move_horizontal(-line_being_read_window_rect.x0);
@@ -10752,15 +10622,6 @@ std::wstring MainWidget::handle_synctex_to_ruler() {
     return synctex_under_pos(mid_window_pos);
 }
 
-void MainWidget::focus_on_line_with_index(int page, int index) {
-    main_document_view->set_line_index(index, page);
-    //main_document_view->set_vertical_line_rect(line_rects[max_index]);
-    if (focus_on_visual_mark_pos(true)) {
-        float distance = (main_document_view->get_view_height() / main_document_view->get_zoom_level()) * VISUAL_MARK_NEXT_PAGE_FRACTION / 2;
-        main_document_view->move_absolute(0, distance);
-    }
-}
-
 void MainWidget::show_touch_main_menu() {
 
     set_current_widget(new AndroidSelector(this));
@@ -12005,24 +11866,7 @@ QString MainWidget::get_rest_of_document_pages_text() {
 }
 
 void MainWidget::focus_on_character_offset_into_document(int character_offset_into_document) {
-    int page = doc()->get_page_from_character_offset(character_offset_into_document);
-    int page_offset = doc()->get_page_offset_into_super_fast_index(page);
-    int character_offset_into_page = character_offset_into_document - page_offset;
-
-    int remaining_line_offset = character_offset_into_page;
-
-    //std::vector<std::wstring> page_lines;
-
-    const std::vector<std::wstring>& page_lines = doc()->get_page_lines(page).merged_line_texts;
-    int line_index = 0;
-
-    while ((line_index < page_lines.size()) && (remaining_line_offset > page_lines[line_index].size())) {
-        remaining_line_offset -= page_lines[line_index].size();
-        line_index++;
-    }
-
-    //qDebug() << "SIOYEK FOCUS: page " << current_page << " line: " << line_index << " offset was: " << offset;
-    focus_on_line_with_index(page, line_index);
+    main_document_view->focus_on_character_offset_into_document(character_offset_into_document);
     invalidate_render();
 }
 

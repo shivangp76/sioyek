@@ -41,6 +41,7 @@
 #endif
 
 #include <mupdf/pdf.h>
+#include "synctex/synctex_parser.h"
 
 extern std::ofstream LOG_FILE;
 extern int STATUS_BAR_FONT_SIZE;

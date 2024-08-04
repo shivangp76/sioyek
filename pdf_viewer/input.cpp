@@ -3757,7 +3757,7 @@ public:
     MoveRulerToNextBlockCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_goto_next_block();
+        widget->main_document_view->goto_next_block();
     }
 };
 
@@ -3768,7 +3768,7 @@ public:
     MoveRulerToPrevBlockCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_goto_prev_block();
+        widget->main_document_view->goto_prev_block();
     }
 };
 

@@ -658,7 +658,7 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
     if (parser->isSet("focus-text")) {
         QString text = parser->value("focus-text");
         int page = parser->value("focus-text-page").toInt();
-        target_window->focus_text(page, text.toStdWString());
+        target_window->main_document_view->focus_text(page, text.toStdWString());
     }
 
     // if no file is specified, use the previous file

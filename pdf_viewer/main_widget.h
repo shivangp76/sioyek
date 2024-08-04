@@ -572,10 +572,10 @@ public:
     void zoom(WindowPos pos, float zoom_factor, bool zoom_in);
     bool move_document(float dx, float dy, bool force = false);
     void move_document_screens(int num_screens);
-    void focus_text(int page, const std::wstring& text);
-    int get_page_intersecting_rect_index(DocumentRect rect);
-    std::optional<AbsoluteRect> get_page_intersecting_rect(DocumentRect rect);
-    void focus_rect(DocumentRect rect);
+    // void focus_text(int page, const std::wstring& text);
+    // int get_page_intersecting_rect_index(DocumentRect rect);
+    // std::optional<AbsoluteRect> get_page_intersecting_rect(DocumentRect rect);
+    // void focus_rect(DocumentRect rect);
     std::optional<float> move_visual_mark_next_get_offset();
 
     void move_visual_mark_next();
@@ -601,7 +601,7 @@ public:
     void push_current_widget(QWidget* new_widget);
     void pop_current_widget(bool canceled = false);
     void show_current_widget();
-    bool focus_on_visual_mark_pos(bool moving_down);
+    // bool focus_on_visual_mark_pos(bool moving_down);
     void toggle_visual_scroll_mode();
     //void set_overview_link(PdfLink link);
     //void set_overview_position(
@@ -746,8 +746,8 @@ public:
     void show_audio_buttons();
     void set_freehand_thickness(float val);
 
-    void handle_goto_next_block();
-    void handle_goto_prev_block();
+    // void handle_goto_next_block();
+    // void handle_goto_prev_block();
 
     // Text selection indicators in touch mode
     SelectionIndicator* selection_begin_indicator = nullptr;
@@ -997,7 +997,7 @@ public:
 
     QString handle_action_in_menu(std::wstring action);
     std::wstring handle_synctex_to_ruler();
-    void focus_on_line_with_index(int page, int index);
+    // void focus_on_line_with_index(int page, int index);
     void show_touch_main_menu();
     void show_touch_page_select();
     void show_touch_highlight_type_select();

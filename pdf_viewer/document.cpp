@@ -5143,3 +5143,37 @@ std::optional<Portal> Document::get_portal_with_index(int index) {
 bool Document::get_is_opened() {
     return is_opened;
 }
+
+int Document::get_page_intersecting_rect_index(DocumentRect r) {
+    std::vector<AbsoluteRect> line_rects = get_page_lines(r.page).merged_line_rects;
+    AbsoluteRect abs_rect = r.to_absolute(this);
+    //rect = doc()->document_to_absolute_rect(page, rect);
+
+    if (abs_rect.y0 > abs_rect.y1) {
+        std::swap(abs_rect.y0, abs_rect.y1);
+    }
+
+    float max_area = 0;
+    int selected_index = -1;
+
+    for (int i = 0; i < line_rects.size(); i++) {
+        float area = rect_area(fz_intersect_rect(line_rects[i], abs_rect));
+        if (area > max_area * 2) {
+            max_area = area;
+            selected_index = i;
+        }
+    }
+    if (selected_index == -1) {
+        return line_rects.size() - 1;
+    }
+    return selected_index;
+}
+
+std::optional<AbsoluteRect> Document::get_page_intersecting_rect(DocumentRect rect) {
+    int index = get_page_intersecting_rect_index(rect);
+    if (index >= 0) {
+        std::vector<AbsoluteRect> line_rects = get_page_lines(rect.page).merged_line_rects;
+        return line_rects[index];
+    }
+    return {};
+}
