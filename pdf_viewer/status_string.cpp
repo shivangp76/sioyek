@@ -189,7 +189,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         };
     auto closest_portal_fn = [widget=main_widget]() {
 
-        std::optional<Portal> close_portal = widget->get_target_portal(true);
+        std::optional<Portal> close_portal = widget->main_document_view->get_target_portal(true);
         if (close_portal) {
             return QString(" [ PORTAL ]");
         }

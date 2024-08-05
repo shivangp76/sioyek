@@ -1947,7 +1947,7 @@ public:
     GetOverviewPaperName(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        std::optional<QString> paper_name = widget->get_overview_paper_name();
+        std::optional<QString> paper_name = widget->main_document_view->get_overview_paper_name();
         result = paper_name.value_or("").toStdWString();
     }
 };
@@ -4445,7 +4445,7 @@ public:
         auto selected_text = widget->get_selected_text();
         if (selected_text.size() == 0) {
             if (widget->main_document_view->get_overview_page()) {
-                std::optional<QString> overview_paper_name = widget->get_overview_paper_name();
+                std::optional<QString> overview_paper_name = widget->main_document_view->get_overview_paper_name();
                 if (overview_paper_name) {
                     copy_to_clipboard(overview_paper_name->toStdWString());
                 }
@@ -4740,7 +4740,7 @@ public:
                     search_custom_engine(selected_text, SEARCH_URLS[symbol - 'a']);
                 }
                 else {
-                    std::optional<QString> overview_paper_name = widget->get_overview_paper_name();
+                    std::optional<QString> overview_paper_name = widget->main_document_view->get_overview_paper_name();
                     if (overview_paper_name.has_value()) {
                         search_custom_engine(overview_paper_name->toStdWString(), SEARCH_URLS[symbol - 'a']);
                     }
@@ -6465,7 +6465,7 @@ public:
     }
 
     void pre_perform() {
-        std::optional<QString> paper_name = widget->get_overview_paper_name();
+        std::optional<QString> paper_name = widget->main_document_view->get_overview_paper_name();
         src_doc_path = widget->doc()->get_path();
 
         if (paper_name) {

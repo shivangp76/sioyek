@@ -559,6 +559,9 @@ public:
     void clear_keyboard_select_highlights();
     void handle_fit_to_page_width(bool smart);
     void toggle_rect_hints();
+    bool select_current_search_match();
+    std::optional<Portal> get_target_portal(bool limit);
+    std::optional<QString> get_overview_paper_name();
 };
 
 

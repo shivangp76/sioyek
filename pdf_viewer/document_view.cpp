@@ -4745,3 +4745,71 @@ void DocumentView::toggle_rect_hints() {
         show_rect_hints();
     }
 }
+
+bool DocumentView::select_current_search_match() {
+    std::optional<SearchResult> maybe_current_search_match = get_current_search_result();
+    if (maybe_current_search_match) {
+        SearchResult current_search_match = maybe_current_search_match.value();
+        DocumentPos selection_begin_doc, selection_end_doc;
+        selection_begin_doc.x = current_search_match.rects[0].x0;
+        selection_begin_doc.y = (current_search_match.rects[0].y0 + current_search_match.rects[0].y1) / 2;
+        selection_begin_doc.page = current_search_match.page;
+        
+        selection_end_doc.x = current_search_match.rects.back().x1 - 1.0f;
+        selection_end_doc.y = (current_search_match.rects.back().y0 + current_search_match.rects.back().y1) / 2;
+        selection_end_doc.page = current_search_match.page;
+
+        AbsoluteDocumentPos abspos_begin = selection_begin_doc.to_absolute(current_document);
+        AbsoluteDocumentPos abspos_end = selection_end_doc.to_absolute(current_document);
+
+        selection_begin = abspos_begin;
+        selection_end = abspos_end;
+
+        selected_character_rects.clear();
+        current_document->get_text_selection(abspos_begin, abspos_end, false, selected_character_rects, selected_text);
+        return true;
+    }
+    return false;
+}
+
+std::optional<Portal> DocumentView::get_target_portal(bool limit) {
+    std::string selected_portal_uuid = get_selected_portal_uuid();
+    if ((selected_portal_uuid.size() > 0) && (get_overview_page().has_value())) {
+        Portal* p = current_document->get_portal_with_uuid(selected_portal_uuid);
+        if (p) {
+            return *p;
+        }
+        return {};
+    }
+    return find_closest_portal(limit);
+}
+
+std::optional<QString> DocumentView::get_overview_paper_name() {
+    if (get_overview_page()) {
+        if (smart_view_candidates.size() > 0) {
+            DocumentPos center_document = smart_view_candidates[index_into_candidates].source_rect.center().to_document(current_document);
+
+            std::optional<QString> bib_string = {};
+
+            if (smart_view_candidates[index_into_candidates].source_text.size() > 0) {
+
+                int page = smart_view_candidates[index_into_candidates].get_docpos(this).page;
+
+                auto ref = current_document->get_page_bib_with_reference(page, smart_view_candidates[index_into_candidates].source_text);
+                if (ref.has_value()) {
+                    bib_string = ref->first;
+                }
+            }
+            else {
+                bib_string = get_paper_name_under_pos(center_document);
+            }
+
+            if (bib_string) {
+                return get_paper_name_from_reference_text(bib_string.value());
+            }
+            return {};
+
+        }
+    }
+    return {};
+}

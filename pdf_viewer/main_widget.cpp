@@ -2158,7 +2158,7 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
 }
 
 void MainWidget::download_and_portal_to_highlighted_overview_paper() {
-    auto paper_name = get_overview_paper_name();
+    auto paper_name = main_document_view->get_overview_paper_name();
     auto source_rect = get_overview_source_rect();
     if (paper_name && source_rect) {
         download_and_portal(paper_name->toStdWString(), source_rect->center());
@@ -5006,7 +5006,7 @@ void MainWidget::goto_overview() {
     if (main_document_view->get_overview_page()) {
         OverviewState overview = main_document_view->get_overview_page().value();
         if (overview.doc != nullptr && (overview.doc != doc())) {
-            std::optional<Portal> closest_link_ = get_target_portal(false);
+            std::optional<Portal> closest_link_ = main_document_view->get_target_portal(false);
             if (closest_link_) {
                 push_state();
                 open_document(closest_link_.value().dst);
@@ -6457,7 +6457,7 @@ void MainWidget::handle_overview_to_portal() {
     else {
 
         OverviewState overview_state;
-        std::optional<Portal> portal_ = get_target_portal(false);
+        std::optional<Portal> portal_ = main_document_view->get_target_portal(false);
         if (portal_) {
             Portal portal = portal_.value();
             auto destination_path = checksummer->get_path(portal.dst.document_checksum);
@@ -9342,37 +9342,6 @@ std::optional<AbsoluteRect> MainWidget::get_overview_source_rect() {
     return {};
 }
 
-std::optional<QString> MainWidget::get_overview_paper_name() {
-    if (main_document_view->get_overview_page()) {
-        if (dv()->smart_view_candidates.size() > 0) {
-            DocumentPos center_document = dv()->smart_view_candidates[dv()->index_into_candidates].source_rect.center().to_document(doc());
-
-            std::optional<QString> bib_string = {};
-
-            if (dv()->smart_view_candidates[dv()->index_into_candidates].source_text.size() > 0) {
-
-                int page = dv()->smart_view_candidates[dv()->index_into_candidates].get_docpos(main_document_view).page;
-
-                auto ref = doc()->get_page_bib_with_reference(page, dv()->smart_view_candidates[dv()->index_into_candidates].source_text);
-                if (ref.has_value()) {
-                    bib_string = ref->first;
-                }
-            }
-            else {
-                bib_string = dv()->get_paper_name_under_pos(center_document);
-            }
-
-            if (bib_string) {
-                return get_paper_name_from_reference_text(bib_string.value());
-            }
-            return {};
-
-        }
-    }
-    return {};
-}
-
-
 Portal* MainWidget::get_portal_under_window_pos(WindowPos pos) {
     AbsoluteDocumentPos abspos = main_document_view->window_to_absolute_document_pos(pos);
     return get_portal_under_absolute_pos(abspos);
@@ -9387,18 +9356,6 @@ AbsoluteDocumentPos MainWidget::get_cursor_abspos() {
     QPoint current_mouse_window_point = mapFromGlobal(QCursor::pos());
     WindowPos current_mouse_window_pos = { current_mouse_window_point.x(), current_mouse_window_point.y() };
     return main_document_view->window_to_absolute_document_pos(current_mouse_window_pos);
-}
-
-std::optional<Portal> MainWidget::get_target_portal(bool limit) {
-    std::string selected_portal_uuid = main_document_view->get_selected_portal_uuid();
-    if ((selected_portal_uuid.size() > 0) && (main_document_view->get_overview_page().has_value())) {
-        Portal* p = doc()->get_portal_with_uuid(selected_portal_uuid);
-        if (p) {
-            return *p;
-        }
-        return {};
-    }
-    return main_document_view->find_closest_portal(limit);
 }
 
 void MainWidget::cleanup_expired_pending_portals() {
@@ -10046,28 +10003,8 @@ void MainWidget::advance_waiting_command(std::string waiting_command_name) {
 
 }
 
-
 void MainWidget::handle_select_current_search_match() {
-    std::optional<SearchResult> maybe_current_search_match = main_document_view->get_current_search_result();
-    if (maybe_current_search_match) {
-        SearchResult current_search_match = maybe_current_search_match.value();
-        DocumentPos selection_begin_doc, selection_end_doc;
-        selection_begin_doc.x = current_search_match.rects[0].x0;
-        selection_begin_doc.y = (current_search_match.rects[0].y0 + current_search_match.rects[0].y1) / 2;
-        selection_begin_doc.page = current_search_match.page;
-        
-        selection_end_doc.x = current_search_match.rects.back().x1 - 1.0f;
-        selection_end_doc.y = (current_search_match.rects.back().y0 + current_search_match.rects.back().y1) / 2;
-        selection_end_doc.page = current_search_match.page;
-
-        AbsoluteDocumentPos abspos_begin = selection_begin_doc.to_absolute(doc());
-        AbsoluteDocumentPos abspos_end = selection_end_doc.to_absolute(doc());
-
-        dv()->selection_begin = abspos_begin;
-        dv()->selection_end = abspos_end;
-
-        main_document_view->selected_character_rects.clear();
-        doc()->get_text_selection(abspos_begin, abspos_end, false, main_document_view->selected_character_rects, dv()->selected_text);
+    if (main_document_view->select_current_search_match()) {
         handle_stop_search();
     }
 }

@@ -867,7 +867,6 @@ public:
     void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
     bool goto_ith_next_overview(int i);
     void on_overview_source_updated();
-    std::optional<QString> get_overview_paper_name();
     std::optional<AbsoluteRect> get_overview_source_rect();
 
     void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
@@ -875,7 +874,6 @@ public:
 
     Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
     Portal* get_portal_under_window_pos(WindowPos pos);
-    std::optional<Portal> get_target_portal(bool limit);
 
     AbsoluteDocumentPos get_cursor_abspos();
     void cleanup_expired_pending_portals();
