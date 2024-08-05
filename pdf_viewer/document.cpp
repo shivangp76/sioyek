@@ -5177,3 +5177,8 @@ std::optional<AbsoluteRect> Document::get_page_intersecting_rect(DocumentRect re
     }
     return {};
 }
+
+Portal* Document::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos) {
+    std::string uuid = get_icon_portal_uuid_at_pos(abspos);
+    return get_portal_with_uuid(uuid);
+}

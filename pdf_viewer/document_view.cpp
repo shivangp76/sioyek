@@ -4360,14 +4360,8 @@ void VisibleObjectIndex::handle_move_begin(DocumentView* view, AbsoluteDocumentP
 
 Portal* DocumentView::get_portal_under_window_pos(WindowPos pos) {
     AbsoluteDocumentPos abspos = window_to_absolute_document_pos(pos);
-    return get_portal_under_absolute_pos(abspos);
+    return current_document->get_portal_under_absolute_pos(abspos);
 }
-
-Portal* DocumentView::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos) {
-    std::string uuid = current_document->get_icon_portal_uuid_at_pos(abspos);
-    return current_document->get_portal_with_uuid(uuid);
-}
-
 
 bool DocumentView::handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos){
     if (visible_object_resize_data){

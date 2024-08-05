@@ -3495,7 +3495,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
     dv()->index_into_candidates = 0;
 
     //std::string portal_uuid = -1;
-    Portal* portal = get_portal_under_window_pos(pos);
+    Portal* portal = main_document_view->get_portal_under_window_pos(pos);
     if (portal) {
         Document* dst_doc = document_manager->get_document_with_checksum(portal->dst.document_checksum);
         if (dst_doc) {
@@ -9340,16 +9340,6 @@ std::optional<AbsoluteRect> MainWidget::get_overview_source_rect() {
     }
 
     return {};
-}
-
-Portal* MainWidget::get_portal_under_window_pos(WindowPos pos) {
-    AbsoluteDocumentPos abspos = main_document_view->window_to_absolute_document_pos(pos);
-    return get_portal_under_absolute_pos(abspos);
-}
-
-Portal* MainWidget::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos) {
-    std::string uuid = doc()->get_icon_portal_uuid_at_pos(abspos);
-    return doc()->get_portal_with_uuid(uuid);
 }
 
 AbsoluteDocumentPos MainWidget::get_cursor_abspos() {

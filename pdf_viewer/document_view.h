@@ -533,7 +533,6 @@ public:
     void schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
     // bool overview_under_pos(WindowPos pos);
     Portal* get_portal_under_window_pos(WindowPos pos);
-    Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
     bool handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos);
     bool is_pinned_portal_selected();
     Portal* get_pinned_portal();

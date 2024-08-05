@@ -453,6 +453,7 @@ public:
     bool annotations_file_is_newer_than_database();
     std::optional<AbsoluteRect> get_rect_vertically(bool below, AbsoluteRect rect);
 
+    Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
     void persist_drawings(bool force = false);
     void persist_annotations(bool force = false);
     void load_drawings();
