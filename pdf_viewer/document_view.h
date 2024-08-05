@@ -553,6 +553,7 @@ public:
     std::vector<Portal> get_ruler_portals();
     void highlight_ruler_portals();
     std::optional<OverviewState> overview_to_ruler_portal(bool* is_render_invalid);
+    void handle_visible_bookmark_tags_pre_perform(const std::vector<std::string>& visible_bookmark_uuids);
 };
 
 

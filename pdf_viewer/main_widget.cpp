@@ -11310,14 +11310,6 @@ void MainWidget::handle_highlight_tags_pre_perform(const std::vector<std::string
 
 }
 
-void MainWidget::handle_visible_bookmark_tags_pre_perform(const std::vector<std::string>& visible_bookmark_uuids){
-    const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
-
-    std::vector<DocumentRect> bookmark_rects = doc()->get_rects_for_bookmark_indices(visible_bookmark_uuids);
-
-    main_document_view->set_highlight_words(bookmark_rects);
-    main_document_view->set_should_highlight_words(true);
-}
 
 void MainWidget::clear_keyboard_select_highlights() {
     main_document_view->set_should_highlight_words(false);
@@ -11439,19 +11431,6 @@ void MainWidget::focus_on_character_offset_into_document(int character_offset_in
     main_document_view->focus_on_character_offset_into_document(character_offset_into_document);
     invalidate_render();
 }
-
-//void MainWidget::handle_move_smooth_press(bool down) {
-//
-//    float mult = down ? -1 : 1;
-//
-//    velocity_y += mult * SMOOTH_MOVE_INITIAL_VELOCITY;
-//    if (std::abs(velocity_y) > SMOOTH_MOVE_MAX_VELOCITY) {
-//        if (down) velocity_y = -SMOOTH_MOVE_MAX_VELOCITY;
-//        else velocity_y = SMOOTH_MOVE_MAX_VELOCITY;
-//    }
-//    validation_interval_timer->setInterval(0);
-//    last_speed_update_time = QTime::currentTime();
-//}
 
 void MainWidget::handle_move_smooth_hold(bool down) {
 

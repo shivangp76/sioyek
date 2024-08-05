@@ -4597,3 +4597,12 @@ std::optional<OverviewState> DocumentView::overview_to_ruler_portal(bool* is_ren
     return {};
 
 }
+
+void DocumentView::handle_visible_bookmark_tags_pre_perform(const std::vector<std::string>& visible_bookmark_uuids){
+    const std::vector<BookMark>& bookmarks = current_document->get_bookmarks();
+
+    std::vector<DocumentRect> bookmark_rects = current_document->get_rects_for_bookmark_indices(visible_bookmark_uuids);
+
+    set_highlight_words(bookmark_rects);
+    set_should_highlight_words(true);
+}

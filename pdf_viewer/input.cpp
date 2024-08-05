@@ -4233,7 +4233,7 @@ public:
 
 
     void handle_indices_pre_perform() override {
-        widget->handle_visible_bookmark_tags_pre_perform(visible_item_uuids);
+        dv()->handle_visible_bookmark_tags_pre_perform(visible_item_uuids);
     }
 
     virtual void perform_with_bookmark_selected() = 0;
