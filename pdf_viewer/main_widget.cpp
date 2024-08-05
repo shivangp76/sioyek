@@ -1345,7 +1345,7 @@ MainWidget::~MainWidget() {
 }
 
 bool MainWidget::is_pending_link_source_filled() {
-    return (current_pending_portal && current_pending_portal->first);
+    return (main_document_view->current_pending_portal && main_document_view->current_pending_portal->first);
 }
 
 std::wstring MainWidget::get_status_string(bool is_right) {
@@ -1406,7 +1406,7 @@ void MainWidget::handle_escape() {
     }
     hide_command_line_edit();
     text_suggestion_index = 0;
-    set_pending_portal({});
+    main_document_view->set_pending_portal({});
     synchronize_pending_link();
 
 
@@ -3593,13 +3593,8 @@ void MainWidget::start_creating_rect_portal(AbsoluteDocumentPos location) {
     Portal new_portal;
     new_portal.src_offset_y = location.y;
     new_portal.src_offset_x = location.x;
-    //new_portal.src_rect_begin_x = rect.x0;
-    //new_portal.src_rect_begin_y = rect.y0;
-    //new_portal.src_rect_end_x = rect.x1;
-    //new_portal.src_rect_end_y = rect.y1;
 
-
-    set_pending_portal(main_document_view->get_document()->get_path(), new_portal);
+    main_document_view->set_pending_portal(main_document_view->get_document()->get_path(), new_portal);
 
     synchronize_pending_link();
     refresh_all_windows();
@@ -3610,17 +3605,17 @@ void MainWidget::handle_portal() {
     if (!main_document_view_has_document()) return;
 
     if (is_pending_link_source_filled()) {
-        auto [source_path, pl] = current_pending_portal.value();
+        auto [source_path, pl] = main_document_view->current_pending_portal.value();
         pl.dst = main_document_view->get_checksum_state();
 
         if (source_path.has_value()) {
             add_portal(source_path.value(), pl);
         }
 
-        set_pending_portal({});
+        main_document_view->set_pending_portal({});
     }
     else {
-        set_pending_portal(main_document_view->get_document()->get_path(),
+        main_document_view->set_pending_portal(main_document_view->get_document()->get_path(),
             Portal::with_src_offset(main_document_view->get_offset_y()));
     }
 
@@ -3670,12 +3665,12 @@ void MainWidget::set_presentation_mode(bool mode) {
 }
 
 void MainWidget::complete_pending_link(const PortalViewState& destination_view_state) {
-    Portal& pl = current_pending_portal.value().second;
+    Portal& pl = main_document_view->current_pending_portal.value().second;
     pl.dst = destination_view_state;
     std::string uuid = doc()->add_portal(pl);
     on_new_portal_added(uuid);
 
-    set_pending_portal({});
+    main_document_view->set_pending_portal({});
 }
 
 void MainWidget::long_jump_to_destination(int page, float offset_y) {
@@ -6565,7 +6560,7 @@ void MainWidget::handle_delete_selected_portal() {
 void MainWidget::synchronize_pending_link() {
     for (auto window : windows) {
         if (window != this) {
-            window->set_pending_portal(current_pending_portal);
+            window->main_document_view->set_pending_portal(main_document_view->current_pending_portal);
         }
     }
     refresh_all_windows();
@@ -11985,23 +11980,23 @@ void MainWidget::delete_menu_nodes(MenuNode* items) {
     delete items;
 }
 
-void MainWidget::set_pending_portal(std::optional<std::wstring> doc_path, Portal portal) {
-    set_pending_portal(std::make_pair(doc_path, portal));
-}
+// void MainWidget::set_pending_portal(std::optional<std::wstring> doc_path, Portal portal) {
+//     set_pending_portal(std::make_pair(doc_path, portal));
+// }
 
-void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal) {
-    current_pending_portal = pending_portal;
+// void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal) {
+//     current_pending_portal = pending_portal;
 
-    if (pending_portal) {
-        if (pending_portal->second.src_offset_x.has_value()){
-            // show pending portal icon for visible portals only
-            main_document_view->set_pending_portal_position(pending_portal->second.get_rectangle());
-        }
-    }
-    else {
-        main_document_view->set_pending_portal_position({});
-    }
-}
+//     if (pending_portal) {
+//         if (pending_portal->second.src_offset_x.has_value()){
+//             // show pending portal icon for visible portals only
+//             main_document_view->set_pending_portal_position(pending_portal->second.get_rectangle());
+//         }
+//     }
+//     else {
+//         main_document_view->set_pending_portal_position({});
+//     }
+// }
 
 bool MainWidget::is_ruler_mode(){
     return main_document_view->is_ruler_mode();

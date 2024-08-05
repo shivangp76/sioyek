@@ -1141,8 +1141,11 @@ void PdfViewOpenGLWidget::my_render() {
             }
         }
 
-        if (document_view->pending_portal_rect) {
-            render_portal_rect(document_view->pending_portal_rect.value(), true, {});
+        if (document_view->current_pending_portal){
+            Portal portal = document_view->current_pending_portal->second;
+            if (portal.is_visible()){
+                render_portal_rect(portal.get_rectangle().value(), true, {});
+            }
         }
 
         for (int i = 0; i < bookmarks.size(); i++) {

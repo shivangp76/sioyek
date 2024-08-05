@@ -3051,9 +3051,9 @@ bool DocumentView::is_tag_highlighted(const std::string& tag) {
     return false;
 }
 
-void DocumentView::set_pending_portal_position(std::optional<AbsoluteRect> rect) {
-    pending_portal_rect = rect;
-}
+// void DocumentView::set_pending_portal_position(std::optional<AbsoluteRect> rect) {
+//     pending_portal_rect = rect;
+// }
 
 void DocumentView::rotate_clockwise() {
     rotation_index = (rotation_index + 1) % 4;
@@ -4459,4 +4459,12 @@ void DocumentView::perform_fuzzy_search(std::wstring query) {
 
     set_search_results(std::move(search_results));
     goto_search_result(0, false);
+}
+
+void DocumentView::set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal) {
+    current_pending_portal = pending_portal;
+}
+
+void DocumentView::set_pending_portal(std::wstring path, Portal portal){
+    set_pending_portal(std::make_pair(path, portal));
 }

@@ -137,7 +137,7 @@ public:
 
     std::vector<DocumentRect> word_rects;
 
-    std::optional<AbsoluteRect> pending_portal_rect = {};
+    // std::optional<AbsoluteRect> pending_portal_rect = {};
 
     std::optional<AbsoluteRect> character_highlight_rect = {};
     std::optional<AbsoluteRect> wrong_character_rect = {};
@@ -163,6 +163,10 @@ public:
 
     std::optional<AbsoluteDocumentPos> underline = {};
     // std::vector<DocumentRect> overview_highlights;
+
+    // An incomplete portal that is being created. The source of the portal is filled
+    // but the destination still needs to be set.
+    std::optional<std::pair<std::optional<std::wstring>, Portal>> current_pending_portal;
 
     // std::vector<std::pair<AbsoluteRect, float>> pending_download_portals;
     std::vector<PendingDownloadPortal> pending_download_portals;
@@ -301,7 +305,7 @@ public:
     //void absolute_to_window_pos(float absolute_x, float absolute_y, float* window_x, float* window_y);
     NormalizedWindowPos absolute_to_window_pos(AbsoluteDocumentPos absolute_pos);
 
-    void set_pending_portal_position(std::optional<AbsoluteRect> rect);
+    // void set_pending_portal_position(std::optional<AbsoluteRect> rect);
     void set_synctex_highlights(std::vector<DocumentRect> highlights);
 
     bool should_show_synxtex_highlights();
@@ -534,6 +538,9 @@ public:
     void zoom_pinned_portal(bool zoom_in);
     std::optional<Portal> pin_current_overview_as_portal();
     void perform_fuzzy_search(std::wstring query);
+
+    void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
+    void set_pending_portal(std::wstring path, Portal portal);
 };
 
 
