@@ -584,6 +584,8 @@ public:
     void handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos, ScratchPad* scratchpad);
     void select_freehand_drawings(AbsoluteRect rect, ScratchPad* scratchpad);
     void freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
+    void handle_portal_move(AbsoluteDocumentPos current_mouse_abspos);
+    void handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos);
 };
 
 struct CachedScratchpadPixmapData {

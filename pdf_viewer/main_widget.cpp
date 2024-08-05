@@ -9058,71 +9058,18 @@ void MainWidget::handle_visible_object_move() {
             handle_bookmark_move();
         }
         else if (type == VisibleObjectType::Portal || type == VisibleObjectType::PendingPortal) {
-            handle_portal_move();
+            main_document_view->handle_portal_move(get_cursor_abspos());
         }
     }
+}
+
+void MainWidget::handle_portal_move(){
+    main_document_view->handle_portal_move(get_cursor_abspos());
 }
 
 void MainWidget::handle_bookmark_move() {
     AbsoluteDocumentPos current_mouse_abspos = get_cursor_abspos();
-
-    float diff_x = current_mouse_abspos.x - main_document_view->visible_object_move_data->initial_mouse_position.x;
-    float diff_y = current_mouse_abspos.y - main_document_view->visible_object_move_data->initial_mouse_position.y;
-
-    //BookMark& bookmark = doc()->get_bookmarks()[visible_object_move_data->index.index];
-    BookMark* bookmark = doc()->get_bookmark_with_uuid(main_document_view->visible_object_move_data->index.uuid);
-
-    if (bookmark) {
-
-        auto bm_width = bookmark->rect().width();
-        auto bm_height = bookmark->rect().height();
-
-        bookmark->begin_x = main_document_view->visible_object_move_data->initial_position.x + diff_x;
-        bookmark->begin_y = main_document_view->visible_object_move_data->initial_position.y + diff_y;
-
-        if (bookmark->is_freetext()) {
-            bookmark->end_x = bookmark->begin_x + bm_width;
-            bookmark->end_y = bookmark->begin_y + bm_height;
-        }
-    }
-}
-
-void MainWidget::handle_portal_move() {
-    AbsoluteDocumentPos current_mouse_abspos = get_cursor_abspos();
-
-    float diff_x = current_mouse_abspos.x - main_document_view->visible_object_move_data->initial_mouse_position.x;
-    float diff_y = current_mouse_abspos.y - main_document_view->visible_object_move_data->initial_mouse_position.y;
-
-    std::string uuid = main_document_view->visible_object_move_data->index.uuid;
-    if (main_document_view->visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal) {
-        PendingDownloadPortal* pending_portal = main_document_view->get_pending_portal_with_uuid(uuid);
-        if (pending_portal) {
-            pending_portal->pending_portal.src_offset_x = main_document_view->visible_object_move_data->initial_position.x + diff_x;
-            pending_portal->pending_portal.src_offset_y = main_document_view->visible_object_move_data->initial_position.y + diff_y;
-            // update_opengl_pending_download_portals();
-        }
-    }
-    else {
-        Portal* portal = doc()->get_portal_with_uuid(uuid);
-
-        if (portal) {
-            if (portal->is_pinned()) {
-                float width = portal->get_rectangle()->width();
-                float height = portal->get_rectangle()->height();
-
-                portal->src_offset_x = main_document_view->visible_object_move_data->initial_position.x + diff_x;
-                portal->src_offset_y = main_document_view->visible_object_move_data->initial_position.y + diff_y;
-                portal->src_offset_end_x = portal->src_offset_x.value() + width;
-                portal->src_offset_end_y = portal->src_offset_y - height;
-            }
-            else {
-                portal->update_merged_rect(doc());
-                portal->src_offset_x = main_document_view->visible_object_move_data->initial_position.x + diff_x;
-                portal->src_offset_y = main_document_view->visible_object_move_data->initial_position.y + diff_y;
-            }
-        }
-
-    }
+    main_document_view->handle_bookmark_move(current_mouse_abspos);
 }
 
 bool MainWidget::is_middle_click_being_used() {

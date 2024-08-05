@@ -838,10 +838,10 @@ public:
     void update_portal_with_uuid(const std::string& uuid);
     void handle_bookmark_move_finish();
     void handle_portal_move_finish();
+    void handle_portal_move();
 
     void handle_visible_object_move();
     void handle_bookmark_move();
-    void handle_portal_move();
 
     bool is_middle_click_being_used();
     // void begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos);
