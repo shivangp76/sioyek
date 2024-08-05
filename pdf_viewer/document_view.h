@@ -24,6 +24,7 @@ class DatabaseManager;
 class DocumentManager;
 class ConfigManager;
 class PdfRenderer;
+class ScratchPad;
 
 
 struct MarkedDataRect {
@@ -41,6 +42,18 @@ struct LineSelectBeginData {
 struct ScheduledPortalUpdate {
     Portal portal;
     OpenedBookState state;
+};
+
+struct SelectedDrawings {
+    int page;
+    AbsoluteRect selection_absrect;
+    std::vector<SelectedObjectIndex> selected_indices;
+};
+
+struct FreehandDrawingMoveData {
+    std::vector<FreehandDrawing> initial_drawings;
+    std::vector<PixmapDrawing> initial_pixmaps;
+    AbsoluteDocumentPos initial_mouse_position;
 };
 
 struct VisibleObjectMoveData {
@@ -152,6 +165,9 @@ public:
 
     std::optional<VisibleObjectResizeData> visible_object_resize_data = {};
     std::optional<VisibleObjectScrollData> visible_object_scroll_data = {};
+
+    std::optional<SelectedDrawings> selected_freehand_drawings = {};
+    std::optional<FreehandDrawingMoveData> freehand_drawing_move_data = {};
 
     std::optional<VisibleObjectMoveData> visible_object_move_data = {};
 
@@ -563,8 +579,12 @@ public:
     std::optional<QString> get_overview_paper_name();
     std::optional<AbsoluteRect> get_overview_source_rect();
     std::optional<OverviewState> get_ith_next_overview(int i);
+    void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
+    bool is_moving_annotations();
+    void handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos, ScratchPad* scratchpad);
+    void select_freehand_drawings(AbsoluteRect rect, ScratchPad* scratchpad);
+    void freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
 };
-
 
 struct CachedScratchpadPixmapData {
     QPixmap pixmap;

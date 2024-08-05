@@ -2377,7 +2377,7 @@ public:
         md.initial_drawings = drawings;
         md.initial_pixmaps = {};
         md.initial_mouse_position = click_pos;
-        widget->freehand_drawing_move_data = md;
+        dv()->freehand_drawing_move_data = md;
         widget->toggle_scratchpad_mode();
         widget->set_rect_select_mode(false);
         widget->invalidate_render();

@@ -747,6 +747,9 @@ void DocumentView::reset_doc_state() {
     visible_object_scroll_data = {};
     visible_object_move_data = {};
 
+    freehand_drawing_move_data = {};
+    selected_freehand_drawings = {};
+
     velocity_x = 0;
     velocity_y = 0;
     is_velocity_fixed = false;
@@ -4841,4 +4844,124 @@ std::optional<OverviewState> DocumentView::get_ith_next_overview(int i) {
         return state;
     }
     return {};
+}
+
+void DocumentView::move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps) {
+    float diff_x = -freehand_drawing_move_data->initial_mouse_position.x + new_pos.x;
+    float diff_y = -freehand_drawing_move_data->initial_mouse_position.y + new_pos.y;
+
+    for (auto drawing : freehand_drawing_move_data->initial_drawings) {
+        FreehandDrawing new_drawing = drawing;
+        for (int i = 0; i < new_drawing.points.size(); i++) {
+            new_drawing.points[i].pos.x += diff_x;
+            new_drawing.points[i].pos.y += diff_y;
+        }
+        moved_drawings.push_back(new_drawing);
+    }
+
+    for (auto pixmap_drawing : freehand_drawing_move_data->initial_pixmaps) {
+        PixmapDrawing new_pixmap = pixmap_drawing;
+        new_pixmap.rect.x0 += diff_x;
+        new_pixmap.rect.x1 += diff_x;
+        new_pixmap.rect.y0 += diff_y;
+        new_pixmap.rect.y1 += diff_y;
+        moved_pixmaps.push_back(new_pixmap);
+    }
+}
+
+bool DocumentView::is_moving_annotations(){
+    if (visible_object_move_data || freehand_drawing_move_data) {
+        return true;
+    }
+    return false;
+}
+
+void DocumentView::handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos, ScratchPad* scratchpad) {
+    std::vector<FreehandDrawing> moving_drawings;
+    std::vector<PixmapDrawing> moving_pixmaps;
+
+    if (scratchpad) {
+        scratchpad->get_selected_objects_with_indices(
+            selected_freehand_drawings->selected_indices,
+            moving_drawings,
+            moving_pixmaps);
+        scratchpad->delete_intersecting_objects(selected_freehand_drawings->selection_absrect);
+    }
+    else {
+        current_document->get_page_freehand_drawings_with_indices(
+            selected_freehand_drawings->page,
+            selected_freehand_drawings->selected_indices,
+            moving_drawings,
+            moving_pixmaps);
+        current_document->delete_page_intersecting_drawings(
+            selected_freehand_drawings->page,
+            selected_freehand_drawings->selection_absrect,
+            visible_drawing_mask);
+    }
+
+    FreehandDrawingMoveData md;
+    md.initial_drawings = moving_drawings;
+    md.initial_pixmaps = moving_pixmaps;
+    md.initial_mouse_position = click_pos;
+    freehand_drawing_move_data = md;
+    selected_freehand_drawings = {};
+}
+
+void DocumentView::select_freehand_drawings(AbsoluteRect rect, ScratchPad* scratchpad) {
+    DocumentRect page_rect = rect.to_document(current_document);
+    SelectedDrawings selected_drawings;
+    std::vector<SelectedObjectIndex> selected_indices;
+    if (scratchpad) {
+        selected_indices = scratchpad->get_intersecting_objects(rect);
+    }
+    else {
+        selected_indices = current_document->get_page_intersecting_drawing_indices(page_rect.page, rect, visible_drawing_mask);;
+    }
+
+    selected_drawings.page = page_rect.page;
+    selected_drawings.selected_indices = selected_indices;
+    selected_drawings.selection_absrect = rect;
+    selected_freehand_drawings = selected_drawings;
+    moving_drawings.clear();
+    moving_pixmaps.clear();
+
+    if (scratchpad) {
+        scratchpad->get_selected_objects_with_indices(selected_indices, moving_drawings, moving_pixmaps);
+    }
+    else {
+        current_document->get_page_freehand_drawings_with_indices(
+            selected_freehand_drawings->page,
+            selected_freehand_drawings->selected_indices,
+            moving_drawings,
+            moving_pixmaps);
+    }
+
+}
+
+void DocumentView::freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad){
+    std::vector<FreehandDrawing> moved_drawings;
+    std::vector<PixmapDrawing> moved_pixmaps;
+
+    move_selected_drawings(mpos_absolute, moved_drawings, moved_pixmaps);
+
+    if (scratchpad) {
+
+        for (auto drawing : moved_drawings) {
+            scratchpad->add_drawing(drawing);
+        }
+        for (auto pixmap_drawing : moved_pixmaps) {
+            scratchpad->pixmaps.push_back(pixmap_drawing);
+        }
+    }
+    else {
+        for (auto drawing : moved_drawings) {
+            current_document->add_freehand_drawing(drawing);
+        }
+    }
+
+
+    freehand_drawing_move_data = {};
+    moving_drawings.clear();
+    moving_pixmaps.clear();
+
 }

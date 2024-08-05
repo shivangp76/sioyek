@@ -74,19 +74,6 @@ enum class DrawingMode {
 
 
 
-struct SelectedDrawings {
-    int page;
-    AbsoluteRect selection_absrect;
-    std::vector<SelectedObjectIndex> selected_indices;
-};
-
-
-
-struct FreehandDrawingMoveData {
-    std::vector<FreehandDrawing> initial_drawings;
-    std::vector<PixmapDrawing> initial_pixmaps;
-    AbsoluteDocumentPos initial_mouse_position;
-};
 
 struct RecentlyUpdatedPortalState {
     std::string uuid;
@@ -277,9 +264,6 @@ public:
     // when we go back to the original location by jumping back in history, the portal will be edited
     // to be the new document view state
     std::optional<Portal> portal_to_edit = {};
-
-    std::optional<SelectedDrawings> selected_freehand_drawings = {};
-    std::optional<FreehandDrawingMoveData> freehand_drawing_move_data = {};
 
     // the current freehand drawing mode. None means we are not drawing anything
     // Drawing means we use the mouse to draw a freehand diagram
@@ -864,7 +848,7 @@ public:
     // void begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
     bool should_drag();
     void handle_freehand_drawing_move_finish();
-    void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
+    // void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
     bool goto_ith_next_overview(int i);
     void on_overview_source_updated();
 
@@ -958,7 +942,6 @@ public:
     void export_json(std::wstring json_file_path);
     void import_json(std::wstring json_file_path);
     bool does_current_widget_consume_quicktap_event();
-    bool is_moving_annotations();
     PdfViewOpenGLWidget* helper_opengl_widget();
     DocumentView* helper_document_view();
     void initialize_helper();
