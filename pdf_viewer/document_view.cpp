@@ -4807,3 +4807,13 @@ std::optional<QString> DocumentView::get_overview_paper_name() {
     }
     return {};
 }
+
+std::optional<AbsoluteRect> DocumentView::get_overview_source_rect() {
+    if (get_overview_page()) {
+        if (smart_view_candidates.size() > 0) {
+            return smart_view_candidates[index_into_candidates].source_rect;
+        }
+    }
+
+    return {};
+}

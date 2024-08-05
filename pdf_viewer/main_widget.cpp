@@ -2159,7 +2159,7 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
 
 void MainWidget::download_and_portal_to_highlighted_overview_paper() {
     auto paper_name = main_document_view->get_overview_paper_name();
-    auto source_rect = get_overview_source_rect();
+    auto source_rect = main_document_view->get_overview_source_rect();
     if (paper_name && source_rect) {
         download_and_portal(paper_name->toStdWString(), source_rect->center());
     }
@@ -7873,8 +7873,8 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
 
         if (get_default_paper_download_finish_action() == PaperDownloadFinishedAction::Portal) {
             AbsoluteDocumentPos source_position;
-            if (main_document_view->get_overview_page() && get_overview_source_rect())  {
-                source_position = get_overview_source_rect()->center();
+            if (main_document_view->get_overview_page() && main_document_view->get_overview_source_rect())  {
+                source_position = main_document_view->get_overview_source_rect()->center();
             }
             else {
                 source_position = doc_pos.to_absolute(doc());
@@ -9330,16 +9330,6 @@ void MainWidget::on_overview_source_updated() {
     //if (index_into_candidates >= 0 && index_into_candidates < smart_view_candidates.size()) {
     //    main_document_view->set_overview_highlights(smart_view_candidates[index_into_candidates].highlight_rects);
     //}
-}
-
-std::optional<AbsoluteRect> MainWidget::get_overview_source_rect() {
-    if (main_document_view->get_overview_page()) {
-        if (dv()->smart_view_candidates.size() > 0) {
-            return dv()->smart_view_candidates[dv()->index_into_candidates].source_rect;
-        }
-    }
-
-    return {};
 }
 
 AbsoluteDocumentPos MainWidget::get_cursor_abspos() {

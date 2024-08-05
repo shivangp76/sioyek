@@ -6469,7 +6469,7 @@ public:
         src_doc_path = widget->doc()->get_path();
 
         if (paper_name) {
-            source_rect = widget->get_overview_source_rect();
+            source_rect = dv()->get_overview_source_rect();
 
             if (TOUCH_MODE) {
                 TouchTextEdit* paper_name_editor = dynamic_cast<TouchTextEdit*>(widget->current_widget_stack.back());
