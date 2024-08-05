@@ -623,7 +623,6 @@ public:
     void advance_command(std::unique_ptr<Command> command, std::wstring* result = nullptr);
     void add_search_term(const std::wstring& term);
     void perform_search(std::wstring text, bool is_regex = false, bool is_incremental = false);
-    void perform_fuzzy_search(std::wstring text);
     void overview_to_definition();
     void portal_to_definition();
     void move_visual_mark_command(int amount);

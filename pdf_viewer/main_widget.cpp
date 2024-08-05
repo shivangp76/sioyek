@@ -2695,7 +2695,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
                             }
                             decoded = decoded.trimmed();
                             push_state();
-                            perform_fuzzy_search(decoded.toStdWString());
+                            main_document_view->perform_fuzzy_search(decoded.toStdWString());
                         }
                     }
                 }
@@ -12976,18 +12976,6 @@ void MainWidget::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int
 void MainWidget::scroll_selected_bookmark(int amount) {
     std::string bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
     scroll_bookmark_with_uuid(bookmark_uuid, amount);
-}
-
-void MainWidget::perform_fuzzy_search(std::wstring query) {
-    if (doc()->get_super_fast_index().size() == 0) {
-        show_error_message(L"Super fast search index is not ready");
-        return;
-    }
-
-    std::vector<SearchResult> search_results = main_document_view->get_fuzzy_search_results(query);
-
-    main_document_view->set_search_results(std::move(search_results));
-    goto_search_result(0);
 }
 
 void MainWidget::pin_current_overview_as_portal() {

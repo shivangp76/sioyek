@@ -1496,7 +1496,7 @@ public:
     };
 
     virtual void perform() {
-        widget->perform_fuzzy_search(text.value());
+        dv()->perform_fuzzy_search(text.value());
     }
 
 };

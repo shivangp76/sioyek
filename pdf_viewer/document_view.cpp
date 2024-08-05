@@ -4448,3 +4448,15 @@ std::optional<Portal> DocumentView::pin_current_overview_as_portal() {
     }
     return {};
 }
+
+void DocumentView::perform_fuzzy_search(std::wstring query) {
+    if (current_document->get_super_fast_index().size() == 0) {
+        show_error_message(L"Super fast search index is not ready");
+        return;
+    }
+
+    std::vector<SearchResult> search_results = get_fuzzy_search_results(query);
+
+    set_search_results(std::move(search_results));
+    goto_search_result(0, false);
+}
