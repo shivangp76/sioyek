@@ -10534,19 +10534,6 @@ void MainWidget::add_password(std::wstring path, std::string password) {
     pdf_renderer->add_password(path, password);
 }
 
-void MainWidget::handle_fit_to_page_width(bool smart) {
-    main_document_view->fit_to_page_width(smart);
-
-    if (smart) {
-        int current_page = get_current_page_number();
-        if (!main_document_view->is_two_page_mode()) {
-            main_document_view->last_smart_fit_page = current_page;
-        }
-    }
-    else {
-        main_document_view->last_smart_fit_page = {};
-    }
-}
 
 int MainWidget::current_document_page_count(){
     if (doc()) {

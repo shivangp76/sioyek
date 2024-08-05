@@ -954,7 +954,6 @@ public:
     void run_command_with_name(std::string command_name, bool should_pop_current_widget=false);
     QStringListModel* get_new_command_list_model();
     void add_password(std::wstring path, std::string password);
-    void handle_fit_to_page_width(bool smart);
     int current_document_page_count();
     void goto_search_result(int nth_next_result, bool overview=false);
     void set_should_highlight_words(bool should_highlight_words);

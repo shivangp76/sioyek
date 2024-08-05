@@ -3638,7 +3638,7 @@ public:
     FitToPageWidthCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_fit_to_page_width(false);
+        dv()->handle_fit_to_page_width(false);
     }
 };
 
@@ -3659,7 +3659,7 @@ public:
     static inline const std::string hname = "Fit the page to screen width, ignoring white page margins";
     FitToPageWidthSmartCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->handle_fit_to_page_width(true);
+        dv()->handle_fit_to_page_width(true);
     }
 };
 

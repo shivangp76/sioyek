@@ -4722,3 +4722,17 @@ void ScratchPad::save(std::wstring scratchpad_file_name){
     json_file.close();
 
 }
+
+void DocumentView::handle_fit_to_page_width(bool smart) {
+    fit_to_page_width(smart);
+
+    if (smart) {
+        int current_page = get_current_page_number();
+        if (!is_two_page_mode()) {
+            last_smart_fit_page = current_page;
+        }
+    }
+    else {
+        last_smart_fit_page = {};
+    }
+}
