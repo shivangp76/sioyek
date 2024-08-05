@@ -72,11 +72,10 @@ protected:
     Document* current_document = nullptr;
 
     float zoom_level = 0.0f;
-    //float offset_x = 0.0f;
-    //float offset_y = 0.0f;
     VirtualPos offset = {0, 0};
     std::vector<VirtualRect> cached_virtual_rects;
     bool two_page_mode = false;
+
 
     // absolute rect of the current ruler if this is {} then ruler_pos is used instead
     std::optional<AbsoluteRect> ruler_rect;
@@ -104,6 +103,10 @@ protected:
 
 public:
     std::vector<std::vector<AbsoluteRect>>  debug_highlight_rects;
+
+    float velocity_x = 0;
+    float velocity_y = 0;
+    bool is_velocity_fixed = false;
 
     std::vector<SearchResult> search_results;
     int current_search_result_index = -1;
@@ -542,6 +545,9 @@ public:
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     void set_pending_portal(std::wstring path, Portal portal);
     bool is_pending_link_source_filled();
+    void velocity_tick(float dt_secs, bool horizontal_scroll_locked);
+    bool is_moving();
+    void move_selected_bookmark_to_pos(AbsoluteDocumentPos pos);
 };
 
 

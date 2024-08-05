@@ -1501,30 +1501,13 @@ void MainWidget::validate_render() {
             last_speed_update_time = QTime::currentTime();
         }
     }
-    if (is_moving()) {
+    if (main_document_view->is_moving()) {
         auto current_time = QTime::currentTime();
         float secs = current_time.msecsTo(last_speed_update_time) / 1000.0f;
-        float move_x = secs * velocity_x;
-        float move_y = secs * velocity_y;
-        if (horizontal_scroll_locked) {
-            move_x = 0;
-        }
-        dv()->move(move_x, move_y);
 
-        if (!is_velocity_fixed) {
-            velocity_x = dampen_velocity(velocity_x, secs);
-            velocity_y = dampen_velocity(velocity_y, secs);
-        }
+        main_document_view->velocity_tick(secs, horizontal_scroll_locked);
 
-        if (!TOUCH_MODE) {
-            if (!is_velocity_fixed) {
-                // when using smooth_move commands not in touch mode we stop much faster
-                velocity_x = dampen_velocity(velocity_x, secs);
-                velocity_y = dampen_velocity(velocity_y, secs);
-            }
-        }
-
-        if (!is_moving()) {
+        if (!main_document_view->is_moving()) {
             validation_interval_timer->setInterval(INTERVAL_TIME);
         }
         last_speed_update_time = current_time;
@@ -1569,7 +1552,7 @@ void MainWidget::validate_render() {
     if (smooth_scroll_mode && (smooth_scroll_speed != 0)) {
         is_render_invalidated = true;
     }
-    if (is_moving()) {
+    if (main_document_view->is_moving()) {
         is_render_invalidated = true;
         if (!hasFocus()) { // stop scrolling if the windows doesn't have focus
             set_fixed_velocity(0);
@@ -2201,8 +2184,8 @@ bool MainWidget::handle_left_press_touch_mode(WindowPos click_pos) {
 
     last_press_point = mapFromGlobal(QCursor::pos());
     last_press_msecs = QDateTime::currentMSecsSinceEpoch();
-    velocity_x = 0;
-    velocity_y = 0;
+    main_document_view->velocity_x = 0;
+    main_document_view->velocity_y = 0;
     is_pressed = true;
 
     if (current_widget_stack.size() > 0 && (dynamic_cast<AndroidSelector*>(current_widget_stack.back()))) {
@@ -2259,12 +2242,12 @@ bool MainWidget::handle_left_release_touch_mode(WindowPos click_pos) {
         }
     }
     else if (is_flicking(&vel)) {
-        velocity_x = -vel.x();
-        velocity_y = vel.y();
+        main_document_view->velocity_x = -vel.x();
+        main_document_view->velocity_y = vel.y();
         if (is_dragging_snapped) {
-            velocity_x = 0;
+            main_document_view->velocity_x = 0;
         }
-        if (is_moving()) {
+        if (main_document_view->is_moving()) {
             validation_interval_timer->setInterval(0);
         }
         last_speed_update_time = QTime::currentTime();
@@ -6635,8 +6618,8 @@ bool MainWidget::event(QEvent* event) {
             auto gesture = (static_cast<QGestureEvent*>(event));
 
             if (gesture->gesture(Qt::TapAndHoldGesture)) {
-                velocity_x = 0;
-                velocity_y = 0;
+                main_document_view->velocity_x = 0;
+                main_document_view->velocity_y = 0;
 
                 if (was_last_mouse_down_in_ruler_next_rect) {
                     return true;
@@ -7011,10 +6994,6 @@ void MainWidget::android_handle_visual_mode() {
 
         visual_mark_under_pos(pos);
     }
-}
-
-bool MainWidget::is_moving() {
-    return (velocity_x != 0) || (velocity_y != 0);
 }
 
 void MainWidget::update_position_buffer() {
@@ -11518,10 +11497,10 @@ void MainWidget::handle_move_smooth_hold(bool down) {
     float max_velocity = down ? -SMOOTH_MOVE_MAX_VELOCITY : SMOOTH_MOVE_MAX_VELOCITY;
 
     if (down) {
-        velocity_y -= (velocity_y - max_velocity) / 5.0f;
+        main_document_view->velocity_y -= (main_document_view->velocity_y - max_velocity) / 5.0f;
     }
     else {
-        velocity_y += (max_velocity - velocity_y) / 5.0f;
+        main_document_view->velocity_y += (max_velocity - main_document_view->velocity_y) / 5.0f;
     }
 
     validation_interval_timer->setInterval(0);
@@ -11604,29 +11583,6 @@ AbsoluteDocumentPos MainWidget::get_mouse_abspos() {
     return abspos;
 }
 
-void MainWidget::move_selected_bookmark_to_mouse_cursor() {
-    std::string selected_bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
-    BookMark* bm = doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
-    if (bm) {
-
-        AbsoluteDocumentPos mouse_abspos = get_mouse_abspos();
-        //BookMark& bm = doc()->get_bookmarks()[selected_bookmark_index];
-        if (bm->end_x == -1) {
-            bm->begin_x = mouse_abspos.x;
-            bm->begin_y = mouse_abspos.y;
-        }
-        else{
-            float width = bm->end_x - bm->begin_x;
-            float height = bm->end_y - bm->begin_y;
-            bm->begin_x = mouse_abspos.x;
-            bm->begin_y = mouse_abspos.y;
-            bm->end_x = bm->begin_x + width;
-            bm->end_y = bm->begin_y + height;
-        }
-
-    }
-}
-
 bool MainWidget::handle_annotation_move_finish(){
 
     if (main_document_view->visible_object_move_data && main_document_view->visible_object_move_data->is_moving) {
@@ -11648,16 +11604,15 @@ bool MainWidget::handle_annotation_move_finish(){
 }
 
 void MainWidget::set_fixed_velocity(float vel) {
-    velocity_y = vel;
-    is_velocity_fixed = true;
+    main_document_view->velocity_y = vel;
+    main_document_view->is_velocity_fixed = true;
     if (vel == 0) {
-        is_velocity_fixed = false;
+        main_document_view->is_velocity_fixed = false;
         if (validation_interval_timer->interval() == 0){
             validation_interval_timer->setInterval(INTERVAL_TIME);
         }
     }
 }
-
 
 void MainWidget::create_menu_from_menu_node(
     QMenu* parent,
@@ -11752,24 +11707,6 @@ void MainWidget::delete_menu_nodes(MenuNode* items) {
     }
     delete items;
 }
-
-// void MainWidget::set_pending_portal(std::optional<std::wstring> doc_path, Portal portal) {
-//     set_pending_portal(std::make_pair(doc_path, portal));
-// }
-
-// void MainWidget::set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal) {
-//     current_pending_portal = pending_portal;
-
-//     if (pending_portal) {
-//         if (pending_portal->second.src_offset_x.has_value()){
-//             // show pending portal icon for visible portals only
-//             main_document_view->set_pending_portal_position(pending_portal->second.get_rectangle());
-//         }
-//     }
-//     else {
-//         main_document_view->set_pending_portal_position({});
-//     }
-// }
 
 bool MainWidget::is_ruler_mode(){
     return main_document_view->is_ruler_mode();

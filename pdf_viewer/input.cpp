@@ -3862,7 +3862,7 @@ public:
         if (selected_bookmark_uuid.size() > 0) {
 
             AbsoluteDocumentPos mouse_abspos = widget->get_mouse_abspos();
-            widget->move_selected_bookmark_to_mouse_cursor();
+            dv()->move_selected_bookmark_to_pos(mouse_abspos);
             dv()->begin_bookmark_move(selected_bookmark_uuid, mouse_abspos);
         }
 

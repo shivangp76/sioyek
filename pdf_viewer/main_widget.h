@@ -730,9 +730,6 @@ public:
     bool is_pressed = false;
     // list of mouse positions used to calculate the velocity when flicking in touch mode
     std::deque<std::pair<QTime, QPoint>> position_buffer;
-    float velocity_x = 0;
-    float velocity_y = 0;
-    bool is_velocity_fixed = false;
 
     // indicates if mouse was in next/prev ruler rect in touch mode
     // if this is the case, we use mouse movement to perform next/prev ruler command
@@ -756,7 +753,6 @@ public:
     void show_search_buttons();
     void clear_search_buttons();
     void clear_selection_indicators();
-    bool is_moving();
     void update_position_buffer();
     bool is_flicking(QPointF* out_velocity);
     void handle_touch_highlight();
@@ -1052,7 +1048,6 @@ public:
     void highlight_window_points();
     void set_highlighted_tags(std::vector<std::string> tags);
     AbsoluteDocumentPos get_mouse_abspos();
-    void move_selected_bookmark_to_mouse_cursor();
     bool handle_annotation_move_finish();
     void set_fixed_velocity(float vel);
     QMenuBar* create_main_menu_bar();

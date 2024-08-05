@@ -747,6 +747,10 @@ void DocumentView::reset_doc_state() {
     visible_object_scroll_data = {};
     visible_object_move_data = {};
 
+    velocity_x = 0;
+    velocity_y = 0;
+    is_velocity_fixed = false;
+
     overview_page = {};
     synctex_highlights.clear();
     handle_escape();
@@ -4471,4 +4475,50 @@ void DocumentView::set_pending_portal(std::wstring path, Portal portal){
 
 bool DocumentView::is_pending_link_source_filled() {
     return (current_pending_portal && current_pending_portal->first);
+}
+
+void DocumentView::velocity_tick(float secs, bool horizontal_scroll_locked){
+    float move_x = secs * velocity_x;
+    float move_y = secs * velocity_y;
+    if (horizontal_scroll_locked) {
+        move_x = 0;
+    }
+    move(move_x, move_y);
+
+    if (!is_velocity_fixed) {
+        velocity_x = dampen_velocity(velocity_x, secs);
+        velocity_y = dampen_velocity(velocity_y, secs);
+    }
+
+    if (!TOUCH_MODE) {
+        if (!is_velocity_fixed) {
+            // when using smooth_move commands not in touch mode we stop much faster
+            velocity_x = dampen_velocity(velocity_x, secs);
+            velocity_y = dampen_velocity(velocity_y, secs);
+        }
+    }
+}
+
+bool DocumentView::is_moving(){
+    return (velocity_x != 0) || (velocity_y != 0);
+}
+
+void DocumentView::move_selected_bookmark_to_pos(AbsoluteDocumentPos pos) {
+    std::string selected_bookmark_uuid = get_selected_bookmark_uuid();
+    BookMark* bm = current_document->get_bookmark_with_uuid(selected_bookmark_uuid);
+    if (bm) {
+
+        if (bm->end_x == -1) {
+            bm->begin_x = pos.x;
+            bm->begin_y = pos.y;
+        }
+        else{
+            float width = bm->end_x - bm->begin_x;
+            float height = bm->end_y - bm->begin_y;
+            bm->begin_x = pos.x;
+            bm->begin_y = pos.y;
+            bm->end_x = bm->begin_x + width;
+            bm->end_y = bm->begin_y + height;
+        }
+    }
 }
