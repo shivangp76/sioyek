@@ -12991,24 +12991,9 @@ void MainWidget::perform_fuzzy_search(std::wstring query) {
 }
 
 void MainWidget::pin_current_overview_as_portal() {
-    if (dv()->overview_page.has_value()) {
-        OverviewState state = dv()->overview_page.value();
-        AbsoluteRect overview_rect = dv()->get_overview_rect().to_window(dv()).to_absolute(dv());
-
-        PortalViewState dst;
-        dst.document_checksum = state.doc ? state.doc->get_checksum() : doc()->get_checksum();
-        dst.book_state.offset_x = state.absolute_offset_x;
-        dst.book_state.offset_y = state.absolute_offset_y;
-        dst.book_state.zoom_level = state.zoom_level / dv()->get_zoom_level();
-
-        Portal new_portal;
-        new_portal.src_offset_x = overview_rect.x0;
-        new_portal.src_offset_y = overview_rect.y0;
-        new_portal.src_offset_end_x = overview_rect.x1;
-        new_portal.src_offset_end_y = overview_rect.y1;
-        new_portal.dst = dst;
-        add_portal(doc()->get_path(), new_portal);
-
+    std::optional<Portal> new_portal = main_document_view->pin_current_overview_as_portal();
+    if (new_portal){
+        add_portal(doc()->get_path(), new_portal.value());
     }
 }
 

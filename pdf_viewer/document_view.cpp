@@ -4424,3 +4424,27 @@ void DocumentView::zoom_pinned_portal(bool zoom_in) {
         }
     }
 }
+
+std::optional<Portal> DocumentView::pin_current_overview_as_portal() {
+    if (overview_page.has_value()) {
+        OverviewState state = overview_page.value();
+        AbsoluteRect overview_rect = get_overview_rect().to_window(this).to_absolute(this);
+
+        PortalViewState dst;
+        dst.document_checksum = state.doc ? state.doc->get_checksum() : current_document->get_checksum();
+        dst.book_state.offset_x = state.absolute_offset_x;
+        dst.book_state.offset_y = state.absolute_offset_y;
+        dst.book_state.zoom_level = state.zoom_level / get_zoom_level();
+
+        Portal new_portal;
+        new_portal.src_offset_x = overview_rect.x0;
+        new_portal.src_offset_y = overview_rect.y0;
+        new_portal.src_offset_end_x = overview_rect.x1;
+        new_portal.src_offset_end_y = overview_rect.y1;
+        new_portal.dst = dst;
+        return new_portal;
+        // add_portal(current_document->get_path(), new_portal);
+
+    }
+    return {};
+}

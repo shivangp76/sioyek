@@ -532,6 +532,7 @@ public:
     Portal* get_pinned_portal();
     void move_pinned_portal(float horizontal_amount, float vertical_amount);
     void zoom_pinned_portal(bool zoom_in);
+    std::optional<Portal> pin_current_overview_as_portal();
 };
 
 
