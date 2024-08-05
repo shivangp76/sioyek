@@ -4817,3 +4817,28 @@ std::optional<AbsoluteRect> DocumentView::get_overview_source_rect() {
 
     return {};
 }
+
+std::optional<OverviewState> DocumentView::get_ith_next_overview(int i) {
+    if (smart_view_candidates.size() > 1) {
+        index_into_candidates = mod((index_into_candidates + i), smart_view_candidates.size());
+
+        AbsoluteDocumentPos abspos;
+
+        if (std::holds_alternative<DocumentPos>(smart_view_candidates[index_into_candidates].target_pos)) {
+            DocumentPos docpos = std::get<DocumentPos>(smart_view_candidates[index_into_candidates].target_pos);
+            abspos = docpos.to_absolute(current_document);
+        }
+        else{
+            abspos = std::get<AbsoluteDocumentPos>(smart_view_candidates[index_into_candidates].target_pos);
+        }
+
+        Document* overview_doc = smart_view_candidates[index_into_candidates].doc;
+        if (overview_doc == nullptr) overview_doc = current_document;
+        OverviewState state;
+        state.doc = overview_doc;
+        state.absolute_offset_y = abspos.y;
+        state.highlight_rects = smart_view_candidates[index_into_candidates].get_highlight_rects();
+        return state;
+    }
+    return {};
+}

@@ -562,6 +562,7 @@ public:
     std::optional<Portal> get_target_portal(bool limit);
     std::optional<QString> get_overview_paper_name();
     std::optional<AbsoluteRect> get_overview_source_rect();
+    std::optional<OverviewState> get_ith_next_overview(int i);
 };
 
 
