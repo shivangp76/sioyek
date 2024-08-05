@@ -1919,3 +1919,13 @@ QString SioyekNetworkManager::get_login_status_string(Document *current_document
 
     return "[ " + server_status_string + " ]";
 }
+
+void SioyekNetworkManager::handle_logout() {
+    ACCESS_TOKEN = "";
+    persist_access_token(ACCESS_TOKEN);
+    one_time_network_operations_performed = false;
+    SERVER_HASHES.clear();
+    server_opened_files.clear();
+    last_server_location.clear();
+    status = ServerStatus::NotLoggedIn;
+}

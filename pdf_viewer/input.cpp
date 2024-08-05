@@ -6314,7 +6314,7 @@ public:
     LogoutCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_logout();
+        widget->sioyek_network_manager->handle_logout();
     }
 };
 

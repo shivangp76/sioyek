@@ -12441,18 +12441,6 @@ void MainWidget::handle_login(std::wstring username, std::wstring password) {
     sioyek_network_manager->login(username, password);
 }
 
-void MainWidget::handle_logout() {
-    sioyek_network_manager->ACCESS_TOKEN = "";
-    sioyek_network_manager->persist_access_token(sioyek_network_manager->ACCESS_TOKEN);
-    sioyek_network_manager->one_time_network_operations_performed = false;
-    sioyek_network_manager->SERVER_HASHES.clear();
-    sioyek_network_manager->server_opened_files.clear();
-    sioyek_network_manager->last_server_location.clear();
-    sioyek_network_manager->status = ServerStatus::NotLoggedIn;
-
-}
-
-
 void MainWidget::upload_current_file() {
     if (!doc()) return;
 

@@ -1112,7 +1112,6 @@ public:
     void update_current_document_checksum(std::string checksum);
     bool is_current_document_available_on_server();
     void handle_login(std::wstring username, std::wstring password);
-    void handle_logout();
     void sync_current_file_location_to_servers(bool wait_for_send=false);
     void sync_document_location_to_servers(Document* doc, float offset_y, bool wait_for_send=false);
     void handle_open_server_only_file();
