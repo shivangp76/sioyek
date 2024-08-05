@@ -36,6 +36,12 @@ struct JsCommandInfo {
     std::optional<std::wstring> entry_point;
 };
 
+struct MenuNode {
+    QString name;
+    QString doc;
+    std::vector<MenuNode*> children;
+};
+
 std::wstring to_lower(const std::wstring& inp);
 bool is_separator(fz_stext_char* last_char, fz_stext_char* current_char);
 void get_flat_toc(const std::vector<TocNode*>& roots, std::vector<std::wstring>& output, std::vector<int>& pages);
@@ -932,3 +938,4 @@ float similarity_score(const T& haystack, const T& needle, int* out_begin = null
 bool is_alpha_only(const std::wstring& str);
 QColor qconvert_color3(const float* input_color, ColorPalette palette);
 std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction);
+std::vector<MenuNode*> get_top_level_menu_nodes();

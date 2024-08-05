@@ -72,11 +72,6 @@ enum class DrawingMode {
     None
 };
 
-struct MenuNode {
-    QString name;
-    QString doc;
-    std::vector<MenuNode*> children;
-};
 
 
 struct SelectedDrawings {
