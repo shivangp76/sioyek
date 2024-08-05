@@ -542,7 +542,7 @@ bool MainWidget::handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpo
             return true;
         }
     }
-    else if (is_pinned_portal_selected()) {
+    else if (main_document_view->is_pinned_portal_selected()) {
         //Portal& selected_portal = doc()->get_portals()[selected_object_index->index];
         Portal* selected_portal = doc()->get_portal_with_uuid(selected_object_index->uuid);
         if (selected_portal) {
@@ -2954,7 +2954,7 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
         last_mouse_down_document_virtual_offset = dv()->get_virtual_offset();
 
         AbsoluteDocumentPos abs_mpos = dv()->window_to_absolute_document_pos(last_mouse_down_window_pos);
-        if (is_pinned_portal_selected()) {
+        if (main_document_view->is_pinned_portal_selected()) {
             main_document_view->begin_portal_scroll(last_mouse_down_window_pos);
         }
         else if (!main_document_view->visible_object_move_data.has_value()) {
@@ -5460,8 +5460,8 @@ void MainWidget::move_visual_mark_command(int amount) {
     else if (is_visual_mark_mode()) {
         move_visual_mark(amount);
     }
-    else if (is_pinned_portal_selected()) {
-        move_pinned_portal(0, amount * 72 * VERTICAL_MOVE_AMOUNT);
+    else if (main_document_view->is_pinned_portal_selected()) {
+        main_document_view->move_pinned_portal(0, amount * 72 * VERTICAL_MOVE_AMOUNT);
     }
     else {
         move_document(0.0f, 72.0f * amount * VERTICAL_MOVE_AMOUNT);
@@ -5490,8 +5490,8 @@ void MainWidget::handle_horizontal_move(int amount) {
     if (main_document_view->get_overview_page()) {
         return;
     }
-    else if (is_pinned_portal_selected()) {
-        move_pinned_portal(amount * 72 * VERTICAL_MOVE_AMOUNT, 0);
+    else if (main_document_view->is_pinned_portal_selected()) {
+        main_document_view->move_pinned_portal(amount * 72 * VERTICAL_MOVE_AMOUNT, 0);
     }
     else if (main_document_view->is_presentation_mode()) {
         main_document_view->move_pages(-amount);
@@ -12863,6 +12863,7 @@ void MainWidget::on_paper_download_begin(QNetworkReply* reply, std::string pendi
         });
 }
 
+
 QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action, std::string pending_portal_handle) {
     QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, name,
         action.value_or(get_default_paper_download_finish_action()),
@@ -13008,44 +13009,6 @@ void MainWidget::pin_current_overview_as_portal() {
         new_portal.dst = dst;
         add_portal(doc()->get_path(), new_portal);
 
-    }
-}
-
-bool MainWidget::is_pinned_portal_selected() {
-    if (main_document_view->selected_object_index.has_value() && main_document_view->selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
-        return true;
-    }
-    return false;
-}
-
-Portal* MainWidget::get_pinned_portal() {
-    if (is_pinned_portal_selected()) {
-        return doc()->get_portal_with_uuid(main_document_view->selected_object_index->uuid);
-    }
-    return nullptr;
-}
-
-void MainWidget::move_pinned_portal(float horizontal_amount, float vertical_amount) {
-    if (is_pinned_portal_selected()) {
-        Portal* pinned_portal = get_pinned_portal();
-        if (pinned_portal) {
-            pinned_portal->dst.book_state.offset_x += horizontal_amount / (pinned_portal->dst.book_state.zoom_level * dv()->get_zoom_level());
-            pinned_portal->dst.book_state.offset_y += vertical_amount / (pinned_portal->dst.book_state.zoom_level * dv()->get_zoom_level());
-        }
-    }
-}
-
-void MainWidget::zoom_pinned_portal(bool zoom_in) {
-    if (is_pinned_portal_selected()) {
-        Portal* pinned_portal = get_pinned_portal();
-        if (pinned_portal) {
-            if (zoom_in) {
-                pinned_portal->dst.book_state.zoom_level *= ZOOM_INC_FACTOR;
-            }
-            else {
-                pinned_portal->dst.book_state.zoom_level /= ZOOM_INC_FACTOR;
-            }
-        }
     }
 }
 

@@ -3374,7 +3374,7 @@ public:
     virtual bool is_down() = 0;
 
     void perform() {
-        if (widget->main_document_view->is_ruler_mode() || widget->is_pinned_portal_selected()) {
+        if (widget->main_document_view->is_ruler_mode() || dv()->is_pinned_portal_selected()) {
             widget->move_visual_mark_command(is_down() ? 1 : -1);
         }
         else {
@@ -3389,7 +3389,7 @@ public:
 
     bool is_holdable() {
 
-        if (widget->main_document_view->is_ruler_mode() || widget->is_pinned_portal_selected()) {
+        if (widget->main_document_view->is_ruler_mode() || dv()->is_pinned_portal_selected()) {
             return false;
         }
         else {
@@ -3601,8 +3601,8 @@ public:
     static inline const std::string hname = "Zoom in";
     ZoomInCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        if (widget->is_pinned_portal_selected()) {
-            widget->zoom_pinned_portal(true);
+        if (dv()->is_pinned_portal_selected()) {
+            dv()->zoom_pinned_portal(true);
         }
         else {
             widget->main_document_view->zoom_in();
@@ -3711,8 +3711,8 @@ public:
     ZoomOutCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        if (widget->is_pinned_portal_selected()) {
-            widget->zoom_pinned_portal(false);
+        if (dv()->is_pinned_portal_selected()) {
+            dv()->zoom_pinned_portal(false);
         }
         else {
             widget->main_document_view->zoom_out();

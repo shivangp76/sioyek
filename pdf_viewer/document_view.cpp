@@ -4386,3 +4386,41 @@ bool DocumentView::handle_visible_object_resize_mouse_move(AbsoluteDocumentPos a
     }
     return false;
 }
+
+bool DocumentView::is_pinned_portal_selected() {
+    if (selected_object_index.has_value() && selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
+        return true;
+    }
+    return false;
+}
+
+Portal* DocumentView::get_pinned_portal() {
+    if (is_pinned_portal_selected()) {
+        return current_document->get_portal_with_uuid(selected_object_index->uuid);
+    }
+    return nullptr;
+}
+
+void DocumentView::move_pinned_portal(float horizontal_amount, float vertical_amount) {
+    if (is_pinned_portal_selected()) {
+        Portal* pinned_portal = get_pinned_portal();
+        if (pinned_portal) {
+            pinned_portal->dst.book_state.offset_x += horizontal_amount / (pinned_portal->dst.book_state.zoom_level * get_zoom_level());
+            pinned_portal->dst.book_state.offset_y += vertical_amount / (pinned_portal->dst.book_state.zoom_level * get_zoom_level());
+        }
+    }
+}
+
+void DocumentView::zoom_pinned_portal(bool zoom_in) {
+    if (is_pinned_portal_selected()) {
+        Portal* pinned_portal = get_pinned_portal();
+        if (pinned_portal) {
+            if (zoom_in) {
+                pinned_portal->dst.book_state.zoom_level *= ZOOM_INC_FACTOR;
+            }
+            else {
+                pinned_portal->dst.book_state.zoom_level /= ZOOM_INC_FACTOR;
+            }
+        }
+    }
+}

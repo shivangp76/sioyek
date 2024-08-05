@@ -528,6 +528,10 @@ public:
     Portal* get_portal_under_window_pos(WindowPos pos);
     Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
     bool handle_visible_object_resize_mouse_move(AbsoluteDocumentPos abs_mpos);
+    bool is_pinned_portal_selected();
+    Portal* get_pinned_portal();
+    void move_pinned_portal(float horizontal_amount, float vertical_amount);
+    void zoom_pinned_portal(bool zoom_in);
 };
 
 
