@@ -4522,3 +4522,78 @@ void DocumentView::move_selected_bookmark_to_pos(AbsoluteDocumentPos pos) {
         }
     }
 }
+
+DocumentPos DocumentView::get_index_document_pos(int index){
+    const int x_res = 26;
+    const int y_res = 26;
+
+    int x = index / x_res;
+    int y = index % y_res;
+    int window_width = get_view_width();
+    int window_height = get_view_height() - get_status_bar_height();
+
+    int begin_x = x * window_width / x_res;
+    int end_y = (y + 1) * window_height / y_res;
+
+    return WindowPos{ begin_x, end_y }.to_document(this);
+}
+
+void DocumentView::highlight_window_points() {
+    std::vector<DocumentRect> document_rects;
+
+    for (int index = 0; index < 26 * 26; index++) {
+        DocumentPos docpos = get_index_document_pos(index);
+        document_rects.push_back(DocumentRect(docpos, docpos, docpos.page));
+    }
+    set_highlight_words(document_rects);
+    set_should_highlight_words(true);
+}
+
+std::vector<Portal> DocumentView::get_ruler_portals() {
+    std::vector<Portal> res;
+    std::optional<AbsoluteRect> ruler_rect_ = get_ruler_rect();
+    if (ruler_rect_) {
+        AbsoluteRect ruler_rect = ruler_rect_.value();
+        return current_document->get_intersecting_visible_portals(ruler_rect.y0, ruler_rect.y1);
+    }
+    return res;
+}
+
+void DocumentView::highlight_ruler_portals() {
+    std::vector<Portal> portals = get_ruler_portals();
+
+    std::vector<DocumentRect> portal_rect_pages;
+    for (auto portal : portals) {
+        DocumentRect doc_rect = portal.get_rectangle()->to_document(current_document);
+        portal_rect_pages.push_back(doc_rect);
+    }
+
+    set_highlight_words(portal_rect_pages);
+    set_should_highlight_words(true);
+
+}
+
+std::optional<OverviewState> DocumentView::overview_to_ruler_portal(bool* is_render_invalid) {
+    std::vector<Portal> candidates = get_ruler_portals();
+
+    if (candidates.size() > 0) {
+        smart_view_candidates.clear();
+        for (auto candid : candidates) {
+            SmartViewCandidate smc;
+            smc.doc = document_manager->get_document_with_checksum(candid.dst.document_checksum);
+            smc.doc->open(is_render_invalid, true);
+            smc.source_rect = candid.get_rectangle().value();
+            smc.target_pos = AbsoluteDocumentPos{ 0, candid.dst.book_state.offset_y };
+            smart_view_candidates.push_back(smc);
+        }
+        index_into_candidates = 0;
+
+
+        OverviewState state;
+        state.doc = smart_view_candidates[0].doc;
+        state.absolute_offset_y = candidates[0].dst.book_state.offset_y;
+        return state;
+    }
+    return {};
+
+}

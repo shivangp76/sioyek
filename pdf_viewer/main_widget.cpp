@@ -4201,19 +4201,6 @@ void MainWidget::dropEvent(QDropEvent* event)
 }
 // #endif
 
-void MainWidget::highlight_ruler_portals() {
-    std::vector<Portal> portals = get_ruler_portals();
-
-    std::vector<DocumentRect> portal_rect_pages;
-    for (auto portal : portals) {
-        DocumentRect doc_rect = portal.get_rectangle()->to_document(doc());
-        portal_rect_pages.push_back(doc_rect);
-    }
-
-    main_document_view->set_highlight_words(portal_rect_pages);
-    main_document_view->set_should_highlight_words(true);
-
-}
 void MainWidget::highlight_words() {
 
     int page = get_current_page_number();
@@ -9458,43 +9445,17 @@ void MainWidget::close_overview() {
     set_overview_page({}, false);
 }
 
-std::vector<Portal> MainWidget::get_ruler_portals() {
-    std::vector<Portal> res;
-    std::optional<AbsoluteRect> ruler_rect_ = main_document_view->get_ruler_rect();
-    if (ruler_rect_) {
-        AbsoluteRect ruler_rect = ruler_rect_.value();
-        return doc()->get_intersecting_visible_portals(ruler_rect.y0, ruler_rect.y1);
-    }
-    return res;
-}
-
 void MainWidget::handle_overview_to_ruler_portal() {
-    std::vector<Portal> candidates = get_ruler_portals();
-
-    if (candidates.size() > 0) {
-        dv()->smart_view_candidates.clear();
-        for (auto candid : candidates) {
-            SmartViewCandidate smc;
-            smc.doc = document_manager->get_document_with_checksum(candid.dst.document_checksum);
-            smc.doc->open(&is_render_invalidated, true);
-            smc.source_rect = candid.get_rectangle().value();
-            smc.target_pos = AbsoluteDocumentPos{ 0, candid.dst.book_state.offset_y };
-            dv()->smart_view_candidates.push_back(smc);
-        }
-        dv()->index_into_candidates = 0;
-
-
-        OverviewState state;
-        state.doc = dv()->smart_view_candidates[0].doc;
-        state.absolute_offset_y = candidates[0].dst.book_state.offset_y;
-        set_overview_page(state, true);
+    std::optional<OverviewState> state = main_document_view->overview_to_ruler_portal(&is_render_invalidated);
+    if (state.has_value()){
+        set_overview_page(state.value(), true);
         invalidate_render();
     }
 
 }
 
 void MainWidget::handle_goto_ruler_portal(std::string tag) {
-    std::vector<Portal> portals = get_ruler_portals();
+    std::vector<Portal> portals = main_document_view->get_ruler_portals();
     int index = 0;
     if (tag.size() > 0) {
         index = get_index_from_tag(tag);
@@ -11544,32 +11505,6 @@ void MainWidget::make_current_menu_columns_equal() {
             widget2->set_equal_columns();
         }
     }
-}
-
-DocumentPos MainWidget::get_index_document_pos(int index){
-    const int x_res = 26;
-    const int y_res = 26;
-
-    int x = index / x_res;
-    int y = index % y_res;
-    int window_width = main_document_view->get_view_width();
-    int window_height = main_document_view->get_view_height() - get_status_bar_height();
-
-    int begin_x = x * window_width / x_res;
-    int end_y = (y + 1) * window_height / y_res;
-
-    return WindowPos{ begin_x, end_y }.to_document(main_document_view);
-}
-
-void MainWidget::highlight_window_points() {
-    std::vector<DocumentRect> document_rects;
-
-    for (int index = 0; index < 26 * 26; index++) {
-        DocumentPos docpos = get_index_document_pos(index);
-        document_rects.push_back(DocumentRect(docpos, docpos, docpos.page));
-    }
-    main_document_view->set_highlight_words(document_rects);
-    main_document_view->set_should_highlight_words(true);
 }
 
 void MainWidget::set_highlighted_tags(std::vector<std::string> tags) {

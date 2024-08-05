@@ -981,7 +981,7 @@ void Command::set_next_requirement_with_string(std::wstring str) {
         else if (req.type == RequirementType::Point) {
             if (USE_KEYBOARD_POINT_SELECTION && is_alpha_only(str)) {
                 int index = get_index_from_tag(utf8_encode(str));
-                AbsoluteDocumentPos abspos = widget->get_index_document_pos(index).to_absolute(widget->doc());
+                AbsoluteDocumentPos abspos = dv()->get_index_document_pos(index).to_absolute(widget->doc());
                 set_point_requirement(abspos);
             }
             else {
@@ -4540,8 +4540,8 @@ public:
     }
 
     void pre_perform() override {
-        if (widget->get_ruler_portals().size() > 1) {
-            widget->highlight_ruler_portals();
+        if (dv()->get_ruler_portals().size() > 1) {
+            dv()->highlight_ruler_portals();
         }
     }
 
@@ -4552,7 +4552,7 @@ public:
     virtual std::optional<Requirement> next_requirement(MainWidget* widget) {
         if (mark) return {};
 
-        if (widget->get_ruler_portals().size() > 1) {
+        if (dv()->get_ruler_portals().size() > 1) {
             return Requirement{ RequirementType::Symbol, "Mark" };
         }
 
@@ -5312,8 +5312,8 @@ void KeyboardSelectPointCommand::perform() {
         std::string tag2 = utf8_encode(result.value().substr(2, 2));
         int index1 = get_index_from_tag(tag1);
         int index2 = get_index_from_tag(tag2);
-        AbsoluteDocumentPos pos1 = widget->get_index_document_pos(index1).to_absolute(widget->doc());
-        AbsoluteDocumentPos pos2 = widget->get_index_document_pos(index2).to_absolute(widget->doc());
+        AbsoluteDocumentPos pos1 = dv()->get_index_document_pos(index1).to_absolute(widget->doc());
+        AbsoluteDocumentPos pos2 = dv()->get_index_document_pos(index2).to_absolute(widget->doc());
         AbsoluteRect rect(pos1, pos2);
         origin->set_rect_requirement(rect);
         widget->set_rect_select_mode(false);
@@ -5322,7 +5322,7 @@ void KeyboardSelectPointCommand::perform() {
     else {
 
         int index = get_index_from_tag(utf8_encode(result.value()));
-        AbsoluteDocumentPos abspos = widget->get_index_document_pos(index).to_absolute(widget->doc());
+        AbsoluteDocumentPos abspos = dv()->get_index_document_pos(index).to_absolute(widget->doc());
         origin->set_point_requirement(abspos);
     }
 
@@ -5334,7 +5334,7 @@ void KeyboardSelectPointCommand::pre_perform() {
     if (already_pre_performed) return;
 
     widget->clear_tag_prefix();
-    widget->highlight_window_points();
+    dv()->highlight_window_points();
     widget->invalidate_render();
     already_pre_performed = true;
 }

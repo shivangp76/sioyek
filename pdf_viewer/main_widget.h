@@ -573,7 +573,6 @@ public:
     void apply_window_params_for_two_window_mode();
     bool helper_window_overlaps_main_window();
     void highlight_words();
-    void highlight_ruler_portals();
     void upload_drawings(bool wait_for_send = false);
     void perform_sync_operations_when_document_is_closed(bool wait_for_send, bool sync_drawings);
 
@@ -882,7 +881,6 @@ public:
     void cleanup_expired_pending_portals();
     //void update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices);
     void close_overview();
-    std::vector<Portal> get_ruler_portals();
     void handle_overview_to_ruler_portal();
     void handle_goto_ruler_portal(std::string tag="");
     void show_touch_buttons(
@@ -1044,8 +1042,6 @@ public:
     void ensure_zero_interval_timer();
     void set_last_performed_command(std::unique_ptr<Command> command);
     void make_current_menu_columns_equal();
-    DocumentPos get_index_document_pos(int index);
-    void highlight_window_points();
     void set_highlighted_tags(std::vector<std::string> tags);
     AbsoluteDocumentPos get_mouse_abspos();
     bool handle_annotation_move_finish();

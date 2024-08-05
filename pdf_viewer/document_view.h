@@ -548,6 +548,11 @@ public:
     void velocity_tick(float dt_secs, bool horizontal_scroll_locked);
     bool is_moving();
     void move_selected_bookmark_to_pos(AbsoluteDocumentPos pos);
+    DocumentPos get_index_document_pos(int index);
+    void highlight_window_points();
+    std::vector<Portal> get_ruler_portals();
+    void highlight_ruler_portals();
+    std::optional<OverviewState> overview_to_ruler_portal(bool* is_render_invalid);
 };
 
 
