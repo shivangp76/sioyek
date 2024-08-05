@@ -603,6 +603,8 @@ public:
     void add_drawing(FreehandDrawing drawing);
     void clear();
     bool is_compile_invalid();
+    void load(std::wstring path);
+    void save(std::wstring path);
 
 
 };
