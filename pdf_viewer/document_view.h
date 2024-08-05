@@ -486,6 +486,8 @@ public:
     std::optional<AbsoluteRect> shrink_selection(bool is_begin, bool word);
     std::deque<AbsoluteRect>* get_selected_character_rects();
 
+    Document* doc();
+
     std::vector<VisibleObjectIndex> get_generic_visible_item_indices();
 
     std::vector<std::string> get_visible_highlight_uuids();
@@ -586,6 +588,8 @@ public:
     void freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
     void handle_portal_move(AbsoluteDocumentPos current_mouse_abspos);
     void handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos);
+    void handle_portal_move_finish();
+    void handle_bookmark_move_finish();
 };
 
 struct CachedScratchpadPixmapData {

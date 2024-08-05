@@ -9032,23 +9032,7 @@ void MainWidget::handle_bookmark_move_finish() {
 }
 
 void MainWidget::handle_portal_move_finish() {
-    if (!(main_document_view->visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
-        std::string uuid = main_document_view->visible_object_move_data->index.uuid;
-        //Portal& portal = doc()->get_portals()[index];
-        Portal* portal = doc()->get_portal_with_uuid(uuid);
-
-        if (portal) {
-            if (portal->is_pinned()) {
-                doc()->update_portal_src_position(uuid,
-                    AbsoluteDocumentPos{ portal->src_offset_x.value(), portal->src_offset_y },
-                    AbsoluteDocumentPos{ portal->src_offset_end_x.value(), portal->src_offset_end_y.value() }
-                );
-            }
-            else {
-                doc()->update_portal_src_position(uuid, { portal->src_offset_x.value(), portal->src_offset_y }, {});
-            }
-        }
-    }
+    main_document_view->handle_portal_move_finish();
 }
 
 void MainWidget::handle_visible_object_move() {
@@ -9058,7 +9042,7 @@ void MainWidget::handle_visible_object_move() {
             handle_bookmark_move();
         }
         else if (type == VisibleObjectType::Portal || type == VisibleObjectType::PendingPortal) {
-            main_document_view->handle_portal_move(get_cursor_abspos());
+            handle_portal_move();
         }
     }
 }

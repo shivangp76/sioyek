@@ -5025,3 +5025,26 @@ void DocumentView::handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos
         }
     }
 }
+
+Document* DocumentView::doc(){
+    return current_document;
+}
+
+void DocumentView::handle_portal_move_finish() {
+    if (!(visible_object_move_data->index.object_type == VisibleObjectType::PendingPortal)) {
+        std::string uuid = visible_object_move_data->index.uuid;
+        Portal* portal = doc()->get_portal_with_uuid(uuid);
+
+        if (portal) {
+            if (portal->is_pinned()) {
+                doc()->update_portal_src_position(uuid,
+                    AbsoluteDocumentPos{ portal->src_offset_x.value(), portal->src_offset_y },
+                    AbsoluteDocumentPos{ portal->src_offset_end_x.value(), portal->src_offset_end_y.value() }
+                );
+            }
+            else {
+                doc()->update_portal_src_position(uuid, { portal->src_offset_x.value(), portal->src_offset_y }, {});
+            }
+        }
+    }
+}
