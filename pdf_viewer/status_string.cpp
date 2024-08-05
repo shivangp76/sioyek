@@ -67,7 +67,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         return QString("");
         };
     auto get_link_status_fn = [widget=main_widget]() {
-        if (widget->is_pending_link_source_filled()) {
+        if (widget->main_document_view->is_pending_link_source_filled()) {
             return QString(" | linking ...");
         }
         else if (widget->portal_to_edit) {

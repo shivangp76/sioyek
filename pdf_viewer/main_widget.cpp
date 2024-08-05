@@ -1344,10 +1344,6 @@ MainWidget::~MainWidget() {
     }
 }
 
-bool MainWidget::is_pending_link_source_filled() {
-    return (main_document_view->current_pending_portal && main_document_view->current_pending_portal->first);
-}
-
 std::wstring MainWidget::get_status_string(bool is_right) {
 
     if (is_right) {
@@ -3604,7 +3600,7 @@ void MainWidget::start_creating_rect_portal(AbsoluteDocumentPos location) {
 void MainWidget::handle_portal() {
     if (!main_document_view_has_document()) return;
 
-    if (is_pending_link_source_filled()) {
+    if (main_document_view->is_pending_link_source_filled()) {
         auto [source_path, pl] = main_document_view->current_pending_portal.value();
         pl.dst = main_document_view->get_checksum_state();
 
@@ -3688,7 +3684,7 @@ void MainWidget::long_jump_to_destination(float abs_offset_y) {
 void MainWidget::long_jump_to_destination(DocumentPos pos) {
     AbsoluteDocumentPos abs_pos = pos.to_absolute(doc());
 
-    if (!is_pending_link_source_filled()) {
+    if (!main_document_view->is_pending_link_source_filled()) {
         push_state();
         main_document_view->set_offsets(pos.x, abs_pos.y);
         //main_document_view->goto_offset_within_page({ pos.page, pos.x, pos.y });
@@ -4339,7 +4335,7 @@ void MainWidget::show_password_prompt_if_required() {
 }
 
 void MainWidget::on_new_paper_added(const std::wstring& file_path) {
-    if (is_pending_link_source_filled()) {
+    if (main_document_view->is_pending_link_source_filled()) {
         PortalViewState dst_view_state;
 
         dst_view_state.book_state.offset_x = 0;
@@ -8105,7 +8101,7 @@ bool MainWidget::should_show_status_label() {
         if (pending_command_instance && pending_command_instance->next_requirement(this)->type == RequirementType::Point){
             return true;
         }
-        if (current_widget_stack.size() > 0 || main_document_view->get_is_searching(&prog) || is_pending_link_source_filled()) {
+        if (current_widget_stack.size() > 0 || main_document_view->get_is_searching(&prog) || main_document_view->is_pending_link_source_filled()) {
             return true;
         }
         return false;

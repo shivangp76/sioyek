@@ -398,7 +398,6 @@ public:
     void handle_search_paper_name(QString paper_name, bool is_shift_pressed);
 
     void persist(bool persist_drawings = false);
-    bool is_pending_link_source_filled();
     std::wstring get_status_string(bool is_right);
     std::wstring get_title_string();
     void handle_escape();

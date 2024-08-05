@@ -541,6 +541,7 @@ public:
 
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     void set_pending_portal(std::wstring path, Portal portal);
+    bool is_pending_link_source_filled();
 };
 
 

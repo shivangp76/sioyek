@@ -4468,3 +4468,7 @@ void DocumentView::set_pending_portal(std::optional<std::pair<std::optional<std:
 void DocumentView::set_pending_portal(std::wstring path, Portal portal){
     set_pending_portal(std::make_pair(path, portal));
 }
+
+bool DocumentView::is_pending_link_source_filled() {
+    return (current_pending_portal && current_pending_portal->first);
+}
