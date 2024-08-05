@@ -558,6 +558,7 @@ public:
     void handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids);
     void clear_keyboard_select_highlights();
     void handle_fit_to_page_width(bool smart);
+    void toggle_rect_hints();
 };
 
 

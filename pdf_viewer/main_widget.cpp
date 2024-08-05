@@ -10428,16 +10428,6 @@ void MainWidget::maximize_window() {
     showMaximized();
 }
 
-
-void MainWidget::toggle_rect_hints() {
-    if (main_document_view->is_showing_rect_hints()) {
-        main_document_view->hide_rect_hints();
-    }
-    else {
-        main_document_view->show_rect_hints();
-    }
-}
-
 void MainWidget::handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already) {
 
     const std::wstring& index = doc()->get_super_fast_index();

@@ -4736,3 +4736,12 @@ void DocumentView::handle_fit_to_page_width(bool smart) {
         last_smart_fit_page = {};
     }
 }
+
+void DocumentView::toggle_rect_hints() {
+    if (is_showing_rect_hints()) {
+        hide_rect_hints();
+    }
+    else {
+        show_rect_hints();
+    }
+}

@@ -1960,7 +1960,7 @@ public:
     ToggleRectHintsCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->toggle_rect_hints();
+        dv()->toggle_rect_hints();
     }
 
 };
