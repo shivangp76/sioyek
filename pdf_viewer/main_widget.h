@@ -1024,9 +1024,9 @@ public:
     // std::string get_selected_portal_uuid();
     // std::string get_selected_bookmark_uuid();
 
-    void handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects);
-    void handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids);
-    void clear_keyboard_select_highlights();
+    // void handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects);
+    // void handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids);
+    // void clear_keyboard_select_highlights();
     void handle_goto_link_with_page_and_offset(int page, float y_offset);
     std::optional<std::wstring> get_search_suggestion_with_index(int index);
     bool is_menu_focused();

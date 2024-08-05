@@ -4068,7 +4068,7 @@ public:
         }
 
         if (should_clear_labels) {
-            widget->clear_keyboard_select_highlights();
+            dv()->clear_keyboard_select_highlights();
         }
     }
 };
@@ -4104,7 +4104,7 @@ public:
 
     void handle_indices_pre_perform() override {
         widget->clear_tag_prefix();
-        widget->handle_generic_tags_pre_perform(visible_objects);
+        dv()->handle_generic_tags_pre_perform(visible_objects);
 
     }
 
@@ -4160,7 +4160,7 @@ public:
 
     void handle_indices_pre_perform() override {
         widget->clear_tag_prefix();
-        widget->handle_generic_tags_pre_perform(visible_objects);
+        dv()->handle_generic_tags_pre_perform(visible_objects);
 
     }
 
@@ -4200,7 +4200,7 @@ public:
     }
 
     void handle_indices_pre_perform() override {
-        widget->handle_highlight_tags_pre_perform(visible_item_uuids);
+        dv()->handle_highlight_tags_pre_perform(visible_item_uuids);
 
     }
 
@@ -5326,7 +5326,7 @@ void KeyboardSelectPointCommand::perform() {
         origin->set_point_requirement(abspos);
     }
 
-    widget->clear_keyboard_select_highlights();
+    dv()->clear_keyboard_select_highlights();
     widget->advance_command(std::move(origin));
 }
 

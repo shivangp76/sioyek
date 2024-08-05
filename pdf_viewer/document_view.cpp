@@ -4606,3 +4606,42 @@ void DocumentView::handle_visible_bookmark_tags_pre_perform(const std::vector<st
     set_highlight_words(bookmark_rects);
     set_should_highlight_words(true);
 }
+
+void DocumentView::handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects){
+    std::vector<std::string> highlight_uuids;
+    std::vector<std::string> bookmark_uuids;
+    std::vector<std::string> portal_uuids;
+
+    for (const VisibleObjectIndex& obj : visible_objects) {
+        if (obj.object_type == VisibleObjectType::Highlight) highlight_uuids.push_back(obj.uuid);
+        if (obj.object_type == VisibleObjectType::Bookmark) bookmark_uuids.push_back(obj.uuid);
+        if ((obj.object_type == VisibleObjectType::Portal) || (obj.object_type == VisibleObjectType::PinnedPortal)) portal_uuids.push_back(obj.uuid);
+    }
+    std::vector<DocumentRect> highlight_rects = current_document->get_rects_for_highlight_indices(highlight_uuids);
+    std::vector<DocumentRect> bookmark_rects = current_document->get_rects_for_bookmark_indices(bookmark_uuids);
+    std::vector<DocumentRect> portal_rects = current_document->get_rects_for_portal_indices(portal_uuids);
+
+    std::vector<DocumentRect> merged_rects;
+    merged_rects.insert(merged_rects.end(), highlight_rects.begin(), highlight_rects.end());
+    merged_rects.insert(merged_rects.end(), bookmark_rects.begin(), bookmark_rects.end());
+    merged_rects.insert(merged_rects.end(), portal_rects.begin(), portal_rects.end());
+
+    set_highlight_words(merged_rects);
+    set_should_highlight_words(true);
+
+}
+
+void DocumentView::handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids) {
+    const std::vector<Highlight>& highlights = current_document->get_highlights();
+
+    std::vector<DocumentRect> highlight_rects = current_document->get_rects_for_highlight_indices(visible_highlight_uuids);
+
+    set_highlight_words(highlight_rects);
+    set_should_highlight_words(true);
+
+}
+
+
+void DocumentView::clear_keyboard_select_highlights() {
+    set_should_highlight_words(false);
+}
