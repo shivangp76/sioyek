@@ -3375,7 +3375,7 @@ public:
 
     void perform() {
         if (widget->main_document_view->is_ruler_mode() || dv()->is_pinned_portal_selected()) {
-            widget->move_visual_mark_command(is_down() ? 1 : -1);
+            widget->move_visual_mark(is_down() ? 1 : -1);
         }
         else {
             widget->handle_move_smooth_hold(is_down());
@@ -3788,7 +3788,7 @@ public:
     MoveVisualMarkDownCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->move_visual_mark_command(rp);
+        widget->move_visual_mark(rp);
     }
 };
 
@@ -3799,7 +3799,7 @@ public:
     MoveVisualMarkUpCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->move_visual_mark_command(-rp);
+        widget->move_visual_mark(-rp);
     }
 };
 

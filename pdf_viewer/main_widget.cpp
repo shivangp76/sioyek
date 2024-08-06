@@ -15,6 +15,7 @@
 // in touch mode if menu button and a visible object overlap, bad things happen
 // visible_object_move_data, etc. should be in document_view
 // clear_selected_text etc. should be moved to document_view
+// make sure mouse wheel in visual mark mode works with tts
 
 #include <iostream>
 #include <vector>
@@ -8043,6 +8044,7 @@ TextToSpeechHandler* MainWidget::get_tts() {
 
                 if (char_being_read_window_rect.x0 > 1) {
                     main_document_view->move_visual_mark_next();
+                    invalidate_render();
                 }
             }
 
