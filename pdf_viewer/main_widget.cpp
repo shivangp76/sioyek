@@ -3329,21 +3329,6 @@ fz_stext_char* MainWidget::get_closest_character_to_cusrsor(AbsoluteDocumentPos 
     return find_closest_char_to_document_point(flat_chars, doc_point, &location_index);
 }
 
-
-DocumentPos MainWidget::get_document_pos_under_window_pos(WindowPos window_pos) {
-    auto normal_pos = main_document_view->window_to_normalized_window_pos(window_pos);
-    if (main_document_view->is_window_point_in_overview(normal_pos)) {
-        return main_document_view->window_pos_to_overview_pos(normal_pos);
-    }
-    else {
-        return main_document_view->window_to_document_pos(window_pos);
-    }
-}
-
-AbsoluteDocumentPos MainWidget::get_absolute_document_pos_under_window_pos(WindowPos window_pos) {
-    return get_document_pos_under_window_pos(window_pos).to_absolute(doc());
-}
-
 std::optional<QString> MainWidget::get_paper_name_under_cursor(bool use_last_hold_point) {
     QPoint mouse_pos;
     if (use_last_hold_point) {
@@ -7175,7 +7160,8 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
         mouse_pos = mapFromGlobal(cursor_pos());
     }
     WindowPos pos(mouse_pos.x(), mouse_pos.y());
-    DocumentPos doc_pos = get_document_pos_under_window_pos(pos);
+    DocumentPos doc_pos = pos.to_document(main_document_view);
+    // DocumentPos doc_pos = main_document_view->get_document_pos_under_window_pos(pos);
     std::optional<QString> paper_name = dv()->get_paper_name_under_pos(doc_pos, true);
 
 

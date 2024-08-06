@@ -611,9 +611,6 @@ public:
     void scroll_bookmark_with_uuid(const std::string& uuid, int amount);
     bool ensure_super_fast_search_index();
 
-    DocumentPos get_document_pos_under_window_pos(WindowPos window_pos);
-    AbsoluteDocumentPos get_absolute_document_pos_under_window_pos(WindowPos window_pos);
-
     std::string get_current_mode_string();
 
     void show_audio_buttons();
