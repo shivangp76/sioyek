@@ -13,9 +13,7 @@
 // add keyboard commands to control pinned portals
 // pinned portals outside of page boundary are displayed weirdly in two page mode
 // in touch mode if menu button and a visible object overlap, bad things happen
-// visible_object_move_data, etc. should be in document_view
-// clear_selected_text etc. should be moved to document_view
-// make sure mouse wheel in visual mark mode works with tts
+// scrolling to out of bound portals does not work if we are not zoomed in enough
 
 #include <iostream>
 #include <vector>
@@ -6348,8 +6346,13 @@ void MainWidget::clear_selection_indicators() {
 bool MainWidget::handle_quick_tap(WindowPos click_pos) {
     // returns true if we double clicked or clicked on a location that executes a command
     // in either case, we should not do anything else corresponding to the single tap event
-
     QTime now = QTime::currentTime();
+
+    // if we perform a quick tap, then we are not moving or resizing
+    // this prevents bugs e.g. when we tap on a rect that is supposed to show the touch
+    // mode menu and it overlaps a portal or bookmark
+    main_document_view->visible_object_move_data = {};
+    main_document_view->visible_object_resize_data = {};
 
     if ((last_quick_tap_time.msecsTo(now) < 200) && (mapFromGlobal(QCursor::pos()) - last_quick_tap_position).manhattanLength() < 20) {
         if (handle_double_tap(last_quick_tap_position)) {
