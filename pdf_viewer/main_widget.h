@@ -518,7 +518,6 @@ public:
     void apply_window_params_for_one_window_mode(bool force_resize = false);
     void apply_window_params_for_two_window_mode();
     bool helper_window_overlaps_main_window();
-    void highlight_words();
     void upload_drawings(bool wait_for_send = false);
     void perform_sync_operations_when_document_is_closed(bool wait_for_send, bool sync_drawings);
 

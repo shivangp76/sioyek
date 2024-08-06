@@ -5478,7 +5478,7 @@ public:
     }
 
     void pre_perform() {
-        widget->highlight_words();
+        dv()->highlight_words();
         widget->clear_tag_prefix();
 
     }
@@ -5505,7 +5505,7 @@ public:
     }
 
     void pre_perform() {
-        widget->highlight_words();
+        dv()->highlight_words();
 
     }
 
@@ -5530,7 +5530,7 @@ public:
     }
 
     void pre_perform() {
-        widget->highlight_words();
+        dv()->highlight_words();
     }
 
     bool pushes_state() {

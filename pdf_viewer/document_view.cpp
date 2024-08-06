@@ -5773,3 +5773,28 @@ std::optional<WindowRect> DocumentView::get_tag_window_rect(std::string tag, std
     }
     return {};
 }
+
+void DocumentView::highlight_words() {
+
+    int page = get_current_page_number();
+    fz_stext_page* stext_page = get_document()->get_stext_with_page_number(page);
+    std::vector<fz_stext_char*> flat_chars;
+    std::vector<PagelessDocumentRect> word_rects;
+    std::vector<DocumentRect> word_rects_with_page;
+    std::vector<DocumentRect> visible_word_rects;
+
+    get_flat_chars_from_stext_page(stext_page, flat_chars);
+    get_flat_words_from_flat_chars(flat_chars, word_rects);
+    for (auto rect : word_rects) {
+        word_rects_with_page.push_back(DocumentRect(rect, page));
+    }
+
+    for (auto [rect, page] : word_rects_with_page) {
+        if (DocumentRect(rect, page).is_visible(this)) {
+            visible_word_rects.push_back(DocumentRect(rect, page));
+        }
+    }
+
+    set_highlight_words(visible_word_rects);
+    set_should_highlight_words(true);
+}

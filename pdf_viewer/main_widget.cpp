@@ -4168,32 +4168,6 @@ void MainWidget::dropEvent(QDropEvent* event)
 }
 // #endif
 
-void MainWidget::highlight_words() {
-
-    int page = get_current_page_number();
-    fz_stext_page* stext_page = main_document_view->get_document()->get_stext_with_page_number(page);
-    std::vector<fz_stext_char*> flat_chars;
-    std::vector<PagelessDocumentRect> word_rects;
-    std::vector<DocumentRect> word_rects_with_page;
-    std::vector<DocumentRect> visible_word_rects;
-
-    get_flat_chars_from_stext_page(stext_page, flat_chars);
-    get_flat_words_from_flat_chars(flat_chars, word_rects);
-    for (auto rect : word_rects) {
-        word_rects_with_page.push_back(DocumentRect(rect, page));
-    }
-
-    for (auto [rect, page] : word_rects_with_page) {
-        if (DocumentRect(rect, page).is_visible(main_document_view)) {
-            visible_word_rects.push_back(DocumentRect(rect, page));
-        }
-    }
-
-    main_document_view->set_highlight_words(visible_word_rects);
-    main_document_view->set_should_highlight_words(true);
-    invalidate_render();
-}
-
 
 bool MainWidget::is_rotated() {
     return main_document_view->is_rotated();
@@ -4929,6 +4903,7 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstr
 
             if (pending_command_instance) {
                 pending_command_instance->pre_perform();
+                invalidate_render();
             }
 
         }

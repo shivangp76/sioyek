@@ -656,6 +656,7 @@ public:
     std::vector<PagelessDocumentRect> get_current_page_flat_words(std::vector<std::vector<PagelessDocumentRect>>* flat_word_chars=nullptr);
 std::optional<PagelessDocumentRect> get_tag_rect(std::string tag, std::vector<PagelessDocumentRect>* word_chars=nullptr);
     std::optional<WindowRect> get_tag_window_rect(std::string tag, std::vector<WindowRect>* char_rects=nullptr);
+    void highlight_words();
 };
 
 struct CachedScratchpadPixmapData {
