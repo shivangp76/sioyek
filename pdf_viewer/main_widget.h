@@ -388,8 +388,6 @@ public:
     void start_creating_rect_portal(AbsoluteDocumentPos location);
     void add_portal(std::wstring source_path, Portal new_link);
     void toggle_fullscreen();
-    void toggle_presentation_mode();
-    void set_presentation_mode(bool mode);
     void set_synctex_mode(bool mode);
     void toggle_synctex_mode();
     void complete_pending_link(const PortalViewState& destination_view_state);

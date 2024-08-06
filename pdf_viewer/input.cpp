@@ -4958,7 +4958,7 @@ public:
     TogglePresentationModeCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->toggle_presentation_mode();
+        dv()->toggle_presentation_mode();
     }
 
     bool requires_document() { return false; }
@@ -4971,7 +4971,7 @@ public:
     TurnOnPresentationModeCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->set_presentation_mode(true);
+        dv()->set_presentation_mode(true);
     }
 
     bool requires_document() { return false; }

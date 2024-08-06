@@ -5798,3 +5798,21 @@ void DocumentView::highlight_words() {
     set_highlight_words(visible_word_rects);
     set_should_highlight_words(true);
 }
+
+void DocumentView::toggle_presentation_mode() {
+    if (is_presentation_mode()) {
+        set_presentation_mode(false);
+    }
+    else {
+        set_presentation_mode(true);
+    }
+}
+
+void DocumentView::set_presentation_mode(bool mode) {
+    if (mode) {
+        set_presentation_page_number(get_current_page_number());
+    }
+    else {
+        set_presentation_page_number({});
+    }
+}

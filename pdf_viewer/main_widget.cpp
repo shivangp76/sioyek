@@ -3593,23 +3593,6 @@ void MainWidget::toggle_fullscreen() {
     }
 }
 
-void MainWidget::toggle_presentation_mode() {
-    if (main_document_view->is_presentation_mode()) {
-        set_presentation_mode(false);
-    }
-    else {
-        set_presentation_mode(true);
-    }
-}
-
-void MainWidget::set_presentation_mode(bool mode) {
-    if (mode) {
-        main_document_view->set_presentation_page_number(get_current_page_number());
-    }
-    else {
-        main_document_view->set_presentation_page_number({});
-    }
-}
 
 void MainWidget::complete_pending_link(const PortalViewState& destination_view_state) {
     Portal& pl = main_document_view->current_pending_portal.value().second;
