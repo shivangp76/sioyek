@@ -560,14 +560,14 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         return;
     }
 
-    if (should_draw(false) && is_drawing) {
-        handle_drawing_move(mouse_event->pos(), -1.0f);
+    if (should_draw(false) && main_document_view->is_drawing) {
+        main_document_view->handle_drawing_move(mouse_event->pos(), -1.0f, opengl_widget->get_scratchpad());
         validate_render();
         return;
     }
 
     WindowPos mpos(mouse_event->pos());
-    AbsoluteDocumentPos abs_mpos = get_window_abspos(mpos);
+    AbsoluteDocumentPos abs_mpos = main_document_view->get_window_abspos(mpos, opengl_widget->get_scratchpad());
     NormalizedWindowPos normal_mpos = mpos.to_window_normalized(main_document_view);
 
     // we start moving visible objects when the mouse has moved for some distance after clicking
@@ -2160,19 +2160,6 @@ void MainWidget::download_and_portal_to_highlighted_overview_paper() {
     }
 }
 
-bool MainWidget::handle_freehand_drawing_click_event() {
-    AbsoluteDocumentPos mpos_absolute = get_window_abspos(WindowPos(mapFromGlobal(QCursor::pos())));
-
-    if (main_document_view->selected_freehand_drawings->selection_absrect.contains(mpos_absolute)) {
-        handle_freehand_drawing_selection_click(mpos_absolute);
-        return true;
-    }
-    else {
-        main_document_view->selected_freehand_drawings = {};
-    }
-    return false;
-}
-
 bool MainWidget::handle_left_press_touch_mode(WindowPos click_pos) {
     was_last_mouse_down_in_ruler_next_rect = false;
     was_last_mouse_down_in_ruler_prev_rect = false;
@@ -2357,6 +2344,8 @@ bool MainWidget::handle_visible_object_resize_finish() {
 }
 
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
+    AbsoluteDocumentPos abs_doc_pos = main_document_view->get_window_abspos(click_pos, opengl_widget->get_scratchpad());
+
     if (is_rotated()) {
         // we don't support selection, etc. when document is rotated
         return;
@@ -2367,7 +2356,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
     }
 
     if (main_document_view->selected_freehand_drawings) {
-        if (handle_freehand_drawing_click_event()) {
+        if (main_document_view->handle_freehand_drawing_click_event(abs_doc_pos, opengl_widget->get_scratchpad())) {
             return;
         }
     }
@@ -2381,7 +2370,6 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         }
     }
 
-    AbsoluteDocumentPos abs_doc_pos = get_window_abspos(click_pos);
     NormalizedWindowPos click_normalized_window_pos = main_document_view->window_to_normalized_window_pos(click_pos);
 
     if (point_select_mode && (down == false)) {
@@ -2746,8 +2734,8 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         return;
     }
 
-    if (is_drawing) {
-        finish_drawing(mevent->pos());
+    if (main_document_view->is_drawing) {
+        main_document_view->finish_drawing(mevent->pos(), opengl_widget->get_scratchpad());
         invalidate_render();
         return;
     }
@@ -2905,7 +2893,7 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     }
 
     if (should_draw(false) && (mevent->button() == Qt::MouseButton::LeftButton)) {
-        start_drawing();
+        main_document_view->start_drawing();
         return;
     }
 
@@ -8365,83 +8353,28 @@ void MainWidget::handle_undo_drawing() {
 }
 
 void MainWidget::set_freehand_thickness(float val) {
-    freehand_thickness = val;
+    main_document_view->freehand_thickness = val;
 }
 
 void MainWidget::handle_pen_drawing_event(QTabletEvent* te) {
 
     if (te->type() == QEvent::TabletPress) {
-        start_drawing();
+        main_document_view->start_drawing();
     }
 
     if (te->type() == QEvent::TabletRelease) {
-        finish_drawing(te->pos());
+        main_document_view->finish_drawing(te->pos(), opengl_widget->get_scratchpad());
         invalidate_render();
     }
 
     if (te->type() == QEvent::TabletMove) {
-        if (is_drawing) {
-            handle_drawing_move(te->pos(), te->pressure());
+        if (main_document_view->is_drawing) {
+            main_document_view->handle_drawing_move(te->pos(), te->pressure(), opengl_widget->get_scratchpad());
             validate_render();
         }
 
     }
 }
-
-void MainWidget::handle_drawing_move(QPoint pos, float pressure) {
-    pressure = 0;
-    WindowPos current_window_pos = { pos.x(), pos.y() };
-    AbsoluteDocumentPos mouse_abspos = get_window_abspos(current_window_pos);
-    FreehandDrawingPoint fdp;
-    fdp.pos = mouse_abspos;
-    float thickness_zoom_factor = 1.0f;
-
-    if (opengl_widget->get_scratchpad()) {
-        thickness_zoom_factor = 1.0f / dv()->get_zoom_level() * 3;
-    }
-
-    if (pressure > 0) {
-        fdp.thickness = freehand_thickness * (0.5f + pressure * 3) * thickness_zoom_factor;
-    }
-    else {
-        fdp.thickness = freehand_thickness * thickness_zoom_factor;
-    }
-    main_document_view->current_drawing.points.push_back(fdp);
-}
-
-void MainWidget::start_drawing() {
-    is_drawing = true;
-    main_document_view->current_drawing.points.clear();
-    main_document_view->current_drawing.type = current_freehand_type;
-    main_document_view->current_drawing.alpha = freehand_alpha;
-}
-
-void MainWidget::finish_drawing(QPoint pos) {
-    is_drawing = false;
-
-    if (main_document_view->current_drawing.points.size() == 0) {
-        handle_drawing_move(pos, -1.0f);
-    }
-
-    std::vector<FreehandDrawingPoint> pruned_points = prune_freehand_drawing_points(main_document_view->current_drawing.points);
-    main_document_view->current_drawing.points.clear();
-
-    FreehandDrawing pruned_drawing;
-    pruned_drawing.points = pruned_points;
-    pruned_drawing.type = main_document_view->current_drawing.type;
-    pruned_drawing.alpha = main_document_view->current_drawing.alpha;
-    pruned_drawing.creattion_time = QDateTime::currentDateTime();
-
-    if (opengl_widget->get_scratchpad()) {
-        scratchpad->add_drawing(pruned_drawing);
-        /* opengl_widget->update_framebuffer_cache(); */
-    }
-    else {
-        doc()->add_freehand_drawing(pruned_drawing);
-    }
-    
-}
-
 
 void MainWidget::delete_freehand_drawings(AbsoluteRect rect) {
     if (opengl_widget->get_scratchpad()) {
@@ -8520,7 +8453,7 @@ void MainWidget::handle_drawing_ui_visibilty() {
     }
     else {
         get_draw_controls()->show();
-        get_draw_controls()->controls_ui->set_pen_size(freehand_thickness);
+        get_draw_controls()->controls_ui->set_pen_size(main_document_view->freehand_thickness);
     }
 }
 
@@ -8932,13 +8865,6 @@ bool MainWidget::is_middle_click_being_used() {
 bool MainWidget::should_drag() {
     return is_dragging && main_document_view && (!main_document_view->visible_object_move_data.has_value());
 }
-
-void MainWidget::handle_freehand_drawing_move_finish() {
-    QPoint p = last_press_point = mapFromGlobal(QCursor::pos());
-    AbsoluteDocumentPos mpos_absolute = get_window_abspos({ p.x(), p.y() });
-    main_document_view->freehand_drawing_move_finish(mpos_absolute, opengl_widget->get_scratchpad());
-}
-
 
 void MainWidget::show_command_palette() {
 
@@ -10612,15 +10538,6 @@ void MainWidget::set_text_prompt_text(QString text) {
     }
 }
 
-AbsoluteDocumentPos MainWidget::get_window_abspos(WindowPos window_pos) {
-    if (opengl_widget->get_scratchpad()) {
-        return scratchpad->window_to_absolute_document_pos(window_pos);
-    }
-    else {
-        return window_pos.to_absolute(main_document_view);
-    }
-}
-
 DocumentView* MainWidget::dv() {
     if (opengl_widget->get_scratchpad()) {
         return scratchpad;
@@ -10666,10 +10583,6 @@ bool MainWidget::should_draw(bool originated_from_pen) {
     return false;
 }
 
-void MainWidget::handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos) {
-    main_document_view->handle_freehand_drawing_selection_click(click_pos, opengl_widget->get_scratchpad());
-}
-
 bool MainWidget::is_scratchpad_mode(){
     return opengl_widget->get_scratchpad() != nullptr;
 }
@@ -10710,18 +10623,6 @@ void MainWidget::load_scratchpad() {
 void MainWidget::clear_scratchpad() {
     scratchpad->clear();
     invalidate_render();
-}
-
-char MainWidget::get_current_freehand_type() {
-    return current_freehand_type;
-}
-
-float MainWidget::get_current_freehand_alpha() {
-    return freehand_alpha;
-}
-
-void MainWidget::set_current_freehand_alpha(float alpha) {
-    freehand_alpha = alpha;
 }
 
 void MainWidget::show_draw_controls() {
@@ -10956,7 +10857,7 @@ bool MainWidget::handle_annotation_move_finish(){
     }
 
     if (main_document_view->freehand_drawing_move_data) {
-        handle_freehand_drawing_move_finish();
+        main_document_view->handle_freehand_drawing_move_finish(get_cursor_abspos(), opengl_widget->get_scratchpad());
         invalidate_render();
         main_document_view->is_selecting = false;
         return true;

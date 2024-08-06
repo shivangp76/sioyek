@@ -167,11 +167,15 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
     auto drawing_fn = [widget=main_widget]() {
 
         QString drawing_mode_string = "";
-        if (widget->freehand_drawing_mode == DrawingMode::Drawing) {
-            drawing_mode_string = QString(" [ freehand:") + widget->current_freehand_type + " ]";
-        }
-        if (widget->freehand_drawing_mode == DrawingMode::PenDrawing) {
-            drawing_mode_string = QString(" [ pen:") + widget->current_freehand_type + " ]";
+        if (widget->main_document_view){
+            if (widget->freehand_drawing_mode == DrawingMode::Drawing)
+            {
+                drawing_mode_string = QString(" [ freehand:") + widget->main_document_view->current_freehand_type + " ]";
+            }
+            if (widget->freehand_drawing_mode == DrawingMode::PenDrawing)
+            {
+                drawing_mode_string = QString(" [ pen:") + widget->main_document_view->current_freehand_type + " ]";
+            }
         }
 
         return drawing_mode_string;

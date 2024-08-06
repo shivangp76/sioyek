@@ -228,15 +228,6 @@ public:
     bool is_select_highlight_mode = false;
     char select_highlight_type = 'a';
 
-    // color type to use when freehand drawing
-    char current_freehand_type = 'r';
-
-    // alpha of freehand drawings
-    float freehand_alpha = 1.0f;
-
-    // line thickness of freehand drawings
-    float freehand_thickness = 1.0f;
-
     // in smooth scroll mode we scroll the document smoothly instead of jumping to the target
     // `smooth_scroll_speed` is used to keep track of our speed in this mode
     bool smooth_scroll_mode = false;
@@ -271,9 +262,6 @@ public:
     bool is_dragging_snapped = false;
     // are we performing pinch to zoom gesture
     bool is_pinching = false;
-
-    // are we currently freehand drawing on the document
-    bool is_drawing = false;
 
     // should we show the status label?
     // If touch mode is enabled, we don't show the status label at all, unless there is another window
@@ -732,9 +720,6 @@ public:
     bool is_in_edit_portal_rect(WindowPos pos);
     bool is_in_visual_mark_next_rect(WindowPos pos);
     bool is_in_visual_mark_prev_rect(WindowPos pos);
-    void handle_drawing_move(QPoint pos, float pressure);
-    void start_drawing();
-    void finish_drawing(QPoint pos);
     void handle_pen_drawing_event(QTabletEvent* te);
     void select_freehand_drawings(AbsoluteRect rect);
     void delete_freehand_drawings(AbsoluteRect rect);
@@ -825,7 +810,6 @@ public:
     // void begin_bookmark_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos);
     // void begin_portal_move(const std::string& uuid, AbsoluteDocumentPos begin_cursor_pos, bool is_pending);
     bool should_drag();
-    void handle_freehand_drawing_move_finish();
     // void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
     bool goto_ith_next_overview(int i);
     void on_overview_source_updated();
@@ -943,19 +927,14 @@ public:
     void run_startup_js(bool first_run=false);
     void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);
     void set_text_prompt_text(QString text);
-    AbsoluteDocumentPos get_window_abspos(WindowPos window_pos);
     DocumentView* dv();
     bool should_draw(bool originated_from_pen);
-    void handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos);
     bool is_scratchpad_mode();
     void toggle_scratchpad_mode();
     void add_pixmap_to_scratchpad(QPixmap pixmap);
     void save_scratchpad();
     void load_scratchpad();
     void clear_scratchpad();
-    char get_current_freehand_type();
-    float get_current_freehand_alpha();
-    void set_current_freehand_alpha(float alpha);
     void show_draw_controls();
     PaperDownloadFinishedAction get_default_paper_download_finish_action();
     void set_tag_prefix(std::wstring prefix);
@@ -1076,7 +1055,6 @@ public:
     void pin_current_overview_as_portal();
     // void begin_portal_scroll();
     void set_mouse_cursor_for_side_resize(std::optional<OverviewSide> side);
-    bool handle_freehand_drawing_click_event();
     bool handle_left_press_touch_mode(WindowPos click_pos);
     bool handle_left_release_touch_mode(WindowPos click_pos);
     bool handle_left_click_point_select(AbsoluteDocumentPos abs_doc_pos);

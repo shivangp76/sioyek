@@ -5993,7 +5993,7 @@ public:
     static inline const std::string hname = "Set the freehand drawing color type";
     SetFreehandType(MainWidget* w) : SymbolCommand(cname, w) {};
     void perform() {
-        widget->current_freehand_type = symbol;
+        dv()->current_freehand_type = symbol;
     }
 
     bool requires_document() { return false; }
@@ -6011,7 +6011,7 @@ public:
             if (!was_number || alpha > 1 || alpha < 0) {
                 alpha = 1.0f;
             }
-            widget->set_current_freehand_alpha(alpha);
+            dv()->set_current_freehand_alpha(alpha);
 
         }
     }

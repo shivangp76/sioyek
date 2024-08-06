@@ -747,12 +747,15 @@ void DocumentView::reset_doc_state() {
     visible_object_scroll_data = {};
     visible_object_move_data = {};
 
+
     freehand_drawing_move_data = {};
     selected_freehand_drawings = {};
 
     velocity_x = 0;
     velocity_y = 0;
     is_velocity_fixed = false;
+
+    is_drawing = false;
 
     selected_text_is_dirty = false;
     selected_character_rects.clear();
@@ -5179,4 +5182,96 @@ void DocumentView::clear_selected_text() {
     }
     selected_text_is_dirty = false;
 
+}
+
+void DocumentView::finish_drawing(QPoint pos, ScratchPad* scratchpad) {
+    is_drawing = false;
+
+    if (current_drawing.points.size() == 0) {
+        handle_drawing_move(pos, -1.0f, scratchpad);
+    }
+
+    std::vector<FreehandDrawingPoint> pruned_points = prune_freehand_drawing_points(current_drawing.points);
+    current_drawing.points.clear();
+
+    FreehandDrawing pruned_drawing;
+    pruned_drawing.points = pruned_points;
+    pruned_drawing.type = current_drawing.type;
+    pruned_drawing.alpha = current_drawing.alpha;
+    pruned_drawing.creattion_time = QDateTime::currentDateTime();
+
+    if (scratchpad) {
+        scratchpad->add_drawing(pruned_drawing);
+        /* opengl_widget->update_framebuffer_cache(); */
+    }
+    else {
+        doc()->add_freehand_drawing(pruned_drawing);
+    }
+    
+}
+
+AbsoluteDocumentPos DocumentView::get_window_abspos(WindowPos window_pos, ScratchPad* scratchpad) {
+    if (scratchpad) {
+        return scratchpad->window_to_absolute_document_pos(window_pos);
+    }
+    else {
+        return window_pos.to_absolute(this);
+    }
+}
+
+void DocumentView::handle_drawing_move(QPoint pos, float pressure, ScratchPad* scratchpad) {
+    pressure = 0;
+    WindowPos current_window_pos = { pos.x(), pos.y() };
+    AbsoluteDocumentPos mouse_abspos = get_window_abspos(current_window_pos, scratchpad);
+    FreehandDrawingPoint fdp;
+    fdp.pos = mouse_abspos;
+    float thickness_zoom_factor = 1.0f;
+
+    auto dv = scratchpad ? scratchpad : this;
+
+    if (scratchpad) {
+        thickness_zoom_factor = 1.0f / dv->get_zoom_level() * 3;
+    }
+
+    if (pressure > 0) {
+        fdp.thickness = freehand_thickness * (0.5f + pressure * 3) * thickness_zoom_factor;
+    }
+    else {
+        fdp.thickness = freehand_thickness * thickness_zoom_factor;
+    }
+    current_drawing.points.push_back(fdp);
+}
+
+char DocumentView::get_current_freehand_type() {
+    return current_freehand_type;
+}
+
+float DocumentView::get_current_freehand_alpha() {
+    return freehand_alpha;
+}
+
+void DocumentView::set_current_freehand_alpha(float alpha) {
+    freehand_alpha = alpha;
+}
+
+bool DocumentView::handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad) {
+    if (selected_freehand_drawings->selection_absrect.contains(mpos_absolute)) {
+        handle_freehand_drawing_selection_click(mpos_absolute, scratchpad);
+        return true;
+    }
+    else {
+        selected_freehand_drawings = {};
+    }
+    return false;
+}
+
+void DocumentView::start_drawing() {
+    is_drawing = true;
+    current_drawing.points.clear();
+    current_drawing.type = current_freehand_type;
+    current_drawing.alpha = freehand_alpha;
+}
+
+void DocumentView::handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad) {
+    freehand_drawing_move_finish(mpos_absolute, scratchpad);
 }

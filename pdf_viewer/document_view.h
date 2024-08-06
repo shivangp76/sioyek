@@ -194,6 +194,18 @@ public:
     // selected text (using mouse cursor or other methods) which is used e.g. for copying or highlighting
     std::wstring selected_text;
 
+    // are we currently freehand drawing on the document
+    bool is_drawing = false;
+
+    // color type to use when freehand drawing
+    char current_freehand_type = 'r';
+
+    // alpha of freehand drawings
+    float freehand_alpha = 1.0f;
+
+    // line thickness of freehand drawings
+    float freehand_thickness = 1.0f;
+
     // when moving the text selection using keyboard, `selection_begin` and `selection_end`
     // might be out of sync with `selected_text_`. `selected_text_is_dirty` is true when this
     // is the case, which means that we need to update `selected_text_` before using it.
@@ -609,6 +621,15 @@ public:
     void move_selection_begin(bool expand, bool word);
     void handle_move_text_mark_forward(bool word);
     void clear_selected_text();
+    void finish_drawing(QPoint pos, ScratchPad* scratchpad);
+    void handle_drawing_move(QPoint pos, float pressure, ScratchPad* scractchpad);
+    AbsoluteDocumentPos get_window_abspos(WindowPos window_pos, ScratchPad* scratchpad);
+    char get_current_freehand_type();
+    float get_current_freehand_alpha();
+    void set_current_freehand_alpha(float alpha);
+    bool handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
+    void start_drawing();
+    void handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
 };
 
 struct CachedScratchpadPixmapData {
