@@ -833,7 +833,6 @@ public:
     void show_touch_buttons_for_overview_type(std::string type);
     void update_touch_overview_buttons(const std::optional<OverviewState>& overview);
     void set_overview_page(std::optional<OverviewState> overview, bool should_update_buttons);
-    std::vector<std::wstring> get_new_files_from_scan_directory();
     void scan_new_files_from_scan_directory();
     void export_python_api();
     QJSEngine* take_js_engine(bool async);

@@ -60,6 +60,7 @@ extern std::wstring SHARED_DATABASE_PATH;
 extern bool DEBUG;
 extern bool EXACT_HIGHLIGHT_SELECT;
 extern std::wstring ANNOTATIONS_DIR_PATH;
+extern std::wstring BOOK_SCAN_PATH;
 
 int Document::get_mark_index(char symbol) {
     for (size_t i = 0; i < marks.size(); i++) {
@@ -5181,4 +5182,39 @@ std::optional<AbsoluteRect> Document::get_page_intersecting_rect(DocumentRect re
 Portal* Document::get_portal_under_absolute_pos(AbsoluteDocumentPos abspos) {
     std::string uuid = get_icon_portal_uuid_at_pos(abspos);
     return get_portal_with_uuid(uuid);
+}
+
+std::vector<std::wstring> DocumentManager::get_new_files_from_scan_directory() {
+    std::vector<std::pair<std::wstring, std::wstring>> path_hash;
+    db_manager->get_prev_path_hash_pairs(path_hash);
+    std::vector<std::wstring> prev_paths;
+
+    for (auto [path, hash] : path_hash) {
+        prev_paths.push_back(path);
+    }
+
+    std::sort(prev_paths.begin(), prev_paths.end());
+
+    QDir parent(QString::fromStdWString(BOOK_SCAN_PATH));
+    parent.setFilter(QDir::Files | QDir::NoSymLinks);
+    parent.setSorting(QDir::Time);
+    QFileInfoList list = parent.entryInfoList();
+
+    std::vector<std::wstring> paths;
+
+    for (int i = 0; i < list.size(); i++) {
+        paths.push_back(list.at(i).absoluteFilePath().toStdWString());
+    }
+
+    std::sort(paths.begin(), paths.end());
+
+    std::vector<std::wstring> new_paths;
+
+    std::set_difference(
+        paths.begin(), paths.end(),
+        prev_paths.begin(), prev_paths.end(),
+        std::back_inserter(new_paths)
+    );
+
+    return new_paths;
 }

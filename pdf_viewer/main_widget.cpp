@@ -240,7 +240,6 @@ extern float RULER_AUTO_MOVE_SENSITIVITY;
 extern float TTS_RATE;
 extern std::wstring HOLD_MIDDLE_CLICK_COMMAND;
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
-extern std::wstring BOOK_SCAN_PATH;
 extern bool USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE;
 extern std::wstring VOLUME_DOWN_COMMAND;
 extern std::wstring VOLUME_UP_COMMAND;
@@ -7776,43 +7775,9 @@ void MainWidget::export_default_config_file(std::wstring file_path){
     }
 }
 
-std::vector<std::wstring> MainWidget::get_new_files_from_scan_directory() {
-    std::vector<std::pair<std::wstring, std::wstring>> path_hash;
-    db_manager->get_prev_path_hash_pairs(path_hash);
-    std::vector<std::wstring> prev_paths;
-
-    for (auto [path, hash] : path_hash) {
-        prev_paths.push_back(path);
-    }
-
-    std::sort(prev_paths.begin(), prev_paths.end());
-
-    QDir parent(QString::fromStdWString(BOOK_SCAN_PATH));
-    parent.setFilter(QDir::Files | QDir::NoSymLinks);
-    parent.setSorting(QDir::Time);
-    QFileInfoList list = parent.entryInfoList();
-
-    std::vector<std::wstring> paths;
-
-    for (int i = 0; i < list.size(); i++) {
-        paths.push_back(list.at(i).absoluteFilePath().toStdWString());
-    }
-
-    std::sort(paths.begin(), paths.end());
-
-    std::vector<std::wstring> new_paths;
-
-    std::set_difference(
-        paths.begin(), paths.end(),
-        prev_paths.begin(), prev_paths.end(),
-        std::back_inserter(new_paths)
-    );
-
-    return new_paths;
-}
 
 void MainWidget::scan_new_files_from_scan_directory() {
-    std::vector<std::wstring> new_file_paths = get_new_files_from_scan_directory();
+    std::vector<std::wstring> new_file_paths = document_manager->get_new_files_from_scan_directory();
 
     for (auto new_file : new_file_paths) {
         std::string checksum = checksummer->get_checksum(new_file);
