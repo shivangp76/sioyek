@@ -1305,7 +1305,7 @@ public:
 
     void perform() {
         //if (num_repeats == 0) num_repeats++;
-        widget->handle_move_text_mark_forward(false);
+        dv()->handle_move_text_mark_forward(false);
         //widget->invalidate_render();
     }
 };
@@ -1317,7 +1317,7 @@ public:
     MoveTextMarkDownCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_move_text_mark_down();
+        dv()->handle_move_text_mark_down();
     }
 };
 
@@ -1328,7 +1328,7 @@ public:
     MoveTextMarkUpCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_move_text_mark_up();
+        dv()->handle_move_text_mark_up();
     }
 };
 
@@ -1339,7 +1339,7 @@ public:
     MoveTextMarkForwardWordCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_move_text_mark_forward(true);
+        dv()->handle_move_text_mark_forward(true);
     }
 };
 
@@ -1350,7 +1350,7 @@ public:
     MoveTextMarkBackwardCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_move_text_mark_backward(false);
+        dv()->handle_move_text_mark_backward(false);
     }
 };
 
@@ -1361,7 +1361,7 @@ public:
     MoveTextMarkBackwardWordCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_move_text_mark_backward(true);
+        dv()->handle_move_text_mark_backward(true);
     }
 };
 
@@ -1476,7 +1476,7 @@ public:
 
     std::wstring get_text_default_value() {
         if (FILL_TEXTBAR_WITH_SELECTED_TEXT) {
-            return widget->get_selected_text();
+            return dv()->get_selected_text();
         }
         return L"";
     }
@@ -1716,7 +1716,7 @@ public:
         QString result = QString::fromStdWString(prompt);
 
         if (result.indexOf("%{selected_text}") != -1) {
-            result = result.replace("%{selected_text}", QString::fromStdWString(widget->get_selected_text()));
+            result = result.replace("%{selected_text}", QString::fromStdWString(dv()->get_selected_text()));
         }
 
         if (result.indexOf("%{document_text}") != -1) {
@@ -4442,7 +4442,7 @@ public:
     static inline const std::string hname = "Copy";
     CopyCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        auto selected_text = widget->get_selected_text();
+        auto selected_text = dv()->get_selected_text();
         if (selected_text.size() == 0) {
             if (widget->main_document_view->get_overview_page()) {
                 std::optional<QString> overview_paper_name = widget->main_document_view->get_overview_paper_name();
@@ -4732,7 +4732,7 @@ public:
     static inline const std::string hname = "Search using external search engines";
     ExternalSearchCommand(MainWidget* w) : SymbolCommand(cname, w) {};
     void perform() {
-        std::wstring selected_text = widget->get_selected_text();
+        std::wstring selected_text = dv()->get_selected_text();
 
         if ((symbol >= 'a') && (symbol <= 'z')) {
             if (SEARCH_URLS[symbol - 'a'].size() > 0) {
@@ -4763,7 +4763,7 @@ public:
     static inline const std::string hname = "";
     OpenSelectedUrlCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        open_web_url((widget->get_selected_text()).c_str());
+        open_web_url((dv()->get_selected_text()).c_str());
     }
 };
 
@@ -6027,7 +6027,7 @@ public:
     void perform() {
         if (widget->main_document_view->selected_character_rects.size() > 0) {
             widget->add_highlight_to_current_document(widget->dv()->selection_begin, widget->dv()->selection_end, widget->select_highlight_type);
-            widget->clear_selected_text();
+            dv()->clear_selected_text();
         }
     }
 

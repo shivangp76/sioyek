@@ -205,13 +205,6 @@ public:
     // last window position when mouse was clicked, we use this in mouse drag mode
     WindowPos last_mouse_down_window_pos;
 
-
-    // when moving the text selection using keyboard, `selection_begin` and `selection_end`
-    // might be out of sync with `selected_text_`. `selected_text_is_dirty` is true when this
-    // is the case, which means that we need to update `selected_text_` before using it.
-    bool selected_text_is_dirty = false;
-
-
     // whether we are in rect/point select mode (some commands require a rectangle to be executed
     // for example `delete_freehand_drawings`)
     bool rect_select_mode = false;
@@ -229,11 +222,6 @@ public:
     bool debug_mode = false;
 
     bool horizontal_scroll_locked = false;
-
-    // is the user currently selecing text? (happens when we left click and move the cursor)
-    bool is_selecting = false;
-    // is the user in word select mode? (happens when we double left click and move the cursor)
-    bool is_word_selecting = false;
 
     // in select highlight mode, we immediately highlight the text when it is selected
     // with highlight type of `select_highlight_type` 
@@ -460,11 +448,8 @@ public:
     void set_rect_select_mode(bool mode);
     void set_point_select_mode(bool mode);
     void clear_selected_rect();
-    void clear_selected_text();
     void toggle_pdf_annotations();
     void on_paper_downloaded(QNetworkReply* reply);
-
-    void expand_selection_vertical(bool begin, bool below);
 
     std::optional<AbsoluteRect> get_selected_rect_absolute();
     std::optional<DocumentRect> get_selected_rect_document();
@@ -753,15 +738,8 @@ public:
     void handle_pen_drawing_event(QTabletEvent* te);
     void select_freehand_drawings(AbsoluteRect rect);
     void delete_freehand_drawings(AbsoluteRect rect);
-    void handle_move_text_mark_forward(bool word);
-    void handle_move_text_mark_backward(bool word);
-    void handle_move_text_mark_down();
-    void handle_move_text_mark_up();
     void handle_toggle_text_mark();
 
-    const std::wstring& get_selected_text();
-    void move_selection_end(bool expand, bool word);
-    void move_selection_begin(bool expand, bool word);
     void shrink_selection_end();
     void shrink_selection_begin();
 

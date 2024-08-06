@@ -754,6 +754,9 @@ void DocumentView::reset_doc_state() {
     velocity_y = 0;
     is_velocity_fixed = false;
 
+    selected_text_is_dirty = false;
+    selected_character_rects.clear();
+
     overview_page = {};
     synctex_highlights.clear();
     handle_escape();
@@ -5047,4 +5050,133 @@ void DocumentView::handle_portal_move_finish() {
             }
         }
     }
+}
+
+const std::wstring& DocumentView::get_selected_text() {
+    if (selected_text_is_dirty) {
+        std::deque<AbsoluteRect> dummy_rects;
+        get_text_selection(selection_begin,
+            selection_end,
+            is_word_selecting,
+            dummy_rects,
+            selected_text);
+
+        selected_text_is_dirty = false;
+    }
+
+    return selected_text;
+}
+
+void DocumentView::expand_selection_vertical(bool begin, bool below) {
+    const std::deque<AbsoluteRect>& scr = selected_character_rects;
+    if (scr.size() == 0) return;
+
+    int index = (begin) ? 0 : scr.size() - 1;
+
+    std::optional<AbsoluteRect> next_rect = doc()->get_rect_vertically(below, scr[index]);
+    if (next_rect) {
+        if (begin) {
+            selection_begin = next_rect->center();
+        }
+        else {
+            selection_end = next_rect->center();
+        }
+        get_text_selection(selection_begin,
+            selection_end,
+            is_word_selecting,
+            selected_character_rects,
+            selected_text);
+        selected_text_is_dirty = false;
+    }
+
+}
+
+void DocumentView::handle_move_text_mark_down() {
+    should_show_text_selection_marker = true;
+    if (mark_end) {
+        expand_selection_vertical(false, true);
+    }
+    else {
+        expand_selection_vertical(true, true);
+    }
+}
+
+void DocumentView::handle_move_text_mark_up() {
+    should_show_text_selection_marker = true;
+
+    if (mark_end) {
+        expand_selection_vertical(false, false);
+    }
+    else {
+        expand_selection_vertical(true, false);
+    }
+}
+
+void DocumentView::handle_move_text_mark_backward(bool word) {
+    should_show_text_selection_marker = true;
+    selected_text_is_dirty = true;
+    if (mark_end) {
+        move_selection_end(false, word);
+    }
+    else {
+        move_selection_begin(true, word);
+    }
+}
+
+void DocumentView::move_selection_end(bool expand, bool word) {
+    selected_text_is_dirty = true;
+    std::optional<AbsoluteRect> new_end_ = {};
+
+    if (expand) {
+        new_end_ = expand_selection(false, word);
+    }
+    else {
+        new_end_ = shrink_selection(false, word);
+    }
+
+    if (new_end_) {
+        AbsoluteRect new_end = new_end_.value();
+        selection_end = new_end.center();
+    }
+
+}
+
+void DocumentView::move_selection_begin(bool expand, bool word) {
+    selected_text_is_dirty = true;
+    std::optional<AbsoluteRect> new_begin_ = {};
+    if (expand) {
+        new_begin_ = expand_selection(true, word);
+    }
+    else {
+        new_begin_ = shrink_selection(true, word);
+    }
+
+    if (new_begin_) {
+        AbsoluteRect new_begin = new_begin_.value();
+        selection_begin = new_begin.center();
+    }
+}
+
+void DocumentView::handle_move_text_mark_forward(bool word) {
+    should_show_text_selection_marker = true;
+    selected_text_is_dirty = true;
+    if (mark_end) {
+        move_selection_end(true, word);
+    }
+    else {
+        move_selection_begin(false, word);
+    }
+}
+
+void DocumentView::clear_selected_text() {
+    selected_character_rects.clear();
+    mark_end = true;
+    should_show_text_selection_marker = false;
+    selected_text.clear();
+    if (is_line_select_mode()) {
+        line_select_begin_data = {};
+        line_select_mode = false;
+    }
+    selected_text_is_dirty = false;
+
 }

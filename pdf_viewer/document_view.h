@@ -194,6 +194,16 @@ public:
     // selected text (using mouse cursor or other methods) which is used e.g. for copying or highlighting
     std::wstring selected_text;
 
+    // when moving the text selection using keyboard, `selection_begin` and `selection_end`
+    // might be out of sync with `selected_text_`. `selected_text_is_dirty` is true when this
+    // is the case, which means that we need to update `selected_text_` before using it.
+    bool selected_text_is_dirty = false;
+
+    // is the user currently selecing text? (happens when we left click and move the cursor)
+    bool is_selecting = false;
+    // is the user in word select mode? (happens when we double left click and move the cursor)
+    bool is_word_selecting = false;
+
     // A list of candiadates to be shown in the overview window. We use simple heuristics to determine the
     // target of references, while this works most of the time, it is not perfect. So we keep a list of candidates
     // which the user can naviagte through using `next_preview` and `previous_preview` commands which move
@@ -590,6 +600,15 @@ public:
     void handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos);
     void handle_portal_move_finish();
     void handle_bookmark_move_finish();
+    const std::wstring& get_selected_text();
+    void expand_selection_vertical(bool begin, bool below);
+    void handle_move_text_mark_down();
+    void handle_move_text_mark_up();
+    void handle_move_text_mark_backward(bool word);
+    void move_selection_end(bool expand, bool word);
+    void move_selection_begin(bool expand, bool word);
+    void handle_move_text_mark_forward(bool word);
+    void clear_selected_text();
 };
 
 struct CachedScratchpadPixmapData {

@@ -811,7 +811,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         validate_render();
     }
 
-    if (is_selecting) {
+    if (main_document_view->is_selecting) {
 
         // When selecting, we occasionally update selected text
         //todo: maybe have a timer event that handles this periodically
@@ -825,10 +825,10 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
             main_document_view->get_text_selection(dv()->selection_begin,
                 dv()->selection_end,
-                is_word_selecting,
+                main_document_view->is_word_selecting,
                 main_document_view->selected_character_rects,
                 dv()->selected_text);
-            selected_text_is_dirty = false;
+            main_document_view->selected_text_is_dirty = false;
 
             validate_render();
             last_text_select_time = QTime::currentTime();
@@ -1429,7 +1429,7 @@ void MainWidget::handle_escape() {
 
         set_overview_page({}, false);
         if (!was_line_select) {
-            clear_selected_text();
+            main_document_view->clear_selected_text();
         }
 
         //main_document_view->ruler
@@ -2261,7 +2261,7 @@ bool MainWidget::handle_left_click_point_select(AbsoluteDocumentPos abs_doc_pos)
         advance_command(std::move(pending_command_instance));
     }
 
-    is_selecting = false;
+    main_document_view->is_selecting = false;
     this->point_select_mode = false;
     main_document_view->clear_selected_rectangle();
     return true;
@@ -2432,9 +2432,9 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         }
 
         if ((!TOUCH_MODE) && (!mouse_drag_mode)) {
-            is_selecting = true;
+            main_document_view->is_selecting = true;
             if (SINGLE_CLICK_SELECTS_WORDS) {
-                is_word_selecting = true;
+                main_document_view->is_word_selecting = true;
             }
         }
         else {
@@ -2447,7 +2447,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
     else {
         dv()->selection_end = abs_doc_pos;
 
-        is_selecting = false;
+        main_document_view->is_selecting = false;
         is_dragging = false;
 
         if (main_document_view->visible_object_resize_data) {
@@ -2475,13 +2475,13 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
             main_document_view->get_text_selection(last_mouse_down,
                 abs_doc_pos,
-                is_word_selecting,
+                main_document_view->is_word_selecting,
                 main_document_view->selected_character_rects,
                 dv()->selected_text);
-            selected_text_is_dirty = false;
+            main_document_view->selected_text_is_dirty = false;
 
             //opengl_widget->set_control_character_rect(control_rect);
-            is_word_selecting = false;
+            main_document_view->is_word_selecting = false;
         }
         else {
             // clear the potential drag candidate as we are clicking rather than dragging
@@ -2491,7 +2491,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
             if (!TOUCH_MODE) {
                 handle_click(click_pos);
-                clear_selected_text();
+                main_document_view->clear_selected_text();
             }
             else {
                 int distance = abs(click_pos.x - last_mouse_down_window_pos.x) + abs(click_pos.y - last_mouse_down_window_pos.y);
@@ -2790,10 +2790,10 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
             handle_left_click({ mevent->pos().x(), mevent->pos().y() }, false, is_shift_pressed, is_control_pressed, is_command_pressed, is_alt_pressed);
             if (is_select_highlight_mode && (main_document_view->selected_character_rects.size() > 0)) {
                 add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, select_highlight_type);
-                clear_selected_text();
+                main_document_view->clear_selected_text();
             }
             if (main_document_view->selected_character_rects.size() > 0) {
-                copy_to_clipboard(get_selected_text(), true);
+                copy_to_clipboard(main_document_view->get_selected_text(), true);
             }
         }
 
@@ -2832,7 +2832,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
                 && !(main_document_view && main_document_view->get_overview_page())) {
 
                 add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, select_highlight_type);
-                clear_selected_text();
+                main_document_view->clear_selected_text();
 
                 validate_render();
             }
@@ -2873,12 +2873,12 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
 
     if (!TOUCH_MODE) {
         if (mevent->button() == Qt::MouseButton::LeftButton) {
-            is_selecting = true;
+            main_document_view->is_selecting = true;
             if (SINGLE_CLICK_SELECTS_WORDS) {
-                is_word_selecting = false;
+                main_document_view->is_word_selecting = false;
             }
             else {
-                is_word_selecting = true;
+                main_document_view->is_word_selecting = true;
             }
         }
 
@@ -3830,15 +3830,15 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
             // lagacy number macros, now replaced with names ones
             command_parts[i].replace("%1", qfile_path);
             command_parts[i].replace("%2", qfile_name);
-            command_parts[i].replace("%3", QString::fromStdWString(get_selected_text()));
+            command_parts[i].replace("%3", QString::fromStdWString(main_document_view->get_selected_text()));
             command_parts[i].replace("%4", QString::number(get_current_page_number()));
             command_parts[i].replace("%5", QString::fromStdWString(text));
 
             // new named macros
             command_parts[i].replace("%{file_path}", qfile_path);
             command_parts[i].replace("%{file_name}", qfile_name);
-            command_parts[i].replace("%{selected_text}", QString::fromStdWString(get_selected_text()));
-            std::wstring current_selected_text = get_selected_text();
+            command_parts[i].replace("%{selected_text}", QString::fromStdWString(main_document_view->get_selected_text()));
+            std::wstring current_selected_text = main_document_view->get_selected_text();
 
             if (current_selected_text.size() > 0) {
                 auto selection_begin_document = main_document_view->get_document()->absolute_to_page_pos(dv()->selection_begin);
@@ -5183,18 +5183,6 @@ float CharacterAddress::focus_offset() {
     return doc->document_to_absolute_y(page, character->quad.ll.y);
 }
 
-void MainWidget::clear_selected_text() {
-    main_document_view->selected_character_rects.clear();
-    main_document_view->mark_end = true;
-    main_document_view->should_show_text_selection_marker = false;
-    dv()->selected_text.clear();
-    if (dv()->is_line_select_mode()) {
-        dv()->line_select_begin_data = {};
-        dv()->line_select_mode = false;
-    }
-    selected_text_is_dirty = false;
-
-}
 
 bool MainWidget::is_rect_visible(DocumentRect rect) {
     WindowRect window_rect = rect.to_window(main_document_view);
@@ -5745,7 +5733,7 @@ std::string MainWidget::add_highlight_to_current_document(AbsoluteDocumentPos se
 std::wstring MainWidget::handle_add_highlight(char symbol) {
     if (main_document_view->selected_character_rects.size() > 0) {
         std::string uuid = add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, symbol);
-        clear_selected_text();
+        main_document_view->clear_selected_text();
         return utf8_decode(uuid);
     }
     else {
@@ -6849,7 +6837,7 @@ void MainWidget::update_mobile_selection() {
         false,
         main_document_view->selected_character_rects,
         dv()->selected_text);
-    selected_text_is_dirty = false;
+    main_document_view->selected_text_is_dirty = false;
     validate_render();
 }
 
@@ -6940,7 +6928,7 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
     }
 
 
-    clear_selected_text();
+    main_document_view->clear_selected_text();
     clear_selection_indicators();
     main_document_view->clear_selected_object();
     clear_highlight_buttons();
@@ -8254,7 +8242,7 @@ void MainWidget::handle_add_marked_data() {
 
     main_document_view->get_text_selection(dv()->selection_begin,
         dv()->selection_end,
-        is_word_selecting,
+        main_document_view->is_word_selecting,
         local_selected_rects,
         local_selected_text);
     if (local_selected_rects.size() > 0) {
@@ -8541,127 +8529,12 @@ void MainWidget::handle_drawing_ui_visibilty() {
     }
 }
 
-void MainWidget::move_selection_end(bool expand, bool word) {
-    selected_text_is_dirty = true;
-    std::optional<AbsoluteRect> new_end_ = {};
-
-    if (expand) {
-        new_end_ = main_document_view->expand_selection(false, word);
-    }
-    else {
-        new_end_ = main_document_view->shrink_selection(false, word);
-    }
-
-    if (new_end_) {
-        AbsoluteRect new_end = new_end_.value();
-        dv()->selection_end = new_end.center();
-    }
-
-}
-
-
-void MainWidget::move_selection_begin(bool expand, bool word) {
-    selected_text_is_dirty = true;
-    std::optional<AbsoluteRect> new_begin_ = {};
-    if (expand) {
-        new_begin_ = main_document_view->expand_selection(true, word);
-    }
-    else {
-        new_begin_ = main_document_view->shrink_selection(true, word);
-    }
-
-    if (new_begin_) {
-        AbsoluteRect new_begin = new_begin_.value();
-        dv()->selection_begin = new_begin.center();
-    }
-}
-
-void MainWidget::handle_move_text_mark_forward(bool word) {
-    main_document_view->should_show_text_selection_marker = true;
-    selected_text_is_dirty = true;
-    if (main_document_view->mark_end) {
-        move_selection_end(true, word);
-    }
-    else {
-        move_selection_begin(false, word);
-    }
-}
 
 void MainWidget::handle_toggle_text_mark() {
     main_document_view->should_show_text_selection_marker = true;
     main_document_view->toggle_text_mark();
 }
 
-void MainWidget::handle_move_text_mark_backward(bool word) {
-    main_document_view->should_show_text_selection_marker = true;
-    selected_text_is_dirty = true;
-    if (main_document_view->mark_end) {
-        move_selection_end(false, word);
-    }
-    else {
-        move_selection_begin(true, word);
-    }
-}
-
-const std::wstring& MainWidget::get_selected_text() {
-    if (selected_text_is_dirty) {
-        std::deque<AbsoluteRect> dummy_rects;
-        main_document_view->get_text_selection(dv()->selection_begin,
-            dv()->selection_end,
-            is_word_selecting,
-            dummy_rects,
-            dv()->selected_text);
-
-        selected_text_is_dirty = false;
-    }
-
-    return dv()->selected_text;
-}
-
-void MainWidget::expand_selection_vertical(bool begin, bool below) {
-    const std::deque<AbsoluteRect>& scr = main_document_view->selected_character_rects;
-    if (scr.size() == 0) return;
-
-    int index = (begin) ? 0 : scr.size() - 1;
-
-    std::optional<AbsoluteRect> next_rect = doc()->get_rect_vertically(below, scr[index]);
-    if (next_rect) {
-        if (begin) {
-            dv()->selection_begin = next_rect->center();
-        }
-        else {
-            dv()->selection_end = next_rect->center();
-        }
-        main_document_view->get_text_selection(dv()->selection_begin,
-            dv()->selection_end,
-            is_word_selecting,
-            main_document_view->selected_character_rects,
-            dv()->selected_text);
-        selected_text_is_dirty = false;
-    }
-
-}
-
-void MainWidget::handle_move_text_mark_down() {
-    main_document_view->should_show_text_selection_marker = true;
-    if (main_document_view->mark_end) {
-        expand_selection_vertical(false, true);
-    }
-    else {
-        expand_selection_vertical(true, true);
-    }
-}
-
-void MainWidget::handle_move_text_mark_up() {
-    main_document_view->should_show_text_selection_marker = true;
-
-    if (main_document_view->mark_end) {
-        expand_selection_vertical(false, false);
-    }
-    else {
-        expand_selection_vertical(true, false);
-    }
-}
 
 void MainWidget::handle_goto_loaded_document() {
     // opens a list of currently loaded documents. This is basically sioyek's "tab" feature
@@ -9704,7 +9577,7 @@ QJsonObject MainWidget::get_json_state() {
 
         result["zoom_level"] = main_document_view->get_zoom_level();
 
-        result["selected_text"] = QString::fromStdWString(get_selected_text());
+        result["selected_text"] = QString::fromStdWString(main_document_view->get_selected_text());
         result["window_id"] = window_id;
         result["window_width"] = width();
         result["window_height"] = height();
@@ -11083,14 +10956,14 @@ bool MainWidget::handle_annotation_move_finish(){
         main_document_view->visible_object_move_data->handle_move_end(this);
         main_document_view->visible_object_move_data = {};
         is_dragging = false;
-        is_selecting = false;
+        main_document_view->is_selecting = false;
         return true;
     }
 
     if (main_document_view->freehand_drawing_move_data) {
         handle_freehand_drawing_move_finish();
         invalidate_render();
-        is_selecting = false;
+        main_document_view->is_selecting = false;
         return true;
     }
 

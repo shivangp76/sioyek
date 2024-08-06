@@ -569,23 +569,23 @@ TouchTextSelectionButtons::TouchTextSelectionButtons(MainWidget* parent) : QWidg
     this->setAttribute(Qt::WA_NoMousePropagation);
 
     QObject::connect(buttons_ui, &TouchCopyOptions::copyClicked, [&]() {
-        copy_to_clipboard(main_widget->get_selected_text());
+        copy_to_clipboard(main_widget->main_document_view->get_selected_text());
         main_widget->clear_selection_indicators();
         });
 
     QObject::connect(buttons_ui, &TouchCopyOptions::searchClicked, [&]() {
-        main_widget->perform_search(main_widget->get_selected_text(), false);
+        main_widget->perform_search(main_widget->main_document_view->get_selected_text(), false);
         main_widget->show_search_buttons();
         main_widget->clear_selection_indicators();
         });
 
     QObject::connect(buttons_ui, &TouchCopyOptions::scholarClicked, [&]() {
-        search_custom_engine(main_widget->get_selected_text(), L"https://scholar.google.com/scholar?&q=");
+        search_custom_engine(main_widget->main_document_view->get_selected_text(), L"https://scholar.google.com/scholar?&q=");
         main_widget->clear_selection_indicators();
         });
 
     QObject::connect(buttons_ui, &TouchCopyOptions::googleClicked, [&]() {
-        search_custom_engine(main_widget->get_selected_text(), L"https://www.google.com/search?q=");
+        search_custom_engine(main_widget->main_document_view->get_selected_text(), L"https://www.google.com/search?q=");
         main_widget->clear_selection_indicators();
         });
 
