@@ -5305,3 +5305,19 @@ QSizeF DocumentView::get_bookmark_text_size(const BookMark& bookmark) {
     QSizeF size = td.documentLayout()->documentSize();
     return size;
 }
+
+void DocumentView::focus_on_current_page_text(const std::wstring& text) {
+    if ((text.size() > 0) && (text[0] == '#')) {
+        std::wstringstream ss(text.substr(1, text.size() - 1));
+        std::wstring actual_text;
+        int page_number;
+        ss >> page_number;
+        std::getline(ss, actual_text);
+        focus_text(page_number, actual_text);
+    }
+    else {
+        int page_number = get_center_page_number();
+        focus_text(page_number, text);
+    }
+    //opengl_widget->set_should_draw_vertical_line(true);
+}

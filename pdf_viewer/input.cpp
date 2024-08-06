@@ -6434,7 +6434,7 @@ public:
 
     void perform() {
         std::wstring text_ = text.value();
-        widget->handle_focus_text(text_);
+        widget->main_document_view->focus_on_current_page_text(text_);
     }
 
     std::string text_requirement_name() {

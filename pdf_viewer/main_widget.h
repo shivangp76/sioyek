@@ -593,7 +593,6 @@ public:
     void handle_keys_user_all();
     void handle_prefs_user_all();
     void handle_portal_to_overview();
-    void handle_focus_text(const std::wstring& text);
     void handle_goto_window();
     void handle_toggle_smooth_scroll_mode();
     void handle_overview_to_portal();

@@ -633,6 +633,7 @@ public:
     void start_drawing();
     void handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute);
     QSizeF get_bookmark_text_size(const BookMark& bookmark);
+    void focus_on_current_page_text(const std::wstring& text);
 };
 
 struct CachedScratchpadPixmapData {

@@ -6370,22 +6370,6 @@ void MainWidget::handle_portal_to_overview() {
     }
 }
 
-void MainWidget::handle_focus_text(const std::wstring& text) {
-    if ((text.size() > 0) && (text[0] == '#')) {
-        std::wstringstream ss(text.substr(1, text.size() - 1));
-        std::wstring actual_text;
-        int page_number;
-        ss >> page_number;
-        std::getline(ss, actual_text);
-        main_document_view->focus_text(page_number, actual_text);
-    }
-    else {
-        int page_number = main_document_view->get_center_page_number();
-        main_document_view->focus_text(page_number, text);
-    }
-    //opengl_widget->set_should_draw_vertical_line(true);
-}
-
 void MainWidget::handle_goto_window() {
     std::vector<std::wstring> window_names;
     std::vector<int> window_ids;
@@ -7291,42 +7275,6 @@ void MainWidget::show_context_menu(QString menu_string) {
 
     auto menu = parse_menu_string(this, "menu", menu_string);
     show_recursive_context_menu(std::move(menu));
-    //QMenu contextMenu("Context menu", this);
-    //QStringList command_names;
-
-    //if (menu_string.size() == 0) {
-    //    command_names = QString::fromStdWString(CONTEXT_MENU_ITEMS).split('|');
-    //}
-    //else {
-    //    command_names = menu_string.split('|');
-    //}
-
-    //std::vector<QAction*> actions;
-    ////original_cursor_pos = QCursor::pos();
-    //context_menu_right_click_pos = QCursor::pos();
-
-    //for (auto command_name : command_names) {
-
-    //    std::string human_readable_name = command_name.toStdString();
-    //    if (command_manager->command_human_readable_names.find(command_name.toStdString()) != command_manager->command_human_readable_names.end()) {
-    //        human_readable_name = command_manager->command_human_readable_names[command_name.toStdString()];
-    //    }
-
-    //    QAction* action = new QAction(QString::fromStdString(human_readable_name), this);
-    //    actions.push_back(action);
-    //    connect(action, &QAction::triggered, [&, command_name]() {
-    //        execute_macro_if_enabled(command_name.toStdWString());
-    //        invalidate_render();
-    //    });
-    //    contextMenu.addAction(action);
-    //}
-
-    //contextMenu.exec(QCursor::pos());
-    //context_menu_right_click_pos = {};
-
-    //for (QAction* action : actions) {
-    //    delete action;
-    //}
 }
 
 QMenu* MainWidget::get_menu_from_items(std::unique_ptr<MenuItems> items, QWidget* parent) {
@@ -7334,8 +7282,6 @@ QMenu* MainWidget::get_menu_from_items(std::unique_ptr<MenuItems> items, QWidget
     QStringList command_names;
 
     std::vector<QAction*> actions;
-    context_menu_right_click_pos = QCursor::pos();
-
     for (auto&& subitem : items->items) {
 
         if (std::holds_alternative<std::unique_ptr<Command>>(subitem)) {
