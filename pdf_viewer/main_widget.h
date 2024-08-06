@@ -27,8 +27,6 @@
 #include "path.h"
 #include "background_tasks.h"
 
-extern float VERTICAL_MOVE_AMOUNT;
-extern float HORIZONTAL_MOVE_AMOUNT;
 
 class SelectionIndicator;
 class QLocalSocket;
@@ -428,7 +426,6 @@ public:
 
     void handle_close_event();
     void return_to_last_visual_mark();
-    bool is_visual_mark_mode();
     void reload(bool flush = true);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
 
@@ -476,16 +473,10 @@ public:
     void validate_render();
     void validate_ui();
     void zoom(WindowPos pos, float zoom_factor, bool zoom_in);
-    bool move_document(float dx, float dy, bool force = false);
-    void move_document_screens(int num_screens);
     // void focus_text(int page, const std::wstring& text);
     // int get_page_intersecting_rect_index(DocumentRect rect);
     // std::optional<AbsoluteRect> get_page_intersecting_rect(DocumentRect rect);
     // void focus_rect(DocumentRect rect);
-    std::optional<float> move_visual_mark_next_get_offset();
-
-    void move_visual_mark_next();
-    void move_visual_mark_prev();
     AbsoluteRect move_visual_mark(int offset);
     void on_config_file_changed(ConfigManager* new_config);
     void toggle_mouse_drag_mode();
@@ -541,8 +532,6 @@ public:
 
     bool is_rotated();
     void on_new_paper_added(const std::wstring& file_path);
-    void scroll_overview(int vertical_amount, int horizontal_amount = 0);
-    void scroll_overview_vertical(float amount);
     int get_current_page_number() const;
     std::wstring get_current_page_label();
     void goto_page_with_page_number(int page_number);
@@ -561,7 +550,6 @@ public:
     void push_state(bool update = true);
     void toggle_scrollbar();
     void update_scrollbar();
-    void handle_portal_overview_update();
     void goto_overview();
     bool is_rect_visible(DocumentRect rect);
     void set_mark_in_current_location(char symbol);
@@ -574,8 +562,6 @@ public:
     void move_visual_mark_command(int amount);
     void handle_goto_loaded_document();
 
-    void handle_vertical_move(int amount);
-    void handle_horizontal_move(int amount);
     void handle_goto_portal_list();
     void handle_goto_bookmark();
     void handle_goto_bookmark_global();
@@ -585,7 +571,6 @@ public:
     void handle_goto_toc();
     void handle_open_prev_doc();
     void handle_open_all_docs();
-    void handle_move_screen(int amount);
     MainWidget* handle_new_window();
     void handle_open_link(const std::wstring& text, bool copy = false);
     void handle_overview_link(const std::wstring& text);
@@ -906,8 +891,6 @@ public:
     void initialize_helper();
     void hide_command_line_edit();
     void deselect_document_indices();
-    void zoom_in_overview();
-    void zoom_out_overview();
     Q_INVOKABLE MainWidget* get_widget_with_id(int window_id);
     Q_INVOKABLE QString run_macro_on_main_thread(QString macro_string, QStringList args, bool wait_for_result=true, int target_window_id=-1);
     Q_INVOKABLE QByteArray perform_network_request(QString url, QString method = "get", QString json_data = "");

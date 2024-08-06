@@ -634,6 +634,19 @@ public:
     void handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute);
     QSizeF get_bookmark_text_size(const BookMark& bookmark);
     void focus_on_current_page_text(const std::wstring& text);
+    void handle_horizontal_move(int amount);
+    void handle_portal_overview_update();
+    void scroll_overview(int vertical_amount, int horizontal_amount=0);
+    void scroll_overview_vertical(float amount);
+    bool move_document(float dx, float dy, bool force=false);
+    void move_document_screens(int num_screens);
+    void handle_vertical_move(int amount);
+    void move_ruler(int amount);
+    void return_to_last_visual_mark();
+    void move_visual_mark_next();
+    void move_visual_mark_prev();
+    std::optional<float> move_visual_mark_next_get_offset();
+    void handle_move_screen(int amount);
 };
 
 struct CachedScratchpadPixmapData {

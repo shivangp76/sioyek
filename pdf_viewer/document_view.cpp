@@ -35,6 +35,11 @@ extern bool IGNORE_WHITESPACE_IN_PRESENTATION_MODE;
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
+extern float VERTICAL_MOVE_AMOUNT;
+extern float HORIZONTAL_MOVE_AMOUNT;
+extern float TOUCHPAD_SENSITIVITY;
+extern float SCROLL_VIEW_SENSITIVITY;
+extern bool AUTOCENTER_VISUAL_SCROLL;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -2725,14 +2730,6 @@ void DocumentView::zoom_overview(float scale){
     }
 }
 
-void DocumentView::zoom_in_overview(){
-    zoom_overview(ZOOM_INC_FACTOR);
-}
-
-void DocumentView::zoom_out_overview(){
-    zoom_overview(1.0f / ZOOM_INC_FACTOR);
-}
-
 NormalizedWindowRect DocumentView::get_overview_rect(std::optional<OverviewState> maybe_overview) {
     if (maybe_overview.has_value() && maybe_overview->source_rect.has_value()) {
         return maybe_overview->source_rect->to_window_normalized(this);
@@ -5320,4 +5317,236 @@ void DocumentView::focus_on_current_page_text(const std::wstring& text) {
         focus_text(page_number, text);
     }
     //opengl_widget->set_should_draw_vertical_line(true);
+}
+
+void DocumentView::handle_horizontal_move(int amount) {
+    if (get_overview_page()) {
+        return;
+    }
+    else if (is_pinned_portal_selected()) {
+        move_pinned_portal(amount * 72 * VERTICAL_MOVE_AMOUNT, 0);
+    }
+    else if (is_presentation_mode()) {
+        move_pages(-amount);
+    }
+    else {
+        move(72.0f * amount * HORIZONTAL_MOVE_AMOUNT, 0.0f);
+        last_smart_fit_page = {};
+    }
+}
+
+void DocumentView::handle_portal_overview_update() {
+    std::optional<OverviewState> current_state_ = get_overview_page();
+    if (current_state_) {
+        OverviewState current_state = current_state_.value();
+        if (current_state.source_portal.has_value()) {
+            OpenedBookState link_new_state = current_state.source_portal->dst.book_state;
+            link_new_state.offset_y = current_state.absolute_offset_y;
+            link_new_state.offset_x = current_state.absolute_offset_x;
+            link_new_state.zoom_level = current_state.zoom_level;
+            schedule_update_link_with_opened_book_state(current_state.source_portal.value(), link_new_state);
+        }
+    }
+}
+
+void DocumentView::zoom_in_overview(){
+    zoom_overview(ZOOM_INC_FACTOR);
+    handle_portal_overview_update();
+}
+
+void DocumentView::zoom_out_overview(){
+    zoom_overview(1.0f / ZOOM_INC_FACTOR);
+    handle_portal_overview_update();
+}
+
+
+void DocumentView::scroll_overview(int vertical_amount, int horizontal_amount) {
+    float vertical_move_amount = VERTICAL_MOVE_AMOUNT * TOUCHPAD_SENSITIVITY * SCROLL_VIEW_SENSITIVITY;
+    OverviewState state = get_overview_page().value();
+    state.absolute_offset_y += 36.0f * vertical_move_amount * vertical_amount;
+    state.absolute_offset_x += 36.0f * vertical_move_amount * horizontal_amount;
+    set_overview_page(state);
+    handle_portal_overview_update();
+}
+
+void DocumentView::scroll_overview_vertical(float amount){
+    OverviewState state = get_overview_page().value();
+    state.absolute_offset_y += amount;
+    set_overview_page(state);
+    handle_portal_overview_update();
+}
+
+bool DocumentView::move_document(float dx, float dy, bool force) {
+    if (current_document) {
+        //return main_document_view->move(dx, dy, force);
+        return move(dx, dy, force);
+    }
+    return false;
+}
+
+void DocumentView::move_document_screens(int num_screens) {
+    int view_height = get_view_height();
+    float move_amount = num_screens * view_height * MOVE_SCREEN_PERCENTAGE;
+    move_document(0, move_amount);
+}
+
+void DocumentView::handle_vertical_move(int amount) {
+    if (get_overview_page()) {
+        scroll_overview(amount);
+    }
+    else if (is_presentation_mode()) {
+        move_pages(amount);
+    }
+    else {
+        move_document(0.0f, 72.0f * amount * VERTICAL_MOVE_AMOUNT);
+    }
+}
+
+void DocumentView::move_ruler(int amount){
+    if (get_overview_page()) {
+        if (amount > 0) {
+            scroll_overview(amount);
+        }
+        else {
+            scroll_overview(amount);
+        }
+    }
+    else if (is_ruler_mode()) {
+        move_visual_mark(amount);
+    }
+    else if (is_pinned_portal_selected()) {
+        move_pinned_portal(0, amount * 72 * VERTICAL_MOVE_AMOUNT);
+    }
+    else {
+        move_document(0.0f, 72.0f * amount * VERTICAL_MOVE_AMOUNT);
+    }
+    if (AUTOCENTER_VISUAL_SCROLL) {
+        goto_vertical_line_pos();
+    }
+}
+
+
+void DocumentView::move_visual_mark_next() {
+    clear_underline();
+
+    int prev_line_index = get_line_index();
+    int vertical_line_page = get_vertical_line_page();
+    int current_line_index, current_page;
+
+    AbsoluteRect current_ruler_rect_absolute = doc()->
+        get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page);
+
+    NormalizedWindowRect current_ruler_rect = current_ruler_rect_absolute.to_window_normalized(this);
+    //current_ruler_rect = main_document_view->absolute_to_window_rect(current_ruler_rect);
+
+    if (current_ruler_rect.x1 <= 1.0f) {
+        NormalizedWindowRect new_ruler_rect = move_visual_mark(1).to_window_normalized(this);
+        if (new_ruler_rect.x0 < -1) {
+            float offset = (new_ruler_rect.x0 + 0.9f) * view_width / 2;
+            move_document(-offset, 0);
+        }
+
+        if (new_ruler_rect.x0 > 1) {
+            float offset = (new_ruler_rect.x0 - 0.1f) * view_width / 2;
+            move_document(-offset, 0);
+        }
+
+        // if the new rect can fit entirely in the screen yet it is out of bounds,
+        // move such that it is contained in the screen
+        if (new_ruler_rect.x1 > 1 && (new_ruler_rect.x1 - new_ruler_rect.x0) < 1.9f) {
+            float offset = (new_ruler_rect.x1 - 0.9f) * view_width / 2;
+            move_document(-offset, 0);
+        }
+
+    }
+    else {
+
+        WindowPos pos;
+
+        pos.x = view_width;
+        pos.y = view_height - static_cast<int>((current_ruler_rect.y1 + 1) * view_height / 2);
+
+        AbsoluteDocumentPos abspos = window_to_absolute_document_pos(pos);
+
+        float move_amount = -(current_ruler_rect.x1 - 0.9f) / 2.0f * get_view_width();
+        if (std::abs(move_amount) > static_cast<float>(view_width)){
+            move_document(-static_cast<float>(view_width), 0);
+        }
+        else{
+            move_document(move_amount, 0);
+        }
+
+    }
+    std::optional<float> next_offset = move_visual_mark_next_get_offset();
+    if (next_offset){
+        int prev_line_index = get_line_index();
+        AbsoluteRect cr = doc()->
+            get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page);
+
+        WindowPos pos;
+
+        pos.x = view_width;
+        pos.y = view_height - static_cast<int>((cr.y1 + 1) * view_height / 2);
+
+        AbsoluteDocumentPos abspos = window_to_absolute_document_pos(pos);
+
+        AbsoluteDocumentPos underline_pos;
+        underline_pos.y = cr.y1;
+        underline_pos.x = abspos.x - get_view_width() / get_zoom_level() - next_offset.value() / get_zoom_level();
+        set_underline(underline_pos);
+    }
+}
+
+std::optional<float> DocumentView::move_visual_mark_next_get_offset(){
+    int prev_line_index = get_line_index();
+    int vertical_line_page = get_vertical_line_page();
+    int current_line_index, current_page;
+    AbsoluteRect current_ruler_rect_absolute = doc()->
+        get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page);
+
+    NormalizedWindowRect current_ruler_rect = current_ruler_rect_absolute.to_window_normalized(this);
+
+    if (current_ruler_rect.x1 > 1.0f) {
+        float move_amount = -(current_ruler_rect.x1 - 0.9f) / 2.0f * get_view_width();
+        if (std::abs(move_amount) > static_cast<float>(view_width)){
+            //return -static_cast<float>(main_window_width);
+            return {};
+        }
+        else{
+            return move_amount;
+        }
+    }
+    return {};
+}
+
+void DocumentView::move_visual_mark_prev() {
+    int prev_line_index = get_line_index();
+    int vertical_line_page = get_vertical_line_page();
+    int current_line_index, current_page;
+
+    NormalizedWindowRect current_ruler_rect = doc()->
+        get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page)
+        .to_window_normalized(this);
+    //current_ruler_rect = main_document_view->absolute_to_window_rect(current_ruler_rect);
+
+    if (current_ruler_rect.x0 >= -1.0f) {
+        NormalizedWindowRect new_ruler_rect = move_visual_mark(-1).to_window_normalized(this);
+        if (new_ruler_rect.x1 > 1) {
+            float offset = (new_ruler_rect.x1 - 0.9f) * view_width / 2;
+            move_document(-offset, 0); //todo: fix this
+        }
+
+    }
+    else {
+        move_document(static_cast<float>(view_width), 0);
+    }
+}
+
+void DocumentView::handle_move_screen(int amount) {
+    if (!is_presentation_mode()) {
+        move_document_screens(amount);
+    }
+    else {
+        move_pages(amount);
+    }
 }

@@ -161,6 +161,9 @@ extern float SMALL_PIXMAP_SCALE;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
 
+extern float VERTICAL_MOVE_AMOUNT;
+extern float HORIZONTAL_MOVE_AMOUNT;
+
 extern std::wstring TITLEBAR_FORMAT;
 extern Path standard_data_path;
 extern Path default_config_path;
@@ -625,10 +628,10 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             for (int i = 0; i < num_next; i++) {
 
                 if (was_last_mouse_down_in_ruler_next_rect) {
-                    move_visual_mark_next();
+                    main_document_view->move_visual_mark_next();
                 }
                 else {
-                    move_visual_mark_prev();
+                    main_document_view->move_visual_mark_prev();
                 }
 
                 invalidate_render();
@@ -1575,22 +1578,7 @@ void MainWidget::validate_ui() {
     is_ui_invalidated = false;
 }
 
-bool MainWidget::move_document(float dx, float dy, bool force) {
-    if (main_document_view_has_document()) {
-        //return main_document_view->move(dx, dy, force);
-        return dv()->move(dx, dy, force);
-    }
-    return false;
-}
-
-void MainWidget::move_document_screens(int num_screens) {
-    int view_height = opengl_widget->height();
-    float move_amount = num_screens * view_height * MOVE_SCREEN_PERCENTAGE;
-    move_document(0, move_amount);
-}
-
 void MainWidget::on_config_file_changed(ConfigManager* new_config) {
-
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
 
@@ -2175,28 +2163,28 @@ bool MainWidget::handle_left_press_touch_mode(WindowPos click_pos) {
 
     NormalizedWindowPos nwp = main_document_view->window_to_normalized_window_pos(click_pos);
 
-    if (is_visual_mark_mode()) {
+    if (main_document_view->is_ruler_mode()) {
         if (screen()->orientation() == Qt::PortraitOrientation) {
             if (PORTRAIT_VISUAL_MARK_NEXT.enabled && PORTRAIT_VISUAL_MARK_NEXT.contains(nwp)) {
-                move_visual_mark_next();
+                main_document_view->move_visual_mark_next();
                 was_last_mouse_down_in_ruler_next_rect = true;
                 ruler_moving_last_window_pos = click_pos;
 
             }
             else if (PORTRAIT_VISUAL_MARK_PREV.enabled && PORTRAIT_VISUAL_MARK_PREV.contains(nwp)) {
-                move_visual_mark_prev();
+                main_document_view->move_visual_mark_prev();
                 was_last_mouse_down_in_ruler_prev_rect = true;
                 ruler_moving_last_window_pos = click_pos;
             }
         }
         else {
             if (LANDSCAPE_VISUAL_MARK_NEXT.enabled && LANDSCAPE_VISUAL_MARK_NEXT.contains(nwp)) {
-                move_visual_mark_next();
+                main_document_view->move_visual_mark_next();
                 was_last_mouse_down_in_ruler_next_rect = true;
                 ruler_moving_last_window_pos = click_pos;
             }
             else if (LANDSCAPE_VISUAL_MARK_PREV.enabled && LANDSCAPE_VISUAL_MARK_PREV.contains(nwp)) {
-                move_visual_mark_prev();
+                main_document_view->move_visual_mark_prev();
                 was_last_mouse_down_in_ruler_prev_rect = true;
                 ruler_moving_last_window_pos = click_pos;
             }
@@ -3044,18 +3032,18 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
             if (main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
                 if (is_touchpad){
                     if (wevent->angleDelta().y() > 0) {
-                        scroll_overview_vertical(-72.0f * vertical_move_amount * num_repeats_f_y);
+                        main_document_view->scroll_overview_vertical(-72.0f * vertical_move_amount * num_repeats_f_y);
                     }
                     if (wevent->angleDelta().y() < 0) {
-                        scroll_overview_vertical(72.0f * vertical_move_amount * num_repeats_f_y);
+                        main_document_view->scroll_overview_vertical(72.0f * vertical_move_amount * num_repeats_f_y);
                     }
                 }
                 else{
                     if (wevent->angleDelta().y() > 0) {
-                        scroll_overview(-1);
+                        main_document_view->scroll_overview(-1);
                     }
                     if (wevent->angleDelta().y() < 0) {
-                        scroll_overview(1);
+                        main_document_view->scroll_overview(1);
                     }
 
                 }
@@ -3094,7 +3082,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     }
                     else {
                         /* move_visual_mark_command(-num_repeats); */
-                        move_visual_mark_prev();
+                        main_document_view->move_visual_mark_prev();
                         validate_render();
                         return;
                     }
@@ -3121,7 +3109,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     }
                     else {
                         /* move_visual_mark_command(num_repeats); */
-                        move_visual_mark_next();
+                        main_document_view->move_visual_mark_next();
                         validate_render();
                         return;
                     }
@@ -3153,10 +3141,10 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     if (is_control_pressed) {
         if (main_document_view->get_overview_page() && main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
             if (wevent->angleDelta().y() > 0) {
-                zoom_in_overview();
+                main_document_view->zoom_in_overview();
             }
             else if (wevent->angleDelta().y() < 0) {
-                zoom_out_overview();
+                main_document_view->zoom_out_overview();
             }
             validate_render();
             return;
@@ -3908,7 +3896,7 @@ void MainWidget::move_vertical(float amount) {
     }
 
     if (!smooth_scroll_mode) {
-        move_document(0, amount);
+        main_document_view->move_document(0, amount);
         validate_render();
     }
     else {
@@ -3940,7 +3928,7 @@ void MainWidget::zoom(WindowPos pos, float zoom_factor, bool zoom_in) {
 
 bool MainWidget::move_horizontal(float amount, bool force) {
     if (!horizontal_scroll_locked) {
-        bool ret = move_document(amount, 0, force);
+        bool ret = main_document_view->move_document(amount, 0, force);
         validate_render();
         return ret;
     }
@@ -4477,123 +4465,6 @@ void MainWidget::changeEvent(QEvent* event) {
     QWidget::changeEvent(event);
 }
 
-std::optional<float> MainWidget::move_visual_mark_next_get_offset(){
-    int prev_line_index = main_document_view->get_line_index();
-    int vertical_line_page = main_document_view->get_vertical_line_page();
-    int current_line_index, current_page;
-    AbsoluteRect current_ruler_rect_absolute = doc()->
-        get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page);
-
-    NormalizedWindowRect current_ruler_rect = current_ruler_rect_absolute.to_window_normalized(main_document_view);
-
-    if (current_ruler_rect.x1 > 1.0f) {
-        float move_amount = -(current_ruler_rect.x1 - 0.9f) / 2.0f * main_document_view->get_view_width();
-        if (std::abs(move_amount) > static_cast<float>(main_window_width)){
-            //return -static_cast<float>(main_window_width);
-            return {};
-        }
-        else{
-            return move_amount;
-        }
-    }
-    return {};
-}
-
-void MainWidget::move_visual_mark_next() {
-    main_document_view->clear_underline();
-
-    int prev_line_index = main_document_view->get_line_index();
-    int vertical_line_page = main_document_view->get_vertical_line_page();
-    int current_line_index, current_page;
-
-    AbsoluteRect current_ruler_rect_absolute = doc()->
-        get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page);
-
-    NormalizedWindowRect current_ruler_rect = current_ruler_rect_absolute.to_window_normalized(main_document_view);
-    //current_ruler_rect = main_document_view->absolute_to_window_rect(current_ruler_rect);
-
-    if (current_ruler_rect.x1 <= 1.0f) {
-        NormalizedWindowRect new_ruler_rect = move_visual_mark(1).to_window_normalized(main_document_view);
-        if (new_ruler_rect.x0 < -1) {
-            float offset = (new_ruler_rect.x0 + 0.9f) * main_window_width / 2;
-            move_horizontal(-offset);
-        }
-
-        if (new_ruler_rect.x0 > 1) {
-            float offset = (new_ruler_rect.x0 - 0.1f) * main_window_width / 2;
-            move_horizontal(-offset);
-        }
-
-        // if the new rect can fit entirely in the screen yet it is out of bounds,
-        // move such that it is contained in the screen
-        if (new_ruler_rect.x1 > 1 && (new_ruler_rect.x1 - new_ruler_rect.x0) < 1.9f) {
-            float offset = (new_ruler_rect.x1 - 0.9f) * main_window_width / 2;
-            move_horizontal(-offset);
-        }
-
-    }
-    else {
-
-        WindowPos pos;
-
-        pos.x = main_window_width;
-        pos.y = main_window_height - static_cast<int>((current_ruler_rect.y1 + 1) * main_window_height / 2);
-
-        AbsoluteDocumentPos abspos = main_document_view->window_to_absolute_document_pos(pos);
-
-        float move_amount = -(current_ruler_rect.x1 - 0.9f) / 2.0f * main_document_view->get_view_width();
-        if (std::abs(move_amount) > static_cast<float>(main_window_width)){
-            move_horizontal(-static_cast<float>(main_window_width));
-        }
-        else{
-            move_horizontal(move_amount);
-        }
-
-    }
-    std::optional<float> next_offset = move_visual_mark_next_get_offset();
-    if (next_offset){
-        int prev_line_index = main_document_view->get_line_index();
-        AbsoluteRect cr = doc()->
-            get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page);
-
-        WindowPos pos;
-
-        pos.x = main_window_width;
-        pos.y = main_window_height - static_cast<int>((cr.y1 + 1) * main_window_height / 2);
-
-        AbsoluteDocumentPos abspos = main_document_view->window_to_absolute_document_pos(pos);
-
-        AbsoluteDocumentPos underline_pos;
-        underline_pos.y = cr.y1;
-        underline_pos.x = abspos.x - main_document_view->get_view_width() / main_document_view->get_zoom_level() - next_offset.value() / main_document_view->get_zoom_level();
-        main_document_view->set_underline(underline_pos);
-        /* opengl_widget->set_underline() */
-    }
-}
-
-void MainWidget::move_visual_mark_prev() {
-    int prev_line_index = main_document_view->get_line_index();
-    int vertical_line_page = main_document_view->get_vertical_line_page();
-    int current_line_index, current_page;
-
-    NormalizedWindowRect current_ruler_rect = doc()->
-        get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, 0, true, &current_line_index, &current_page)
-        .to_window_normalized(main_document_view);
-    //current_ruler_rect = main_document_view->absolute_to_window_rect(current_ruler_rect);
-
-    if (current_ruler_rect.x0 >= -1.0f) {
-        NormalizedWindowRect new_ruler_rect = move_visual_mark(-1).to_window_normalized(main_document_view);
-        if (new_ruler_rect.x1 > 1) {
-            float offset = (new_ruler_rect.x1 - 0.9f) * main_window_width / 2;
-            move_horizontal(-offset); //todo: fix this
-        }
-
-    }
-    else {
-        move_horizontal(static_cast<float>(main_window_width));
-    }
-}
-
 AbsoluteRect MainWidget::move_visual_mark(int offset) {
     AbsoluteRect ruler_rect = main_document_view->move_visual_mark(offset);
 
@@ -4607,26 +4478,6 @@ AbsoluteRect MainWidget::move_visual_mark(int offset) {
     return ruler_rect;
 }
 
-bool MainWidget::is_visual_mark_mode() {
-    return main_document_view->is_ruler_mode();
-    //return opengl_widget->get_should_draw_vertical_line();
-}
-
-void MainWidget::scroll_overview(int vertical_amount, int horizontal_amount) {
-    float vertical_move_amount = VERTICAL_MOVE_AMOUNT * TOUCHPAD_SENSITIVITY * SCROLL_VIEW_SENSITIVITY;
-    OverviewState state = main_document_view->get_overview_page().value();
-    state.absolute_offset_y += 36.0f * vertical_move_amount * vertical_amount;
-    state.absolute_offset_x += 36.0f * vertical_move_amount * horizontal_amount;
-    set_overview_page(state, false);
-    handle_portal_overview_update();
-}
-
-void MainWidget::scroll_overview_vertical(float amount){
-    OverviewState state = main_document_view->get_overview_page().value();
-    state.absolute_offset_y += amount;
-    set_overview_page(state, false);
-    handle_portal_overview_update();
-}
 
 std::wstring MainWidget::get_current_page_label() {
     return doc()->get_page_label(main_document_view->get_center_page_number());
@@ -4967,19 +4818,6 @@ void MainWidget::update_scrollbar() {
     }
 }
 
-void MainWidget::handle_portal_overview_update() {
-    std::optional<OverviewState> current_state_ = main_document_view->get_overview_page();
-    if (current_state_) {
-        OverviewState current_state = current_state_.value();
-        if (current_state.source_portal.has_value()) {
-            OpenedBookState link_new_state = current_state.source_portal->dst.book_state;
-            link_new_state.offset_y = current_state.absolute_offset_y;
-            link_new_state.offset_x = current_state.absolute_offset_x;
-            link_new_state.zoom_level = current_state.zoom_level;
-            main_document_view->schedule_update_link_with_opened_book_state(current_state.source_portal.value(), link_new_state);
-        }
-    }
-}
 
 void MainWidget::goto_overview() {
     if (main_document_view->get_overview_page()) {
@@ -5383,59 +5221,8 @@ void MainWidget::portal_to_definition() {
 }
 
 void MainWidget::move_visual_mark_command(int amount) {
-
-    if (main_document_view->get_overview_page()) {
-        if (amount > 0) {
-            scroll_overview(amount);
-        }
-        else {
-            scroll_overview(amount);
-        }
-    }
-    else if (is_visual_mark_mode()) {
-        move_visual_mark(amount);
-    }
-    else if (main_document_view->is_pinned_portal_selected()) {
-        main_document_view->move_pinned_portal(0, amount * 72 * VERTICAL_MOVE_AMOUNT);
-    }
-    else {
-        move_document(0.0f, 72.0f * amount * VERTICAL_MOVE_AMOUNT);
-    }
-    if (AUTOCENTER_VISUAL_SCROLL) {
-        return_to_last_visual_mark();
-    }
-    //}
-
+    main_document_view->move_ruler(amount);
     validate_render();
-}
-
-void MainWidget::handle_vertical_move(int amount) {
-    if (main_document_view->get_overview_page()) {
-        scroll_overview(amount);
-    }
-    else if (main_document_view->is_presentation_mode()) {
-        main_document_view->move_pages(amount);
-    }
-    else {
-        move_document(0.0f, 72.0f * amount * VERTICAL_MOVE_AMOUNT);
-    }
-}
-
-void MainWidget::handle_horizontal_move(int amount) {
-    if (main_document_view->get_overview_page()) {
-        return;
-    }
-    else if (main_document_view->is_pinned_portal_selected()) {
-        main_document_view->move_pinned_portal(amount * 72 * VERTICAL_MOVE_AMOUNT, 0);
-    }
-    else if (main_document_view->is_presentation_mode()) {
-        main_document_view->move_pages(-amount);
-        validate_render();
-    }
-    else {
-        dv()->move(72.0f * amount * HORIZONTAL_MOVE_AMOUNT, 0.0f);
-        dv()->last_smart_fit_page = {};
-    }
 }
 
 void MainWidget::show_current_widget() {
@@ -6191,15 +5978,6 @@ void MainWidget::handle_open_prev_doc() {
 
 }
 
-void MainWidget::handle_move_screen(int amount) {
-    if (!main_document_view->is_presentation_mode()) {
-        move_document_screens(amount);
-    }
-    else {
-        main_document_view->move_pages(amount);
-    }
-}
-
 MainWidget* MainWidget::handle_new_window() {
     MainWidget* new_widget = new MainWidget(mupdf_context,
         pdf_renderer,
@@ -6654,12 +6432,12 @@ bool MainWidget::event(QEvent* event) {
                         invalidate_render();
                         return true;
                     }
-                    if ((!is_visual_mark_mode()) && is_in_visual_mark_next_rect(window_pos)) {
+                    if ((!main_document_view->is_ruler_mode()) && is_in_visual_mark_next_rect(window_pos)) {
                         if (execute_macro_if_enabled(VISUAL_MARK_NEXT_HOLD_COMMAND)) {
                             return true;
                         }
                     }
-                    if ((!is_visual_mark_mode()) && is_in_visual_mark_prev_rect(window_pos)) {
+                    if ((!main_document_view->is_ruler_mode()) && is_in_visual_mark_prev_rect(window_pos)) {
                         if (execute_macro_if_enabled(VISUAL_MARK_PREV_HOLD_COMMAND)) {
                             return true;
                         }
@@ -6869,12 +6647,12 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
         }
     }
 
-    if ((!is_visual_mark_mode()) && is_in_visual_mark_next_rect(click_pos)) {
+    if ((!main_document_view->is_ruler_mode()) && is_in_visual_mark_next_rect(click_pos)) {
         if (execute_macro_if_enabled(VISUAL_MARK_NEXT_TAP_COMMAND)) {
             return true;
         }
     }
-    if ((!is_visual_mark_mode()) && is_in_visual_mark_prev_rect(click_pos)) {
+    if ((!main_document_view->is_ruler_mode()) && is_in_visual_mark_prev_rect(click_pos)) {
         if (execute_macro_if_enabled(VISUAL_MARK_PREV_TAP_COMMAND)) {
             return true;
         }
@@ -6919,7 +6697,7 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
 
 void MainWidget::android_handle_visual_mode() {
     //	last_hold_point
-    if (is_visual_mark_mode()) {
+    if (main_document_view->is_ruler_mode()) {
         //opengl_widget->set_should_draw_vertical_line(false);
         main_document_view->exit_ruler_mode();
         main_document_view->clear_underline();
@@ -7000,7 +6778,7 @@ bool MainWidget::handle_double_tap(QPoint pos) {
     position.x = pos.x();
     position.y = pos.y();
 
-    if (is_visual_mark_mode()) {
+    if (main_document_view->is_ruler_mode()) {
         NormalizedWindowPos nmp = main_document_view->window_to_normalized_window_pos(position);
         // don't want to accidentally smart jump when quickly moving the ruler
         if (screen()->orientation() == Qt::PortraitOrientation) {
@@ -8218,7 +7996,7 @@ void MainWidget::handle_toggle_drawing_mask(char symbol) {
 
 std::string MainWidget::get_current_mode_string() {
     std::string res;
-    res += (is_visual_mark_mode()) ? "r" : "R";
+    res += (main_document_view->is_ruler_mode()) ? "r" : "R";
     res += (synctex_mode) ? "x" : "X";
     res += (is_select_highlight_mode) ? "h" : "H";
     res += (freehand_drawing_mode == DrawingMode::Drawing) ? "q" : "Q";
@@ -8482,7 +8260,7 @@ TextToSpeechHandler* MainWidget::get_tts() {
             if (last_focused_rect.has_value() && (last_focused_rect.value() == line_being_read_rect)) {
 
                 if (char_being_read_window_rect.x0 > 1) {
-                    move_visual_mark_next();
+                    main_document_view->move_visual_mark_next();
                 }
             }
 
@@ -9982,16 +9760,6 @@ void MainWidget::deselect_document_indices(){
     main_document_view->clear_selected_object();
 }
 
-void MainWidget::zoom_in_overview(){
-    main_document_view->zoom_in_overview();
-    handle_portal_overview_update();
-}
-
-void MainWidget::zoom_out_overview(){
-    main_document_view->zoom_out_overview();
-    handle_portal_overview_update();
-}
-
 QString MainWidget::run_macro_on_main_thread(QString macro_string, QStringList args, bool wait_for_result, int target_window_id) {
     MainWidget* target = this;
     if (target_window_id != -1) {
@@ -11453,7 +11221,7 @@ bool MainWidget::is_logged_in() {
 }
 
 void MainWidget::on_overview_move_end() {
-    handle_portal_overview_update();
+    main_document_view->handle_portal_overview_update();
 }
 
 void MainWidget::do_synchronize() {

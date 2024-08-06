@@ -3463,7 +3463,7 @@ public:
 
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->handle_vertical_move(rp);
+        dv()->handle_vertical_move(rp);
     }
 };
 
@@ -3475,7 +3475,7 @@ public:
 
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->handle_vertical_move(-rp);
+        dv()->handle_vertical_move(-rp);
     }
 };
 
@@ -3485,7 +3485,7 @@ public:
     static inline const std::string hname = "Move left in the overview window";
     MoveLeftInOverviewCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->scroll_overview(0, 1);
+        dv()->scroll_overview(0, 1);
     }
 };
 
@@ -3495,7 +3495,7 @@ public:
     static inline const std::string hname = "Move right in the overview window";
     MoveRightInOverviewCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->scroll_overview(0, -1);
+        dv()->scroll_overview(0, -1);
     }
 };
 
@@ -3507,7 +3507,7 @@ public:
 
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->handle_horizontal_move(-rp);
+        dv()->handle_horizontal_move(-rp);
     }
 };
 
@@ -3519,7 +3519,7 @@ public:
 
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->handle_horizontal_move(rp);
+        dv()->handle_horizontal_move(rp);
     }
 };
 
@@ -3617,7 +3617,7 @@ public:
     static inline const std::string hname = "Zoom out the overview window";
     ZoomOutOverviewCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->zoom_out_overview();
+        dv()->zoom_out_overview();
     }
 };
 
@@ -3627,7 +3627,7 @@ public:
     static inline const std::string hname = "Zoom in the overview window";
     ZoomInOverviewCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->zoom_in_overview();
+        dv()->zoom_in_overview();
     }
 };
 
@@ -3809,7 +3809,7 @@ public:
     static inline const std::string hname = "Move the current highlighted line to the next unread text";
     MoveVisualMarkNextCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->move_visual_mark_next();
+        dv()->move_visual_mark_next();
     }
 };
 
@@ -3819,7 +3819,7 @@ public:
     static inline const std::string hname = "Move the current highlighted line to the previous";
     MoveVisualMarkPrevCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        widget->move_visual_mark_prev();
+        dv()->move_visual_mark_prev();
     }
 
 };
@@ -4775,7 +4775,7 @@ public:
 
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->handle_move_screen(rp);
+        dv()->handle_move_screen(rp);
     }
 
 };
@@ -4788,7 +4788,7 @@ public:
 
     void perform() {
         int rp = num_repeats == 0 ? 1 : num_repeats;
-        widget->handle_move_screen(-rp);
+        dv()->handle_move_screen(-rp);
     }
 
 };
