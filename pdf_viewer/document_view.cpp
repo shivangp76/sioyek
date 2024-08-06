@@ -5550,3 +5550,29 @@ void DocumentView::handle_move_screen(int amount) {
         move_pages(amount);
     }
 }
+
+std::optional<DocumentPos> DocumentView::get_overview_position() {
+    auto overview_state_ = get_overview_page();
+    if (overview_state_.has_value()) {
+        OverviewState overview_state = overview_state_.value();
+        return doc()->absolute_to_page_pos_uncentered({ 0, overview_state.absolute_offset_y });
+        //return pos;
+    }
+    return {};
+}
+
+std::optional<Portal> DocumentView::create_portal_to_overview(){
+    std::optional<DocumentPos> maybe_overview_position = get_overview_position();
+    if (maybe_overview_position.has_value()) {
+        AbsoluteDocumentPos abs_pos = maybe_overview_position->to_absolute(doc());
+        std::string document_checksum = get_document()->get_checksum();
+        Portal new_portal;
+        new_portal.dst.document_checksum = document_checksum;
+        new_portal.dst.book_state.offset_x = abs_pos.x;
+        new_portal.dst.book_state.offset_y = abs_pos.y;
+        new_portal.dst.book_state.zoom_level = get_zoom_level();
+        new_portal.src_offset_y = get_offset_y();
+        return new_portal;
+    }
+    return {};
+}

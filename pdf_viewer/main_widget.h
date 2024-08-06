@@ -544,7 +544,6 @@ public:
     void set_status_message(std::wstring new_status_string);
     void remove_self_from_windows();
     //void handle_additional_command(std::wstring command_name, bool wait=false);
-    std::optional<DocumentPos> get_overview_position();
     void handle_keyboard_select(const std::wstring& text);
     //void run_multiple_commands(const std::wstring& commands);
     void push_state(bool update = true);

@@ -647,6 +647,8 @@ public:
     void move_visual_mark_prev();
     std::optional<float> move_visual_mark_next_get_offset();
     void handle_move_screen(int amount);
+    std::optional<DocumentPos> get_overview_position();
+    std::optional<Portal> create_portal_to_overview();
 };
 
 struct CachedScratchpadPixmapData {

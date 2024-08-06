@@ -4650,16 +4650,6 @@ void MainWidget::remove_self_from_windows() {
 }
 
 
-std::optional<DocumentPos> MainWidget::get_overview_position() {
-    auto overview_state_ = main_document_view->get_overview_page();
-    if (overview_state_.has_value()) {
-        OverviewState overview_state = overview_state_.value();
-        return main_document_view->get_document()->absolute_to_page_pos_uncentered({ 0, overview_state.absolute_offset_y });
-        //DocumentPos pos = { overview_state.page, 0.0f, overview_state.offset_y };
-        //return pos;
-    }
-    return {};
-}
 
 void MainWidget::add_portal(std::wstring source_path, Portal new_link) {
     if (source_path == main_document_view->get_document()->get_path()) {
@@ -4830,7 +4820,7 @@ void MainWidget::goto_overview() {
             }
         }
         else {
-            std::optional<DocumentPos> maybe_overview_position = get_overview_position();
+            std::optional<DocumentPos> maybe_overview_position = main_document_view->get_overview_position();
             if (maybe_overview_position.has_value()) {
                 long_jump_to_destination(maybe_overview_position.value());
             }
@@ -6133,18 +6123,9 @@ void MainWidget::handle_prefs_user_all() {
 }
 
 void MainWidget::handle_portal_to_overview() {
-    std::optional<DocumentPos> maybe_overview_position = get_overview_position();
-    if (maybe_overview_position.has_value()) {
-        AbsoluteDocumentPos abs_pos = maybe_overview_position->to_absolute(doc());
-        std::string document_checksum = main_document_view->get_document()->get_checksum();
-        Portal new_portal;
-        new_portal.dst.document_checksum = document_checksum;
-        new_portal.dst.book_state.offset_x = abs_pos.x;
-        new_portal.dst.book_state.offset_y = abs_pos.y;
-        new_portal.dst.book_state.zoom_level = main_document_view->get_zoom_level();
-        new_portal.src_offset_y = main_document_view->get_offset_y();
-        //new_portal.dst.book_state.
-        add_portal(main_document_view->get_document()->get_path(), new_portal);
+    std::optional<Portal> new_portal = main_document_view->create_portal_to_overview();
+    if (new_portal.has_value()) {
+        add_portal(main_document_view->get_document()->get_path(), new_portal.value());
     }
 }
 
