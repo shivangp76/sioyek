@@ -1045,7 +1045,6 @@ public:
     bool import_shared_database(std::wstring path);
     void on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle);
     QNetworkReply* download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action = {}, std::string pending_portal_handle="");
-    QVariantMap get_color_mapping();
     void handle_type_text_into_input(QString txt);
     void send_symbol_to_last_command(char symbol);
     void ensure_titlebar_colors_match_color_mode();

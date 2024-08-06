@@ -5298,3 +5298,18 @@ std::wstring replace_verbatim_links(std::wstring input) {
     }
     return result;
 }
+
+QVariantMap get_color_mapping() {
+    QVariantMap color_map;
+    for (int i = 'a'; i <= 'z'; i++) {
+        QColor color = QColor::fromRgbF(
+            HIGHLIGHT_COLORS[3 * (i - 'a') + 0],
+            HIGHLIGHT_COLORS[3 * (i - 'a') + 1],
+            HIGHLIGHT_COLORS[3 * (i - 'a') + 2]
+        );
+        color_map[QString::number(i)] = color;
+        color_map[QString::number(i + 'A' - 'a')] = color;
+    }
+    color_map["_"] = QVariant::fromValue(Qt::black);
+    return color_map;
+}

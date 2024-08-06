@@ -13,6 +13,7 @@
 #include <optional>
 #include <memory>
 #include <qcommandlineparser.h>
+#include <qvariantmap.h>
 
 #include <qkeyevent.h>
 #include <qstandarditemmodel.h>
@@ -940,3 +941,4 @@ QColor qconvert_color3(const float* input_color, ColorPalette palette);
 std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction);
 std::vector<MenuNode*> get_top_level_menu_nodes();
 std::wstring replace_verbatim_links(std::wstring input);
+QVariantMap get_color_mapping();

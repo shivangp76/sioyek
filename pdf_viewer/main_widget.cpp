@@ -78,7 +78,6 @@
 #include <qaudiooutput.h>
 #include <qregion.h>
 #include <qtextdocument.h>
-#include <qvariantmap.h>
 
 //#include "main_widget.moc"
 
@@ -7464,22 +7463,6 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
     }
 }
 
-QVariantMap MainWidget::get_color_mapping() {
-    std::vector<Highlight> highlights = doc()->get_highlights();
-    QAbstractTableModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
-    QVariantMap color_map;
-    for (int i = 'a'; i <= 'z'; i++) {
-        QColor color = QColor::fromRgbF(
-            HIGHLIGHT_COLORS[3 * (i - 'a') + 0],
-            HIGHLIGHT_COLORS[3 * (i - 'a') + 1],
-            HIGHLIGHT_COLORS[3 * (i - 'a') + 2]
-        );
-        color_map[QString::number(i)] = color;
-        color_map[QString::number(i + 'A' - 'a')] = color;
-    }
-    color_map["_"] = QVariant::fromValue(Qt::black);
-    return color_map;
-}
 
 void MainWidget::handle_debug_command() {
 }
