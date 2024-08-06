@@ -659,6 +659,7 @@ std::optional<PagelessDocumentRect> get_tag_rect(std::string tag, std::vector<Pa
     void highlight_words();
     void toggle_presentation_mode();
     void set_presentation_mode(bool mode);
+    fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
 };
 
 struct CachedScratchpadPixmapData {

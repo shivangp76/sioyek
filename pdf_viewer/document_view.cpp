@@ -5816,3 +5816,18 @@ void DocumentView::set_presentation_mode(bool mode) {
         set_presentation_page_number({});
     }
 }
+
+fz_stext_char* DocumentView::get_closest_character_to_cusrsor(AbsoluteDocumentPos pos) {
+
+    DocumentPos doc_pos = pos.to_document(doc());
+    int current_page = doc_pos.page;
+    fz_stext_page* stext_page = doc()->get_stext_with_page_number(current_page);
+    std::vector<fz_stext_char*> flat_chars;
+    get_flat_chars_from_stext_page(stext_page, flat_chars);
+    int location_index = -1;
+
+    fz_point doc_point;
+    doc_point.x = doc_pos.x;
+    doc_point.y = doc_pos.y;
+    return find_closest_char_to_document_point(flat_chars, doc_point, &location_index);
+}

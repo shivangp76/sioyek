@@ -530,7 +530,6 @@ public:
     int get_current_monitor_width(); int get_current_monitor_height();
     std::wstring synctex_under_pos(WindowPos position);
     std::optional<QString> get_paper_name_under_cursor(bool use_last_hold_point = false);
-    fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
     void set_status_message(std::wstring new_status_string);
     void remove_self_from_windows();
     // void handle_keyboard_select(const std::wstring& text);
