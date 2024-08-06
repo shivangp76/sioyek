@@ -939,3 +939,4 @@ bool is_alpha_only(const std::wstring& str);
 QColor qconvert_color3(const float* input_color, ColorPalette palette);
 std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction);
 std::vector<MenuNode*> get_top_level_menu_nodes();
+std::wstring replace_verbatim_links(std::wstring input);

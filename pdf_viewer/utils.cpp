@@ -5269,3 +5269,32 @@ std::vector<MenuNode*> get_top_level_menu_nodes(){
 
     return top_level_menus;
 }
+
+std::wstring replace_verbatim_links(std::wstring input) {
+    // convert '@verbatim(string)' in input to '[ref](string)'
+    std::wstring result;
+    std::wstring::size_type start = 0;
+    std::wstring::size_type end = 0;
+    int index = 1;
+
+    while (start < input.size()) {
+        start = input.find(L"@verbatim({", start);
+        if (start == std::wstring::npos) {
+            result += input.substr(end);
+            break;
+        }
+        result += input.substr(end, start - end);
+        end = input.find(L"})", start);
+        if (end == std::wstring::npos) {
+            result += input.substr(start);
+            break;
+        }
+        std::wstring link = input.substr(start + 11, end - start - 11);
+        link = QString(QUrl::toPercentEncoding(QString::fromStdWString(link))).toStdWString();
+        result += L"[[" + QString::number(index).toStdWString() + L"]](sioyek://" + link + L")";
+        start = end + 1;
+        end = start;
+        index++;
+    }
+    return result;
+}
