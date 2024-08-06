@@ -632,6 +632,7 @@ public:
     bool handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute);
     void start_drawing();
     void handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute);
+    QSizeF get_bookmark_text_size(const BookMark& bookmark);
 };
 
 struct CachedScratchpadPixmapData {

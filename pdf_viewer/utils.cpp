@@ -36,6 +36,9 @@
 #include <qmenu.h>
 #include <qmenubar.h>
 #include "path.h"
+#include <qtextdocument.h>
+#include <qabstracttextdocumentlayout.h>
+#include <qtextcursor.h>
 
 #ifdef SIOYEK_ANDROID
 #include <QtCore/private/qandroidextras_p.h>

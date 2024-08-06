@@ -34,6 +34,7 @@ extern bool SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS;
 extern bool IGNORE_WHITESPACE_IN_PRESENTATION_MODE;
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
+extern float FREETEXT_BOOKMARK_FONT_SIZE;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -5275,4 +5276,32 @@ void DocumentView::start_drawing() {
 
 void DocumentView::handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute) {
     freehand_drawing_move_finish(mpos_absolute);
+}
+
+QSizeF DocumentView::get_bookmark_text_size(const BookMark& bookmark) {
+    //const QPainter& painter = opengl_widget->get_painter();
+    QFont some_font;
+    float font_size = bookmark.font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmark.font_size;
+    some_font.setPointSizeF(font_size * get_zoom_level() * 0.75);
+
+    QFont font;
+    QTextDocument td;
+
+    auto formats = td.allFormats();
+    QTextCharFormat old_format = formats[0].toCharFormat();
+
+    td.setMarkdown(bookmark.get_question_or_summary_markdown(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
+
+    QRect window_qrect = bookmark.get_rectangle()->to_window(this).to_qrect();
+    td.setTextWidth(window_qrect.width());
+    td.setDefaultFont(some_font);
+
+    QTextCursor cursor(&td);
+    QTextCharFormat format;
+    cursor.select(QTextCursor::Document);
+    QAbstractTextDocumentLayout::PaintContext ctx;
+    window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
+    ctx.clip = window_qrect;
+    QSizeF size = td.documentLayout()->documentSize();
+    return size;
 }

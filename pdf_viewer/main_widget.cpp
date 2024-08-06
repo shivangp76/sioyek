@@ -78,8 +78,6 @@
 #include <qaudiooutput.h>
 #include <qregion.h>
 #include <qtextdocument.h>
-#include <qabstracttextdocumentlayout.h>
-#include <qtextcursor.h>
 #include <qvariantmap.h>
 
 //#include "main_widget.moc"
@@ -7565,19 +7563,6 @@ void MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_
         BookMark& bm = document->get_bookmarks()[bookmark_index];
         bm.description += chunk.toStdWString();
 
-        if (false) {
-            // we don't need this anymore because bookmarks can be scrolled, we keep this code for future reference (maybe can be enabled with a config option?)
-
-            // if the new description doesn't fit, increase the height of the bookmark
-            QSizeF new_size = get_bookmark_text_size(bm);
-            QRect current_window_rect = bm.get_rectangle()->to_window(dv()).to_qrect();
-            if (current_window_rect.height() < new_size.height()) {
-                float diff = new_size.height() - current_window_rect.height();
-                float absolute_diff = diff / dv()->get_zoom_level();
-                bm.end_y += absolute_diff;
-            }
-        }
-
         invalidate_render();
     }
 }
@@ -7641,34 +7626,6 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
             }
         });
-}
-
-QSizeF MainWidget::get_bookmark_text_size(const BookMark& bookmark) {
-    //const QPainter& painter = opengl_widget->get_painter();
-    QFont some_font;
-    float font_size = bookmark.font_size == -1 ? FREETEXT_BOOKMARK_FONT_SIZE : bookmark.font_size;
-    some_font.setPointSizeF(font_size * dv()->get_zoom_level() * 0.75);
-
-    QFont font;
-    QTextDocument td;
-
-    auto formats = td.allFormats();
-    QTextCharFormat old_format = formats[0].toCharFormat();
-
-    td.setMarkdown(bookmark.get_question_or_summary_markdown(), QTextDocument::MarkdownFeature::MarkdownDialectGitHub);
-
-    QRect window_qrect = bookmark.get_rectangle()->to_window(dv()).to_qrect();
-    td.setTextWidth(window_qrect.width());
-    td.setDefaultFont(some_font);
-
-    QTextCursor cursor(&td);
-    QTextCharFormat format;
-    cursor.select(QTextCursor::Document);
-    QAbstractTextDocumentLayout::PaintContext ctx;
-    window_qrect = QRect(0, 0, window_qrect.width(), window_qrect.height());
-    ctx.clip = window_qrect;
-    QSizeF size = td.documentLayout()->documentSize();
-    return size;
 }
 
 
@@ -7746,29 +7703,17 @@ void MainWidget::export_config_names(std::wstring file_path){
 void MainWidget::export_default_config_file(std::wstring file_path){
     load_sioyek_documentation();
 
-    //auto config_docs = config_doc_json_document.object();
-
     QFile output_file(QString::fromStdWString(file_path));
     if (output_file.open(QIODeviceBase::WriteOnly)){
         std::vector<Config*> configs = config_manager->get_configs();
         for (auto config : configs){
             QString config_name = QString::fromStdWString(config->name);
-            //QString config_doc = QTextDocumentFragment::fromHtml(config_docs[config_name].toString()).toPlainText();
-            //if (config_doc.size() > 0){
-            //    QStringList lines = config_doc.split("\n");
-            //    for (auto line : lines.sliced(1)){
-            //        output_file.write(("# " + line + "\n").toUtf8());
-            //    }
-            //}
-
             if (config->default_value_string.size() > 0){
                 output_file.write((config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
             }
             else{
                 output_file.write(("# " + config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
             }
-
-            /* output_file.write((QString::fromStdWString(config.name) + "\n").toUtf8()); */
         }
 
         output_file.close();
