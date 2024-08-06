@@ -436,8 +436,6 @@ public:
     void toggle_pdf_annotations();
     void on_paper_downloaded(QNetworkReply* reply);
 
-    std::optional<AbsoluteRect> get_selected_rect_absolute();
-    std::optional<DocumentRect> get_selected_rect_document();
     Document* doc();
 
     MainWidget(
@@ -524,12 +522,7 @@ public:
     void upload_drawings(bool wait_for_send = false);
     void perform_sync_operations_when_document_is_closed(bool wait_for_send, bool sync_drawings);
 
-    std::vector<PagelessDocumentRect> get_flat_words(std::vector<std::vector<PagelessDocumentRect>>* flat_word_chars = nullptr);
-
     // get rects using tags (tags are strings shown when executing `keyboard_*` commands)
-    std::optional<PagelessDocumentRect> get_tag_rect(std::string tag, std::vector<PagelessDocumentRect>* word_chars = nullptr);
-    std::optional<WindowRect> get_tag_window_rect(std::string tag, std::vector<WindowRect>* char_rects = nullptr);
-
     bool is_rotated();
     void on_new_paper_added(const std::wstring& file_path);
     int get_current_page_number() const;
@@ -543,14 +536,11 @@ public:
     fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
     void set_status_message(std::wstring new_status_string);
     void remove_self_from_windows();
-    //void handle_additional_command(std::wstring command_name, bool wait=false);
-    void handle_keyboard_select(const std::wstring& text);
-    //void run_multiple_commands(const std::wstring& commands);
+    // void handle_keyboard_select(const std::wstring& text);
     void push_state(bool update = true);
     void toggle_scrollbar();
     void update_scrollbar();
     void goto_overview();
-    bool is_rect_visible(DocumentRect rect);
     void set_mark_in_current_location(char symbol);
     void goto_mark(char symbol);
     void advance_command(std::unique_ptr<Command> command, std::wstring* result = nullptr);

@@ -281,3 +281,7 @@ AbsoluteRect WindowRect::to_absolute(DocumentView* dv) {
     AbsoluteDocumentPos abs_bottom_right = dv->window_to_absolute_document_pos(bottom_right());
     return AbsoluteRect(abs_top_left, abs_bottom_right);
 }
+
+bool DocumentRect::is_visible(DocumentView *document_view) {
+    return document_view->is_rect_visible(*this);
+}

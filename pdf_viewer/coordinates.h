@@ -243,6 +243,7 @@ struct DocumentRect {
 
     DocumentPos top_left();
     DocumentPos bottom_right();
+    bool is_visible(DocumentView* document_view);
 };
 
 

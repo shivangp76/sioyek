@@ -5576,3 +5576,200 @@ std::optional<Portal> DocumentView::create_portal_to_overview(){
     }
     return {};
 }
+
+bool DocumentView::is_rect_visible(DocumentRect rect) {
+    WindowRect window_rect = rect.to_window(this);
+    if (window_rect.x0 > 0 && window_rect.x1 < view_width && window_rect.y0 > 0 && window_rect.y1 < view_height) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+std::optional<AbsoluteRect> DocumentView::get_selected_rect_absolute() {
+    return get_selected_rectangle();
+}
+
+std::optional<DocumentRect> DocumentView::get_selected_rect_document() {
+    std::optional<AbsoluteRect> absrect = get_selected_rect_absolute();
+
+    if (absrect) {
+
+        DocumentPos top_left_document = absrect->top_left().to_document(doc());
+        DocumentPos bottom_right_document = absrect->bottom_right().to_document(doc());
+        return DocumentRect(top_left_document, bottom_right_document, top_left_document.page);
+    }
+    else {
+        return {};
+    }
+}
+
+void DocumentView::handle_keyboard_select(const std::wstring& text) {
+    std::optional<AbsoluteDocumentPos> begin_pos = {};
+    std::optional<AbsoluteDocumentPos> end_pos = {};
+    set_should_highlight_words(false);
+
+    if (text[0] == '#') {
+        // we can select text using window-space coordinates.
+        // this is not something that the user should be able to do, but it's useful for scripts.
+        QStringList parts = QString::fromStdWString(text.substr(1, text.size() - 1)).split(' ');
+
+        if (parts.size() == 2) {
+            QString begin_text = parts.at(0);
+            QString end_text = parts.at(1);
+            QStringList begin_parts = begin_text.split(',');
+            QStringList end_parts = end_text.split(',');
+            if ((begin_parts.size() == 3) && (end_parts.size() == 3)) {
+
+                int begin_page_number = begin_parts.at(0).toInt();
+                float begin_offset_x = begin_parts.at(1).toFloat();
+                float begin_offset_y = begin_parts.at(2).toFloat();
+
+                int end_page_number = end_parts.at(0).toInt();
+                float end_offset_x = end_parts.at(1).toFloat();
+                float end_offset_y = end_parts.at(2).toFloat();
+
+                DocumentPos begin_doc_pos = { begin_page_number, begin_offset_x, begin_offset_y };
+                DocumentPos end_doc_pos = { end_page_number, end_offset_x, end_offset_y };
+
+                begin_pos = begin_doc_pos.to_absolute(doc());
+                end_pos = end_doc_pos.to_absolute(doc());
+            }
+        }
+
+    }
+    else {
+        // here we select with "user-friendly" tags
+
+        QStringList parts = QString::fromStdWString(text).split(' ');
+
+        if (parts.size() == 1) {
+            std::vector<WindowRect> schar_rects;
+            std::optional<WindowRect> srect_ = get_tag_window_rect(parts.at(0).toStdString(), &schar_rects);
+            if (schar_rects.size() > 1) {
+                WindowRect srect = schar_rects[0];
+                WindowRect erect = schar_rects[schar_rects.size() - 2];
+                int w = erect.x1 - erect.x0;
+
+                WindowPos begin_window_pos, end_window_pos;
+                begin_window_pos.x = (srect.x0 + srect.x1) / 2 - 1;
+                begin_window_pos.y = (srect.y0 + srect.y1) / 2;
+                end_window_pos.x = erect.x0;
+                end_window_pos.y = (erect.y0 + erect.y1) / 2;
+                begin_pos = begin_window_pos.to_absolute(this);
+                end_pos = end_window_pos.to_absolute(this);
+            }
+        }
+        if (parts.size() == 2) {
+
+            std::vector<WindowRect> schar_rects;
+            std::vector<WindowRect> echar_rects;
+
+            std::optional<WindowRect> srect_ = get_tag_window_rect(parts.at(0).toStdString(), &schar_rects);
+            std::optional<WindowRect> erect_ = get_tag_window_rect(parts.at(1).toStdString(), &echar_rects);
+
+            if ((schar_rects.size() > 0) && (echar_rects.size() > 0)) {
+                WindowRect srect = schar_rects[0];
+                WindowRect erect = echar_rects[0];
+                int w = erect.x1 - erect.x0;
+
+                WindowPos begin_pos_window, end_pos_window;
+                begin_pos_window.x = (srect.x0 + srect.x1) / 2 - 1;
+                begin_pos_window.y = (srect.y0 + srect.y1) / 2;
+                end_pos_window.x = erect.x0 - w / 2;
+                end_pos_window.y = (erect.y0 + erect.y1) / 2;
+                begin_pos = begin_pos_window.to_absolute(this);
+                end_pos = end_pos_window.to_absolute(this);
+
+            }
+            else if (srect_.has_value() && erect_.has_value()) {
+                WindowRect srect = srect_.value();
+                WindowRect erect = erect_.value();
+
+                WindowPos begin_pos_window, end_pos_window;
+                begin_pos_window.x = srect.x0 + 5;
+                begin_pos_window.y = (srect.y0 + srect.y1) / 2;
+                end_pos_window.x = erect.x0 - 5;
+                end_pos_window.y = (erect.y0 + erect.y1) / 2;
+                begin_pos = begin_pos_window.to_absolute(this);
+                end_pos = end_pos_window.to_absolute(this);
+            }
+
+        }
+    }
+
+    if (begin_pos.has_value() && end_pos.has_value()){
+        clear_selected_text();
+        get_text_selection(
+            begin_pos.value(),
+            end_pos.value(),
+            true,
+            selected_character_rects,
+            selected_text
+        );
+    }
+}
+
+std::vector<PagelessDocumentRect> DocumentView::get_current_page_flat_words(std::vector<std::vector<PagelessDocumentRect>>* flat_word_chars) {
+    int page = get_current_page_number();
+    auto res = doc()->get_page_flat_words(page);
+    if (flat_word_chars != nullptr) {
+        *flat_word_chars = doc()->get_page_flat_word_chars(page);
+    }
+    return res;
+}
+
+std::optional<PagelessDocumentRect> DocumentView::get_tag_rect(std::string tag, std::vector<PagelessDocumentRect>* word_chars) {
+
+    int page = get_current_page_number();
+    std::vector<std::vector<PagelessDocumentRect>> all_word_chars;
+    std::vector<PagelessDocumentRect> word_rects;
+    if (word_chars == nullptr) {
+        word_rects = get_current_page_flat_words(nullptr);
+    }
+    else {
+        word_rects = get_current_page_flat_words(&all_word_chars);
+    }
+
+    std::vector<std::vector<PagelessDocumentRect>> visible_word_chars;
+    std::vector<PagelessDocumentRect> visible_word_rects;
+
+    for (int i = 0; i < word_rects.size(); i++) {
+        if (DocumentRect(word_rects[i], page).is_visible(this)) {
+            visible_word_rects.push_back(word_rects[i]);
+            if (word_chars != nullptr) {
+                visible_word_chars.push_back(all_word_chars[i]);
+            }
+        }
+    }
+
+    int index = get_index_from_tag(tag);
+    if (index < visible_word_rects.size()) {
+        if (word_chars != nullptr) {
+            *word_chars = visible_word_chars[index];
+        }
+        return visible_word_rects[index];
+    }
+    return {};
+}
+
+std::optional<WindowRect> DocumentView::get_tag_window_rect(std::string tag, std::vector<WindowRect>* char_rects) {
+
+    int page = get_current_page_number();
+    std::vector<PagelessDocumentRect> word_char_rects;
+    std::optional<PagelessDocumentRect> rect = get_tag_rect(tag, &word_char_rects);
+
+    if (rect.has_value()) {
+
+        //fz_irect window_rect = main_document_view->document_to_window_irect(page, rect.value());
+        WindowRect window_rect = DocumentRect(rect.value(), page).to_window(this);
+        if (char_rects != nullptr) {
+            for (auto c : word_char_rects) {
+                char_rects->push_back(DocumentRect(c, page).to_window(this));
+            }
+        }
+        return window_rect;
+    }
+    return {};
+}

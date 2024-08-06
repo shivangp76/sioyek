@@ -5473,7 +5473,7 @@ public:
     }
 
     void perform() {
-        widget->handle_keyboard_select(text.value());
+        dv()->handle_keyboard_select(text.value());
         widget->set_highlighted_tags({});
     }
 
@@ -5495,7 +5495,7 @@ public:
     KeyboardOverviewCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void perform() {
-        std::optional<fz_irect> rect_ = widget->get_tag_window_rect(utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(utf8_encode(text.value()));
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->overview_under_pos({ (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2 });
@@ -5521,7 +5521,7 @@ public:
     KeyboardSmartjumpCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void perform() {
-        std::optional<fz_irect> rect_ = widget->get_tag_window_rect(utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(utf8_encode(text.value()));
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->smart_jump_under_pos({ (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2 });
