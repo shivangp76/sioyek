@@ -7775,16 +7775,6 @@ void MainWidget::export_default_config_file(std::wstring file_path){
     }
 }
 
-
-void MainWidget::scan_new_files_from_scan_directory() {
-    std::vector<std::wstring> new_file_paths = document_manager->get_new_files_from_scan_directory();
-
-    for (auto new_file : new_file_paths) {
-        std::string checksum = checksummer->get_checksum(new_file);
-        db_manager->insert_document_hash(new_file, checksum);
-    }
-}
-
 void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
     if (is_scratchpad_mode()){
         return;

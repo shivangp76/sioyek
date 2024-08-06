@@ -5218,3 +5218,12 @@ std::vector<std::wstring> DocumentManager::get_new_files_from_scan_directory() {
 
     return new_paths;
 }
+
+void DocumentManager::scan_new_files_from_scan_directory() {
+    std::vector<std::wstring> new_file_paths = get_new_files_from_scan_directory();
+
+    for (auto new_file : new_file_paths) {
+        std::string checksum = checksummer->get_checksum(new_file);
+        db_manager->insert_document_hash(new_file, checksum);
+    }
+}

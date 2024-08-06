@@ -6564,7 +6564,7 @@ public:
     ScanNewFilesFromScanDirCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->scan_new_files_from_scan_directory();
+        widget->document_manager->scan_new_files_from_scan_directory();
     }
 
 };

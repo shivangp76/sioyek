@@ -579,6 +579,7 @@ public:
     void delete_highlight_with_uuid(const std::string& uuid);
     void update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     std::vector<std::wstring> get_new_files_from_scan_directory();
+    void scan_new_files_from_scan_directory();
     ~DocumentManager();
 };
 
