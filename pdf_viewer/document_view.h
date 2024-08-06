@@ -226,6 +226,8 @@ public:
     int rotation_index = 0;
     bool fastread_mode = false;
 
+    ScratchPad* scratchpad = nullptr;
+
     //int selected_highlight_index = -1;
     //int selected_bookmark_index = -1;
     // std::optional<VisibleObjectIndex> selected_object_index = {};
@@ -605,9 +607,9 @@ public:
     std::optional<OverviewState> get_ith_next_overview(int i);
     void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
     bool is_moving_annotations();
-    void handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos, ScratchPad* scratchpad);
-    void select_freehand_drawings(AbsoluteRect rect, ScratchPad* scratchpad);
-    void freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
+    void handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos);
+    void select_freehand_drawings(AbsoluteRect rect);
+    void freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute);
     void handle_portal_move(AbsoluteDocumentPos current_mouse_abspos);
     void handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos);
     void handle_portal_move_finish();
@@ -621,15 +623,15 @@ public:
     void move_selection_begin(bool expand, bool word);
     void handle_move_text_mark_forward(bool word);
     void clear_selected_text();
-    void finish_drawing(QPoint pos, ScratchPad* scratchpad);
-    void handle_drawing_move(QPoint pos, float pressure, ScratchPad* scractchpad);
-    AbsoluteDocumentPos get_window_abspos(WindowPos window_pos, ScratchPad* scratchpad);
+    void finish_drawing(QPoint pos);
+    void handle_drawing_move(QPoint pos, float pressure);
+    AbsoluteDocumentPos get_window_abspos(WindowPos window_pos);
     char get_current_freehand_type();
     float get_current_freehand_alpha();
     void set_current_freehand_alpha(float alpha);
-    bool handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
+    bool handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute);
     void start_drawing();
-    void handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad);
+    void handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute);
 };
 
 struct CachedScratchpadPixmapData {

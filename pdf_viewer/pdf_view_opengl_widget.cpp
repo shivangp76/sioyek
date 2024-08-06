@@ -300,8 +300,8 @@ void PdfViewOpenGLWidget::render_highlight_window(NormalizedWindowRect window_re
 
 void PdfViewOpenGLWidget::render_highlight_absolute(AbsoluteRect absolute_document_rect, int flags) {
     NormalizedWindowRect window_rect;
-    if (scratchpad) {
-        window_rect = scratchpad->absolute_to_window_rect(absolute_document_rect);
+    if (scratch()) {
+        window_rect = scratch()->absolute_to_window_rect(absolute_document_rect);
     }
     else {
         window_rect = absolute_document_rect.to_window_normalized(dv());
@@ -324,8 +324,8 @@ void PdfViewOpenGLWidget::render_scratchpad() {
     clear_background_color();
     end_native_painting();
 
-    for (auto [pixmap, rect] : scratchpad->pixmaps) {
-        WindowRect window_rect = rect.to_window(scratchpad);
+    for (auto [pixmap, rect] : scratch()->pixmaps) {
+        WindowRect window_rect = rect.to_window(scratch());
 
         QRect window_qrect = QRect(
             window_rect.x0,
@@ -337,7 +337,7 @@ void PdfViewOpenGLWidget::render_scratchpad() {
     }
 
     for (auto [pixmap, rect] : document_view->moving_pixmaps) { // highlight moving pixmaps
-        WindowRect window_rect = rect.to_window(scratchpad);
+        WindowRect window_rect = rect.to_window(scratch());
         QRect window_qrect = QRect(window_rect.x0, window_rect.y0, window_rect.width(), window_rect.height());
         fill_rect(window_qrect.adjusted(-2, -2, 2, 2), QColor(255, 255, 0));
         draw_pixmap(window_qrect, &pixmap);
@@ -357,6 +357,7 @@ void PdfViewOpenGLWidget::render_scratchpad() {
     }
 
 
+    auto scratchpad = scratch();
     if (scratchpad->get_non_compiled_drawings().size() > 50 || scratchpad->is_compile_invalid()) {
         compile_drawings(scratchpad, scratchpad->get_all_drawings());
     }
@@ -1908,6 +1909,7 @@ void PdfViewOpenGLWidget::render_compiled_drawings() {
         mode_highlight_colors[i * 3 + 2] = res[2];
     }
 
+    auto scratchpad = scratch();
     if (scratchpad->cached_compiled_drawing_data.has_value()) {
         float scale[] = {
             2 * scratchpad->get_zoom_level() / scratchpad->get_view_width() ,
@@ -2432,14 +2434,6 @@ bool PdfViewOpenGLWidget::needs_stencil_buffer() {
     return document_view->fastread_mode || document_view->selected_rectangle.has_value() || dv()->overview_page.has_value();
 }
 
-void PdfViewOpenGLWidget::set_scratchpad(ScratchPad* pad) {
-    scratchpad = pad;
-}
-
-ScratchPad* PdfViewOpenGLWidget::get_scratchpad() {
-    return scratchpad;
-}
-
 void PdfViewOpenGLWidget::render_selected_rectangle() {
 
     if (document_view->selected_rectangle) {
@@ -2453,6 +2447,7 @@ void PdfViewOpenGLWidget::render_selected_rectangle() {
 }
 
 bool PdfViewOpenGLWidget::can_use_cached_scratchpad_framebuffer() {
+    auto scratchpad = scratch();
     float current_offset_x = scratchpad->get_offset_x();
     float current_offset_y = scratchpad->get_offset_y();
     float current_zoom_level = scratchpad->get_zoom_level();
@@ -2480,6 +2475,10 @@ void PdfViewOpenGLWidget::clear_background_color() {
 
 DocumentView* PdfViewOpenGLWidget::dv(){
     return document_view;
+}
+
+ScratchPad* PdfViewOpenGLWidget::scratch(){
+    return document_view->scratchpad;
 }
 
 #ifdef SIOYEK_OPENGL_BACKEND
@@ -2824,6 +2823,7 @@ void PdfViewOpenGLWidget::resizeGL(int w, int h) {
 }
 
 void PdfViewOpenGLWidget::compile_drawings_opengl_backend(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) {
+    ScratchPad* scratchpad = scratch();
     if (scratchpad->cached_compiled_drawing_data) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -3449,7 +3449,7 @@ void PdfViewOpenGLWidget::do_paint(){
     QColor red_color = QColor::fromRgb(255, 0, 0);
     painter.setPen(red_color);
 
-    if (scratchpad == nullptr) {
+    if (scratch() == nullptr) {
         my_render();
     }
     else {

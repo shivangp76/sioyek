@@ -561,13 +561,13 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     }
 
     if (should_draw(false) && main_document_view->is_drawing) {
-        main_document_view->handle_drawing_move(mouse_event->pos(), -1.0f, opengl_widget->get_scratchpad());
+        main_document_view->handle_drawing_move(mouse_event->pos(), -1.0f);
         validate_render();
         return;
     }
 
     WindowPos mpos(mouse_event->pos());
-    AbsoluteDocumentPos abs_mpos = main_document_view->get_window_abspos(mpos, opengl_widget->get_scratchpad());
+    AbsoluteDocumentPos abs_mpos = main_document_view->get_window_abspos(mpos);
     NormalizedWindowPos normal_mpos = mpos.to_window_normalized(main_document_view);
 
     // we start moving visible objects when the mouse has moved for some distance after clicking
@@ -2344,7 +2344,7 @@ bool MainWidget::handle_visible_object_resize_finish() {
 }
 
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
-    AbsoluteDocumentPos abs_doc_pos = main_document_view->get_window_abspos(click_pos, opengl_widget->get_scratchpad());
+    AbsoluteDocumentPos abs_doc_pos = main_document_view->get_window_abspos(click_pos);
 
     if (is_rotated()) {
         // we don't support selection, etc. when document is rotated
@@ -2356,7 +2356,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
     }
 
     if (main_document_view->selected_freehand_drawings) {
-        if (main_document_view->handle_freehand_drawing_click_event(abs_doc_pos, opengl_widget->get_scratchpad())) {
+        if (main_document_view->handle_freehand_drawing_click_event(abs_doc_pos)) {
             return;
         }
     }
@@ -2735,7 +2735,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     }
 
     if (main_document_view->is_drawing) {
-        main_document_view->finish_drawing(mevent->pos(), opengl_widget->get_scratchpad());
+        main_document_view->finish_drawing(mevent->pos());
         invalidate_render();
         return;
     }
@@ -3381,7 +3381,7 @@ std::optional<QString> MainWidget::get_paper_name_under_cursor(bool use_last_hol
 }
 
 void MainWidget::smart_jump_under_pos(WindowPos pos) {
-    if ((!main_document_view_has_document()) || opengl_widget->get_scratchpad()) {
+    if ((!main_document_view_has_document()) || main_document_view->scratchpad) {
         return;
     }
 
@@ -8363,13 +8363,13 @@ void MainWidget::handle_pen_drawing_event(QTabletEvent* te) {
     }
 
     if (te->type() == QEvent::TabletRelease) {
-        main_document_view->finish_drawing(te->pos(), opengl_widget->get_scratchpad());
+        main_document_view->finish_drawing(te->pos());
         invalidate_render();
     }
 
     if (te->type() == QEvent::TabletMove) {
         if (main_document_view->is_drawing) {
-            main_document_view->handle_drawing_move(te->pos(), te->pressure(), opengl_widget->get_scratchpad());
+            main_document_view->handle_drawing_move(te->pos(), te->pressure());
             validate_render();
         }
 
@@ -8377,7 +8377,7 @@ void MainWidget::handle_pen_drawing_event(QTabletEvent* te) {
 }
 
 void MainWidget::delete_freehand_drawings(AbsoluteRect rect) {
-    if (opengl_widget->get_scratchpad()) {
+    if (main_document_view->scratchpad) {
         scratchpad->delete_intersecting_objects(rect);
         set_rect_select_mode(false);
         clear_selected_rect();
@@ -8393,7 +8393,7 @@ void MainWidget::delete_freehand_drawings(AbsoluteRect rect) {
 }
 
 void MainWidget::select_freehand_drawings(AbsoluteRect rect) {
-    main_document_view->select_freehand_drawings(rect, opengl_widget->get_scratchpad());
+    main_document_view->select_freehand_drawings(rect);
 
     set_rect_select_mode(false);
     clear_selected_rect();
@@ -8429,7 +8429,7 @@ std::string MainWidget::get_current_mode_string() {
     res += (mouse_drag_mode) ? "d" : "D";
     res += (main_document_view->is_presentation_mode()) ? "p" : "P";
     res += (main_document_view->get_overview_page()) ? "o" : "O";
-    res += opengl_widget->get_scratchpad() ? "s" : "S";
+    res += main_document_view->scratchpad ? "s" : "S";
     res += (main_document_view->get_is_searching(nullptr)) ? "f" : "F";
     res += (is_menu_focused()) ? "m" : "M";
 
@@ -10539,7 +10539,7 @@ void MainWidget::set_text_prompt_text(QString text) {
 }
 
 DocumentView* MainWidget::dv() {
-    if (opengl_widget->get_scratchpad()) {
+    if (main_document_view->scratchpad) {
         return scratchpad;
     }
     else{
@@ -10553,7 +10553,7 @@ bool MainWidget::should_draw(bool originated_from_pen) {
     if (main_document_view && (main_document_view->freehand_drawing_move_data || main_document_view->selected_freehand_drawings)) return false;
 
     if (TOUCH_MODE){
-        if (opengl_widget && opengl_widget->get_scratchpad()) {
+        if (opengl_widget && main_document_view->scratchpad) {
             return originated_from_pen;
         }
 
@@ -10566,7 +10566,7 @@ bool MainWidget::should_draw(bool originated_from_pen) {
         }
     }
     else{
-        if (opengl_widget && opengl_widget->get_scratchpad()) {
+        if (opengl_widget && main_document_view->scratchpad) {
             return true;
         }
 
@@ -10584,20 +10584,20 @@ bool MainWidget::should_draw(bool originated_from_pen) {
 }
 
 bool MainWidget::is_scratchpad_mode(){
-    return opengl_widget->get_scratchpad() != nullptr;
+    return main_document_view->scratchpad != nullptr;
 }
 
 void MainWidget::toggle_scratchpad_mode(){
-    if (opengl_widget->get_scratchpad()) {
-        opengl_widget->set_scratchpad(nullptr);
+    if (main_document_view->scratchpad) {
+        main_document_view->scratchpad = nullptr;
     }
     else {
         scratchpad->on_view_size_change(width(), height());
-        opengl_widget->set_scratchpad(scratchpad);
+        main_document_view->scratchpad = scratchpad;
     }
 
     if (draw_controls_) {
-        if (opengl_widget->get_scratchpad()) {
+        if (main_document_view->scratchpad) {
             draw_controls_->controls_ui->set_scratchpad_mode(true);
         }
         else {
@@ -10857,7 +10857,7 @@ bool MainWidget::handle_annotation_move_finish(){
     }
 
     if (main_document_view->freehand_drawing_move_data) {
-        main_document_view->handle_freehand_drawing_move_finish(get_cursor_abspos(), opengl_widget->get_scratchpad());
+        main_document_view->handle_freehand_drawing_move_finish(get_cursor_abspos());
         invalidate_render();
         main_document_view->is_selecting = false;
         return true;

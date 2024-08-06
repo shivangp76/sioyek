@@ -747,6 +747,7 @@ void DocumentView::reset_doc_state() {
     visible_object_scroll_data = {};
     visible_object_move_data = {};
 
+    scratchpad = nullptr;
 
     freehand_drawing_move_data = {};
     selected_freehand_drawings = {};
@@ -4882,7 +4883,7 @@ bool DocumentView::is_moving_annotations(){
     return false;
 }
 
-void DocumentView::handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos, ScratchPad* scratchpad) {
+void DocumentView::handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos) {
     std::vector<FreehandDrawing> moving_drawings;
     std::vector<PixmapDrawing> moving_pixmaps;
 
@@ -4913,7 +4914,7 @@ void DocumentView::handle_freehand_drawing_selection_click(AbsoluteDocumentPos c
     selected_freehand_drawings = {};
 }
 
-void DocumentView::select_freehand_drawings(AbsoluteRect rect, ScratchPad* scratchpad) {
+void DocumentView::select_freehand_drawings(AbsoluteRect rect) {
     DocumentRect page_rect = rect.to_document(current_document);
     SelectedDrawings selected_drawings;
     std::vector<SelectedObjectIndex> selected_indices;
@@ -4944,7 +4945,7 @@ void DocumentView::select_freehand_drawings(AbsoluteRect rect, ScratchPad* scrat
 
 }
 
-void DocumentView::freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad){
+void DocumentView::freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute){
     std::vector<FreehandDrawing> moved_drawings;
     std::vector<PixmapDrawing> moved_pixmaps;
 
@@ -5184,11 +5185,11 @@ void DocumentView::clear_selected_text() {
 
 }
 
-void DocumentView::finish_drawing(QPoint pos, ScratchPad* scratchpad) {
+void DocumentView::finish_drawing(QPoint pos) {
     is_drawing = false;
 
     if (current_drawing.points.size() == 0) {
-        handle_drawing_move(pos, -1.0f, scratchpad);
+        handle_drawing_move(pos, -1.0f);
     }
 
     std::vector<FreehandDrawingPoint> pruned_points = prune_freehand_drawing_points(current_drawing.points);
@@ -5210,7 +5211,7 @@ void DocumentView::finish_drawing(QPoint pos, ScratchPad* scratchpad) {
     
 }
 
-AbsoluteDocumentPos DocumentView::get_window_abspos(WindowPos window_pos, ScratchPad* scratchpad) {
+AbsoluteDocumentPos DocumentView::get_window_abspos(WindowPos window_pos) {
     if (scratchpad) {
         return scratchpad->window_to_absolute_document_pos(window_pos);
     }
@@ -5219,10 +5220,10 @@ AbsoluteDocumentPos DocumentView::get_window_abspos(WindowPos window_pos, Scratc
     }
 }
 
-void DocumentView::handle_drawing_move(QPoint pos, float pressure, ScratchPad* scratchpad) {
+void DocumentView::handle_drawing_move(QPoint pos, float pressure) {
     pressure = 0;
     WindowPos current_window_pos = { pos.x(), pos.y() };
-    AbsoluteDocumentPos mouse_abspos = get_window_abspos(current_window_pos, scratchpad);
+    AbsoluteDocumentPos mouse_abspos = get_window_abspos(current_window_pos);
     FreehandDrawingPoint fdp;
     fdp.pos = mouse_abspos;
     float thickness_zoom_factor = 1.0f;
@@ -5254,9 +5255,9 @@ void DocumentView::set_current_freehand_alpha(float alpha) {
     freehand_alpha = alpha;
 }
 
-bool DocumentView::handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad) {
+bool DocumentView::handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute) {
     if (selected_freehand_drawings->selection_absrect.contains(mpos_absolute)) {
-        handle_freehand_drawing_selection_click(mpos_absolute, scratchpad);
+        handle_freehand_drawing_selection_click(mpos_absolute);
         return true;
     }
     else {
@@ -5272,6 +5273,6 @@ void DocumentView::start_drawing() {
     current_drawing.alpha = freehand_alpha;
 }
 
-void DocumentView::handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute, ScratchPad* scratchpad) {
-    freehand_drawing_move_finish(mpos_absolute, scratchpad);
+void DocumentView::handle_freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute) {
+    freehand_drawing_move_finish(mpos_absolute);
 }

@@ -115,7 +115,6 @@ private:
     QPainter painter;
 
     DocumentView* document_view = nullptr;
-    ScratchPad* scratchpad = nullptr;
     PdfRenderer* pdf_renderer = nullptr;
     DocumentManager* document_manager = nullptr;
 
@@ -236,6 +235,7 @@ public:
     std::vector<NormalizedWindowRect> get_overview_border_rects();
     Document* doc(std::optional<OverviewState> overview = {});
     DocumentView* dv();
+    ScratchPad* scratch();
 
     void setup_text_painter();
     void get_overview_window_vertices(float out_vertices[2 * 4], std::optional<OverviewState> maybe_overview = {});
@@ -261,8 +261,6 @@ public:
     //void draw_markdown_text(QString text, QRect window_rect, const QFont& font);
 
     void render_selected_rectangle();
-    void set_scratchpad(ScratchPad* pad);
-    ScratchPad* get_scratchpad();
     bool can_use_cached_scratchpad_framebuffer();
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
     void clear_background_color();
