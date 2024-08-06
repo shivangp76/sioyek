@@ -16,11 +16,6 @@
 // visible_object_move_data, etc. should be in document_view
 // clear_selected_text etc. should be moved to document_view
 
-
-#include "platform/qt/graphic_qt.h"
-#include "core/formula.h"
-#include "latex.h"
-
 #include <iostream>
 #include <vector>
 #include <string>
@@ -81,7 +76,7 @@
 #include <qstringconverter.h>
 #include <qmediaplayer.h>
 #include <qaudiooutput.h>
-#include <qregion.h>>
+#include <qregion.h>
 #include <qtextdocument.h>
 #include <qabstracttextdocumentlayout.h>
 #include <qtextcursor.h>
