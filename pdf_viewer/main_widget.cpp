@@ -3082,7 +3082,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     }
                     else {
                         /* move_visual_mark_command(-num_repeats); */
-                        main_document_view->move_visual_mark_prev();
+                        move_ruler_prev();
                         validate_render();
                         return;
                     }
@@ -3109,7 +3109,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     }
                     else {
                         /* move_visual_mark_command(num_repeats); */
-                        main_document_view->move_visual_mark_next();
+                        move_ruler_next();
                         validate_render();
                         return;
                     }
@@ -4328,6 +4328,20 @@ void MainWidget::changeEvent(QEvent* event) {
 #endif
 
     QWidget::changeEvent(event);
+}
+
+void MainWidget::move_ruler_next(){
+    main_document_view->move_visual_mark_next();
+    if (is_reading || high_quality_play_state.has_value()) {
+        read_current_line();
+    }
+}
+
+void MainWidget::move_ruler_prev(){
+    main_document_view->move_visual_mark_prev();
+    if (is_reading || high_quality_play_state.has_value()) {
+        read_current_line();
+    }
 }
 
 AbsoluteRect MainWidget::move_visual_mark(int offset) {

@@ -473,6 +473,9 @@ public:
     // int get_page_intersecting_rect_index(DocumentRect rect);
     // std::optional<AbsoluteRect> get_page_intersecting_rect(DocumentRect rect);
     // void focus_rect(DocumentRect rect);
+    void move_ruler_next();
+    void move_ruler_prev();
+
     AbsoluteRect move_visual_mark(int offset);
     void on_config_file_changed(ConfigManager* new_config);
     void toggle_mouse_drag_mode();
