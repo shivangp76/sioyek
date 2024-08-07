@@ -183,6 +183,7 @@ SOURCES += pdf_viewer/book.cpp \
 win32-msvc*{
     
     CONFIG(Debug){
+        CONFIG += console
         QMAKE_LFLAGS += /SUBSYSTEM:CONSOLE
     }
     CONFIG(Release){
