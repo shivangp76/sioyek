@@ -258,6 +258,10 @@ public:
     // are we currently dragging the document
     bool is_dragging = false;
     bool is_dragging_snapped = false;
+
+    float current_drag_min_annotation_x = -1;
+    float current_drag_max_annotation_x = -1;
+
     // are we performing pinch to zoom gesture
     bool is_pinching = false;
 
@@ -417,6 +421,7 @@ public:
     void on_next_text_suggestion();
     void on_prev_text_suggestion();
     void set_current_text_suggestion();
+    void set_drag_value_on_small_documents(fvec2& val);
 
     std::wstring get_window_configuration_string();
     std::wstring get_serialized_configuration_string();
@@ -475,6 +480,9 @@ public:
     // void focus_rect(DocumentRect rect);
     void move_ruler_next();
     void move_ruler_prev();
+
+    void start_dragging();
+    void stop_dragging();
 
     AbsoluteRect move_visual_mark(int offset);
     void on_config_file_changed(ConfigManager* new_config);

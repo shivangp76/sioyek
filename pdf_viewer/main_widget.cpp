@@ -660,7 +660,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         else {
             if (!main_document_view->visible_object_move_data.has_value()) {
                 if ((mpos.manhattan(last_mouse_down_window_pos)) > 50) {
-                    is_dragging = true;
+                    start_dragging();
                 }
             }
         }
@@ -786,20 +786,15 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
                 diff_doc.values[0] = 0;
             }
         }
+
         if (!ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL) {
-            float current_page_width = doc()->get_page_width(get_current_page_number());
-
-            if (dv()->is_two_page_mode()) {
-                current_page_width += (current_page_width + PAGE_SPACE_X) * (NUM_PAGE_COLUMNS - 1);
-            }
-
-            if ((current_page_width > 0) && ((dv()->get_zoom_level() * current_page_width) < width())) {
-                diff_doc.values[0] = 0;
-            }
+            set_drag_value_on_small_documents(diff_doc);
         }
-        //dv()->set_pos(last_mouse_down_document_offset + diff_doc);
+        else{
+            auto new_pos = last_mouse_down_document_virtual_offset + diff_doc;
+            dv()->set_virtual_pos(new_pos, true);
+        }
 
-        dv()->set_virtual_pos(last_mouse_down_document_virtual_offset + diff_doc, true);
 
         validate_render();
     }
@@ -827,6 +822,52 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             last_text_select_time = QTime::currentTime();
         }
     }
+}
+
+void MainWidget::set_drag_value_on_small_documents(fvec2& diff_doc){
+    float current_page_width = doc()->get_page_width(get_current_page_number());
+    float current_offset = dv()->get_offset_x();
+
+    float view_hwidth_document = dv()->get_view_width() / dv()->get_zoom_level() / 2;
+
+    float min_valid_new_offset_x = std::min(-(current_drag_max_annotation_x - view_hwidth_document), 0.0f);
+    float max_valid_new_offset_x = std::max(-(current_drag_min_annotation_x + view_hwidth_document), 0.0f);
+
+    if (dv()->is_two_page_mode()) {
+        current_page_width += (current_page_width + PAGE_SPACE_X) * (NUM_PAGE_COLUMNS - 1);
+    }
+
+    if ((current_page_width > 0) && ((dv()->get_zoom_level() * current_page_width) < width())) {
+        bool ignore = false;
+        if (diff_doc[0] < 0 && current_offset < min_valid_new_offset_x){
+            diff_doc[0] = 0;
+            ignore = true;
+        }
+        else if (diff_doc[0] > 0 && current_offset > max_valid_new_offset_x){
+            diff_doc[0] = 0;
+            ignore = true;
+        }
+
+        auto new_pos = last_mouse_down_document_virtual_offset + diff_doc;
+
+        if (current_offset <= max_valid_new_offset_x && new_pos.x >= max_valid_new_offset_x){
+            new_pos.x = max_valid_new_offset_x;
+        }
+        else if (current_offset >= min_valid_new_offset_x && new_pos.x <= min_valid_new_offset_x){
+            new_pos.x = min_valid_new_offset_x;
+        }
+        qDebug() << ignore;
+        if (!ignore){
+            dv()->set_virtual_pos(new_pos, true);
+        }
+    }
+    else {
+        auto new_pos = last_mouse_down_document_virtual_offset + diff_doc;
+        dv()->set_virtual_pos(new_pos, true);
+    }
+
+
+
 }
 
 void MainWidget::persist(bool persist_drawings) {
@@ -2201,7 +2242,7 @@ bool MainWidget::handle_left_release_touch_mode(WindowPos click_pos) {
     QPointF vel;
     if (((current_pos - last_press_point).manhattanLength() < 10) && ((current_time - last_press_msecs) < 500)) {
         if (handle_quick_tap(click_pos)) {
-            is_dragging = false;
+            stop_dragging();
             invalidate_render();
             return true;
         }
@@ -2326,6 +2367,18 @@ bool MainWidget::handle_visible_object_resize_finish() {
     return false;
 }
 
+void MainWidget::start_dragging(){
+    int page = get_current_page_number();
+    auto [min_x, max_x] = doc()->get_min_max_annot_x_for_page(page);
+    current_drag_min_annotation_x = min_x;
+    current_drag_max_annotation_x = max_x;
+    is_dragging = true;
+}
+
+void MainWidget::stop_dragging(){
+    is_dragging = false;
+}
+
 void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift_pressed, bool is_control_pressed, bool is_command_pressed, bool is_alt_pressed) {
     AbsoluteDocumentPos abs_doc_pos = main_document_view->get_window_abspos(click_pos);
 
@@ -2404,7 +2457,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             }
         }
         else {
-            is_dragging = true;
+            start_dragging();
             if (SNAP_DRAGGING) {
                 is_dragging_snapped = true;
             }
@@ -2414,7 +2467,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         dv()->selection_end = abs_doc_pos;
 
         main_document_view->is_selecting = false;
-        is_dragging = false;
+        stop_dragging();
 
         if (main_document_view->visible_object_resize_data) {
             if (handle_visible_object_resize_finish()) return;
@@ -2827,7 +2880,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
             }
         }
         else {
-            is_dragging = false;
+            stop_dragging();
 
         }
     }
@@ -6150,7 +6203,7 @@ bool MainWidget::event(QEvent* event) {
                 QTapAndHoldGesture* tapgest = static_cast<QTapAndHoldGesture*>(gesture->gesture(Qt::TapAndHoldGesture));
                 if (tapgest->state() == Qt::GestureFinished) {
 
-                    is_dragging = false;
+                    stop_dragging();
 
                     if (is_in_middle_left_rect(window_pos)) {
                         if (execute_macro_if_enabled(MIDDLE_LEFT_RECT_HOLD_COMMAND)) {
@@ -6205,7 +6258,7 @@ bool MainWidget::event(QEvent* event) {
                 }
                 if ((pinch->state() == Qt::GestureFinished) || (pinch->state() == Qt::GestureCanceled)) {
                     is_pinching = false;
-                    is_dragging = false;
+                    stop_dragging();
                 }
                 float scale = pinch->scaleFactor();
 
@@ -6427,7 +6480,7 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
     clear_highlight_buttons();
     clear_search_buttons();
     main_document_view->cancel_search();
-    is_dragging = false;
+    stop_dragging();
 
     //if (current_widget != nullptr) {
     //    delete current_widget;
@@ -10170,7 +10223,7 @@ bool MainWidget::handle_annotation_move_finish(){
     if (main_document_view->visible_object_move_data && main_document_view->visible_object_move_data->is_moving) {
         main_document_view->visible_object_move_data->handle_move_end(this);
         main_document_view->visible_object_move_data = {};
-        is_dragging = false;
+        stop_dragging();
         main_document_view->is_selecting = false;
         return true;
     }
