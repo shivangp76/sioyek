@@ -407,8 +407,13 @@ NormalizedWindowPos DocumentView::absolute_to_window_pos(AbsoluteDocumentPos abs
 }
 
 NormalizedWindowRect DocumentView::absolute_to_window_rect(AbsoluteRect doc_rect) {
+    float abs_width = doc_rect.width();
+    float abs_height = doc_rect.height();
+
     NormalizedWindowPos top_left = doc_rect.top_left().to_window_normalized(this);
-    NormalizedWindowPos bottom_right = doc_rect.bottom_right().to_window_normalized(this);
+    NormalizedWindowPos bottom_right;
+    bottom_right.x = top_left.x + abs_width * zoom_level / view_width * 2;
+    bottom_right.y = top_left.y - abs_height * zoom_level / view_height * 2;
 
     return NormalizedWindowRect(top_left, bottom_right);
 }

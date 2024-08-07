@@ -12,8 +12,6 @@
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
 // pinned portals outside of page boundary are displayed weirdly in two page mode
-// in touch mode if menu button and a visible object overlap, bad things happen
-// scrolling to out of bound portals does not work if we are not zoomed in enough
 
 #include <iostream>
 #include <vector>
@@ -856,7 +854,6 @@ void MainWidget::set_drag_value_on_small_documents(fvec2& diff_doc){
         else if (current_offset >= min_valid_new_offset_x && new_pos.x <= min_valid_new_offset_x){
             new_pos.x = min_valid_new_offset_x;
         }
-        qDebug() << ignore;
         if (!ignore){
             dv()->set_virtual_pos(new_pos, true);
         }
