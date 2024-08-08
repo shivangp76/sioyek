@@ -4393,16 +4393,22 @@ void MainWidget::move_ruler_prev(){
 }
 
 AbsoluteRect MainWidget::move_visual_mark(int offset) {
-    AbsoluteRect ruler_rect = main_document_view->move_visual_mark(offset);
+    if (!main_document_view->is_ruler_mode()){
+        main_document_view->handle_vertical_move(offset);
+        return fz_empty_rect;
+    }
+    else{
+        AbsoluteRect ruler_rect = main_document_view->move_visual_mark(offset);
 
-    if (is_reading || high_quality_play_state.has_value()) {
-        read_current_line();
+        if (is_reading || high_quality_play_state.has_value()) {
+            read_current_line();
+        }
+        if (AUTOCENTER_VISUAL_SCROLL) {
+            return_to_last_visual_mark();
+        }
+        main_document_view->clear_underline();
+        return ruler_rect;
     }
-    if (AUTOCENTER_VISUAL_SCROLL) {
-        return_to_last_visual_mark();
-    }
-    main_document_view->clear_underline();
-    return ruler_rect;
 }
 
 
