@@ -656,6 +656,7 @@ std::string reference_type_string(ReferenceType rt) {
 void Portal::update_merged_rect(Document* doc) const{
 
     if (!is_visible()) return;
+    if (is_pinned()) return;
 
     if (merged_rect) {
         if (!merged_rect->intersects(get_actual_rectangle())) {
