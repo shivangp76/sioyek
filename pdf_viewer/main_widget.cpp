@@ -6087,7 +6087,6 @@ int MainWidget::num_visible_links() {
 bool MainWidget::event(QEvent* event) {
     QTabletEvent* te = dynamic_cast<QTabletEvent*>(event);
     QKeyEvent* ke = dynamic_cast<QKeyEvent*>(event);
-    qDebug() << size() << " " << pos();
 
     if (event->type() == QEvent::WindowActivate) {
         if (SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS && is_external_file_edited) {
