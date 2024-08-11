@@ -1864,7 +1864,7 @@ void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const std::vector<F
 
 
     if (drawings.size() == 0) {
-        scratchpad->on_compile();
+        dv->scratchpad->on_compile();
     }
 
     QPixmap pixmap(rect().size());
@@ -1878,18 +1878,10 @@ void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const std::vector<F
     cached_pixmap_data.offset_y = dv->get_offset_y();
     cached_pixmap_data.zoom_level = dv->get_zoom_level();
     cached_pixmap_data.pixmap = pixmap;
-    scratchpad->cached_pixmap = std::make_unique<CachedScratchpadPixmapData>(cached_pixmap_data);
-    scratchpad->on_compile();
+    dv->scratchpad->cached_pixmap = std::make_unique<CachedScratchpadPixmapData>(cached_pixmap_data);
+    dv->scratchpad->on_compile();
 
 
-    //QPainterPath path;
-    //for (const auto& drawing : drawings) {
-    //    path.line
-    //}
-    //std::vector<QLineF> compiled_lines;
-    //painter.drawLines()
-    //scratchpad->on_compile();
-    //qDebug() << "compile_drawings not implemented.";
 #endif
 }
 
@@ -1966,10 +1958,9 @@ void PdfViewOpenGLWidget::render_compiled_drawings() {
 
     }
 #else
-    if (scratchpad->cached_pixmap) {
-        painter.drawPixmap(rect(), scratchpad->cached_pixmap->pixmap);
+    if (dv()->scratchpad->cached_pixmap) {
+        painter.drawPixmap(rect(), dv()->scratchpad->cached_pixmap->pixmap);
     }
-    //qDebug() << "render compiled drawings not implemented";
 #endif
 }
 
@@ -2799,7 +2790,7 @@ void PdfViewOpenGLWidget::render_highlight_window_opengl_backend(NormalizedWindo
             window_rect.x0, window_rect.y1
         };
 
-        glDisable(GL_BLEND);
+        // glDisable(GL_BLEND);
         glBufferData(GL_ARRAY_BUFFER, sizeof(line_data), line_data, GL_DYNAMIC_DRAW);
         glDrawArrays(GL_LINE_LOOP, 0, 4);
     }
@@ -2809,7 +2800,7 @@ void PdfViewOpenGLWidget::render_highlight_window_opengl_backend(NormalizedWindo
     }
 
     if (flags & HRF_STRIKE) {
-        glDisable(GL_BLEND);
+        // glDisable(GL_BLEND);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 }
@@ -3418,9 +3409,9 @@ void PdfViewOpenGLWidget::render_overview_qpainter_backend(NormalizedWindowRect 
             render_highlight_window(target, HRF_FILL | HRF_BORDER);
         }
     }
-    if (document_view->overview_highlights.size() > 0) {
+    if (overview.highlight_rects.size() > 0) {
         set_highlight_color(&OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0], 0.3f);
-        for (auto rect : document_view->overview_highlights) {
+        for (auto rect : overview.highlight_rects) {
             NormalizedWindowRect target = document_view->document_to_overview_rect(rect, overview);
             render_highlight_window(target, HRF_FILL);
         }
