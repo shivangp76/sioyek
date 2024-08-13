@@ -7847,7 +7847,7 @@ public:
 CommandManager::CommandManager(ConfigManager* config_manager) {
 
     register_command<CloseWindowCommand>("q");
-    register_command<GotoBeginningCommand>();
+    register_command<GotoBeginningCommand>("goto_beginning");
     register_command<GotoEndCommand>();
     register_command<GotoDefinitionCommand>();
     register_command<OverviewDefinitionCommand>();
