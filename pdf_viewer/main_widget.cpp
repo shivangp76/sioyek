@@ -11,7 +11,6 @@
 // make the action of download and clipboard paper configurable
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
-// pinned portals outside of page boundary are displayed weirdly in two page mode
 
 #include <iostream>
 #include <vector>
@@ -3579,8 +3578,15 @@ void MainWidget::handle_portal() {
         main_document_view->set_pending_portal({});
     }
     else {
-        main_document_view->set_pending_portal(main_document_view->get_document()->get_path(),
-            Portal::with_src_offset(main_document_view->get_offset_y()));
+        // if an overview is opened, add the overview as a pinned portal
+        if (dv()->get_overview_page().has_value()){
+            pin_current_overview_as_portal();
+            close_overview();
+        }
+        else{
+            main_document_view->set_pending_portal(main_document_view->get_document()->get_path(),
+                Portal::with_src_offset(main_document_view->get_offset_y()));
+        }
     }
 
     synchronize_pending_link();
