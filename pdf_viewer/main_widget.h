@@ -138,6 +138,7 @@ public:
     // is the TTS engine currently reading text?
     bool is_reading = false;
     bool word_by_word_reading = false;
+    QString prev_tts_state = "";
     bool tts_has_pause_resume_capability = false;
     bool tts_is_about_to_finish = false;
     std::wstring tts_text = L"";

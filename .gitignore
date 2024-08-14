@@ -386,6 +386,7 @@ CMakeCache.txt
 .qt_plugins/*
 .qt/*
 .DS_STORE
+.gdb_history
 
 .vscode/*
 vscodebuild/*

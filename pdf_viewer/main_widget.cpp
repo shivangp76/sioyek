@@ -7319,6 +7319,14 @@ void MainWidget::read_current_line() {
     }
     else {
 
+        if (!word_by_word_reading){
+            if (is_reading){
+                is_reading = false;
+                prev_tts_state = "Stopped";
+                get_tts()->stop();
+            }
+        }
+
         std::wstring selected_line_text = main_document_view->get_selected_line_text().value_or(L"");
         //std::wstring text = main_document_view->get_selected_line_text().value_or(L"");
         tts_text.clear();
@@ -7346,7 +7354,6 @@ void MainWidget::read_current_line() {
         }
         else {
             get_tts()->say(QString::fromStdWString(selected_line_text));
-            tts_is_about_to_finish = true;
         }
 
         last_page_read = page_number;
@@ -8104,13 +8111,23 @@ TextToSpeechHandler* MainWidget::get_tts() {
 
 
     tts->set_state_change_callback([&](QString state) {
-        if ((state == "Ready") || (state == "Error")) {
-            if (is_reading && tts_is_about_to_finish) {
-                tts_is_about_to_finish = false;
-                move_visual_mark(1);
-                invalidate_render();
+
+        if ((!word_by_word_reading) && is_reading && (state == "Ready") && (prev_tts_state == "Speaking")){
+            // when word_by_word_reading is not available, we can't rely on tts_is_about_to_finish
+            move_visual_mark(1);
+            invalidate_render();
+
+        }
+        else{
+            if ((state == "Ready") || (state == "Error")) {
+                if (is_reading && tts_is_about_to_finish) {
+                    tts_is_about_to_finish = false;
+                    move_visual_mark(1);
+                    invalidate_render();
+                }
             }
         }
+        prev_tts_state = state;
         });
 
     tts->set_external_state_change_callback([&](QString state){

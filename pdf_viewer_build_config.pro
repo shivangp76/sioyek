@@ -219,6 +219,10 @@ unix:!mac:!android {
 
     QMAKE_CXXFLAGS += -std=c++17
 
+    CONFIG(debug){
+        DEFINES += SIOYEK_DEVELOPER
+    }
+    
     CONFIG(linux_app_image){
         LIBS += -ldl -L$$PWD/mupdf/build/release -lmupdf -lmupdf-third -lmupdf-threads -lharfbuzz -lz
     } else {
