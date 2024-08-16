@@ -7097,6 +7097,7 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
             if (bm) {
                 bm->description = replace_verbatim_links(bm->description);
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
+                on_bookmark_edited(bm->uuid);
             }
         });
 }
@@ -7114,6 +7115,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
             BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
             if (bm) {
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
+                on_bookmark_edited(bm->uuid);
             }
         });
 }
