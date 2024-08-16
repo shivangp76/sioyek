@@ -11,6 +11,7 @@
 // make the action of download and clipboard paper configurable
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
+// bug: the result of ai queries is not uploaded to servers
 
 #include <iostream>
 #include <vector>

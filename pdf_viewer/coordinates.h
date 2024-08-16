@@ -179,7 +179,7 @@ struct EnhancedRect : public R {
         return std::abs(c1.x - c2.x) + std::abs(c1.y - c2.y);
     }
 
-    EnhancedRect<R, T>& intersect_rect(const EnhancedRect<R, T>& other) const {
+    EnhancedRect<R, T> intersect_rect(const EnhancedRect<R, T>& other) const {
         EnhancedRect<R, T> res;
         res.x0 = std::max(R::x0, other.x0);
         res.x1 = std::min(R::x1, other.x1);
