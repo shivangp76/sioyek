@@ -3030,7 +3030,7 @@ public:
         }
         else {
 
-            TouchCommandSelector* tcs = new TouchCommandSelector(FUZZY_SEARCHING, command_names, widget);
+            TouchCommandSelector* tcs = new TouchCommandSelector(true, command_names, widget);
             widget->set_current_widget(tcs);
         }
 

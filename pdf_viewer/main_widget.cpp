@@ -7043,7 +7043,6 @@ void MainWidget::show_command_menu() {
         pop_current_widget();
         setFocus();
         on_command_done(command_name.toStdString(), query);
-
         });
     set_current_widget(command_selector_widget);
     show_current_widget();
