@@ -90,12 +90,13 @@ std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
 std::wstring PAPERS_FOLDER_PATH = L"";
 #ifndef SIOYEK_MOBILE
 std::wstring STATUS_BAR_FORMAT = L"[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}%{rect_select}%{custom_message}%{download}%{download_button}%{network_status}%{tts_status}%{tts_rate}";
-std::wstring TITLEBAR_FORMAT = L"";
 std::wstring RIGHT_STATUS_BAR_FORMAT = L"";
 #else
 std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_results}%{search_progress}%{link_status}%{indexing}%{current_requirement_desc}";
 std::wstring RIGHT_STATUS_BAR_FORMAT = L"%{auto_name}";
 #endif
+
+std::wstring TITLEBAR_FORMAT = L"";
 
 // these commands are peformed when the user clicks on the corresponding item's text on statusbar
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
@@ -1714,87 +1715,6 @@ bool ConfigManager::deserialize_config(std::string config_name, std::wstring con
 
 }
 
-ConfigModel::ConfigModel(std::vector<Config*>* configs, QObject* parent) : QAbstractTableModel(parent), configs(configs) {
-}
-
-int ConfigModel::rowCount(const QModelIndex& parent) const {
-    return configs->size();
-}
-
-int ConfigModel::columnCount(const QModelIndex& parent) const {
-    return 3;
-}
-QVariant ConfigModel::data(const QModelIndex& index, int role) const {
-    if (role == Qt::DisplayRole) {
-        int col = index.column();
-        int row = index.row();
-        if (col < 0 || row < 0) {
-            //return QAbstractTableModel::data(index, role);
-            return QVariant::fromValue(QString(""));
-        }
-
-        const Config* conf = (*configs)[row];
-        ConfigType config_type = conf->config_type;
-        std::wstring config_name = conf->name;
-        if (col == 0) {
-            return QVariant::fromValue(QString::fromStdWString(conf->get_type_string()));
-        }
-        if (col == 1) {
-            return QVariant::fromValue(QString::fromStdWString(config_name));
-        }
-        if (col == 2) {
-            //std::wstringstream config_serialized;
-            //conf->serialize(conf->value, config_serialized);
-            //QVariant::fromValue(QString::fromStdWString(config_serialized.str()));
-            if (config_type == ConfigType::Bool) {
-                return QVariant::fromValue(*(bool*)conf->value);
-            }
-
-            if (config_type == ConfigType::Float) {
-                QList<float> vals;
-                FloatExtras extras = std::get<FloatExtras>(conf->extras);
-                vals << *(float*)conf->value;
-                vals << extras.min_val << extras.max_val;
-                return QVariant::fromValue(vals);
-            }
-            if (config_type == ConfigType::Int) {
-                QList<int> vals;
-                IntExtras extras = std::get<IntExtras>(conf->extras);
-                vals << *(int*)conf->value;
-                vals << extras.min_val << extras.max_val;
-                return QVariant::fromValue(vals);
-            }
-
-            if ((config_type == ConfigType::String) || (config_type == ConfigType::Macro) || (config_type == ConfigType::Enum) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
-                //QColor::from
-                return QVariant::fromValue(QString::fromStdWString(*(std::wstring*)(conf->value)));
-            }
-            if (config_type == ConfigType::Color3) {
-                //QColor::from
-                int out_rgb[3];
-                convert_color3((float*)conf->value, out_rgb);
-                return QVariant::fromValue(QColor(out_rgb[0], out_rgb[1], out_rgb[2]));
-            }
-
-            if (config_type == ConfigType::Color4) {
-                //QColor::from
-                int out_rgb[4];
-                convert_color4((float*)conf->value, out_rgb);
-                return QVariant::fromValue(QColor(out_rgb[0], out_rgb[1], out_rgb[2], out_rgb[3]));
-            }
-
-            //if (config_type == ConfigType::String) {
-            //	//QColor::from
-            //	return QVariant::fromValue(QString::fromStdWString(*(std::wstring*)conf->value));
-            //}
-            return QVariant::fromValue(QString(""));
-        }
-
-        //conf->name
-
-    }
-    return QVariant::fromValue(QString(""));
-}
 
 void Config::save_value_into_default() {
     default_value_string = L"";

@@ -10,6 +10,7 @@
 
 #include "background_tasks.h"
 #include "utils.h"
+#include "path.h"
 
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"

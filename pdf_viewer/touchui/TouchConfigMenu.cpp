@@ -2,6 +2,7 @@
 #include <QVariant>
 #include "ui.h"
 #include "main_widget.h"
+#include "config.h"
 
 
 TouchConfigMenu::TouchConfigMenu(bool fuzzy, MainWidget* main_widget) :
@@ -142,3 +143,85 @@ void TouchConfigMenu::resizeEvent(QResizeEvent* resize_event) {
 
 }
 
+
+ConfigModel::ConfigModel(std::vector<Config*>* configs, QObject* parent) : QAbstractTableModel(parent), configs(configs) {
+}
+
+int ConfigModel::rowCount(const QModelIndex& parent) const {
+    return configs->size();
+}
+
+int ConfigModel::columnCount(const QModelIndex& parent) const {
+    return 3;
+}
+QVariant ConfigModel::data(const QModelIndex& index, int role) const {
+    if (role == Qt::DisplayRole) {
+        int col = index.column();
+        int row = index.row();
+        if (col < 0 || row < 0) {
+            //return QAbstractTableModel::data(index, role);
+            return QVariant::fromValue(QString(""));
+        }
+
+        const Config* conf = (*configs)[row];
+        ConfigType config_type = conf->config_type;
+        std::wstring config_name = conf->name;
+        if (col == 0) {
+            return QVariant::fromValue(QString::fromStdWString(conf->get_type_string()));
+        }
+        if (col == 1) {
+            return QVariant::fromValue(QString::fromStdWString(config_name));
+        }
+        if (col == 2) {
+            //std::wstringstream config_serialized;
+            //conf->serialize(conf->value, config_serialized);
+            //QVariant::fromValue(QString::fromStdWString(config_serialized.str()));
+            if (config_type == ConfigType::Bool) {
+                return QVariant::fromValue(*(bool*)conf->value);
+            }
+
+            if (config_type == ConfigType::Float) {
+                QList<float> vals;
+                FloatExtras extras = std::get<FloatExtras>(conf->extras);
+                vals << *(float*)conf->value;
+                vals << extras.min_val << extras.max_val;
+                return QVariant::fromValue(vals);
+            }
+            if (config_type == ConfigType::Int) {
+                QList<int> vals;
+                IntExtras extras = std::get<IntExtras>(conf->extras);
+                vals << *(int*)conf->value;
+                vals << extras.min_val << extras.max_val;
+                return QVariant::fromValue(vals);
+            }
+
+            if ((config_type == ConfigType::String) || (config_type == ConfigType::Macro) || (config_type == ConfigType::Enum) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
+                //QColor::from
+                return QVariant::fromValue(QString::fromStdWString(*(std::wstring*)(conf->value)));
+            }
+            if (config_type == ConfigType::Color3) {
+                //QColor::from
+                int out_rgb[3];
+                convert_color3((float*)conf->value, out_rgb);
+                return QVariant::fromValue(QColor(out_rgb[0], out_rgb[1], out_rgb[2]));
+            }
+
+            if (config_type == ConfigType::Color4) {
+                //QColor::from
+                int out_rgb[4];
+                convert_color4((float*)conf->value, out_rgb);
+                return QVariant::fromValue(QColor(out_rgb[0], out_rgb[1], out_rgb[2], out_rgb[3]));
+            }
+
+            //if (config_type == ConfigType::String) {
+            //	//QColor::from
+            //	return QVariant::fromValue(QString::fromStdWString(*(std::wstring*)conf->value));
+            //}
+            return QVariant::fromValue(QString(""));
+        }
+
+        //conf->name
+
+    }
+    return QVariant::fromValue(QString(""));
+}
