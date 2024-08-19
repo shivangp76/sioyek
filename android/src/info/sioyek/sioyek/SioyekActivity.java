@@ -76,6 +76,7 @@ public class SioyekActivity extends QtActivity{
 
     public static boolean isIntentPending;
     public static boolean isInitialized;
+    public static boolean wasPlayingWhenPaused = false;
     public static boolean isPaused = true;
 
     private static SioyekActivity instance = null;
@@ -186,13 +187,24 @@ public class SioyekActivity extends QtActivity{
         LocalBroadcastManager.getInstance(this).unregisterReceiver(externalStateMessageReceiver);
     }
 
+    public void startMaybeForegroundService(Intent intent){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+    }
+
     @Override
     public void onResume(){
 
         isPaused = false;
-        Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
-        intent.putExtra("resume", true);
-        startService(intent);
+        if (wasPlayingWhenPaused){
+            wasPlayingWhenPaused = false;
+            Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
+            intent.putExtra("resume", true);
+            startMaybeForegroundService(intent);
+        }
 
         super.onResume();
     }
@@ -203,6 +215,7 @@ public class SioyekActivity extends QtActivity{
         String rest = getRestOnPause();
 
         if (rest.length() > 0){
+            wasPlayingWhenPaused = true;
             setTtsRestOfDocument(rest);
         }
 
@@ -478,7 +491,7 @@ public class SioyekActivity extends QtActivity{
     public void ttsSay(String text){
         Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
         intent.putExtra("text", text);
-        startService(intent);
+        startMaybeForegroundService(intent);
 
         Handler handler = new Handler(Looper.getMainLooper());
         handler.postDelayed(new Runnable() {
@@ -492,13 +505,13 @@ public class SioyekActivity extends QtActivity{
     public void setTtsRate(float rate){
         Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
         intent.putExtra("rate", rate);
-        startService(intent);
+        startMaybeForegroundService(intent);
     }
 
     public void setTtsRestOfDocument(String rest){
         Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
         intent.putExtra("rest", rest);
-        startService(intent);
+        startMaybeForegroundService(intent);
     }
 
 }
