@@ -37,7 +37,7 @@ Rectangle {
     TextInput{
         id: query
         color: "white"
-        inputMethodHints: Qt.ImhSensitiveData | Qt.ImhPreferLowercase
+        inputMethodHints: Qt.ImhPreferLowercase | Qt.ImhNoPredictiveText
         focus: _focus
         activeFocusOnTab: true
 
@@ -59,10 +59,8 @@ Rectangle {
         }
 
 
-        onTextChanged: {
-            //lview.model.setFilterRegularExpression(text);
-            lview.model.setFilterCustom(text);
-            //rootitem.root_model.setFilterRegularExpression(text);
+        onDisplayTextChanged: {
+            lview.model.setFilterCustom(displayText);
         }
 
         onAccepted: {

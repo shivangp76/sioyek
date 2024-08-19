@@ -5,7 +5,7 @@ import QtQuick.Controls 2.15
 
 
 Rectangle {
-    //property list<int> selection_range: model.get_highlight_positions(model.data(model.display.slice(0, 0), query.text))
+    //property list<int> selection_range: model.get_highlight_positions(model.data(model.display.slice(0, 0), query.displayText))
     anchors {
         left: parent ? parent.left : undefined
         right: parent ? parent.right : undefined
@@ -32,7 +32,7 @@ Rectangle {
 
             Text {
                 function getDisplayText(){
-                    let selectionRange = lview.model.get_highlight_positions(model.display.toLowerCase(), query.text.toLowerCase());
+                    let selectionRange = lview.model.get_highlight_positions(model.display.toLowerCase(), query.displayText.toLowerCase());
                     if (selectionRange[0] == -1){
                         return model.display;
                     }
