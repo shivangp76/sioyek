@@ -391,3 +391,6 @@ CMakeCache.txt
 .vscode/*
 vscodebuild/*
 sioyek.code-workspace
+.nvimrc
+cmakebuild/*
+sioyek
