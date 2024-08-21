@@ -21,7 +21,12 @@
 #include "book.h"
 
 class BackgroundBookmarkRenderer;
-/* #define SIOYEK_OPENGL_BACKEND */
+#ifdef SIOYEK_ANDROID
+#define SIOYEK_OPENGL_BACKEND
+#else
+#define SIOYEK_OPENGL_BACKEND
+#endif
+
 #ifdef SIOYEK_OPENGL_BACKEND
 using SioyekTextureType = GLuint;
 #else

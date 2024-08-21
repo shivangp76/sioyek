@@ -12,6 +12,7 @@
 // factorize click, scroll, etc. handling code
 // add keyboard commands to control pinned portals
 // bug: the result of ai queries is not uploaded to servers
+// probably we need to convert onTextChanged to onDisplayTextChanged in more qml places
 
 #include <iostream>
 #include <vector>
@@ -4229,7 +4230,7 @@ void MainWidget::handle_link_click(const PdfLink& link) {
         auto docpath = doc()->get_path();
         Path linked_file_path = Path(doc()->get_path()).file_parent().slash(path_part);
         int page = 0;
-        if (parts.size() > 0) {
+        if (parts.size() > 1) {
             std::string page_string = parts.at(1).toStdString();
             page_string = page_string.substr(5, page_string.size() - 5);
             page = QString::fromStdString(page_string).toInt() - 1;
@@ -7004,6 +7005,7 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
+
 }
 
 void MainWidget::show_command_menu() {
