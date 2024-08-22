@@ -222,7 +222,7 @@ unix:!mac:!android {
     QMAKE_CXX = clang++
     QMAKE_LINK = clang++
     QMAKE_LFLAGS += -fuse-ld=mold
-    QMAKE_CXXFLAGS += -ftime-trace
+    # QMAKE_CXXFLAGS += -ftime-trace
 
 
     CONFIG(debug){

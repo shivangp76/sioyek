@@ -49,6 +49,12 @@ bool SLICED_RENDERING = true;
 #else
 bool SLICED_RENDERING = false;
 #endif
+
+// when the window rect size is not an exact integer, mupdf rounds up and 
+// this can cause a pixel strip on documents with dark background color
+// this is a workaround for which basically doesn't render the last pixel strip
+bool BACKGROUND_PIXEL_FIX = false;
+
 int NUM_V_SLICES = 5;
 int NUM_H_SLICES = 1;
 bool SHOULD_RENDER_PDF_ANNOTATIONS = true;
@@ -69,13 +75,8 @@ bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH = false;
 bool SHOW_SETCONFIG_IN_STATUSBAR = false;
 int NUM_PAGE_COLUMNS = 2;
 
+
 std::wstring SEARCH_URLS[26];
-// std::wstring EXECUTE_COMMANDS[26];
-// std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
-//std::wstring PAPER_SEARCH_URL = L"https://search.fatcat.wiki/fatcat_release/_search?q=%{query}";
-//std::wstring PAPER_SEARCH_URL_PATH = L"hits.hits[]._source.best_pdf_url";
-//std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
-//std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 
 std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a markdown table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns. Only reply with the raw markdown, do not include any extra text.";
 // std::wstring PAPER_SEARCH_URL = L"https://scholar.google.com/scholar?oi=gsr-r&output=gsb&q=%{query}";
@@ -1214,7 +1215,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"show_reference_overview_highlights", &SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS);
     add_bool(L"always_render_bookmarks", &ALWAYS_RENDER_BOOKMARKS);
     add_bool(L"visualize_ruler_thresholds", &VISUALIZE_RULER_THRESHOLDS);
-
+    add_bool(L"background_pixel_fix", &BACKGROUND_PIXEL_FIX);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
     add_string(L"shared_database_path", &SHARED_DATABASE_PATH);

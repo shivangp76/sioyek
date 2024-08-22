@@ -136,6 +136,7 @@ extern std::wstring TAG_FONT_FACE;
 
 const int SELECTED_BORDER_PEN_SIZE = 2;
 const float SELECTED_BORDER_COLOR[3] = { 0.7f, 0.7f, 0.7f };
+extern bool BACKGROUND_PIXEL_FIX;
 
 GLfloat g_quad_vertex[] = {
     -1.0f, -1.0f,
@@ -652,7 +653,12 @@ void PdfViewOpenGLWidget::render_page(int page_number, std::optional<OverviewSta
         }
 
 #ifdef SIOYEK_OPENGL_BACKEND
-        if (dv()->is_two_page_mode() && (stencils_allowed)) {
+        if (BACKGROUND_PIXEL_FIX || (document_view->is_two_page_mode() && (stencils_allowed))) {
+            if (BACKGROUND_PIXEL_FIX) {
+                page_content.x1 -= 1.0f / zoom_level;
+                page_content.y1 -= 1.0f / zoom_level;
+            }
+
             glClear(GL_STENCIL_BUFFER_BIT);
             enable_stencil();
             write_to_stencil();
