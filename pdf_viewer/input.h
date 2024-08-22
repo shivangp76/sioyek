@@ -104,26 +104,6 @@ public:
     void handle_new_javascript_command(std::wstring command_name, JsCommandInfo command_files_pair, bool is_async);
     void update_command_last_use(std::string command_name);
 
-    template<typename T>
-    void register_command(std::string alias_name="") {
-        bool is_developer_mode = false;
-
-#ifdef SIOYEK_DEVELOPER
-        is_developer_mode = true;
-#endif
-
-        if (is_developer_mode || !T::developer_only) {
-            std::string name = alias_name.size() > 0 ? alias_name : T::cname;
-            bool is_alias = alias_name.size() > 0;
-            new_commands[T::cname] = [](MainWidget* widget) {return std::make_unique<T>(widget); };
-            if (is_alias) {
-                new_commands[name] = [](MainWidget* widget) {return std::make_unique<T>(widget); };
-                command_aliases[T::cname] = name;
-            }
-            command_human_readable_names[name] = is_alias ? "alias for " + T::cname : T::hname;
-            command_required_prefixes[QString::fromStdString(name)] = "";
-        }
-    }
 };
 
 struct InputParseTreeNode {

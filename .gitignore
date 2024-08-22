@@ -394,3 +394,4 @@ sioyek.code-workspace
 .nvimrc
 cmakebuild/*
 sioyek
+sioyek.gch/*

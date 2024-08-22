@@ -217,10 +217,15 @@ win32{
 
 unix:!mac:!android {
 
-    QMAKE_CXXFLAGS += -std=c++17
-
     QMAKE_CXX = clang++
     QMAKE_LINK = clang++
+
+    CONFIG += precompile_header
+    PRECOMPILED_HEADER = pch.h
+    HEADERS += pch.h
+
+    QMAKE_CXXFLAGS += -std=c++17
+
     QMAKE_LFLAGS += -fuse-ld=mold
     # QMAKE_CXXFLAGS += -ftime-trace
 
