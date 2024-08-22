@@ -7005,7 +7005,6 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
-
 }
 
 void MainWidget::show_command_menu() {

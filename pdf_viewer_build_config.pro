@@ -219,6 +219,12 @@ unix:!mac:!android {
 
     QMAKE_CXXFLAGS += -std=c++17
 
+    QMAKE_CXX = clang++
+    QMAKE_LINK = clang++
+    QMAKE_LFLAGS += -fuse-ld=mold
+    QMAKE_CXXFLAGS += -ftime-trace
+
+
     CONFIG(debug){
         DEFINES += SIOYEK_DEVELOPER
     }
