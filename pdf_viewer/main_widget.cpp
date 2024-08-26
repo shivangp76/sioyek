@@ -1080,6 +1080,19 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         handle_resume_to_server_location();
         });
 
+    // when screen is rotated, we may be below the minimum zoom level for the new orientation
+    // so we check for that here and adjust to screen width if that is the case
+    QObject::connect(screen(), &QScreen::orientationChanged, [&](Qt::ScreenOrientation orientation){
+            if (TOUCH_MODE && doc()){
+                int current_page_number = main_document_view->get_current_page_number();
+                float min_zoom_level = main_document_view->get_view_width() / doc()->get_page_width(current_page_number);
+                if (main_document_view->get_zoom_level() < min_zoom_level){
+                    main_document_view->fit_to_page_width();
+                    invalidate_render();
+                }
+            }
+            });
+
     dynamic_cast<StatusLabelLineEdit*>(status_label_left)->on_click = [&]() {
 
         if (TOUCH_MODE){
