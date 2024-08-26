@@ -1082,6 +1082,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     dynamic_cast<StatusLabelLineEdit*>(status_label_left)->on_click = [&]() {
 
+        if (TOUCH_MODE){
+            // we don't want to handle clicks on the status label in touch mode
+            return;
+        }
+
         QPoint mouse_pos = mapFromGlobal(QCursor::pos());
         int cursor_pos = status_label_left->cursorPositionAt(mouse_pos);
         QString text = status_label_left->text();
