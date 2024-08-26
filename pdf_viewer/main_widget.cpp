@@ -6697,6 +6697,7 @@ int MainWidget::get_current_colorscheme_index() {
 void MainWidget::set_dark_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Dark) {
         main_document_view->set_dark_mode(true);
+        config_manager->handle_set_color_palette(this, ColorPalette::Dark);
     }
     if (helper_opengl_widget_) {
         if (helper_document_view_->get_current_color_mode() != ColorPalette::Dark) {
@@ -6708,6 +6709,7 @@ void MainWidget::set_dark_mode() {
 void MainWidget::set_light_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Normal) {
         main_document_view->set_dark_mode(false);
+        config_manager->handle_set_color_palette(this, ColorPalette::Normal);
     }
     if (helper_opengl_widget_) {
         if (helper_document_view_->get_current_color_mode() != ColorPalette::Normal) {
@@ -6719,6 +6721,7 @@ void MainWidget::set_light_mode() {
 void MainWidget::set_custom_color_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Custom) {
         main_document_view->set_custom_color_mode(true);
+        config_manager->handle_set_color_palette(this, ColorPalette::Custom);
     }
     if (helper_opengl_widget_) {
         if (helper_document_view_->get_current_color_mode() != ColorPalette::Custom) {
