@@ -395,3 +395,5 @@ sioyek.code-workspace
 cmakebuild/*
 sioyek
 sioyek.gch/*
+.vimspector.json
+.vimspector.session
