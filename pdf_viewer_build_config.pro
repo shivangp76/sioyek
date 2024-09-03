@@ -218,6 +218,7 @@ win32{
 unix:!mac:!android {
 
     QMAKE_CXX = clang++
+    QMAKE_CC = clang
     QMAKE_LINK = clang++
 
     CONFIG += precompile_header

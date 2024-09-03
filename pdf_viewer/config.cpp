@@ -43,6 +43,7 @@ bool TOUCH_MODE = true;
 #else
 bool TOUCH_MODE = false;
 #endif
+float BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY = 0.2f;
 
 #ifdef SIOYEK_MOBILE
 bool SLICED_RENDERING = true;
@@ -1111,6 +1112,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"menu_screen_height_ratio", &MENU_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
     add_float(L"smooth_scroll_speed", &SMOOTH_SCROLL_SPEED, FloatExtras{0.0f, 20.0f});
     add_float(L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, FloatExtras{10.0f, 10000.0f});
+    add_float(L"box_highlight_bookmark_transparency", &BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY, FloatExtras{0.0f, 1.0f});
     add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f})->set_change_fn([](MainWidget* w){
         w->invalidate_render();
     });

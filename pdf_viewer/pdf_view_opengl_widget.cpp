@@ -79,6 +79,8 @@ extern bool INVERT_SELECTED_TEXT;
 extern bool VISUALIZE_RULER_THRESHOLDS;
 extern bool DEBUG;
 
+extern float BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY;
+
 extern int NUM_PRERENDERED_NEXT_SLIDES;
 extern int NUM_PRERENDERED_PREV_SLIDES;
 
@@ -1219,10 +1221,25 @@ void PdfViewOpenGLWidget::my_render() {
                         }
                         else{
                             char mode = bm_type.value();
+                            // draw an empty box with the color type of lowercase and draw a transparent filled box if uppercase
                             if (mode >= 'a' && mode <= 'z') {
-                                std::array<float, 3> box_color = cc3( & HIGHLIGHT_COLORS[3 * (mode - 'a')]);
+                                std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
                                 painter.setPen(convert_float3_to_qcolor(&box_color[0]));
                                 painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                            }
+                            else if (mode >= 'A' && mode <= 'Z') {
+                                mode = mode - 'A' + 'a';
+                                std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
+                                float box_color_with_alpha[4];
+                                box_color_with_alpha[0] = box_color[0];
+                                box_color_with_alpha[1] = box_color[1];
+                                box_color_with_alpha[2] = box_color[2];
+                                box_color_with_alpha[3] = BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY;
+
+                                QColor qcolor = convert_float4_to_qcolor(box_color_with_alpha);
+                                QBrush brush(qcolor);
+
+                                painter.fillRect(window_rect.to_qrect(), brush);
                             }
                         }
                     }
