@@ -39,6 +39,7 @@
 #include <qtextdocument.h>
 #include <qabstracttextdocumentlayout.h>
 #include <qtextcursor.h>
+#include <qlistview.h>
 
 #ifdef SIOYEK_ANDROID
 #include <QtCore/private/qandroidextras_p.h>
@@ -2791,6 +2792,68 @@ QString get_list_item_stylesheet() {
     return QString("background-color: red; padding-bottom: 20px; padding-top: 20px;");
 }
 
+QString get_scrollbar_stylesheet(){
+
+    QColor ui_background_color = QColor::fromRgbF(UI_BACKGROUND_COLOR[0], UI_BACKGROUND_COLOR[1], UI_BACKGROUND_COLOR[2]);
+    QColor handle_color;
+    QColor handle_color_hover;
+    // if color is black
+    if (ui_background_color.red() == 0 && ui_background_color.green() == 0 && ui_background_color.blue() == 0) {
+        handle_color = QColor::fromRgbF(0.15, 0.15, 0.15);
+        handle_color_hover = QColor::fromRgbF(0.25, 0.25, 0.25);
+    }
+    else {
+        handle_color = ui_background_color.lighter();
+        handle_color_hover = handle_color.lighter();
+    }
+
+    QString handle_color_string = get_color_qml_string(handle_color.redF(), handle_color.greenF(), handle_color.blueF());
+    QString handle_color_hover_string = get_color_qml_string(handle_color_hover.redF(), handle_color_hover.greenF(), handle_color_hover.blueF());
+
+    return QString(R"(
+
+        QScrollBar:horizontal {
+            border: none;
+            background: transparent;
+            height: 8px;
+            margin: 0px 20px 0 20px;
+        }
+
+        QScrollBar::handle:horizontal {
+            background: %1;
+            min-width: 8px;
+        }
+
+        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+            background: none;
+            width: 0px;
+            subcontrol-position: left;
+            subcontrol-origin: margin;
+        }
+
+        QScrollBar:vertical {
+            border: none;
+            background: transparent;
+            margin: 0 0 0 0;
+        }
+
+        QScrollBar::handle:vertical {
+            background: %1;
+            min-height: 20px;
+        }
+
+        QScrollBar::handle:vertical:hover {
+            background: %2;
+        }
+
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            background: none;
+            height: 0px;
+            subcontrol-position: top;
+            subcontrol-origin: margin;
+        }
+    )").arg(handle_color_string, handle_color_hover_string);
+}
 QString get_selected_stylesheet(bool nofont) {
     if ((!nofont) && STATUS_BAR_FONT_SIZE > -1) {
         QString	font_size_stylesheet = QString("font-size: %1px").arg(STATUS_BAR_FONT_SIZE);
@@ -5312,4 +5375,10 @@ QVariantMap get_color_mapping() {
     }
     color_map["_"] = QVariant::fromValue(Qt::black);
     return color_map;
+}
+
+QListView* get_ui_new_listview(){
+    QListView* view = new QListView();
+    view->setSpacing(5);
+    return view;
 }

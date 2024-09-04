@@ -43,6 +43,7 @@ struct MenuNode {
     std::vector<MenuNode*> children;
 };
 
+class QListView;
 std::wstring to_lower(const std::wstring& inp);
 bool is_separator(fz_stext_char* last_char, fz_stext_char* current_char);
 void get_flat_toc(const std::vector<TocNode*>& roots, std::vector<std::wstring>& output, std::vector<int>& pages);
@@ -288,6 +289,7 @@ std::string get_aplph_tag(int n, int max_n);
 fz_document* open_document_with_file_name(fz_context* context, std::wstring file_name);
 
 QString get_list_item_stylesheet();
+QString get_scrollbar_stylesheet();
 
 #ifdef SIOYEK_ANDROID
 QString android_file_name_from_uri(QString uri);
@@ -942,3 +944,4 @@ std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const
 std::vector<MenuNode*> get_top_level_menu_nodes();
 std::wstring replace_verbatim_links(std::wstring input);
 QVariantMap get_color_mapping();
+QListView* get_ui_new_listview();

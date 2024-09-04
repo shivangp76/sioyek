@@ -1666,7 +1666,7 @@ void BaseSelectorWidget::on_config_file_changed() {
 
     setStyleSheet(get_ui_stylesheet(true) + font_size_stylesheet);
     QAbstractItemView* view = get_view();
-    QString style = get_view_stylesheet_type_name(view) + "::item::selected{" + get_selected_stylesheet() + "}";
+    QString style = get_view_stylesheet_type_name(view) + "::item::selected{" + get_selected_stylesheet() + "}" + get_scrollbar_stylesheet();
     view->setStyleSheet(style);
 }
 
@@ -2152,7 +2152,7 @@ HighlightSelectorWidget* HighlightSelectorWidget::from_highlights(std::vector<Hi
 
     HighlightModel* highlight_model = new HighlightModel(std::move(highlights), std::move(doc_names), std::move(doc_checksums));
 
-    QListView* list_view = new QListView();
+    QListView* list_view = get_ui_new_listview();
 
     HighlightSelectorWidget* highlight_selector_widget = new HighlightSelectorWidget(list_view, highlight_model, parent);
 
@@ -2469,7 +2469,7 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString>
         prefix_models[prefix] = new CommandModel(prefix_command_names[prefix], prefix_keybinds[prefix]);
     }
 
-    QListView* list_view = new QListView();
+    QListView* list_view = get_ui_new_listview();
     list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     CommandSelectorWidget* command_selector_widget = new CommandSelectorWidget(list_view, prefix_models, parent);
@@ -2815,7 +2815,7 @@ BookmarkSelectorWidget* BookmarkSelectorWidget::from_bookmarks(std::vector<BookM
 
     BookmarkModel* bookmark_model = new BookmarkModel(std::move(bookmarks), std::move(doc_names), std::move(doc_checksums));
 
-    QListView* list_view = new QListView();
+    QListView* list_view = get_ui_new_listview();
 
     BookmarkSelectorWidget* bookmark_selector_widget = new BookmarkSelectorWidget(list_view, bookmark_model, parent);
 
@@ -3019,7 +3019,7 @@ DocumentSelectorWidget* DocumentSelectorWidget::from_documents(
 
     DocumentNameModel* document_model = new DocumentNameModel(std::move(docs));
 
-    QListView* list_view = new QListView();
+    QListView* list_view = get_ui_new_listview();
 
     DocumentSelectorWidget* document_selector_widget = new DocumentSelectorWidget(list_view, document_model, parent);
 
@@ -3055,7 +3055,7 @@ FulltextSearchWidget* FulltextSearchWidget::create(MainWidget* parent, std::wstr
     //DocumentNameModel* document_model = new DocumentNameModel(std::move(docs));
     QStringListModel* res_model = new QStringListModel();
 
-    QListView* list_view = new QListView();
+    QListView* list_view = get_ui_new_listview();
 
     FulltextSearchWidget* fulltext_search_widget = new FulltextSearchWidget(parent->db_manager, list_view, res_model, parent, checksum);
 
@@ -3397,7 +3397,7 @@ DocumentationSearchWidget* DocumentationSearchWidget::create(MainWidget* parent)
     //DocumentNameModel* document_model = new DocumentNameModel(std::move(docs));
     QStringListModel* res_model = new QStringListModel();
 
-    QListView* list_view = new QListView();
+    QListView* list_view = get_ui_new_listview();
 
     DocumentationSearchWidget* fulltext_search_widget = new DocumentationSearchWidget(parent->db_manager, list_view, res_model, parent);
 
