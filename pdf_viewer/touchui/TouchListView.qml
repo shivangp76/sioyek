@@ -32,6 +32,7 @@ Rectangle {
     signal itemSelected(item: string, index: int)
     signal itemPressAndHold(item: string, index: int)
     signal itemDeleted(item: string, index: int)
+    radius: 10
 
     TextInput{
         id: query
@@ -79,6 +80,7 @@ Rectangle {
         anchors {
             top: query.bottom
             topMargin: 10
+            bottomMargin: 10
             left: rootitem.left
             right: rootitem.right
             bottom: rootitem.bottom

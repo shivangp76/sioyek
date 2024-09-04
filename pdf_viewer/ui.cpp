@@ -1155,14 +1155,25 @@ TouchCommandSelector::TouchCommandSelector(bool is_fuzzy, const QStringList& com
 }
 
 void TouchCommandSelector::resizeEvent(QResizeEvent* resize_event) {
+
+    int parent_width = parentWidget()->width();
+    int parent_height = parentWidget()->height();
+    int w = parent_width * 0.8f;
+    int h = parent_height * 0.8f;
+
+    list_view->resize(w, h);
+    move(parent_width * 0.1f, parent_height * 0.1f);
+    resize(w, h);
     QWidget::resizeEvent(resize_event);
 
-    int parent_width = parentWidget()->size().width();
-    int parent_height = parentWidget()->size().height();
+    // QWidget::resizeEvent(resize_event);
 
-    resize(parent_width * 0.9f, parent_height);
-    move(parent_width * 0.05f, 0);
-    list_view->resize(parent_width * 0.9f, parent_height);
+    // int parent_width = parentWidget()->size().width();
+    // int parent_height = parentWidget()->size().height();
+
+    // resize(parent_width * 0.9f, parent_height);
+    // move(parent_width * 0.05f, 0);
+    // list_view->resize(parent_width * 0.9f, parent_height);
 }
 
 

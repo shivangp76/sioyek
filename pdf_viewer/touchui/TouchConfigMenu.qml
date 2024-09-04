@@ -127,6 +127,7 @@ Rectangle {
         anchors {
             top: queryrow.bottom
             topMargin: 10
+            bottomMargin: 10
             left: rootitem.left
             right: rootitem.right
             bottom: rootitem.bottom
