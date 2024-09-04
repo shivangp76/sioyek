@@ -167,6 +167,7 @@ public:
     void handle_edit();
     virtual void on_resize();
     QString get_selected_item();
+    void paintEvent(QPaintEvent* paint_event) override;
 
 
 #ifndef SIOYEK_QT6
@@ -1118,7 +1119,6 @@ public:
     void set_selected_index(int index);
     void update_render();
     virtual bool on_text_change(const QString& text) override;
-    void paintEvent(QPaintEvent* paint_event) override;
 
     //virtual void update_render() = 0;
 };

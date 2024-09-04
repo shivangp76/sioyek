@@ -24,7 +24,7 @@ class BackgroundBookmarkRenderer;
 #ifdef SIOYEK_ANDROID
 #define SIOYEK_OPENGL_BACKEND
 #else
-#define SIOYEK_OPENGL_BACKEND
+// #define SIOYEK_OPENGL_BACKEND
 #endif
 
 #ifdef SIOYEK_OPENGL_BACKEND

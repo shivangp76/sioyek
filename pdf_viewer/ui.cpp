@@ -2582,7 +2582,7 @@ bool CommandSelectorWidget::on_text_change(const QString& txt) {
     return BaseCustomSelectorWidget::on_text_change(text);
 }
 
-void BaseCustomSelectorWidget::paintEvent(QPaintEvent* paint_event){
+void BaseSelectorWidget::paintEvent(QPaintEvent* paint_event){
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
