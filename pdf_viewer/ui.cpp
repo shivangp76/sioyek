@@ -1360,6 +1360,7 @@ BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy,
     abstract_item_view->setParent(this);
     abstract_item_view->setModel(proxy_model);
     abstract_item_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    line_edit->setFont(get_ui_font_face_name());
 
     if (TOUCH_MODE) {
         QScroller::grabGesture(abstract_item_view->viewport(), QScroller::TouchGesture);
