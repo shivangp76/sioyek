@@ -2600,7 +2600,7 @@ void BaseSelectorWidget::paintEvent(QPaintEvent* paint_event){
         painter.drawRect(rect);
     }
     else{
-        painter.drawRoundedRect (rect, 8, 8);
+        painter.drawRoundedRect (rect, 4, 4);
     }
 
     QWidget::paintEvent(paint_event);
@@ -3480,6 +3480,7 @@ void SelectionIndicator::paintEvent(QPaintEvent* event) {
 
 SioyekDocumentationTextBrowser::SioyekDocumentationTextBrowser(MainWidget* parent) : QTextBrowser(parent) {
     main_widget = parent;
+
 }
 
 void SioyekDocumentationTextBrowser::mousePressEvent(QMouseEvent* mevent) {

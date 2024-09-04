@@ -6774,11 +6774,11 @@ void MainWidget::update_highlight_buttons_position() {
 void MainWidget::show_documentation_with_title(QString doctype, QString title) {
     load_sioyek_documentation();
     SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
-    text_edit->setStyleSheet(get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE));
+    text_edit->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
     text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
 
-    int w = width() / 2;
-    int h = height() / 2;
+    int w = width() * 0.9f;
+    int h = height() * 0.9f;
     text_edit->setReadOnly(true);
     text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
     text_edit->resize(w, h);

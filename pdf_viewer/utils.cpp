@@ -2815,7 +2815,7 @@ QString get_scrollbar_stylesheet(){
         QScrollBar:horizontal {
             border: none;
             background: transparent;
-            height: 8px;
+            min-height: 8px;
             margin: 0px 20px 0 20px;
         }
 
@@ -2843,6 +2843,10 @@ QString get_scrollbar_stylesheet(){
         }
 
         QScrollBar::handle:vertical:hover {
+            background: %2;
+        }
+
+        QScrollBar::handle:horizontal:hover {
             background: %2;
         }
 
