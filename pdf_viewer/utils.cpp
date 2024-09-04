@@ -2776,7 +2776,7 @@ QString get_color_stylesheet(float* bg_color, float* text_color, bool nofont, in
 }
 
 QString get_ui_stylesheet(bool nofont, int font_size) {
-    return get_color_stylesheet(UI_BACKGROUND_COLOR, UI_TEXT_COLOR, nofont, font_size);
+    return get_color_stylesheet(UI_BACKGROUND_COLOR, UI_TEXT_COLOR, nofont, font_size) + "background-color: transparent;";
 }
 
 QString get_status_stylesheet(bool nofont, int font_size) {

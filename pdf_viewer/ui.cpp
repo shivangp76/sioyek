@@ -2192,6 +2192,7 @@ BaseCustomSelectorWidget::BaseCustomSelectorWidget(
 
     lv = dynamic_cast<decltype(lv)>(get_view());
 
+
 }
 
 void BaseCustomSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
@@ -2568,6 +2569,29 @@ bool CommandSelectorWidget::on_text_change(const QString& txt) {
     }
 
     return BaseCustomSelectorWidget::on_text_change(text);
+}
+
+void BaseCustomSelectorWidget::paintEvent(QPaintEvent* paint_event){
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    // QColor ui_background_color = convert_float3_to_qcolor();
+    QColor ui_background_color = QColor::fromRgbF(UI_BACKGROUND_COLOR[0], UI_BACKGROUND_COLOR[1], UI_BACKGROUND_COLOR[2]);
+    painter.setBrush(QBrush(ui_background_color));
+    painter.setPen(Qt::transparent);
+    
+    QRect rect = this->rect();
+    rect.setWidth(rect.width()-1);
+    rect.setHeight(rect.height()-1);
+    if (MENU_SCREEN_HEIGHT_RATIO == 1.0f){
+        // no need for rounded corners
+        painter.drawRect(rect);
+    }
+    else{
+        painter.drawRoundedRect (rect, 8, 8);
+    }
+
+    QWidget::paintEvent(paint_event);
 }
 
 void CommandSelectorWidget::on_text_changed(const QString& text) {

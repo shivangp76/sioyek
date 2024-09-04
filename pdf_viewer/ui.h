@@ -1118,6 +1118,7 @@ public:
     void set_selected_index(int index);
     void update_render();
     virtual bool on_text_change(const QString& text) override;
+    void paintEvent(QPaintEvent* paint_event) override;
 
     //virtual void update_render() = 0;
 };
