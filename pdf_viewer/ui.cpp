@@ -3494,6 +3494,11 @@ void SioyekDocumentationTextBrowser::mouseReleaseEvent(QMouseEvent* mevent) {
     mevent->accept();
 }
 
+void SioyekDocumentationTextBrowser::wheelEvent(QWheelEvent* wevent) {
+    QTextBrowser::wheelEvent(wevent);
+    wevent->accept();
+}
+
 void SioyekDocumentationTextBrowser::backward() {
     QTextBrowser::backward();
     QUrl current_url = historyUrl(0);

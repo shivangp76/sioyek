@@ -1402,6 +1402,8 @@ public:
 class SioyekDocumentationTextBrowser : public QTextBrowser {
 private:
     MainWidget* main_widget = nullptr;
+protected:
+    void wheelEvent(QWheelEvent* wevent) override;
 public:
     SioyekDocumentationTextBrowser(MainWidget* parent);
 
