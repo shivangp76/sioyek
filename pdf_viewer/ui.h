@@ -168,6 +168,7 @@ public:
     virtual void on_resize();
     QString get_selected_item();
     void paintEvent(QPaintEvent* paint_event) override;
+    void wheelEvent(QWheelEvent* wheel_event) override;
 
 
 #ifndef SIOYEK_QT6

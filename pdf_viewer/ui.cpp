@@ -2606,6 +2606,11 @@ void BaseSelectorWidget::paintEvent(QPaintEvent* paint_event){
     QWidget::paintEvent(paint_event);
 }
 
+void BaseSelectorWidget::wheelEvent(QWheelEvent* wheel_event) {
+    QWidget::wheelEvent(wheel_event);
+    wheel_event->accept();
+}
+
 void CommandSelectorWidget::on_text_changed(const QString& text) {
     if (!on_text_change(text)) {
         QString pattern = dynamic_cast<CommandItemDelegate*>(lv->itemDelegate())->pattern;
