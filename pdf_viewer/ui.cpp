@@ -1508,20 +1508,19 @@ bool BaseSelectorWidget::eventFilter(QObject* obj, QEvent* event) {
                     return false;
                 }
             }
-            if (key_event->key() == Qt::Key_Down ||
-                key_event->key() == Qt::Key_Up ||
-                key_event->key() == Qt::Key_Left ||
-                key_event->key() == Qt::Key_Right
-                ) {
-#ifdef SIOYEK_QT6
-                QKeyEvent* newEvent = key_event->clone();
-#else
-                QKeyEvent* newEvent = new QKeyEvent(*key_event);
-#endif
-                QCoreApplication::postEvent(get_view(), newEvent);
-                //QCoreApplication::postEvent(tree_view, key_event);
-                return true;
-            }
+            // if (key_event->key() == Qt::Key_Down ||
+                // key_event->key() == Qt::Key_Up ||
+                // key_event->key() == Qt::Key_Left ||
+                // key_event->key() == Qt::Key_Right
+                // ) {
+// #ifdef SIOYEK_QT6
+                // QKeyEvent* newEvent = key_event->clone();
+// #else
+                // QKeyEvent* newEvent = new QKeyEvent(*key_event);
+// #endif
+                // QCoreApplication::postEvent(get_view(), newEvent);
+                // return true;
+            // }
             if (key_event->key() == Qt::Key_Tab) {
                 QKeyEvent* new_key_event = new QKeyEvent(key_event->type(), Qt::Key_Down, key_event->modifiers());
                 QCoreApplication::postEvent(get_view(), new_key_event);
