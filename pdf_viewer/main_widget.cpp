@@ -1434,7 +1434,9 @@ void MainWidget::handle_escape() {
                 pending_command_instance->on_cancel();
             }
             main_document_view->cancel_search();
-            get_search_buttons()->hide();
+            if (search_buttons_){
+                get_search_buttons()->hide();
+            }
             hide_command_line_edit();
             should_return = true;
         }
@@ -9187,10 +9189,10 @@ QString MainWidget::handle_action_in_menu(std::wstring action) {
             my_line_edit->cursorBackward(true);
             my_line_edit->del();
         }
-        else if (action == L"next_suggestion") {
+        else if (action == L"next_suggestion" || action == L"down") {
             on_next_text_suggestion();
         }
-        else if (action == L"prev_suggestion") {
+        else if (action == L"prev_suggestion" || action == L"up") {
             on_prev_text_suggestion();
         }
 
