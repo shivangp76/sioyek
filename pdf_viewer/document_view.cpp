@@ -3286,9 +3286,9 @@ std::optional<QString> DocumentView::get_paper_name_under_pos(DocumentPos docpos
         }
         else {
             //std::optional<std::wstring> paper_name = get_paper_name_under_cursor(alksdh);
-            std::optional<QString> paper_name = get_direct_paper_name_under_pos(docpos);
+            std::optional<PaperNameWithRects> paper_name = get_direct_paper_name_under_pos(docpos);
             if (paper_name) {
-                return paper_name;
+                return paper_name->paper_name;
             }
         }
     }
@@ -3296,7 +3296,7 @@ std::optional<QString> DocumentView::get_paper_name_under_pos(DocumentPos docpos
     return {};
 }
 
-std::optional<QString> DocumentView::get_direct_paper_name_under_pos(DocumentPos docpos) {
+std::optional<PaperNameWithRects> DocumentView::get_direct_paper_name_under_pos(DocumentPos docpos) {
     return current_document->get_paper_name_at_position(docpos);
 }
 
@@ -4802,9 +4802,15 @@ std::optional<QString> DocumentView::get_overview_paper_name() {
 
                 int page = smart_view_candidates[index_into_candidates].get_docpos(this).page;
 
-                auto ref = current_document->get_page_bib_with_reference(page, smart_view_candidates[index_into_candidates].source_text);
-                if (ref.has_value()) {
-                    bib_string = ref->first;
+                
+                if (smart_view_candidates[index_into_candidates].target_reference_text){
+                    bib_string = smart_view_candidates[index_into_candidates].target_reference_text;
+                }
+                else{
+                    auto ref = current_document->get_page_bib_with_reference(page, smart_view_candidates[index_into_candidates].source_text);
+                    if (ref.has_value()) {
+                        bib_string = ref->first;
+                    }
                 }
             }
             else {
@@ -5835,4 +5841,35 @@ fz_stext_char* DocumentView::get_closest_character_to_cusrsor(AbsoluteDocumentPo
     doc_point.x = doc_pos.x;
     doc_point.y = doc_pos.y;
     return find_closest_char_to_document_point(flat_chars, doc_point, &location_index);
+}
+
+void DocumentView::update_overview_highlighted_paper_with_position(DocumentPos docpos){
+    // when the automatic paper name detection is wrong, the user can click on the paper name
+    // in the overview page to correct it. This function updates the highlighted paper name
+    
+
+    std::optional<PaperNameWithRects> paper_name_with_rects = get_direct_paper_name_under_pos(docpos);
+    if (paper_name_with_rects){
+        std::vector<PagelessDocumentRect> paper_name_rects = paper_name_with_rects->character_rects;
+        std::vector<DocumentRect> paper_name_rects_with_page;
+
+        for (auto rect : paper_name_rects) {
+            paper_name_rects_with_page.push_back(DocumentRect(rect, docpos.page));
+        }
+
+        if ((index_into_candidates >= 0) && (index_into_candidates < smart_view_candidates.size())){
+            if ((smart_view_candidates[index_into_candidates].reference_type == ReferenceType::Reference) || (smart_view_candidates[index_into_candidates].reference_type == ReferenceType::None)){
+                smart_view_candidates[index_into_candidates].target_pos = docpos;
+                smart_view_candidates[index_into_candidates].target_reference_text = paper_name_with_rects->paper_name;
+
+                smart_view_candidates[index_into_candidates].set_highlight_rects(paper_name_rects_with_page);
+
+                if (overview_page){
+                    overview_page->highlight_rects = paper_name_rects_with_page;
+                }
+            }
+        }
+
+    }
+
 }

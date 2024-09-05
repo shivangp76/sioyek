@@ -286,7 +286,7 @@ public:
     void fill_smart_view_candidate_reference_highlight_rects(SmartViewCandidate& candidate);
     std::vector<DocumentRect> get_paper_name_rects_from_page_and_source_text(int page, const std::wstring& source_text);
     std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean=false);
-    std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
+    std::optional<PaperNameWithRects> get_direct_paper_name_under_pos(DocumentPos docpos);
     TextUnderPointerInfo find_location_of_text_under_pointer(DocumentPos docpos, bool update_candidates=false, int max_size=-1);
     int get_current_page_number();
     ReferenceType find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects = nullptr);
@@ -660,6 +660,7 @@ std::optional<PagelessDocumentRect> get_tag_rect(std::string tag, std::vector<Pa
     void toggle_presentation_mode();
     void set_presentation_mode(bool mode);
     fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
+    void update_overview_highlighted_paper_with_position(DocumentPos docpos);
 };
 
 struct CachedScratchpadPixmapData {

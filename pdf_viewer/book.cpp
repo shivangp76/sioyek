@@ -679,6 +679,11 @@ void Portal::update_merged_rect(Document* doc) const{
     }
 }
 
+void SmartViewCandidate::set_highlight_rects(std::vector<DocumentRect> rects){
+    highlight_rects_ = rects;
+    are_highlights_computed = true;
+}
+
 const std::vector<DocumentRect> SmartViewCandidate::get_highlight_rects() {
     if (are_highlights_computed) {
         return highlight_rects_;

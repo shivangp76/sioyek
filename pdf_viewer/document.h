@@ -34,6 +34,7 @@ struct RegexMatchInfo {
     std::pair<int, int> match_range;
 };
 
+
 class CharacterIterator {
     fz_stext_block* block = nullptr;
     fz_stext_line* line = nullptr;
@@ -345,13 +346,13 @@ public:
 
     std::optional<std::wstring> get_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position);
     std::optional<std::wstring> get_reference_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
-    std::optional<QString> get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position);
+    std::optional<PaperNameWithRects> get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position);
+    std::optional<PaperNameWithRects> get_paper_name_at_position(DocumentPos position);
     std::optional<std::wstring> get_equation_text_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::pair<std::wstring, std::wstring>> get_generic_link_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::wstring> get_regex_match_at_position(const std::wstring& regex, const std::vector<fz_stext_char*>& flat_chars, DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::wstring> get_text_at_position(DocumentPos position);
     std::optional<std::wstring> get_reference_text_at_position(DocumentPos position, std::pair<int, int>* out_range);
-    std::optional<QString> get_paper_name_at_position(DocumentPos position);
     std::optional<std::wstring> get_equation_text_at_position(DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::pair<std::wstring, std::wstring>> get_generic_link_name_at_position(DocumentPos position, std::pair<int, int>* out_range);
     std::optional<std::wstring> get_regex_match_at_position(const std::wstring& regex, DocumentPos position, std::pair<int, int>* out_range);

@@ -193,6 +193,9 @@ public:
     // (e.g. the PDF rendering thread) that they should exit.
     bool* should_quit = nullptr;
 
+    // if the last event before handling mouse release event was a hold gesture
+    bool was_hold_gesture = false;
+
     // last position when mouse was clicked in absolute document space
     AbsoluteDocumentPos last_mouse_down;
     // The document offset (offset_x and offset_y) when mouse was last pressed
@@ -541,7 +544,7 @@ public:
     void set_inverse_search_command(const std::wstring& new_command);
     int get_current_monitor_width(); int get_current_monitor_height();
     std::wstring synctex_under_pos(WindowPos position);
-    std::optional<QString> get_paper_name_under_cursor(bool use_last_hold_point = false);
+    std::optional<PaperNameWithRects> get_paper_name_under_cursor(bool use_last_hold_point = false);
     void set_status_message(std::wstring new_status_string);
     void remove_self_from_windows();
     // void handle_keyboard_select(const std::wstring& text);

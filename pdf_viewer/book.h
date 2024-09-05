@@ -467,6 +467,11 @@ enum class ReferenceType {
     None
 };
 
+struct PaperNameWithRects{
+    QString paper_name;
+    std::vector<PagelessDocumentRect> character_rects;
+};
+
 std::string reference_type_string(ReferenceType rt);
 
 struct SmartViewCandidate {
@@ -478,9 +483,11 @@ struct SmartViewCandidate {
 
     // this function lazily computes highlight_rects_ when they are needed
     std::optional<std::function<std::vector<DocumentRect>()>> highlight_rects_func = {};
+    std::optional<QString> target_reference_text = {};
     bool are_highlights_computed = false;
 
     const std::vector<DocumentRect> get_highlight_rects();
+    void set_highlight_rects(std::vector<DocumentRect> rects);
     Document* get_document(DocumentView* view);
     DocumentPos get_docpos(DocumentView* view);
     AbsoluteDocumentPos get_abspos(DocumentView* view);

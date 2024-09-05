@@ -1880,17 +1880,29 @@ QString clean_bib_string_quotations(QString bib_string){
     return bib_string;
 }
 
-std::optional<QString> Document::get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position) {
+std::optional<PaperNameWithRects> Document::get_paper_name_at_position(const std::vector<fz_stext_char*>& flat_chars, DocumentPos position) {
+
     QString selected_string = "";
+    std::vector<PagelessDocumentRect> selected_rects;
     bool reached = false;
 
     for (auto ch : flat_chars) {
         if (ch->c == '.') {
             if (!reached) {
                 selected_string = "";
+                selected_rects.clear();
             }
             else {
-                return clean_bib_string_quotations(selected_string);
+                PaperNameWithRects result;
+                result.paper_name = clean_bib_string_quotations(selected_string);
+                result.character_rects = selected_rects;
+
+                while (result.paper_name.size() > 0 && result.paper_name[0].isSpace()) {
+                    result.paper_name = result.paper_name.mid(1);
+                    result.character_rects.erase(result.character_rects.begin());
+                }
+
+                return result;
             }
         }
 
@@ -1901,9 +1913,11 @@ std::optional<QString> Document::get_paper_name_at_position(const std::vector<fz
 
         if (ch->c != '.') {
             selected_string.push_back(QChar(ch->c));
+            selected_rects.push_back(rect_from_quad(ch->quad));
         }
         if (ch->next == nullptr) {
             selected_string.push_back(' ');
+            selected_rects.push_back(rect_from_quad(ch->quad));
         }
 
     }
@@ -2459,7 +2473,7 @@ std::optional<std::wstring> Document::get_text_at_position(DocumentPos position)
     return get_text_at_position(flat_chars, position);
 }
 
-std::optional<QString> Document::get_paper_name_at_position(DocumentPos position) {
+std::optional<PaperNameWithRects> Document::get_paper_name_at_position(DocumentPos position) {
     fz_stext_page* stext_page = get_stext_with_page_number(position.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);

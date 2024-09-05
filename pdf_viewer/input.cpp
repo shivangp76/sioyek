@@ -558,7 +558,8 @@ public:
         }
     }
 
-    bool requires_document() {
+    bool requires_document() override{
+
         if (is_modal) {
             int current_mode_index = get_current_mode_index();
             if (current_mode_index >= 0) {
@@ -574,6 +575,8 @@ public:
             }
             return false;
         }
+
+        return true;
     }
 
     void set_file_requirement(std::wstring value) {

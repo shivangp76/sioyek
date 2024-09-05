@@ -2504,11 +2504,18 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         if (overview_touch_move_data) {
             on_overview_move_end();
         }
+        int overview_move_distance = 0;
+        if (overview_move_data){
+            WindowPos original_mouse_pos = overview_move_data->original_normal_mouse_pos.to_window(main_document_view);
+            overview_move_distance = click_pos.manhattan(original_mouse_pos);
+        }
+
         overview_move_data = {};
         overview_touch_move_data = {};
         overview_resize_data = {};
 
-        if ((!was_resizing_overview) && (!TOUCH_MODE) && (!mouse_drag_mode) && (manhattan_distance(fvec2(last_mouse_down), fvec2(abs_doc_pos)) > 5)) {
+        float dist = manhattan_distance(fvec2(last_mouse_down), fvec2(abs_doc_pos));
+        if ((!was_resizing_overview) && (!TOUCH_MODE) && (!mouse_drag_mode) && (dist > 5)) {
 
             main_document_view->get_text_selection(last_mouse_down,
                 abs_doc_pos,
@@ -2527,12 +2534,16 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
             }
 
             if (!TOUCH_MODE) {
+                if ((overview_move_distance > 10) && (dist > 5)) {
+                    // don't click on overview links when we are moving them
+                    return;
+                }
                 handle_click(click_pos);
                 main_document_view->clear_selected_text();
             }
             else {
                 int distance = abs(click_pos.x - last_mouse_down_window_pos.x) + abs(click_pos.y - last_mouse_down_window_pos.y);
-                if (distance < 20) { // we don't want to accidentally click on links when moving the document
+                if (distance < 20 && (!was_hold_gesture)) { // we don't want to accidentally click on links when moving the document
                     handle_click(click_pos);
                 }
             }
@@ -2681,6 +2692,12 @@ void MainWidget::handle_click(WindowPos click_pos) {
         if (link) {
             handle_link_click(link.value());
         }
+        else {
+            // try to update the target paper name
+            NormalizedWindowPos normal_click_pos = click_pos.to_window_normalized(main_document_view);
+            DocumentPos overview_doc_pos = main_document_view->window_pos_to_overview_pos(normal_click_pos);
+            main_document_view->update_overview_highlighted_paper_with_position(overview_doc_pos);
+        }
         return;
     }
 
@@ -2825,6 +2842,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         }
         else {
             handle_left_click({ mevent->pos().x(), mevent->pos().y() }, false, is_shift_pressed, is_control_pressed, is_command_pressed, is_alt_pressed);
+            was_hold_gesture = false;
             if (is_select_highlight_mode && (main_document_view->selected_character_rects.size() > 0)) {
                 add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, select_highlight_type);
                 main_document_view->clear_selected_text();
@@ -3382,7 +3400,7 @@ void MainWidget::toggle_two_window_mode() {
     }
 }
 
-std::optional<QString> MainWidget::get_paper_name_under_cursor(bool use_last_hold_point) {
+std::optional<PaperNameWithRects> MainWidget::get_paper_name_under_cursor(bool use_last_hold_point) {
     QPoint mouse_pos;
     if (use_last_hold_point) {
         mouse_pos = last_hold_point;
@@ -3417,9 +3435,9 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
     // if overview page is open and we middle click on a paper name, search it in a search engine
     if (main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
         DocumentPos docpos = main_document_view->window_pos_to_overview_pos({ normal_x, normal_y });
-        std::optional<QString> paper_name = main_document_view->get_document()->get_paper_name_at_position(docpos);
+        std::optional<PaperNameWithRects> paper_name = main_document_view->get_document()->get_paper_name_at_position(docpos);
         if (paper_name) {
-            handle_search_paper_name(paper_name.value(), is_shift_pressed);
+            handle_search_paper_name(paper_name->paper_name, is_shift_pressed);
         }
         return;
     }
@@ -3435,9 +3453,9 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
         long_jump_to_destination(text_under_pos_info.targets[0].page, text_under_pos_info.targets[0].y);
     }
     else {
-        std::optional<QString> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos);
+        std::optional<PaperNameWithRects> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos);
         if (paper_name_on_pointer) {
-            handle_search_paper_name(paper_name_on_pointer.value(), is_shift_pressed);
+            handle_search_paper_name(paper_name_on_pointer->paper_name, is_shift_pressed);
         }
     }
 
@@ -3547,11 +3565,13 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
         int pos_page = main_document_view->window_to_document_pos(pos).page;
         //opengl_widget->set_selected_rectangle(overview_source_rect_absolute);
 
-        //SmartViewCandidate current_candid;
-        //current_candid.source_rect = reference_info.source_rect;
-        //current_candid.target_pos = reference_info.targets[0];
-        //current_candid.source_text = reference_info.source_text;
-        //smart_view_candidates = { current_candid };
+        SmartViewCandidate current_candid;
+        current_candid.source_rect = reference_info.source_rect;
+        current_candid.target_pos = reference_info.targets[0];
+        current_candid.source_text = reference_info.source_text;
+        current_candid.reference_type = reference_info.reference_type;
+        main_document_view->smart_view_candidates = { current_candid };
+
         dv()->set_overview_position(reference_info.targets[0].page, reference_info.targets[0].y, reference_type_string(reference_info.reference_type), reference_info.overview_highlight_rects);
         //main_document_view->set_overview_highlights(reference_info.overview_highlight_rects);
         on_overview_source_updated();
@@ -3853,9 +3873,9 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
             command_parts[i].replace("%{mouse_pos_document}", QString::number(mouse_pos_document.page) + " " + QString::number(mouse_pos_document.x) + " " + QString::number(mouse_pos_document.y));
             //command_parts[i].replace("%{mouse_pos_document}", QString("%1 %2 %3").arg(mouse_pos_document.page, mouse_pos_document.x, mouse_pos_document.y));
             if (command_parts[i].indexOf("%{paper_name}") != -1) {
-                std::optional<QString> maybe_paper_name = get_paper_name_under_cursor();
+                std::optional<PaperNameWithRects> maybe_paper_name = get_paper_name_under_cursor();
                 if (maybe_paper_name) {
-                    command_parts[i].replace("%{paper_name}", maybe_paper_name.value());
+                    command_parts[i].replace("%{paper_name}", maybe_paper_name->paper_name);
                 }
             }
 
@@ -6165,6 +6185,7 @@ bool MainWidget::event(QEvent* event) {
             auto gesture = (static_cast<QGestureEvent*>(event));
 
             if (gesture->gesture(Qt::TapAndHoldGesture)) {
+                was_hold_gesture = true;
                 main_document_view->velocity_x = 0;
                 main_document_view->velocity_y = 0;
 
@@ -6431,6 +6452,7 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
     // returns true if we double clicked or clicked on a location that executes a command
     // in either case, we should not do anything else corresponding to the single tap event
     QTime now = QTime::currentTime();
+    NormalizedWindowPos normalized_click_pos = click_pos.to_window_normalized(main_document_view);
 
     // if we perform a quick tap, then we are not moving or resizing
     // this prevents bugs e.g. when we tap on a rect that is supposed to show the touch
@@ -6449,11 +6471,20 @@ bool MainWidget::handle_quick_tap(WindowPos click_pos) {
     }
 
     if (current_widget_stack.size() > 0) {
-        bool should_return = does_current_widget_consume_quicktap_event();
-        pop_current_widget();
-        if (should_return){
-            return false;
+        bool is_tap_in_overview = main_document_view->is_window_point_in_overview(normalized_click_pos);
+        if (!is_tap_in_overview){
+            bool should_return = does_current_widget_consume_quicktap_event();
+            pop_current_widget();
+            if (should_return){
+                return false;
+            }
         }
+    }
+
+    if (main_document_view->overview_page.has_value() && main_document_view->is_window_point_in_overview(normalized_click_pos)){
+
+        DocumentPos overview_doc_pos = main_document_view->window_pos_to_overview_pos(normalized_click_pos);
+        main_document_view->update_overview_highlighted_paper_with_position(overview_doc_pos);
     }
 
     if (is_in_middle_left_rect(click_pos)) {
@@ -7028,6 +7059,10 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
+    WindowPos window_pos = mapFromGlobal(QCursor::pos());
+    NormalizedWindowPos normalized_window_pos = window_pos.to_window_normalized(main_document_view);
+    DocumentPos doc_pos = main_document_view->window_pos_to_overview_pos(normalized_window_pos);
+    main_document_view->update_overview_highlighted_paper_with_position(doc_pos);
 }
 
 void MainWidget::show_command_menu() {
