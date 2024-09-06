@@ -177,7 +177,7 @@ void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash
         QString filename = reply->header(QNetworkRequest::ContentDispositionHeader).toString().mid(22);
         filename = filename.left(filename.size() - 1);
         QDir papers_dir(QString::fromStdWString(PAPERS_FOLDER_PATH));
-        QString download_path = papers_dir.filePath(filename);
+        QString download_path = papers_dir.absoluteFilePath(filename);
         QFileInfo download_file_info(download_path);
         if (!download_file_info.exists()) {
             QFile file(download_path);
