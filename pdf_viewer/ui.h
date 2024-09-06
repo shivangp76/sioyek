@@ -1241,7 +1241,8 @@ public:
         file_path = 0,
         document_title = 1,
         last_access_time = 2,
-        max_columns = 3,
+        is_server_only = 3,
+        max_columns = 4,
     };
 
     std::vector<OpenedBookInfo> opened_documents;

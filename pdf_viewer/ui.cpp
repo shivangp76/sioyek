@@ -2864,9 +2864,10 @@ QVariant DocumentNameModel::data(const QModelIndex& index, int role) const {
             return opened_documents[index.row()].document_title;
         }
         if (index.column() == DocumentNameColumn::last_access_time) {
-            //return last_access_times[index.row()];
-            //qDebug() << opened_documents[index.row()].last_access_time.daysTo(QDateTime::currentDateTime());
             return opened_documents[index.row()].last_access_time;
+        }
+        if (index.column() == DocumentNameColumn::is_server_only) {
+            return opened_documents[index.row()].is_server_only;
         }
     }
 
@@ -2935,7 +2936,11 @@ void DocumentItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& 
     painter->setPen(separator_color);
     painter->drawLine(separator_left, separator_right);
 
+    bool is_server_only = index.siblingAtColumn(DocumentNameModel::is_server_only).data().toBool();
     QString title_string = highlight_pattern(index.siblingAtColumn(DocumentNameModel::document_title).data().toString().toHtmlEscaped());
+    if (is_server_only){
+        title_string = "<span style=\"color: #888;\">[ DOWNLOAD ] </span>" + title_string;
+    }
     float offset = option.rect.topLeft().y();
 
     painter->setClipRect(option.rect);

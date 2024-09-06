@@ -733,6 +733,7 @@ void SioyekNetworkManager::download_opened_files_info(QObject* parent, std::func
 
     std::vector<OpenedBookInfo> server_only_files;
     for (auto checksum : server_only_checksums) {
+        server_opened_files[checksum].is_server_only = true;
         server_only_files.push_back(server_opened_files[checksum]);
     }
 

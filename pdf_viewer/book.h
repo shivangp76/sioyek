@@ -79,6 +79,7 @@ struct OpenedBookInfo {
     QString file_name;
     QDateTime last_access_time;
     float offset_y;
+    bool is_server_only = false;
 };
 
 struct BookState {
