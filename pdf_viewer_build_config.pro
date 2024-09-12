@@ -198,7 +198,21 @@ win32-msvc*{
 }
 
 win32{
-    DEFINES += _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE
+
+    CONFIG(Debug){
+        CONFIG += console
+        QMAKE_LFLAGS += /SUBSYSTEM:CONSOLE
+    }
+    CONFIG(Release){
+    }
+        
+    # set /bigobj for MSVC, otherwise it will fail
+    QMAKE_CXXFLAGS += /bigobj
+
+    # enable multiprocessor compilation
+    QMAKE_CXXFLAGS += /MP
+
+    DEFINES += _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE NOMINMAX
     RC_ICONS = pdf_viewer\icon2.ico
     
     CONFIG(Debug){

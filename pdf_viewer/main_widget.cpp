@@ -7059,10 +7059,6 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
-    WindowPos window_pos = mapFromGlobal(QCursor::pos());
-    NormalizedWindowPos normalized_window_pos = window_pos.to_window_normalized(main_document_view);
-    DocumentPos doc_pos = main_document_view->window_pos_to_overview_pos(normalized_window_pos);
-    main_document_view->update_overview_highlighted_paper_with_position(doc_pos);
 }
 
 void MainWidget::show_command_menu() {
