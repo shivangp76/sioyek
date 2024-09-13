@@ -2916,6 +2916,10 @@ QString android_file_uri_from_content_uri(QString uri) {
     return file_uri_object.toString();
 }
 
+int android_tts_get_max_text_size(){
+    QJniObject activity = QNativeInterface::QAndroidApplication::context();
+    return activity.callMethod<int>("ttsGetMaxTextSize", "()I");
+}
 void android_tts_say(QString text) {
 
     QJniObject text_jni = QJniObject::fromString(text);
@@ -4477,6 +4481,10 @@ QString get_status_font_face_name() {
 }
 
 
+int TextToSpeechHandler::get_maximum_tts_text_size(){
+    return INT_MAX;
+}
+
 QtTextToSpeechHandler::QtTextToSpeechHandler() {
     tts = new QTextToSpeech();
 }
@@ -4576,6 +4584,10 @@ QString translate_key_mapping_to_macos(QString mapping){
 #ifdef SIOYEK_ANDROID
 
 AndroidTextToSpeechHandler::AndroidTextToSpeechHandler() {
+}
+
+int AndroidTextToSpeechHandler::get_maximum_tts_text_size(){
+    return android_tts_get_max_text_size();
 }
 
 void AndroidTextToSpeechHandler::say(QString text) {

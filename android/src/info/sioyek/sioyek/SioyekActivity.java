@@ -460,6 +460,10 @@ public class SioyekActivity extends QtActivity{
 
     } 
 
+    public int ttsGetMaxTextSize(){
+        return TextToSpeech.getMaxSpeechInputLength();
+    }
+
     public void ttsStop(){
         runOnUiThread(new Runnable() {
             @Override

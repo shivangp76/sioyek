@@ -4522,7 +4522,7 @@ PageIterator Document::page_iterator(int page_number, bool line_only) {
     return PageIterator(page, line_only);
 }
 
-int Document::get_page_text_and_line_rects_after_rect(int page_number,
+int Document::get_page_text_and_line_rects_after_rect(int page_number, int maximum_size,
     AbsoluteRect after_,
     std::wstring& text,
     std::vector<PagelessDocumentRect>& line_rects,
@@ -4537,7 +4537,12 @@ int Document::get_page_text_and_line_rects_after_rect(int page_number,
         begun = true;
     }
 
+    int last_line_size = 0;
     for (auto [block, line, chr] : page_iterator(page_number)) {
+
+        if (text.size() >= maximum_size) {
+            break;
+        }
 
         if (rects_intersect(after.rect, line->bbox)) {
             begun = true;
@@ -4546,6 +4551,7 @@ int Document::get_page_text_and_line_rects_after_rect(int page_number,
         if (!begun) {
             index_into_page++;
         }
+
 
         if (chr->c > 0) {
             if (!(chr->c < 0xffff)) {
@@ -4559,6 +4565,7 @@ int Document::get_page_text_and_line_rects_after_rect(int page_number,
                 char_rects.push_back(fz_rect_from_quad(chr->quad));
 
                 if ((chr->next == nullptr)) {
+                    last_line_size = text.size();
                     text.push_back(' ');
 
                     line_rects.push_back(line->bbox);
@@ -4574,6 +4581,11 @@ int Document::get_page_text_and_line_rects_after_rect(int page_number,
             }
         }
 
+    }
+    if (text.size() >= maximum_size){
+        text = text.substr(0, last_line_size);
+        line_rects.resize(last_line_size);
+        char_rects.resize(last_line_size);
     }
     return index_into_page;
 }

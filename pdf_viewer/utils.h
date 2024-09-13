@@ -536,6 +536,7 @@ public:
     virtual void set_external_state_change_callback(std::function<void(QString)>) = 0;
     virtual void set_on_app_pause_callback(std::function<QString()>) = 0;
     virtual void set_on_app_resume_callback(std::function<void(bool, bool, int)>) = 0;
+    virtual int get_maximum_tts_text_size();
 };
 
 class QtTextToSpeechHandler : public TextToSpeechHandler {
@@ -595,6 +596,7 @@ public:
     void set_external_state_change_callback(std::function<void(QString)> callback);
     virtual void set_on_app_pause_callback(std::function<QString()>);
     virtual void set_on_app_resume_callback(std::function<void(bool, bool, int)>);
+    int get_maximum_tts_text_size();
 };
 #endif
 

@@ -3709,7 +3709,7 @@ void DocumentView::focus_page_text(int page, const std::wstring& text) {
     std::wstring page_text;
     std::vector <PagelessDocumentRect> line_rects;
     std::vector <PagelessDocumentRect> char_rects;
-    current_document->get_page_text_and_line_rects_after_rect(page, fz_empty_rect, page_text, line_rects, char_rects);
+    current_document->get_page_text_and_line_rects_after_rect(page, INT_MAX, fz_empty_rect, page_text, line_rects, char_rects);
 
     int start_index = -1;
     int end_index = -1;

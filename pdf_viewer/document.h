@@ -198,7 +198,7 @@ public:
     std::optional<bool> cached_is_synced;
 
     PageIterator page_iterator(int page_number, bool line_only=false);
-    int get_page_text_and_line_rects_after_rect(int page_number,
+    int get_page_text_and_line_rects_after_rect(int page_number, int maximum_size,
         AbsoluteRect after,
         std::wstring& text,
         std::vector<PagelessDocumentRect>& line_rects,

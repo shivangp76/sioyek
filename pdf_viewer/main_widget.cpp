@@ -7059,6 +7059,13 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
+    // get list of available qtexttospeech engines
+    // qDebug() << QTextToSpeech::availableEngines();
+    qDebug() << "maximum text size is: " << get_tts()->get_maximum_tts_text_size();
+
+
+
+    // qDebug() << ((QtTextToSpeechHandler*)get_tts())->tts->engine();
 }
 
 void MainWidget::show_command_menu() {
@@ -7392,8 +7399,10 @@ void MainWidget::read_current_line() {
 
         int page_number = main_document_view->get_vertical_line_page();
         AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
+        int maximum_size = get_tts()->get_maximum_tts_text_size();
         int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
             page_number,
+            maximum_size,
             ruler_rect,
             tts_text,
             tts_corresponding_line_rects,
@@ -11165,6 +11174,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     std::vector<PagelessDocumentRect> rect1, rect2;
     int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
         current_page_number,
+        INT_MAX,
         ruler_rect,
         dummy_text,
         rect1,
@@ -11172,7 +11182,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
 
     std::wstring text;
 
-    doc()->get_page_text_and_line_rects_after_rect(current_page_number, fz_empty_rect, text, line_rects, char_rects);
+    doc()->get_page_text_and_line_rects_after_rect(current_page_number, INT_MAX, fz_empty_rect, text, line_rects, char_rects);
     high_quality_play_state->line_rects = line_rects;
     //qDebug() << "page text size : " << text.size();
     index_into_page = text.size() - dummy_text.size();
@@ -11221,7 +11231,7 @@ void MainWidget::preload_next_page_for_tts(float rate) {
         std::vector<PagelessDocumentRect> dummy_next_lines;
         std::vector<PagelessDocumentRect> dummy_next_chars;
         std::wstring next_page_text;
-        doc()->get_page_text_and_line_rects_after_rect(next_page_number, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
+        doc()->get_page_text_and_line_rects_after_rect(next_page_number, INT_MAX, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
         sioyek_network_manager->tts(this, next_page_text, doc()->get_checksum(), next_page_number, rate, [](QString path, std::vector<float> timestamps) {});
     }
 }
