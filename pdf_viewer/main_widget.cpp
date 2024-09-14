@@ -7885,6 +7885,7 @@ void MainWidget::handle_toggle_drawing_mask(char symbol) {
 std::string MainWidget::get_current_mode_string() {
     std::string res;
     res += (main_document_view->is_ruler_mode()) ? "r" : "R";
+    res += main_document_view->is_line_select_mode() ? "l" : "L";
     res += (synctex_mode) ? "x" : "X";
     res += (is_select_highlight_mode) ? "h" : "H";
     res += (freehand_drawing_mode == DrawingMode::Drawing) ? "q" : "Q";
