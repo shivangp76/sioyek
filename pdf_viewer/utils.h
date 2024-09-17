@@ -299,6 +299,8 @@ void android_tts_pause();
 void android_tts_stop();
 void android_tts_set_rate(float rate);
 void android_tts_set_rest_of_document(QString rest);
+void on_android_pause_global();
+void on_android_resume_global();
 #endif
 
 float dampen_velocity(float v, float dt);

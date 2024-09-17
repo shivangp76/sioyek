@@ -381,6 +381,7 @@ public:
     void manage_last_document_checksum();
     void on_checksum_computed();
 
+    void handle_validation_interval_timeout();
     void update_selected_bookmark_font_size();
     //bool eventFilter(QObject* obj, QEvent* event) override;
     void set_command_textbox_text(const std::wstring& txt);
@@ -719,6 +720,8 @@ public:
 #ifdef SIOYEK_ANDROID
     //    void onApplicationStateChanged(Qt::ApplicationState applicationState);
     bool pending_intents_checked = false;
+    Q_INVOKABLE void on_android_pause();
+    Q_INVOKABLE void on_android_resume();
 #endif
 
 protected:

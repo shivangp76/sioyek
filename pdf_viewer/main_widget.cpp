@@ -1158,88 +1158,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     network_timer->setInterval(60000);
 
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
-        focus_on_high_quality_text_being_read();
-        if (doc()) {
-            if (doc()->super_fast_search_index_is_new()) {
-                on_super_fast_search_index_computed();
-            }
-        }
-
-        if (main_document_view->scheduled_portal_update) {
-            update_link_with_opened_book_state(main_document_view->scheduled_portal_update->portal, main_document_view->scheduled_portal_update->state, true);
-            main_document_view->scheduled_portal_update = {};
-
-        }
-        if (sioyek_network_manager->status != last_server_status) {
-            last_server_status = sioyek_network_manager->status;
-            invalidate_ui();
-        }
-
-        cleanup_expired_pending_portals();
-        manage_last_document_checksum();
-        if (TOUCH_MODE && selection_begin_indicator) {
-            selection_begin_indicator->update_pos();
-            selection_end_indicator->update_pos();
-        }
-        if (recently_updated_portal.has_value() &&
-            (recently_updated_portal->last_modification_time.msecsTo(QDateTime::currentDateTime()) > 1000)) {
-            on_portal_edited(recently_updated_portal->uuid);
-            recently_updated_portal = {};
-        }
-
-        if (doc()) {
-            if (doc()->get_should_reload_annotations()) {
-                doc()->reload_annotations_on_new_checksum();
-                validate_render();
-            }
-        }
-
-        if (main_document_view->has_synctex_timed_out()) {
-            is_render_invalidated = true;
-        }
-
-        if (is_render_invalidated) {
-            validate_render();
-        }
-        else if (is_ui_invalidated) {
-            validate_ui();
-        }
-        if (doc() && doc()->annotations_are_freshly_loaded) {
-            doc()->annotations_are_freshly_loaded = false;
-            sync_annotations_with_server();
-        }
-
-        if (QGuiApplication::mouseButtons() & Qt::MouseButton::MiddleButton) {
-            if ((last_middle_down_time.msecsTo(QTime::currentTime()) > 200) && (!is_middle_click_being_used())) {
-                if ((!middle_click_hold_command_already_executed) && (!main_document_view->is_moving_annotations())) {
-                    execute_macro_if_enabled(HOLD_MIDDLE_CLICK_COMMAND);
-                    middle_click_hold_command_already_executed = true;
-                    invalidate_render();
-                }
-            }
-        }
-
-        // detect if the document file has changed and if so, reload the document
-        if (main_document_view != nullptr) {
-            Document* doc = nullptr;
-            if ((doc = main_document_view->get_document()) != nullptr) {
-
-                // Wait until a safe amount of time has passed since the last time the file was updated on the filesystem
-                // this is because LaTeX software frequently puts PDF files in an invalid state while it is being made in
-                // multiple passes.
-                if ((doc->get_milies_since_last_document_update_time() > (doc->get_milies_since_last_edit_time())) &&
-                    (doc->get_milies_since_last_edit_time() > RELOAD_INTERVAL_MILISECONDS)) {
-
-                    if (true || is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
-                        doc->reload();
-                        this->pdf_renderer->clear_cache();
-                        this->on_document_changed();
-                        invalidate_render();
-                    }
-                }
-            }
-        }
+        handle_validation_interval_timeout();
         });
+
     connect(network_timer, &QTimer::timeout, [&]() {
         handle_periodic_network_operations();
         });
@@ -1393,6 +1314,92 @@ MainWidget::~MainWidget() {
         helper_document_view_ = nullptr;
     }
 }
+
+void MainWidget::handle_validation_interval_timeout(){
+
+        focus_on_high_quality_text_being_read();
+        if (doc()) {
+            if (doc()->super_fast_search_index_is_new()) {
+                on_super_fast_search_index_computed();
+            }
+        }
+
+        if (main_document_view->scheduled_portal_update) {
+            update_link_with_opened_book_state(main_document_view->scheduled_portal_update->portal, main_document_view->scheduled_portal_update->state, true);
+            main_document_view->scheduled_portal_update = {};
+
+        }
+        if (sioyek_network_manager->status != last_server_status) {
+            last_server_status = sioyek_network_manager->status;
+            invalidate_ui();
+        }
+
+        cleanup_expired_pending_portals();
+        manage_last_document_checksum();
+        if (TOUCH_MODE && selection_begin_indicator) {
+            selection_begin_indicator->update_pos();
+            selection_end_indicator->update_pos();
+        }
+        if (recently_updated_portal.has_value() &&
+            (recently_updated_portal->last_modification_time.msecsTo(QDateTime::currentDateTime()) > 1000)) {
+            on_portal_edited(recently_updated_portal->uuid);
+            recently_updated_portal = {};
+        }
+
+        if (doc()) {
+            if (doc()->get_should_reload_annotations()) {
+                doc()->reload_annotations_on_new_checksum();
+                validate_render();
+            }
+        }
+
+        if (main_document_view->has_synctex_timed_out()) {
+            is_render_invalidated = true;
+        }
+
+        if (is_render_invalidated) {
+            validate_render();
+        }
+        else if (is_ui_invalidated) {
+            validate_ui();
+        }
+        if (doc() && doc()->annotations_are_freshly_loaded) {
+            doc()->annotations_are_freshly_loaded = false;
+            sync_annotations_with_server();
+        }
+
+        if (QGuiApplication::mouseButtons() & Qt::MouseButton::MiddleButton) {
+            if ((last_middle_down_time.msecsTo(QTime::currentTime()) > 200) && (!is_middle_click_being_used())) {
+                if ((!middle_click_hold_command_already_executed) && (!main_document_view->is_moving_annotations())) {
+                    execute_macro_if_enabled(HOLD_MIDDLE_CLICK_COMMAND);
+                    middle_click_hold_command_already_executed = true;
+                    invalidate_render();
+                }
+            }
+        }
+
+        // detect if the document file has changed and if so, reload the document
+        if (main_document_view != nullptr) {
+            Document* doc = nullptr;
+            if ((doc = main_document_view->get_document()) != nullptr) {
+
+                // Wait until a safe amount of time has passed since the last time the file was updated on the filesystem
+                // this is because LaTeX software frequently puts PDF files in an invalid state while it is being made in
+                // multiple passes.
+                if ((doc->get_milies_since_last_document_update_time() > (doc->get_milies_since_last_edit_time())) &&
+                    (doc->get_milies_since_last_edit_time() > RELOAD_INTERVAL_MILISECONDS)) {
+
+                    if (true || is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
+                        doc->reload();
+                        this->pdf_renderer->clear_cache();
+                        this->on_document_changed();
+                        invalidate_render();
+                    }
+                }
+            }
+        }
+}
+
 
 std::wstring MainWidget::get_status_string(bool is_right) {
 
@@ -2390,6 +2397,12 @@ void MainWidget::start_dragging(){
     auto [min_x, max_x] = doc()->get_min_max_annot_x_for_page(page);
     current_drag_min_annotation_x = min_x;
     current_drag_max_annotation_x = max_x;
+
+    // when the user starts dragging while the document is moving with velocity, we should reset the interval
+    if (validation_interval_timer->interval() == 0){
+        validation_interval_timer->setInterval(INTERVAL_TIME);
+    }
+
     is_dragging = true;
 }
 
@@ -8243,6 +8256,9 @@ TextToSpeechHandler* MainWidget::get_tts() {
                 focus_on_character_offset_into_document(current_offset_into_document);
             }
         }
+        else{
+            ensure_player_state("Ended");
+        }
     });
 
 #else
@@ -9539,6 +9555,9 @@ QStringListModel* MainWidget::get_new_command_list_model() {
 }
 
 void MainWidget::add_password(std::wstring path, std::string password) {
+    if (doc()){
+        doc()->reload(password);
+    }
     pdf_renderer->add_password(path, password);
 }
 
@@ -11420,3 +11439,14 @@ void MainWidget::set_mouse_cursor_for_side_resize(std::optional<OverviewSide> si
     }
     setCursor(Qt::ArrowCursor);
 }
+#ifdef SIOYEK_ANDROID
+
+void MainWidget::on_android_pause(){
+    // todo: we should probably stop all threads here
+    validation_interval_timer->stop();
+}
+
+void MainWidget::on_android_resume(){
+    validation_interval_timer->start();
+}
+#endif

@@ -3,6 +3,7 @@ package info.sioyek.sioyek;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
@@ -11,6 +12,9 @@ import android.app.NotificationManager;
 import android.app.NotificationChannel;
 import androidx.core.app.NotificationCompat;
 import android.content.Context;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.media3.common.MediaItem;
 
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -22,22 +26,25 @@ import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
 import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionCommands;
+import android.content.pm.ServiceInfo;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
 
 import java.util.Collections;
 import java.util.ArrayList;
 
 
-class CustomPlayer extends SimpleBasePlayer{
+class CustomPlayer extends SimpleBasePlayer {
 
 
     private State state = new State.Builder()
             .setAvailableCommands(new Commands.Builder().addAll(
              COMMAND_PLAY_PAUSE,
              COMMAND_GET_CURRENT_MEDIA_ITEM,
-             COMMAND_GET_MEDIA_ITEMS_METADATA).build())
+             COMMAND_GET_MEDIA_ITEMS_METADATA,
+             COMMAND_SET_SPEED_AND_PITCH).build())
             .setPlayWhenReady(true, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
             .setPlaylist(Collections.singletonList(new MediaItemData.Builder("test").build()))
             .setPlaylistMetadata(new MediaMetadata.Builder().setMediaType(MediaMetadata.MEDIA_TYPE_PLAYLIST).setTitle("tts test").build())
@@ -71,6 +78,7 @@ class CustomPlayer extends SimpleBasePlayer{
 
     }
 }
+
 public class TextToSpeechService extends MediaSessionService {
 
     private MediaSession mediaSession = null;
@@ -224,32 +232,26 @@ public class TextToSpeechService extends MediaSessionService {
 
     @Override
     public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo){
-        SessionCommands commands = new SessionCommands.Builder().add(new SessionCommand("set_text", new Bundle())).build();
-        Player.Commands playerCommands = new Player.Commands.Builder().addAll(
-            Player.COMMAND_PLAY_PAUSE,
-             Player.COMMAND_GET_CURRENT_MEDIA_ITEM,
-             Player.COMMAND_GET_MEDIA_ITEMS_METADATA).build();
-        mediaSession.setAvailableCommands(controllerInfo, commands, playerCommands);
         return mediaSession;
     }
 
     private void sendMessage(int begin, int end){
-        Intent intent = new Intent("sioyek_tts");
+        Intent intent = new Intent("info.sioyek.sioyek.SIOYEK_TTS");
         intent.putExtra("begin", begin);
         intent.putExtra("end", end);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        sendBroadcast(intent);
     }
 
     private void publishTtsState(String state){
-        Intent intent = new Intent("sioyek_tts_state");
+        Intent intent = new Intent("info.sioyek.sioyek.SIOYEK_TTS_STATE");
         intent.putExtra("state", state);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        sendBroadcast(intent);
     }
 
     private void publishExternalTtsState(String state){
-        Intent intent = new Intent("sioyek_external_tts_state");
+        Intent intent = new Intent("info.sioyek.sioyek.SIOYEK_EXTERNAL_TTS_STATE");
         intent.putExtra("state", state);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        sendBroadcast(intent);
     }
 
     int findFirstSpaceBefore(String text, int index){
@@ -287,7 +289,12 @@ public class TextToSpeechService extends MediaSessionService {
         tempPauseLocation = 0;
         restOfDocument.clear();
         restIndex = 0;
-        SioyekActivity.onResumeState(isPlaying, isOnRest, offset);
+        // send a message to SioyekActivity to resume the state
+        Intent intent = new Intent("info.sioyek.sioyek.SIOYEK_RESUME");
+        intent.putExtra("isPlaying", isPlaying);
+        intent.putExtra("isOnRest", isOnRest);
+        intent.putExtra("offset", offset);
+        sendBroadcast(intent);
     }
 
 }

@@ -857,6 +857,9 @@ int main(int argc, char* args[]) {
     if (VOLUME_UP_COMMAND.size() > 0 || VOLUME_DOWN_COMMAND.size() > 0){
         qputenv("QT_ANDROID_VOLUME_KEYS", "1");
     }
+    // if we don't do this, the app crashes when android stops it
+    qputenv("QT_ANDROID_NO_EXIT_CALL", "1");
+
 #endif
 
 

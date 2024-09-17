@@ -3101,6 +3101,18 @@ void on_android_tts(int begin, int end){
     // qDebug() << "ttsed from " << begin << " to " << end;
 }
 
+void on_android_pause_global(){
+    for (auto window : windows){
+        QMetaObject::invokeMethod(window, "on_android_pause", Qt::QueuedConnection);
+    }
+}
+
+void on_android_resume_global(){
+    for (auto window : windows){
+        QMetaObject::invokeMethod(window, "on_android_resume", Qt::QueuedConnection);
+    }
+}
+
 void on_android_state_change(QString new_state){
     if (android_global_state_change_callback){
         android_global_state_change_callback.value()(new_state);
@@ -3159,6 +3171,27 @@ extern "C" {
     {
         on_android_tts((int)begin, (int)end);
     }
+
+    JNIEXPORT void JNICALL
+        Java_info_sioyek_sioyek_SioyekActivity_onAndroidPause(JNIEnv* env,
+                                                          jobject obj)
+    {
+        on_android_pause_global();
+    }
+
+    JNIEXPORT void JNICALL
+        Java_info_sioyek_sioyek_SioyekActivity_onAndroidResume(JNIEnv* env,
+                                                          jobject obj)
+    {
+        on_android_resume_global();
+    }
+
+    // JNIEXPORT void JNICALL
+    //     Java_info_sioyek_sioyek_SioyekActivity_onAndroidPause(JNIEnv* env,
+    //                                                       jobject obj)
+    // {
+    //     on_android_pause
+    // }
 
     JNIEXPORT void JNICALL
         Java_info_sioyek_sioyek_SioyekActivity_onTtsStateChange(JNIEnv* env,

@@ -397,3 +397,5 @@ sioyek
 sioyek.gch/*
 .vimspector.json
 .vimspector.session
+android/.gradle/*
+android/local.properties

@@ -73,6 +73,8 @@ public class SioyekActivity extends QtActivity{
     public static native void onExternalTtsStateChange(String newState);
     public static native String getRestOnPause();
     public static native void onResumeState(boolean isPlaying, boolean readingRest, int offset);
+    public static native void onAndroidPause();
+    public static native void onAndroidResume();
 
     public static boolean isIntentPending;
     public static boolean isInitialized;
@@ -90,6 +92,16 @@ public class SioyekActivity extends QtActivity{
             int begin = intent.getIntExtra("begin", 0);
             int end = intent.getIntExtra("end", 0);
             onTts(begin, end);
+        }
+    };
+
+    private BroadcastReceiver resumeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean isPlaying = intent.getBooleanExtra("isPlaying", false);
+            boolean isOnRest = intent.getBooleanExtra("isOnRest", false);
+            int offset = intent.getIntExtra("offset", 0);
+            onResumeState(isPlaying, isOnRest, offset);
         }
     };
 
@@ -173,18 +185,17 @@ public class SioyekActivity extends QtActivity{
                 qDebug("sioyek: could not get media controller");
             }
         }, MoreExecutors.directExecutor());
-        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, new IntentFilter("sioyek_tts"));
-        LocalBroadcastManager.getInstance(this).registerReceiver(stateMessageReceiver, new IntentFilter("sioyek_tts_state"));
-        LocalBroadcastManager.getInstance(this).registerReceiver(externalStateMessageReceiver, new IntentFilter("sioyek_external_tts_state"));
+        registerReceiver(messageReceiver, new IntentFilter("info.sioyek.sioyek.SIOYEK_TTS"), Context.RECEIVER_EXPORTED);
+        registerReceiver(stateMessageReceiver, new IntentFilter("info.sioyek.sioyek.SIOYEK_TTS_STATE"), Context.RECEIVER_EXPORTED);
+        registerReceiver(externalStateMessageReceiver, new IntentFilter("info.sioyek.sioyek.SIOYEK_EXTERNAL_TTS_STATE"), Context.RECEIVER_EXPORTED);
     }
 
     @Override
     public void onStop(){
-
         super.onStop();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(stateMessageReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(externalStateMessageReceiver);
+        unregisterReceiver(messageReceiver);
+        unregisterReceiver(stateMessageReceiver);
+        unregisterReceiver(externalStateMessageReceiver);
     }
 
     public void startMaybeForegroundService(Intent intent){
@@ -198,6 +209,9 @@ public class SioyekActivity extends QtActivity{
     @Override
     public void onResume(){
 
+        IntentFilter filter = new IntentFilter("info.sioyek.sioyek.SIOYEK_RESUME");
+        registerReceiver(resumeReceiver, filter, Context.RECEIVER_EXPORTED);
+        
         isPaused = false;
         if (wasPlayingWhenPaused){
             wasPlayingWhenPaused = false;
@@ -207,6 +221,9 @@ public class SioyekActivity extends QtActivity{
         }
 
         super.onResume();
+        onAndroidResume();
+
+
     }
 
     @Override
@@ -219,7 +236,11 @@ public class SioyekActivity extends QtActivity{
             setTtsRestOfDocument(rest);
         }
 
+        onAndroidPause();
         super.onPause();
+
+        unregisterReceiver(resumeReceiver);
+
     }
 
     @Override
