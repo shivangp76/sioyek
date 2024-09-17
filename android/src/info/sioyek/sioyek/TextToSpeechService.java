@@ -89,9 +89,11 @@ public class TextToSpeechService extends MediaSessionService {
     private int pauseLocation = 0;
     private int tempPauseLocation = 0;
     private String spokenText = "";
+    private int startOffset = -1;
     // private String restOfDocument = "";
     private ArrayList<String> restOfDocument = new ArrayList<String>();
     private int restIndex = 0; 
+    private int restBeginOffset = -1;
     boolean shouldHideNotification = false;
 
     private int MAX_SPEECH_SIZE = 4000;
@@ -195,6 +197,7 @@ public class TextToSpeechService extends MediaSessionService {
 
         if (intent.getStringExtra("text") != null){
             spokenText = intent.getStringExtra("text");
+            startOffset = intent.getIntExtra("startOffset", -1);
             pauseLocation = 0;
             tempPauseLocation = 0;
         }
@@ -209,7 +212,8 @@ public class TextToSpeechService extends MediaSessionService {
         }
         if (intent.hasExtra("rest")){
             String rest = intent.getStringExtra("rest");
-            setRestText(rest);
+            int restOffset = intent.getIntExtra("restOffset", -1);
+            setRestText(rest, restOffset);
         }
         return super.onStartCommand(intent, flags, startId);
     }
@@ -263,7 +267,7 @@ public class TextToSpeechService extends MediaSessionService {
         return 0;
     }
 
-    void setRestText(String rest){
+    void setRestText(String rest, int restOffset){
         while (rest.length() > MAX_SPEECH_SIZE){
             int index = findFirstSpaceBefore(rest, MAX_SPEECH_SIZE);
             restOfDocument.add(rest.substring(0, index));
@@ -272,6 +276,7 @@ public class TextToSpeechService extends MediaSessionService {
         if (rest.length() > 0){
             restOfDocument.add(rest);
         }
+        restBeginOffset = restOffset;
         restIndex = 0;
     }
 
@@ -293,7 +298,18 @@ public class TextToSpeechService extends MediaSessionService {
         Intent intent = new Intent("info.sioyek.sioyek.SIOYEK_RESUME");
         intent.putExtra("isPlaying", isPlaying);
         intent.putExtra("isOnRest", isOnRest);
-        intent.putExtra("offset", offset);
+
+        if (isOnRest){
+            offset += restBeginOffset;
+            intent.putExtra("offset", offset);
+        }
+        else{
+            if (startOffset != -1){
+                offset += startOffset;
+            }
+
+            intent.putExtra("offset", offset);
+        }
         sendBroadcast(intent);
     }
 

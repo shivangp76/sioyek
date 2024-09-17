@@ -41,6 +41,7 @@
 #include <qabstracttextdocumentlayout.h>
 #include <qtextcursor.h>
 #include <qlistview.h>
+#include <QTimer>
 
 #ifdef SIOYEK_ANDROID
 #include <QtCore/private/qandroidextras_p.h>
@@ -2920,12 +2921,14 @@ int android_tts_get_max_text_size(){
     QJniObject activity = QNativeInterface::QAndroidApplication::context();
     return activity.callMethod<int>("ttsGetMaxTextSize", "()I");
 }
-void android_tts_say(QString text) {
+
+void android_tts_say(QString text, int start_offset) {
 
     QJniObject text_jni = QJniObject::fromString(text);
     QJniObject activity = QNativeInterface::QAndroidApplication::context();
     //QJniObject contentResolverObj = activity.callObjectMethod("saySomethingElse", "(Ljava/lang/String;)V", text_jni.object<jstring>());
-    activity.callMethod<void>("ttsSay", "(Ljava/lang/String;)V", text_jni.object<jstring>());
+    // activity.callMethod<void>("ttsSay", "(Ljava/lang/String;)V", text_jni.object<jstring>());
+    activity.callMethod<void>("ttsSay", "(Ljava/lang/String;I)V", text_jni.object<jstring>(), start_offset);
 }
 
 void android_tts_pause(){
@@ -2947,12 +2950,6 @@ void android_tts_set_rate(float rate){
 //     QJniObject activity = QNativeInterface::QAndroidApplication::context();
 //     activity.callMethod<void>("stopTtsService", "()V");
 // }
-
-void android_tts_set_rest_of_document(QString rest){
-    QJniObject rest_jni = QJniObject::fromString(rest);
-    QJniObject activity = QNativeInterface::QAndroidApplication::context();
-    activity.callMethod<void>("ttsSetRestOfDocument", "(Ljava/lang/String;)V", rest_jni.object<jstring>());
-}
 
 #endif
 
@@ -3036,6 +3033,13 @@ extern std::vector<MainWidget*> windows;
 
 // modified from https://github.com/mahdize/CrossQFile/blob/main/CrossQFile.cpp
 
+
+void log_d(QString text){
+    // call the activitie's myLogD method with text
+    QJniObject activity = QNativeInterface::QAndroidApplication::context();
+    activity.callMethod<void>("myLogD", "(Ljava/lang/String;)V", QJniObject::fromString(text).object<jstring>());
+
+}
 
 QString android_file_name_from_uri(QString uri) {
 
@@ -3125,10 +3129,16 @@ void on_android_external_state_change(QString new_state){
     }
 }
 
-void on_android_resume_state(bool is_playing, bool is_on_rest, int offset){
-    if (android_global_resume_state_callback){
-        android_global_resume_state_callback.value()(is_playing, is_on_rest, offset);
+bool on_android_resume_state(bool is_playing, bool is_on_rest, int offset){
+    if (windows.size() > 0){
+        for (auto window : windows){
+            QMetaObject::invokeMethod(window, "handle_app_tts_resume", Qt::QueuedConnection,
+                                      Q_ARG(bool, is_playing), Q_ARG(bool, is_on_rest), Q_ARG(int, offset));
+        }
+        return true;
     }
+    return false;
+
 }
 
 QString on_android_get_rest_on_pause(){
@@ -3217,7 +3227,7 @@ extern "C" {
         on_android_external_state_change(state_str);
     }
 
-    JNIEXPORT void JNICALL
+    JNIEXPORT bool JNICALL
         Java_info_sioyek_sioyek_SioyekActivity_onResumeState(JNIEnv* env,
             jobject obj,
             jboolean is_playing,
@@ -3226,7 +3236,7 @@ extern "C" {
     {
 
         Q_UNUSED(obj)
-        on_android_resume_state(is_playing, reading_rest, offset);
+        return on_android_resume_state(is_playing, reading_rest, offset);
     }
 
     JNIEXPORT jstring JNICALL
@@ -4528,7 +4538,7 @@ QtTextToSpeechHandler::~QtTextToSpeechHandler() {
     delete tts;
 }
 
-void QtTextToSpeechHandler::say(QString text) {
+void QtTextToSpeechHandler::say(QString text, int offset) {
     tts->say(text);
 }
 
@@ -4623,8 +4633,8 @@ int AndroidTextToSpeechHandler::get_maximum_tts_text_size(){
     return android_tts_get_max_text_size();
 }
 
-void AndroidTextToSpeechHandler::say(QString text) {
-    android_tts_say(text);
+void AndroidTextToSpeechHandler::say(QString text, int start_offset) {
+    android_tts_say(text, start_offset);
 }
 
 void AndroidTextToSpeechHandler::stop() {

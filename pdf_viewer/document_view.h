@@ -111,6 +111,7 @@ protected:
     bool is_ruler_mode_ = false;
     std::optional<int> presentation_page_number;
 
+
     float page_space_x = 0;
     float page_space_y = 0;
 
@@ -120,6 +121,9 @@ public:
     float velocity_x = 0;
     float velocity_y = 0;
     bool is_velocity_fixed = false;
+
+    // when we want to focus on an offset within the document but the super fast search index is not ready
+    std::optional<int> on_super_fast_compute_focus_offset = {};
 
     std::vector<SearchResult> search_results;
     int current_search_result_index = -1;

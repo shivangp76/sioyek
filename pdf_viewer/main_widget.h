@@ -294,10 +294,6 @@ public:
     QPushButton* resume_to_server_position_button = nullptr;
     int text_suggestion_index = 0;
 
-    int last_pause_rest_of_document_page = -1;
-    int last_page_read = -1;
-    int last_index_into_page_read = -1;
-
     std::deque<std::wstring> search_terms;
 
     // determines if the widget render is invalid and needs to be updated
@@ -357,6 +353,7 @@ public:
 
     // search the `paper_name` in one of the configurable when middle-click or shift+middle-clicking on paper's name
     void handle_search_paper_name(QString paper_name, bool is_shift_pressed);
+    Q_INVOKABLE void handle_app_tts_resume(bool is_playing, bool is_on_rest, int offset);
 
     void persist(bool persist_drawings = false);
     std::wstring get_status_string(bool is_right);

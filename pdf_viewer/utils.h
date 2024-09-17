@@ -298,7 +298,7 @@ void check_pending_intents(const QString workingDirPath);
 void android_tts_pause();
 void android_tts_stop();
 void android_tts_set_rate(float rate);
-void android_tts_set_rest_of_document(QString rest);
+// void android_tts_set_rest_of_document(QString rest);
 void on_android_pause_global();
 void on_android_resume_global();
 #endif
@@ -528,7 +528,7 @@ std::vector<fz_stext_char*> reorder_mixed_stext_line(fz_stext_line* line);
 class TextToSpeechHandler {
 public:
     virtual void set_rate(float rate) = 0;
-    virtual void say(QString text) = 0;
+    virtual void say(QString text, int start_offset=-1) = 0;
     virtual void stop() = 0;
     virtual void pause() = 0;
     virtual bool is_pausable() = 0;
@@ -551,7 +551,7 @@ public:
 
     ~QtTextToSpeechHandler();
 
-    void say(QString text) override;
+    void say(QString text, int start_offset=-1) override;
 
     void stop() override;
 
@@ -580,7 +580,7 @@ public:
 
     AndroidTextToSpeechHandler();
 
-    void say(QString text) override;
+    void say(QString text, int start_offset=-1) override;
 
     void stop() override;
 
@@ -949,3 +949,5 @@ std::vector<MenuNode*> get_top_level_menu_nodes();
 std::wstring replace_verbatim_links(std::wstring input);
 QVariantMap get_color_mapping();
 QListView* get_ui_new_listview();
+
+void log_d(QString text);

@@ -7421,22 +7421,25 @@ void MainWidget::read_current_line() {
             tts_corresponding_line_rects,
             tts_corresponding_char_rects);
 
+
         //fz_stext_page* stext_page = doc()->get_stext_with_page_number(page_number);
         //std::vector<fz_stext_char*> flat_chars;
         //get_flat_chars_from_stext_page(stext_page, flat_chars, true);
 
         get_tts()->set_rate(TTS_RATE);
         if (word_by_word_reading) {
+            int page_offset = doc()->get_page_offset_into_super_fast_index(page_number);
+            int current_offset_into_document = page_offset + index_into_page;
             if (tts_text.size() > 0) {
-                get_tts()->say(QString::fromStdWString(tts_text));
+                get_tts()->say(QString::fromStdWString(tts_text), current_offset_into_document);
             }
         }
         else {
             get_tts()->say(QString::fromStdWString(selected_line_text));
         }
 
-        last_page_read = page_number;
-        last_index_into_page_read = index_into_page;
+        // last_page_read = page_number;
+        // last_index_into_page_read = index_into_page;
 
         is_reading = true;
     }
@@ -8234,31 +8237,7 @@ TextToSpeechHandler* MainWidget::get_tts() {
 
     tts->set_on_app_resume_callback([&](bool is_playing, bool is_on_rest, int offset){
 
-        if (is_reading && (is_playing == false)){
-            is_reading = false;
-        }
-
-        if (is_playing){
-            ensure_player_state("Ended");
-
-            handle_stop_reading();
-
-            if (is_on_rest) {
-                int last_page = last_pause_rest_of_document_page;
-                int last_page_offset = doc()->get_page_offset_into_super_fast_index(last_page);
-                int current_offset_in_document = last_page_offset + offset;
-                focus_on_character_offset_into_document(current_offset_in_document);
-            }
-            else {
-                int last_page = last_page_read;
-                int last_page_offset = doc()->get_page_offset_into_super_fast_index(last_page);
-                int current_offset_into_document = last_page_offset + last_index_into_page_read + offset;
-                focus_on_character_offset_into_document(current_offset_into_document);
-            }
-        }
-        else{
-            ensure_player_state("Ended");
-        }
+        handle_app_tts_resume(is_playing, is_on_rest, offset);
     });
 
 #else
@@ -8279,6 +8258,33 @@ TextToSpeechHandler* MainWidget::get_tts() {
 #endif
 
     return tts;
+}
+
+void MainWidget::handle_app_tts_resume(bool is_playing, bool is_on_rest, int offset){
+    // set_status_message(L"got on resume callback");
+
+    // return;
+    if (is_reading && (is_playing == false)){
+        is_reading = false;
+    }
+
+    if (is_playing){
+        ensure_player_state("Ended");
+
+        handle_stop_reading();
+
+        if (doc() && doc()->is_super_fast_index_ready()){
+            if (offset > 0){
+                focus_on_character_offset_into_document(offset);
+            }
+        }
+        else{
+            dv()->on_super_fast_compute_focus_offset = offset;
+        }
+    }
+    else{
+        ensure_player_state("Ended");
+    }
 }
 
 void MainWidget::update_bookmark_with_uuid(const std::string& uuid) {
@@ -10256,8 +10262,14 @@ void MainWidget::ensure_player_state_(QString state) {
 
 QString MainWidget::get_rest_of_document_pages_text() {
     int page_number = main_document_view->get_vertical_line_page();
-    last_pause_rest_of_document_page = page_number + 1;
+
+    // last_pause_rest_of_document_page = page_number + 1;
+#ifdef SIOYEK_ANDROID
+    int page_offset = doc()->get_page_offset_into_super_fast_index(page_number + 1);
+    return QString::number(page_offset) + " " + doc()->get_rest_of_document_pages_text(page_number + 1).left(100000);
+#else
     return doc()->get_rest_of_document_pages_text(page_number + 1).left(100000);
+#endif
 }
 
 void MainWidget::focus_on_character_offset_into_document(int character_offset_into_document) {
@@ -11320,6 +11332,11 @@ QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, std::opti
 void MainWidget::on_super_fast_search_index_computed() {
     if (AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH) {
         index_current_document_for_fulltext_search(true);
+    }
+
+    if (dv() && dv()->on_super_fast_compute_focus_offset){
+        focus_on_character_offset_into_document(dv()->on_super_fast_compute_focus_offset.value());
+        dv()->on_super_fast_compute_focus_offset = {};
     }
 }
 

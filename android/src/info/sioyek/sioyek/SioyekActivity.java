@@ -16,6 +16,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 import android.net.Uri;
 import android.provider.OpenableColumns;
+import android.app.ActivityManager;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -58,6 +59,7 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import android.view.Menu;
@@ -72,13 +74,13 @@ public class SioyekActivity extends QtActivity{
     public static native void onTtsStateChange(String newState);
     public static native void onExternalTtsStateChange(String newState);
     public static native String getRestOnPause();
-    public static native void onResumeState(boolean isPlaying, boolean readingRest, int offset);
+    public static native boolean onResumeState(boolean isPlaying, boolean readingRest, int offset);
     public static native void onAndroidPause();
     public static native void onAndroidResume();
 
     public static boolean isIntentPending;
     public static boolean isInitialized;
-    public static boolean wasPlayingWhenPaused = false;
+    // public static boolean wasPlayingWhenPaused = false;
     public static boolean isPaused = true;
 
     private static SioyekActivity instance = null;
@@ -101,7 +103,18 @@ public class SioyekActivity extends QtActivity{
             boolean isPlaying = intent.getBooleanExtra("isPlaying", false);
             boolean isOnRest = intent.getBooleanExtra("isOnRest", false);
             int offset = intent.getIntExtra("offset", 0);
-            onResumeState(isPlaying, isOnRest, offset);
+            // run onResumeState after a delay to make sure that the activity is fully resumed
+            boolean result = onResumeState(isPlaying, isOnRest, offset);
+            if (!result){
+                // the app is not fully initialized yet, try again after a delay
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        onResumeState(isPlaying, isOnRest, offset);
+                    }
+                }, 1000);
+            }
         }
     };
 
@@ -172,9 +185,15 @@ public class SioyekActivity extends QtActivity{
 
     }
 
-    @Override
-    public void onStart(){
-        super.onStart();
+    ListenableFuture<MediaController> ensureTtsService(){
+        // start the TTS service if it doesn't already exist
+        if (mediaController == null){
+            return startTtsService();
+        }
+        return Futures.immediateFuture(mediaController);
+    }
+
+    ListenableFuture<MediaController> startTtsService(){
         ttsSessionToken = new SessionToken(getApplicationContext(), new ComponentName(getApplicationContext(), TextToSpeechService.class));
         ListenableFuture<MediaController> controllerFuture = new MediaController.Builder(getApplicationContext(), ttsSessionToken).buildAsync();
         controllerFuture.addListener(() -> {
@@ -185,6 +204,12 @@ public class SioyekActivity extends QtActivity{
                 qDebug("sioyek: could not get media controller");
             }
         }, MoreExecutors.directExecutor());
+        return controllerFuture;
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
         registerReceiver(messageReceiver, new IntentFilter("info.sioyek.sioyek.SIOYEK_TTS"), Context.RECEIVER_EXPORTED);
         registerReceiver(stateMessageReceiver, new IntentFilter("info.sioyek.sioyek.SIOYEK_TTS_STATE"), Context.RECEIVER_EXPORTED);
         registerReceiver(externalStateMessageReceiver, new IntentFilter("info.sioyek.sioyek.SIOYEK_EXTERNAL_TTS_STATE"), Context.RECEIVER_EXPORTED);
@@ -206,22 +231,38 @@ public class SioyekActivity extends QtActivity{
         }
     }
 
+    boolean isTtsServiceRunning(){
+
+        ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : activityManager.getRunningServices(Integer.MAX_VALUE)) {
+            if (service.service.getClassName().equals(TextToSpeechService.class.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void onResume(){
 
         IntentFilter filter = new IntentFilter("info.sioyek.sioyek.SIOYEK_RESUME");
         registerReceiver(resumeReceiver, filter, Context.RECEIVER_EXPORTED);
+        boolean wasTtsServiceRunning = isTtsServiceRunning();
+        // Log.d("sioyek", "wasTtsServiceRunning: " + wasTtsServiceRunning);
         
         isPaused = false;
-        if (wasPlayingWhenPaused){
-            wasPlayingWhenPaused = false;
+        // if (wasPlayingWhenPaused){
+        if (wasTtsServiceRunning){
+            // wasPlayingWhenPaused = false;
             Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
             intent.putExtra("resume", true);
             startMaybeForegroundService(intent);
+
         }
 
         super.onResume();
         onAndroidResume();
+
 
 
     }
@@ -230,10 +271,16 @@ public class SioyekActivity extends QtActivity{
     public void onPause(){
         isPaused = true;
         String rest = getRestOnPause();
+        // the format of rest is "<offset> <rest>" where offset is an integer offset of begin position
 
         if (rest.length() > 0){
-            wasPlayingWhenPaused = true;
-            setTtsRestOfDocument(rest);
+            String[] parts = rest.split(" ", 2);
+            int offset = Integer.parseInt(parts[0]);
+            String restString = parts[1];
+            ensureTtsService().addListener(() -> {
+                // wasPlayingWhenPaused = true;
+                setTtsRestOfDocument(restString, offset);
+            }, MoreExecutors.directExecutor());
         }
 
         onAndroidPause();
@@ -475,7 +522,9 @@ public class SioyekActivity extends QtActivity{
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mediaController.pause();
+                if (mediaController != null){
+                    mediaController.pause();
+                }
             }
         });
 
@@ -489,54 +538,62 @@ public class SioyekActivity extends QtActivity{
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mediaController.stop();
+                if (mediaController != null){
+                    mediaController.stop();
+                }
             }
         });
     } 
 
     public void ttsSetRate(float rate){
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                setTtsRate(rate);
-            }
-        });
+        ensureTtsService().addListener(() -> {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    setTtsRate(rate);
+                }
+            });
+        }, MoreExecutors.directExecutor());
     } 
 
-    public void ttsSetRestOfDocument(String text){
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                setTtsRestOfDocument(text);
-            }
-        });
-    } 
+    public void ttsSay(String text, int startOffset){
+        ensureTtsService().addListener(() -> {
+            Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
+            intent.putExtra("text", text);
+            intent.putExtra("startOffset", startOffset);
+            startMaybeForegroundService(intent);
 
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (mediaController != null){
+                        mediaController.play();
+                    }
+                }
+            }, 100);
+        }, MoreExecutors.directExecutor());
+    }
 
-    public void ttsSay(String text){
-        Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
-        intent.putExtra("text", text);
-        startMaybeForegroundService(intent);
-
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mediaController.play();
-            }
-        }, 100);
+    public void myLogD(String msg){
+        Log.d("sioyek", msg);
     }
 
     public void setTtsRate(float rate){
-        Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
-        intent.putExtra("rate", rate);
-        startMaybeForegroundService(intent);
+        ensureTtsService().addListener(() -> {
+            Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
+            intent.putExtra("rate", rate);
+            startMaybeForegroundService(intent);
+        }, MoreExecutors.directExecutor());
     }
 
-    public void setTtsRestOfDocument(String rest){
-        Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
-        intent.putExtra("rest", rest);
-        startMaybeForegroundService(intent);
+    public void setTtsRestOfDocument(String rest, int offset){
+        ensureTtsService().addListener(() -> {
+            Intent intent = new Intent(getApplicationContext(), TextToSpeechService.class);
+            intent.putExtra("rest", rest);
+            intent.putExtra("restOffset", offset);
+            startMaybeForegroundService(intent);
+        }, MoreExecutors.directExecutor());
     }
 
 }
