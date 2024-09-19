@@ -138,7 +138,7 @@ protected:
 
     QAbstractItemView* abstract_item_view;
 
-    virtual void on_select(const QModelIndex& value) = 0;
+    virtual void on_select(QModelIndex value) = 0;
     virtual void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index);
     virtual void on_edit(const QModelIndex& source_index, const QModelIndex& selected_index);
 
@@ -219,7 +219,7 @@ public:
 
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(QModelIndex index) {
         this->hide();
         this->parentWidget()->setFocus();
         auto source_index = this->proxy_model->mapToSource(index);
@@ -377,7 +377,7 @@ public:
         }
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(QModelIndex index) {
         this->hide();
         this->parentWidget()->setFocus();
         auto source_index = this->proxy_model->mapToSource(index);
@@ -574,7 +574,7 @@ public:
         }
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(QModelIndex index) {
         this->hide();
         this->parentWidget()->setFocus();
         auto source_index = this->proxy_model->mapToSource(index);
@@ -703,7 +703,7 @@ public:
         return res;
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(QModelIndex index) {
         QString name = list_model->data(index).toString();
         QChar sep = QDir::separator();
         QString full_path = expand_home_dir((last_root.size() > 0) ? (last_root + sep + name) : name);
@@ -1115,7 +1115,7 @@ public:
     void set_edit_fn(std::function<void(int)>&& fn);
     void resizeEvent(QResizeEvent* resize_event) override;
 
-    void on_select(const QModelIndex& value) override;
+    void on_select(QModelIndex value) override;
     void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
     void on_edit(const QModelIndex& source_index, const QModelIndex& selected_index) override;
 
@@ -1357,7 +1357,7 @@ public:
     static FulltextSearchWidget* create(MainWidget* parent, std::wstring checksum=L"");
 
     virtual void on_text_changed(const QString& text) override;
-    virtual void on_select(const QModelIndex& value) override;
+    virtual void on_select(QModelIndex value) override;
     virtual void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
 
     //QStringListModel* result_model = nullptr;

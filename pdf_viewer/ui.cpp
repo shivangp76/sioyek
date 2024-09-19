@@ -1446,7 +1446,14 @@ void BaseSelectorWidget::on_delete(const QModelIndex& source_index, const QModel
 void BaseSelectorWidget::on_edit(const QModelIndex& source_index, const QModelIndex& selected_index) {}
 
 void BaseSelectorWidget::on_return_no_select(const QString& text) {
-    if (get_view()->model()->hasIndex(0, 0)) {
+    bool is_numeric = false;
+    text.toInt(&is_numeric);
+
+    if (is_numeric){
+        auto invalid_index = get_view()->model()->index(-1, 0);
+        on_select(invalid_index);
+    }
+    else if (get_view()->model()->hasIndex(0, 0)) {
         on_select(get_view()->model()->index(0, 0));
     }
 }
@@ -2285,13 +2292,18 @@ void BaseCustomSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
     update_render();
 }
 
-void BaseCustomSelectorWidget::on_select(const QModelIndex& value) {
-    QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
-    int source_row = source_index.row();
+void BaseCustomSelectorWidget::on_select(QModelIndex value) {
+    if (value.isValid()){
+        QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
+        int source_row = source_index.row();
 
-    if (select_fn.has_value()) {
+        if (select_fn.has_value()) {
 
-        select_fn.value()(source_row);
+            select_fn.value()(source_row);
+        }
+    }
+    else{
+        select_fn.value()(-1);
     }
 }
 
@@ -3346,8 +3358,9 @@ QVariant FulltextResultModel::headerData(int section, Qt::Orientation orientatio
     return QVariant();
 }
 
-void FulltextSearchWidget::on_select(const QModelIndex& value) {
+void FulltextSearchWidget::on_select(QModelIndex value) {
     if (select_fn.has_value()) {
+        QString input_text = line_edit->text();
         select_fn.value()(value.row());
     }
     //(value.row());

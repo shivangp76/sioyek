@@ -1052,6 +1052,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             if (is_numeric) {
                 if (main_document_view) {
                     main_document_view->goto_page(page_number - 1);
+                    invalidate_render();
                 }
             }
             else {
@@ -7113,12 +7114,26 @@ void MainWidget::show_command_menu() {
     }
 
     CommandSelectorWidget* command_selector_widget = CommandSelectorWidget::from_commands(command_names, command_keybinds, this);
-    command_selector_widget->set_select_fn([&, command_selector_widget](int index) {
-        QString command_name = command_selector_widget->get_command_with_index(index);
+    command_selector_widget->set_select_fn([&, command_selector_widget](int index){
+
         std::string query = command_selector_widget->line_edit->text().toStdString();
-        pop_current_widget();
-        setFocus();
-        on_command_done(command_name.toStdString(), query);
+        bool is_numeric = false;
+        QString::fromStdString(query).toInt(&is_numeric);
+        if (is_numeric){
+            int page_number = QString::fromStdString(query).toInt();
+            main_document_view->goto_page(page_number - 1);
+            // open_document_at_location(doc()->get_path(), page_number, {}, {}, {});
+            invalidate_render();
+            pop_current_widget();
+            setFocus();
+        }
+        else{
+            QString command_name = command_selector_widget->get_command_with_index(index);
+            pop_current_widget();
+            setFocus();
+            on_command_done(command_name.toStdString(), query);
+        }
+
         });
     set_current_widget(command_selector_widget);
     show_current_widget();
