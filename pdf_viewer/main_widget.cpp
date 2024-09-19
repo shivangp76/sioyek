@@ -7074,13 +7074,6 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
-    // get list of available qtexttospeech engines
-    // qDebug() << QTextToSpeech::availableEngines();
-    qDebug() << "maximum text size is: " << get_tts()->get_maximum_tts_text_size();
-
-
-
-    // qDebug() << ((QtTextToSpeechHandler*)get_tts())->tts->engine();
 }
 
 void MainWidget::show_command_menu() {
@@ -11487,5 +11480,26 @@ void MainWidget::on_android_pause(){
 
 void MainWidget::on_android_resume(){
     validation_interval_timer->start();
+
+    // on mobile we use setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true)
+    // to make the app cover the entire screen including the area above the camera notch
+    // however, there seems to be a bug on android where this option stops working after
+    // the app is minimized and then maximized again (even though the flag is still set)
+    // and the weird thing is that when on_android_resume is called, the screen size is still
+    // correct. So we just toggle the fullscreen twice to fix this issue, however, this might
+    // cause problems when wants to manually resize the window. As a workaround we only do that
+    // if the height difference between the screen and the window is less than 100 pixels
+
+    int screen_height = screen()->size().height();
+    int window_height = size().height();
+    int height_diff = std::abs(screen_height - window_height);
+
+    if (height_diff < 100){
+        toggle_fullscreen();
+        QTimer::singleShot(10, [&](){
+            toggle_fullscreen();
+        });
+    }
+
 }
 #endif
