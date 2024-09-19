@@ -9177,6 +9177,12 @@ QString MainWidget::handle_action_in_menu(std::wstring action) {
         if (action == L"menu_end") {
             selector_widget->simulate_end();
         }
+        if (action == L"menu_close") {
+            selector_widget->simulate_move_left();
+        }
+        if (action == L"menu_expand") {
+            selector_widget->simulate_move_right();
+        }
         if (action == L"select") {
             selector_widget->simulate_select();
         }

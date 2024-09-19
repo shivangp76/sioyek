@@ -1508,13 +1508,13 @@ bool BaseSelectorWidget::eventFilter(QObject* obj, QEvent* event) {
                     return false;
                 }
             }
-            if (key_event->key() == Qt::Key_Left ||
-                key_event->key() == Qt::Key_Right
-                ) {
-                QKeyEvent* newEvent = key_event->clone();
-                QCoreApplication::postEvent(get_view(), newEvent);
-                return true;
-            }
+            // if (key_event->key() == Qt::Key_Left ||
+                // key_event->key() == Qt::Key_Right
+                // ) {
+                // QKeyEvent* newEvent = key_event->clone();
+                // QCoreApplication::postEvent(get_view(), newEvent);
+                // return true;
+            // }
             if (key_event->key() == Qt::Key_Tab) {
                 QKeyEvent* new_key_event = new QKeyEvent(key_event->type(), Qt::Key_Down, key_event->modifiers());
                 QCoreApplication::postEvent(get_view(), new_key_event);
@@ -1616,6 +1616,16 @@ bool is_tree_view_index_first(const QModelIndex& index, QTreeView* view){
     // else{
         // return index.row() == 0;
     // }
+}
+
+void BaseSelectorWidget::simulate_move_left() {
+    QKeyEvent* move_down_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Left, Qt::KeyboardModifier::NoModifier);
+    QCoreApplication::postEvent(get_view(), move_down_event);
+}
+
+void BaseSelectorWidget::simulate_move_right() {
+    QKeyEvent* move_down_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Right, Qt::KeyboardModifier::NoModifier);
+    QCoreApplication::postEvent(get_view(), move_down_event);
 }
 
 void BaseSelectorWidget::simulate_move_down() {

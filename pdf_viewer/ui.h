@@ -158,6 +158,8 @@ public:
     bool eventFilter(QObject* obj, QEvent* event) override;
     void simulate_move_down();
     void simulate_move_up();
+    void simulate_move_left();
+    void simulate_move_right();
     void simulate_page_down();
     void simulate_page_up();
     void simulate_end();
