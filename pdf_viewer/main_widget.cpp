@@ -2829,7 +2829,8 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     }
 
     if (TOUCH_MODE) {
-
+        was_last_mouse_down_in_ruler_next_rect = false;
+        was_last_mouse_down_in_ruler_prev_rect = false;
         pdf_renderer->no_rerender = false;
     }
 
