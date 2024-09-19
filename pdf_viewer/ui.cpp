@@ -1508,19 +1508,13 @@ bool BaseSelectorWidget::eventFilter(QObject* obj, QEvent* event) {
                     return false;
                 }
             }
-            // if (key_event->key() == Qt::Key_Down ||
-                // key_event->key() == Qt::Key_Up ||
-                // key_event->key() == Qt::Key_Left ||
-                // key_event->key() == Qt::Key_Right
-                // ) {
-// #ifdef SIOYEK_QT6
-                // QKeyEvent* newEvent = key_event->clone();
-// #else
-                // QKeyEvent* newEvent = new QKeyEvent(*key_event);
-// #endif
-                // QCoreApplication::postEvent(get_view(), newEvent);
-                // return true;
-            // }
+            if (key_event->key() == Qt::Key_Left ||
+                key_event->key() == Qt::Key_Right
+                ) {
+                QKeyEvent* newEvent = key_event->clone();
+                QCoreApplication::postEvent(get_view(), newEvent);
+                return true;
+            }
             if (key_event->key() == Qt::Key_Tab) {
                 QKeyEvent* new_key_event = new QKeyEvent(key_event->type(), Qt::Key_Down, key_event->modifiers());
                 QCoreApplication::postEvent(get_view(), new_key_event);
@@ -1586,14 +1580,93 @@ void BaseSelectorWidget::simulate_page_up() {
 }
 
 
+bool is_tree_view_index_last(const QModelIndex& index, QTreeView* view, bool include_chilren){
+    bool index_has_children = view->model()->rowCount(index) > 0;
+    if (include_chilren && index_has_children) return false;
+    if (index.parent().isValid()){
+        int parent_row_count = view->model()->rowCount(index.parent());
+        if (index.row() == (parent_row_count - 1)){
+            return is_tree_view_index_last(index.parent(), view, false);
+        }
+        else{
+            return false;
+        }
+    }
+    else{
+        return index.row() == view->model()->rowCount() - 1;
+    }
+}
+
+bool is_tree_view_index_first(const QModelIndex& index, QTreeView* view){
+
+    if (index.parent().isValid()){
+        return false;
+    }
+    return index.row() == 0;
+    // if (include_parent && index.parent().isValid()) return false;
+
+    // if (index.parent().isValid()){
+        // if (index.row() == 0){
+            // return is_tree_view_index_first(index.parent(), view, false);
+        // }
+        // else{
+            // return false;
+        // }
+    // }
+    // else{
+        // return index.row() == 0;
+    // }
+}
+
 void BaseSelectorWidget::simulate_move_down() {
-    QKeyEvent* move_down_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Down, Qt::KeyboardModifier::NoModifier);
-    QCoreApplication::postEvent(get_view(), move_down_event);
+    bool is_last = false;
+    if (dynamic_cast<QTreeView*>(get_view())){
+        QTreeView* tree_view = dynamic_cast<QTreeView*>(get_view());
+        const QModelIndex& tree_index = tree_view->currentIndex();
+        is_last = is_tree_view_index_last(tree_index, tree_view, true);
+    }
+    else{
+        is_last = get_view()->currentIndex().row() == get_view()->model()->rowCount() - 1;
+    }
+
+    if (is_last){
+        get_view()->setCurrentIndex(get_view()->model()->index(0, 0));
+    }
+    else{
+        QKeyEvent* move_down_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Down, Qt::KeyboardModifier::NoModifier);
+        QCoreApplication::postEvent(get_view(), move_down_event);
+    }
+}
+
+QModelIndex get_last_tree_index(QAbstractItemModel* model, QModelIndex parent_index){
+    int row_count = model->rowCount(parent_index);
+    if (row_count == 0){
+        return parent_index;
+    }
+    else{
+        QModelIndex last_child = model->index(row_count - 1, 0, parent_index);
+        return get_last_tree_index(model, last_child);
+    }
 }
 
 void BaseSelectorWidget::simulate_move_up() {
-    QKeyEvent* move_up_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Up, Qt::KeyboardModifier::NoModifier);
-    QCoreApplication::postEvent(get_view(), move_up_event);
+    bool is_first = false;
+    if (dynamic_cast<QTreeView*>(get_view())){
+        QTreeView* tree_view = dynamic_cast<QTreeView*>(get_view());
+        const QModelIndex& tree_index = tree_view->currentIndex();
+        is_first = is_tree_view_index_first(tree_index, tree_view);
+    }
+    else{
+        is_first = get_view()->currentIndex().row() == 0;
+    }
+
+    if (is_first) {
+        get_view()->setCurrentIndex(get_last_tree_index(get_view()->model(), QModelIndex()));
+    }
+    else{
+        QKeyEvent* move_up_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Up, Qt::KeyboardModifier::NoModifier);
+        QCoreApplication::postEvent(get_view(), move_up_event);
+    }
 }
 
 QString BaseSelectorWidget::get_selected_item() {
