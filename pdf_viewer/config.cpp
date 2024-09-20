@@ -241,6 +241,7 @@ std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
 std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
 std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
+std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 bool PRERENDER_NEXT_PAGE = true;
 bool HIGHLIGHT_MIDDLE_CLICK = false;
@@ -1540,7 +1541,12 @@ void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_na
                 deserialize_file(changed_config_names, path, true);
             }
         }
-        else if ((conf_name == L"new_command") || (conf_name == L"new_async_js_command") || (conf_name == L"new_macro") || (conf_name == L"new_js_command") || (conf_name == L"keymap")) {
+        else if ((conf_name == L"new_command") ||
+                (conf_name == L"new_async_js_command") ||
+                (conf_name == L"new_macro") ||
+                (conf_name == L"new_js_command") ||
+                (conf_name == L"new_shell_bookmark_command") ||
+                (conf_name == L"keymap")) {
             std::wstring config_value;
             std::getline(ss, config_value);
             config_value = strip_string(config_value);
@@ -1555,12 +1561,16 @@ void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_na
             }
             else {
                 std::wstring new_command_name = config_value.substr(0, space_index);
-                if (new_command_name[0] == '_') {
+                if ((new_command_name[0] == '_') || (conf_name == L"new_shell_bookmark_command")) {
                     std::wstring command_value = config_value.substr(space_index + 1, config_value.size() - space_index - 1);
 
                     if (conf_name == L"new_command") {
                         ADDITIONAL_COMMANDS[new_command_name] = command_value;
                     }
+                    if (conf_name == L"new_shell_bookmark_command"){
+                        SHELL_BOOKMARK_COMMANDS[new_command_name] = command_value;
+                    }
+                    
                     if (conf_name == L"new_macro") {
                         ADDITIONAL_MACROS[new_command_name] = command_value;
                     }
@@ -1645,6 +1655,7 @@ void ConfigManager::deserialize(std::vector<std::string>* changed_config_names, 
     ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS.clear();
     ADDITIONAL_MACROS.clear();
     ADDITIONAL_KEYMAPS.clear();
+    SHELL_BOOKMARK_COMMANDS.clear();
 
     deserialize_file(changed_config_names, default_file_path);
 

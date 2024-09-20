@@ -34,6 +34,7 @@
 #include <qmenu.h>
 #include <qdesktopservices.h>
 #include <qtemporarydir.h>
+#include <qtemporaryfile.h>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
@@ -135,6 +136,7 @@ extern std::string APPLICATION_VERSION;
 const std::wstring SERVER_SYMBOL = L"🌐";
 
 extern int next_window_id;
+extern std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 
 extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;
 extern bool SHOULD_USE_MULTIPLE_MONITORS;
@@ -1319,6 +1321,9 @@ MainWidget::~MainWidget() {
 void MainWidget::handle_validation_interval_timeout(){
 
         focus_on_high_quality_text_being_read();
+
+        remove_finished_shell_bookmarks();
+
         if (doc()) {
             if (doc()->super_fast_search_index_is_new()) {
                 on_super_fast_search_index_computed();
@@ -7203,6 +7208,157 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
         });
 }
 
+void MainWidget::remove_finished_shell_bookmark_with_index(int index){
+    if (index >= 0 && index < shell_output_bookmarks.size()){
+        ShellOutputBookmark& shell_output_bookmark = shell_output_bookmarks[index];
+        shell_output_bookmark.watcher->removePath(shell_output_bookmark.output_file->fileName());
+        shell_output_bookmark.watcher->deleteLater();
+        shell_output_bookmark.output_file->remove();
+        shell_output_bookmark.output_file->deleteLater();
+
+        if (shell_output_bookmark.document_content_file){
+            shell_output_bookmark.document_content_file->remove();
+            shell_output_bookmark.document_content_file->deleteLater();
+        }
+
+        if (shell_output_bookmark.image_file){
+            shell_output_bookmark.image_file->remove();
+            shell_output_bookmark.image_file->deleteLater();
+        }
+
+        shell_output_bookmark.process->deleteLater();
+        shell_output_bookmarks.erase(shell_output_bookmarks.begin() + index);
+    }
+}
+
+void MainWidget::remove_finished_shell_bookmarks(){
+#ifndef SIOYEK_MOBILE
+    std::vector<int> indices_to_delete;
+    for (int i = 0; i < shell_output_bookmarks.size(); i++){
+        if (!is_process_still_running(shell_output_bookmarks[i].pid)){
+            indices_to_delete.push_back(i);
+        }
+    }
+    for (int j = indices_to_delete.size() - 1; j >= 0; j--){
+        int index = indices_to_delete[j];
+        remove_finished_shell_bookmark_with_index(index);
+    }
+#endif
+}
+
+void MainWidget::handle_bookmark_shell_command(QString text, std::string pending_uuid, QString text_arg){
+#ifndef SIOYEK_MOBILE
+
+    QTemporaryFile* file_content_temp_file = nullptr;
+    QTemporaryFile* image_temp_file = nullptr;
+
+    if (text.indexOf("%{text}") != -1){
+        text = text.replace("%{text}", text_arg);
+    }
+    if (text.indexOf("%{document_text_file}") != -1){
+        file_content_temp_file = new QTemporaryFile();
+        file_content_temp_file->open();
+        if (doc()->get_super_fast_index().size() > 0){
+            file_content_temp_file->write(utf8_encode(doc()->get_super_fast_index()).c_str());
+            text = text.replace("%{document_text_file}", file_content_temp_file->fileName());
+        }
+    }
+    if (text.indexOf("%{current_page_begin_index}")){
+        int current_page = main_document_view->get_current_page_number();
+        int page_begin_index = doc()->get_super_fast_page_begin_indices()[current_page];
+        text = text.replace("%{current_page_begin_index}", QString::number(page_begin_index));
+    }
+    if (text.indexOf("%{current_page_end_index}")){
+        int next_page = main_document_view->get_current_page_number() + 1;
+
+        if (next_page < doc()->get_super_fast_page_begin_indices().size()){
+            int page_begin_index = doc()->get_super_fast_page_begin_indices()[next_page];
+            text = text.replace("%{current_page_end_index}", QString::number(page_begin_index));
+        }
+        else{
+            text = text.replace("%{current_page_end_index}", QString::number(doc()->get_super_fast_index().size()));
+        }
+    }
+    if (text.indexOf("%{bookmark_image_file}") != -1){
+        BookMark* bm = doc()->get_bookmark_with_uuid(pending_uuid);
+        if (bm){
+            std::optional<AbsoluteRect> rect = bm->get_rectangle();
+            if (rect){
+                WindowRect window_rect = rect->to_window(dv());
+                QRect window_qrect = window_rect.to_qrect();
+                QPixmap pixmap;
+
+                float ratio = QGuiApplication::primaryScreen()->devicePixelRatio();
+                pixmap = QPixmap(static_cast<int>(window_qrect.width() * ratio), static_cast<int>(window_qrect.height() * ratio));
+                pixmap.setDevicePixelRatio(ratio);
+
+                render(&pixmap, QPoint(), QRegion(window_qrect));
+
+                image_temp_file = new QTemporaryFile();
+                image_temp_file->open();
+                image_temp_file->setFileName(image_temp_file->fileName() + ".png");
+                pixmap.save(image_temp_file->fileName());
+
+                text = text.replace("%{bookmark_image_file}", image_temp_file->fileName());
+            }
+        }
+
+    }
+    if (text.indexOf("%{selected_text}")){
+        text = text.replace("%{selected_text}", QString::fromStdWString(main_document_view->get_selected_text()));
+    }
+
+    QString command = text.mid(QString("#shell").size()).trimmed();
+    QStringList command_parts = QProcess::splitCommand(command);
+    if (command_parts.size() > 0){
+
+        QString command_name = command_parts.at(0);
+        QStringList command_args = command_parts.mid(1);
+        // qint64 pid = -1; 
+        // QProcess::startDetached(command_name, command_args, QString(), &pid);
+
+
+        QTemporaryFile* temp_file = new QTemporaryFile();
+        temp_file->open();
+        QFileSystemWatcher* watcher = new QFileSystemWatcher();
+        watcher->addPath(temp_file->fileName());
+        connect(watcher, &QFileSystemWatcher::fileChanged, [this, pending_uuid](const QString& path) {
+                QFile file(path);
+                if (file.open(QIODevice::ReadOnly)){
+                    QTextStream stream(&file);
+                    QString content = stream.readAll();
+                    file.close();
+                    BookMark* bm = doc()->get_bookmark_with_uuid(pending_uuid);
+                    if (bm){
+                        bm->description = content.toStdWString();
+                        doc()->update_bookmark_text(pending_uuid, bm->description, bm->font_size);
+                        on_bookmark_edited(bm->uuid);
+                        invalidate_render();
+                    }
+                }
+                });
+
+        qint64 pid = -1;
+        QProcess* process = new QProcess();
+        process->setProgram(command_name);
+        process->setArguments(command_args);
+        process->setStandardOutputFile(temp_file->fileName());
+        process->startDetached(&pid);
+
+        ShellOutputBookmark shell_output_bookmark;
+        shell_output_bookmark.pid = pid;
+        shell_output_bookmark.uuid = pending_uuid;
+        shell_output_bookmark.output_file = std::move(temp_file);
+        shell_output_bookmark.watcher = watcher;
+        shell_output_bookmark.process = process;
+        shell_output_bookmark.document_content_file = file_content_temp_file;
+        shell_output_bookmark.image_file = image_temp_file;
+
+        shell_output_bookmarks.push_back(shell_output_bookmark);
+
+    }
+#endif
+}
 
 std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid) {
     std::wstring result = L"";
@@ -7211,11 +7367,26 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
         on_new_bookmark_added(uuid);
         result = utf8_decode(uuid);
         main_document_view->set_selected_bookmark_uuid("");
+        QString qtext = QString::fromStdWString(text);
+
         if (text.size() > 2 && text.substr(0, 2) == L"? ") {
             handle_bookmark_ask_query(text.substr(2, text.size()-2), result);
         }
-        else if (QString::fromStdWString(text).startsWith("#summarize")) {
+        else if (qtext.startsWith("#summarize")) {
             handle_bookmark_summarize_query(result);
+        }
+        else if (qtext.startsWith("#shell")) {
+            handle_bookmark_shell_command(qtext, pending_uuid);
+        }
+        else if (QString::fromStdWString(text).startsWith("@")){
+            // the text after the @ and before the first space is the command name
+            QString command_name = qtext.mid(1).split(" ").at(0);
+            QString text_arg = qtext.mid(1 + command_name.size()).trimmed();
+            if (SHELL_BOOKMARK_COMMANDS.find(command_name.toStdWString()) != SHELL_BOOKMARK_COMMANDS.end()){
+                QString command_string = QString::fromStdWString(SHELL_BOOKMARK_COMMANDS[command_name.toStdWString()]);
+                QString equivalent_shell_command = "#shell " + command_string;
+                handle_bookmark_shell_command(equivalent_shell_command, pending_uuid, text_arg);
+            }
         }
     }
     else {
@@ -10611,6 +10782,17 @@ void MainWidget::on_bookmark_deleted(const std::string& uuid) {
     if (delete_bookmark_hook_function_name) {
         call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
     }
+
+    // if we have deleted a bookmark which shows the output of a command
+    // we need to kill the process and remove it from shell_output_bookmarks
+    for (int i = 0; i < shell_output_bookmarks.size(); i++){
+        if (shell_output_bookmarks[i].uuid == uuid){
+            kill_process(shell_output_bookmarks[i].pid);
+            remove_finished_shell_bookmark_with_index(i);
+            break;
+        }
+    }
+
     sync_deleted_annot("bookmark", uuid);
 }
 

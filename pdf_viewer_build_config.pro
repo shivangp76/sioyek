@@ -247,6 +247,7 @@ unix:!mac:!android {
 
     CONFIG(debug){
         DEFINES += SIOYEK_DEVELOPER
+        QMAKE_CXXFLAGS += -fstandalone-debug
     }
     
     CONFIG(linux_app_image){

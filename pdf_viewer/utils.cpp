@@ -5,6 +5,10 @@
 #include <unistd.h>
 #endif
 
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
+#include <signal.h>
+#endif
+
 #include <cmath>
 #include <cassert>
 #include "utils.h"
@@ -5441,4 +5445,29 @@ QListView* get_ui_new_listview(){
     QListView* view = new QListView();
     view->setSpacing(5);
     return view;
+}
+
+bool is_process_still_running(qint64 pid) {
+#ifndef SIOYEK_MOBILE
+#ifdef Q_OS_WIN
+#else
+    if (pid == -1) {
+        return false;
+    }
+    QFile file(QString("/proc/%1").arg(pid));
+    return file.exists();
+#endif
+#endif
+}
+
+void kill_process(qint64 pid){
+#ifndef SIOYEK_MOBILE
+#ifdef Q_OS_WIN
+#else
+    if (pid == -1) {
+        return;
+    }
+    kill(pid, SIGKILL);
+#endif
+#endif
 }
