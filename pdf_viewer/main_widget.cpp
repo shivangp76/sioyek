@@ -7208,6 +7208,15 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
         });
 }
 
+std::optional<ShellOutputBookmark> MainWidget::get_shell_output_bookmark_with_uuid(std::string uuid){
+    for (int i = 0; i < shell_output_bookmarks.size(); i++){
+        if (shell_output_bookmarks[i].uuid == uuid){
+            return shell_output_bookmarks[i];
+        }
+    }
+    return {};
+}
+
 void MainWidget::remove_finished_shell_bookmark_with_index(int index){
     if (index >= 0 && index < shell_output_bookmarks.size()){
         ShellOutputBookmark& shell_output_bookmark = shell_output_bookmarks[index];
@@ -7249,8 +7258,20 @@ void MainWidget::remove_finished_shell_bookmarks(){
 void MainWidget::handle_bookmark_shell_command(QString text, std::string pending_uuid, QString text_arg){
 #ifndef SIOYEK_MOBILE
 
+    if (text.startsWith("#shell")){
+        text = text.mid(QString("#shell").size() + 1); // also skip the space
+    }
+
     QTemporaryFile* file_content_temp_file = nullptr;
     QTemporaryFile* image_temp_file = nullptr;
+    QString style_string = "";
+    if (text.startsWith("#") && (!text.startsWith("#shell"))){
+        int first_space_index = text.indexOf(" ");
+        if (first_space_index >= 0){
+            style_string = text.mid(0, first_space_index).trimmed();
+            text = text.mid(first_space_index + 1);
+        }
+    }
 
     if (text.indexOf("%{text}") != -1){
         text = text.replace("%{text}", text_arg);
@@ -7308,8 +7329,8 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
         text = text.replace("%{selected_text}", QString::fromStdWString(main_document_view->get_selected_text()));
     }
 
-    QString command = text.mid(QString("#shell").size()).trimmed();
-    QStringList command_parts = QProcess::splitCommand(command);
+    // QString command = text.mid(QString("#shell").size()).trimmed();
+    QStringList command_parts = QProcess::splitCommand(text);
     if (command_parts.size() > 0){
 
         QString command_name = command_parts.at(0);
@@ -7330,10 +7351,13 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
                     file.close();
                     BookMark* bm = doc()->get_bookmark_with_uuid(pending_uuid);
                     if (bm){
-                        bm->description = content.toStdWString();
-                        doc()->update_bookmark_text(pending_uuid, bm->description, bm->font_size);
-                        on_bookmark_edited(bm->uuid);
-                        invalidate_render();
+                        std::optional<ShellOutputBookmark> shell_output_data = get_shell_output_bookmark_with_uuid(pending_uuid);
+                        if (shell_output_data){
+                            bm->description = (shell_output_data->style_string + " " + content).toStdWString();
+                            doc()->update_bookmark_text(pending_uuid, bm->description, bm->font_size);
+                            on_bookmark_edited(bm->uuid);
+                            invalidate_render();
+                        }
                     }
                 }
                 });
@@ -7353,6 +7377,7 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
         shell_output_bookmark.process = process;
         shell_output_bookmark.document_content_file = file_content_temp_file;
         shell_output_bookmark.image_file = image_temp_file;
+        shell_output_bookmark.style_string = style_string;
 
         shell_output_bookmarks.push_back(shell_output_bookmark);
 

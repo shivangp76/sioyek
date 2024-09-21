@@ -115,6 +115,7 @@ struct ShellOutputBookmark{
     QTemporaryFile* image_file = nullptr;
     QFileSystemWatcher* watcher;
     QProcess* process;
+    QString style_string = "";
 };
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
@@ -454,6 +455,7 @@ public:
     void toggle_pdf_annotations();
     void on_paper_downloaded(QNetworkReply* reply);
 
+    std::optional<ShellOutputBookmark> get_shell_output_bookmark_with_uuid(std::string uuid);
     void remove_finished_shell_bookmark_with_index(int index);
     void remove_finished_shell_bookmarks();
     void handle_bookmark_shell_command(QString bookmark_text, std::string uuid, QString text_arg="");
