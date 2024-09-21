@@ -5450,6 +5450,17 @@ QListView* get_ui_new_listview(){
 bool is_process_still_running(qint64 pid) {
 #ifndef SIOYEK_MOBILE
 #ifdef Q_OS_WIN
+    if (pid == -1) {
+        return false;
+    }
+    HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+    if (process == NULL) {
+        return false;
+    }
+    DWORD exit_code;
+    GetExitCodeProcess(process, &exit_code);
+    CloseHandle(process);
+    return exit_code == STILL_ACTIVE;
 #else
     if (pid == -1) {
         return false;
@@ -5463,6 +5474,15 @@ bool is_process_still_running(qint64 pid) {
 void kill_process(qint64 pid){
 #ifndef SIOYEK_MOBILE
 #ifdef Q_OS_WIN
+    if (pid == -1) {
+        return;
+    }
+    HANDLE process = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+    if (process == NULL) {
+        return;
+    }
+    TerminateProcess(process, 0);
+    CloseHandle(process);
 #else
     if (pid == -1) {
         return;

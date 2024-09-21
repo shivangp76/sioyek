@@ -7245,6 +7245,7 @@ void MainWidget::remove_finished_shell_bookmarks(){
     std::vector<int> indices_to_delete;
     for (int i = 0; i < shell_output_bookmarks.size(); i++){
         if (!is_process_still_running(shell_output_bookmarks[i].pid)){
+            on_bookmark_shell_output_updated(shell_output_bookmarks[i].uuid, shell_output_bookmarks[i].output_file->fileName());
             indices_to_delete.push_back(i);
         }
     }
@@ -7253,6 +7254,25 @@ void MainWidget::remove_finished_shell_bookmarks(){
         remove_finished_shell_bookmark_with_index(index);
     }
 #endif
+}
+
+void MainWidget::on_bookmark_shell_output_updated(std::string bookmark_uuid, QString file_path) {
+    QFile file(file_path);
+    if (file.open(QIODevice::ReadOnly)) {
+        QTextStream stream(&file);
+        QString content = stream.readAll();
+        file.close();
+        BookMark* bm = doc()->get_bookmark_with_uuid(bookmark_uuid);
+        if (bm) {
+            std::optional<ShellOutputBookmark> shell_output_data = get_shell_output_bookmark_with_uuid(bookmark_uuid);
+            if (shell_output_data) {
+                bm->description = (shell_output_data->style_string + " " + content).toStdWString();
+                doc()->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
+                on_bookmark_edited(bm->uuid);
+                invalidate_render();
+            }
+        }
+    }
 }
 
 void MainWidget::handle_bookmark_shell_command(QString text, std::string pending_uuid, QString text_arg){
@@ -7284,12 +7304,12 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
             text = text.replace("%{document_text_file}", file_content_temp_file->fileName());
         }
     }
-    if (text.indexOf("%{current_page_begin_index}")){
+    if (text.indexOf("%{current_page_begin_index}") != -1){
         int current_page = main_document_view->get_current_page_number();
         int page_begin_index = doc()->get_super_fast_page_begin_indices()[current_page];
         text = text.replace("%{current_page_begin_index}", QString::number(page_begin_index));
     }
-    if (text.indexOf("%{current_page_end_index}")){
+    if (text.indexOf("%{current_page_end_index}") != -1){
         int next_page = main_document_view->get_current_page_number() + 1;
 
         if (next_page < doc()->get_super_fast_page_begin_indices().size()){
@@ -7325,7 +7345,7 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
         }
 
     }
-    if (text.indexOf("%{selected_text}")){
+    if (text.indexOf("%{selected_text}") != -1){
         text = text.replace("%{selected_text}", QString::fromStdWString(main_document_view->get_selected_text()));
     }
 
@@ -7344,22 +7364,8 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
         QFileSystemWatcher* watcher = new QFileSystemWatcher();
         watcher->addPath(temp_file->fileName());
         connect(watcher, &QFileSystemWatcher::fileChanged, [this, pending_uuid](const QString& path) {
-                QFile file(path);
-                if (file.open(QIODevice::ReadOnly)){
-                    QTextStream stream(&file);
-                    QString content = stream.readAll();
-                    file.close();
-                    BookMark* bm = doc()->get_bookmark_with_uuid(pending_uuid);
-                    if (bm){
-                        std::optional<ShellOutputBookmark> shell_output_data = get_shell_output_bookmark_with_uuid(pending_uuid);
-                        if (shell_output_data){
-                            bm->description = (shell_output_data->style_string + " " + content).toStdWString();
-                            doc()->update_bookmark_text(pending_uuid, bm->description, bm->font_size);
-                            on_bookmark_edited(bm->uuid);
-                            invalidate_render();
-                        }
-                    }
-                }
+
+                on_bookmark_shell_output_updated(pending_uuid, path);
                 });
 
         qint64 pid = -1;

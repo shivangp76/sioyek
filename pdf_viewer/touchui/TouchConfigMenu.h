@@ -8,6 +8,7 @@
 #include <QStringListModel>
 #include <QSortFilterProxyModel>
 #include "mysortfilterproxymodel.h"
+#include "config.h"
 
 
 class Config;

@@ -459,6 +459,7 @@ public:
     void remove_finished_shell_bookmark_with_index(int index);
     void remove_finished_shell_bookmarks();
     void handle_bookmark_shell_command(QString bookmark_text, std::string uuid, QString text_arg="");
+    void on_bookmark_shell_output_updated(std::string bookmark_uuid, QString file_path);
 
     Document* doc();
 
