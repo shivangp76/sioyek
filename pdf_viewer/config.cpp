@@ -242,6 +242,7 @@ std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
 std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
 std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
+
 std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 bool PRERENDER_NEXT_PAGE = true;
 bool HIGHLIGHT_MIDDLE_CLICK = false;
@@ -1504,6 +1505,7 @@ void ConfigManager::serialize(const Path& path) {
     file.close();
 }
 
+
 void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_names, const Path& file_path, bool warn_if_not_exists, bool is_auto) {
 
     std::wstring line;
@@ -1570,7 +1572,6 @@ void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_na
                     if (conf_name == L"new_shell_bookmark_command"){
                         SHELL_BOOKMARK_COMMANDS[new_command_name] = command_value;
                     }
-                    
                     if (conf_name == L"new_macro") {
                         ADDITIONAL_MACROS[new_command_name] = command_value;
                     }

@@ -220,11 +220,72 @@ bool BookMark::is_freetext() const {
     return (begin_y != -1) && (end_y != -1);
 }
 
-std::optional<char> BookMark::get_type() const{
+QString BookMark::get_render_text() const {
+    if (is_box()) {
+        if (description.size() > 0) {
+            int space_index = description.find(L" ");
+            if (space_index != std::wstring::npos) {
+                return QString::fromStdWString(description.substr(space_index + 1));
+            }
+            return "";
+        }
+    }
+
+    return QString::fromStdWString(description);
+}
+
+std::wstring  BookMark::get_style_text() const {
+    if (is_box()) {
+        if (description.size() > 0) {
+            int space_index = description.find(L" ");
+            if (space_index != std::wstring::npos) {
+                return description.substr(1, space_index - 1);
+            }
+        }
+    }
+
+    return {};
+}
+
+std::optional<char> BookMark::get_type() const {
     if (is_box()) {
         if (description.size() > 1) {
             return description[1];
         }
+    }
+    return {};
+}
+
+std::optional<char> BookMark::get_background_type() const {
+    if (is_box()){
+        QString style_text = QString::fromStdWString(get_style_text());
+        if (style_text.startsWith("markdown")){
+            style_text = style_text.mid(8);
+        }
+        if (style_text.startsWith("latex")){
+            style_text = style_text.mid(5);
+        }
+        if (style_text.size() > 1 && style_text.size() <= 3) {
+            return style_text[1].unicode();
+        }
+
+    }
+    return {};
+}
+
+std::optional<char> BookMark::get_text_type() const {
+    if (is_box()){
+        QString style_text = QString::fromStdWString(get_style_text());
+        if (style_text.startsWith("markdown")){
+            style_text = style_text.mid(8);
+        }
+        if (style_text.startsWith("latex")){
+            style_text = style_text.mid(5);
+        }
+        if (style_text.size() > 2 && style_text.size() <= 3) {
+            return style_text[2].unicode();
+        }
+
     }
     return {};
 }
@@ -235,6 +296,7 @@ bool BookMark::is_box() const {
     }
     return false;
 }
+
 
 bool BookMark::is_marked() const {
     return (begin_y > -1) && (end_y == -1);

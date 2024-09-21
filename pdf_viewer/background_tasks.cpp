@@ -19,6 +19,7 @@
 
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
+extern float HIGHLIGHT_COLORS[26 * 3];
 extern bool VERBOSE;
 extern Path standard_data_path;
 
@@ -97,9 +98,18 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
     QFont font = bookmark.get_font(zoom_level);
     painter->setFont(font);
 
-    if (desc_qstring.startsWith("#markdown")) {
+    std::optional<char> text_color_type = bookmark.get_text_type();
 
-        float height = draw_markdown_text(*painter, desc_qstring.mid(9).trimmed(), window_qrect, scroll_amount, is_from_main_thread, font);
+    tex::color foreground_color = tex::black;
+
+    if (text_color_type && text_color_type.value() >= 'a' && text_color_type.value() <= 'z') {
+        QColor pen_color = qconvert_color3(&HIGHLIGHT_COLORS[3 * (text_color_type.value() - 'a')], palette);
+        painter->setPen(pen_color);
+        foreground_color = tex::argb(pen_color.alpha(), pen_color.red(), pen_color.green(), pen_color.blue());
+    }
+
+    if (desc_qstring.startsWith("#markdown")) {
+        float height = draw_markdown_text(*painter, bookmark.get_render_text(), window_qrect, scroll_amount, is_from_main_thread, font);
         cached_bookmark_heights[bookmark.uuid] = height;
     }
     else if (desc_qstring.startsWith("#latex")) {
@@ -112,7 +122,8 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
         latex_lock.lock();
         initialize_latex();
 
-        QString latex_text = desc_qstring.mid(6).trimmed();
+        // QString latex_text = desc_qstring.mid(6).trimmed();
+        QString latex_text = bookmark.get_render_text();
 
         std::wstring code = latex_text.toStdWString();
 
@@ -130,7 +141,7 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
                 .setWidth(tex::UnitType::pixel, width_in_pixels, tex::Alignment::left)
                 .setIsMaxWidth(false)
                 .setLineSpace(tex::UnitType::pixel, 10)
-                .setForeground(tex::black)
+                .setForeground(foreground_color)
                 .build(formula);
 
             painter->save();
@@ -173,8 +184,9 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
             QRect r = QRect(window_qrect.left(), window_qrect.top() - scroll_amount, window_qrect.width(), window_qrect.height() + scroll_amount);
 
+
             QRect bounding_rect;
-            painter->drawText(r, flags, QString::fromStdWString(bookmark.description), &bounding_rect);
+            painter->drawText(r, flags, bookmark.get_render_text(), &bounding_rect);
             cached_bookmark_heights[bookmark.uuid] = bounding_rect.height();
 
             painter->restore();

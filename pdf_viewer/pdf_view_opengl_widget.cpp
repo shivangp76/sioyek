@@ -94,6 +94,7 @@ extern float KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO[4];
 extern float QUESTION_BOOKMARK_BACKGROUND_COLOR[4];
 extern float QUESTION_BOOKMARK_TEXT_COLOR[3];
 extern float OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[3];
+
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
 extern bool ALWAYS_RENDER_BOOKMARKS;
@@ -1212,10 +1213,25 @@ void PdfViewOpenGLWidget::my_render() {
                         painter.restore();
                     }
 
-                    if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#markdown") || desc_qstring.startsWith("#latex") || desc_qstring.startsWith("#summarize"))) {
+                    if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
+                        QColor question_background_color = qcc4(QUESTION_BOOKMARK_BACKGROUND_COLOR);
+                        QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        painter.fillRect(fill_rect, question_background_color);
+
+                    }
+                    else{
+                        std::optional<char> background_type = bookmarks[i].get_background_type();
+                        if (background_type && background_type.value() >= 'a' && background_type.value() <= 'z') {
+                            QColor highlight_background_color = qcc3(&HIGHLIGHT_COLORS[3 * (background_type.value() - 'a')]);
+                            QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                            painter.fillRect(fill_rect, highlight_background_color);
+                        }
+                    }
+
+                    std::optional<char> bm_type = bookmarks[i].get_type();
+                    if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#summarize"))) {
 
                         QString box_text = desc_qstring.split(' ')[0];
-                        std::optional<char> bm_type = bookmarks[i].get_type();
                         if (!bm_type.has_value()){
                             painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         }
@@ -1243,24 +1259,16 @@ void PdfViewOpenGLWidget::my_render() {
                             }
                         }
                     }
+
+                    auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->color_mode);
+                    if (pixmap && (was_exact || bookmarks[i].is_latex() || (!ALWAYS_RENDER_BOOKMARKS))) {
+                        painter.drawPixmap(window_qrect, *pixmap);
+                    }
                     else {
-                        static int count = 0;
-                        if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
-                            QColor question_background_color = qcc4(QUESTION_BOOKMARK_BACKGROUND_COLOR);
-                            QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                            painter.fillRect(fill_rect, question_background_color);
-
-                        }
-
-                        auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->color_mode);
-                        if (pixmap && (was_exact || bookmarks[i].is_latex() || (!ALWAYS_RENDER_BOOKMARKS))) {
-                            painter.drawPixmap(window_qrect, *pixmap);
-                        }
-                        else {
-                            if (ALWAYS_RENDER_BOOKMARKS) {
-                                // rendering bookmarks on the main thrad can prevent flickering, but may
-                                // cause the UI to slow down a little e.g. when zooming
-                                pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
+                        if (ALWAYS_RENDER_BOOKMARKS) {
+                            // rendering bookmarks on the main thrad can prevent flickering, but may
+                            // cause the UI to slow down a little e.g. when zooming
+                            pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
                                     bookmarks[i],
                                     &painter,
                                     dv()->get_zoom_level(),
@@ -1269,7 +1277,6 @@ void PdfViewOpenGLWidget::my_render() {
                                     window_qrect,
                                     dv()->color_mode,
                                     true);
-                            }
                         }
                     }
 
