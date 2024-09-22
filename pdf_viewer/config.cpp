@@ -75,6 +75,7 @@ bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS = true;
 bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH = false;
 bool SHOW_SETCONFIG_IN_STATUSBAR = false;
 int NUM_PAGE_COLUMNS = 2;
+bool GG_USES_LABELS = false;
 
 
 std::wstring SEARCH_URLS[26];
@@ -1144,6 +1145,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"invert_selected_text", &INVERT_SELECTED_TEXT);
     add_bool(L"ignore_scroll_events", &IGNORE_SCROLL_EVENTS);
     add_bool(L"dont_center_if_synctex_rect_is_visible", &DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE);
+    add_bool(L"gg_uses_labels", &GG_USES_LABELS);
     add_bool(L"should_use_multiple_monitors", &SHOULD_USE_MULTIPLE_MONITORS);
     add_bool(L"paper_download_should_create_portal", &PAPER_DOWNLOAD_CREATE_PORTAL);
     add_bool(L"automatically_download_matching_paper_name", &AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME);

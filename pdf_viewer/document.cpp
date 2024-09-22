@@ -3043,10 +3043,10 @@ int Document::get_page_number_with_label(std::wstring page_label) {
                 return i;
             }
         }
-        return -1;
+        return QString::fromStdWString(page_label).toInt() - 1;
     }
     else {
-        return QString::fromStdWString(page_label).toInt();
+        return QString::fromStdWString(page_label).toInt() - 1;
     }
 }
 
