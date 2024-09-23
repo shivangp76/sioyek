@@ -207,10 +207,10 @@ win32{
     }
         
     # set /bigobj for MSVC, otherwise it will fail
-    QMAKE_CXXFLAGS += /bigobj
+    # QMAKE_CXXFLAGS += /bigobj
 
     # enable multiprocessor compilation
-    QMAKE_CXXFLAGS += /MP
+    # QMAKE_CXXFLAGS += /MP
 
     DEFINES += _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE NOMINMAX
     RC_ICONS = pdf_viewer\icon2.ico

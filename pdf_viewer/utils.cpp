@@ -5,9 +5,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
-#include <signal.h>
-#endif
+
 
 #include <cmath>
 #include <cassert>
@@ -50,6 +48,10 @@
 #ifdef SIOYEK_ANDROID
 #include <QtCore/private/qandroidextras_p.h>
 #include <qjniobject.h>
+#endif
+
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
+#include <signal.h>
 #endif
 
 #include <mupdf/pdf.h>
