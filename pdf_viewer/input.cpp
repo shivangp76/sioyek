@@ -6283,35 +6283,69 @@ public:
 
 };
 
+class LoginWithGoogleCommand : public Command {
+public:
+    static inline const std::string cname = "login_with_google";
+    static inline const std::string hname = "Login to sioyek using your google account";
+    std::optional<std::wstring> token;
+
+    LoginWithGoogleCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+        if (!token.has_value()) {
+            return Requirement{ RequirementType::Password, "Token" };
+        }
+        return {};
+    }
+
+
+    void set_text_requirement(std::wstring value) {
+        token = value;
+    }
+
+    void pre_perform() {
+        // open web browser to get token
+        QDesktopServices::openUrl(QUrl("https://127.0.0.1:8081/app/login_token"));
+    }
+
+    void perform() {
+        widget->sioyek_network_manager->ACCESS_TOKEN = utf8_encode(token.value());
+        widget->sioyek_network_manager->persist_access_token(utf8_encode(token.value()));
+
+        widget->sioyek_network_manager->status = ServerStatus::LoggedIn;
+        widget->sioyek_network_manager->handle_one_time_network_operations();
+    }
+};
+
 class LoginCommand : public Command {
 public:
     static inline const std::string cname = "login";
     static inline const std::string hname = "Login to sioyek";
-    std::optional<std::wstring> username;
+    std::optional<std::wstring> email;
     std::optional<std::wstring> password;
 
     LoginCommand(MainWidget* w) : Command(cname, w) {};
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
-        if (username.has_value() && password.has_value()) return {};
-        if (username.has_value()) {
+        if (email.has_value() && password.has_value()) return {};
+        if (email.has_value()) {
             return Requirement{ RequirementType::Password, "password" };
         }
-        return Requirement{ RequirementType::Text, "username" };
+        return Requirement{ RequirementType::Text, "email" };
     }
 
 
     void set_text_requirement(std::wstring value) {
-        if (username.has_value()) {
+        if (email.has_value()) {
             password = value;
         }
         else {
-            username = value;
+            email = value;
         }
     }
 
     void perform() {
-        widget->handle_login(username.value(), password.value());
+        widget->handle_login(email.value(), password.value());
     }
 };
 
@@ -8181,6 +8215,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SetWindowRectCommand>(this);
     register_command<MoveSelectedBookmarkCommand>(this);
     register_command<LoginCommand>(this);
+    register_command<LoginWithGoogleCommand>(this);
     register_command<LogoutCommand>(this);
     register_command<ResumeToServerLocationCommand>(this);
     register_command<LoginUsingAccessTokenCommand>(this);

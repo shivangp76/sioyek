@@ -34,6 +34,12 @@ QNetworkAccessManager* SioyekNetworkManager::get_network_manager() {
     QObject::connect(network_manager_, &QNetworkAccessManager::finished, [](QNetworkReply* reply) {
         reply->deleteLater();
         });
+
+    // @nocheckin this should be a config option which is disabled by default (maybe enabled by default in development builds)
+    QObject::connect(network_manager_, &QNetworkAccessManager::sslErrors, [](QNetworkReply* reply, const QList<QSslError>& errors) {
+        reply->ignoreSslErrors();
+        });
+
     return network_manager_;
 }
 
@@ -42,12 +48,12 @@ SioyekNetworkManager::SioyekNetworkManager(DatabaseManager* db_manager_, Backgro
     last_document_location_upload_time = QDateTime::currentDateTime();
 }
 
-void SioyekNetworkManager::login(std::wstring username, std::wstring password) {
+void SioyekNetworkManager::login(std::wstring email, std::wstring password) {
     QNetworkRequest req;
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_TOKEN_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     QUrlQuery params;
-    params.addQueryItem("username", QString::fromStdWString(username));
+    params.addQueryItem("username", QString::fromStdWString(email));
     params.addQueryItem("password", QString::fromStdWString(password));
     QNetworkReply* reply = get_network_manager()->post(req, params.query().toUtf8());
 

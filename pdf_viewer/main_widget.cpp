@@ -7079,6 +7079,7 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
+
 }
 
 void MainWidget::show_command_menu() {
@@ -11129,8 +11130,8 @@ void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
     }
 }
 
-void MainWidget::handle_login(std::wstring username, std::wstring password) {
-    sioyek_network_manager->login(username, password);
+void MainWidget::handle_login(std::wstring email, std::wstring password) {
+    sioyek_network_manager->login(email, password);
 }
 
 void MainWidget::upload_current_file() {

@@ -24,7 +24,7 @@ private:
 public:
     QNetworkAccessManager* network_manager_ = nullptr;
     std::string ACCESS_TOKEN;
-    const std::wstring SIOYEK_HOST = L"http://192.168.1.23:8081/";
+    const std::wstring SIOYEK_HOST = L"https://127.0.0.1:8081/";
     const std::wstring SIOYEK_TOKEN_URL = SIOYEK_HOST + L"token";
     const std::wstring SIOYEK_PAPER_URL_URL = SIOYEK_HOST + L"get_paper_url";
     const std::wstring SIOYEK_ECHO_URL = SIOYEK_HOST + L"echo_user";
@@ -74,7 +74,7 @@ public:
 
     SioyekNetworkManager(DatabaseManager* db_manager, BackgroundTaskManager* task_manager, DocumentManager* document_manager, QObject* parent=nullptr);
     void tts(QObject* parent, const std::wstring& text, const std::string& document_checksum, int page, float rate, std::function<void(QString file_path, std::vector<float>)> on_done);
-    void login(std::wstring username, std::wstring password);
+    void login(std::wstring email, std::wstring password);
     bool handle_network_reply_if_error(QNetworkReply* reply, bool show_message);
     void persist_access_token(std::string access_token);
     void load_access_token();
