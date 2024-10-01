@@ -146,6 +146,7 @@ float HIGHLIGHT_COLORS[26 * 3] = { \
 float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD = 1000;
 float DARK_MODE_CONTRAST = 0.8f;
 float ZOOM_INC_FACTOR = 1.2f;
+float SCROLL_ZOOM_INC_FACTOR = 1.2f;
 float VERTICAL_MOVE_AMOUNT = 1.0f;
 float HORIZONTAL_MOVE_AMOUNT = 1.0f;
 float MOVE_SCREEN_PERCENTAGE = 0.5f;
@@ -1089,6 +1090,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"freetext_bookmark_font_size", &FREETEXT_BOOKMARK_FONT_SIZE, FloatExtras{0.0f, 100.0f});
     add_float(L"custom_color_contrast", &CUSTOM_COLOR_CONTRAST, FloatExtras{0.0f, 1.0f});
     add_float(L"zoom_inc_factor", &ZOOM_INC_FACTOR, FloatExtras{1.0f, 2.0f});
+    add_float(L"scroll_zoom_inc_factor", &SCROLL_ZOOM_INC_FACTOR, FloatExtras{1.0f, 2.0f});
     add_float(L"vertical_move_amount", &VERTICAL_MOVE_AMOUNT, FloatExtras{0.1f, 10.0f});
     add_float(L"horizontal_move_amount", &HORIZONTAL_MOVE_AMOUNT, FloatExtras{0.1f, 10.0f});
     add_float(L"move_screen_ratio", &MOVE_SCREEN_PERCENTAGE, FloatExtras{0.0f, 1.0f});

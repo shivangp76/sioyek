@@ -3257,7 +3257,8 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
             return;
         }
         else {
-            zoom(mouse_window_pos, zoom_factor, wevent->angleDelta().y() > 0);
+            float scroll_zoom_factor = 1.0f + num_repeats_f_y * (SCROLL_ZOOM_INC_FACTOR - 1.0f);
+            zoom(mouse_window_pos, scroll_zoom_factor, wevent->angleDelta().y() > 0);
             return;
         }
     }

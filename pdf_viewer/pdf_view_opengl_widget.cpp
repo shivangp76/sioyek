@@ -39,6 +39,7 @@ extern float GAMMA;
 extern float BACKGROUND_COLOR[3];
 extern float DARK_MODE_CONTRAST;
 extern float ZOOM_INC_FACTOR;
+extern float SCROLL_ZOOM_INC_FACTOR;
 extern float VERTICAL_MOVE_AMOUNT;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern bool SHOULD_DRAW_UNRENDERED_PAGES;
