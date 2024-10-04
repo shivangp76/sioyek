@@ -65,6 +65,9 @@ void PdfRenderer::join_threads()
         worker.join();
     }
     search_thread.join();
+
+    worker_threads.clear();
+    search_thread = {};
 }
 
 
