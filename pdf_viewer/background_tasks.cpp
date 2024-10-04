@@ -203,6 +203,7 @@ void BackgroundTaskManager::start_worker_thread() {
     //    std::condition_variable* pending_task_cv_,
     //    std::deque<std::pair<QObject*, std::function<void()>>>* pending_tasks_,
     //    QObject** current_task_parent_);
+    should_stop = false;
     worker_thread = std::make_unique<MyThread>(
         &should_stop,
         &pending_tasks_mutex,
@@ -228,6 +229,15 @@ void BackgroundTaskManager::start_worker_thread() {
     //        current_task_parent = nullptr;
     //    }
     //    });
+}
+
+void BackgroundTaskManager::stop_worker_thread(){
+    if (worker_thread != nullptr) {
+        should_stop = true;
+        pending_taks_cv.notify_one();
+        worker_thread->wait();
+        worker_thread = {};
+    }
 }
 
 BackgroundTaskManager::~BackgroundTaskManager() {

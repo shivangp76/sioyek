@@ -1059,6 +1059,8 @@ public:
     bool handle_overview_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos);
     // bool handle_visible_object_click(WindowPos click_pos, AbsoluteDocumentPos abs_doc_pos, std::optional<VisibleObjectIndex> visible_object);
     bool handle_visible_object_resize_finish();
+    void stop_all_threads();
+    void restart_all_threads();
 
 
 public slots:

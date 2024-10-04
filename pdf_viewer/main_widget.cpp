@@ -7080,7 +7080,6 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
-
 }
 
 void MainWidget::show_command_menu() {
@@ -11686,6 +11685,23 @@ void MainWidget::set_mouse_cursor_for_side_resize(std::optional<OverviewSide> si
     }
     setCursor(Qt::ArrowCursor);
 }
+
+void MainWidget::stop_all_threads(){
+    if ((*should_quit) == false){
+        *should_quit = true;
+        pdf_renderer->join_threads();
+        background_task_manager->stop_worker_thread();
+    }
+}
+
+void MainWidget::restart_all_threads(){
+    if ((*should_quit) == true){
+        *should_quit = false;
+        pdf_renderer->start_threads();
+        background_task_manager->start_worker_thread();
+    }
+}
+
 #ifdef SIOYEK_ANDROID
 
 void MainWidget::on_android_pause(){
@@ -11718,3 +11734,4 @@ void MainWidget::on_android_resume(){
 
 }
 #endif
+

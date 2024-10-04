@@ -51,6 +51,7 @@ private:
 public:
 
     void start_worker_thread();
+    void stop_worker_thread();
     void add_task(std::function<void()>&& fn, QObject* parent);
     void delete_tasks_with_parent(QObject* parent);
     ~BackgroundTaskManager();
