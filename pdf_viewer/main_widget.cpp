@@ -1322,6 +1322,12 @@ void MainWidget::handle_validation_interval_timeout(){
 
         focus_on_high_quality_text_being_read();
 
+        if (download_checksum_when_ready.has_value() && (sioyek_network_manager->status == ServerStatus::LoggedIn)){
+            std::string checksum = download_checksum_when_ready.value();
+            download_checksum_when_ready = {};
+            download_and_open(checksum, 0);
+        }
+
         remove_finished_shell_bookmarks();
 
         if (doc()) {

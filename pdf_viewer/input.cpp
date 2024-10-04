@@ -2994,6 +2994,16 @@ public:
         CreateRegistryKey(HKEY_CLASSES_ROOT, "sioyek\\shell\\open\\command", NULL, val.c_str());
 #endif
 
+#ifdef Q_OS_LINUX
+        QFile desktop_file = QFile(":/resources/sioyek.desktop");
+        desktop_file.copy(QDir::homePath() + "/.local/share/applications/sioyek.desktop");
+        std::string desktop_file_path = QDir::homePath().toStdString() + "/.local/share/applications/sioyek.desktop";
+
+        system(("chmod +x " + desktop_file_path).c_str());
+        system("xdg-mime default sioyek.desktop x-scheme-handler/sioyek");
+
+#endif
+
     }
 
     bool requires_document() { return false; }
@@ -3013,6 +3023,10 @@ public:
         RegDeleteKeyA(HKEY_CLASSES_ROOT, "sioyek\\shell\\open");
         RegDeleteKeyA(HKEY_CLASSES_ROOT, "sioyek\\shell");
         RegDeleteKeyA(HKEY_CLASSES_ROOT, "sioyek");
+#endif
+#ifdef Q_OS_LINUX
+        QFile desktop_file = QFile(QDir::homePath() + "/.local/share/applications/sioyek.desktop");
+        desktop_file.remove();
 #endif
     }
 

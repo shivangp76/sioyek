@@ -678,6 +678,7 @@ public:
     std::optional<QString> edit_portal_hook_function_name = {};
     std::optional<QString> open_document_hook_function_name = {};
     std::optional<QString> open_new_document_hook_function_name = {};
+    std::optional<std::string> download_checksum_when_ready = {};
 
     std::optional<RecentlyUpdatedPortalState> recently_updated_portal = {};
 

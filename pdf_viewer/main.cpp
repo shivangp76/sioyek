@@ -196,9 +196,14 @@ QStringList convert_arguments(QStringList input_args) {
 
     for (auto arg : input_args) {
         if (arg == path_arg) {
-            std::wstring path_wstring = strip_uri(arg.toStdWString());
-            Path path_object(path_wstring);
-            output_args.push_back(QString::fromStdWString(path_object.get_path()));
+            if (arg.startsWith("sioyek://")) {
+                output_args.push_back(arg);
+            }
+            else {
+                std::wstring path_wstring = strip_uri(arg.toStdWString());
+                Path path_object(path_wstring);
+                output_args.push_back(QString::fromStdWString(path_object.get_path()));
+            }
         }
         else {
             output_args.push_back(arg);
@@ -541,6 +546,24 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
             }
             else {
                 pdf_file_name = tutorial_path.get_path();
+            }
+        }
+    }
+
+    QString sioyek_url = QString::fromStdWString(pdf_file_name);
+    if (sioyek_url.startsWith("sioyek://")){
+        if (sioyek_url.startsWith("sioyek://doc/")){
+            int skip_length = QString("sioyek://doc/").size();
+            QString document_hash = sioyek_url.mid(skip_length);
+            MainWidget* some_widget = windows[0];
+
+            std::optional<std::wstring> document_path = some_widget->document_manager->get_path_from_hash(document_hash.toStdString());
+            if (document_path){
+                pdf_file_name = document_path.value();
+            }
+            else{
+                // should download the document when ready
+                windows[0]->download_checksum_when_ready = document_hash.toStdString();
             }
         }
     }
