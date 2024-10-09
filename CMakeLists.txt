@@ -268,7 +268,7 @@ if(NOT ANDROID AND NOT IOS)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(sioyek
+    target_compile_options(sioyek PRIVATE
         /MP
         /bigobj
     )
@@ -289,14 +289,14 @@ if(WIN32)
         )
 
         target_link_libraries(sioyek PRIVATE
-            -L${CMAKE_CURRENT_SOURCE_DIR}\mupdf\platform\win32\x64\Debug
+            -L${CMAKE_CURRENT_SOURCE_DIR}/mupdf/platform/win32/x64/Debug
             -llibmupdf
-            -L${CMAKE_CURRENT_SOURCE_DIR}\zlib
+            -L${CMAKE_CURRENT_SOURCE_DIR}/zlib
             -lzlib
         )
     else()
         target_link_libraries(sioyek PRIVATE
-            -L${CMAKE_CURRENT_SOURCE_DIR}\mupdf\platform\win32\x64\Release
+            -L${CMAKE_CURRENT_SOURCE_DIR}/mupdf/platform/win32/x64/Release
             -llibmupdf
             -Lzlib
             -lzlib

@@ -22,6 +22,10 @@
 #include "document_view.h"
 #include "network_manager.h"
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 extern Path local_database_file_path;
 extern Path global_database_file_path;
 
