@@ -680,6 +680,10 @@ public:
     std::optional<QString> open_new_document_hook_function_name = {};
     std::optional<std::string> download_checksum_when_ready = {};
 
+    // list of pairs of [checksum, highlight text], when the super fast index of document with checksum
+    // is computed, we should highlight the text in the document
+    std::vector<std::pair<std::string, QString>> highlight_text_when_super_fast_index_is_ready;
+
     std::optional<RecentlyUpdatedPortalState> recently_updated_portal = {};
 
     // whether mouse is pressed, `is_pressed` is true, we add mouse positions to `position_buffer`
@@ -724,6 +728,8 @@ public:
     void select_freehand_drawings(AbsoluteRect rect);
     void delete_freehand_drawings(AbsoluteRect rect);
     void handle_toggle_text_mark();
+
+    void handle_highlight_text_in_document(std::string document_checksum, QString text_to_highlight);
 
     void shrink_selection_end();
     void shrink_selection_begin();

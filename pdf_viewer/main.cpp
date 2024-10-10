@@ -554,10 +554,11 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
 
     QString sioyek_url = QString::fromStdWString(pdf_file_name);
     if (sioyek_url.startsWith("sioyek://")){
+        MainWidget* some_widget = windows[0];
+
         if (sioyek_url.startsWith("sioyek://doc/")){
             int skip_length = QString("sioyek://doc/").size();
             QString document_hash = sioyek_url.mid(skip_length);
-            MainWidget* some_widget = windows[0];
 
             std::optional<std::wstring> document_path = some_widget->document_manager->get_path_from_hash(document_hash.toStdString());
             if (document_path){
@@ -567,6 +568,14 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
                 // should download the document when ready
                 windows[0]->download_checksum_when_ready = document_hash.toStdString();
             }
+        }
+        if (sioyek_url.startsWith("sioyek://text_highlight/")) {
+            int skip_length = QString("sioyek://text_highlight/").size();
+            QString document_hash_prefix = sioyek_url.mid(skip_length);
+            int slash_index = document_hash_prefix.indexOf("/");
+            QString document_hash = document_hash_prefix.left(slash_index);
+            QString highlight_text = document_hash_prefix.mid(slash_index + 1);
+            some_widget->handle_highlight_text_in_document(document_hash.toStdString(), highlight_text);
         }
     }
 

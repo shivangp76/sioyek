@@ -11576,6 +11576,15 @@ void MainWidget::on_super_fast_search_index_computed() {
         focus_on_character_offset_into_document(dv()->on_super_fast_compute_focus_offset.value());
         dv()->on_super_fast_compute_focus_offset = {};
     }
+
+    if (doc()) {
+        for (auto [checksum, text] : highlight_text_when_super_fast_index_is_ready) {
+            if (doc()->get_checksum() == checksum) {
+                main_document_view->perform_fuzzy_search(text.toStdWString());
+            }
+        }
+    }
+
 }
 
 
@@ -11746,3 +11755,18 @@ void MainWidget::on_android_resume(){
 }
 #endif
 
+void MainWidget::handle_highlight_text_in_document(std::string document_checksum, QString text_to_highlight) {
+    std::optional<std::wstring> maybe_path = document_manager->get_path_from_hash(document_checksum);
+    if (maybe_path.has_value()) {
+        open_document(maybe_path.value());
+        if (doc()->is_super_fast_index_ready()) {
+            main_document_view->perform_fuzzy_search(text_to_highlight.toStdWString());
+        }
+        else {
+            highlight_text_when_super_fast_index_is_ready.push_back(std::make_pair(document_checksum, text_to_highlight));
+        }
+    }
+    else {
+        windows[0]->download_checksum_when_ready = document_checksum;
+    }
+}
