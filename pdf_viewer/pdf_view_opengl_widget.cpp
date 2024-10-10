@@ -319,8 +319,6 @@ void PdfViewOpenGLWidget::render_highlight_document(DocumentRect doc_rect, int f
     render_highlight_window(window_rect, flags);
 }
 
-void draw_markdown_text(QPainter& painter, QString text, QRect window_qrect, const QFont& font);
-
 void PdfViewOpenGLWidget::render_scratchpad() {
 
     /* bool use_cached_framebuffer = can_use_cached_scratchpad_framebuffer(); */

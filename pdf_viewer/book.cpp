@@ -238,6 +238,12 @@ std::wstring  BookMark::get_style_text() const {
     if (is_box()) {
         if (description.size() > 0) {
             int space_index = description.find(L" ");
+            int newline_index = description.find(L"\n");
+
+            if (newline_index < space_index) {
+                space_index = newline_index;
+            }
+
             if (space_index != std::wstring::npos) {
                 return description.substr(1, space_index - 1);
             }
@@ -249,8 +255,16 @@ std::wstring  BookMark::get_style_text() const {
 
 std::optional<char> BookMark::get_type() const {
     if (is_box()) {
-        if (description.size() > 1) {
-            return description[1];
+        QString style_text = QString::fromStdWString(get_style_text());
+        if (style_text.startsWith("markdown")){
+            style_text = style_text.mid(8);
+        }
+        if (style_text.startsWith("latex")){
+            style_text = style_text.mid(5);
+        }
+
+        if (style_text.size() > 0) {
+            return style_text[0].unicode();
         }
     }
     return {};
