@@ -11716,10 +11716,12 @@ void MainWidget::restart_all_threads(){
 void MainWidget::on_android_pause(){
     // todo: we should probably stop all threads here
     validation_interval_timer->stop();
+    network_timer->stop();
 }
 
 void MainWidget::on_android_resume(){
     validation_interval_timer->start();
+    network_timer->start();
 
     // on mobile we use setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true)
     // to make the app cover the entire screen including the area above the camera notch
