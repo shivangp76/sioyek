@@ -268,6 +268,9 @@ extern std::wstring DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern int NUM_PAGE_COLUMNS;
 extern Path python_api_base_path;
 
+extern float MENU_SCREEN_WDITH_RATIO;
+extern float MENU_SCREEN_HEIGHT_RATIO;
+
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
@@ -6837,8 +6840,8 @@ void MainWidget::show_documentation_with_title(QString doctype, QString title) {
     text_edit->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
     text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
 
-    int w = width() * 0.9f;
-    int h = height() * 0.9f;
+    int w = width() * MENU_SCREEN_WDITH_RATIO;
+    int h = height() * MENU_SCREEN_HEIGHT_RATIO;
     text_edit->setReadOnly(true);
     text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
     text_edit->resize(w, h);
