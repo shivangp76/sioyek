@@ -35,10 +35,11 @@ QNetworkAccessManager* SioyekNetworkManager::get_network_manager() {
         reply->deleteLater();
         });
 
-    // @nocheckin this should be a config option which is disabled by default (maybe enabled by default in development builds)
+#ifdef SIOYEK_DEVELOPER
     QObject::connect(network_manager_, &QNetworkAccessManager::sslErrors, [](QNetworkReply* reply, const QList<QSslError>& errors) {
         reply->ignoreSslErrors();
         });
+#endif
 
     return network_manager_;
 }
@@ -397,7 +398,35 @@ std::optional<QJsonDocument> SioyekNetworkManager::get_network_json_reply(QNetwo
     return {};
 }
 
-QNetworkReply* SioyekNetworkManager::download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> begin_function, std::function<void(QNetworkReply*)> fn) {
+QNetworkReply* SioyekNetworkManager::get_citers_with_name(
+    QObject* parent, const std::wstring& name, std::function<void(QNetworkReply*)> fn) {
+
+    QUrl url(QString::fromStdWString(SIOYEK_PAPER_CITERS_URL));
+    QUrlQuery params;
+    params.addQueryItem("paper_title", QString::fromStdWString(name));
+    url.setQuery(params);
+
+    QNetworkRequest req;
+    std::string user_agent_string = get_user_agent_string();
+    req.setRawHeader("User-Agent", user_agent_string.c_str());
+    req.setUrl(url);
+    authorize_request(&req);
+    auto reply = get_network_manager()->get(req);
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn = std::move(fn)]() {
+        if (handle_network_reply_if_error(reply, true)) {
+            fn(reply);
+        }
+        });
+    return reply;
+}
+
+QNetworkReply* SioyekNetworkManager::download_paper_with_name(
+    QObject* parent,
+    const std::wstring& name,
+    PaperDownloadFinishedAction action,
+    std::function<void(QNetworkReply*)> begin_function,
+    std::function<void(QNetworkReply*)> fn
+    ) {
     std::wstring download_name = name;
     if (name.size() > 0 && name[0] == ':') {
         download_name = name.substr(1, name.size() - 1);

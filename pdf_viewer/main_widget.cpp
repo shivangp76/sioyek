@@ -11770,3 +11770,40 @@ void MainWidget::handle_highlight_text_in_document(std::string document_checksum
         windows[0]->download_checksum_when_ready = document_checksum;
     }
 }
+
+void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
+    sioyek_network_manager->get_citers_with_name(this, paper_name, [this](QNetworkReply* reply) {
+        auto content = reply->readAll();
+        QJsonDocument json_doc = QJsonDocument::fromJson(content);
+        QJsonObject root_object = json_doc.object();
+
+        std::vector<std::wstring> citer_titles;
+        std::vector<std::wstring> citer_citations;
+        std::vector<std::wstring> citer_publication_year;
+        std::vector<std::wstring> citer_urls;
+        for (auto obj : root_object["citers"].toArray()) {
+            QJsonArray citer_props = obj.toArray();
+            citer_titles.push_back(citer_props[0].toString().toStdWString());
+            citer_urls.push_back(citer_props[1].toString().toStdWString());
+            citer_citations.push_back(QString::number(citer_props[2].toInt()).toStdWString());
+            citer_publication_year.push_back(QString::number(citer_props[3].toInt()).toStdWString());
+
+
+            set_filtered_select_menu<std::wstring>(this, true, false, { citer_titles, citer_publication_year, citer_citations}, citer_urls, -1, [this](std::wstring* url) {
+                download_paper_with_url(*url, false, PaperDownloadFinishedAction::OpenInNewWindow);
+
+                }, [this](std::wstring* _) {});
+            auto  table = dynamic_cast<FilteredSelectTableWindowClass<std::wstring>*>(current_widget_stack.back());
+            table->set_stretch_column_index(0);
+            show_current_widget();
+
+        }
+
+        });
+
+}
+
+void MainWidget::show_citers_of_current_paper() {
+    std::wstring paper_name = doc()->detect_paper_name();
+    show_citers_with_paper_name(paper_name);
+}

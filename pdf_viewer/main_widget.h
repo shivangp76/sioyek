@@ -1068,6 +1068,8 @@ public:
     bool handle_visible_object_resize_finish();
     void stop_all_threads();
     void restart_all_threads();
+    void show_citers_with_paper_name(std::wstring paper_name);
+    void show_citers_of_current_paper();
 
 
 public slots:

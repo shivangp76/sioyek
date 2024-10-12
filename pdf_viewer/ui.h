@@ -326,6 +326,20 @@ public:
         }
     }
 
+    void set_stretch_column_index(int index) {
+        if (item_strings.size() > 0) {
+            QTableView* table_view = dynamic_cast<QTableView*>(get_view());
+            for (int i = 0; i < n_cols; i++) {
+                if (i == index) {
+                    table_view->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Stretch);
+                }
+                else {
+                    table_view->horizontalHeader()->setSectionResizeMode(i, QHeaderView::ResizeToContents);
+                }
+            }
+        }
+    }
+
     void set_equal_columns() {
         if (item_strings.size() > 0) {
             QTableView* table_view = dynamic_cast<QTableView*>(get_view());

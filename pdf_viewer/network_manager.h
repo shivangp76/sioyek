@@ -24,9 +24,10 @@ private:
 public:
     QNetworkAccessManager* network_manager_ = nullptr;
     std::string ACCESS_TOKEN;
-    const std::wstring SIOYEK_HOST = L"https://127.0.0.1:8081/";
+    const std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
     const std::wstring SIOYEK_TOKEN_URL = SIOYEK_HOST + L"token";
     const std::wstring SIOYEK_PAPER_URL_URL = SIOYEK_HOST + L"get_paper_url";
+    const std::wstring SIOYEK_PAPER_CITERS_URL = SIOYEK_HOST + L"get_paper_citers";
     const std::wstring SIOYEK_ECHO_URL = SIOYEK_HOST + L"echo_user";
     const std::wstring SIOYEK_UPLOAD_URL = SIOYEK_HOST + L"upload_file";
     const std::wstring SIOYEK_UPDATE_CHECKSUM_URL = SIOYEK_HOST + L"checksum_updated";
@@ -86,6 +87,8 @@ public:
     void update_user_files_hash_set();
     std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
     QNetworkReply* download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> begin_function, std::function<void(QNetworkReply*)> fn);
+    QNetworkReply* get_citers_with_name(QObject* parent, const std::wstring& name, std::function<void(QNetworkReply*)> fn);
+
     void download_unsynced_files(QObject* parent, DatabaseManager* db_manager);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
     bool is_checksum_available_on_server(const std::string& checksum);

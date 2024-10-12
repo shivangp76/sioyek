@@ -6379,6 +6379,18 @@ public:
     }
 };
 
+class CitersCommand : public Command {
+public:
+    static inline const std::string cname = "citers";
+    static inline const std::string hname = "Show a list of citers of this paper";
+
+    CitersCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->show_citers_of_current_paper();
+    }
+};
+
 class ResumeToServerLocationCommand : public Command {
 public:
     static inline const std::string cname = "resume_to_server";
@@ -8235,6 +8247,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<LoginCommand>(this);
     register_command<LoginWithGoogleCommand>(this);
     register_command<LogoutCommand>(this);
+    register_command<CitersCommand>(this);
     register_command<ResumeToServerLocationCommand>(this);
     register_command<LoginUsingAccessTokenCommand>(this);
     register_command<SynchronizeCommand>(this);
