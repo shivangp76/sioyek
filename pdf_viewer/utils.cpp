@@ -70,6 +70,7 @@ extern float CUSTOM_TEXT_COLOR[3];
 extern float CUSTOM_COLOR_CONTRAST;
 
 extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
+extern bool ALWAYS_COPY_SELECTED_TEXT;
 
 extern QString EPUB_TEMPLATE;
 extern float EPUB_LINE_SPACING;
@@ -270,7 +271,12 @@ void copy_to_clipboard(const std::wstring& text, bool selection) {
         clipboard->setText(qtext);
     }
     else {
-        clipboard->setText(qtext, QClipboard::Selection);
+        if (ALWAYS_COPY_SELECTED_TEXT) {
+            clipboard->setText(qtext);
+        }
+        else {
+            clipboard->setText(qtext, QClipboard::Selection);
+        }
     }
 }
 
