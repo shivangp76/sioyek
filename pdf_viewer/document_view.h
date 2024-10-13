@@ -619,7 +619,7 @@ public:
     void handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos);
     void handle_portal_move_finish();
     void handle_bookmark_move_finish();
-    const std::wstring& get_selected_text();
+    const std::wstring& get_selected_text(bool insert_newlines=false);
     void expand_selection_vertical(bool begin, bool below);
     void handle_move_text_mark_down();
     void handle_move_text_mark_up();

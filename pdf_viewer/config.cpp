@@ -38,6 +38,7 @@ bool ALWAYS_RENDER_BOOKMARKS = true;
 bool VISUALIZE_RULER_THRESHOLDS = false;
 bool DEBUG_SMOOTH_FREEHAND_DRAWINGS = true;
 bool DEBUG = false;
+bool ADD_NEWLINES_WHEN_COPYING_TEXT = false;
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
 #else
@@ -1224,6 +1225,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"always_render_bookmarks", &ALWAYS_RENDER_BOOKMARKS);
     add_bool(L"visualize_ruler_thresholds", &VISUALIZE_RULER_THRESHOLDS);
     add_bool(L"background_pixel_fix", &BACKGROUND_PIXEL_FIX);
+    add_bool(L"add_newlines_when_copying_text", &ADD_NEWLINES_WHEN_COPYING_TEXT);
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
     add_string(L"shared_database_path", &SHARED_DATABASE_PATH);

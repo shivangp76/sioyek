@@ -41,6 +41,7 @@ extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 extern std::wstring TABLE_EXTRACT_BEHAVIOUR;
 
 extern bool USE_KEYBOARD_POINT_SELECTION;
+extern bool ADD_NEWLINES_WHEN_COPYING_TEXT;
 extern float EPUB_WIDTH;
 extern float EPUB_HEIGHT;
 
@@ -4464,7 +4465,7 @@ public:
     static inline const std::string hname = "Copy";
     CopyCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        auto selected_text = dv()->get_selected_text();
+        auto selected_text = dv()->get_selected_text(ADD_NEWLINES_WHEN_COPYING_TEXT);
         if (selected_text.size() == 0) {
             if (widget->main_document_view->get_overview_page()) {
                 std::optional<QString> overview_paper_name = widget->main_document_view->get_overview_paper_name();
