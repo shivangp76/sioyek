@@ -11794,6 +11794,7 @@ void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
 
                 }, [this](std::wstring* _) {});
             auto  table = dynamic_cast<FilteredSelectTableWindowClass<std::wstring>*>(current_widget_stack.back());
+            table->set_horizontal_header(QStringList() << "Title" << "Publication Year" << "Citation Count");
             table->set_stretch_column_index(0);
             show_current_widget();
 

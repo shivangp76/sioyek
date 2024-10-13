@@ -340,6 +340,16 @@ public:
         }
     }
 
+    void set_horizontal_header(QStringList header_titles) {
+
+        QTableView* table_view = dynamic_cast<QTableView*>(this->get_view());
+        QStandardItemModel* model = dynamic_cast<QStandardItemModel*>(proxy_model->sourceModel());
+        model->setHorizontalHeaderLabels(header_titles);
+
+        table_view->horizontalHeader()->show();
+
+    }
+
     void set_equal_columns() {
         if (item_strings.size() > 0) {
             QTableView* table_view = dynamic_cast<QTableView*>(get_view());
