@@ -231,9 +231,16 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
     auto download_fn = [widget=main_widget]() {
 
         bool is_downloading = false;
-        if (widget->is_network_manager_running(&is_downloading)) {
+        std::wstring message;
+        if (widget->is_network_manager_running(&is_downloading, &message)) {
             if (is_downloading) {
-                return QString(" [ downloading ]");
+                if (message.size() > 0) {
+                    return QString(" [ " + QString::fromStdWString(message) + " ]");
+                }
+                else {
+                    return QString(" [ downloading ]");
+                }
+
             }
         }
         return QString("");

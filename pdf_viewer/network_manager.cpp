@@ -412,6 +412,10 @@ QNetworkReply* SioyekNetworkManager::get_citers_with_name(
     req.setUrl(url);
     authorize_request(&req);
     auto reply = get_network_manager()->get(req);
+
+    reply->setProperty("sioyek_downloading", true);
+    reply->setProperty("sioyek_network_message", "Retrieving citations ...");
+
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn = std::move(fn)]() {
         if (handle_network_reply_if_error(reply, true)) {
             fn(reply);

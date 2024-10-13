@@ -7981,18 +7981,24 @@ void MainWidget::show_download_paper_menu(
 }
 
 
-bool MainWidget::is_network_manager_running(bool* is_downloading) {
+bool MainWidget::is_network_manager_running(bool* is_downloading, std::wstring* message) {
     if (sioyek_network_manager->network_manager_ == nullptr) {
         return false;
     }
 
     auto children = sioyek_network_manager->network_manager_->findChildren<QNetworkReply*>();
     bool running = false;
+
     for (int i = 0; i < children.size(); i++) {
         if (children.at(i)->isRunning()) {
             running = true;
             if (is_downloading) {
                 bool downloading = !children.at(i)->property("sioyek_downloading").isNull();
+
+                if (!children.at(i)->property("sioyek_network_message").isNull()) {
+                    *message = children.at(i)->property("sioyek_network_message").toString().toStdWString();
+                }
+
                 *is_downloading = downloading;
                 return running;
             }
@@ -11790,7 +11796,17 @@ void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
 
 
             set_filtered_select_menu<std::wstring>(this, true, false, { citer_titles, citer_publication_year, citer_citations}, citer_urls, -1, [this](std::wstring* url) {
-                download_paper_with_url(*url, false, PaperDownloadFinishedAction::OpenInNewWindow);
+                auto reply = download_paper_with_url(*url, false, PaperDownloadFinishedAction::OpenInNewWindow);
+                reply->setProperty("sioyek_downloading", true);
+                reply->setProperty("sioyek_network_message", "starting download");
+                QObject::connect(reply, &QNetworkReply::downloadProgress, [this, reply](qint64 received, qint64 total) {
+                    float ratio = static_cast<float>(received) / total;
+                    int percent = static_cast<int>(ratio * 100);
+                    reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(percent) + "%");
+                    //main_document_view->pending_download_portals[pending_index].downloaded_fraction = ratio;
+                    invalidate_ui();
+                    });
+                invalidate_ui();
 
                 }, [this](std::wstring* _) {});
             auto  table = dynamic_cast<FilteredSelectTableWindowClass<std::wstring>*>(current_widget_stack.back());

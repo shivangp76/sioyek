@@ -420,7 +420,7 @@ public:
     void open_overview_to_portal(Document* document, Portal portal);
     bool overview_under_pos(WindowPos pos);
     void visual_mark_under_pos(WindowPos pos);
-    bool is_network_manager_running(bool* is_downloading = nullptr);
+    bool is_network_manager_running(bool* is_downloading = nullptr, std::wstring* message=nullptr);
     QString get_network_status_string();
     void show_download_paper_menu(
         const std::vector<std::wstring>& paper_names,
