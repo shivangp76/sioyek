@@ -1969,3 +1969,10 @@ void SioyekNetworkManager::handle_logout() {
     last_server_location.clear();
     status = ServerStatus::NotLoggedIn;
 }
+
+void SioyekNetworkManager::cancel_all_downlods() {
+    QList<QNetworkReply*> children = network_manager_->findChildren<QNetworkReply*>();
+    for (auto child : children) {
+        child->abort();
+    }
+}

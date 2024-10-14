@@ -11800,9 +11800,15 @@ void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
                 reply->setProperty("sioyek_downloading", true);
                 reply->setProperty("sioyek_network_message", "starting download");
                 QObject::connect(reply, &QNetworkReply::downloadProgress, [this, reply](qint64 received, qint64 total) {
-                    float ratio = static_cast<float>(received) / total;
-                    int percent = static_cast<int>(ratio * 100);
-                    reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(percent) + "%");
+                    if (total > 0) {
+                        float ratio = static_cast<float>(received) / total;
+                        int percent = static_cast<int>(ratio * 100);
+                        reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(percent) + "% (cancel)");
+                    }
+                    else {
+                        reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(received) + "B (cancel)");
+
+                    }
                     //main_document_view->pending_download_portals[pending_index].downloaded_fraction = ratio;
                     invalidate_ui();
                     });

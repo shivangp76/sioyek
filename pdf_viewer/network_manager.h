@@ -136,6 +136,7 @@ public:
     bool should_sync_document_to_server(Document* doc);
     QString get_login_status_string(Document* current_document);
     void handle_logout();
+    void cancel_all_downlods();
 };
 
 void block_for_send(QNetworkReply* reply);

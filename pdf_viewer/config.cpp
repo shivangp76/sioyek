@@ -114,6 +114,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
     {L"download_button", L"download_overview_paper_no_prompt"},
     {L"tts_status", L"stop_reading"},
     {L"tts_rate", L"setconfig_tts_rate"},
+    {L"download", L"cancel_all_downloads"},
 };
 
 float BLACK_COLOR[3] = { 0.0f, 0.0f, 0.0f };

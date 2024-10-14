@@ -6380,6 +6380,18 @@ public:
     }
 };
 
+class CancelAllDownloadsCommand : public Command {
+public:
+    static inline const std::string cname = "cancel_all_downloads";
+    static inline const std::string hname = "Cancel all pending downloads";
+
+    CancelAllDownloadsCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->sioyek_network_manager->cancel_all_downlods();
+    }
+};
+
 class CitersCommand : public Command {
 public:
     static inline const std::string cname = "citers";
@@ -8248,6 +8260,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<LoginCommand>(this);
     register_command<LoginWithGoogleCommand>(this);
     register_command<LogoutCommand>(this);
+    register_command<CancelAllDownloadsCommand>(this);
     register_command<CitersCommand>(this);
     register_command<ResumeToServerLocationCommand>(this);
     register_command<LoginUsingAccessTokenCommand>(this);
