@@ -2040,8 +2040,8 @@ void HighlightSearchItemDelegate::paint(QPainter* painter, const QStyleOptionVie
         int text_highlight_begin = -1, text_highlight_end = -1;
         int comment_highlight_begin = -1, comment_highlight_end = -1;
 
-        int text_similarity = similarity_score(highlight_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
-        int comment_similarity = similarity_score(comment_text.toLower().toStdWString(), pattern.toStdWString(), &comment_highlight_begin, &comment_highlight_end);
+        int text_similarity = similarity_score_cached(highlight_text.toLower(), pattern, &text_highlight_begin, &text_highlight_end);
+        int comment_similarity = similarity_score_cached(comment_text.toLower(), pattern, &comment_highlight_begin, &comment_highlight_end);
 
         //auto [text_highlight_begin, text_highlight_end] = find_smallest_containing_substring(text.toLower().toStdWString(), pattern.toStdWString());
         //auto [comment_highlight_begin, comment_highlight_end] = find_smallest_containing_substring(comment_text.toLower().toStdWString(), pattern.toStdWString());
@@ -2415,13 +2415,13 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
     const int similarity_threshold = 70;
     QString highlight_span = "<span style=\"" + QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) + "\">";
     if (ignore_prefix.size() == 0){
-        int text_similarity = similarity_score(command_name.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
+        int text_similarity = similarity_score_cached(command_name.toLower(), pattern, &text_highlight_begin, &text_highlight_end, 0.8f);
         if (text_similarity > similarity_threshold) {
             command_name = command_name.left(text_highlight_begin) + highlight_span + command_name.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + command_name.mid(text_highlight_end);
         }
     }
     else{
-        int text_similarity = similarity_score(command_name.mid(ignore_prefix.size()).toLower().toStdWString(), pattern.mid(ignore_prefix.size()).toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
+        int text_similarity = similarity_score_cached(command_name.mid(ignore_prefix.size()).toLower(), pattern.mid(ignore_prefix.size()), &text_highlight_begin, &text_highlight_end, 0.8f);
 
         if (text_highlight_begin >= 0) text_highlight_begin += ignore_prefix.size();
         if (text_highlight_end >= 0) text_highlight_end += ignore_prefix.size();
@@ -2498,6 +2498,26 @@ QSize CommandItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QM
     return QSize(option.rect.width(), cached_size.value());
 }
 
+int BaseCustomDelegate::similarity_score_cached(QString haystack, QString needle, int* match_begin, int* match_end, float ratio) const{
+    std::tuple<QString, QString, float> key = std::make_tuple(haystack, needle, ratio);
+    auto cached_result = cached_similarity_scores.find(key);
+    if (cached_result != cached_similarity_scores.end()) {
+        *match_begin = cached_result->second.highlight_begin;
+        *match_end = cached_result->second.highlight_end;
+        return cached_result->second.score;
+    }
+
+    int score = similarity_score(haystack.toStdWString(), needle.toStdWString(), match_begin, match_end, ratio);
+    SimilarityScoreResult result;
+    result.score = score;
+    result.highlight_begin = *match_begin;
+    result.highlight_end = *match_end;
+    cached_similarity_scores[key] = result;
+
+    return score;
+
+}
+
 void BaseCustomDelegate::set_pattern(QString p) {
     pattern = p.toLower();
 }
@@ -2505,7 +2525,7 @@ void BaseCustomDelegate::set_pattern(QString p) {
 QString BaseCustomDelegate::highlight_pattern(QString txt) const{
     int text_highlight_begin = 0;
     int text_highlight_end = 0;
-    int text_similarity = similarity_score(txt.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end, 0.8f);
+    int text_similarity = similarity_score_cached(txt.toLower(), pattern, &text_highlight_begin, &text_highlight_end, 0.8f);
     const int similarity_threshold = 70;
     if (text_similarity > similarity_threshold) {
         txt = txt.left(text_highlight_begin) + "<span style=\"" + QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) + "\">" + txt.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + txt.mid(text_highlight_end);
@@ -2839,7 +2859,7 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     bookmark_text = BookMark::get_display_markdown_or_text(bookmark_text);
 
     int text_highlight_begin = -1, text_highlight_end=-1;
-    int text_similarity = similarity_score(bookmark_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
+    int text_similarity = similarity_score_cached(bookmark_text.toLower(), pattern, &text_highlight_begin, &text_highlight_end);
 
     if (text_similarity > 0 && text_highlight_begin >= 0) {
         bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
@@ -3714,7 +3734,7 @@ void ItemWithDescriptionDelegate::paint(QPainter* painter, const QStyleOptionVie
     QString item_text = index.data().toString();
 
     int text_highlight_begin = -1, text_highlight_end=-1;
-    int text_similarity = similarity_score(item_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
+    int text_similarity = similarity_score_cached(item_text.toLower(), pattern, &text_highlight_begin, &text_highlight_end);
 
     if (text_similarity > 0 && text_highlight_begin >= 0) {
         item_text = item_text.left(text_highlight_begin) + "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\">" + item_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + item_text.mid(text_highlight_end);
