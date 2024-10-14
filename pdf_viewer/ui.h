@@ -1229,6 +1229,49 @@ public:
 
 };
 
+class ItemWithDescriptionModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    enum ItemWithDescriptionColumn {
+        item_text = 0,
+        description = 1,
+        metadata = 2,
+        max_columns = 4
+    };
+
+    std::vector<QString> items;
+    std::vector<QString> descriptions;
+    std::vector<QString> metadatas;
+
+
+    ItemWithDescriptionModel(std::vector<QString>&& items, std::vector<QString>&& descriptions, std::vector<QString>&& metadata, QObject * parent = nullptr);
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+};
+
+class ItemWithDescriptionDelegate : public BaseCustomDelegate {
+    Q_OBJECT
+public:
+    //QString pattern;
+
+    mutable QTextDocument item_document;
+    mutable QTextDocument description_document;
+    mutable std::unordered_map<int, float> cached_sizes;
+
+    ItemWithDescriptionDelegate();
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void clear_cache();
+};
+
 class BookmarkSearchItemDelegate : public BaseCustomDelegate {
     Q_OBJECT
 public:
@@ -1258,6 +1301,20 @@ public:
     static BookmarkSelectorWidget* from_bookmarks(std::vector<BookMark>&& bookmarks, MainWidget* parent, std::vector<QString>&& doc_names = {}, std::vector<QString>&& doc_checksums = {});
 
     BookmarkModel* bookmark_model = nullptr;
+};
+
+class ItemWithDescriptionSelectorWidget : public BaseCustomSelectorWidget{
+private:
+    ItemWithDescriptionSelectorWidget(
+        QAbstractItemView* view,
+        QAbstractItemModel* model,
+        MainWidget* parent
+    );
+public:
+
+    static ItemWithDescriptionSelectorWidget* from_items(std::vector<QString>&& items, std::vector<QString>&& descriptions, std::vector<QString>&& metadata, MainWidget* parent);
+
+    ItemWithDescriptionModel* item_model = nullptr;
 };
 
 class DocumentNameModel : public QAbstractTableModel {

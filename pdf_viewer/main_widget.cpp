@@ -11783,44 +11783,53 @@ void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
         QJsonDocument json_doc = QJsonDocument::fromJson(content);
         QJsonObject root_object = json_doc.object();
 
-        std::vector<std::wstring> citer_titles;
-        std::vector<std::wstring> citer_citations;
-        std::vector<std::wstring> citer_publication_year;
-        std::vector<std::wstring> citer_urls;
+        //std::vector<QString> citer_titles;
+        //std::vector<QString> citer_citations;
+        //std::vector<QString> citer_publication_year;
+        std::vector<QString> citer_urls;
+        std::vector<QString> citer_titles;
+        std::vector<QString> citer_descriptions;
+
         for (auto obj : root_object["citers"].toArray()) {
-            QJsonArray citer_props = obj.toArray();
-            citer_titles.push_back(citer_props[0].toString().toStdWString());
-            citer_urls.push_back(citer_props[1].toString().toStdWString());
-            citer_citations.push_back(QString::number(citer_props[2].toInt()).toStdWString());
-            citer_publication_year.push_back(QString::number(citer_props[3].toInt()).toStdWString());
+            QJsonObject citer_props = obj.toObject();
+            citer_titles.push_back(citer_props["title"].toString());
+            citer_urls.push_back(citer_props["url"].toString());
 
-
-            set_filtered_select_menu<std::wstring>(this, true, false, { citer_titles, citer_publication_year, citer_citations}, citer_urls, -1, [this](std::wstring* url) {
-                auto reply = download_paper_with_url(*url, false, PaperDownloadFinishedAction::OpenInNewWindow);
-                reply->setProperty("sioyek_downloading", true);
-                reply->setProperty("sioyek_network_message", "starting download");
-                QObject::connect(reply, &QNetworkReply::downloadProgress, [this, reply](qint64 received, qint64 total) {
-                    if (total > 0) {
-                        float ratio = static_cast<float>(received) / total;
-                        int percent = static_cast<int>(ratio * 100);
-                        reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(percent) + "% (cancel)");
-                    }
-                    else {
-                        reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(received) + "B (cancel)");
-
-                    }
-                    //main_document_view->pending_download_portals[pending_index].downloaded_fraction = ratio;
-                    invalidate_ui();
-                    });
-                invalidate_ui();
-
-                }, [this](std::wstring* _) {});
-            auto  table = dynamic_cast<FilteredSelectTableWindowClass<std::wstring>*>(current_widget_stack.back());
-            table->set_horizontal_header(QStringList() << "Title" << "Publication Year" << "Citation Count");
-            table->set_stretch_column_index(0);
-            show_current_widget();
-
+            QString cite_count =QString::number(citer_props["cited_by_count"].toInt());
+            QString publication_year = QString::number(citer_props["publication_year"].toInt());
+            QString pulibcation_location = citer_props["publication_location"].toString();
+            QString description = pulibcation_location + ", " + publication_year + ", " + cite_count + " citations";
+            if (pulibcation_location.size() == 0) {
+                description = publication_year + ", " + cite_count + " citations";
+            }
+            citer_descriptions.push_back(description);
         }
+
+        auto selector_widget = ItemWithDescriptionSelectorWidget::from_items(std::move(citer_titles), std::move(citer_descriptions), std::move(citer_urls), this);
+        selector_widget->set_select_fn([this, selector_widget](int index) {
+            QString url = selector_widget->item_model->metadatas[index];
+            auto reply = download_paper_with_url(url.toStdWString(), false, PaperDownloadFinishedAction::OpenInNewWindow);
+            reply->setProperty("sioyek_downloading", true);
+            reply->setProperty("sioyek_network_message", "starting download");
+            QObject::connect(reply, &QNetworkReply::downloadProgress, [this, reply](qint64 received, qint64 total) {
+                if (total > 0) {
+                    float ratio = static_cast<float>(received) / total;
+                    int percent = static_cast<int>(ratio * 100);
+                    reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(percent) + "% (cancel)");
+                }
+                else {
+                    reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(received) + "B (cancel)");
+
+                }
+                //main_document_view->pending_download_portals[pending_index].downloaded_fraction = ratio;
+                invalidate_ui();
+                });
+            pop_current_widget();
+            invalidate_ui();
+
+            });
+        set_current_widget(selector_widget);
+        show_current_widget();
 
         });
 

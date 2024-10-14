@@ -3658,3 +3658,170 @@ void SioyekDocumentationTextBrowser::doSetSource(const QUrl& url, QTextDocument:
         //QTextBrowser::doSetSource(url, type);
     }
 }
+
+ItemWithDescriptionDelegate::ItemWithDescriptionDelegate(){
+    QFont item_font(get_ui_font_face_name());
+    QFont description_font;
+
+    int font_size = FONT_SIZE > 0 ? FONT_SIZE : item_font.pointSize();
+
+    if (font_size >= 0) {
+        item_font.setPointSize(font_size);
+        description_font.setPointSize(font_size * 3 / 4);
+    }
+
+    item_document.setDefaultFont(item_font);
+    description_document.setDefaultFont(description_font);
+}
+
+QSize ItemWithDescriptionDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+    const QSortFilterProxyModel *proxy_model = dynamic_cast<const QSortFilterProxyModel*>(index.model());
+    auto source_index = proxy_model->mapToSource(index);
+    if (cached_sizes.find(source_index.row()) != cached_sizes.end()) {
+        return QSize(option.rect.width(), cached_sizes[source_index.row()]);
+    }
+
+    QString item_text = index.siblingAtColumn(ItemWithDescriptionModel::item_text).data().toString();
+    QString description = index.siblingAtColumn(ItemWithDescriptionModel::description).data().toString();
+
+    item_document.setTextWidth(option.rect.width());
+    item_document.setHtml(item_text);
+
+    QSize res = item_document.size().toSize();
+    int col_count = index.model()->columnCount();
+    bool is_global = index.model()->columnCount() == ItemWithDescriptionModel::max_columns;
+
+    description_document.setTextWidth(option.rect.width());
+    description_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(ItemWithDescriptionModel::description).data().toString() + "</div>");
+    res = QSize(res.width(), res.height() + description_document.size().toSize().height());
+
+    cached_sizes[source_index.row()] = res.height();
+    return res;
+}
+
+void ItemWithDescriptionDelegate::clear_cache() {
+    cached_sizes.clear();
+}
+
+void ItemWithDescriptionDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
+    const QModelIndex& index) const {
+
+    painter->save();
+    bool is_selected = option.state & QStyle::State_Selected;
+
+    item_document.setTextWidth(option.rect.width());
+
+    QString item_text = index.data().toString();
+
+    int text_highlight_begin = -1, text_highlight_end=-1;
+    int text_similarity = similarity_score(item_text.toLower().toStdWString(), pattern.toStdWString(), &text_highlight_begin, &text_highlight_end);
+
+    if (text_similarity > 0 && text_highlight_begin >= 0) {
+        item_text = item_text.left(text_highlight_begin) + "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\">" + item_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + item_text.mid(text_highlight_end);
+    }
+
+    item_document.setHtml(item_text);
+
+    QAbstractTextDocumentLayout::PaintContext ctx;
+
+
+    if (is_selected) {
+        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_SELECTED_TEXT_COLOR));
+    }
+    else {
+        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_TEXT_COLOR));
+    }
+    painter->fillRect(option.rect, is_selected ? convert_float3_to_qcolor(UI_SELECTED_BACKGROUND_COLOR) : convert_float3_to_qcolor(UI_BACKGROUND_COLOR));
+    //painter->fillRect(option.rect, is_selected ? Qt::red : Qt::blue);
+
+    painter->translate(option.rect.topLeft());
+    painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
+
+    item_document.documentLayout()->draw(painter, ctx);
+
+    //if (is_global) {
+    painter->translate(0, item_document.size().height());
+
+    if (!is_selected) {
+        ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
+    }
+    else {
+        ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
+    }
+
+    description_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(ItemWithDescriptionModel::description).data().toString() + "</div>");
+    description_document.documentLayout()->draw(painter, ctx);
+    //}
+
+    painter->restore();
+}
+
+ItemWithDescriptionModel::ItemWithDescriptionModel(std::vector<QString> && items_, std::vector<QString> && descriptions_, std::vector<QString> && metadata_, QObject * parent): QAbstractTableModel(parent) {
+    items = items_;
+    descriptions = descriptions_;
+    metadatas = metadata_;
+}
+
+int ItemWithDescriptionModel::rowCount(const QModelIndex& parent) const {
+    if (parent == QModelIndex()) {
+        return items.size();
+    }
+    return 0;
+}
+
+int ItemWithDescriptionModel::columnCount(const QModelIndex& parent) const {
+    if (metadatas.size() == 0) {
+        return 2;
+    }
+    return 3;
+}
+
+QVariant ItemWithDescriptionModel::data(const QModelIndex& index, int role) const {
+    if (role == Qt::DisplayRole) {
+        if (index.column() == ItemWithDescriptionColumn::item_text) {
+            return items[index.row()];
+        }
+        if (index.column() == ItemWithDescriptionColumn::description) {
+            return descriptions[index.row()];
+        }
+        if (index.column() == ItemWithDescriptionColumn::metadata) {
+            return metadatas[index.row()];
+        }
+    }
+    return QVariant();
+}
+
+QVariant ItemWithDescriptionModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+        return "Item";
+    }
+    return QVariant();
+}
+
+ItemWithDescriptionSelectorWidget::ItemWithDescriptionSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent) 
+    : BaseCustomSelectorWidget(view, model, parent) {
+
+    item_model = dynamic_cast<ItemWithDescriptionModel*>(model);
+
+    if (lv) {
+        lv->setItemDelegate(new ItemWithDescriptionDelegate());
+    }
+}
+
+ItemWithDescriptionSelectorWidget* ItemWithDescriptionSelectorWidget::from_items(std::vector<QString>&& items, std::vector<QString>&& descriptions, std::vector<QString>&& metadata, MainWidget* parent) {
+
+    ItemWithDescriptionModel* item_model = new ItemWithDescriptionModel(std::move(items), std::move(descriptions), std::move(metadata));
+
+    QListView* list_view = get_ui_new_listview();
+
+    ItemWithDescriptionSelectorWidget* item_selector_widget = new ItemWithDescriptionSelectorWidget(list_view, item_model, parent);
+
+    item_model->setParent(item_selector_widget);
+    list_view->setParent(item_selector_widget);
+
+    item_selector_widget->on_resize();
+    item_selector_widget->set_filter_column_index(-1);
+
+    item_selector_widget->update_render();
+    return item_selector_widget;
+}
