@@ -7561,6 +7561,9 @@ void MainWidget::on_paper_downloaded(QNetworkReply* reply) {
     }
 
     QString file_name = reply->url().fileName();
+    if (!file_name.endsWith(".pdf") && header.startsWith("application/pdf")) {
+        file_name = file_name + ".pdf";
+    }
 
     if (AUTO_RENAME_DOWNLOADED_PAPERS && (!reply->property("sioyek_actual_paper_name").isNull())) {
         QString detected_file_name = get_file_name_from_paper_name(reply->property("sioyek_actual_paper_name").toString());
