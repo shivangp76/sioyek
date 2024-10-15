@@ -5711,13 +5711,13 @@ void MainWidget::handle_open_all_docs() {
     show_current_widget();
 }
 
-std::vector<OpenedBookInfo> MainWidget::get_all_opened_books(bool include_server_books) {
+std::vector<OpenedBookInfo> MainWidget::get_all_opened_books(bool include_server_books, bool force_full_path) {
     std::vector<OpenedBookInfo> res;
     db_manager->select_opened_books(res);
     for (int i = 0; i < res.size(); i++) {
         std::wstring path = document_manager->get_path_from_hash(res[i].checksum).value_or(L"");
         if (path.size() > 0) {
-            if (SHOW_DOC_PATH) {
+            if (SHOW_DOC_PATH || force_full_path) {
                 res[i].file_name = QString::fromStdWString(path);
             }
             else {
@@ -8179,15 +8179,29 @@ void MainWidget::handle_goto_loaded_document() {
     // the user can "unload" a document by pressing the delete key while it is highlighted in the list
 
     std::vector<std::wstring> loaded_document_paths_ = document_manager->get_tabs();
-    std::vector<std::wstring> loaded_document_paths = get_path_unique_prefix(loaded_document_paths_);
+    //std::vector<std::wstring> loaded_document_paths = get_path_unique_prefix(loaded_document_paths_);
+    //std::vector<std::wstring> loaded_document_paths = get_path_unique_prefix(loaded_document_paths_);
     std::vector<std::wstring> detected_paper_names;
+
+    std::vector<OpenedBookInfo> opened_books = get_all_opened_books(false, true);
+    std::map<QString, QString> path_to_title_map;
+    for (auto opened_book : opened_books) {
+        path_to_title_map[opened_book.file_name] = opened_book.document_title;
+    }
+
     for (auto path : loaded_document_paths_) {
         Document* loaded_document = document_manager->get_document(path);
-        if (loaded_document) {
+        if (loaded_document && loaded_document->doc) {
             detected_paper_names.push_back(loaded_document->detect_paper_name());
         }
         else {
-            detected_paper_names.push_back(L"");
+            auto it = path_to_title_map.find(QString::fromStdWString(path));
+            if (it != path_to_title_map.end()) {
+                detected_paper_names.push_back(it->second.toStdWString());
+            }
+            else {
+                detected_paper_names.push_back(L"[" + path + L"]");
+            }
         }
     }
 
@@ -8204,37 +8218,83 @@ void MainWidget::handle_goto_loaded_document() {
         index = loc - loaded_document_paths_.begin();
     }
 
-    set_filtered_select_menu<std::wstring>(this, true,
-        MULTILINE_MENUS,
-        { loaded_document_paths, detected_paper_names },
-        loaded_document_paths_,
-        index,
-        [&](std::wstring* path) {
-            if (pending_command_instance) {
-                pending_command_instance->set_generic_requirement(QString::fromStdWString(*path));
-                advance_command(std::move(pending_command_instance));
-            }
-            //open_document(*path);
-        },
-        [&](std::wstring* path) {
-            std::optional<Document*> doc_to_delete = document_manager->get_cached_document(*path);
-            if (!doc_to_delete) {
-                document_manager->remove_tab(*path);
-            }
-            for (auto window : windows) {
-                if (window->doc() && window->doc()->get_path() == *path) {
-                    if (window != this) {
-                        window->close();
-                    }
+    std::vector<QString> loaded_document_paths_qstrings;
+    std::vector<QString> detected_paper_names_qstrings;
+    std::vector<QString> document_path_qstring;
+    for (int i = 0; i < loaded_document_paths_.size(); i++) {
+        loaded_document_paths_qstrings.push_back(QString::fromStdWString(loaded_document_paths_[i]));
+        detected_paper_names_qstrings.push_back(QString::fromStdWString(detected_paper_names[i]));
+        document_path_qstring.push_back(QString::fromStdWString(loaded_document_paths_[i]));
+    }
+
+    auto widget = ItemWithDescriptionSelectorWidget::from_items(
+        std::move(detected_paper_names_qstrings),
+        std::move(loaded_document_paths_qstrings),
+        std::move(document_path_qstring),
+        this);
+
+    widget->set_select_fn([this, widget](int index) {
+        QString path = widget->item_model->metadatas[index];
+        if (pending_command_instance) {
+            pending_command_instance->set_generic_requirement(path);
+            advance_command(std::move(pending_command_instance));
+            pop_current_widget();
+        }
+        });
+    widget->set_delete_fn([this, widget](int index) {
+        std::wstring path = widget->item_model->metadatas[index].toStdWString();
+        std::optional<Document*> doc_to_delete = document_manager->get_cached_document(path);
+        if (!doc_to_delete) {
+            document_manager->remove_tab(path);
+        }
+        for (auto window : windows) {
+            if (window->doc() && window->doc()->get_path() == path) {
+                if (window != this) {
+                    window->close();
                 }
             }
-            if (doc_to_delete && (doc_to_delete.value() != doc())) {
-                document_manager->remove_tab(*path);
-                free_document(doc_to_delete.value());
-            }
         }
-        );
-    make_current_menu_columns_equal();
+        if (doc_to_delete && (doc_to_delete.value() != doc())) {
+            document_manager->remove_tab(path);
+            free_document(doc_to_delete.value());
+        }
+        });
+
+    set_current_widget(widget);
+    show_current_widget();
+
+    //set_filtered_select_menu<std::wstring>(this, true,
+    //    MULTILINE_MENUS,
+    //    { loaded_document_paths, detected_paper_names },
+    //    loaded_document_paths_,
+    //    index,
+    //    [&](std::wstring* path) {
+    //        if (pending_command_instance) {
+    //            pending_command_instance->set_generic_requirement(QString::fromStdWString(*path));
+    //            advance_command(std::move(pending_command_instance));
+    //        }
+    //        //open_document(*path);
+    //    },
+    //    [&](std::wstring* path) {
+    //        std::optional<Document*> doc_to_delete = document_manager->get_cached_document(*path);
+    //        if (!doc_to_delete) {
+    //            document_manager->remove_tab(*path);
+    //        }
+    //        for (auto window : windows) {
+    //            if (window->doc() && window->doc()->get_path() == *path) {
+    //                if (window != this) {
+    //                    window->close();
+    //                }
+    //            }
+    //        }
+    //        if (doc_to_delete && (doc_to_delete.value() != doc())) {
+    //            document_manager->remove_tab(*path);
+    //            free_document(doc_to_delete.value());
+    //        }
+    //    }
+    //    );
+    //make_current_menu_columns_equal();
+
     show_current_widget();
 }
 
