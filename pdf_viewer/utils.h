@@ -954,3 +954,4 @@ QListView* get_ui_new_listview();
 void log_d(QString text);
 bool is_process_still_running(qint64 pid);
 void kill_process(qint64 pid);
+std::vector<std::wstring> get_last_opened_file_name();
