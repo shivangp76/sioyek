@@ -902,7 +902,7 @@ void Command::on_text_change(const QString& new_text) {
 DocumentView* Command::dv(){
 
     if (widget){
-        return widget->main_document_view;
+        return widget->dv();
     }
 
     return nullptr;
