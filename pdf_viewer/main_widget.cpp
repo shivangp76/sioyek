@@ -3974,8 +3974,14 @@ void MainWidget::move_vertical(float amount) {
         hide_command_line_edit();
     }
 
+    if (dv()->is_scratchpad()) {
+        dv()->move_document(0, amount);
+        validate_render();
+        return;
+    }
+
     if (!smooth_scroll_mode) {
-        main_document_view->move_document(0, amount);
+        dv()->move_document(0, amount);
         validate_render();
     }
     else {

@@ -1832,7 +1832,7 @@ ScratchPad::ScratchPad() : DocumentView(nullptr, nullptr, nullptr) {
     zoom_level = 1;
 }
 
-bool ScratchPad::set_offsets(float new_offset_x, float new_offset_y, bool force) {
+bool ScratchPad::set_offsets(float new_offset_x, float new_offset_y, bool force, bool is_dragging){
     offset.x = new_offset_x;
     offset.y = new_offset_y;
     return false;
@@ -5971,4 +5971,17 @@ void DocumentView::zoom_selected_freehand_drawings(float zoom_factor) {
     }
 
 
+}
+
+bool ScratchPad::move_document(float dx, float dy, bool force) {
+
+    return move(dx, dy, force);
+}
+
+bool DocumentView::is_scratchpad() {
+    return false;
+}
+
+bool ScratchPad::is_scratchpad() {
+    return true;
 }

@@ -587,6 +587,7 @@ public:
     void zoom_pinned_portal(bool zoom_in);
     std::optional<Portal> pin_current_overview_as_portal();
     void perform_fuzzy_search(std::wstring query);
+    virtual bool is_scratchpad();
 
     void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     void set_pending_portal(std::wstring path, Portal portal);
@@ -643,7 +644,7 @@ public:
     void handle_portal_overview_update();
     void scroll_overview(int vertical_amount, int horizontal_amount=0);
     void scroll_overview_vertical(float amount);
-    bool move_document(float dx, float dy, bool force=false);
+    virtual bool move_document(float dx, float dy, bool force=false);
     void move_document_screens(int num_screens);
     void handle_vertical_move(int amount);
     void move_ruler(int amount);
@@ -690,7 +691,7 @@ public:
 #endif
 
     ScratchPad();
-    bool set_offsets(float new_offset_x, float new_offset_y, bool force = false);
+    bool set_offsets(float new_offset_x, float new_offset_y, bool force = false, bool is_dragging=false) override;
     float set_zoom_level(float zl, bool should_exit_auto_resize_mode);
     float zoom_in(float zoom_factor = ZOOM_INC_FACTOR);
     float zoom_out(float zoom_factor = ZOOM_INC_FACTOR);
@@ -715,6 +716,8 @@ public:
     bool is_compile_invalid();
     void load(std::wstring path);
     void save(std::wstring path);
+    bool move_document(float dx, float dy, bool force=false) override;
+    bool is_scratchpad() override;
 
 
 };
