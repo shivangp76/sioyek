@@ -3530,6 +3530,22 @@ void Document::delete_page_intersecting_drawings(int page, AbsoluteRect absolute
     is_drawings_dirty = true;
 }
 
+void Document::delete_drawings_with_indices(int page, std::vector<SelectedObjectIndex>& drawing_indices) {
+    std::vector<int> raw_indices;
+    for (auto index : drawing_indices) {
+        if (index.type == SelectedObjectType::Drawing) {
+            raw_indices.push_back(index.index);
+        }
+    }
+
+    std::sort(raw_indices.begin(), raw_indices.end());
+
+    for (int j = raw_indices.size() - 1; j >= 0; j--) {
+        int index = raw_indices[j];
+        page_freehand_drawings[page].erase(page_freehand_drawings[page].begin() + index);
+    }
+}
+
 std::wstring Document::get_addtional_sioyek_file_path(QString type) {
     if (ANNOTATIONS_DIR_PATH.size() == 0) {
         Path path = Path(file_name);

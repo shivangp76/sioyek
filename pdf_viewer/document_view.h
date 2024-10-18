@@ -47,7 +47,7 @@ struct ScheduledPortalUpdate {
 
 struct SelectedDrawings {
     int page;
-    AbsoluteRect selection_absrect;
+    AbsoluteRect selection_absrect_;
     std::vector<SelectedObjectIndex> selected_indices;
 };
 
@@ -666,6 +666,7 @@ std::optional<PagelessDocumentRect> get_tag_rect(std::string tag, std::vector<Pa
     void set_presentation_mode(bool mode);
     fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
     void update_overview_highlighted_paper_with_position(DocumentPos docpos);
+    void zoom_selected_freehand_drawings(float zoom_factor);
 };
 
 struct CachedScratchpadPixmapData {
@@ -700,6 +701,7 @@ public:
     void delete_intersecting_drawings(AbsoluteRect selection);
     void delete_intersecting_pixmaps(AbsoluteRect selection);
     void delete_intersecting_objects(AbsoluteRect selection);
+    void delete_objects_with_indices(const std::vector<SelectedObjectIndex> object_indices);
     void get_selected_objects_with_indices(const std::vector<SelectedObjectIndex>& indices, std::vector<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);
     void add_pixmap(QPixmap pixmap);
     AbsoluteRect get_bounding_box();

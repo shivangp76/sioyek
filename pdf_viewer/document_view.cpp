@@ -1908,6 +1908,35 @@ void ScratchPad::delete_intersecting_objects(AbsoluteRect selection) {
     delete_intersecting_pixmaps(selection);
 }
 
+void ScratchPad::delete_objects_with_indices(const std::vector<SelectedObjectIndex> object_indices) {
+    invalidate_compile(true);
+
+    std::vector<int> raw_drawing_indices;
+    std::vector<int> raw_pixmap_indices;
+    for (auto object_index : object_indices) {
+        if (object_index.type == SelectedObjectType::Drawing) {
+            raw_drawing_indices.push_back(object_index.index);
+        }
+        else {
+            raw_pixmap_indices.push_back(object_index.index);
+        }
+    }
+
+    std::sort(raw_drawing_indices.begin(), raw_drawing_indices.end());
+    std::sort(raw_pixmap_indices.begin(), raw_pixmap_indices.end());
+
+
+    for (int j = raw_drawing_indices.size() - 1; j >= 0; j--) {
+        int index = raw_drawing_indices[j];
+        all_drawings.erase(all_drawings.begin() + index);
+    }
+
+    for (int j = raw_pixmap_indices.size() - 1; j >= 0; j--) {
+        int index = raw_pixmap_indices[j];
+        pixmaps.erase(pixmaps.begin() + index);
+    }
+}
+
 void ScratchPad::get_selected_objects_with_indices(const std::vector<SelectedObjectIndex>&indices, std::vector<FreehandDrawing>&freehand_drawings, std::vector<PixmapDrawing>&pixmap_drawings){
 
     for (auto [index, type] : indices) {
@@ -4901,7 +4930,8 @@ void DocumentView::handle_freehand_drawing_selection_click(AbsoluteDocumentPos c
             selected_freehand_drawings->selected_indices,
             moving_drawings,
             moving_pixmaps);
-        scratchpad->delete_intersecting_objects(selected_freehand_drawings->selection_absrect);
+
+        scratchpad->delete_objects_with_indices(selected_freehand_drawings->selected_indices);
     }
     else {
         current_document->get_page_freehand_drawings_with_indices(
@@ -4909,10 +4939,14 @@ void DocumentView::handle_freehand_drawing_selection_click(AbsoluteDocumentPos c
             selected_freehand_drawings->selected_indices,
             moving_drawings,
             moving_pixmaps);
-        current_document->delete_page_intersecting_drawings(
+        current_document->delete_drawings_with_indices(
             selected_freehand_drawings->page,
-            selected_freehand_drawings->selection_absrect,
-            visible_drawing_mask);
+            selected_freehand_drawings->selected_indices
+        );
+        //current_document->delete_page_intersecting_drawings(
+        //    selected_freehand_drawings->page,
+        //    selected_freehand_drawings->selection_absrect,
+        //    visible_drawing_mask);
     }
 
     FreehandDrawingMoveData md;
@@ -4936,7 +4970,7 @@ void DocumentView::select_freehand_drawings(AbsoluteRect rect) {
 
     selected_drawings.page = page_rect.page;
     selected_drawings.selected_indices = selected_indices;
-    selected_drawings.selection_absrect = rect;
+    selected_drawings.selection_absrect_ = rect;
     selected_freehand_drawings = selected_drawings;
     moving_drawings.clear();
     moving_pixmaps.clear();
@@ -5270,7 +5304,7 @@ void DocumentView::set_current_freehand_alpha(float alpha) {
 }
 
 bool DocumentView::handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute) {
-    if (selected_freehand_drawings->selection_absrect.contains(mpos_absolute)) {
+    if (selected_freehand_drawings->selection_absrect_.contains(mpos_absolute)) {
         handle_freehand_drawing_selection_click(mpos_absolute);
         return true;
     }
@@ -5876,5 +5910,65 @@ void DocumentView::update_overview_highlighted_paper_with_position(DocumentPos d
         }
 
     }
+
+}
+
+void DocumentView::zoom_selected_freehand_drawings(float zoom_factor) {
+    if (selected_freehand_drawings.has_value()) {
+        //int index = selected_index.index;
+//std::vector<FreehandDrawing> selected_drawings;
+//std::vector<PixmapDrawing> selected_pixmaps;
+
+//current_document->get_page_freehand_drawings_with_indices(
+//    selected_freehand_drawings->page,
+//    selected_freehand_drawings->selected_indices,
+//    selected_drawings,
+//    selected_pixmaps);
+//selected_freehand_drawings->page
+
+        if (selected_freehand_drawings->selected_indices.size() > 0) {
+            std::vector<FreehandDrawing>& page_freehand_drawings = current_document->page_freehand_drawings[selected_freehand_drawings->page];
+            std::optional<AbsoluteRect> bbox = {};
+            for (auto ind : selected_freehand_drawings->selected_indices) {
+                if (ind.type == SelectedObjectType::Drawing) {
+                    if (bbox.has_value()) {
+                        bbox = bbox->union_rect(page_freehand_drawings[ind.index].bbox());
+                    }
+                    else {
+                        bbox = page_freehand_drawings[ind.index].bbox();
+                    }
+                }
+            }
+
+            if (bbox) {
+                std::vector<FreehandDrawing> new_moving_drawings;
+
+                AbsoluteDocumentPos zoom_center = bbox->center();
+                for (auto ind : selected_freehand_drawings->selected_indices) {
+                    if (ind.type == SelectedObjectType::Drawing) {
+                        for (int point_index = 0; point_index < page_freehand_drawings[ind.index].points.size(); point_index++) {
+                            auto diff = page_freehand_drawings[ind.index].points[point_index].pos - zoom_center;
+                            page_freehand_drawings[ind.index].points[point_index].pos = zoom_center + diff * zoom_factor;
+                            page_freehand_drawings[ind.index].points[point_index].thickness *= zoom_factor;
+                            moving_drawings.push_back(page_freehand_drawings[ind.index]);
+                        }
+                    }
+                }
+                moving_drawings = new_moving_drawings;
+            }
+        }
+
+        //if (selected_drawings.size() > 0) {
+
+        //    AbsoluteRect bbox = selected_drawings[0].bbox();
+
+        //    for (auto drawing : selected_drawings) {
+        //        bbox = bbox.union_rect(drawing.bbox());
+        //    }
+
+        //    AbsoluteDocumentPos zoom_origin = bbox.center();
+        //}
+    }
+
 
 }

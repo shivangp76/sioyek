@@ -3624,7 +3624,10 @@ public:
     static inline const std::string hname = "Zoom in";
     ZoomInCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        if (dv()->is_pinned_portal_selected()) {
+        if (dv()->selected_freehand_drawings.has_value()) {
+            dv()->zoom_selected_freehand_drawings(ZOOM_INC_FACTOR);
+        }
+        else if (dv()->is_pinned_portal_selected()) {
             dv()->zoom_pinned_portal(true);
         }
         else {
@@ -3734,7 +3737,10 @@ public:
     ZoomOutCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        if (dv()->is_pinned_portal_selected()) {
+        if (dv()->selected_freehand_drawings.has_value()) {
+            dv()->zoom_selected_freehand_drawings(1.0f / ZOOM_INC_FACTOR);
+        }
+        else if (dv()->is_pinned_portal_selected()) {
             dv()->zoom_pinned_portal(false);
         }
         else {

@@ -80,7 +80,6 @@ private:
     std::mutex drawings_mutex;
     std::mutex highlights_mutex;
 
-    std::map<int, std::vector<FreehandDrawing>> page_freehand_drawings;
     // it means we have modified freehand drawings since the document was loaded
     // which means that when we exit, we must write the modified drawings to the drawings file
     bool is_drawings_dirty = false;
@@ -191,11 +190,14 @@ private:
     void clear_toc_node(TocNode* node);
     int find_highlight_index_with_uuid(const std::string& uuid);
 public:
+
     fz_document* doc = nullptr;
     std::wstring detected_paper_name = L"";
     bool annotations_are_freshly_loaded = false;
     bool checksum_is_new = false;
     std::optional<bool> cached_is_synced;
+
+    std::map<int, std::vector<FreehandDrawing>> page_freehand_drawings;
 
     PageIterator page_iterator(int page_number, bool line_only=false);
     int get_page_text_and_line_rects_after_rect(int page_number, int maximum_size,
@@ -333,6 +335,7 @@ public:
     void index_document(bool* invalid_flag);
     void stop_indexing();
     void delete_page_intersecting_drawings(int page, AbsoluteRect absolute_rect, bool mask[26]);
+    void delete_drawings_with_indices(int page, std::vector<SelectedObjectIndex>& indices);
     void delete_all_page_drawings(int page);
     void delete_all_drawings();
     std::vector<SelectedObjectIndex> get_page_intersecting_drawing_indices(int page, AbsoluteRect absolute_rect, bool mask[26]);
@@ -546,6 +549,7 @@ public:
         this->db_manager->set_annot_uuids_to_synced_(T::TABLE_NAME, uuids);
 
     }
+
 
     void set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids);
     ParsedUri parse_link(const PdfLink& link);
