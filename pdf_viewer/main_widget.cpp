@@ -11997,4 +11997,3 @@ void MainWidget::show_citers_of_current_paper() {
     std::wstring paper_name = doc()->detect_paper_name();
     show_citers_with_paper_name(paper_name);
 }
-
