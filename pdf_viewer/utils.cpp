@@ -2274,10 +2274,22 @@ bool is_string_titlish(const std::wstring& str) {
     std::wregex regex(L"([0-9IVXC]+\\.)+([0-9IVXC]+)*");
     std::wsmatch match;
 
+
     std::regex_search(str, match, regex);
     int pos = match.position();
     int size = match.length();
-    return (size > 0) && (pos == 0);
+    int numeric_count = 0;
+
+    // the above regex can match numeric values like 0.975, here we use a heuristic
+    // to check if the string is a title by checking if it has less than 20% of numeric values
+    for (int i = 0; i < str.size(); i++) {
+        if ((str[i] < 128) && std::isdigit(str[i])) {
+            numeric_count++;
+        }
+    }
+    int max_numeric_count = static_cast<int>(str.size() * 0.2f);
+
+    return (size > 0) && (pos == 0) && (numeric_count <= max_numeric_count);
 }
 
 bool is_title_parent_of(const std::wstring& parent_title, const std::wstring& child_title, bool* are_same) {
