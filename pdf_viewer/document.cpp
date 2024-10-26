@@ -4533,6 +4533,7 @@ std::wstring Document::detect_paper_name() {
 
 std::wstring Document::detect_paper_name(fz_context* context, fz_document* doc) {
 
+    const int MAX_DETECTED_TITLE_LENGTH = 100;
     if (detected_paper_name.size() > 0) return detected_paper_name;
 
     fz_stext_page* stext_page = get_stext_with_page_number(context, 0, doc);
@@ -4575,12 +4576,12 @@ std::wstring Document::detect_paper_name(fz_context* context, fz_document* doc) 
             }
         }
         if (max_block) {
-            return get_string_from_stext_block(max_block, true);
+            return clip_string_to_length(get_string_from_stext_block(max_block, true), MAX_DETECTED_TITLE_LENGTH);
         }
         else {
             char buffer[1000];
             fz_lookup_metadata(context, doc, FZ_META_INFO_TITLE, buffer, 1000);
-            return utf8_decode(buffer);
+            return clip_string_to_length(utf8_decode(buffer), MAX_DETECTED_TITLE_LENGTH);
         }
     }
     return L"";

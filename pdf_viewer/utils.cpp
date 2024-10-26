@@ -5558,3 +5558,10 @@ std::vector<std::wstring> get_last_opened_file_name() {
 
     return res;
 }
+
+std::wstring clip_string_to_length(const std::wstring& input, int length) {
+    if (input.size() > length) {
+        return input.substr(0, length) + L"...";
+    }
+    return input;
+}

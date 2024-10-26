@@ -955,3 +955,4 @@ void log_d(QString text);
 bool is_process_still_running(qint64 pid);
 void kill_process(qint64 pid);
 std::vector<std::wstring> get_last_opened_file_name();
+std::wstring clip_string_to_length(const std::wstring& input, int length);
