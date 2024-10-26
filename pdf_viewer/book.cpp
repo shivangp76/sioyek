@@ -240,7 +240,7 @@ std::wstring  BookMark::get_style_text() const {
             int space_index = description.find(L" ");
             int newline_index = description.find(L"\n");
 
-            if (newline_index < space_index) {
+            if ((newline_index >= 0) && (newline_index < space_index)) {
                 space_index = newline_index;
             }
 

@@ -1239,7 +1239,7 @@ void PdfViewOpenGLWidget::my_render() {
 
                         QString box_text = desc_qstring.split(' ')[0];
                         if (!bm_type.has_value()){
-                            painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                            //painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         }
                         else{
                             char mode = bm_type.value();
