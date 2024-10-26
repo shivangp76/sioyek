@@ -574,8 +574,8 @@ std::optional<Portal> Document::delete_portal_with_index(int index) {
 }
 
 std::optional<Highlight> Document::delete_highlight(Highlight hl) {
-    for (size_t i = (highlights.size() - 1); i >= 0; i--) {
-        if (highlights[i] == hl) {
+    for (int i = (highlights.size() - 1); i >= 0; i--) {
+        if (highlights[i].uuid == hl.uuid) {
             return delete_highlight_with_index(i);
         }
     }

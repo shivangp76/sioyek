@@ -8415,8 +8415,13 @@ std::optional<BookMark> MainWidget::delete_current_document_bookmark(const std::
 void MainWidget::delete_global_bookmark(const std::string& uuid) {
     std::vector<std::pair<std::string, BookMark>> deleted_bookmark;
     db_manager->select_bookmark_with_uuid(uuid, deleted_bookmark);
-    db_manager->delete_bookmark(uuid);
     if (deleted_bookmark.size() > 0) {
+        if (deleted_bookmark[0].first == doc()->get_checksum()) {
+            doc()->delete_bookmark_with_uuid(uuid);
+        }
+        else {
+            db_manager->delete_bookmark(uuid);
+        }
         on_bookmark_deleted(deleted_bookmark[0].second, deleted_bookmark[0].first);
     }
 }
@@ -11047,9 +11052,18 @@ void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::st
 
 void MainWidget::delete_highlight_with_uuid(const std::string& uuid) {
     //db_manager->delete_highlight(uuid);
-    std::optional<std::pair<std::string, Highlight>> deleted_highlight = document_manager->delete_highlight_with_uuid(uuid);
-    if (deleted_highlight.has_value()) {
-        on_highlight_deleted(deleted_highlight->second, deleted_highlight->first);
+    std::vector<std::pair<std::string, Highlight>> deleted_highlight;
+    db_manager->select_highlight_with_uuid(uuid, deleted_highlight);
+
+    if (deleted_highlight.size() > 0) {
+        if (deleted_highlight[0].first == doc()->get_checksum()) {
+            doc()->delete_highlight(deleted_highlight[0].second);
+        }
+        else {
+            db_manager->delete_highlight(uuid);
+        }
+
+        on_highlight_deleted(deleted_highlight[0].second, deleted_highlight[0].first);
     }
 }
 

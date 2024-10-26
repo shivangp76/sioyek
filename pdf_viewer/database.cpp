@@ -1658,12 +1658,24 @@ bool DatabaseManager::select_bookmark(const std::string& book_path, std::vector<
 
 bool DatabaseManager::select_bookmark_with_uuid(const std::string& uuid, std::vector<std::pair<std::string, BookMark>>& out_result) {
     std::wstringstream ss;
-    ss << "select document_path, desc, offset_y, begin_x, begin_y, end_x, end_y, color_red, color_green, color_blue, font_size, font_face, uuid, creation_time, modification_time, is_synced from bookmarks where uuid='" << esc(uuid) << "';";
+    ss << "select document_path, desc, offset_y, begin_x, begin_y, end_x, end_y, uuid, creation_time, modification_time, is_synced  from bookmarks where uuid='" << esc(uuid) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), global_bookmark_select_callback, &out_result, &error_message);
     return handle_error(
         "select_bookmark_with_uuid",
+        error_code,
+        error_message);
+}
+
+bool DatabaseManager::select_highlight_with_uuid(const std::string& uuid, std::vector<std::pair<std::string, Highlight>>& out_result) {
+    std::wstringstream ss;
+    ss << "select document_path, desc, text_annot, begin_x, begin_y, end_x, end_y, type, uuid, creation_time, modification_time, is_synced from highlights where uuid='" << esc(uuid) << "';";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), global_highlight_select_callback, &out_result, &error_message);
+    return handle_error(
+        "select_highlight_with_uuid",
         error_code,
         error_message);
 }
