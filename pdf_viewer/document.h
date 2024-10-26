@@ -219,12 +219,12 @@ public:
     std::string add_portal_with_existing_uuid(const Portal& portal);
     std::string add_highlight(const std::wstring& desc, const std::vector<AbsoluteRect>& highlight_rects, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     std::string add_highlight(const std::wstring& annot, AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
-    std::string delete_highlight_with_index(int index);
-    bool delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
-    std::string delete_bookmark_with_index(int index);
-    std::string delete_portal_with_index(int index);
-    bool delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
-    void delete_highlight(Highlight hl);
+    std::optional<Highlight> delete_highlight_with_index(int index);
+    std::optional<Highlight> delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
+    std::optional<BookMark> delete_bookmark_with_index(int index);
+    std::optional<Portal> delete_portal_with_index(int index);
+    std::optional<BookMark> delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
+    std::optional<Highlight> delete_highlight(Highlight hl);
     std::string get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos);
     std::string get_pinned_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
     std::string get_icon_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
@@ -276,11 +276,11 @@ public:
 
     std::optional<Portal> find_closest_portal(float to_offset_y, int* index = nullptr);
     bool update_portal(Portal new_link);
-    std::string delete_closest_bookmark(float to_y_offset);
-    void delete_bookmark(int index);
-    std::string delete_closest_portal(float to_offset_y);
+    std::optional<BookMark> delete_closest_bookmark(float to_y_offset);
+    std::optional<BookMark> delete_bookmark(int index);
+    std::optional<Portal> delete_closest_portal(float to_offset_y);
     int get_portal_index_with_uuid(const std::string& uuid);
-    void delete_portal_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
+    std::optional<Portal> delete_portal_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     std::vector<BookMark>& get_bookmarks();
     std::vector<Portal>& get_portals();
     std::vector<BookMark> get_sorted_bookmarks() const;
@@ -583,7 +583,7 @@ public:
     void free_document(Document* document);
     std::vector<std::wstring> get_loaded_document_paths();
     void delete_global_mark(char symbol);
-    void delete_highlight_with_uuid(const std::string& uuid);
+    std::optional<std::pair<std::string, Highlight>> delete_highlight_with_uuid(const std::string& uuid);
     void update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     std::vector<std::wstring> get_new_files_from_scan_directory();
     void scan_new_files_from_scan_directory();

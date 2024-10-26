@@ -76,6 +76,7 @@ public:
     bool insert_portal_synced(const std::string& checksum, const Portal& portal);
     bool insert_or_update_portal_synced(bool or_udpate, const std::string& checksum, const Portal& portal);
     bool select_bookmark(const std::string& checksum, std::vector<BookMark>& out_result);
+    bool select_bookmark_with_uuid(const std::string& uuid, std::vector<std::pair<std::string, BookMark>>& out_result);
     bool insert_portal(const std::string& src_checksum,
         const std::string& dst_checksum,
         float dst_offset_y,

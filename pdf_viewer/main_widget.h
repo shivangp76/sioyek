@@ -97,6 +97,12 @@ struct AVSpeechSynthesizer;
 //    QString role_string;
 //
 //};
+
+struct DeletedObject {
+    std::string document_checksum;
+    std::variant<BookMark, Portal, Highlight> object;
+};
+
 struct HighQualityPlayState {
     bool is_playing = false;
     int page_number = -1;
@@ -179,6 +185,8 @@ public:
     std::optional<std::function<std::pair<QString, std::vector<int>>()>> left_status_string_generator = {};
     std::optional<std::function<std::pair<QString, std::vector<int>>()>> right_status_string_generator = {};
     std::optional<std::function<std::pair<QString, std::vector<int>>()>> titlebar_generator = {};
+
+    std::vector<DeletedObject> deleted_objects;
 
     DocumentView* main_document_view = nullptr;
     ScratchPad* scratchpad = nullptr;
@@ -601,9 +609,9 @@ public:
     void handle_overview_to_portal();
     void handle_toggle_typing_mode();
     void handle_delete_highlight_under_cursor();
-    void handle_delete_selected_highlight();
-    void handle_delete_selected_bookmark();
-    void handle_delete_selected_portal();
+    std::optional<Highlight> handle_delete_selected_highlight();
+    std::optional<BookMark> handle_delete_selected_bookmark();
+    std::optional<Portal> handle_delete_selected_portal();
     void handle_start_reading();
     void preload_next_page_for_tts(float rate);
     void handle_start_reading_high_quality(bool should_preload=false);
@@ -994,18 +1002,18 @@ public:
     void call_js_function_with_portal_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void on_new_bookmark_added(const std::string& uuid);
-    void on_bookmark_deleted(const std::string& uuid);
+    void on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum);
     void on_bookmark_edited(const std::string& uuid);
     void on_new_highlight_added(const std::string& uuid);
-    void on_highlight_deleted(const std::string& uuid);
+    void on_highlight_deleted(const Highlight& highlight, const std::string& document_checksum);
     void on_mark_added(const std::string& uuid, char type);
     void on_highlight_annotation_edited(const std::string& uuid);
     void on_highlight_type_edited(const std::string& uuid);
     void delete_highlight_with_uuid(const std::string& uuid);
-    void delete_current_document_highlight_with_uuid(const std::string& uuid);
+    std::optional<Highlight> delete_current_document_highlight_with_uuid(const std::string& uuid);
     void delete_current_document_highlight(Highlight* hl);
     void on_new_portal_added(const std::string& uuid);
-    void on_portal_deleted(const std::string& uuid);
+    void on_portal_deleted(const Portal& uuid, const std::string& document_checksum);
     void on_portal_edited(const std::string& uuid);
     void on_open_document(const std::wstring& path);
     void sync_edited_annot(const std::string& annot_type, const std::string& uuid);
@@ -1020,7 +1028,7 @@ public:
 
 
     void update_highlight_annot_with_uuid(const std::string& uuid, const std::wstring& new_annot);
-    void delete_current_document_bookmark(const std::string& uuid);
+    std::optional<BookMark> delete_current_document_bookmark(const std::string& uuid);
     void delete_current_document_bookmark_with_bookmark(BookMark* bm);
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
@@ -1071,6 +1079,13 @@ public:
     void restart_all_threads();
     void show_citers_with_paper_name(std::wstring paper_name);
     void show_citers_of_current_paper();
+
+    void push_deleted_object(DeletedObject object);
+    void push_deleted_highlight(std::optional<Highlight> hl);
+    void push_deleted_bookmark(std::optional<BookMark> bm);
+    void push_deleted_portal(std::optional<Portal> portal);
+
+    void undo_delete();
 
 
 public slots:

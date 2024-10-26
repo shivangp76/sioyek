@@ -5197,8 +5197,10 @@ void MainWidget::handle_goto_portal_list() {
         },
         [&](Portal* portal) {
             std::string uuid = portal->uuid;
-            doc()->delete_portal_with_uuid(uuid);
-            on_portal_deleted(uuid);
+            std::optional<Portal> deleted_portal = doc()->delete_portal_with_uuid(uuid);
+            if (deleted_portal) {
+                on_portal_deleted(deleted_portal.value(), doc()->get_checksum());
+            }
         },
             [&](Portal* portal) {
                 portal_to_edit = *portal;
@@ -6147,32 +6149,41 @@ void MainWidget::handle_delete_highlight_under_cursor() {
     }
 }
 
-void MainWidget::handle_delete_selected_highlight() {
+std::optional<Highlight> MainWidget::handle_delete_selected_highlight() {
     std::string selected_highlight_uuid = main_document_view->get_selected_highlight_uuid();
+    std::optional<Highlight> deleted_highlight = {};
     if (selected_highlight_uuid.size() > 0) {
         main_document_view->set_selected_highlight_uuid("");
-        delete_current_document_highlight_with_uuid(selected_highlight_uuid);
+        deleted_highlight = delete_current_document_highlight_with_uuid(selected_highlight_uuid);
     }
     validate_render();
+    return deleted_highlight;
 }
 
-void MainWidget::handle_delete_selected_bookmark() {
+std::optional<BookMark> MainWidget::handle_delete_selected_bookmark() {
     std::string selected_bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
+    std::optional<BookMark> deleted_bookmark = {};
     if (selected_bookmark_uuid.size() > 0) {
         main_document_view->set_selected_bookmark_uuid("");
-        delete_current_document_bookmark(selected_bookmark_uuid);
+        deleted_bookmark = delete_current_document_bookmark(selected_bookmark_uuid);
     }
     validate_render();
+    return deleted_bookmark;
 }
 
-void MainWidget::handle_delete_selected_portal() {
+std::optional<Portal> MainWidget::handle_delete_selected_portal() {
     std::string selected_portal_uuid = main_document_view->get_selected_portal_uuid();
+    std::optional<Portal> deleted_portal = {};
     if (selected_portal_uuid.size() > 0) {
         main_document_view->clear_selected_object();
-        doc()->delete_portal_with_uuid(selected_portal_uuid);
-        on_portal_deleted(selected_portal_uuid);
+        deleted_portal = doc()->delete_portal_with_uuid(selected_portal_uuid);
+        if (deleted_portal.has_value()) {
+            on_portal_deleted(deleted_portal.value(), doc()->get_checksum());
+        }
+        //push_deleted_portal(deleted_portal);
     }
     validate_render();
+    return deleted_portal;
 }
 
 void MainWidget::synchronize_pending_link() {
@@ -6306,8 +6317,10 @@ bool MainWidget::event(QEvent* event) {
                                 std::string del_uuid = main_document_view->get_selected_portal_uuid();
                                 main_document_view->clear_selected_object();
                                 //std::string uuid = doc()->get_portals()[del_index].uuid;
-                                doc()->delete_portal_with_uuid(del_uuid);
-                                on_portal_deleted(del_uuid);
+                                std::optional<Portal> deleted_portal = doc()->delete_portal_with_uuid(del_uuid);
+                                if (deleted_portal) {
+                                    on_portal_deleted(deleted_portal.value(), doc()->get_checksum());
+                                }
                                 pop_current_widget();
                                 invalidate_render();
                             }
@@ -7124,6 +7137,7 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
+    qDebug() << deleted_objects.size();
 }
 
 void MainWidget::show_command_menu() {
@@ -8390,14 +8404,21 @@ void MainWidget::update_highlight_annot_with_uuid(const std::string& uuid, const
     on_highlight_annotation_edited(uuid);
 }
 
-void MainWidget::delete_current_document_bookmark(const std::string& uuid) {
-    doc()->delete_bookmark_with_uuid(uuid);
-    on_bookmark_deleted(uuid);
+std::optional<BookMark> MainWidget::delete_current_document_bookmark(const std::string& uuid) {
+    std::optional<BookMark> deleted_bookmark = doc()->delete_bookmark_with_uuid(uuid);
+    if (deleted_bookmark) {
+        on_bookmark_deleted(deleted_bookmark.value(), doc()->get_checksum());
+    }
+    return deleted_bookmark;
 }
 
 void MainWidget::delete_global_bookmark(const std::string& uuid) {
+    std::vector<std::pair<std::string, BookMark>> deleted_bookmark;
+    db_manager->select_bookmark_with_uuid(uuid, deleted_bookmark);
     db_manager->delete_bookmark(uuid);
-    on_bookmark_deleted(uuid);
+    if (deleted_bookmark.size() > 0) {
+        on_bookmark_deleted(deleted_bookmark[0].second, deleted_bookmark[0].first);
+    }
 }
 
 void MainWidget::change_selected_highlight_text_annot(const std::wstring& new_text) {
@@ -10983,29 +11004,40 @@ void MainWidget::open_external_text_editor() {
     }
 }
 
-void MainWidget::on_bookmark_deleted(const std::string& uuid) {
+void MainWidget::on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum){
+    DeletedObject deleted_bookmark_object;
+    deleted_bookmark_object.document_checksum = document_checksum;
+    deleted_bookmark_object.object = bookmark;
+    deleted_objects.push_back(deleted_bookmark_object);
+
     if (delete_bookmark_hook_function_name) {
-        call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
+        call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(bookmark.uuid));
     }
 
     // if we have deleted a bookmark which shows the output of a command
     // we need to kill the process and remove it from shell_output_bookmarks
     for (int i = 0; i < shell_output_bookmarks.size(); i++){
-        if (shell_output_bookmarks[i].uuid == uuid){
+        if (shell_output_bookmarks[i].uuid == bookmark.uuid) {
             kill_process(shell_output_bookmarks[i].pid);
             remove_finished_shell_bookmark_with_index(i);
             break;
         }
     }
 
-    sync_deleted_annot("bookmark", uuid);
+    sync_deleted_annot("bookmark", bookmark.uuid);
 }
 
-void MainWidget::on_highlight_deleted(const std::string& uuid){
+void MainWidget::on_highlight_deleted(const Highlight& hl, const std::string& document_checksum){
+
+    DeletedObject deleted_highlight_object;
+    deleted_highlight_object.document_checksum = document_checksum;
+    deleted_highlight_object.object = hl;
+    deleted_objects.push_back(deleted_highlight_object);
+
     if (delete_highlight_hook_function_name) {
-        call_async_js_function_with_args(delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid));
+        call_async_js_function_with_args(delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(hl.uuid));
     }
-    sync_deleted_annot("highlight", uuid);
+    sync_deleted_annot("highlight", hl.uuid);
 }
 
 void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::string& uuid) {
@@ -11015,19 +11047,26 @@ void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::st
 
 void MainWidget::delete_highlight_with_uuid(const std::string& uuid) {
     //db_manager->delete_highlight(uuid);
-    document_manager->delete_highlight_with_uuid(uuid);
-    on_highlight_deleted(uuid);
+    std::optional<std::pair<std::string, Highlight>> deleted_highlight = document_manager->delete_highlight_with_uuid(uuid);
+    if (deleted_highlight.has_value()) {
+        on_highlight_deleted(deleted_highlight->second, deleted_highlight->first);
+    }
 }
 
-void MainWidget::delete_current_document_highlight_with_uuid(const std::string& uuid) {
-    doc()->delete_highlight_with_uuid(uuid);
-    on_highlight_deleted(uuid);
+std::optional<Highlight> MainWidget::delete_current_document_highlight_with_uuid(const std::string& uuid) {
+    std::optional<Highlight> deleted_highlight = doc()->delete_highlight_with_uuid(uuid);
+    if (deleted_highlight.has_value()) {
+        on_highlight_deleted(deleted_highlight.value(), doc()->get_checksum());
+    }
+    return deleted_highlight;
 }
 
 void MainWidget::delete_current_document_highlight(Highlight* hl) {
     std::string uuid = hl->uuid;
-    doc()->delete_highlight(*hl);
-    on_highlight_deleted(uuid);
+    std::optional<Highlight> deleted_highlight = doc()->delete_highlight(*hl);
+    if (deleted_highlight) {
+        on_highlight_deleted(deleted_highlight.value(), doc()->get_checksum());
+    }
 }
 
 void MainWidget::delete_current_document_bookmark_with_bookmark(BookMark* bm) {
@@ -11135,12 +11174,18 @@ void MainWidget::on_new_portal_added(const std::string& uuid) {
     doc()->update_last_local_edit_time();
 }
 
-void MainWidget::on_portal_deleted(const std::string& uuid) {
+void MainWidget::on_portal_deleted(const Portal& deleted_portal, const std::string& document_checksum) {
+
+    DeletedObject deleted_portal_object;
+    deleted_portal_object.document_checksum = document_checksum;
+    deleted_portal_object.object = deleted_portal;
+    deleted_objects.push_back(deleted_portal_object);
+
     if (delete_portal_hook_function_name) {
         call_async_js_function_with_args(delete_portal_hook_function_name.value(),
-            QJsonArray() << QString::fromStdString(uuid));
+            QJsonArray() << QString::fromStdString(deleted_portal.uuid));
     }
-    sync_deleted_annot("portal", uuid);
+    sync_deleted_annot("portal", deleted_portal.uuid);
 }
 
 void MainWidget::on_portal_edited(const std::string& uuid) {
@@ -11996,4 +12041,48 @@ void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
 void MainWidget::show_citers_of_current_paper() {
     std::wstring paper_name = doc()->detect_paper_name();
     show_citers_with_paper_name(paper_name);
+}
+
+void MainWidget::push_deleted_object(DeletedObject object) {
+    deleted_objects.push_back(object);
+}
+
+void MainWidget::undo_delete() {
+    if (deleted_objects.size() > 0) {
+        DeletedObject& object_to_undo = deleted_objects.back();
+        Document* target_doc = document_manager->get_document_with_checksum(object_to_undo.document_checksum);
+
+        if (std::holds_alternative<Highlight>(object_to_undo.object)) {
+            Highlight highlight_to_undo = std::get<Highlight>(object_to_undo.object);
+            target_doc->add_highlight_with_existing_uuid(highlight_to_undo);
+        }
+        else if (std::holds_alternative<BookMark>(object_to_undo.object)) {
+            BookMark bookmark_to_undo = std::get<BookMark>(object_to_undo.object);
+            target_doc->add_bookmark_with_existing_uuid(bookmark_to_undo);
+        }
+        else if (std::holds_alternative<Portal>(object_to_undo.object)) {
+            Portal portal_to_undo = std::get<Portal>(object_to_undo.object);
+            target_doc->add_portal_with_existing_uuid(portal_to_undo);
+        }
+
+        deleted_objects.pop_back();
+    }
+}
+
+void MainWidget::push_deleted_highlight(std::optional<Highlight> hl) {
+    if (hl) {
+        push_deleted_object(DeletedObject{ doc()->get_checksum(),  hl.value() });
+    }
+}
+
+void MainWidget::push_deleted_bookmark(std::optional<BookMark> bm) {
+    if (bm) {
+        push_deleted_object(DeletedObject{ doc()->get_checksum(), bm.value() });
+    }
+}
+
+void MainWidget::push_deleted_portal(std::optional<Portal> portal) {
+    if (portal) {
+        push_deleted_object(DeletedObject{ doc()->get_checksum(), portal.value() });
+    }
 }

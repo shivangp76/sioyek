@@ -499,84 +499,87 @@ int Document::find_closest_highlight_index(const std::vector<Highlight>& sorted_
     return min_index;
 }
 
-std::string Document::delete_closest_bookmark(float to_y_offset) {
+std::optional<BookMark> Document::delete_closest_bookmark(float to_y_offset) {
     int closest_index = find_closest_bookmark_index(bookmarks, to_y_offset);
     if (closest_index > -1) {
-        std::string uuid = bookmarks[closest_index].uuid;
-        db_manager->delete_bookmark(bookmarks[closest_index].uuid);
+        BookMark deleted_bookmark = bookmarks[closest_index];
+        db_manager->delete_bookmark(deleted_bookmark.uuid);
         is_annotations_dirty = true;
         bookmarks.erase(bookmarks.begin() + closest_index);
-        return uuid;
+        return deleted_bookmark;
     }
-    return "";
+    return {};
 }
 
-void Document::delete_bookmark(int index) {
+std::optional<BookMark> Document::delete_bookmark(int index) {
 
     if ((index != -1) && (index < bookmarks.size())) {
         if (db_manager->delete_bookmark(bookmarks[index].uuid)) {
+            BookMark deleted_bookmark = bookmarks[index];
             bookmarks.erase(bookmarks.begin() + index);
             is_annotations_dirty = true;
+            return deleted_bookmark;
         }
     }
+    return {};
 }
 
-std::string Document::delete_highlight_with_index(int index) {
+std::optional<Highlight> Document::delete_highlight_with_index(int index) {
     Highlight highlight_to_delete = highlights[index];
 
     db_manager->delete_highlight(highlight_to_delete.uuid);
     highlights.erase(highlights.begin() + index);
     is_annotations_dirty = true;
-    return highlight_to_delete.uuid;
+    return highlight_to_delete;
 }
 
-bool Document::delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
+std::optional<Highlight> Document::delete_highlight_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
     int index = get_highlight_index_with_uuid(uuid);
-    if (index < 0) return false;
+    if (index < 0) return {};
     if (delete_only_if_synced && (index >= 0) && (!highlights[index].is_synced)) {
-        return false;
+        return {};
     }
 
-    return delete_highlight_with_index(index).size() > 0;
+    return delete_highlight_with_index(index);
     //return db_manager->delete_highlight(uuid);
 }
 
-bool Document::delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
+std::optional<BookMark> Document::delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
     int index = get_bookmark_index_with_uuid(uuid);
-    if (index < 0) return false;
+    if (index < 0) return {};
     if (delete_only_if_synced && (index >= 0) && (!bookmarks[index].is_synced)) {
-        return false;
+        return {};
     }
 
-    return delete_bookmark_with_index(index).size() > 0;
+    return delete_bookmark_with_index(index);
     //return db_manager->delete_highlight(uuid);
 }
 
-std::string Document::delete_bookmark_with_index(int index) {
+std::optional<BookMark> Document::delete_bookmark_with_index(int index) {
     BookMark bookmark_to_delete = bookmarks[index];
 
     db_manager->delete_bookmark(bookmark_to_delete.uuid);
     bookmarks.erase(bookmarks.begin() + index);
     is_annotations_dirty = true;
-    return bookmark_to_delete.uuid;
+    return bookmark_to_delete;
 }
 
-std::string Document::delete_portal_with_index(int index) {
+std::optional<Portal> Document::delete_portal_with_index(int index) {
     Portal portal_to_delete = portals[index];
 
     db_manager->delete_portal(portal_to_delete.uuid);
     portals.erase(portals.begin() + index);
     is_annotations_dirty = true;
-    return portal_to_delete.uuid;
+    return portal_to_delete;
 }
 
-void Document::delete_highlight(Highlight hl) {
+std::optional<Highlight> Document::delete_highlight(Highlight hl) {
     for (size_t i = (highlights.size() - 1); i >= 0; i--) {
         if (highlights[i] == hl) {
-            delete_highlight_with_index(i);
-            return;
+            return delete_highlight_with_index(i);
         }
     }
+    return {};
 }
 
 std::optional<Portal> Document::find_closest_portal(float to_offset_y, int* index) {
@@ -601,16 +604,16 @@ bool Document::update_portal(Portal new_portal) {
     return false;
 }
 
-std::string Document::delete_closest_portal(float to_offset_y) {
+std::optional<Portal> Document::delete_closest_portal(float to_offset_y) {
     int closest_index = -1;
     if (find_closest_portal(to_offset_y, &closest_index)) {
-        std::string uuid = portals[closest_index].uuid;
-        db_manager->delete_portal(uuid);
+        Portal deleted_portal = portals[closest_index];
+        db_manager->delete_portal(deleted_portal.uuid);
         portals.erase(portals.begin() + closest_index);
         is_annotations_dirty = true;
-        return uuid;
+        return deleted_portal;
     }
-    return "";
+    return {};
 }
 
 int Document::get_portal_index_with_uuid(const std::string& uuid) {
@@ -622,17 +625,20 @@ int Document::get_portal_index_with_uuid(const std::string& uuid) {
     return -1;
 }
 
-void Document::delete_portal_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
+std::optional<Portal> Document::delete_portal_with_uuid(const std::string& uuid, bool delete_only_if_synced) {
     int index = get_portal_index_with_uuid(uuid);
-    if (index < 0) return;
+    if (index < 0) return {};
 
     if (delete_only_if_synced && (index >= 0) && (!portals[index].is_synced)) {
-        return;
+        return {};
     }
     if (index > -1) {
+        Portal deleted_portal = portals[index];
         db_manager->delete_portal(uuid);
         portals.erase(portals.begin() + index);
+        return deleted_portal;
     }
+    return {};
 }
 
 std::vector<BookMark>& Document::get_bookmarks() {
@@ -5132,10 +5138,14 @@ ParsedUri Document::parse_link(const PdfLink& link) {
     return res;
 }
 
-void DocumentManager::delete_highlight_with_uuid(const std::string& uuid) {
+std::optional<std::pair<std::string, Highlight>> DocumentManager::delete_highlight_with_uuid(const std::string& uuid) {
     for (auto [path, doc] : cached_documents) {
-        doc->delete_highlight_with_uuid(uuid);
+        std::optional<Highlight> deleted_highlight = doc->delete_highlight_with_uuid(uuid);
+        if (deleted_highlight.has_value()) {
+            return std::make_pair(doc->get_checksum(), deleted_highlight.value());
+        }
     }
+    return {};
     //db_manager->delete_highlight(uuid);
 }
 

@@ -1656,6 +1656,18 @@ bool DatabaseManager::select_bookmark(const std::string& book_path, std::vector<
         error_message);
 }
 
+bool DatabaseManager::select_bookmark_with_uuid(const std::string& uuid, std::vector<std::pair<std::string, BookMark>>& out_result) {
+    std::wstringstream ss;
+    ss << "select document_path, desc, offset_y, begin_x, begin_y, end_x, end_y, color_red, color_green, color_blue, font_size, font_face, uuid, creation_time, modification_time, is_synced from bookmarks where uuid='" << esc(uuid) << "';";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), global_bookmark_select_callback, &out_result, &error_message);
+    return handle_error(
+        "select_bookmark_with_uuid",
+        error_code,
+        error_message);
+}
+
 bool DatabaseManager::get_path_from_hash(const std::string& checksum, std::vector<std::wstring>& out_paths) {
     std::wstringstream ss;
     ss << "select path from document_hash where hash='" << esc(checksum) << "';";

@@ -251,20 +251,21 @@ void DocumentView::goto_portal(Portal* link) {
     }
 }
 
-std::string DocumentView::delete_closest_portal() {
+std::optional<Portal> DocumentView::delete_closest_portal() {
     if (current_document) {
         return current_document->delete_closest_portal(get_offsets().y);
     }
+    return {};
 }
 
-std::string DocumentView::delete_closest_bookmark() {
+std::optional<BookMark> DocumentView::delete_closest_bookmark() {
     if (current_document) {
         return delete_closest_bookmark_to_offset(get_offsets().y);
     }
-    return "";
+    return {};
 }
 
-std::string DocumentView::delete_closest_bookmark_to_offset(float offset) {
+std::optional<BookMark> DocumentView::delete_closest_bookmark_to_offset(float offset) {
     return current_document->delete_closest_bookmark(offset);
 }
 

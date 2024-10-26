@@ -4017,8 +4017,10 @@ public:
     static inline const std::string hname = "Delete the closest portal";
     DeletePortalCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        std::string uuid = widget->main_document_view->delete_closest_portal();
-        widget->on_portal_deleted(uuid);
+        std::optional<Portal> deleted_portal = widget->main_document_view->delete_closest_portal();
+        if (deleted_portal) {
+            widget->on_portal_deleted(deleted_portal.value(), widget->doc()->get_checksum());
+        }
         widget->validate_render();
     }
 };
@@ -4029,8 +4031,10 @@ public:
     static inline const std::string hname = "Delete the closest bookmark";
     DeleteBookmarkCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        std::string uuid = widget->main_document_view->delete_closest_bookmark();
-        widget->on_bookmark_deleted(uuid);
+        std::optional<BookMark> deleted_bookmark = widget->main_document_view->delete_closest_bookmark();
+        if (deleted_bookmark) {
+            widget->on_bookmark_deleted(deleted_bookmark.value(), widget->doc()->get_checksum());
+        }
         widget->validate_render();
     }
 };
@@ -4311,7 +4315,10 @@ public:
     DeleteHighlightCommand(MainWidget* w) : GenericHighlightCommand(cname, w) {};
 
     void perform_with_highlight_selected() override {
-        widget->handle_delete_selected_highlight();
+        std::optional<Highlight> deleted_highlight = widget->handle_delete_selected_highlight();
+        //if (deleted_highlight) {
+        //    widget->push_deleted_object({ widget->doc()->get_checksum(), deleted_highlight.value() });
+        //}
     }
 };
 
@@ -6675,6 +6682,19 @@ public:
 
 };
 
+class UndoDeleteCommand : public Command {
+public:
+    inline static const std::string cname = "undo_delete";
+    inline static const std::string hname = "Undo deleted object";
+
+    UndoDeleteCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->undo_delete();
+    }
+
+};
+
 class FulltextSearchCommand : public Command {
 public:
     static inline const std::string cname = "search_all_indexed_documents";
@@ -8246,6 +8266,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowTouchSettingsMenu>(this);
     register_command<ShowTouchDrawingMenu>(this);
     register_command<DebugCommand>(this);
+    register_command<UndoDeleteCommand>(this);
     register_command<FulltextSearchCommand>(this);
     register_command<DocumentationSearchCommand>(this);
     register_command<FulltextSearchCurrentDocumentCommand>(this);

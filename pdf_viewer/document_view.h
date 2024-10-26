@@ -330,10 +330,10 @@ public:
     std::optional<Portal> find_closest_portal(bool limit = false);
     std::optional<BookMark> find_closest_bookmark();
     void goto_portal(Portal* link);
-    std::string delete_closest_portal();
-    std::string delete_closest_bookmark();
+    std::optional<Portal> delete_closest_portal();
+    std::optional<BookMark> delete_closest_bookmark();
 
-    std::string delete_closest_bookmark_to_offset(float offset);
+    std::optional<BookMark> delete_closest_bookmark_to_offset(float offset);
     float get_offset_x();
     float get_offset_y();
     AbsoluteDocumentPos get_offsets();
