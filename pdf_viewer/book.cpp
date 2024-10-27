@@ -9,6 +9,7 @@ extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern QString computer_modern_font_family;
 extern std::wstring BOOKMARK_FONT_FACE;
 extern int BACKGROUND_BOOKMARKS_PIXEL_BUDGET;
+extern float HIGHLIGHT_COLORS[26 * 3];
 
 bool operator==(const DocumentViewState& lhs, const DocumentViewState& rhs)
 {
@@ -247,6 +248,9 @@ std::wstring  BookMark::get_style_text() const {
             if (space_index != std::wstring::npos) {
                 return description.substr(1, space_index - 1);
             }
+            else {
+                return description.substr(1);
+            }
         }
     }
 
@@ -350,6 +354,15 @@ QString BookMark::get_display_markdown_or_text(QString res){
         }
 
         return res;
+    }
+    else if (res.startsWith("#")) {
+        int first_space_index = res.indexOf(" ");
+        if (first_space_index >= 0) {
+            return res.mid(first_space_index + 1);
+        }
+        else {
+            return "";
+        }
     }
     else {
         return res;
@@ -857,4 +870,39 @@ void Portal::set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos) {
 
 AbsoluteDocumentPos OverviewState::get_absolute_pos() {
     return AbsoluteDocumentPos{ absolute_offset_x, absolute_offset_y };
+}
+
+std::optional<QColor> get_color_from_type(std::optional<char> t) {
+    if (t.has_value()) {
+        if (t.value() >= 'a' && t.value() <= 'z') {
+            int index = t.value() - 'a';
+            return QColor::fromRgbF(HIGHLIGHT_COLORS[3 * index], HIGHLIGHT_COLORS[3 * index + 1], HIGHLIGHT_COLORS[3 * index + 2]);
+        }
+    }
+    return {};
+}
+
+std::optional<QColor> BookMark::get_background_color() {
+    std::optional<char> background_type = get_background_type();
+    if (background_type.has_value()) {
+        return get_color_from_type(background_type);
+
+    }
+    return {};
+}
+
+std::optional<QColor> BookMark::get_border_color() {
+    std::optional<char> border_type = get_type();
+    if (border_type.has_value()) {
+        return get_color_from_type(border_type);
+    }
+    return {};
+}
+
+std::optional<QColor> BookMark::get_text_color() {
+    std::optional<char> text_type = get_text_type();
+    if (text_type.has_value()) {
+        return get_color_from_type(text_type);
+    }
+    return QColor::fromRgbF(color[0], color[1], color[2]);
 }

@@ -19,6 +19,7 @@
 #include <set>
 
 #include <mupdf/pdf.h>
+#include <mupdf/pdf/annot.h>
 
 #include "sqlite3.h"
 #include "checksum.h"
@@ -2428,8 +2429,43 @@ void Document::embed_annotations(std::wstring new_file_path) {
         fz_page* page = load_cached_page(page_number);
         pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
         pdf_annot* bookmark_annot;
-        if (bookmark.is_freetext() && (!bookmark.is_box())) {
+        int bm_size = BookMark::get_display_markdown_or_text(QString::fromStdWString(bookmark.description)).size();
+
+        QString display_text = BookMark::get_display_markdown_or_text(QString::fromStdWString(bookmark.description));
+
+        float bookmark_text_color[3];
+        bookmark_text_color[0] = bookmark.color[0];
+        bookmark_text_color[1] = bookmark.color[1];
+        bookmark_text_color[2] = bookmark.color[2];
+
+        if (bookmark.is_freetext() && (!bookmark.is_box() || display_text.size() != 0)) {
             bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_FREE_TEXT);
+
+            std::optional<QColor> border_color = bookmark.get_border_color();
+            std::optional<QColor> background_color = bookmark.get_background_color();
+            std::optional<QColor> text_color = bookmark.get_text_color();
+
+            if (text_color.has_value()) {
+                bookmark_text_color[0] = text_color->redF();
+                bookmark_text_color[1] = text_color->greenF();
+                bookmark_text_color[2] = text_color->blueF();
+            }
+
+
+            if (border_color.has_value()) {
+                pdf_set_annot_border_width(context, bookmark_annot, 1);
+            }
+
+            if (background_color.has_value()) {
+                float bg[3] = {0};
+                background_color->getRgbF(&bg[0], &bg[1], &bg[2]);
+                pdf_obj* bg_color = pdf_new_array(context, pdf_doc, 3);
+                pdf_array_push_real(context, bg_color, bg[0]);
+                pdf_array_push_real(context, bg_color, bg[1]);
+                pdf_array_push_real(context, bg_color, bg[2]);
+                pdf_dict_put(context, pdf_annot_obj(context, bookmark_annot), PDF_NAME(C), bg_color);
+                pdf_drop_obj(context, bg_color);
+            }
         }
         else if (bookmark.is_box()) {
             bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_SQUARE);
@@ -2442,12 +2478,13 @@ void Document::embed_annotations(std::wstring new_file_path) {
             }
 
             pdf_set_annot_color(context, bookmark_annot, 3, color);
+            //pdf_set_annot_interior_color(context, bookmark_annot, 3, color);
         }
         else {
             bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_TEXT);
         }
 
-        std::string encoded_bookmark_text = utf8_encode(bookmark.description);
+        std::string encoded_bookmark_text = display_text.toStdString();
 
         PagelessDocumentRect annot_rect;
         if (bookmark.is_freetext()) {
@@ -2455,7 +2492,7 @@ void Document::embed_annotations(std::wstring new_file_path) {
 
             std::string encoded_font_face = utf8_encode(bookmark.font_face);
             const char* font_face = bookmark.font_face.size() == 0 ? "Times New Roman" : encoded_font_face.c_str();
-            pdf_set_annot_default_appearance(context, bookmark_annot, font_face, bookmark.font_size, 3, bookmark.color);
+            pdf_set_annot_default_appearance(context, bookmark_annot, font_face, bookmark.font_size, 3, bookmark_text_color);
         }
         else if (bookmark.is_marked()) {
             //DocumentPos begin_page_pos = absolute_to_page_pos_uncentered({ bookmark.begin_x, bookmark.begin_y });

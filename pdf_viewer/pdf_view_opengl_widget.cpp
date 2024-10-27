@@ -1238,6 +1238,11 @@ void PdfViewOpenGLWidget::my_render() {
                     if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#summarize"))) {
 
                         QString box_text = desc_qstring.split(' ')[0];
+                        if (bm_type.has_value()) {
+                            painter.setPen(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * (bm_type.value() - 'a')]));
+                            painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        }
+
                         if (!bm_type.has_value()){
                             //painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                         }
@@ -1247,7 +1252,6 @@ void PdfViewOpenGLWidget::my_render() {
                             if (mode >= 'a' && mode <= 'z') {
                                 std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
                                 painter.setPen(convert_float3_to_qcolor(&box_color[0]));
-                                painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                             }
                             else if (mode >= 'A' && mode <= 'Z') {
                                 mode = mode - 'A' + 'a';

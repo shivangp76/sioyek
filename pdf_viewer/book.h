@@ -224,6 +224,10 @@ struct BookMark : Annotation {
     std::wstring  get_style_text() const;
     QString get_render_text() const;
 
+    std::optional<QColor> get_background_color();
+    std::optional<QColor> get_border_color();
+    std::optional<QColor> get_text_color();
+
     std::optional<AbsoluteRect> get_rectangle() const override;
     std::optional<AbsoluteRect> get_selection_rectangle() const;
     //std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
