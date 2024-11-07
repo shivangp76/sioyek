@@ -253,6 +253,7 @@ extern bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME;
 extern bool ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW;
 extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
+extern bool FANCY_UI_MENUS;
 
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
@@ -5255,7 +5256,7 @@ void MainWidget::handle_goto_bookmark() {
         handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
         };
 
-    if (TOUCH_MODE) {
+    if (TOUCH_MODE || (!FANCY_UI_MENUS)) {
         std::vector<std::wstring> option_names;
         std::vector<std::wstring> option_location_wstrings;
         //std::vector<BookMark> bookmarks;
@@ -5302,6 +5303,7 @@ void MainWidget::handle_goto_bookmark() {
 
         set_current_widget(bookmark_widget);
         show_current_widget();
+
     }
 }
 
@@ -5348,7 +5350,7 @@ void MainWidget::handle_goto_bookmark_global() {
             file_checksums.push_back(QString::fromStdString(checksum));
         }
     }
-    if (TOUCH_MODE) {
+    if (TOUCH_MODE || (!FANCY_UI_MENUS)) {
         std::vector<std::wstring> descs;
         std::vector<std::wstring> file_names_wstring;
         std::vector<std::pair<BookState, std::string>> book_states;
@@ -5512,31 +5514,57 @@ void MainWidget::handle_goto_highlight() {
 
     }
     else {
-        HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(page_numbers));
-        highlight_selector_widget->set_selected_index(closest_highlight_index);
+        if (FANCY_UI_MENUS) {
+            HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(page_numbers));
+            highlight_selector_widget->set_selected_index(closest_highlight_index);
 
-        highlight_selector_widget->set_select_fn(
-            [&, highlight_selector_widget, handle_select_fn](int index) {
-                Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-                handle_select_fn(hl);
-            }
-        );
+            highlight_selector_widget->set_select_fn(
+                [&, highlight_selector_widget, handle_select_fn](int index) {
+                    Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                    handle_select_fn(hl);
+                }
+            );
 
-        highlight_selector_widget->set_delete_fn(
-            [&, highlight_selector_widget, handle_delete_fn](int index) {
-                Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-                handle_delete_fn(hl);
-            }
-        );
-        highlight_selector_widget->set_edit_fn(
-            [&, highlight_selector_widget, handle_edit_fn](int index) {
-                Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-                handle_edit_fn(hl);
-            }
-        );
+            highlight_selector_widget->set_delete_fn(
+                [&, highlight_selector_widget, handle_delete_fn](int index) {
+                    Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                    handle_delete_fn(hl);
+                }
+            );
+            highlight_selector_widget->set_edit_fn(
+                [&, highlight_selector_widget, handle_edit_fn](int index) {
+                    Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                    handle_edit_fn(hl);
+                }
+            );
 
-        set_current_widget(highlight_selector_widget);
-        show_current_widget();
+            set_current_widget(highlight_selector_widget);
+            show_current_widget();
+        }
+        else {
+            std::vector<std::wstring> option_names;
+            std::vector<std::wstring> option_location_wstrings;
+
+            for (auto highlight : highlights) {
+                option_names.push_back(ITEM_LIST_PREFIX + L" " + highlight.description);
+                int page = highlight.selection_begin.to_document(doc()).page;
+                option_location_wstrings.push_back(get_page_formatted_string(page + 1));
+            }
+
+            set_filtered_select_menu<Highlight>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, highlights, closest_highlight_index,
+                [&, handle_select_fn](Highlight* hl) {
+                    handle_select_fn(*hl);
+                },
+                [&, handle_delete_fn](Highlight* hl) {
+                    handle_delete_fn(*hl);
+                },
+                [&, handle_edit_fn](Highlight* hl) {
+                    handle_edit_fn(*hl);
+                }
+            );
+            show_current_widget();
+
+        }
     }
 }
 
@@ -5614,23 +5642,49 @@ void MainWidget::handle_goto_highlight_global() {
         show_current_widget();
     }
     else {
+        if (FANCY_UI_MENUS) {
+            HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(file_names), std::move(file_checksums));
 
-        HighlightSelectorWidget* highlight_selector_widget = HighlightSelectorWidget::from_highlights(std::move(highlights), this, std::move(file_names), std::move(file_checksums));
+            highlight_selector_widget->set_select_fn(
+                [&, highlight_selector_widget, handle_select_fn](int index) {
+                    Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
+                    std::string checksum = highlight_selector_widget->highlight_model->checksums[index].toStdString();
+                    handle_select_fn(hl.selection_begin.y, checksum);
+                });
 
-        highlight_selector_widget->set_select_fn(
-            [&, highlight_selector_widget, handle_select_fn](int index) {
+            highlight_selector_widget->set_delete_fn([&, highlight_selector_widget, handle_delete_fn](int index) {
                 Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-                std::string checksum = highlight_selector_widget->highlight_model->checksums[index].toStdString();
-                handle_select_fn(hl.selection_begin.y, checksum);
-            });
+                handle_delete_fn(hl.uuid);
+                });
 
-        highlight_selector_widget->set_delete_fn([&, highlight_selector_widget, handle_delete_fn](int index) {
-            Highlight hl = highlight_selector_widget->highlight_model->highlights[index];
-            handle_delete_fn(hl.uuid);
-            });
+            set_current_widget(highlight_selector_widget);
+            show_current_widget();
+        }
+        else {
+            std::vector<std::wstring> descs;
+            std::vector<std::wstring> file_names_wstring;
+            std::vector<std::pair<BookState, std::string>> book_states;
+            for (int i = 0; i < highlights.size(); i++) {
+                descs.push_back(highlights[i].description);
+                file_names_wstring.push_back(file_names[i].toStdWString());
+                BookState book_state;
+                book_state.document_path = file_checksums[i].toStdWString();
+                book_state.offset_y = highlights[i].selection_begin.y;
+                book_states.push_back(std::make_pair(book_state, highlights[i].uuid));
+            }
 
-        set_current_widget(highlight_selector_widget);
-        show_current_widget();
+            set_filtered_select_menu<std::pair<BookState, std::string>>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
+                [&, handle_select_fn](std::pair<BookState, std::string>* book_state) {
+                    handle_select_fn(book_state->first.offset_y, book_state->second);
+
+                },
+                [&, handle_delete_fn](std::pair<BookState, std::string>* book_state) {
+                    handle_delete_fn(book_state->second);
+                }
+            );
+            show_current_widget();
+
+        }
     }
 }
 

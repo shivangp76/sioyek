@@ -241,6 +241,7 @@ bool SINGLE_CLICK_SELECTS_WORDS = false;
 bool USE_LEGACY_KEYBINDS = false;
 bool MULTILINE_MENUS = true;
 bool START_WITH_HELPER_WINDOW = false;
+bool FANCY_UI_MENUS = true;
 std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 
 
@@ -1190,6 +1191,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"use_legacy_keybinds", &USE_LEGACY_KEYBINDS);
     add_bool(L"multiline_menus", &MULTILINE_MENUS);
     add_bool(L"start_with_helper_window", &START_WITH_HELPER_WINDOW);
+    add_bool(L"fancy_ui_menus", &FANCY_UI_MENUS);
     add_bool(L"prerender_next_page_presentation", &PRERENDER_NEXT_PAGE);
     add_bool(L"highlight_middle_click", &HIGHLIGHT_MIDDLE_CLICK);
     add_bool(L"auto_rename_downloaded_papers", &AUTO_RENAME_DOWNLOADED_PAPERS);
