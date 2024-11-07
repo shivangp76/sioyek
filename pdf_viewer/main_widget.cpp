@@ -5879,7 +5879,7 @@ void MainWidget::handle_open_prev_doc() {
         }
         };
 
-    if (TOUCH_MODE) {
+    if (TOUCH_MODE || (!FANCY_UI_MENUS)) {
         std::vector<std::wstring> opened_docs_names;
         std::vector<std::wstring> opened_docs_actual_names;
         std::vector<OpenedBookInfo> opened_docs = get_all_opened_books();
