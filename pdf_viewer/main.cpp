@@ -859,8 +859,10 @@ int main(int argc, char* args[]) {
         use_single_instance = false;
     }
 
-#ifndef SIOYEK_MOBILE
-    RunGuard guard("sioyek");
+#ifndef SIOYEK_ANDROID
+    char* instance_name = get_argv_value(argc, args, "--instance-name");
+    RunGuard guard(instance_name ? instance_name : "sioyek");
+
     if (!guard.isPrimary()) {
         QStringList sent_args = convert_arguments(app.arguments());
         bool should_wait = parser->isSet("wait-for-response");

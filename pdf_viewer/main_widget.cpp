@@ -5891,8 +5891,6 @@ void MainWidget::handle_open_prev_doc() {
             current_path = doc()->get_path();
         }
 
-
-
         for (const auto& opened_doc : opened_docs) {
             if (QString::fromStdString(opened_doc.checksum).startsWith("SERVER://")) {
                 opened_docs_names.push_back(L"[" + SERVER_SYMBOL + L"] " + opened_doc.file_name.toStdWString());
