@@ -11,6 +11,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
     int current_colorscheme_index,
     bool is_logged_in,
     bool is_current_document_synced,
+    float current_brightness,
     QWidget* parent) : QWidget(parent) {
 
     setAttribute(Qt::WA_NoMousePropagation);
@@ -30,6 +31,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
     quick_widget->rootContext()->setContextProperty("_fit", fit_mode);
     quick_widget->rootContext()->setContextProperty("_loggedIn", is_logged_in);
     quick_widget->rootContext()->setContextProperty("_synced", is_current_document_synced);
+    quick_widget->rootContext()->setContextProperty("_currentBrightness", current_brightness);
 
     quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchMainMenu.qml"));
 

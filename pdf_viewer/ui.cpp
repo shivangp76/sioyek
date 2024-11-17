@@ -173,6 +173,11 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     bool fit_mode = main_widget->main_document_view->last_smart_fit_page.has_value();
     bool is_logged_in = main_widget->is_logged_in();
     bool is_current_document_synced = main_widget->is_current_document_available_on_server();
+    #ifdef SIOYEK_ANDROID
+    float current_brightness = android_brightness_get();
+    #else
+    float current_brightness = 0.5f;
+    #endif
 
     main_menu = new TouchMainMenu(fit_mode,
         portaling,
@@ -183,6 +188,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         current_colorscheme_index,
         is_logged_in,
         is_current_document_synced,
+        current_brightness,
         this);
 
 

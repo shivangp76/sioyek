@@ -47,7 +47,7 @@ Rectangle{
     property bool is_fit: _fit;
     property bool is_ruler: _ruler;
     property bool is_locked: _locked;
-    property real currentBrightness: _currentBrightness;
+    property real currentBrightness: _currentBrightness * 100;
 
     ColumnLayout{
         spacing: 0

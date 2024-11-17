@@ -613,7 +613,18 @@ public class SioyekActivity extends QtActivity{
 
     float getScreenBrightness(){
         WindowManager.LayoutParams lp = getWindow().getAttributes();
-        return lp.screenBrightness;
+        if (lp.screenBrightness == -1){
+            try{
+                float currentBrightness = Settings.System.getFloat(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS);
+                return currentBrightness / 255.0f;
+            }
+            catch(Settings.SettingNotFoundException e){
+                return 0.5f;
+            }
+        }
+        else{
+            return lp.screenBrightness;
+        }
     }
 
 }

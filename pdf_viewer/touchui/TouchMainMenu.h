@@ -18,6 +18,7 @@ public:
         int current_colorscheme_index,
         bool is_logged_in,
         bool is_current_document_synced,
+        float current_brightness,
         QWidget* parent);
     void resizeEvent(QResizeEvent* resize_event) override;
 
