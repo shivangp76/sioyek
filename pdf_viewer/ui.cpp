@@ -314,6 +314,13 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         main_widget->run_command_with_name("search", true);
         });
 
+    QObject::connect(main_menu, &TouchMainMenu::brightnessChanged, [&](float brightness) {
+        main_widget->set_brightness(brightness);
+        //qDebug() << "brightness changed to: " << brightness;
+        //main_widget->run_command_with_name("search", true);
+        });
+
+
     QObject::connect(main_menu, &TouchMainMenu::addBookmarkClicked, [&]() {
         main_widget->run_command_with_name("add_bookmark", true);
         });

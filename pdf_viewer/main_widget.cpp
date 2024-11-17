@@ -7188,6 +7188,7 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 }
 
 
+
 void MainWidget::handle_debug_command() {
 }
 
@@ -11994,7 +11995,15 @@ void MainWidget::restart_all_threads(){
     }
 }
 
+void MainWidget::set_brightness(float brightness) {
 #ifdef SIOYEK_ANDROID
+    android_brightness_set(brightness);
+#else
+#endif
+}
+
+#ifdef SIOYEK_ANDROID
+
 
 void MainWidget::on_android_pause(){
     // todo: we should probably stop all threads here

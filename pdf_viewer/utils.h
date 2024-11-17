@@ -301,6 +301,9 @@ void android_tts_set_rate(float rate);
 // void android_tts_set_rest_of_document(QString rest);
 void on_android_pause_global();
 void on_android_resume_global();
+void android_brightness_set(float brightness);
+float android_brightness_get();
+
 #endif
 
 float dampen_velocity(float v, float dt);

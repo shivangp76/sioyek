@@ -748,6 +748,7 @@ public:
     void refresh_all_windows();
     std::optional<PdfLink> get_selected_link(const std::wstring& text);
 
+    void set_brightness(float brightness);
     int num_visible_links();
 #ifdef SIOYEK_ANDROID
     //    void onApplicationStateChanged(Qt::ApplicationState applicationState);

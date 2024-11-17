@@ -42,10 +42,12 @@ Rectangle{
     signal logoutClicked();
     signal syncClicked();
     signal refreshClicked();
+    signal brightnessChanged(brightness: real);
 
     property bool is_fit: _fit;
     property bool is_ruler: _ruler;
     property bool is_locked: _locked;
+    property real currentBrightness: _currentBrightness;
 
     ColumnLayout{
         spacing: 0
@@ -260,6 +262,42 @@ Rectangle{
 
             Layout.fillHeight: true
             Layout.preferredWidth: parent.width
+
+            Row{
+                width: parent.width
+                height: parent.height
+
+                spacing: 10
+                leftPadding: 10
+                rightPadding: 10
+                Text{
+                    id: brightness_label
+                    text: "brightness"
+                    color: "white"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Slider{
+                    id: brightness_slider
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - brightness_label.width - 35
+                    height: parent.height - 20
+                    from: 0
+                    to: 100
+                    value: currentBrightness
+                    onValueChanged: function(){
+                        currentBrightness = brightness_slider.value;
+                        brightnessChanged(currentBrightness / 100);
+                    }
+                }
+            }
+        }
+
+        Item{
+
+            Layout.fillHeight: true
+            Layout.preferredWidth: parent.width
+
             Row{
                 width: parent.width
                 height: parent.height

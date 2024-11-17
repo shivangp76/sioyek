@@ -52,6 +52,7 @@ public slots:
     void handleLogout();
     void handleSync();
     void handleRefresh();
+    void handleBrightnessChanged(double);
 
 signals:
     void selectTextClicked();
@@ -84,6 +85,7 @@ signals:
     void logoutClicked();
     void syncClicked();
     void refreshClicked();
+    void brightnessChanged(double);
 private:
     QQuickWidget* quick_widget = nullptr;
 

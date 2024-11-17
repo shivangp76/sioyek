@@ -214,10 +214,20 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
         SIGNAL(refreshClicked()),
         this,
         SLOT(handleRefresh()));
+
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(brightnessChanged(double)),
+        this,
+        SLOT(handleBrightnessChanged(double)));
 }
 
 void TouchMainMenu::handleDrawingMode() {
     emit drawingModeClicked();
+}
+
+void TouchMainMenu::handleBrightnessChanged(double brightness) {
+    emit brightnessChanged(brightness);
 }
 
 void TouchMainMenu::handleLogin() {

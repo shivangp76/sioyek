@@ -2975,6 +2975,16 @@ void android_tts_set_rate(float rate){
     activity.callMethod<void>("ttsSetRate", "(F)V", rate);
 }
 
+void android_brightness_set(float brightness){
+    QJniObject activity = QNativeInterface::QAndroidApplication::context();
+    activity.callMethod<void>("setScreenBrightness", "(F)V", brightness);
+}
+
+float android_brightness_get(){
+    QJniObject activity = QNativeInterface::QAndroidApplication::context();
+    return activity.callMethod<float>("getScreenBrightness", "()F");
+}
+
 // void android_tts_stop_service(){
 //     QJniObject activity = QNativeInterface::QAndroidApplication::context();
 //     activity.callMethod<void>("stopTtsService", "()V");

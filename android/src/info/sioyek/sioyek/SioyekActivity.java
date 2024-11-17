@@ -598,4 +598,22 @@ public class SioyekActivity extends QtActivity{
         }, MoreExecutors.directExecutor());
     }
 
+    public void setScreenBrightness(float brightness){
+        runOnUiThread(
+            new Runnable() {
+                @Override
+                public void run() {
+                    WindowManager.LayoutParams lp = getWindow().getAttributes();
+                    lp.screenBrightness = brightness;
+                    getWindow().setAttributes(lp);
+                }
+            }
+        );
+    }
+
+    float getScreenBrightness(){
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        return lp.screenBrightness;
+    }
+
 }
