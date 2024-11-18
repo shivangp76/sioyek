@@ -1115,7 +1115,7 @@ void PdfViewOpenGLWidget::my_render() {
             portal_overview_state.doc = document_manager->get_document_with_checksum(portals[i].dst.document_checksum);
             if (portal_overview_state.doc) {
                 if (!portal_overview_state.doc->get_is_opened()) {
-                    portal_overview_state.doc->open(nullptr, true);
+                    portal_overview_state.doc->open(true);
                 }
 
                 render_overview(portal_overview_state, !is_portal_selected);

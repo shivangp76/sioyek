@@ -1376,6 +1376,20 @@ void MainWidget::handle_validation_interval_timeout(){
         if (is_render_invalidated) {
             validate_render();
         }
+
+        if (doc() && (!doc()->get_valid())) {
+            validate_render();
+            doc()->validate();
+        }
+
+        if (doc() && dv() && dv()->get_overview_page()) {
+            Document* overview_doc = dv()->get_overview_page()->doc;
+            if (overview_doc && (!overview_doc->get_valid())) {
+                validate_render();
+                overview_doc->validate();
+            }
+        }
+
         else if (is_ui_invalidated) {
             validate_ui();
         }
@@ -1873,7 +1887,7 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     }
 
     main_document_view->on_view_size_change(main_window_width, main_window_height);
-    main_document_view->open_document(path.get_path(), &this->is_render_invalidated, true, {}, false, downloaded_checksum);
+    main_document_view->open_document(path.get_path(), true, {}, false, downloaded_checksum);
 
     if (downloaded_checksum.size() > 0) {
         // if this documents is downloaded from the server, it must be synced
@@ -1946,7 +1960,7 @@ void MainWidget::open_document_at_location(const Path& path_,
     }
     std::wstring path = path_.get_path();
 
-    open_document(path, &this->is_render_invalidated, true, {}, true);
+    open_document(path, true, {}, true);
     bool has_document = main_document_view_has_document();
 
     if (has_document) {
@@ -2791,7 +2805,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
             else if (sioyek_network_manager->is_checksum_available_on_server(portal->dst.document_checksum)) {
                 sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal->dst.document_checksum), [this, portal](QString path) {
                     //void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
-                    open_document(path.toStdWString(), &is_render_invalidated, false, portal->dst.book_state);
+                    open_document(path.toStdWString(), false, portal->dst.book_state);
                     });
             }
         }
@@ -3530,7 +3544,7 @@ void MainWidget::visual_mark_under_pos(WindowPos pos) {
 }
 
 void MainWidget::open_overview_to_portal(Document* dst_doc, Portal portal){
-    dst_doc->open(&is_render_invalidated, true);
+    dst_doc->open(true);
     dst_doc->load_page_dimensions(true);
     OverviewState overview;
     overview.doc = dst_doc;
@@ -4201,7 +4215,6 @@ QRect MainWidget::get_helper_window_rect() {
 }
 
 void MainWidget::open_document(const std::wstring& doc_path,
-    bool* invalid_flag,
     bool load_prev_state,
     std::optional<OpenedBookState> prev_state,
     bool force_load_dimensions) {
@@ -4212,7 +4225,7 @@ void MainWidget::open_document(const std::wstring& doc_path,
     }
     on_open_document(doc_path);
 
-    main_document_view->open_document(doc_path, invalid_flag, load_prev_state, prev_state, force_load_dimensions);
+    main_document_view->open_document(doc_path, load_prev_state, prev_state, force_load_dimensions);
 
     if (doc()) {
         document_manager->add_tab(doc()->get_path());
@@ -4279,7 +4292,7 @@ void MainWidget::on_new_paper_added(const std::wstring& file_path) {
         dst_view_state.book_state.offset_y = 0;
         dst_view_state.book_state.zoom_level = 1;
         Document* new_doc = document_manager->get_document(file_path);
-        new_doc->open(nullptr, false, "", true);
+        new_doc->open(false, "", true);
         PagelessDocumentRect first_page_rect = new_doc->get_page_rect_no_cache(0);
         document_manager->free_document(new_doc);
 
@@ -4324,7 +4337,7 @@ void MainWidget::handle_link_click(const PdfLink& link) {
 
                 Document* linked_doc = document_manager->get_document(linked_file_path.get_path());
                 if (!linked_doc->doc) {
-                    linked_doc->open(nullptr);
+                    linked_doc->open();
                 }
 
                 if (linked_doc && linked_doc->doc) {
@@ -6163,7 +6176,7 @@ void MainWidget::handle_overview_to_portal() {
             if (destination_path) {
                 Document* doc = document_manager->get_document(destination_path.value());
                 if (doc) {
-                    doc->open(&is_render_invalidated, true);
+                    doc->open(true);
                     overview_state.absolute_offset_y = portal.dst.book_state.offset_y;
                     overview_state.doc = doc;
                     set_overview_page(overview_state, true);

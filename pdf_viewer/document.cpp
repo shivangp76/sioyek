@@ -1061,6 +1061,9 @@ Document::~Document() {
         stop_indexing();
         document_indexing_thread.value().join();
     }
+    if (background_page_dimensions_thread.has_value()) {
+        background_page_dimensions_thread->join();
+    }
 
     if (doc != nullptr) {
         fz_try(context) {
@@ -1091,10 +1094,10 @@ void Document::reload(std::string password) {
 
     doc = nullptr;
 
-    open(invalid_flag_pointer, false, password);
+    open(false, password);
 }
 
-bool Document::open(bool* invalid_flag, bool force_load_dimensions, std::string password, bool temp) {
+bool Document::open(bool force_load_dimensions, std::string password, bool temp) {
     is_opened = true;
     load_extras();
 
@@ -1117,7 +1120,7 @@ bool Document::open(bool* invalid_flag, bool force_load_dimensions, std::string 
         }
         if ((doc != nullptr) && (!temp)) {
             //load_document_metadata_from_db();
-            load_document_caches(invalid_flag, force_load_dimensions);
+            load_document_caches(force_load_dimensions);
             return true;
         }
 
@@ -1227,9 +1230,7 @@ void Document::load_page_dimensions(bool force_load_now) {
             page_widths = std::move(page_widths_);
             page_labels = std::move(page_labels_);
 
-            if (invalid_flag_pointer) {
-                *invalid_flag_pointer = true;
-            }
+            is_document_validation_data_changed = true;
             page_dims_mutex.unlock();
 
             highlights_mutex.lock();
@@ -1247,9 +1248,7 @@ void Document::load_page_dimensions(bool force_load_now) {
         fz_drop_context(context_);
 
         are_highlights_loaded = true;
-        if (invalid_flag_pointer) {
-            *invalid_flag_pointer = true;
-        }
+        is_document_validation_data_changed = true;
 
     };
 
@@ -1257,8 +1256,8 @@ void Document::load_page_dimensions(bool force_load_now) {
         load_page_dimensions_function();
     }
     else {
-        auto background_page_dimensions_loading_thread = std::thread(load_page_dimensions_function);
-        background_page_dimensions_loading_thread.detach();
+        background_page_dimensions_thread = std::thread(load_page_dimensions_function);
+        //background_page_dimensions_thread->detach();
     }
     load_drawings_async();
 }
@@ -1474,7 +1473,7 @@ int Document::get_offset_page_number(float y_offset) {
     return (it - accum_page_heights.begin());
 }
 
-void Document::index_document(bool* invalid_flag) {
+void Document::index_document() {
     int n = num_pages();
 
     if (this->document_indexing_thread.has_value()) {
@@ -1485,7 +1484,7 @@ void Document::index_document(bool* invalid_flag) {
     is_document_indexing_required = true;
     is_indexing = true;
 
-    this->document_indexing_thread = std::thread([this, n, invalid_flag]() {
+    this->document_indexing_thread = std::thread([this, n]() {
         std::vector<IndexedData> local_generic_data;
         std::map<std::wstring, IndexedData> local_reference_data;
         std::map<std::wstring, std::vector<IndexedData>> local_equation_data;
@@ -1561,8 +1560,9 @@ void Document::index_document(bool* invalid_flag) {
 
         document_indexing_mutex.unlock();
         is_indexing = false;
-        if (is_document_indexing_required && invalid_flag) {
-            *invalid_flag = true;
+        if (is_document_indexing_required) {
+            is_document_validation_data_changed = true;
+            //*invalid_flag = true;
         }
         });
     //thread.detach();
@@ -3182,15 +3182,15 @@ void Document::clear_document_caches() {
 }
 
 
-void Document::load_document_caches(bool* invalid_flag, bool force_now) {
+void Document::load_document_caches(bool force_now) {
 
     load_page_dimensions(force_now);
     create_toc_tree(top_level_toc_nodes);
     get_flat_toc(top_level_toc_nodes, flat_toc_names, flat_toc_pages);
-    invalid_flag_pointer = invalid_flag;
+    //invalid_flag_pointer = invalid_flag;
 
     // we don't need to index figures in helper documents
-    index_document(invalid_flag);
+    index_document();
 }
 
 int Document::reflow(int page) {
@@ -3221,8 +3221,7 @@ int Document::reflow(int page) {
 
     fz_layout_document(context, doc, EPUB_WIDTH, EPUB_HEIGHT, EPUB_FONT_SIZE);
 
-    bool flag = false;
-    load_document_caches(&flag, false);
+    load_document_caches(false);
 
     fz_location loc = fz_lookup_bookmark(context, doc, last_position_bookmark);
     int new_page = fz_page_number_from_location(context, doc, loc);
@@ -5363,4 +5362,12 @@ void DocumentManager::scan_new_files_from_scan_directory() {
         std::string checksum = checksummer->get_checksum(new_file);
         db_manager->insert_document_hash(new_file, checksum);
     }
+}
+
+void Document::validate() {
+    is_document_validation_data_changed = false;
+}
+
+bool Document::get_valid() {
+    return is_document_validation_data_changed;
 }

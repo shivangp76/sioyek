@@ -159,6 +159,7 @@ private:
 
     std::mutex document_indexing_mutex;
     std::optional<std::thread> document_indexing_thread = {};
+    std::optional<std::thread> background_page_dimensions_thread = {};
     bool is_document_indexing_required = true;
     bool is_indexing = false;
     bool are_highlights_loaded = false;
@@ -172,7 +173,9 @@ private:
     // we do some of the document processing in a background thread (for example indexing all the
     // figures/indices and computing page heights. we use this pointer to notify the main thread when
     // processing is complete.
-    bool* invalid_flag_pointer = nullptr;
+    //bool* invalid_flag_pointer = nullptr;
+
+    bool is_document_validation_data_changed = false;
 
     int get_mark_index(char symbol);
     //std::optional<std::vector<RegexMatchInfo>> get_cached_regex_info(int page, std::wstring regex_string);
@@ -308,7 +311,7 @@ public:
     bool has_toc();
     const std::vector<std::wstring>& get_flat_toc_names();
     const std::vector<int>& get_flat_toc_pages();
-    bool open(bool* invalid_flag, bool force_load_dimensions = false, std::string password = "", bool temp = false);
+    bool open(bool force_load_dimensions = false, std::string password = "", bool temp = false);
     void reload(std::string password = "");
     QDateTime get_last_edit_time();
     unsigned int get_milies_since_last_document_update_time();
@@ -332,7 +335,7 @@ public:
     DocumentRect absolute_to_page_rect(AbsoluteRect abs_rect);
     QStandardItemModel* get_toc_model();
     int get_offset_page_number(float y_offset);
-    void index_document(bool* invalid_flag);
+    void index_document();
     void stop_indexing();
     void delete_page_intersecting_drawings(int page, AbsoluteRect absolute_rect, bool mask[26]);
     void delete_drawings_with_indices(int page, std::vector<SelectedObjectIndex>& indices);
@@ -405,7 +408,7 @@ public:
     std::vector<PagelessDocumentRect> get_page_flat_words(int page);
     std::vector<std::vector<PagelessDocumentRect>> get_page_flat_word_chars(int page);
     void clear_document_caches();
-    void load_document_caches(bool* invalid_flag, bool force_now);
+    void load_document_caches(bool force_now);
     int reflow(int page);
     void update_highlight_add_text_annotation(const std::string& uuid, const std::wstring& text_annot);
     void update_highlight_type(const std::string& uuid, char new_type);
@@ -487,6 +490,9 @@ public:
 
     int get_first_line_index_after_block(int page, int after_index);
     int get_first_line_before_block(int page, int before_index);
+
+    void validate();
+    bool get_valid();
 
     bool get_should_reload_annotations();
     void reload_annotations_on_new_checksum();

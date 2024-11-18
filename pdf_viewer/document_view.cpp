@@ -244,7 +244,7 @@ void DocumentView::goto_portal(Portal* link) {
         else {
             auto destination_path = checksummer->get_path(link->dst.document_checksum);
             if (destination_path) {
-                open_document(destination_path.value(), nullptr);
+                open_document(destination_path.value());
                 set_book_state(link->dst.book_state);
             }
         }
@@ -779,7 +779,6 @@ void DocumentView::reset_doc_state() {
 }
 
 void DocumentView::open_document(const std::wstring& doc_path,
-    bool* invalid_flag,
     bool load_prev_state,
     std::optional<OpenedBookState> prev_state,
     bool force_load_dimensions,
@@ -804,7 +803,7 @@ void DocumentView::open_document(const std::wstring& doc_path,
     //current_document = document_manager->get_document(doc_path);
     current_document = document_manager->get_document(canonical_path, downloaded_checksum);
     //current_document->open();
-    if (!current_document->open(invalid_flag, force_load_dimensions)) {
+    if (!current_document->open(force_load_dimensions)) {
         current_document = nullptr;
     }
 
@@ -4618,7 +4617,7 @@ std::optional<OverviewState> DocumentView::overview_to_ruler_portal(bool* is_ren
         for (auto candid : candidates) {
             SmartViewCandidate smc;
             smc.doc = document_manager->get_document_with_checksum(candid.dst.document_checksum);
-            smc.doc->open(is_render_invalid, true);
+            smc.doc->open(true);
             smc.source_rect = candid.get_rectangle().value();
             smc.target_pos = AbsoluteDocumentPos{ 0, candid.dst.book_state.offset_y };
             smart_view_candidates.push_back(smc);

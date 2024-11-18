@@ -831,7 +831,7 @@ public:
     bool goto_ith_next_overview(int i);
     void on_overview_source_updated();
 
-    void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
+    void open_document(const std::wstring& doc_path, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
 
     AbsoluteDocumentPos get_cursor_abspos();
     void cleanup_expired_pending_portals();
