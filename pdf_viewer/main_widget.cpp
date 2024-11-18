@@ -1459,6 +1459,10 @@ std::wstring MainWidget::get_title_string() {
 
 void MainWidget::handle_escape() {
 
+    if (pop_current_widget()) {
+        return;
+    }
+
     // add high escape priority to overview and search, if any of them are escaped, do not escape any further
     if (main_document_view) {
         bool should_return = false;
@@ -1499,7 +1503,6 @@ void MainWidget::handle_escape() {
     main_document_view->clear_selected_object();
     //current_pending_command = {};
 
-    pop_current_widget();
 
     bool was_line_select = dv()->line_select_mode;
     if (main_document_view) {
@@ -3786,7 +3789,9 @@ void MainWidget::push_current_widget(QWidget* new_widget) {
     current_widget_stack.push_back(new_widget);
 }
 
-void MainWidget::pop_current_widget(bool canceled) {
+bool MainWidget::pop_current_widget(bool canceled) {
+
+    bool popped = false;
 
     if (current_widget_stack.size() > 0) {
         // if (dynamic_cast<AudioUI*>(current_widget_stack.back())){
@@ -3797,6 +3802,7 @@ void MainWidget::pop_current_widget(bool canceled) {
         current_widget_stack.back()->hide();
         current_widget_stack.back()->deleteLater();
         current_widget_stack.pop_back();
+        popped = true;
     }
     if (current_widget_stack.size() > 0) {
         current_widget_stack.back()->show();
@@ -3804,6 +3810,7 @@ void MainWidget::pop_current_widget(bool canceled) {
     else {
         setFocus();
     }
+    return popped;
 }
 
 
