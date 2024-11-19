@@ -3499,7 +3499,7 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
     get_flat_chars_from_stext_page(stext_page, flat_chars);
 
     TextUnderPointerInfo text_under_pos_info = dv()->find_location_of_text_under_pointer(docpos);
-    if ((text_under_pos_info.reference_type != ReferenceType::None) && (text_under_pos_info.candidates.size() > 0)){
+    if ((text_under_pos_info.candidates.size() > 0) && (text_under_pos_info.candidates[0].reference_type != ReferenceType::None)){
         DocumentPos candid_docpos = text_under_pos_info.candidates[0].get_docpos(main_document_view);
         long_jump_to_destination(candid_docpos.page, candid_docpos.y);
     }
@@ -3612,13 +3612,18 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
     DocumentPos docpos = main_document_view->window_to_document_pos(pos);
 
     TextUnderPointerInfo reference_info = dv()->find_location_of_text_under_pointer(docpos);
-    if ((reference_info.reference_type != ReferenceType::None) && (reference_info.candidates.size() > 0)) {
+    if ((reference_info.candidates.size() > 0) && (reference_info.candidates[0].reference_type != ReferenceType::None)) {
         int pos_page = main_document_view->window_to_document_pos(pos).page;
 
         main_document_view->smart_view_candidates = reference_info.candidates;
         DocumentPos first_candid_pos = reference_info.candidates[0].get_docpos(main_document_view);
 
-        dv()->set_overview_position(first_candid_pos.page, first_candid_pos.y, reference_type_string(reference_info.reference_type), reference_info.candidates[0].get_highlight_rects());
+        dv()->set_overview_position(
+            first_candid_pos.page,
+            first_candid_pos.y,
+            reference_type_string(reference_info.candidates[0].reference_type),
+            reference_info.candidates[0].get_highlight_rects()
+        );
         on_overview_source_updated();
         return true;
     }
