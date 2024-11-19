@@ -153,6 +153,9 @@ void SioyekNetworkManager::load_access_token() {
                     persist_access_token(ACCESS_TOKEN);
                     show_error_message(L"Access token was expired, please login again");
                 }
+                else if (status_code == 0) {
+                    status = ServerStatus::ServerOffline;
+                }
                 else {
                     status = ServerStatus::LoggedIn;
                     handle_one_time_network_operations();
