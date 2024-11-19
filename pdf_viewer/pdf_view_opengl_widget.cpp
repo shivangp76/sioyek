@@ -1039,7 +1039,7 @@ void PdfViewOpenGLWidget::my_render() {
             }
 
 
-            set_highlight_color(RULER_COLOR, 0.3f);
+            set_highlight_color(RULER_COLOR, 1.0f);
             render_highlight_window(ruler_rect.value(), flags, RULER_UNDERLINE_PIXEL_WIDTH);
         }
         if (document_view->underline) {

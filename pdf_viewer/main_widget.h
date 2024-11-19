@@ -446,6 +446,7 @@ public:
     void on_prev_text_suggestion();
     void set_current_text_suggestion();
     void set_drag_value_on_small_documents(fvec2& val);
+    void toggle_menu_collapse();
 
     std::wstring get_window_configuration_string();
     std::wstring get_serialized_configuration_string();

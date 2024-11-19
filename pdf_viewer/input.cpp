@@ -6779,6 +6779,18 @@ public:
 
 };
 
+class CollapseMenuCommand : public Command {
+public:
+    inline static const std::string cname = "toggle_menu_collapse";
+    inline static const std::string hname = "Toggle collapse of tree menus.";
+
+    CollapseMenuCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->toggle_menu_collapse();
+    }
+};
+
 class ShowTouchMainMenu : public Command {
 public:
     static inline const std::string cname = "show_touch_main_menu";
@@ -8110,6 +8122,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<OpenDocumentEmbeddedCommand>(this);
     register_command<OpenDocumentEmbeddedFromCurrentPathCommand>(this);
     register_command<CopyCommand>(this);
+    register_command<CollapseMenuCommand>(this);
     register_command<ToggleFullscreenCommand>(this);
     register_command<MaximizeCommand>(this);
     register_command<ToggleOneWindowCommand>(this);
@@ -9023,8 +9036,6 @@ int InputHandler::get_event_key(QKeyEvent* key_event, bool* shift_pressed, bool*
         if (((key_event->key() >= 'A') && (key_event->key() <= 'Z')) || ((key_event->text().size() > 0) &&
             (std::find(special_texts.begin(), special_texts.end(), key_event->text()) == special_texts.end()))) {
             if (!(*control_pressed) && !(*alt_pressed) && !(*command_pressed)) {
-                // shift is already handled in the returned text
-                *shift_pressed = false;
                 std::wstring text = key_event->text().toStdWString();
                 key = key_event->text().toStdWString()[0];
             }
@@ -9038,6 +9049,8 @@ int InputHandler::get_event_key(QKeyEvent* key_event, bool* shift_pressed, bool*
                     }
                 }
             }
+            // shift is already handled in the returned text
+            *shift_pressed = false;
         }
         else {
             key = key_event->key();
