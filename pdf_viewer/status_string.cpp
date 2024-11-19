@@ -81,7 +81,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
 
         if (widget->is_waiting_for_symbol()) {
             std::wstring wcommand_name = utf8_decode(widget->pending_command_instance->next_requirement(widget).value().name);
-            QString hint_name = QString::fromStdString(widget->pending_command_instance->get_name());
+            QString hint_name = QString::fromStdString(widget->pending_command_instance->get_symbol_hint_name());
 
             if (wcommand_name.size() > 0) {
                 hint_name += "(" + QString::fromStdWString(wcommand_name) + ")";

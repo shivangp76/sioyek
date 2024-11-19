@@ -4805,6 +4805,28 @@ public:
         }
     }
 
+    std::string get_symbol_hint_name() override {
+        std::vector<std::string> available_chars;
+        char str[2] = { 0 };
+        for (int i = 0; i < 26; i++) {
+            if (SEARCH_URLS[i].size() > 0) {
+                str[0] = 'a' + i;
+                available_chars.push_back(str);
+            }
+        }
+
+        std::string res = get_name() + "(";
+        for (int i = 0; i < available_chars.size(); i++) {
+            res += available_chars[i];
+            if (i < available_chars.size() - 1) {
+                res += "/";
+            }
+        }
+        res += ")";
+        return res;
+
+    }
+
 };
 
 class OpenSelectedUrlCommand : public Command {
@@ -9328,6 +9350,10 @@ std::vector<char> Command::special_symbols() {
 
 std::string Command::get_name() {
     return command_cname;
+}
+
+std::string Command::get_symbol_hint_name() {
+    return get_name();
 }
 
 
