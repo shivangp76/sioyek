@@ -3527,6 +3527,13 @@ bool DocumentView::is_text_source_referncish_at_position(const std::wstring& tex
         prev_word = parts[prev_word_index];
     }
     prev_word = prev_word.toLower();
+
+    if (prev_word.size() > 0) {
+        if (prev_word[0] == '(') {
+            prev_word = prev_word.mid(1);
+        }
+    }
+
     QStringList non_ref_words = {
         "table",
         "equation",
@@ -3604,7 +3611,7 @@ void DocumentView::set_overview_link(PdfLink link) {
         index_into_candidates = 0;
         std::vector<DocumentRect> overview_highlight_rects = {};
 
-        if (SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS){
+        if (SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS && is_reference){
             overview_highlight_rects = get_reference_link_highlights(page - 1, link, link_info);
         }
 
