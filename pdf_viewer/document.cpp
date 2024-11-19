@@ -5369,5 +5369,5 @@ void Document::validate() {
 }
 
 bool Document::get_valid() {
-    return is_document_validation_data_changed;
+    return !is_document_validation_data_changed;
 }
