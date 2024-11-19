@@ -561,10 +561,10 @@ struct PdfLinkTextInfo {
 };
 struct TextUnderPointerInfo{
     ReferenceType reference_type;
-    std::vector<DocumentPos> targets;
+    std::vector<SmartViewCandidate> candidates;
     AbsoluteRect source_rect;
     std::wstring source_text;
-    std::vector<DocumentRect> overview_highlight_rects;
+    //std::vector<DocumentRect> overview_highlight_rects;
 };
 
 struct FulltextSearchResult {

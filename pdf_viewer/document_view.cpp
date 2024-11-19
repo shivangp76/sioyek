@@ -3242,10 +3242,6 @@ std::vector<DocumentRect> DocumentView::get_paper_name_rects_from_page_and_sourc
     return {};
 }
 
-void DocumentView::fill_text_under_pointer_info_reference_highlight_rects(TextUnderPointerInfo& info) {
-    info.overview_highlight_rects = get_paper_name_rects_from_page_and_source_text(info.targets[0].page, info.source_text);
-}
-
 void DocumentView::fill_smart_view_candidate_reference_highlight_rects(SmartViewCandidate& candidate) {
     int page = candidate.get_docpos(this).page;
     std::wstring source_text = candidate.source_text;
@@ -3296,9 +3292,9 @@ std::optional<QString> DocumentView::get_paper_name_under_pos(DocumentPos docpos
 
         if (ref_){
             TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(docpos);
-            if ((reference_info.reference_type == ReferenceType::Reference) && (reference_info.targets.size() > 0)){
+            if ((reference_info.reference_type == ReferenceType::Reference) && (reference_info.candidates.size() > 0)){
                 std::wstring ref = ref_.value();
-                auto res = current_document->get_page_bib_with_reference(reference_info.targets[0].page, ref);
+                auto res = current_document->get_page_bib_with_reference(reference_info.candidates[0].get_docpos(this).page, ref);
                 if (res) {
                     if (clean) {
                         return get_paper_name_from_reference_text(res.value().first);
@@ -3329,7 +3325,7 @@ std::optional<PaperNameWithRects> DocumentView::get_direct_paper_name_under_pos(
     return current_document->get_paper_name_at_position(docpos);
 }
 
-TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentPos docpos,  bool update_candidates, int max_size) {
+TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentPos docpos, int max_size) {
     TextUnderPointerInfo res;
 
     std::vector<fz_stext_char*> flat_chars = current_document->get_flat_chars_around_pos(docpos, max_size);
@@ -3356,30 +3352,23 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
     }
 
     if (generic_pair) {
-        std::vector<DocumentPos> candidates = current_document->find_generic_locations(generic_pair.value().first,
+        std::vector<DocumentPos> candidates_positions = current_document->find_generic_locations(generic_pair.value().first,
             generic_pair.value().second);
-        if (candidates.size() > 0) {
-            if (update_candidates) {
-                smart_view_candidates.clear();
-                for (auto candid : candidates) {
-                    SmartViewCandidate smart_view_candid;
-                    smart_view_candid.source_rect = source_rect_absolute;
-                    smart_view_candid.target_pos = candid;
-                    smart_view_candid.source_text = generic_pair.value().first + L" " + generic_pair.value().second;
-                    smart_view_candidates.push_back(smart_view_candid);
-                }
-                //smart_view_candidates = candidates;
-                index_into_candidates = 0;
-                //on_overview_source_updated();
-                res.source_text = smart_view_candidates[index_into_candidates].source_text;
-            }
-            else {
-                res.source_text = generic_pair.value().first + L" " + generic_pair.value().second;
+        std::vector<SmartViewCandidate> candids;
+        if (candidates_positions.size() > 0) {
+
+            for (auto candid : candidates_positions) {
+                SmartViewCandidate smart_view_candid;
+                smart_view_candid.source_rect = source_rect_absolute;
+                smart_view_candid.target_pos = candid;
+                smart_view_candid.source_text = generic_pair.value().first + L" " + generic_pair.value().second;
+                smart_view_candid.reference_type = ReferenceType::Generic;
+                candids.push_back(smart_view_candid);
             }
 
-            res.targets.push_back(candidates[index_into_candidates]);
-            //res.page = candidates[index_into_candidates].page;
-            //res.offset = candidates[index_into_candidates].y;
+            res.source_text = generic_pair.value().first + L" " + generic_pair.value().second;
+
+            res.candidates = candids;
             res.reference_type = ReferenceType::Generic;
             return res;
         }
@@ -3390,9 +3379,13 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
             IndexedData refdata = eqdata_[0];
             res.source_text = refdata.text;
 
-            res.targets.push_back(DocumentPos{refdata.page, 0, refdata.y_offset});
-            //res.page = refdata.page;
-            //res.offset = refdata.y_offset;
+            SmartViewCandidate candid;
+            candid.source_rect = source_rect_absolute;
+            candid.source_text = equation_text_on_pointer.value();
+            candid.target_pos = DocumentPos{ refdata.page, 0, refdata.y_offset };
+            candid.reference_type = ReferenceType::Equation;
+
+            res.candidates = { candid };
             res.reference_type = ReferenceType::Equation;
             return res;
         }
@@ -3403,12 +3396,26 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
         if (refdata_.size() > 0) {
             res.reference_type = ReferenceType::Reference;
 
+            std::vector<SmartViewCandidate> candids;
+
             for (auto refdata : refdata_) {
                 res.source_text = refdata.text;
-                res.targets.push_back(DocumentPos{refdata.page, 0, refdata.y_offset});
+                SmartViewCandidate candid;
+                candid.source_rect = source_rect_absolute;
+                candid.source_text = reference_text_on_pointer.value();
+                candid.target_pos = DocumentPos{ refdata.page, 0, refdata.y_offset };
+                candid.reference_type = ReferenceType::Reference;
+                candid.highlight_rects_func = [this, refdata]() {
+                    return get_paper_name_rects_from_page_and_source_text(
+                        refdata.page,
+                        refdata.text
+                    );
+                };
+                candids.push_back(candid);
             }
 
-            fill_text_under_pointer_info_reference_highlight_rects(res);
+            res.candidates = candids;
+
             return res;
         }
 
@@ -3417,25 +3424,37 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
         if (selected_text.size() > 0 && current_document->is_super_fast_index_ready()) {
             int target_page;
             float target_y_offset;
-            res.reference_type = find_location_of_selected_text(&target_page, &target_y_offset, &res.source_rect, &res.source_text, &res.overview_highlight_rects);
-            res.targets.push_back(DocumentPos{ target_page, 0, target_y_offset });
-            if (res.reference_type == ReferenceType::Reference) {
-                fill_text_under_pointer_info_reference_highlight_rects(res);
-            }
+            std::vector<DocumentRect> highlight_rects;
+            res.reference_type = find_location_of_selected_text(&target_page, &target_y_offset, &res.source_rect, &res.source_text, &highlight_rects);
+
+            SmartViewCandidate candid;
+            candid.source_rect = source_rect_absolute;
+            candid.source_text = selected_text;
+            candid.target_pos = DocumentPos{ target_page, 0, target_y_offset };
+            candid.reference_type = res.reference_type;
+            candid.set_highlight_rects(highlight_rects);
+
+            res.candidates = { candid };
             return res;
-            /* ReferenceType MainWidget::find_location_of_selected_text(int* out_page, float* out_offset, AbsoluteRect* out_rect, std::wstring* out_source_text, std::vector<DocumentRect>* out_highlight_rects) { */
         }
     }
     else{
         std::wstring abbr_regex(L"[A-Z]+s?");
         std::optional<std::wstring> abbr_under_pointer = current_document->get_regex_match_at_position(abbr_regex, flat_chars, docpos, &reference_range);
         if (abbr_under_pointer){
-            std::optional<DocumentPos> abbr_definition_location = current_document->find_abbreviation(abbr_under_pointer.value(), res.overview_highlight_rects);
+            std::vector<DocumentRect> abbr_highlight_rects;
+            std::optional<DocumentPos> abbr_definition_location = current_document->find_abbreviation(abbr_under_pointer.value(), abbr_highlight_rects);
             if (abbr_definition_location){
                 res.source_text = abbr_under_pointer.value();
-                res.targets.push_back(DocumentPos{ abbr_definition_location->page, 0, abbr_definition_location->y});
-                //res.page = abbr_definition_location->page;
-                //res.offset = abbr_definition_location->y;
+
+                SmartViewCandidate candid;
+                candid.source_rect = source_rect_absolute;
+                candid.source_text = abbr_under_pointer.value();
+                candid.target_pos = DocumentPos{ abbr_definition_location->page, 0, abbr_definition_location->y };
+                candid.reference_type = ReferenceType::Abbreviation;
+                candid.set_highlight_rects(abbr_highlight_rects);
+
+                res.candidates.push_back(candid);
                 res.reference_type = ReferenceType::Abbreviation;
                 return res;
             }
@@ -3546,7 +3565,12 @@ bool DocumentView::is_text_source_referncish_at_position(const std::wstring& tex
         "sect.",
         "appendix"
     };
-    if (non_ref_words.indexOf(prev_word) != -1) return false;
+    for (auto non_ref_word : non_ref_words) {
+        if (prev_word.contains(non_ref_word)) {
+            return false;
+        }
+    }
+    //if (non_ref_words.indexOf(prev_word) != -1) return false;
     //TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(docpos, true);
     return true;
 }
@@ -3556,8 +3580,12 @@ bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInf
     if (link_info.chr) {
         PagelessDocumentPos pageless_pos = PagelessDocumentRect{ fz_rect_from_quad(link_info.chr->quad) }.center();
         DocumentPos link_pos = { link.source_page, pageless_pos.x, pageless_pos.y };
-        TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(link_pos, true, std::max((int)link_info.link_text.size(), 50));
-        bool is_reference = reference_info.reference_type == ReferenceType::None || reference_info.reference_type == ReferenceType::Reference;
+        TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(link_pos, std::max((int)link_info.link_text.size(), 50));
+        bool is_reference = \
+            reference_info.reference_type == ReferenceType::None ||
+            reference_info.reference_type == ReferenceType::Reference ||
+            reference_info.reference_type == ReferenceType::Generic;
+
         if (is_reference) {
             std::wstring block_string = get_string_from_stext_block(link_info.block, false, false);
             is_reference = is_reference && is_text_source_referncish_at_position(block_string, link_info.position_in_block);

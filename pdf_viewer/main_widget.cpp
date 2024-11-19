@@ -3499,8 +3499,9 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
     get_flat_chars_from_stext_page(stext_page, flat_chars);
 
     TextUnderPointerInfo text_under_pos_info = dv()->find_location_of_text_under_pointer(docpos);
-    if ((text_under_pos_info.reference_type != ReferenceType::None) && (text_under_pos_info.targets.size() > 0)){
-        long_jump_to_destination(text_under_pos_info.targets[0].page, text_under_pos_info.targets[0].y);
+    if ((text_under_pos_info.reference_type != ReferenceType::None) && (text_under_pos_info.candidates.size() > 0)){
+        DocumentPos candid_docpos = text_under_pos_info.candidates[0].get_docpos(main_document_view);
+        long_jump_to_destination(candid_docpos.page, candid_docpos.y);
     }
     else {
         std::optional<PaperNameWithRects> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos);
@@ -3610,22 +3611,15 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
 
     DocumentPos docpos = main_document_view->window_to_document_pos(pos);
 
-    TextUnderPointerInfo reference_info = dv()->find_location_of_text_under_pointer(docpos, true);
-    if ((reference_info.reference_type != ReferenceType::None) && (reference_info.targets.size() > 0)) {
+    TextUnderPointerInfo reference_info = dv()->find_location_of_text_under_pointer(docpos);
+    if ((reference_info.reference_type != ReferenceType::None) && (reference_info.candidates.size() > 0)) {
         int pos_page = main_document_view->window_to_document_pos(pos).page;
-        //opengl_widget->set_selected_rectangle(overview_source_rect_absolute);
 
-        SmartViewCandidate current_candid;
-        current_candid.source_rect = reference_info.source_rect;
-        current_candid.target_pos = reference_info.targets[0];
-        current_candid.source_text = reference_info.source_text;
-        current_candid.reference_type = reference_info.reference_type;
-        main_document_view->smart_view_candidates = { current_candid };
+        main_document_view->smart_view_candidates = reference_info.candidates;
+        DocumentPos first_candid_pos = reference_info.candidates[0].get_docpos(main_document_view);
 
-        dv()->set_overview_position(reference_info.targets[0].page, reference_info.targets[0].y, reference_type_string(reference_info.reference_type), reference_info.overview_highlight_rects);
-        //main_document_view->set_overview_highlights(reference_info.overview_highlight_rects);
+        dv()->set_overview_position(first_candid_pos.page, first_candid_pos.y, reference_type_string(reference_info.reference_type), reference_info.candidates[0].get_highlight_rects());
         on_overview_source_updated();
-        //main_document_view->fit_overview_width();
         return true;
     }
 
