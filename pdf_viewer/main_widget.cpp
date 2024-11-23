@@ -3836,6 +3836,7 @@ void MainWidget::toggle_dark_mode() {
 
     if (helper_opengl_widget_) {
         helper_document_view_->toggle_dark_mode();
+        helper_opengl_widget_->update();
     }
     config_manager->handle_set_color_palette(this, main_document_view->color_mode);
 }
@@ -3846,6 +3847,7 @@ void MainWidget::toggle_custom_color_mode() {
 
     if (helper_opengl_widget_) {
         helper_document_view_->toggle_custom_color_mode();
+        helper_opengl_widget_->update();
     }
     config_manager->handle_set_color_palette(this, main_document_view->color_mode);
 }
@@ -4195,7 +4197,20 @@ void MainWidget::apply_window_params_for_two_window_mode() {
     if (helper_opengl_widget_ != nullptr) {
         helper_window->move(helper_window_move[0], helper_window_move[1]);
         helper_window->resize(helper_window_size[0], helper_window_size[1]);
+
         helper_window->show();
+
+
+        // make sure the colorscheme is correct
+        if (main_document_view->get_current_color_mode() == ColorPalette::Dark) {
+            helper_document_view()->set_dark_mode(true);
+        }
+        else if (main_document_view->get_current_color_mode() == ColorPalette::Custom) {
+            helper_document_view()->set_custom_color_mode(true);
+        }
+        else {
+            helper_document_view()->set_dark_mode(false);
+        }
     }
 
     if (should_maximize) {

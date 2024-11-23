@@ -399,3 +399,11 @@ sioyek.gch/*
 .vimspector.session
 android/.gradle/*
 android/local.properties
+
+#Nix generated
+result
+flake*
+*.nix
+
+# ctags
+tags
