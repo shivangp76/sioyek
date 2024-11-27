@@ -264,7 +264,7 @@ public:
     void set_book_state(OpenedBookState state);
     virtual bool set_offsets(float new_offset_x, float new_offset_y, bool force = false, bool is_dragging=false);
     bool set_pos(AbsoluteDocumentPos pos);
-    void set_virtual_pos(VirtualPos pos, bool is_dragging=false);
+    void set_virtual_pos(VirtualPos pos, bool is_dragging=false, bool force=false);
     Document* get_document();
     bool is_ruler_mode();
     void exit_ruler_mode();
@@ -390,9 +390,9 @@ public:
     float get_max_valid_x(bool relenting);
     float get_min_valid_x(bool relenting);
 
-    virtual float set_zoom_level(float zl, bool should_exit_auto_resize_mode);
-    virtual float zoom_in(float zoom_factor = ZOOM_INC_FACTOR);
-    virtual float zoom_out(float zoom_factor = ZOOM_INC_FACTOR);
+    virtual float set_zoom_level(float zl, bool should_exit_auto_resize_mode, bool readjust=true);
+    virtual float zoom_in(float zoom_factor = ZOOM_INC_FACTOR, bool readjust=true);
+    virtual float zoom_out(float zoom_factor = ZOOM_INC_FACTOR, bool readjust=true);
     float zoom_in_cursor(WindowPos mouse_pos, float zoom_factor = ZOOM_INC_FACTOR);
     float zoom_out_cursor(WindowPos mouse_pos, float zoom_factor = ZOOM_INC_FACTOR);
     bool move_absolute(float dx, float dy, bool force = false);
@@ -692,9 +692,9 @@ public:
 
     ScratchPad();
     bool set_offsets(float new_offset_x, float new_offset_y, bool force = false, bool is_dragging=false) override;
-    float set_zoom_level(float zl, bool should_exit_auto_resize_mode);
-    float zoom_in(float zoom_factor = ZOOM_INC_FACTOR);
-    float zoom_out(float zoom_factor = ZOOM_INC_FACTOR);
+    float set_zoom_level(float zl, bool should_exit_auto_resize_mode, bool readjust=true);
+    float zoom_in(float zoom_factor = ZOOM_INC_FACTOR, bool readjust=true);
+    float zoom_out(float zoom_factor = ZOOM_INC_FACTOR, bool readjust=true);
 
     std::vector<int> get_intersecting_drawing_indices(AbsoluteRect selection);
     std::vector<int> get_intersecting_pixmap_indices(AbsoluteRect selection);
