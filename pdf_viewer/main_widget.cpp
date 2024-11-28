@@ -275,6 +275,8 @@ extern float MENU_SCREEN_HEIGHT_RATIO;
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
+extern bool FORCE_CUSTOM_LINE_ALGORITHM;
+
 extern std::wstring RIGHT_CLICK_COMMAND;
 extern std::wstring MIDDLE_CLICK_COMMAND;
 extern int MAX_TAB_COUNT;
@@ -4526,6 +4528,10 @@ void MainWidget::changeEvent(QEvent* event) {
 }
 
 void MainWidget::move_ruler_next(){
+    if (FORCE_CUSTOM_LINE_ALGORITHM) {
+        move_visual_mark(1);
+        return;
+    }
     main_document_view->move_visual_mark_next();
     if (is_reading || high_quality_play_state.has_value()) {
         read_current_line();
@@ -4533,6 +4539,10 @@ void MainWidget::move_ruler_next(){
 }
 
 void MainWidget::move_ruler_prev(){
+    if (FORCE_CUSTOM_LINE_ALGORITHM) {
+        move_visual_mark(-1);
+        return;
+    }
     main_document_view->move_visual_mark_prev();
     if (is_reading || high_quality_play_state.has_value()) {
         read_current_line();
