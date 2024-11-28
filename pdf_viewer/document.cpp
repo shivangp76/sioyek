@@ -3055,8 +3055,7 @@ const PageMergedLinesInfoAbsolute& Document::get_page_lines(int page) {
                 res.merged_line_indices.push_back({static_cast<int>(i)});
             }
             cached_page_line_info[page] = res;
-            //cached_page_line_rects[page] = line_rects;
-            return res;
+            return cached_page_line_info[page];
         }
     }
 }
