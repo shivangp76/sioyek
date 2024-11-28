@@ -3052,6 +3052,7 @@ const PageMergedLinesInfoAbsolute& Document::get_page_lines(int page) {
                 line_rect.y0 = document_to_absolute_y(page, static_cast<float>(line_locations_begins[i]) / SMALL_PIXMAP_SCALE);
                 line_rect.y1 = document_to_absolute_y(page, static_cast<float>(line_locations[i]) / SMALL_PIXMAP_SCALE);
                 res.merged_line_rects.push_back(line_rect);
+                res.merged_line_indices.push_back({static_cast<int>(i)});
             }
             cached_page_line_info[page] = res;
             //cached_page_line_rects[page] = line_rects;
