@@ -295,6 +295,7 @@ int DocumentView::get_view_width() {
 
 void DocumentView::set_null_document() {
     current_document = nullptr;
+    was_set_to_null = true;
 }
 
 void DocumentView::set_offset_x(float new_offset_x) {
@@ -789,6 +790,7 @@ void DocumentView::open_document(const std::wstring& doc_path,
     std::string downloaded_checksum) {
     last_opened_file_path = doc_path;
 
+    was_set_to_null = false;
     std::wstring canonical_path = get_canonical_path(doc_path);
 
     if (canonical_path == L"") {

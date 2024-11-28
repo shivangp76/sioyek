@@ -1264,6 +1264,7 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
 
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
 
 };
 

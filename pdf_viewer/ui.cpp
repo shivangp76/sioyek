@@ -2273,6 +2273,22 @@ bool HighlightModel::removeRows(int row, int count, const QModelIndex& parent) {
     return true;
 }
 
+bool ItemWithDescriptionModel::removeRows(int row, int count, const QModelIndex& parent) {
+    beginRemoveRows(parent, row, row + count - 1);
+    items.erase(items.begin() + row, items.begin() + row + count);
+
+    if (descriptions.size() > 0) {
+        descriptions.erase(descriptions.begin() + row, descriptions.begin() + row + count);
+    }
+
+    if (metadatas.size() > 0) {
+        metadatas.erase(metadatas.begin() + row, metadatas.begin() + row + count);
+    }
+
+    endRemoveRows();
+    return true;
+}
+
 void BaseCustomSelectorWidget::set_select_fn(std::function<void(int)>&& fn) {
     select_fn = fn;
 }
