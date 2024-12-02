@@ -700,27 +700,35 @@ public:
         QDir directory(root);
         QStringList res = directory.entryList({ prefix + "*" });
         if (res.size() == 0) {
-            std::string encoded_prefix = utf8_encode(prefix.toStdWString());
+
+            bool should_consider_case = false;
+            if (!prefix.isLower()) {
+                should_consider_case = true;
+            }
+
+            std::wstring encoded_prefix = prefix.toStdWString();
             QStringList all_directory_files = directory.entryList();
-            std::vector<std::pair<QString, int>> file_scores;
+            std::vector<std::pair<std::wstring, float>> file_scores;
 
             for (auto file : all_directory_files) {
-                std::string encoded_file = utf8_encode(file.toStdWString());
-                int score = 0;
-                if (is_fuzzy) {
-                    score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(encoded_prefix, encoded_file));
+                std::wstring encoded_file = file.toStdWString();
+                std::wstring encoded_file_case_corrected;
+                if (should_consider_case) {
+                    encoded_file_case_corrected = encoded_file;
                 }
                 else {
-                    fts::fuzzy_match(encoded_prefix.c_str(), encoded_file.c_str(), score);
+                    encoded_file_case_corrected = file.toLower().toStdWString();
                 }
-                file_scores.push_back(std::make_pair(file, score));
+
+                float score = similarity_score(encoded_file_case_corrected, encoded_prefix);
+                file_scores.push_back(std::make_pair(encoded_file, score));
             }
-            std::sort(file_scores.begin(), file_scores.end(), [](std::pair<QString, int> lhs, std::pair<QString, int> rhs) {
+            std::sort(file_scores.begin(), file_scores.end(), [](std::pair<std::wstring, float> lhs, std::pair<std::wstring, float> rhs) {
                 return lhs.second > rhs.second;
                 });
             for (auto [file, score] : file_scores) {
-                if (score > 0) {
-                    res.push_back(file);
+                if (score > 50) {
+                    res.push_back(QString::fromStdWString(file));
                 }
             }
         }
