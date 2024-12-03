@@ -5,7 +5,7 @@
 #include <qopengl.h>
 #include <algorithm>
 #include <qrect.h>
-
+#include <cmath>
 
 class Document;
 class DocumentView;
@@ -347,7 +347,7 @@ struct Vec {
         for (int i = 0; i < dim; i++) {
             norm_squared += values[i] * values[i];
         }
-        return sqrt(norm_squared);
+        return std::sqrt(norm_squared);
     }
 
     float manhattan(){
