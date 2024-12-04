@@ -153,6 +153,7 @@ extern std::wstring INVERSE_SEARCH_COMMAND;
 // extern std::wstring PAPER_SEARCH_CONTRIB_PATH;
 extern bool FUZZY_SEARCHING;
 extern bool AUTO_RENAME_DOWNLOADED_PAPERS;
+extern bool SHOW_DOCUMENTATION_IN_WIDGET;
 
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
@@ -166,6 +167,7 @@ extern float HORIZONTAL_MOVE_AMOUNT;
 
 extern std::wstring TITLEBAR_FORMAT;
 extern Path standard_data_path;
+extern Path documentation_path;
 extern Path default_config_path;
 extern Path default_keys_path;
 extern Path sioyek_js_path;
@@ -1956,7 +1958,8 @@ void MainWidget::open_document_at_location(const Path& path_,
     int page,
     std::optional<float> x_loc,
     std::optional<float> y_loc,
-    std::optional<float> zoom_level)
+    std::optional<float> zoom_level,
+    bool should_push_state)
 {
     //save the previous document state
     if (main_document_view) {
@@ -1967,7 +1970,7 @@ void MainWidget::open_document_at_location(const Path& path_,
     open_document(path, true, {}, true);
     bool has_document = main_document_view_has_document();
 
-    if (has_document) {
+    if (has_document && should_push_state) {
         //setWindowTitle(QString::fromStdWString(path));
         push_state();
     }
@@ -6977,65 +6980,111 @@ void MainWidget::update_highlight_buttons_position() {
 }
 
 
+void MainWidget::open_documentation_file_for_name(QString doctype, QString name) {
+    std::string nameddest_link = "file://sioyek_documentation.pdf#nameddest=" + doctype.toStdString() + ":" + name.toStdString();
+    Document* documentation_document = document_manager->get_document(documentation_path.get_path());
+
+    if (!documentation_document->doc) {
+        documentation_document->open();
+    }
+
+    ParsedUri parsed_uri = parse_uri(mupdf_context, documentation_document->doc, nameddest_link);
+    int page = parsed_uri.page - 1;
+    push_state();
+    open_document_at_location(documentation_path.get_path(), page, parsed_uri.x, parsed_uri.y, {}, false);
+    invalidate_render();
+}
+
 void MainWidget::show_documentation_with_title(QString doctype, QString title) {
+
+
     load_sioyek_documentation();
-    SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
-    text_edit->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
-    text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
 
-    int w = width() * MENU_SCREEN_WDITH_RATIO;
-    int h = height() * MENU_SCREEN_HEIGHT_RATIO;
-    text_edit->setReadOnly(true);
-    text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
-    text_edit->resize(w, h);
+    if (!SHOW_DOCUMENTATION_IN_WIDGET) {
 
-    QString documentation_url = "";
-    QString doc;
+        const QJsonObject& command_name_to_file_name_map = sioyek_documentation_json_document["command_name_to_file_name_map"].toObject();
+        const QJsonObject& config_name_to_file_name_map = sioyek_documentation_json_document["config_name_to_file_name_map"].toObject();
 
-    const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
-    const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
-    //for (auto key : command_title_to_documentation_map.keys()) {
-    //    qDebug() << key;
-    //    qDebug() << (key == title);
-    //}
-
-    if (doctype == "command") {
-        if (command_title_to_documentation_map.contains(title)) {
-            doc = command_title_to_documentation_map[title].toString();
+        QString file_title;
+        if (doctype == "command") {
+            file_title = command_name_to_file_name_map[title].toString();
         }
-    }
-    else if (doctype == "config") {
-        if (config_title_to_documentation_map.contains(title)) {
-            doc = config_title_to_documentation_map[title].toString();
+        else {
+            file_title = config_name_to_file_name_map[title].toString();
         }
+        open_documentation_file_for_name(doctype, file_title);
+    }
+    else {
+        SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
+        text_edit->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
+        text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+
+        int w = width() * MENU_SCREEN_WDITH_RATIO;
+        int h = height() * MENU_SCREEN_HEIGHT_RATIO;
+        text_edit->setReadOnly(true);
+        text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
+        text_edit->resize(w, h);
+
+        QString documentation_url = "";
+        QString doc;
+
+        const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
+        const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
+        //for (auto key : command_title_to_documentation_map.keys()) {
+        //    qDebug() << key;
+        //    qDebug() << (key == title);
+        //}
+
+        if (doctype == "command") {
+            if (command_title_to_documentation_map.contains(title)) {
+                doc = command_title_to_documentation_map[title].toString();
+            }
+        }
+        else if (doctype == "config") {
+            if (config_title_to_documentation_map.contains(title)) {
+                doc = config_title_to_documentation_map[title].toString();
+            }
+        }
+
+        text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
+
+        text_edit->setMarkdown(doc);
+        push_current_widget(text_edit);
+        text_edit->show();
     }
 
-    text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
-    
-    text_edit->setMarkdown(doc);
-    push_current_widget(text_edit);
-    text_edit->show();
+
 }
 
 void MainWidget::show_command_documentation(QString command_name) {
-    SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
-    text_edit->setStyleSheet(get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE));
-    text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    if (SHOW_DOCUMENTATION_IN_WIDGET) {
+        SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
+        text_edit->setStyleSheet(get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE));
+        text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
 
-    int w = width() / 2;
-    int h = height() / 2;
-    text_edit->setReadOnly(true);
-    text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
-    text_edit->resize(w, h);
+        int w = width() / 2;
+        int h = height() / 2;
+        text_edit->setReadOnly(true);
+        text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
+        text_edit->resize(w, h);
 
-    QString documentation_url = "";
-    auto doc = get_command_documentation(command_name, &documentation_url);
+        QString documentation_url = "";
+        QString doucmentation_name;
+        auto doc = get_command_documentation(command_name, &documentation_url, &doucmentation_name);
 
-    text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
-    
-    text_edit->setMarkdown(doc);
-    push_current_widget(text_edit);
-    text_edit->show();
+        text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
+
+        text_edit->setMarkdown(doc);
+        push_current_widget(text_edit);
+        text_edit->show();
+    }
+    else {
+        QString documentation_url = "";
+        QString doucmentation_name;
+        auto doc = get_command_documentation(command_name, &documentation_url, &doucmentation_name);
+        QString doctype = documentation_url.startsWith("conf") ? "config" : "command";
+        open_documentation_file_for_name(doctype, doucmentation_name);
+    }
 }
 
 
@@ -7233,6 +7282,8 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
+    //open_document(L":/docs/scripts/sample_doc.pdf");
+    //invalidate_render();
 }
 
 void MainWidget::show_command_menu() {
@@ -10429,7 +10480,7 @@ QString MainWidget::get_command_documentation_with_title(QString title) {
     return "";
 }
 
-QString MainWidget::get_command_documentation(QString command_name, QString* out_url){
+QString MainWidget::get_command_documentation(QString command_name, QString* out_url, QString* out_file_name){
     load_sioyek_documentation();
 
     const QJsonObject& command_name_to_title_map = sioyek_documentation_json_document["command_name_to_title_map"].toObject();
@@ -10439,23 +10490,27 @@ QString MainWidget::get_command_documentation(QString command_name, QString* out
     if (command_name.startsWith("setconfig_")) {
         QString config_name = command_name.mid(10);
         const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
+        const QJsonObject& config_name_to_file_name_map = sioyek_documentation_json_document["config_name_to_file_name_map"].toObject();
         const QJsonObject& config_related_commands_map = sioyek_documentation_json_document["config_related_commands_map"].toObject();
         const QJsonObject& config_related_configs_map = sioyek_documentation_json_document["config_related_configs_map"].toObject();
 
         if (config_name_to_title_map.value(config_name).isString()) {
             QString documentation_title = config_name_to_title_map.value(config_name).toString();
             if (out_url) *out_url = "configs.md#" + documentation_title;
+            if (out_file_name) *out_file_name = config_name_to_file_name_map.value(config_name).toString();
             return get_config_documentation_with_title(config_name, documentation_title);
         }
     }
 
     if (command_name_to_title_map.value(command_name).isString()){
         QString documentation_title = command_name_to_title_map.value(command_name).toString();
+        const QJsonObject& command_name_to_file_name_map = sioyek_documentation_json_document["command_name_to_file_name_map"].toObject();
         const QJsonObject& command_related_commands_map = sioyek_documentation_json_document["command_related_commands_map"].toObject();
         const QJsonObject& command_related_configs_map = sioyek_documentation_json_document["command_related_configs_map"].toObject();
 
         if (command_title_to_documentation_map.value(documentation_title).isString()) {
             if (out_url) *out_url = "commands.md#" + documentation_title;
+            if (out_file_name) *out_file_name = command_name_to_file_name_map.value(command_name).toString();
             //return command_title_to_documentation_map.value(documentation_title).toString();
             return get_command_documentation_with_title(documentation_title);
         }

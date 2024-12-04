@@ -499,7 +499,7 @@ public:
     void invalidate_ui();
     void open_document(const Path& path, std::optional<float> offset_x = {}, std::optional<float> offset_y = {}, std::optional<float> zoom_level = {}, std::string downloaded_checksum="");
     void open_document_with_hash(const std::string& hash, std::optional<float> offset_x = {}, std::optional<float> offset_y = {}, std::optional<float> zoom_level = {});
-    void open_document_at_location(const Path& path, int page, std::optional<float> x_loc, std::optional<float> y_loc, std::optional<float> zoom_level);
+    void open_document_at_location(const Path& path, int page, std::optional<float> x_loc, std::optional<float> y_loc, std::optional<float> zoom_level, bool should_push_state=true);
     void open_document(const DocumentViewState& state);
     void open_document(const PortalViewState& checksum);
     void validate_render();
@@ -889,11 +889,12 @@ public:
     void add_command_being_performed(Command* new_command);
     void remove_command_being_performed(Command* new_command);
     void load_sioyek_documentation();
-    QString get_command_documentation(QString command_name, QString* out_url);
+    QString get_command_documentation(QString command_name, QString* out_url, QString* out_file_name);
     QString get_command_documentation_with_title(QString command_name);
     QString get_config_documentation_with_title(QString config, QString command_name);
     void show_command_documentation(QString command_name);
     void show_documentation_with_title(QString doctype, QString title);
+    void open_documentation_file_for_name(QString doctype, QString name);
     QString get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs);
 
     QString handle_action_in_menu(std::wstring action);

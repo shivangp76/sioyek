@@ -40,6 +40,7 @@ bool DEBUG_SMOOTH_FREEHAND_DRAWINGS = true;
 bool DEBUG = false;
 bool ADD_NEWLINES_WHEN_COPYING_TEXT = false;
 bool ALWAYS_COPY_SELECTED_TEXT = false;
+bool SHOW_DOCUMENTATION_IN_WIDGET = false;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1232,6 +1233,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"background_pixel_fix", &BACKGROUND_PIXEL_FIX);
     add_bool(L"add_newlines_when_copying_text", &ADD_NEWLINES_WHEN_COPYING_TEXT);
     add_bool(L"always_copy_selected_text", &ALWAYS_COPY_SELECTED_TEXT);
+    add_bool(L"show_documentation_in_widget", &SHOW_DOCUMENTATION_IN_WIDGET);
+
 
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);

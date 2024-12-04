@@ -25,7 +25,7 @@ def create_arg_parser():
         prog='sioyek_database_utils',
         )
 
-    parser.add_argument('--output-dir', type=str, help='Path to the local database file (local.db)')
+    parser.add_argument('--output-dir', type=str, help='Path to the local database file (local.db)', default='.')
     return parser
 
 def get_video_file_path_for_markdown_file(markdown_file_path):
@@ -85,6 +85,8 @@ def get_documentation_maps(commands_file_name, configs_file_name):
     command_related_configs_map = dict()
     config_related_commands_map = dict()
     config_related_configs_map = dict()
+    command_name_to_file_name_map = dict()
+    config_name_to_file_name_map = dict()
 
     for file in os.listdir(docs_base_path / 'commands'):
         markdown_file_path = docs_base_path / 'commands' / file
@@ -116,6 +118,8 @@ def get_documentation_maps(commands_file_name, configs_file_name):
                 for_commands.append(markdown_file_path.stem)
             for command in for_commands:
                 command_name_to_title_map[command] = title
+                command_name_to_file_name_map[command] = markdown_file_path.stem
+            command_name_to_file_name_map[title] = markdown_file_path.stem
 
         if document_type == 'configs':
             title = '-'.join(for_configs)
@@ -123,6 +127,9 @@ def get_documentation_maps(commands_file_name, configs_file_name):
                 for_configs.append(markdown_file_path.stem)
             for config in for_configs:
                 config_name_to_title_map[config] = title
+                config_name_to_file_name_map[config] = markdown_file_path.stem
+
+            config_name_to_file_name_map[title] = markdown_file_path.stem
         
 
     for markdown_file_path in tqdm.tqdm(all_files):
@@ -197,7 +204,9 @@ def get_documentation_maps(commands_file_name, configs_file_name):
         'command_related_commands_map': command_related_commands_map,
         'command_related_configs_map': command_related_configs_map,
         'config_related_commands_map': config_related_commands_map,
-        'config_related_configs_map': config_related_configs_map
+        'config_related_configs_map': config_related_configs_map,
+        'command_name_to_file_name_map': command_name_to_file_name_map,
+        'config_name_to_file_name_map': config_name_to_file_name_map,
     }
         
 

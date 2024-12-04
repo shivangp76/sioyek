@@ -125,6 +125,8 @@ Path android_config_path(L"");
 Path tutorial_path(L"");
 #endif
 
+Path documentation_path(L":/data/sioyek_documentation.pdf");
+
 #ifdef SIOYEK_ANDROID
 extern Path android_config_path;
 #endif

@@ -98,6 +98,7 @@ extern QString global_font_family;
 
 #ifdef Q_OS_WIN
 #include <windows.h>
+#include <io.h>
 #endif
 
 
@@ -2994,48 +2995,66 @@ float android_brightness_get(){
 
 fz_document* open_document_with_file_name(fz_context* context, std::wstring file_name) {
 
+    bool sioyek_mobile = false;
 #ifdef SIOYEK_MOBILE
+    sioyek_mobile = true;
+#endif
 
-    QFile pdf_qfile(QString::fromStdWString(file_name));
+    QString file_name_qstring = QString::fromStdWString(file_name);
+    if (sioyek_mobile || file_name_qstring.startsWith(":/")) {
 
-    pdf_qfile.open(QIODeviceBase::ReadOnly);
-    int qfile_handle = pdf_qfile.handle();
-    fz_stream* stream = nullptr;
+        QFile pdf_qfile(QString::fromStdWString(file_name));
+
+        pdf_qfile.open(QIODeviceBase::ReadOnly);
+        int qfile_handle = pdf_qfile.handle();
+        fz_stream* stream = nullptr;
 
 
-    if (qfile_handle != -1) {
-        FILE* file_ptr = fdopen(dup(qfile_handle), "rb");
-        stream = fz_open_file_ptr_no_close(context, file_ptr);
-    }
-    else {
-        QByteArray bytes = pdf_qfile.readAll();
-        int size = bytes.size();
-        unsigned char* new_buffer = new unsigned char[size];
-        memcpy(new_buffer, bytes.data(), bytes.size());
-        stream = fz_open_memory(context, new_buffer, bytes.size());
-    }
+        if (qfile_handle != -1) {
 
-    //return fz_open_document_with_stream(context, "application/pdf", stream);
-    std::string file_name_str = utf8_encode(file_name);
-    return fz_open_document_with_stream(context, file_name_str.c_str(), stream);
+#ifdef Q_OS_WIN
+            FILE* file_ptr = fdopen(qfile_handle, "rb");
+            //FILE* file_ptr = fdopen(_dup(qfile_handle), "rb");
 #else
-    float epub_width, epub_height;
-    get_path_epub_size(file_name, &epub_width, &epub_height);
-
-    fz_document* doc = fz_open_document(context, utf8_encode(file_name).c_str());
-    if (fz_is_document_reflowable(context, doc)) {
-
-        if (EPUB_CSS.size() > 0) {
-            std::string css = utf8_encode(EPUB_CSS);
-            fz_set_user_css(context, css.c_str());
+            FILE* file_ptr = fdopen(dup(qfile_handle), "rb");
+#endif
+            stream = fz_open_file_ptr_no_close(context, file_ptr);
+        }
+        else {
+            QByteArray bytes = pdf_qfile.readAll();
+            int size = bytes.size();
+            unsigned char* new_buffer = new unsigned char[size];
+            memcpy(new_buffer, bytes.data(), bytes.size());
+            stream = fz_open_memory(context, new_buffer, bytes.size());
         }
 
-        fz_layout_document(context, doc, epub_width, epub_height, EPUB_FONT_SIZE);
-
-        //int a = 2;
+        //return fz_open_document_with_stream(context, "application/pdf", stream);
+        std::string file_name_str = utf8_encode(file_name);
+        return fz_open_document_with_stream(context, file_name_str.c_str(), stream);
     }
-    return doc;
+    else {
+#ifndef SIOYEK_MOBILE
+
+
+        float epub_width, epub_height;
+        get_path_epub_size(file_name, &epub_width, &epub_height);
+
+        fz_document* doc = fz_open_document(context, utf8_encode(file_name).c_str());
+        if (fz_is_document_reflowable(context, doc)) {
+
+            if (EPUB_CSS.size() > 0) {
+                std::string css = utf8_encode(EPUB_CSS);
+                fz_set_user_css(context, css.c_str());
+            }
+
+            fz_layout_document(context, doc, epub_width, epub_height, EPUB_FONT_SIZE);
+
+            //int a = 2;
+        }
+        return doc;
 #endif
+    }
+    return nullptr;
 }
 
 void convert_qcolor_to_float3(const QColor& color, float* out_floats) {

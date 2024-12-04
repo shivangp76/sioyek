@@ -1,3 +1,4 @@
+doc_body:
 Used to control ui menus using keyboard or scripts. Takes the desired action as an input string which can be one of the following:
 
 | Action | Description |

@@ -3220,6 +3220,7 @@ void DatabaseManager::delete_documentation_search_index() {
 void DatabaseManager::index_documentation(const QJsonDocument& documentation){
     const QJsonObject& config_title_to_documentation_map = documentation["config_title_to_documentation_map"].toObject();
     const QJsonObject& command_title_to_documentation_map = documentation["command_title_to_documentation_map"].toObject();
+
     std::wstringstream ss;
 
     bool is_indexed = is_documentation_indexed();

@@ -18,6 +18,7 @@
         <file>pdf_viewer/shaders/vertical_bar_dark.fragment</file>
         <file>pdf_viewer/shaders/line.vertex</file>
         <file>resources/sioyek.desktop</file>
+        <file>data/sioyek_documentation.pdf</file>
         
         <file>pdf_viewer/shaders/line.fragment</file>
         <file>pdf_viewer/shaders/compiled_drawing.vertex</file>
