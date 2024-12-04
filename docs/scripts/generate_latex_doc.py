@@ -9,6 +9,7 @@ import tqdm
 DOCUMENTATION_PATH = pathlib.Path(__file__).parent.parent.absolute()
 COMMANDS_PATH = DOCUMENTATION_PATH / "commands"
 CONFIGS_PATH = DOCUMENTATION_PATH / "configs"
+OUTPUT_DIR = DOCUMENTATION_PATH.parent / "bak" / "doc"
 
 @dataclass
 class Documentation:
@@ -223,6 +224,7 @@ def get_latex_documentation():
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 \begin{document}
+\sloppy
 \title{Sioyek Documentation}
 \date{}
 \maketitle
@@ -264,7 +266,7 @@ def get_latex_documentation():
 if __name__ == '__main__':
     docs = get_latex_documentation()
     docs = docs.replace('\r', '')
-    with open('sioyek_documentation.tex', 'w', encoding='utf8') as outfile:
+    with open(OUTPUT_DIR / 'sioyek_documentation.tex', 'w', encoding='utf8') as outfile:
         outfile.write(docs)
 
 #%%

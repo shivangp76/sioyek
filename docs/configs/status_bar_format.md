@@ -8,13 +8,20 @@ demo_code:
 
 doc_body:
 The items and format to show in the statusbar. The default value is:
-```
-[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}%{rect_select}%{custom_message}%{download}%{download_button}%{network_status}%{tts_status}%{tts_rate}
 
 ```
+[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}
+%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}
+%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}
+%{rect_select}%{custom_message}%{download}%{download_button}%{network_status}
+%{tts_status}%{tts_rate}
+```
+
+
 The @config(right_status_bar_format) is similar, but determines what to display on right-aligned statusbar.
 
 Here is what each of the `%{}` variables expand to:
+
 - `%{current_page}` expands to the current page number
 - `%{current_page_label}` expands to the the label of the current page (might be different from `current_page` for example some documents have pages labeled with roman numerals, e.g. XII)
 - `%{num_pages}` expands to the total number of pages in current document
