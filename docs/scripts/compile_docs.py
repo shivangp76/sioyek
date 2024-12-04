@@ -12,6 +12,7 @@ import tqdm
 import json
 #%%
 
+config_names_file = pathlib.Path(__file__).parent / "config_names.txt"
 video_base_path = pathlib.Path(__file__).parent.parent / "videos"
 files_base_path = pathlib.Path(__file__).parent.parent / "files"
 docs_base_path = pathlib.Path(__file__).parent.parent
@@ -73,6 +74,12 @@ def resolve_configs_and_commands(
         raise e
 
 def get_documentation_maps(commands_file_name, configs_file_name):
+    all_config_names = []
+    for line in open(config_names_file, "r", encoding='utf8'):
+        all_config_names.append(line.strip()[1:-1])
+    
+    # print(all_config_names)
+
     command_file_paths = []
     config_file_paths = []
 
@@ -128,6 +135,13 @@ def get_documentation_maps(commands_file_name, configs_file_name):
             for config in for_configs:
                 config_name_to_title_map[config] = title
                 config_name_to_file_name_map[config] = markdown_file_path.stem
+
+                if ('*' in config) or ('[' in config): # config name is a pattern
+                    config = config.replace('*', '.*')
+                    config_pattern = re.compile(config)
+                    for full_config_name in all_config_names:
+                        if config_pattern.match(full_config_name):
+                            config_name_to_file_name_map[full_config_name] = markdown_file_path.stem
 
             config_name_to_file_name_map[title] = markdown_file_path.stem
         

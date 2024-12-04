@@ -7282,8 +7282,6 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
-    //open_document(L":/docs/scripts/sample_doc.pdf");
-    //invalidate_render();
 }
 
 void MainWidget::show_command_menu() {
@@ -10508,6 +10506,10 @@ QString MainWidget::get_command_documentation(QString command_name, QString* out
             if (out_url) *out_url = "configs.md#" + documentation_title;
             if (out_file_name) *out_file_name = config_name_to_file_name_map.value(config_name).toString();
             return get_config_documentation_with_title(config_name, documentation_title);
+        }
+        else if (!config_name_to_file_name_map.value(config_name).isNull()) {
+            if (out_url) *out_url = "configs.md#" + config_name_to_file_name_map.value(config_name).toString();
+            if (out_file_name) *out_file_name = config_name_to_file_name_map.value(config_name).toString();
         }
     }
 
