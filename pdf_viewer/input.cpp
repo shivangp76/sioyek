@@ -8469,7 +8469,7 @@ QStringList CommandManager::get_all_command_names() {
             pairs.push_back(std::make_pair(command_last_uses[com.first], QString::fromStdString(com.first)));
         }
 
-        std::sort(pairs.begin(), pairs.end(), [](const auto& a, const auto& b) {
+        std::stable_sort(pairs.begin(), pairs.end(), [](const auto& a, const auto& b) {
             return a.first > b.first;
             });
 
