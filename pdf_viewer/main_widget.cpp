@@ -3736,6 +3736,11 @@ void MainWidget::long_jump_to_destination(float abs_offset_y) {
 void MainWidget::long_jump_to_destination(DocumentPos pos) {
     AbsoluteDocumentPos abs_pos = pos.to_absolute(doc());
 
+    if (ALIGN_LINK_DEST_TO_TOP) {
+        abs_pos.y += get_align_to_top_offset();
+
+    }
+
     if (!main_document_view->is_pending_link_source_filled()) {
         push_state();
         main_document_view->set_offsets(pos.x, abs_pos.y);
@@ -6980,6 +6985,13 @@ void MainWidget::update_highlight_buttons_position() {
 }
 
 
+float MainWidget::get_align_to_top_offset() {
+    if (ALIGN_LINK_DEST_TO_TOP) {
+        return main_document_view->get_view_height() / 2.1f / main_document_view->get_zoom_level();
+    }
+    return 0;
+}
+
 void MainWidget::open_documentation_file_for_name(QString doctype, QString name) {
     std::string nameddest_link = "file://sioyek_documentation.pdf#nameddest=" + doctype.toStdString() + ":" + name.toStdString();
     Document* documentation_document = document_manager->get_document(documentation_path.get_path());
@@ -6991,7 +7003,12 @@ void MainWidget::open_documentation_file_for_name(QString doctype, QString name)
     ParsedUri parsed_uri = parse_uri(mupdf_context, documentation_document->doc, nameddest_link);
     int page = parsed_uri.page - 1;
     push_state();
-    open_document_at_location(documentation_path.get_path(), page, parsed_uri.x, parsed_uri.y, {}, false);
+    open_document_at_location(documentation_path.get_path(), page, 0, parsed_uri.y, {}, false);
+
+    if (ALIGN_LINK_DEST_TO_TOP) {
+        main_document_view->scroll_mid_to_top();
+    }
+
     invalidate_render();
 }
 
@@ -10740,10 +10757,10 @@ void MainWidget::clear_current_document_drawings() {
 
 void MainWidget::handle_goto_link_with_page_and_offset(int page, float y_offset) {
     long_jump_to_destination(page, y_offset);
-    if (ALIGN_LINK_DEST_TO_TOP) {
-        float top_offset = (main_document_view->get_view_height() / main_document_view->get_zoom_level()) / 2.0f;
-        main_document_view->move_absolute(0, top_offset);
-    }
+    //if (ALIGN_LINK_DEST_TO_TOP) {
+    //    float top_offset = (main_document_view->get_view_height() / main_document_view->get_zoom_level()) / 2.0f;
+    //    main_document_view->move_absolute(0, top_offset);
+    //}
 }
 
 QString MainWidget::execute_macro_sync(QString macro, QStringList args) {

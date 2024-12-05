@@ -1638,7 +1638,9 @@ void DocumentView::readjust_to_screen() {
 }
 
 float DocumentView::get_half_screen_offset() {
-    return (static_cast<float>(view_height) / 2.0f);
+    // we add some additional padding so the actual item is visible on the srceen
+    // that's why we divide by 2.2 instead of 2
+    return (static_cast<float>(view_height) / 2.2f);
 }
 
 void DocumentView::scroll_mid_to_top() {

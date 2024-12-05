@@ -55,6 +55,7 @@ extern float FREETEXT_BOOKMARK_COLOR[3];
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern bool FUZZY_SEARCHING;
 extern bool TOC_JUMP_ALIGN_TOP;
+extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool FILL_TEXTBAR_WITH_SELECTED_TEXT;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 extern bool INCREMENTAL_SEARCH;
@@ -2834,7 +2835,7 @@ public:
 
             widget->main_document_view->goto_page(page);
 
-            if (TOC_JUMP_ALIGN_TOP) {
+            if (TOC_JUMP_ALIGN_TOP || ALIGN_LINK_DEST_TO_TOP) {
                 widget->main_document_view->scroll_mid_to_top();
             }
         }
@@ -2850,7 +2851,7 @@ public:
             else {
                 widget->main_document_view->goto_offset_within_page(page, y_offset);
             }
-            if (TOC_JUMP_ALIGN_TOP) {
+            if (TOC_JUMP_ALIGN_TOP || ALIGN_LINK_DEST_TO_TOP) {
                 widget->main_document_view->scroll_mid_to_top();
             }
 

@@ -896,6 +896,7 @@ public:
     void show_documentation_with_title(QString doctype, QString title);
     void open_documentation_file_for_name(QString doctype, QString name);
     QString get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs);
+    float get_align_to_top_offset();
 
     QString handle_action_in_menu(std::wstring action);
     std::wstring handle_synctex_to_ruler();
