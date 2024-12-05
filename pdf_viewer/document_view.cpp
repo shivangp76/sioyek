@@ -3016,7 +3016,7 @@ void DocumentView::toggle_highlight_words() {
     this->should_highlight_words = !this->should_highlight_words;
 }
 
-void DocumentView::set_highlight_words(std::vector<DocumentRect>& rects) {
+void DocumentView::set_highlight_words(std::vector<DocumentRect> rects) {
     word_rects = std::move(rects);
 }
 
@@ -5720,7 +5720,7 @@ std::optional<DocumentRect> DocumentView::get_selected_rect_document() {
     }
 }
 
-void DocumentView::handle_keyboard_select(const std::wstring& text) {
+void DocumentView::handle_keyboard_select(const std::wstring& text, const std::vector<DocumentRect>& tag_rects) {
     std::optional<AbsoluteDocumentPos> begin_pos = {};
     std::optional<AbsoluteDocumentPos> end_pos = {};
     set_should_highlight_words(false);
@@ -5760,45 +5760,23 @@ void DocumentView::handle_keyboard_select(const std::wstring& text) {
         QStringList parts = QString::fromStdWString(text).split(' ');
 
         if (parts.size() == 1) {
-            std::vector<WindowRect> schar_rects;
-            std::optional<WindowRect> srect_ = get_tag_window_rect(parts.at(0).toStdString(), &schar_rects);
-            if (schar_rects.size() > 1) {
-                WindowRect srect = schar_rects[0];
-                WindowRect erect = schar_rects[schar_rects.size() - 2];
-                int w = erect.x1 - erect.x0;
-
-                WindowPos begin_window_pos, end_window_pos;
-                begin_window_pos.x = (srect.x0 + srect.x1) / 2 - 1;
-                begin_window_pos.y = (srect.y0 + srect.y1) / 2;
-                end_window_pos.x = erect.x0;
-                end_window_pos.y = (erect.y0 + erect.y1) / 2;
-                begin_pos = begin_window_pos.to_absolute(this);
-                end_pos = end_window_pos.to_absolute(this);
+            //std::vector<WindowRect> schar_rects;
+            std::optional<DocumentRect> srect_ = get_tag_rect(tag_rects, parts.at(0).toStdString());
+            //if (schar_rects.size() > 1) {
+            if (srect_.has_value()) {
+                AbsoluteRect absrect = srect_->to_absolute(doc());
+                begin_pos = absrect.top_left();
+                end_pos = absrect.bottom_right();
+                begin_pos->y = absrect.center().y;
+                end_pos->y = absrect.center().y;
             }
         }
         if (parts.size() == 2) {
 
-            std::vector<WindowRect> schar_rects;
-            std::vector<WindowRect> echar_rects;
+            std::optional<WindowRect> srect_ = get_tag_window_rect(tag_rects, parts.at(0).toStdString());
+            std::optional<WindowRect> erect_ = get_tag_window_rect(tag_rects, parts.at(1).toStdString());
 
-            std::optional<WindowRect> srect_ = get_tag_window_rect(parts.at(0).toStdString(), &schar_rects);
-            std::optional<WindowRect> erect_ = get_tag_window_rect(parts.at(1).toStdString(), &echar_rects);
-
-            if ((schar_rects.size() > 0) && (echar_rects.size() > 0)) {
-                WindowRect srect = schar_rects[0];
-                WindowRect erect = echar_rects[0];
-                int w = erect.x1 - erect.x0;
-
-                WindowPos begin_pos_window, end_pos_window;
-                begin_pos_window.x = (srect.x0 + srect.x1) / 2 - 1;
-                begin_pos_window.y = (srect.y0 + srect.y1) / 2;
-                end_pos_window.x = erect.x0 - w / 2;
-                end_pos_window.y = (erect.y0 + erect.y1) / 2;
-                begin_pos = begin_pos_window.to_absolute(this);
-                end_pos = end_pos_window.to_absolute(this);
-
-            }
-            else if (srect_.has_value() && erect_.has_value()) {
+            if (srect_.has_value() && erect_.has_value()) {
                 WindowRect srect = srect_.value();
                 WindowRect erect = erect_.value();
 
@@ -5835,83 +5813,55 @@ std::vector<PagelessDocumentRect> DocumentView::get_current_page_flat_words(std:
     return res;
 }
 
-std::optional<PagelessDocumentRect> DocumentView::get_tag_rect(std::string tag, std::vector<PagelessDocumentRect>* word_chars) {
-
-    int page = get_current_page_number();
-    std::vector<std::vector<PagelessDocumentRect>> all_word_chars;
-    std::vector<PagelessDocumentRect> word_rects;
-    if (word_chars == nullptr) {
-        word_rects = get_current_page_flat_words(nullptr);
-    }
-    else {
-        word_rects = get_current_page_flat_words(&all_word_chars);
-    }
-
-    std::vector<std::vector<PagelessDocumentRect>> visible_word_chars;
-    std::vector<PagelessDocumentRect> visible_word_rects;
-
-    for (int i = 0; i < word_rects.size(); i++) {
-        if (DocumentRect(word_rects[i], page).is_visible(this)) {
-            visible_word_rects.push_back(word_rects[i]);
-            if (word_chars != nullptr) {
-                visible_word_chars.push_back(all_word_chars[i]);
-            }
-        }
-    }
-
+std::optional<DocumentRect> DocumentView::get_tag_rect(const std::vector<DocumentRect>& tag_rects, std::string tag){
     int index = get_index_from_tag(tag);
-    if (index < visible_word_rects.size()) {
-        if (word_chars != nullptr) {
-            *word_chars = visible_word_chars[index];
-        }
-        return visible_word_rects[index];
+    if (index < tag_rects.size()) {
+        return tag_rects[index];
     }
     return {};
 }
 
-std::optional<WindowRect> DocumentView::get_tag_window_rect(std::string tag, std::vector<WindowRect>* char_rects) {
+std::optional<WindowRect> DocumentView::get_tag_window_rect(const std::vector<DocumentRect>& tag_rects, std::string tag){
 
-    int page = get_current_page_number();
-    std::vector<PagelessDocumentRect> word_char_rects;
-    std::optional<PagelessDocumentRect> rect = get_tag_rect(tag, &word_char_rects);
+    std::optional<DocumentRect> rect = get_tag_rect(tag_rects, tag);
 
     if (rect.has_value()) {
 
-        //fz_irect window_rect = main_document_view->document_to_window_irect(page, rect.value());
-        WindowRect window_rect = DocumentRect(rect.value(), page).to_window(this);
-        if (char_rects != nullptr) {
-            for (auto c : word_char_rects) {
-                char_rects->push_back(DocumentRect(c, page).to_window(this));
-            }
-        }
+        WindowRect window_rect = rect->to_window(this);
         return window_rect;
     }
     return {};
 }
 
-void DocumentView::highlight_words() {
+std::vector<DocumentRect> DocumentView::highlight_words() {
 
-    int page = get_current_page_number();
-    fz_stext_page* stext_page = get_document()->get_stext_with_page_number(page);
-    std::vector<fz_stext_char*> flat_chars;
-    std::vector<PagelessDocumentRect> word_rects;
-    std::vector<DocumentRect> word_rects_with_page;
+    std::vector<int> visible_pages;
+    get_visible_pages(get_view_height(), visible_pages);
     std::vector<DocumentRect> visible_word_rects;
 
-    get_flat_chars_from_stext_page(stext_page, flat_chars);
-    get_flat_words_from_flat_chars(flat_chars, word_rects);
-    for (auto rect : word_rects) {
-        word_rects_with_page.push_back(DocumentRect(rect, page));
-    }
+    //int page = get_current_page_number();
+    for (auto page : visible_pages) {
+        fz_stext_page* stext_page = get_document()->get_stext_with_page_number(page);
+        std::vector<fz_stext_char*> flat_chars;
+        std::vector<PagelessDocumentRect> word_rects;
+        std::vector<DocumentRect> word_rects_with_page;
 
-    for (auto [rect, page] : word_rects_with_page) {
-        if (DocumentRect(rect, page).is_visible(this)) {
-            visible_word_rects.push_back(DocumentRect(rect, page));
+        get_flat_chars_from_stext_page(stext_page, flat_chars);
+        get_flat_words_from_flat_chars(flat_chars, word_rects);
+        for (auto rect : word_rects) {
+            word_rects_with_page.push_back(DocumentRect(rect, page));
+        }
+
+        for (auto [rect, page] : word_rects_with_page) {
+            if (DocumentRect(rect, page).is_visible(this)) {
+                visible_word_rects.push_back(DocumentRect(rect, page));
+            }
         }
     }
 
     set_highlight_words(visible_word_rects);
     set_should_highlight_words(true);
+    return visible_word_rects;
 }
 
 void DocumentView::toggle_presentation_mode() {

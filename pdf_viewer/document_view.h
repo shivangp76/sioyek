@@ -278,7 +278,7 @@ public:
     void set_custom_color_mode(bool mode);
     void toggle_custom_color_mode();
     void toggle_highlight_words();
-    void set_highlight_words(std::vector<DocumentRect>& rects);
+    void set_highlight_words(std::vector<DocumentRect> rects);
     void set_should_highlight_words(bool should_highlight);
     std::vector<DocumentRect> get_highlight_word_rects();
     void show_rect_hints();
@@ -660,11 +660,13 @@ public:
     bool is_rect_visible(DocumentRect rect);
     std::optional<AbsoluteRect> get_selected_rect_absolute();
     std::optional<DocumentRect> get_selected_rect_document();
-    void handle_keyboard_select(const std::wstring& text);
+    void handle_keyboard_select(const std::wstring& text, const std::vector<DocumentRect>& tag_rects);
     std::vector<PagelessDocumentRect> get_current_page_flat_words(std::vector<std::vector<PagelessDocumentRect>>* flat_word_chars=nullptr);
-std::optional<PagelessDocumentRect> get_tag_rect(std::string tag, std::vector<PagelessDocumentRect>* word_chars=nullptr);
-    std::optional<WindowRect> get_tag_window_rect(std::string tag, std::vector<WindowRect>* char_rects=nullptr);
-    void highlight_words();
+    //std::optional<DocumentRect> get_tag_rect(const std::vector<DocumentRect>& tag_rects, std::string tag, std::vector<PagelessDocumentRect>* word_chars = nullptr);
+    std::optional<DocumentRect> get_tag_rect(const std::vector<DocumentRect>& tag_rects, std::string tag);
+    //std::optional<WindowRect> get_tag_window_rect(const std::vector<DocumentRect>& tag_rects, std::string tag, std::vector<WindowRect>* char_rects=nullptr);
+    std::optional<WindowRect> get_tag_window_rect(const std::vector<DocumentRect>& tag_rects, std::string tag);
+    std::vector<DocumentRect> highlight_words();
     void toggle_presentation_mode();
     void set_presentation_mode(bool mode);
     fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);

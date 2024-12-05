@@ -2123,7 +2123,7 @@ void Document::get_text_selection(fz_context* ctx, AbsoluteDocumentPos selection
                 if (current_char == char_begin) {
                     word_selecting = true;
                 }
-                if (current_char == char_end) {
+                if (current_char == char_end && (i == page_end)) {
                     selecting = false;
                 }
                 if (word_selecting == true && is_separator(char_end, current_char) && selecting == false) {

@@ -5536,6 +5536,8 @@ public:
     static inline const std::string hname = "Select text using keyboard";
     KeyboardSelectCommand(MainWidget* w) : TextCommand(cname, w) {};
 
+    std::vector<DocumentRect> tag_rects;
+
     void on_text_change(const QString& new_text) override {
         std::vector<std::string> selected_tags;
         QStringList tags = new_text.split(" ");
@@ -5551,12 +5553,12 @@ public:
     }
 
     void perform() {
-        dv()->handle_keyboard_select(text.value());
+        dv()->handle_keyboard_select(text.value(), tag_rects);
         widget->set_highlighted_tags({});
     }
 
     void pre_perform() {
-        dv()->highlight_words();
+        tag_rects = dv()->highlight_words();
         widget->clear_tag_prefix();
 
     }
@@ -5571,9 +5573,10 @@ public:
     static inline const std::string cname = "keyboard_overview";
     static inline const std::string hname = "Open an overview using keyboard";
     KeyboardOverviewCommand(MainWidget* w) : TextCommand(cname, w) {};
+    std::vector<DocumentRect> tags;
 
     void perform() {
-        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(tags, utf8_encode(text.value()));
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->overview_under_pos({ (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2 });
@@ -5583,7 +5586,7 @@ public:
     }
 
     void pre_perform() {
-        dv()->highlight_words();
+        tags = dv()->highlight_words();
 
     }
 
@@ -5597,9 +5600,10 @@ public:
     static inline const std::string cname = "keyboard_smart_jump";
     static inline const std::string hname = "Smart jump using keyboard";
     KeyboardSmartjumpCommand(MainWidget* w) : TextCommand(cname, w) {};
+    std::vector<DocumentRect> tags;
 
     void perform() {
-        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(tags, utf8_encode(text.value()));
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->smart_jump_under_pos({ (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2 });
@@ -5608,7 +5612,7 @@ public:
     }
 
     void pre_perform() {
-        dv()->highlight_words();
+        tags = dv()->highlight_words();
     }
 
     bool pushes_state() {
