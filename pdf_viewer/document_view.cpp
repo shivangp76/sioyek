@@ -5960,7 +5960,9 @@ void DocumentView::update_overview_highlighted_paper_with_position(DocumentPos d
         }
 
         if ((index_into_candidates >= 0) && (index_into_candidates < smart_view_candidates.size())){
-            if ((smart_view_candidates[index_into_candidates].reference_type == ReferenceType::Reference) || (smart_view_candidates[index_into_candidates].reference_type == ReferenceType::None)){
+            if ((smart_view_candidates[index_into_candidates].reference_type == ReferenceType::Reference) ||
+                (smart_view_candidates[index_into_candidates].reference_type == ReferenceType::RefLink) ||
+                (smart_view_candidates[index_into_candidates].reference_type == ReferenceType::None)){
                 smart_view_candidates[index_into_candidates].target_pos = docpos;
                 smart_view_candidates[index_into_candidates].target_reference_text = paper_name_with_rects->paper_name;
 
