@@ -3764,9 +3764,10 @@ void DocumentView::swap_line_select_cursor() {
         new_begin.end_pos = ruler_rect.center_right();
         new_begin.index_info = ruler_line_index.value();
         int old_ruler_index = line_select_begin_data->index_info.merged_index;
+        int old_ruler_page = line_select_begin_data->pos.to_document(doc()).page;
 
         line_select_begin_data = new_begin;
-        set_line_index(old_ruler_index, ruler_page);
+        set_line_index(old_ruler_index, old_ruler_page);
     }
 }
 
