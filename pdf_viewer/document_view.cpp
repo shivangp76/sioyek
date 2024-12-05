@@ -3721,6 +3721,7 @@ void DocumentView::select_ruler_text() {
 
         AbsoluteDocumentPos abspos_begin = ruler_rect.center_left();
         AbsoluteDocumentPos abspos_end = ruler_rect.center_right();
+        int current_ruler_page = ruler_rect_->to_document(doc()).page;
         if (line_select_mode && line_select_begin_data.has_value()) {
             abspos_begin = line_select_begin_data->pos;
             selection_end = abspos_end;
@@ -3738,8 +3739,12 @@ void DocumentView::select_ruler_text() {
         selected_character_rects.clear();
         if (line_select_begin_data) {
             if (line_select_begin_data->index_info.merged_index > ruler_line_index->merged_index) {
-                abspos_end = line_select_begin_data->end_pos;
-                abspos_begin = ruler_rect.center_left();
+                int original_ruler_page = line_select_begin_data->pos.to_document(doc()).page;
+                if (original_ruler_page == current_ruler_page) {
+                    abspos_end = line_select_begin_data->end_pos;
+                    abspos_begin = ruler_rect.center_left();
+                }
+
                 //abspos_end = line_sele
                 //std::swap(abspos_begin, abspos_end);
             }
