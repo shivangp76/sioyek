@@ -3723,8 +3723,15 @@ void DocumentView::select_ruler_text() {
         AbsoluteDocumentPos abspos_end = ruler_rect.center_right();
         int current_ruler_page = ruler_rect_->to_document(doc()).page;
         if (line_select_mode && line_select_begin_data.has_value()) {
-            abspos_begin = line_select_begin_data->pos;
-            selection_end = abspos_end;
+            int original_ruler_page = line_select_begin_data->pos.to_document(doc()).page;
+            if (original_ruler_page <= current_ruler_page) {
+                abspos_begin = line_select_begin_data->pos;
+                selection_end = abspos_end;
+            }
+            else {
+                abspos_end = line_select_begin_data->end_pos;
+                selection_begin = abspos_begin;
+            }
         }
         else {
             LineSelectBeginData data;
