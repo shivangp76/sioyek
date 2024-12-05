@@ -3535,7 +3535,7 @@ ReferenceType DocumentView::find_location_of_selected_text(int* out_page, float*
     return ReferenceType::None;
 }
 
-bool DocumentView::is_text_source_referncish_at_position(const std::wstring& text, int position) {
+bool DocumentView::is_text_source_referncish_at_position(const std::wstring& text, int position, const QString link_text) {
     // todo: should be moved to Document
 
     QString qtext = QString::fromStdWString(text);
@@ -3581,9 +3581,19 @@ bool DocumentView::is_text_source_referncish_at_position(const std::wstring& tex
             return false;
         }
     }
+
+    if (link_text.size() > 0) {
+        if (link_text.contains("[")) {
+            return true;
+        }
+
+        if (link_text[0].isUpper()) {
+            return true;
+        }
+    }
     //if (non_ref_words.indexOf(prev_word) != -1) return false;
     //TextUnderPointerInfo reference_info = find_location_of_text_under_pointer(docpos, true);
-    return true;
+    return false;
 }
 
 bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInfo& link_info) {
@@ -3608,7 +3618,9 @@ bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInf
 
         }
         else {
-            return true;
+            //return false;
+            std::wstring block_string = get_string_from_stext_block(link_info.block, false, false);
+            return is_text_source_referncish_at_position(block_string, link_info.position_in_block, QString::fromStdWString(link_info.link_text));
         }
     }
     return false;

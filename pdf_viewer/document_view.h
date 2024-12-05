@@ -475,7 +475,7 @@ public:
 
     bool is_link_a_reference(const PdfLink& link, const PdfLinkTextInfo& link_info);
     std::vector<DocumentRect> get_reference_link_highlights(int dest_page, const PdfLink& link, const PdfLinkTextInfo& link_info);
-    bool is_text_source_referncish_at_position(const std::wstring& text, int position);
+    bool is_text_source_referncish_at_position(const std::wstring& text, int position, const QString link_text = "");
     void set_overview_link(PdfLink link);
     void set_overview_position(
         int page,
