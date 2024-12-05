@@ -1648,6 +1648,23 @@ void DocumentView::scroll_mid_to_top() {
     move(0, offset);
 }
 
+std::vector<AbsoluteRect> DocumentView::get_visible_line_rects(std::vector<int>& index_in_page) {
+    std::vector<int> visible_pages;
+    get_visible_pages(get_view_height(), visible_pages);
+
+    std::vector<AbsoluteRect> res;
+
+    for (auto page : visible_pages) {
+        // extend res with merged_line_rects
+        std::vector<AbsoluteRect> page_lines = get_document()->get_page_lines(page).merged_line_rects;
+        res.insert(res.end(), page_lines.begin(), page_lines.end());
+        for (int i = 0; i < page_lines.size(); i++) {
+            index_in_page.push_back(i);
+        }
+    }
+    return res;
+}
+
 void DocumentView::get_visible_links(std::vector<PdfLink>& visible_page_links) {
 
     std::vector<int> visible_pages;

@@ -509,6 +509,7 @@ public:
     void readjust_to_screen();
     float get_half_screen_offset();
     void scroll_mid_to_top();
+    std::vector<AbsoluteRect> get_visible_line_rects(std::vector<int>& index_in_page);
     void get_visible_links(std::vector<PdfLink>& visible_page_links);
     void set_text_mark(bool is_begin);
     void toggle_text_mark();

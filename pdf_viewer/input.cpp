@@ -5252,12 +5252,14 @@ public:
     static inline const std::string cname = "keyboard_select_line";
     static inline const std::string hname = "Select a line using keyboard";
     std::vector<DocumentRect> highlight_rects;
+    std::vector<int> index_in_page;
     int rects_size = 0;
-    int page;
+    //int page;
 
     KeyboardSelectLineCommand(MainWidget* w) : Command(cname, w) {
-        const std::vector<AbsoluteRect> rects = widget->doc()->get_page_lines(widget->get_current_page_number()).merged_line_rects;
-        page = widget->get_current_page_number();
+        //const std::vector<AbsoluteRect> rects = widget->doc()->get_page_lines(widget->get_current_page_number()).merged_line_rects;
+        const std::vector<AbsoluteRect> rects = widget->main_document_view->get_visible_line_rects(index_in_page);
+        //page = widget->get_current_page_number();
         for (auto& rect : rects) {
             highlight_rects.push_back(rect.to_document(widget->doc()));
         }
@@ -5293,10 +5295,13 @@ public:
 
     virtual void perform() {
         int index = get_index_from_tag(utf8_encode(text.value()));
-        widget->main_document_view->set_line_index(index, page);
-        //widget->handle_open_link(text.value());
-        widget->set_highlighted_tags({});
-        widget->main_document_view->set_should_highlight_words(false);
+        if (index < highlight_rects.size() && index >= 0) {
+            int page = highlight_rects[index].page;
+            widget->main_document_view->set_line_index(index_in_page[index], page);
+            //widget->handle_open_link(text.value());
+            widget->set_highlighted_tags({});
+            widget->main_document_view->set_should_highlight_words(false);
+        }
     }
 
     void pre_perform() {
