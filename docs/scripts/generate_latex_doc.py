@@ -5,11 +5,13 @@ from typing import List
 import re
 import pypandoc
 import tqdm
+import json
 
 DOCUMENTATION_PATH = pathlib.Path(__file__).parent.parent.absolute()
 COMMANDS_PATH = DOCUMENTATION_PATH / "commands"
 CONFIGS_PATH = DOCUMENTATION_PATH / "configs"
 OUTPUT_DIR = DOCUMENTATION_PATH.parent / "bak" / "doc"
+DOCUMENTATION_JSON_PATH = pathlib.Path(__file__).parent.parent.parent / "data" / "sioyek_documentation.json"
 
 @dataclass
 class Documentation:
@@ -120,6 +122,12 @@ def get_latex_documentation():
                 config_name_to_label_map[item] = "config:" + config.title
         else:
             config_name_to_label_map[config.title] = "config:" + config.title
+    
+    with open(DOCUMENTATION_JSON_PATH, "r", encoding='utf8') as infile:
+        documentation_json = json.load(infile)
+
+    command_name_to_file_map = documentation_json["command_name_to_file_name_map"]
+    config_name_to_file_map = documentation_json["config_name_to_file_name_map"]
 
     documentation = r'''
 \documentclass{article}
@@ -232,14 +240,30 @@ def get_latex_documentation():
 \section{Commands}
 '''
 
+    def handle_documentation(command, type_string):
+        nonlocal documentation
+        style = 'arc=0mm, colback=white, colframe=black!75!black, coltitle=lightgray, fonttitle=\\bfseries'
+        if len(command.related_commands) > 0:
+            related_commands = '\\begin{tcolorbox}[' + style + ', title=\\texttt{Related Commands}]\\begin{flushleft}\n\n' + ', '.join([f"\\hyperref[command:{command_name_to_file_map.get(c, '')}]{{{escape_title(c)}}}" for c in command.related_commands]) + '\n\n\\end{flushleft}\\end{tcolorbox}'
+        else:
+            related_commands = ""
+        if len(command.related_configs) > 0:
+            related_configs = '\\begin{tcolorbox}[' + style + ', title=\\texttt{Related Configs}]\\begin{flushleft}\n\n' + ', '.join([f"\\hyperref[config:{config_name_to_file_map.get(c, '')}]{{{escape_title(c)}}}" for c in command.related_configs]) + '\n\n\\end{flushleft}\\end{tcolorbox}'
+        else:
+            related_configs = ""
+
+        documentation += f'''
+\\subsection{{{escape_title(command.get_title())}}}\\label{{{type_string}:{command.title}}}\hypertarget{{{type_string}:{command.title}}}{{}}
+
+{escape_content(command.content, command_name_to_label_map, config_name_to_label_map)}
+{related_commands}{related_configs}
+'''
+
     index = 0
     for command in tqdm.tqdm(command_docs):
         index += 1
-        documentation += f'''
-\\subsection{{{escape_title(command.get_title())}}}\\label{{command:{command.title}}}\hypertarget{{command:{command.title}}}{{}}
-{escape_content(command.content, command_name_to_label_map, config_name_to_label_map)}
-'''
-        # if index == 20:
+        handle_documentation(command, 'command')
+        # if index == 10:
         #     break
 
     documentation += r'''
@@ -249,12 +273,13 @@ def get_latex_documentation():
     index = 0
     for config in tqdm.tqdm(config_docs):
         index += 1
-        documentation += f'''
-\\subsection{{{escape_title(config.get_title())}}}\\label{{config:{config.title}}}
-{escape_content(config.content, command_name_to_label_map, config_name_to_label_map)}\\hypertarget{{config:{config.title}}}{{}}
-'''
-        # if index == 10:
-        #     break
+        handle_documentation(config, 'config')
+#         documentation += f'''
+# \\subsection{{{escape_title(config.get_title())}}}\\label{{config:{config.title}}}
+# {escape_content(config.content, command_name_to_label_map, config_name_to_label_map)}\\hypertarget{{config:{config.title}}}{{}}
+# '''
+#         # if index == 10:
+#         #     break
 
     documentation += r'''
 \end{document}
