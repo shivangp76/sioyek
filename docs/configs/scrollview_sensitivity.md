@@ -1,6 +1,7 @@
 related_commands: overview_definition
-
 related_configs:
+
+type: float
 
 demo_code:
 

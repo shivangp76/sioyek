@@ -1,3 +1,5 @@
+related_configs: num_two_page_columns
+
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)

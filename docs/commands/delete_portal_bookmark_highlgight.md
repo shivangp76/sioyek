@@ -1,4 +1,4 @@
-related_commands: 
+related_commands: generic_delete
 
 demo_code:
 ```python

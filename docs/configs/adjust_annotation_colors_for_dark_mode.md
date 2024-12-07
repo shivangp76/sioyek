@@ -1,6 +1,7 @@
 related_commands: add_highlight add_freetext_bookmark
 
 related_configs:
+type: bool
 
 demo_code:
 ```python
@@ -29,4 +30,4 @@ end_recording()
 for_configs: 
 
 doc_body:
-Automatically adjust annotation colors to be more appropriate in dark mode.
+Automatically adjust annotation colors to be more appropriate in dark/custom color modes.

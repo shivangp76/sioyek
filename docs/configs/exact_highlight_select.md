@@ -1,6 +1,7 @@
 related_commands: add_highlight
 
 related_configs: 
+type: bool
 
 demo_code:
 

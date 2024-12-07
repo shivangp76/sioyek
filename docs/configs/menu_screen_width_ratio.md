@@ -1,6 +1,7 @@
-related_commands: command goto_prev_doc goto_highlight goto_bookmark
+related_commands: command open_prev_doc goto_highlight goto_bookmark
 
 related_configs: 
+type: float
 
 demo_code:
 ```python

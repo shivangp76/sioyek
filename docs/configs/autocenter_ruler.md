@@ -1,6 +1,7 @@
 related_commands: ruler_under_cursor toggle_ruler_scroll_mode
 
 related_configs:
+type: bool
 
 demo_code:
 ```python

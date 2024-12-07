@@ -1,4 +1,5 @@
 related_commands:
+type: int/color3
 
 related_configs: 
 

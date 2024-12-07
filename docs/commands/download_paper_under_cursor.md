@@ -1,4 +1,5 @@
 related_commands: download_link
+related_configs: papers_folder_path paper_download_should_create_portal
 
 demo_code:
 

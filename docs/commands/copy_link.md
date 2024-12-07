@@ -1,4 +1,4 @@
-related_commands: open_link overview_portal
+related_commands: open_link
 
 demo_code:
 

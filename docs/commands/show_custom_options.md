@@ -1,3 +1,4 @@
+doc_body:
 Given a `|`-separated list of options, displays the options to the user and returns the result. This is used for scripting and is not directly useful for end-users.
 
 Example:

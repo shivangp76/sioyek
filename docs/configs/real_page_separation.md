@@ -1,6 +1,7 @@
 related_commands:
-
 related_configs: page_separator_width
+
+type: bool
 
 demo_code:
 ```python

@@ -1,4 +1,5 @@
 related_commands: keyboard_select
+type: color3
 
 demo_code:
 ```python

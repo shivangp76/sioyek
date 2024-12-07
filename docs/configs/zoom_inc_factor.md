@@ -1,6 +1,6 @@
 related_commands: zoom_in zoom_out zoom_in_cursor zoom_out_cursor
-
 related_configs:
+type: bool
 
 demo_code:
 

@@ -1,4 +1,4 @@
-related_commands: add_bookmark add_freetext_bookmark add_marked_bookmark
+related_commands: add_bookmark add_freetext_bookmark add_marked_bookmark generic_select
 
 demo_code:
 ```python

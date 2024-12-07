@@ -1,4 +1,5 @@
-related_commands: overview_definition
+related_commands: overview_definition download_link download_paper_under_cursor
+related_configs: papers_folder_path paper_download_should_create_portal
 
 demo_code:
 ```python

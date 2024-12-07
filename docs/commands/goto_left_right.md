@@ -1,4 +1,4 @@
-related_commands: 
+related_commands: move_left move_right
 
 demo_code:
 ```python

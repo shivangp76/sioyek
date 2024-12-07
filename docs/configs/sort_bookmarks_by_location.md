@@ -1,6 +1,6 @@
 related_commands: goto_bookmark
-
 related_configs: 
+type: bool
 
 demo_code:
 

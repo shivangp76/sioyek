@@ -1,6 +1,6 @@
 related_commands: 
-
 related_configs:
+type: int
 
 for_configs: main_window_size helper_window_size main_window_move helper_window_move single_main_window_size single_main_window_move overview_size overview_offset
 

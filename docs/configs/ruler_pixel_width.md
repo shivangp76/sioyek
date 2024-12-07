@@ -1,6 +1,7 @@
 related_commands: ruler_under_cursor focus_text
-
 related_configs: ruler_display_mode
+
+type: int
 
 for_configs:
 

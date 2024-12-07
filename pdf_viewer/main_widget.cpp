@@ -1422,7 +1422,7 @@ void MainWidget::handle_validation_interval_timeout(){
                 if ((doc->get_milies_since_last_document_update_time() > (doc->get_milies_since_last_edit_time())) &&
                     (doc->get_milies_since_last_edit_time() > RELOAD_INTERVAL_MILISECONDS)) {
 
-                    if (true || is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
+                    if (is_doc_valid(this->mupdf_context, utf8_encode(doc->get_path()))) {
                         doc->reload();
                         this->pdf_renderer->clear_cache();
                         this->on_document_changed();

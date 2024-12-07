@@ -1,6 +1,6 @@
 related_commands: start_reading start_reading_high_quality
-
 related_configs: 
+type: float
 
 demo_code:
 

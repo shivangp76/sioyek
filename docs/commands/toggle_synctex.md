@@ -1,4 +1,5 @@
 related_commands: 
+related_configs: inverse_search_command
 
 demo_code:
 

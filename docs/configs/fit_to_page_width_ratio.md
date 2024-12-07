@@ -1,6 +1,7 @@
 related_commands: fit_to_page_width_ratio
 
 related_configs:
+type: float
 
 demo_code:
 ```python

@@ -1,4 +1,4 @@
-related_commands: add_highlight change_highlight_type
+related_commands: add_highlight change_highlight delete_highlight generic_delete
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
@@ -17,4 +17,4 @@ end_recording()
 ```
 
 doc_body:
-Alows the user to select a highlight to add annotations to using the keyboard.
+Allows the user to select a highlight to add annotations to using the keyboard. A label is displayed next to each visible highlight, and the user can press the corresponding key to select the highlight. Then a text box will appear where the user can type the annotation. 

@@ -1,3 +1,4 @@
+doc_body:
 Returns the string for current mode. See @concept(mode) for more information.
 
 Example:

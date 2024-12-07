@@ -1,5 +1,6 @@
 related_commands: get_config_value
 
+doc_body:
 Returns the current value of given config without displaying anything to the user. This is mainly useful for scripting.
 
 Example:

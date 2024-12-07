@@ -1,4 +1,4 @@
-related_commands: visual_mark_under_cursor focus_text toggle_line_select_cursor
+related_commands: visual_mark_under_cursor focus_text toggle_line_select_cursor move_ruler_to_next_block move_ruler_to_prev_block
 
 demo_code:
 ```python
@@ -32,4 +32,4 @@ end_recording()
 for_commands:
 
 doc_body:
-Select the current line highlighted by ruler, you can use the up and down movement commands to move the selection and @command(toggle_line_select_cursor) to toggle between begin and end of the selection. Exit the selection mode by pressing escape.
+Select the current line highlighted by ruler, you can use the up and down movement commands to move the selection and @command(toggle_line_select_cursor) to toggle between begin and end of the selection. Exit the selection mode by pressing escape (this is similar to vim's visual line mode).

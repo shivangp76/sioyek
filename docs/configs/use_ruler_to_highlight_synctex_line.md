@@ -1,6 +1,6 @@
 related_commands: toggle_synctex
-
 related_configs: 
+type: bool
 
 demo_code:
 ```python

@@ -1,6 +1,7 @@
 related_commands: keyboard_select_line ruler_under_cursor
-
 related_configs: ruler_display_mode
+
+type: color4
 
 demo_code:
 ```python

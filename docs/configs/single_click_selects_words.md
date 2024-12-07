@@ -1,6 +1,7 @@
 related_commands:
-
 related_configs: 
+
+type: bool
 
 demo_code:
 

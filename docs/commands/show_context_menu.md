@@ -1,5 +1,5 @@
 related_commands: 
-
+related_configs: context_menu_items context_menu_items_for_links context_menu_items_for_selected_text context_menu_items_for_highlights context_menu_items_for_bookmarks context_menu_items_for_overview
 demo_code:
 
 for_commands:

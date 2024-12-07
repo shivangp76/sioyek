@@ -1,4 +1,4 @@
-related_commands: portal overview_to_portal
+related_commands: portal overview_to_portal goto_portal edit_portal delete_portal generic_delete generic_select
 
 demo_code:
 ```python

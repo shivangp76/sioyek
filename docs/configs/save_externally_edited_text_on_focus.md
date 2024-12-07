@@ -1,6 +1,7 @@
 related_commands: open_external_text_editor
-
 related_configs: 
+
+type: bool
 
 demo_code:
 

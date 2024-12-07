@@ -1,4 +1,5 @@
 related_commands: 
+type: string
 
 related_configs: 
 

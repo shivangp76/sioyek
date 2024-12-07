@@ -1,4 +1,4 @@
-related_commands: visual_mark_under_cursor
+related_commands: ruler_under_cursor
 
 demo_code:
 ```python

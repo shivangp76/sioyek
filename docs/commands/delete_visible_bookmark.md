@@ -1,4 +1,4 @@
-related_commands: add_marked_bookmark add_freetext_bookmark edit_visible_bookmark
+related_commands: add_marked_bookmark add_freetext_bookmark edit_visible_bookmark generic_delete
 
 demo_code:
 ```python

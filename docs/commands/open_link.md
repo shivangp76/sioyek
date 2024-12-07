@@ -17,4 +17,4 @@ end_recording()
 for_commands: 
 
 doc_body:
-Displays a symbol next to each visible link and jumps when user enters the link symbol.
+Opens PDF links using keyboard. Displays a symbol next to each visible link and jumps when user enters the link symbol.

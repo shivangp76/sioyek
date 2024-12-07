@@ -1,6 +1,7 @@
 related_commands: toggle_custom_color
 
 related_configs: 
+type: color3
 
 demo_code:
 ```python

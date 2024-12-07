@@ -1,6 +1,6 @@
 related_commands: toggle_statusbar
-
 related_configs: 
+type: color3
 
 demo_code:
 ```python

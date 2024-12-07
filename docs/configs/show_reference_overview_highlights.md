@@ -1,6 +1,7 @@
 related_commands: overview_link overview_definition
-
 related_configs:
+
+type: bool
 
 demo_code:
 ```python

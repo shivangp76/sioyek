@@ -1,4 +1,4 @@
-related_commands: save_scratchpad load_scratchpad copy_drawings_from_scratchpad copy_screenhot_to_scratchpad
+related_commands: save_scratchpad load_scratchpad copy_drawings_from_scratchpad copy_screenshot_to_scratchpad
 
 demo_code:
 

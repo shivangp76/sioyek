@@ -1,4 +1,4 @@
-related_commands: open_link overview_portal
+related_commands: open_link overview_to_portal
 
 demo_code:
 ```python

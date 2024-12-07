@@ -1,6 +1,7 @@
 related_commands: toggle_presentation_mode
 
 related_configs: 
+type: bool
 
 demo_code:
 ```python

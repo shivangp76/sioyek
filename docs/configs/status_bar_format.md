@@ -1,6 +1,6 @@
 related_commands: 
-
 related_configs: 
+type: string
 
 for_configs: status_bar_format right_status_bar_format status_*_command
 

@@ -1,6 +1,7 @@
 related_commands: toggle_pdf_annotations
-
 related_configs: 
+
+type: bool
 
 demo_code:
 

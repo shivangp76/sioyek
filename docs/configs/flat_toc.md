@@ -1,6 +1,7 @@
 related_commands: goto_toc
 
 related_configs:
+type: bool
 
 demo_code:
 

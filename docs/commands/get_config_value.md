@@ -11,4 +11,5 @@ time.sleep(3)
 end_recording()
 ```
 
-Displays the vlue of the given config string to the user.
+doc_body:
+Displays the value of the given config string to the user.

@@ -1,6 +1,7 @@
 related_commands:
 
 related_configs: status_bar_font_size
+type: int
 
 for_configs:
 

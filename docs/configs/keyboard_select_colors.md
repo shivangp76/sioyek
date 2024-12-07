@@ -3,6 +3,7 @@ related_commands: open_link keyboard_select
 related_configs: tag_font_face keyboard_point_selection keyboard_select_font_size
 
 for_configs: keyboard_select_background_color keyboard_select_text_color keyboard_selected_tag_background_color keyboard_selected_tag_text_color
+type: color4
 
 demo_code:
 ```python

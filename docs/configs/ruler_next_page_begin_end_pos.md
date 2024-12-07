@@ -1,6 +1,7 @@
 related_commands: move_ruler_down move_ruler_up toggle_ruler_scroll_mode
-
 related_configs:
+
+type: float
 
 demo_code:
 ```python

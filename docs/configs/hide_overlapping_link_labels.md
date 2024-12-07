@@ -1,6 +1,7 @@
 related_commands: open_link
 
 related_configs:
+type: bool
 
 demo_code:
 

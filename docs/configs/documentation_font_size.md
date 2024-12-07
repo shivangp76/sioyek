@@ -1,6 +1,7 @@
 related_commands: 
 
 related_configs: 
+type: int
 
 for_configs:
 
@@ -25,4 +26,4 @@ end_recording()
 ```
 
 doc_body:
-Font size of documentation.
+Font size of documentation, when viewing the embedded documentation widget.

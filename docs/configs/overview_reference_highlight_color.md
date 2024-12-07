@@ -1,4 +1,5 @@
 related_commands: overview_definition download_overview_paper
+type: color3
 
 demo_code:
 ```python

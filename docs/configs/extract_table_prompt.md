@@ -1,6 +1,7 @@
 related_commands: extract_table
 
 related_configs:
+type: string
 
 demo_code:
 

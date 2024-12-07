@@ -1,5 +1,7 @@
 related_commands: search regex_search semantic_search semantic_search_extractive
 
+type: color3
+
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)

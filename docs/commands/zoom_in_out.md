@@ -1,4 +1,5 @@
 related_commands: zoom_in_overview zoom_out_overview fit_to_page_width
+related_configs: zoom_inc_factor wheel_zoom_on_cursor scroll_zoom_inc_factor
 for_commands: zoom_in zoom_out zoom_in_cursor zoom_out_cursor
 
 doc_body:

@@ -1,4 +1,4 @@
-related_commands: toggle_statusbar toggle_sidebar
+related_commands: toggle_statusbar toggle_scrollbar
 
 demo_code:
 ```python

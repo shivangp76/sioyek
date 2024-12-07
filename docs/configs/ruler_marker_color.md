@@ -1,5 +1,7 @@
 related_commands: keyboard_select_line move_ruler_next move_ruler_prev
 
+type: color3
+
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)

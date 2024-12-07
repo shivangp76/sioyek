@@ -1,6 +1,6 @@
 related_commands: move_down move_up move_left move_right
-
 related_configs: vertical_move_amount horizontal_move_amount
+type: float
 
 demo_code:
 

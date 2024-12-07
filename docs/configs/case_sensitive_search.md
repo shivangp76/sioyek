@@ -1,6 +1,7 @@
 related_commands: search
 
 related_configs: smartcase_search
+type: bool
 
 demo_code:
 

@@ -5,4 +5,4 @@ demo_code:
 for_commands:
 
 doc_body:
-Shows a list of previously opened documents.
+Shows a searchable list of previously opened documents.

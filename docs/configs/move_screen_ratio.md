@@ -1,6 +1,7 @@
 related_commands: screen_down screen_up
 
 related_configs:
+type: float
 
 demo_code:
 ```python

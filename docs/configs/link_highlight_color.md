@@ -1,6 +1,7 @@
 related_commands: open_link toggle_highlight_links
+type: color3
 
-demo_code:
+dlemo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
 s.toggleconfig_show_setconfig_in_statusbar()

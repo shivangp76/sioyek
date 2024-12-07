@@ -1,6 +1,7 @@
 related_commands: add_highlight
 
 related_configs:
+type: color3
 
 for_configs: highlight_color_[a-z]
 
@@ -22,4 +23,4 @@ end_recording()
 ```
 
 doc_body:
-Specifies the color for each of highlight types.
+Specifies the color for each of highlight types. For example `highlight_color_r` specifies the color of highlights with symbol `r`.

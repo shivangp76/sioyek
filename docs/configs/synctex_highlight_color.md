@@ -1,5 +1,6 @@
 related_commands: synctex_under_cursor synctex_under_ruler toggle_synctex
 related_configs: use_ruler_to_highlight_synctex_line synctex_highlight_timeout synctex_highlight_timeout
+type: color3
 
 demo_code:
 ```python

@@ -1,6 +1,7 @@
-related_commands: show_context_menu right_click_context_menu
+related_commands: show_context_menu
 
-related_configs: 
+related_configs: right_click_context_menu
+type: string
 
 demo_code:
 

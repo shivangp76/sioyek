@@ -1,6 +1,7 @@
 related_commands: ruler_under_cursor
-
 related_configs:
+
+type: string
 
 for_configs: 
 

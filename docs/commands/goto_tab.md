@@ -1,1 +1,2 @@
-Open the list of tabs.
+doc_body:
+Opens a searchable list of tabs.

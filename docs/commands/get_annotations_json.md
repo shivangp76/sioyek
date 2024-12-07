@@ -1,3 +1,4 @@
+doc_body:
 Returns the current document's annotations as a json string.
 
 Example:

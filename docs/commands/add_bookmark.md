@@ -1,4 +1,4 @@
-related_commands: add_freetext_bookmark add_marked_bookmark
+related_commands: add_freetext_bookmark add_marked_bookmark goto_bookmark goto_bookmark_g
 
 demo_code:
 ```python

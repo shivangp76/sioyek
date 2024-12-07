@@ -1,4 +1,5 @@
 related_commands:
+related_configs: collapsed_toc create_table_of_contents_if_not_exists max_created_table_of_contents_size
 
 demo_code:
 ```python

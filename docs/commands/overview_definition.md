@@ -25,4 +25,4 @@ end_recording()
 ```
 
 doc_body:
-Open an overview to the definition of the first symbol in the highlighted line using the @link(ruler_mode, "ruler").
+Open an overview to the definition of the first symbol in the highlighted line using the @concept(ruler).

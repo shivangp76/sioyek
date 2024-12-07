@@ -1,6 +1,7 @@
 related_commands: keyboard_select_line
-
 related_configs: ruler_display_mode
+
+type: int
 
 demo_code:
 ```python

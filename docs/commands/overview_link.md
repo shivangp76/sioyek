@@ -17,4 +17,4 @@ end_recording()
 for_commands: 
 
 doc_body:
-Displays a symbol next to each visible link and opens an overview to link destination when user enters the link symbol.
+Create an overview to a PDF link using keyboard. Displays a symbol next to each visible link and opens an overview to link destination when user enters the link symbol.

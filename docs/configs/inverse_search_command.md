@@ -1,6 +1,7 @@
 related_commands: toggle_synctex synctex_under_cursor synctex_under_ruler
 
 related_configs:
+type: string
 
 demo_code:
 

@@ -1,6 +1,7 @@
 related_commands: toggle_freehand_drawing_mode write_annotations_file
 
 related_configs: 
+type: string
 
 demo_code:
 

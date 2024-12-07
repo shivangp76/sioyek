@@ -1,4 +1,5 @@
 related_commands: load_annotations_file
+related_configs: annotations_directory
 
 demo_code:
 

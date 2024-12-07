@@ -1,6 +1,7 @@
 related_commands: resume_to_server
 
 related_configs:
+type: string
 
 for_configs: 
 

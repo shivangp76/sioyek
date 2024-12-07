@@ -1,6 +1,7 @@
 related_commands: toggle_dark_mode
 
 related_configs: 
+type: float
 
 demo_code:
 ```python

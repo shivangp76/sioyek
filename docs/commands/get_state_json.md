@@ -1,3 +1,4 @@
+doc_body:
 Returns a json string containing the current state of the application. The state is a list of json objects for each sioyek window. Each object contains the following fields:
 
 - `document_checksum`: MD5 checksum of the document

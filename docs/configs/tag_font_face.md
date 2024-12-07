@@ -1,6 +1,6 @@
 related_commands: open_link keyboard_select
-
 related_configs: 
+type: string
 
 for_configs:
 

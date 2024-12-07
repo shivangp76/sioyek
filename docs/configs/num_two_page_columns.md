@@ -1,6 +1,8 @@
 related_commands: toggle_two_page_mode
-
 related_configs: 
+
+type: int
+
 demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)

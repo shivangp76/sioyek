@@ -1,6 +1,6 @@
 related_commands: search regex_search
-
 related_configs: 
+type: bool
 
 demo_code:
 

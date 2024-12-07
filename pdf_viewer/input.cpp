@@ -1316,9 +1316,12 @@ public:
     ToggleTextMarkCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        //if (num_repeats == 0) num_repeats++;
-        widget->handle_toggle_text_mark();
-        //widget->invalidate_render();
+        if (widget->main_document_view->line_select_mode) {
+            widget->main_document_view->swap_line_select_cursor();
+        }
+        else {
+            widget->handle_toggle_text_mark();
+        }
     }
 
 };
@@ -1453,7 +1456,7 @@ public:
     }
 
     std::string text_requirement_name() {
-        return "Search Term";
+        return "Keybinding";
     }
 
 };
@@ -6946,17 +6949,17 @@ public:
 
 };
 
-class ToggleLineSelectCursor : public Command {
-public:
-    static inline const std::string cname = "toggle_line_select_cursor";
-    static inline const std::string hname = "Swap between begin/end of line selection.";
-    ToggleLineSelectCursor(MainWidget* w) : Command(cname, w) {};
-
-    void perform() {
-        widget->main_document_view->swap_line_select_cursor();
-    }
-
-};
+//class ToggleLineSelectCursor : public Command {
+//public:
+//    static inline const std::string cname = "toggle_line_select_cursor";
+//    static inline const std::string hname = "Swap between begin/end of line selection.";
+//    ToggleLineSelectCursor(MainWidget* w) : Command(cname, w) {};
+//
+//    void perform() {
+//        widget->main_document_view->swap_line_select_cursor();
+//    }
+//
+//};
 
 class SelectRectCommand : public Command {
 public:
@@ -8045,7 +8048,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<GotoLoadedDocumentCommand>(this);
     register_command<NextItemCommand>(this);
     register_command<PrevItemCommand>(this);
-    register_command<ToggleTextMarkCommand>(this);
+    register_command<ToggleTextMarkCommand>(this, "toggle_line_select_cursor");
     register_command<MoveTextMarkForwardCommand>(this);
     register_command<MoveTextMarkBackwardCommand>(this);
     register_command<MoveTextMarkForwardWordCommand>(this);
@@ -8318,7 +8321,6 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<SelectFreehandDrawingsCommand>(this);
     register_command<SelectCurrentSearchMatchCommand>(this);
     register_command<SelectRulerTextCommand>(this);
-    register_command<ToggleLineSelectCursor>(this);
     register_command<ShowTouchMainMenu>(this);
     register_command<ShowTouchPageSelectCommand>(this);
     register_command<ShowTouchHighlightTypeSelectCommand>(this);

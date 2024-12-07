@@ -1,6 +1,6 @@
 related_commands: search
-
 related_configs:
+type: bool
 
 demo_code:
 

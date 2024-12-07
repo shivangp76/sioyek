@@ -1,6 +1,7 @@
 related_commands: add_freetext_bookmark
-
 related_configs:
+
+type: bool
 
 demo_code:
 ```python

@@ -1,5 +1,6 @@
 related_commands: synctex_under_cursor synctex_under_ruler toggle_synctex
 related_configs: synctex_highlight_color
+type: float
 
 for_configs: 
 

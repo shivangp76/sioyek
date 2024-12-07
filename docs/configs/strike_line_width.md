@@ -1,6 +1,6 @@
 related_commands: add_highlight
-
 related_configs:
+type: int
 
 demo_code:
 ```python

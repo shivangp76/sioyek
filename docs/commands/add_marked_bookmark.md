@@ -1,4 +1,4 @@
-related_commands: add_freetext_bookmark add_bookmark
+related_commands: add_freetext_bookmark add_bookmark goto_bookmark goto_bookmark_g edit_visible_bookmark edit_selected_bookmark delete_bookmark generic_select generic_delete
 
 demo_code:
 ```python
@@ -25,4 +25,4 @@ end_recording()
 for_commands:
 
 doc_body:
-Add a marked bookmark in the selected location. Marked bookmarks are visible in the document using a small icon. You can later search the bookmarks using the @command(goto_bookmark) command.
+Add a marked bookmark in the selected location. Marked bookmarks are visible in the document with a small icon. You can later search the bookmarks using the @command(goto_bookmark) command.

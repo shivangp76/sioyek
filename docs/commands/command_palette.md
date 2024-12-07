@@ -1,4 +1,4 @@
-related_commands:
+related_commands: command
 
 demo_code:
 

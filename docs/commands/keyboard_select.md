@@ -17,4 +17,4 @@ end_recording()
 for_commands: 
 
 doc_body:
-Displays a tag next to each word in the document, selects the text corresponding to the entered begin and end tag (separated by a space).
+Displays a tag next to each word in the document, selects the text corresponding to the entered begin and end tag (separated by a space). If only a single tag is entered, then we just select that word.

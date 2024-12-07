@@ -13,4 +13,4 @@ end_recording()
 ```
 
 doc_body:
-Allows the user to select annotations using keyboard. The user enters the label of the annotation they want to delete.
+Allows the user to select annotations using keyboard. The user enters the label of the annotation they want to select.

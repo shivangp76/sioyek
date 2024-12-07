@@ -6,4 +6,4 @@ for_commands:
 requires_pro: true
 
 doc_body:
-Start reading from the current line highlighted by ruler using the sioyek servers' high quality neural text to speech engine.
+Start reading from the current line highlighted by @concept(ruler) using the sioyek servers' high quality neural text to speech engine.

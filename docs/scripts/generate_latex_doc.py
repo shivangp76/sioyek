@@ -6,12 +6,14 @@ import re
 import pypandoc
 import tqdm
 import json
+import hashlib
 
 DOCUMENTATION_PATH = pathlib.Path(__file__).parent.parent.absolute()
 COMMANDS_PATH = DOCUMENTATION_PATH / "commands"
 CONFIGS_PATH = DOCUMENTATION_PATH / "configs"
 OUTPUT_DIR = DOCUMENTATION_PATH.parent / "bak" / "doc"
 DOCUMENTATION_JSON_PATH = pathlib.Path(__file__).parent.parent.parent / "data" / "sioyek_documentation.json"
+PANDOC_CACHE_PATH = DOCUMENTATION_PATH.parent / "bak" / "doc" / "pandoc_cache"
 
 @dataclass
 class Documentation:
@@ -21,6 +23,8 @@ class Documentation:
     related_commands: List[str]
     related_configs: List[str]
     requires_pro: bool = False
+    data_type: str = ''
+    example: str = ''
 
     def get_title(self):
         if self.for_items != []:
@@ -36,6 +40,14 @@ def get_attribute_list(attribute_name, file_content):
             return attribute_line.split(' ')
     return []
 
+def get_attribute(attribute_name, file_content):
+    attribute_index = file_content.find(attribute_name)
+    if attribute_index >= 0:
+        attribute_line = file_content[attribute_index + len(attribute_name):file_content.find('\n', attribute_index)].strip()
+        if len(attribute_line) > 0:
+            return attribute_line.strip()
+    return ''
+
 def parse_command_doc(command_doc, title) -> Documentation:
     related_commands = get_attribute_list("related_commands:", command_doc)
     related_configs = get_attribute_list("related_configs:", command_doc)
@@ -47,9 +59,16 @@ def parse_command_doc(command_doc, title) -> Documentation:
 def parse_config_doc(config_doc, title) -> Documentation:
     related_commands = get_attribute_list("related_commands:", config_doc)
     related_configs = get_attribute_list("related_configs:", config_doc)
+    type_string = get_attribute("type:", config_doc)
+    requires_pro = get_attribute("requires_pro:", config_doc)
+    example = get_attribute("example:", config_doc)
+
+    if len(requires_pro) > 0:
+        requires_pro = True
+
     for_items = get_attribute_list("for_configs:", config_doc)
     content = config_doc[config_doc.find("doc_body:") + len("doc_body:"):].strip()
-    return Documentation(title, content, for_items, related_commands, related_configs)
+    return Documentation(title, content, for_items, related_commands, related_configs, requires_pro, type_string, example)
 
 def escape_title(title):
     return '\\texttt{' + title.replace("_", "\\_") + '}'
@@ -68,7 +87,15 @@ def escape_content(content, command_name_to_label_map, config_name_to_label_map)
         config_name = match.group(1)
         content = content.replace(f"@config({config_name})", f"`@config({config_name})`")
 
-    content = pypandoc.convert_text(content, to='latex', format='md')
+    checksum = hashlib.md5(content.encode()).hexdigest()
+    if os.path.exists(PANDOC_CACHE_PATH / f"{checksum}"):
+        with open(PANDOC_CACHE_PATH / f"{checksum}", 'r', encoding='utf8') as infile:
+            content = infile.read()
+            content = content.replace('\r', '')
+    else:
+        content = pypandoc.convert_text(content, to='latex', format='md')
+        with open(PANDOC_CACHE_PATH / f"{checksum}", 'w', encoding='utf8') as outfile:
+            outfile.write(content.replace('\r', ''))
 
     # replace @command and @config with hyperlinks
     for match in command_regex.finditer(content):
@@ -77,7 +104,7 @@ def escape_content(content, command_name_to_label_map, config_name_to_label_map)
         if command_name_ in command_name_to_label_map:
             content = content.replace(f"@command({command_name})", f"\\hyperref[{command_name_to_label_map[command_name_]}]{{{command_name}}}")
         else:
-            content = content.replace(f"@command({command_name})", f"\\texttt{{{command_name}}}")
+            content = content.replace(f"@command({command_name})", f"\\textcolor{{red}}{{\\texttt{{{command_name}}}???}}")
     
     for match in config_regex.finditer(content):
         config_name = match.group(1)
@@ -85,7 +112,7 @@ def escape_content(content, command_name_to_label_map, config_name_to_label_map)
         if config_name_ in config_name_to_label_map:
             content = content.replace(f"@config({config_name})", f"\\hyperref[{config_name_to_label_map[config_name_]}]{{{config_name}}}")
         else:
-            content = content.replace(f"@config({config_name})", f"\\texttt{{{config_name}}}")
+            content = content.replace(f"@config({config_name})", f"\\textcolor{{red}}{{\\texttt{{{config_name}}}???}}")
 
 
     return content
@@ -243,19 +270,35 @@ def get_latex_documentation():
     def handle_documentation(command, type_string):
         nonlocal documentation
         style = 'arc=0mm, colback=white, colframe=black!75!black, coltitle=lightgray, fonttitle=\\bfseries'
+
+        def get_item_link(type_string, map, item):
+            if item not in map:
+                return f"\\textcolor{{red}}{{\\hyperref[{type_string}:{map.get(item, '')}]{{{escape_title(item)}}}???}}" 
+            return f"\\hyperref[{type_string}:{map.get(item, '')}]{{{escape_title(item)}}}" 
+
         if len(command.related_commands) > 0:
-            related_commands = '\\begin{tcolorbox}[' + style + ', title=\\texttt{Related Commands}]\\begin{flushleft}\n\n' + ', '.join([f"\\hyperref[command:{command_name_to_file_map.get(c, '')}]{{{escape_title(c)}}}" for c in command.related_commands]) + '\n\n\\end{flushleft}\\end{tcolorbox}'
+            related_commands = '\\begin{tcolorbox}[' + style + ', title=\\texttt{Related Commands}]\\begin{flushleft}\n\n' + ', '.join([get_item_link("command", command_name_to_file_map, c) for c in command.related_commands]) + '\n\n\\end{flushleft}\\end{tcolorbox}'
         else:
             related_commands = ""
         if len(command.related_configs) > 0:
-            related_configs = '\\begin{tcolorbox}[' + style + ', title=\\texttt{Related Configs}]\\begin{flushleft}\n\n' + ', '.join([f"\\hyperref[config:{config_name_to_file_map.get(c, '')}]{{{escape_title(c)}}}" for c in command.related_configs]) + '\n\n\\end{flushleft}\\end{tcolorbox}'
+            related_configs = '\\begin{tcolorbox}[' + style + ', title=\\texttt{Related Configs}]\\begin{flushleft}\n\n' + ', '.join([get_item_link("config", config_name_to_file_map, c) for c in command.related_configs]) + '\n\n\\end{flushleft}\\end{tcolorbox}'
         else:
             related_configs = ""
 
+        example_text = ''
+        if type_string == 'config' and command.example != '':
+            example_text = f'\\begin{{tcolorbox}}[arc=0mm, title=Example]{escape_title(command.example)}\\end{{tcolorbox}}'
+
+
+        config_type_string = ''
+        if command.data_type != '':
+            config_type_string = '\\textcolor{gray}{\\texttt{[' + escape_title(command.data_type) + ']}} '
+
         documentation += f'''
-\\subsection{{{escape_title(command.get_title())}}}\\label{{{type_string}:{command.title}}}\hypertarget{{{type_string}:{command.title}}}{{}}
+\\subsection{{{config_type_string + escape_title(command.get_title())}}}\\label{{{type_string}:{command.title}}}\hypertarget{{{type_string}:{command.title}}}{{}}
 
 {escape_content(command.content, command_name_to_label_map, config_name_to_label_map)}
+{example_text}
 {related_commands}{related_configs}
 '''
 
@@ -278,8 +321,8 @@ def get_latex_documentation():
 # \\subsection{{{escape_title(config.get_title())}}}\\label{{config:{config.title}}}
 # {escape_content(config.content, command_name_to_label_map, config_name_to_label_map)}\\hypertarget{{config:{config.title}}}{{}}
 # '''
-#         # if index == 10:
-#         #     break
+        # if index == 10:
+        #     break
 
     documentation += r'''
 \end{document}

@@ -1,6 +1,7 @@
 related_commands: open_link keyboard_select
 
 related_configs: tag_font_face keyboard_point_selection
+type: int
 
 for_configs:
 

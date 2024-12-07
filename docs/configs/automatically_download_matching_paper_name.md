@@ -1,6 +1,7 @@
 related_commands: download_link download_overview_paper
 
 related_configs:
+type: bool
 
 demo_code:
 

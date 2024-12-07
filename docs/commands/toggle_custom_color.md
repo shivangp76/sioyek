@@ -17,3 +17,5 @@ for_commands:
 
 doc_body:
 Toggle between light and custom color schemes. The background and text color of custom color scheme can be configured using @config(custom_text_color) and @config(custom_background_color).
+
+All color configs in sioyek can be specialized for custom color mode by adding the `CUSTOM_` prefix. For example, if we want to adjust the `text_highlight_color` for custom color mode only, we could set `CUSTOM_text_highlight_color`.

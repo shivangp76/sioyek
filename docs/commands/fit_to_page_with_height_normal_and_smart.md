@@ -19,4 +19,4 @@ end_recording()
 for_commands: fit_to_page_width fit_to_page_height fit_to_page_width_smart fit_to_page_height_smart fit_to_page_smart
 
 doc_body:
-Fits the document to page width/height. The smart variants try to ignore the white page margins while fitting. `fit_to_page_smart` command fits the document to the minimum of width and height, ignoring the white margins.
+Fits the document to page width/height. The smart variants try to ignore the white page margins while fitting. @command(fit_to_page_smart) command fits the document to the minimum of width and height, ignoring the white margins.

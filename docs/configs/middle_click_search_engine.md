@@ -1,6 +1,7 @@
-related_commands: search_url_[a-z]
+related_commands: external_search
 
-related_configs:
+related_configs: search_url_[a-z]
+type: symbol
 
 demo_code:
 

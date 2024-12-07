@@ -1,6 +1,7 @@
 related_commands:
 
 related_configs: 
+type: color4/color3
 
 demo_code:
 ```python

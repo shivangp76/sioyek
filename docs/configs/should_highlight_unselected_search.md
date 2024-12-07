@@ -1,6 +1,7 @@
 related_commands: search
-
 related_configs: unselected_search_highlight_color
+
+type: bool
 
 demo_code:
 ```python

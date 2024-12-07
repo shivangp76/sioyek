@@ -1,8 +1,9 @@
-related_commands: status_custom_message_[a-d]_command
+related_commands:
+related_configs: status_bar_format right_status_bar_format status_custom_message_[a-d]_command
 
-related_configs: 
+type: string
 
-for_configs: status_custom_message_[a-d]
+for_configs: status_custom_message_[a-d] status_custom_message_[a-d]_command
 
 demo_code:
 

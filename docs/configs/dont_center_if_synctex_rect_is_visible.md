@@ -1,6 +1,7 @@
 related_commands: toggle_synctex
 
 related_configs: synctex_highlight_timeout synctex_highlight_color
+type: bool
 
 demo_code:
 

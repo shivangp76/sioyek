@@ -1,6 +1,7 @@
 related_commands: add_freetext_bookmark
 
 related_configs: freetext_bookmark_color
+type: int
 
 demo_code:
 ```python

@@ -1,6 +1,7 @@
 related_commands: extract_table
 
 related_configs:
+type: string
 
 for_configs: 
 
@@ -10,5 +11,6 @@ requires_pro: true
 
 doc_body:
 What to do with extracted table. The possible values are:
+
 - `bookmark`: Create a freetext bookmark with the extracted table
 - `copy`: Copy the extracted table into clipboard 

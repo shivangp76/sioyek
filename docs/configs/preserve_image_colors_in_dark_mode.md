@@ -1,6 +1,7 @@
 related_commands: toggle_dark_mode toggle_custom_color
-
 related_configs:
+
+type: bool
 
 demo_code:
 ```python

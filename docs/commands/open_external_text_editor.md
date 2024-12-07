@@ -1,4 +1,5 @@
 related_commands: 
+related_configs: external_text_editor_command
 
 demo_code:
 ```python

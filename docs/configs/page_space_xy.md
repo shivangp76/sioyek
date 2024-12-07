@@ -1,4 +1,5 @@
 related_commands: toggle_two_page_mode
+type: int
 
 related_configs: 
 

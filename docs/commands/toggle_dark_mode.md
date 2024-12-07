@@ -1,4 +1,5 @@
 related_commands: 
+related_configs: dark_mode_contrast dark_mode_background_color
 
 demo_code:
 ```python
@@ -15,3 +16,5 @@ for_commands:
 
 doc_body:
 Toggle between light and dark color schemes.
+
+All color configs in sioyek can be specialized for dark mode by adding the `DARK_` prefix. For example, if we want to adjust the `text_highlight_color` for dark mode only, we could set `DARK_text_highlight_color`.

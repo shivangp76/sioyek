@@ -1256,6 +1256,11 @@ void Document::load_page_dimensions(bool force_load_now) {
         load_page_dimensions_function();
     }
     else {
+
+        if (background_page_dimensions_thread.has_value()) {
+            background_page_dimensions_thread->join();
+        }
+
         background_page_dimensions_thread = std::thread(load_page_dimensions_function);
         //background_page_dimensions_thread->detach();
     }

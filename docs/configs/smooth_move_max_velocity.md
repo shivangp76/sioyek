@@ -1,6 +1,6 @@
 related_commands: move_down_smooth move_up_smooth
-
 related_configs: 
+type: float
 
 demo_code:
 

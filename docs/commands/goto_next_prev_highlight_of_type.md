@@ -17,4 +17,4 @@ end_recording()
 for_commands: goto_next_highlight_of_type goto_prev_highlight_of_type
 
 doc_body:
-Jump to the next/previous highlight with the current highlight type (as set by @command(set_select_highlight_type))
+Jump to the next/previous highlight with the current highlight type (as set by @command(set_select_highlight_type)).

@@ -1,3 +1,4 @@
+doc_body:
 Returns the title of the current document. This is useful for scripting and probably not directly useful for end-users.
 
 Example:

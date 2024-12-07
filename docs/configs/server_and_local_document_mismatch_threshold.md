@@ -1,6 +1,7 @@
 related_commands: resume_to_server
-
 related_configs: 
+
+type: float
 
 demo_code:
 

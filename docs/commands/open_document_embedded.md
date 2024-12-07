@@ -13,4 +13,4 @@ end_recording()
 for_commands:
 
 doc_body:
-Opens an embedded file browser in sioyek (unlike open_document which uses the operating system's file browser).
+Opens an embedded file browser in sioyek (unlike @command(open_document) which uses the operating system's file browser).

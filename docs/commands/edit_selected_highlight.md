@@ -1,4 +1,4 @@
-related_commands: add_highlight
+related_commands: add_highlight generic_select
 
 demo_code:
 ```python

@@ -1,6 +1,6 @@
 related_commands: search regex_search semantic_search semantic_search_extractive
-
 related_configs: should_highlight_unselected_search
+type: color3
 
 demo_code:
 ```python

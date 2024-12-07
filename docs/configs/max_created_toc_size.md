@@ -1,4 +1,5 @@
 related_commands: 
+type: int
 
 related_configs: create_table_of_contents_if_not_exists
 

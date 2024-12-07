@@ -1,6 +1,7 @@
 related_commands: keyboard_select
 
 related_configs:
+type: bool
 
 demo_code:
 ```python

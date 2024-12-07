@@ -1,4 +1,4 @@
-related_commands: open_link
+related_commands: open_link download_overview_paper
 
 demo_code:
 ```python
