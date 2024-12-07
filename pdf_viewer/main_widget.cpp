@@ -326,6 +326,7 @@ extern bool PAPER_DOWNLOAD_CREATE_PORTAL;
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool USE_KEYBOARD_POINT_SELECTION;
 
+extern bool SCROLLBAR;
 extern bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH;
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;
@@ -1213,7 +1214,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         });
 
 
-    scroll_bar->hide();
+    if (!SCROLLBAR) {
+        scroll_bar->hide();
+    }
 
     if (SHOULD_HIGHLIGHT_LINKS) {
         main_document_view->set_highlight_links(true, false);
@@ -1938,14 +1941,6 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     show_password_prompt_if_required();
 
     if (main_document_view_has_document()) {
-        if (doc()->num_pages() > 0){
-            scroll_bar->setSingleStep(std::max(MAX_SCROLLBAR / doc()->num_pages() / 10, 1));
-            scroll_bar->setPageStep(MAX_SCROLLBAR / doc()->num_pages());
-        }
-        else {
-            scroll_bar->setSingleStep(1);
-            scroll_bar->setPageStep(10);
-        }
         update_scrollbar();
     }
 
@@ -4266,6 +4261,10 @@ void MainWidget::open_document(const std::wstring& doc_path,
     if (filename) {
         setWindowTitle(QString::fromStdWString(filename.value()));
     }
+
+    if (SCROLLBAR) {
+        update_scrollbar();
+    }
 }
 
 // #ifndef Q_OS_MACOS
@@ -4798,26 +4797,21 @@ void MainWidget::add_portal(std::wstring source_path, Portal new_link) {
 }
 
 void MainWidget::toggle_scrollbar() {
-
-    // dirty hack!
-    // really the content of this closure should be in toggle_scrollbar method, however,
-    // for some unknown reason if we do that, new windows are created very small when 
-    // toggle_scrollbar is in startup_commands. Strangely the culprit seems to be this line:
-    // scroll_bar->show()
-    // todo: figure out why this is the case and fix it
-    QTimer::singleShot(100, [&]() {
-        if (scroll_bar->isVisible()) {
-            scroll_bar->hide();
-        }
-        else {
-            scroll_bar->show();
-        }
-        main_window_width = opengl_widget->width();
-        });
+    execute_macro_if_enabled(L"toggleconfig_scrollbar");
 }
 
 void MainWidget::update_scrollbar() {
     if (main_document_view_has_document()) {
+        
+        if (doc()->num_pages() > 0){
+            scroll_bar->setSingleStep(std::max(MAX_SCROLLBAR / doc()->num_pages() / 10, 1));
+            scroll_bar->setPageStep(MAX_SCROLLBAR / doc()->num_pages());
+        }
+        else {
+            scroll_bar->setSingleStep(1);
+            scroll_bar->setPageStep(10);
+        }
+
         float offset = main_document_view->get_offset_y();
         int scroll = static_cast<int>(MAX_SCROLLBAR * offset / doc()->max_y_offset());
         scroll_bar->setValue(scroll);
@@ -8096,6 +8090,18 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             if (confname == "page_space_x") main_document_view->set_page_space_x(PAGE_SPACE_X);
             if (confname == "page_space_y") main_document_view->set_page_space_y(PAGE_SPACE_Y);
             main_document_view->fill_cached_virtual_rects(true);
+        }
+
+        if (confname == "scrollbar") {
+            Config* this_config = config_manager->get_mut_config_with_name(confname.toStdWString());
+            bool enabled = *static_cast<bool*>(this_config->get_value());
+            if (enabled && !scroll_bar->isVisible()) {
+                scroll_bar->show();
+            }
+            if (!enabled && scroll_bar->isVisible()) {
+                scroll_bar->hide();
+            }
+
         }
     }
     if (should_reflow) {
