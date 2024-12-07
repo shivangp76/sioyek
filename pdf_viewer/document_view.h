@@ -144,7 +144,7 @@ public:
     bool should_show_numbers = false;
     bool should_show_rect_hints = false;
 
-    ColorPalette color_mode = ColorPalette::Normal;
+    //ColorPalette color_mode = ColorPalette::Normal;
 
     bool line_select_mode = false;
     std::optional<LineSelectBeginData> line_select_begin_data = {};
@@ -273,10 +273,7 @@ public:
 
     void toggle_highlight_links();
     void set_highlight_links(bool should_highlight, bool should_show_numbers);
-    void set_dark_mode(bool mode);
-    void toggle_dark_mode();
-    void set_custom_color_mode(bool mode);
-    void toggle_custom_color_mode();
+
     void toggle_highlight_words();
     void set_highlight_words(std::vector<DocumentRect> rects);
     void set_should_highlight_words(bool should_highlight);

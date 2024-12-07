@@ -351,6 +351,7 @@ bool MACOS_HIDE_TITLEBAR = false;
 #endif
 
 std::wstring RULER_DISPLAY_MODE = L"underline";
+std::wstring COLOR_MODE = L"light";
 std::wstring EPUB_CSS = L"";
 QString EPUB_TEMPLATE = "p {\
 line-height: %{line_spacing}em!important;\
@@ -1369,6 +1370,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
     add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({ {L"local", L"server", L"ask", L"show_button"}}));
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below"}}));
+    add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"}}));
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
 
     Config* dark_mode_background_config = add_color3(L"dark_mode_background_color", std::get<ColorExtras>(background_color_config->extras).dark_mode, false);

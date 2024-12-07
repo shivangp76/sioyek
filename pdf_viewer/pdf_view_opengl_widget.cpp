@@ -764,7 +764,7 @@ void PdfViewOpenGLWidget::render_page(int page_number, std::optional<OverviewSta
             draw_stencil_rects(page_number, image_rects);
             use_stencil_to_write(true);
             ColorPalette target_palette = ColorPalette::Normal;
-            if (document_view->color_mode == ColorPalette::Custom && INVERTED_PRESERVED_IMAGE_COLORS) {
+            if (document_view->get_current_color_mode() == ColorPalette::Custom && INVERTED_PRESERVED_IMAGE_COLORS) {
                 target_palette = ColorPalette::Dark;
             }
 
@@ -864,7 +864,7 @@ void PdfViewOpenGLWidget::my_render() {
                 if ((presentation_page_number + i + 1) < doc()->num_pages()) {
                     pdf_renderer->find_rendered_page(dv()->get_document()->get_path(),
                         presentation_page_number + i + 1,
-                        document_view->color_mode,
+                        document_view->get_current_color_mode(),
                         dv()->get_document()->should_render_pdf_annotations(),
                         -1,
                         1,
@@ -880,7 +880,7 @@ void PdfViewOpenGLWidget::my_render() {
                 if ((presentation_page_number - i - 1) >= 0) {
                     pdf_renderer->find_rendered_page(dv()->get_document()->get_path(),
                         presentation_page_number - i - 1,
-                        document_view->color_mode,
+                        document_view->get_current_color_mode(),
                         dv()->get_document()->should_render_pdf_annotations(),
                         -1,
                         1,
@@ -926,7 +926,7 @@ void PdfViewOpenGLWidget::my_render() {
                     for (int k = 0; k < nh * nv; k++) {
                         pdf_renderer->find_rendered_page(doc()->get_path(),
                             max_page + i,
-                            document_view->color_mode,
+                            document_view->get_current_color_mode(),
                             doc()->should_render_pdf_annotations(),
                             k,
                             nh,
@@ -1288,7 +1288,7 @@ void PdfViewOpenGLWidget::my_render() {
                         }
                     }
 
-                    auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->color_mode);
+                    auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->get_current_color_mode());
                     if (pixmap && (was_exact || bookmarks[i].is_latex() || (!ALWAYS_RENDER_BOOKMARKS))) {
                         painter.drawPixmap(window_qrect, *pixmap);
                     }
@@ -1303,7 +1303,7 @@ void PdfViewOpenGLWidget::my_render() {
                                     scroll_amount,
                                     devicePixelRatioF(),
                                     window_qrect,
-                                    dv()->color_mode,
+                                    dv()->get_current_color_mode(),
                                     true);
                         }
                     }
@@ -1607,7 +1607,7 @@ void PdfViewOpenGLWidget::draw_empty_helper_message(QString message) {
 
 void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
 #ifdef SIOYEK_OPENGL_BACKEND
-    ColorPalette mode = forced_palette == ColorPalette::None ? document_view->color_mode : forced_palette;
+    ColorPalette mode = forced_palette == ColorPalette::None ? document_view->get_current_color_mode() : forced_palette;
 
     if (mode == ColorPalette::Dark) {
         glUseProgram(shared_gl_objects.rendered_dark_program);
@@ -1677,9 +1677,9 @@ void PdfViewOpenGLWidget::render_transparent_background() {
 
     float background_color[4] = { 1.0f, 1.0f, 1.0f, 1 - FASTREAD_OPACITY };
 
-    if (document_view->color_mode == ColorPalette::Normal) {
+    if (document_view->get_current_color_mode() == ColorPalette::Normal) {
     }
-    else if (document_view->color_mode == ColorPalette::Dark) {
+    else if (document_view->get_current_color_mode() == ColorPalette::Dark) {
         background_color[0] = background_color[1] = background_color[2] = 0;
     }
     else {
@@ -1802,10 +1802,10 @@ void PdfViewOpenGLWidget::get_overview_window_vertices(float out_vertices[2 * 4]
 
 void PdfViewOpenGLWidget::get_background_color(float out_background[3]) {
 
-    if (document_view->color_mode == ColorPalette::Normal) {
+    if (document_view->get_current_color_mode() == ColorPalette::Normal) {
         out_background[0] = out_background[1] = out_background[2] = 1;
     }
-    else if (document_view->color_mode == ColorPalette::Dark) {
+    else if (document_view->get_current_color_mode() == ColorPalette::Dark) {
         out_background[0] = out_background[1] = out_background[2] = 0;
     }
     else {
@@ -2346,7 +2346,7 @@ std::vector<std::pair<QRect, QString>> PdfViewOpenGLWidget::get_hint_rect_and_te
 
 
 void PdfViewOpenGLWidget::get_color_for_current_mode(const float* input_color, float* output_color) {
-    return get_color_for_mode(document_view->color_mode, input_color, output_color);
+    return get_color_for_mode(document_view->get_current_color_mode(), input_color, output_color);
 }
 
 std::array<float, 3> PdfViewOpenGLWidget::cc3(const float* input_color) {
@@ -2363,7 +2363,7 @@ std::array<float, 4> PdfViewOpenGLWidget::cc4(const float* input_color) {
 }
 
 QColor PdfViewOpenGLWidget::qcc3(const float* input_color) {
-    return qconvert_color3(input_color, document_view->color_mode);
+    return qconvert_color3(input_color, document_view->get_current_color_mode());
 }
 
 QColor PdfViewOpenGLWidget::qcc4(const float* input_color) {
@@ -3508,7 +3508,7 @@ void PdfViewOpenGLWidget::do_paint(){
 }
 
 ColorPalette PdfViewOpenGLWidget::get_actual_color_palette(ColorPalette forced_color_palette){
-    return forced_color_palette == ColorPalette::None ? document_view->color_mode : forced_color_palette;
+    return forced_color_palette == ColorPalette::None ? document_view->get_current_color_mode() : forced_color_palette;
 
 }
 

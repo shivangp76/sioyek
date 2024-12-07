@@ -40,6 +40,7 @@ extern float HORIZONTAL_MOVE_AMOUNT;
 extern float TOUCHPAD_SENSITIVITY;
 extern float SCROLL_VIEW_SENSITIVITY;
 extern bool AUTOCENTER_VISUAL_SCROLL;
+extern std::wstring COLOR_MODE;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -2991,7 +2992,10 @@ DocumentPos DocumentView::window_pos_to_overview_pos(NormalizedWindowPos window_
 }
 
 ColorPalette DocumentView::get_current_color_mode() {
-    return color_mode;
+    if (COLOR_MODE == L"light") return ColorPalette::Normal;
+    if (COLOR_MODE == L"dark") return ColorPalette::Dark;
+    if (COLOR_MODE == L"custom") return ColorPalette::Custom;
+    return ColorPalette::None;
 }
 
 void DocumentView::toggle_highlight_links() {
@@ -3001,32 +3005,6 @@ void DocumentView::toggle_highlight_links() {
 void DocumentView::set_highlight_links(bool should_highlight, bool should_show_numbers) {
     this->should_highlight_links = should_highlight;
     this->should_show_numbers = should_show_numbers;
-}
-
-void DocumentView::set_dark_mode(bool mode) {
-    if (mode == true) {
-        this->color_mode = ColorPalette::Dark;
-    }
-    else {
-        this->color_mode = ColorPalette::Normal;
-    }
-}
-
-void DocumentView::toggle_dark_mode() {
-    set_dark_mode(!(this->color_mode == ColorPalette::Dark));
-}
-
-void DocumentView::set_custom_color_mode(bool mode) {
-    if (mode) {
-        this->color_mode = ColorPalette::Custom;
-    }
-    else {
-        this->color_mode = ColorPalette::Normal;
-    }
-}
-
-void DocumentView::toggle_custom_color_mode() {
-    set_custom_color_mode(!(this->color_mode == ColorPalette::Custom));
 }
 
 void DocumentView::toggle_highlight_words() {

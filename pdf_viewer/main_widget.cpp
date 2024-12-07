@@ -257,6 +257,8 @@ extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 
+extern std::wstring COLOR_MODE;
+
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
 extern std::wstring CONTEXT_MENU_ITEMS;
@@ -3835,25 +3837,38 @@ CommandManager* MainWidget::get_command_manager() {
 }
 
 void MainWidget::toggle_dark_mode() {
-    main_document_view->toggle_dark_mode();
+    if (COLOR_MODE == L"dark") {
+        COLOR_MODE = L"light";
+    }
+    else {
+        COLOR_MODE = L"dark";
+    }
+
+    //main_document_view->toggle_dark_mode();
     ensure_titlebar_colors_match_color_mode();
 
     if (helper_opengl_widget_) {
-        helper_document_view_->toggle_dark_mode();
+        //helper_document_view_->toggle_dark_mode();
         helper_opengl_widget_->update();
     }
-    config_manager->handle_set_color_palette(this, main_document_view->color_mode);
+    config_manager->handle_set_color_palette(this, main_document_view->get_current_color_mode());
 }
 
 void MainWidget::toggle_custom_color_mode() {
-    main_document_view->toggle_custom_color_mode();
+    if (COLOR_MODE == L"custom") {
+        COLOR_MODE = L"light";
+    }
+    else {
+        COLOR_MODE = L"custom";
+    }
+    //main_document_view->toggle_custom_color_mode();
     ensure_titlebar_colors_match_color_mode();
 
     if (helper_opengl_widget_) {
-        helper_document_view_->toggle_custom_color_mode();
+        //helper_document_view_->toggle_custom_color_mode();
         helper_opengl_widget_->update();
     }
-    config_manager->handle_set_color_palette(this, main_document_view->color_mode);
+    config_manager->handle_set_color_palette(this, main_document_view->get_current_color_mode());
 }
 
 
@@ -4203,18 +4218,6 @@ void MainWidget::apply_window_params_for_two_window_mode() {
         helper_window->resize(helper_window_size[0], helper_window_size[1]);
 
         helper_window->show();
-
-
-        // make sure the colorscheme is correct
-        if (main_document_view->get_current_color_mode() == ColorPalette::Dark) {
-            helper_document_view()->set_dark_mode(true);
-        }
-        else if (main_document_view->get_current_color_mode() == ColorPalette::Custom) {
-            helper_document_view()->set_custom_color_mode(true);
-        }
-        else {
-            helper_document_view()->set_dark_mode(false);
-        }
     }
 
     if (should_maximize) {
@@ -6904,37 +6907,22 @@ int MainWidget::get_current_colorscheme_index() {
 
 void MainWidget::set_dark_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Dark) {
-        main_document_view->set_dark_mode(true);
+        COLOR_MODE = L"dark";
         config_manager->handle_set_color_palette(this, ColorPalette::Dark);
-    }
-    if (helper_opengl_widget_) {
-        if (helper_document_view_->get_current_color_mode() != ColorPalette::Dark) {
-            helper_document_view_->set_dark_mode(true);
-        }
     }
 }
 
 void MainWidget::set_light_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Normal) {
-        main_document_view->set_dark_mode(false);
+        COLOR_MODE = L"light";
         config_manager->handle_set_color_palette(this, ColorPalette::Normal);
-    }
-    if (helper_opengl_widget_) {
-        if (helper_document_view_->get_current_color_mode() != ColorPalette::Normal) {
-            helper_document_view_->set_dark_mode(false);
-        }
     }
 }
 
 void MainWidget::set_custom_color_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Custom) {
-        main_document_view->set_custom_color_mode(true);
+        COLOR_MODE = L"custom";
         config_manager->handle_set_color_palette(this, ColorPalette::Custom);
-    }
-    if (helper_opengl_widget_) {
-        if (helper_document_view_->get_current_color_mode() != ColorPalette::Custom) {
-            helper_document_view_->set_custom_color_mode(true);
-        }
     }
 }
 
@@ -8060,7 +8048,7 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
 
         // if we are setting the dark/custom variant a color config which matches the current color mode
         // then we should also update the current value of that config
-        if (confname.startsWith("DARK_") && (main_document_view->color_mode == ColorPalette::Dark)) {
+        if (confname.startsWith("DARK_") && (main_document_view->get_current_color_mode() == ColorPalette::Dark)) {
             Config* this_config = config_manager->get_mut_config_with_name(confname.toStdWString());
             Config* base_config = config_manager->get_mut_config_with_name(confname.mid(5).toStdWString());
             int n_channels = base_config->config_type == ConfigType::Color3 ? 3 : 4;
@@ -8071,7 +8059,7 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             }
         }
 
-        if (confname.startsWith("CUSTOM_") && (main_document_view->color_mode == ColorPalette::Custom)) {
+        if (confname.startsWith("CUSTOM_") && (main_document_view->get_current_color_mode() == ColorPalette::Custom)) {
             Config* this_config = config_manager->get_mut_config_with_name(confname.toStdWString());
             Config* base_config = config_manager->get_mut_config_with_name(confname.mid(7).toStdWString());
             int n_channels = base_config->config_type == ConfigType::Color3 ? 3 : 4;
