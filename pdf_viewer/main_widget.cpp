@@ -329,6 +329,7 @@ extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool USE_KEYBOARD_POINT_SELECTION;
 
 extern bool SCROLLBAR;
+extern bool STATUSBAR;
 extern bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH;
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;
@@ -4605,14 +4606,7 @@ void MainWidget::focusInEvent(QFocusEvent* ev) {
 }
 
 void MainWidget::toggle_statusbar() {
-    should_show_status_label_ = !should_show_status_label_;
-
-    if (!should_show_status_label()) {
-        status_label->hide();
-    }
-    else {
-        status_label->show();
-    }
+    execute_macro_if_enabled(L"toggleconfig_statusbar");
 }
 
 void MainWidget::toggle_titlebar() {
@@ -7946,7 +7940,7 @@ bool MainWidget::should_show_status_label() {
         return false;
     }
     else {
-        return should_show_status_label_ || main_document_view->get_is_searching(&prog);
+        return STATUSBAR || main_document_view->get_is_searching(&prog);
     }
 }
 
@@ -8091,6 +8085,15 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             }
 
         }
+        if (confname == "statusbar") {
+            if (!should_show_status_label()) {
+                status_label->hide();
+            }
+            else {
+                status_label->show();
+            }
+        }
+
     }
     if (should_reflow) {
         bool flag = false;

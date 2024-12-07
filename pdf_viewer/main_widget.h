@@ -295,7 +295,8 @@ public:
     // If touch mode is enabled, we don't show the status label at all, unless there is another window
     // (e.g. the main menu or search buttons) is visible. That is because the screen space is already
     // very limited in touch devices and we don't want to waste it using a statusbar unless it is absolutely required
-    bool should_show_status_label_ = true;
+    //bool should_show_status_label_ = true;
+
     bool should_show_status_label();
 
     // the location of current character in sioyek's typing minigame
