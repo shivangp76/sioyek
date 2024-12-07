@@ -5178,6 +5178,7 @@ public:
     bool requires_document() { return true; }
 };
 
+
 class OpenLinkCommand : public Command {
 public:
     static inline const std::string cname = "open_link";
@@ -5576,15 +5577,57 @@ public:
     }
 };
 
-class KeyboardOverviewCommand : public TextCommand {
+
+class TagCommand : public Command {
+public:
+    std::vector<DocumentRect> tags;
+    std::string selected_tag;
+    bool pre_performed = false;
+
+    TagCommand(std::string cname, MainWidget* w) : Command(cname, w) {
+
+    }
+
+
+    bool is_done() {
+        return get_num_tag_digits(tags.size()) == selected_tag.size();
+    }
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) override {
+        if (is_done()) {
+            return {};
+        }
+        else {
+            return Requirement{ RequirementType::Symbol, "tag" };
+        }
+    }
+
+    void set_symbol_requirement(char value) override {
+        selected_tag.push_back(value);
+        if (!is_done()) {
+            widget->set_tag_prefix(utf8_decode(selected_tag));
+        }
+    }
+
+
+    void pre_perform() override {
+        if (!pre_performed) {
+            widget->clear_tag_prefix();
+            tags = dv()->highlight_words();
+            pre_performed = true;
+        }
+    }
+
+};
+
+class KeyboardOverviewCommand : public TagCommand {
 public:
     static inline const std::string cname = "keyboard_overview";
     static inline const std::string hname = "Open an overview using keyboard";
-    KeyboardOverviewCommand(MainWidget* w) : TextCommand(cname, w) {};
-    std::vector<DocumentRect> tags;
+    KeyboardOverviewCommand(MainWidget* w) : TagCommand(cname, w) {};
 
     void perform() {
-        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(tags, utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(tags, selected_tag);
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->overview_under_pos({ (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2 });
@@ -5592,26 +5635,16 @@ public:
             widget->invalidate_render();
         }
     }
-
-    void pre_perform() {
-        tags = dv()->highlight_words();
-
-    }
-
-    std::string text_requirement_name() {
-        return "Label";
-    }
 };
 
-class KeyboardSmartjumpCommand : public TextCommand {
+class KeyboardSmartjumpCommand : public TagCommand {
 public:
     static inline const std::string cname = "keyboard_smart_jump";
     static inline const std::string hname = "Smart jump using keyboard";
-    KeyboardSmartjumpCommand(MainWidget* w) : TextCommand(cname, w) {};
-    std::vector<DocumentRect> tags;
+    KeyboardSmartjumpCommand(MainWidget* w) : TagCommand(cname, w) {};
 
     void perform() {
-        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(tags, utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = dv()->get_tag_window_rect(tags, selected_tag);
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->smart_jump_under_pos({ (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2 });
@@ -5619,16 +5652,8 @@ public:
         }
     }
 
-    void pre_perform() {
-        tags = dv()->highlight_words();
-    }
-
     bool pushes_state() {
         return true;
-    }
-
-    std::string text_requirement_name() {
-        return "Label";
     }
 };
 
