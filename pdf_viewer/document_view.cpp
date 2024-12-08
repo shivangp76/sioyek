@@ -3980,14 +3980,23 @@ void DocumentView::goto_next_block() {
     int ruler_page = get_vertical_line_page();
     //auto [line, block] = main_document_view->get_ruler_line_and_block();
     std::vector<int> unmerged_line_indices = get_ruler_unmerged_line_indices();
-    if (unmerged_line_indices.size() > 0) {
-        int after_index = unmerged_line_indices.front();
-        int next_line_unmerged_index = current_document->get_first_line_index_after_block(ruler_page, after_index);
-        int merged_index = current_document->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
-        set_line_index(merged_index, ruler_page);
+    int prev_merged_index = ruler_line_index->merged_index;
+    int n_page_lines = doc()->get_page_lines(ruler_page).merged_line_rects.size();
 
-        if (merged_index >= 0) {
-            focus_on_visual_mark_pos(true);
+    if (unmerged_line_indices.size() > 0) {
+        if (prev_merged_index == n_page_lines - 1) {
+            move_ruler(1);
+        }
+        else {
+
+            int after_index = unmerged_line_indices.front();
+            int next_line_unmerged_index = current_document->get_first_line_index_after_block(ruler_page, after_index);
+            int merged_index = current_document->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
+            set_line_index(merged_index, ruler_page);
+
+            if (merged_index >= 0) {
+                focus_on_visual_mark_pos(true);
+            }
         }
     }
 }
@@ -3995,13 +4004,26 @@ void DocumentView::goto_next_block() {
 void DocumentView::goto_prev_block() {
     int ruler_page = get_vertical_line_page();
     std::vector<int> unmerged_line_indices = get_ruler_unmerged_line_indices();
+    int prev_merged_index = ruler_line_index->merged_index;
     if (unmerged_line_indices.size() > 0) {
-        int after_index = unmerged_line_indices.front();
-        int next_line_unmerged_index = current_document->get_first_line_before_block(ruler_page, after_index);
-        int merged_index = current_document->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
-        set_line_index(merged_index, ruler_page);
-        if (merged_index >= 0) {
-            focus_on_visual_mark_pos(false);
+        if (prev_merged_index == 0) {
+            // goto the last line of previous page
+            move_ruler(-1);
+        }
+        else {
+
+            int after_index = unmerged_line_indices.front();
+            int next_line_unmerged_index = current_document->get_first_line_before_block(ruler_page, after_index);
+            int merged_index = current_document->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
+            if (merged_index == prev_merged_index && prev_merged_index > 0) {
+                set_line_index(prev_merged_index - 1, ruler_page);
+            }
+            else {
+                set_line_index(merged_index, ruler_page);
+            }
+            if (merged_index >= 0) {
+                focus_on_visual_mark_pos(false);
+            }
         }
     }
 }
