@@ -4959,6 +4959,7 @@ std::optional<OverviewState> DocumentView::get_ith_next_overview(int i) {
         state.doc = overview_doc;
         state.absolute_offset_y = abspos.y;
         state.highlight_rects = smart_view_candidates[index_into_candidates].get_highlight_rects();
+        state.overview_type = reference_type_string(smart_view_candidates[index_into_candidates].reference_type);
         return state;
     }
     return {};
