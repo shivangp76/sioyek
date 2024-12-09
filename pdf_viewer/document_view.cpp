@@ -3609,7 +3609,12 @@ bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInf
             bool is_reference = \
                 reftype == ReferenceType::None ||
                 reftype == ReferenceType::Reference ||
-                reftype == ReferenceType::Generic;
+                reftype == ReferenceType::RefLink;
+                //reftype == ReferenceType::Generic;
+            if (reftype == ReferenceType::Generic) {
+                std::wstring block_string = get_string_from_stext_block(link_info.block, false, false);
+                is_reference = is_text_source_referncish_at_position(block_string, link_info.position_in_block, QString::fromStdWString(link_info.link_text));
+            }
 
             return is_reference;
 
