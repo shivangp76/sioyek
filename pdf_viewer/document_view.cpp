@@ -2290,7 +2290,7 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
                 }
                 else {
                     page_rect.x0 = leftmost_x + (i % NUM_PAGE_COLUMNS) * (page_width + 2 * page_space_x);
-                    page_rect.x1 = page_rect.x0 + page_width;
+                    page_rect.x1 = page_rect.x0 + page_width +  page_space_x;
 
                 }
 
