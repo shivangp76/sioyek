@@ -551,7 +551,7 @@ void DocumentView::goto_mark(char symbol) {
         std::optional<Mark> mark = current_document->get_mark_if_exists(symbol);
         if (mark) {
             set_offset_y(mark->y_offset);
-            if (mark->x_offset) {
+            if (mark->x_offset && (!two_page_mode)) {
                 set_offset_x(mark->x_offset.value());
                 set_zoom_level(mark->zoom_level.value(), true);
             }
