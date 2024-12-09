@@ -4561,7 +4561,7 @@ void MainWidget::move_ruler_prev(){
 }
 
 AbsoluteRect MainWidget::move_visual_mark(int offset) {
-    if (!main_document_view->is_ruler_mode()){
+    if ((!main_document_view->is_ruler_mode()) || (main_document_view->get_overview_page().has_value())){
         dv()->handle_vertical_move(offset);
         return fz_empty_rect;
     }
