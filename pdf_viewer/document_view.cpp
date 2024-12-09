@@ -639,10 +639,13 @@ float DocumentView::zoom_in(float zoom_factor, bool readjust) {
         new_zoom_level = max_zoom_level;
     }
 
-    return set_zoom_level(new_zoom_level, true, readjust);
+    float actual_zoom_factor = new_zoom_level / zoom_level;
+
+    WindowPos center_window_pos = { view_width / 2, view_height / 2 };
+    return zoom_in_cursor(center_window_pos, actual_zoom_factor);
 }
 float DocumentView::zoom_out(float zoom_factor, bool readjust) {
-    return set_zoom_level(zoom_level / zoom_factor, true, readjust);
+    return zoom_in(1.0f / zoom_factor, readjust);
 }
 
 float DocumentView::zoom_in_cursor(WindowPos mouse_pos, float zoom_factor) {
