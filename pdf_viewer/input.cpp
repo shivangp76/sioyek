@@ -418,6 +418,11 @@ public:
                 if (command_invocation.command_name[0] == '[') {
                     is_modal = true;
                 }
+            }
+        }
+
+        for (auto command_invocation : command_invocations) {
+            if (command_invocation.command_name.size() > 0) {
 
                 if (is_modal) {
                     modes.push_back(command_invocation.mode_string().toStdString());
@@ -796,7 +801,7 @@ public:
     int get_current_mode_index() {
         if (is_modal) {
             std::string mode_str = widget->get_current_mode_string();
-            for (int i = 0; i < commands.size(); i++) {
+            for (int i = 0; i < modes.size(); i++) {
                 if (mode_matches(mode_str, modes[i])) {
                     return i;
                 }
@@ -3681,6 +3686,17 @@ public:
     }
 };
 
+class FitToOverviewWidth : public Command {
+public:
+    static inline const std::string cname = "fit_to_overview_width";
+    static inline const std::string hname = "Fit the overview page to overview.";
+    FitToOverviewWidth(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        dv()->fit_overview_width();
+    }
+};
+
 class FitToPageSmartCommand : public Command {
 public:
     static inline const std::string cname = "fit_to_page_smart";
@@ -4533,7 +4549,8 @@ public:
             }
         }
         else {
-            widget->main_document_view->set_offset_y(0.0f);
+            float y_offset = dv()->get_view_height() / 2 / dv()->get_zoom_level();
+            widget->main_document_view->set_offset_y(y_offset);
         }
     }
 
@@ -8137,6 +8154,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ZoomInOverviewCommand>(this);
     register_command<ZoomOutOverviewCommand>(this);
     register_command<FitToPageWidthCommand>(this);
+    register_command<FitToOverviewWidth>(this);
     register_command<FitToPageHeightCommand>(this);
     register_command<FitToPageSmartCommand>(this);
     register_command<FitToPageHeightSmartCommand>(this);
