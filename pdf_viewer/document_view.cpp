@@ -977,8 +977,9 @@ void DocumentView::fit_to_page_width(bool smart, bool ratio) {
             page_space_x = -(left_normal_page_width * (1 - left_right_ratio) + right_normal_page_width * right_left_ratio) / 2;
             cached_virtual_rects.clear();
 
-            set_zoom_level(static_cast<float>(view_width) / (left_page_width + right_page_width + right_page_width * (NUM_PAGE_COLUMNS - 2) + page_space_x * (NUM_PAGE_COLUMNS - 1)), false);
-            offset.x = -imbalance * (left_normal_page_width + right_normal_page_width + page_space_x * 2) / 4.0f;
+            float average_width = (left_page_width + right_page_width) / 2;
+            set_zoom_level(static_cast<float>(view_width) / (average_width * NUM_PAGE_COLUMNS + page_space_x * NUM_PAGE_COLUMNS), false);
+            offset.x = -page_space_x * (NUM_PAGE_COLUMNS - 2) / 2;
         }
 
         else {
