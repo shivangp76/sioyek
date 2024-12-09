@@ -561,7 +561,8 @@ void DocumentView::goto_mark(char symbol) {
 void DocumentView::goto_end() {
     if (current_document) {
         int last_page_index = current_document->num_pages() - 1;
-        set_offset_y(current_document->get_accum_page_height(last_page_index) + current_document->get_page_height(last_page_index));
+        float halfscreen_offset = get_view_height() / 2 / get_zoom_level();
+        set_offset_y(current_document->get_accum_page_height(last_page_index) + current_document->get_page_height(last_page_index) - halfscreen_offset);
     }
 }
 
