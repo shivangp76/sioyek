@@ -2827,7 +2827,7 @@ NormalizedWindowRect DocumentView::get_overview_rect_pixel_perfect(int widget_wi
 WindowRect DocumentView::get_overview_download_rect() {
     WindowPos top_left = NormalizedWindowPos{ overview_offset_x - overview_half_width, overview_offset_y + overview_half_height}.to_window(this);
     //top_left.x += 1;
-    top_left.y += 2;
+    //top_left.y += 2;
 
     WindowPos bottom_right = WindowPos{ top_left.x + 20, top_left.y + 20 };
     return WindowRect(top_left, bottom_right);

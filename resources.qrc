@@ -112,6 +112,7 @@
         <file>icons/save.svg</file>
         <file>icons/load.svg</file>
         <file>icons/move.svg</file>
+        <file>icons/download.svg</file>
         <file>end.png</file>
         <file>data/embedding.npy</file>
         <file>data/linear.npy</file>
