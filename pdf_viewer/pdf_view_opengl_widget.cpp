@@ -432,6 +432,7 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
     portal_icon_white = QIcon(":/icons/P_white.svg");
     hourglass_icon = QIcon(":/icons/hourglass.svg");
     download_icon = QPixmap(":/icons/download.svg");
+    download_icon_dark = QPixmap(":/icons/download_dark.svg");
 }
 
 void PdfViewOpenGLWidget::handle_escape() {
@@ -486,12 +487,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview, bool draw_bord
 
         if ((dv()->overview_page->overview_type == "reference") || (dv()->overview_page->overview_type == "reflink")) {
             QRect download_rect = dv()->get_overview_download_rect().to_qrect();
-            //painter.drawRect(download_rect);
-            //painter.setBrush(Qt::black);
-            //painter.fillRect(download_rect, QBrush(Qt::black));
-            painter.setPen(Qt::white);
-            //painter.drawText(download_rect, Qt::AlignCenter, "↓");
-            draw_icon(download_icon, download_rect);
+            render_ui_icon_for_current_color_mode(download_icon, download_icon_dark, download_rect);
 
             painter.beginNativePainting();
         }

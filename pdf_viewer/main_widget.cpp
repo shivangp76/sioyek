@@ -7275,6 +7275,14 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
+    auto mappings = input_handler->get_command_key_mappings();
+    for (auto [name, value] : mappings) {
+        if (name == "download_overview_paper") {
+            if (value.size() > 0) {
+                qDebug() << value[0];
+            }
+        }
+    }
 }
 
 void MainWidget::show_command_menu() {

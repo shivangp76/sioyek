@@ -127,6 +127,7 @@ private:
     QIcon portal_icon_white;
     QIcon hourglass_icon;
     QIcon download_icon;
+    QIcon download_icon_dark;
 
     int last_mouse_down_window_x = 0;
     int last_mouse_down_window_y = 0;
