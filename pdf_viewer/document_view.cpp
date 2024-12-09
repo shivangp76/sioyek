@@ -3941,12 +3941,10 @@ AbsoluteRect DocumentView::move_visual_mark(int offset) {
     int vertical_line_page = get_vertical_line_page();
     AbsoluteRect ruler_rect = current_document->get_ith_next_line_from_absolute_y(vertical_line_page, prev_line_index, offset, true, &new_line_index, &new_page);
     set_line_index(new_line_index, new_page);
-    //main_document_view->set_vertical_line_rect(ruler_rect);
+
     if (focus_on_visual_mark_pos(moving_down)) {
-        if (!is_two_page_mode()) {
-            float distance = (get_view_height() / get_zoom_level()) * VISUAL_MARK_NEXT_PAGE_FRACTION / 2;
-            move_absolute(0, distance);
-        }
+        float distance = (get_view_height() / get_zoom_level()) * VISUAL_MARK_NEXT_PAGE_FRACTION / 2;
+        move_virtual(0, distance);
     }
 
     clear_underline();
