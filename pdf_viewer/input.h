@@ -141,6 +141,7 @@ private:
     CommandManager* command_manager;
     std::string number_stack;
     std::vector<Path> user_key_paths;
+    mutable std::unordered_map<std::string, std::vector<std::string>> command_keymapping_cache;
 
     std::string get_key_string_from_tree_node_sequence(const std::vector<InputParseTreeNode*> seq) const;
     std::string get_key_name_from_key_code(int key_code) const;
@@ -162,6 +163,7 @@ public:
     std::optional<Path> get_or_create_user_keys_path();
     std::vector<Path> get_all_user_keys_paths();
     std::unordered_map<std::string, std::vector<std::string>> get_command_key_mappings() const;
+    std::vector<std::string> get_key_mappings(std::string command_name) const;
 
 };
 

@@ -9085,10 +9085,27 @@ InputHandler::InputHandler(const Path& default_path, const std::vector<Path>& us
 
 void InputHandler::reload_config_files(const Path& default_config_path, const std::vector<Path>& user_config_paths)
 {
+    command_keymapping_cache.clear();
     delete_current_parse_tree(root);
 
     root = parse_key_config_files(command_manager, default_config_path, user_config_paths);
     current_node = root;
+}
+
+std::vector<std::string> InputHandler::get_key_mappings(std::string command_name) const {
+    auto cached = command_keymapping_cache.find(command_name);
+    if (cached != command_keymapping_cache.end()) {
+        return cached->second;
+    }
+    else {
+        auto all_mappings = get_command_key_mappings();
+        for (auto [name, value] : all_mappings) {
+            if (name == command_name) {
+                command_keymapping_cache[name] = value;
+                return value;
+            }
+        }
+    }
 }
 
 

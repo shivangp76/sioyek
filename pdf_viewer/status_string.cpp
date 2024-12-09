@@ -257,10 +257,17 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         if (widget->dv() && widget->dv()->overview_page) {
             if (((widget->dv()->overview_page->overview_type == "reference") || (widget->dv()->overview_page->overview_type == "reflink"))
                 && (widget->dv()->overview_page->highlight_rects.size() > 0)) {
-                return " [ download ]";
+                auto mappings = widget->input_handler->get_key_mappings("download_overview_paper");
+                //widget->input_handler->get_com
+                if (mappings.size() == 0) {
+                    return QString(" [ download ]");
+                }
+                else {
+                    return QString(" [ download keybind : ") + QString::fromStdString(mappings[0]) + " ]";
+                }
             }
         }
-        return "";
+        return QString("");
         };
     auto network_status_fn = [widget=main_widget]() {
         return " [ " + widget->get_network_status_string() + " ]";
