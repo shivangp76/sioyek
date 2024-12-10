@@ -5770,16 +5770,16 @@ void MainWidget::handle_goto_toc() {
     if (main_document_view->get_document()->has_toc()) {
         if (TOUCH_MODE) {
             std::vector<std::wstring> flat_toc;
-            std::vector<int> current_document_toc_pages;
+            std::vector<DocumentPos> current_document_toc_pages;
             get_flat_toc(main_document_view->get_document()->get_toc(), flat_toc, current_document_toc_pages);
             std::vector<std::wstring> page_strings;
             for (int i = 0; i < current_document_toc_pages.size(); i++) {
-                page_strings.push_back(("[ " + QString::number(current_document_toc_pages[i] + 1) + " ]").toStdWString());
+                page_strings.push_back(("[ " + QString::number(current_document_toc_pages[i].page + 1) + " ]").toStdWString());
             }
             int closest_toc_index = current_document_toc_pages.size() - 1;
             int current_page = get_current_page_number();
             for (int i = 0; i < current_document_toc_pages.size(); i++) {
-                if (current_document_toc_pages[i] > current_page) {
+                if (current_document_toc_pages[i].page > current_page) {
                     closest_toc_index = i - 1;
                     break;
                 }
@@ -5789,25 +5789,25 @@ void MainWidget::handle_goto_toc() {
             }
             QAbstractItemModel* model = create_table_model(flat_toc, page_strings);
 
-            set_current_widget(new TouchFilteredSelectWidget<int>(FUZZY_SEARCHING, model, current_document_toc_pages, closest_toc_index, [&](int* page_value) {
+            set_current_widget(new TouchFilteredSelectWidget<DocumentPos>(FUZZY_SEARCHING, model, current_document_toc_pages, closest_toc_index, [&](DocumentPos* page_value) {
                 if (page_value && pending_command_instance) {
-                    pending_command_instance->set_generic_requirement(*page_value);
+                    pending_command_instance->set_generic_requirement(page_value->page);
                     advance_command(std::move(pending_command_instance));
                     invalidate_render();
                 }
                 pop_current_widget();
-                }, [&](int* page) {}, this));
+                }, [&](DocumentPos* page) {}, this));
             show_current_widget();
         }
         else {
 
             if (FLAT_TABLE_OF_CONTENTS) {
                 std::vector<std::wstring> flat_toc;
-                std::vector<int> current_document_toc_pages;
+                std::vector<DocumentPos> current_document_toc_pages;
                 get_flat_toc(main_document_view->get_document()->get_toc(), flat_toc, current_document_toc_pages);
-                set_current_widget(new FilteredSelectWindowClass<int>(FUZZY_SEARCHING, flat_toc, current_document_toc_pages, [&](int* page_value) {
+                set_current_widget(new FilteredSelectWindowClass<DocumentPos>(FUZZY_SEARCHING, flat_toc, current_document_toc_pages, [&](DocumentPos* page_value) {
                     if (page_value && pending_command_instance) {
-                        pending_command_instance->set_generic_requirement(*page_value);
+                        pending_command_instance->set_generic_requirement(page_value->page);
                         advance_command(std::move(pending_command_instance));
 
                     }

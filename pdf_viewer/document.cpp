@@ -783,8 +783,8 @@ const std::vector<std::wstring>& Document::get_flat_toc_names() {
     return flat_toc_names;
 }
 
-const std::vector<int>& Document::get_flat_toc_pages() {
-    return flat_toc_pages;
+const std::vector<DocumentPos>& Document::get_flat_toc_pages() {
+    return flat_toc_position;
 }
 
 float Document::get_page_height(int page_index) {
@@ -3191,7 +3191,7 @@ void Document::load_document_caches(bool force_now) {
 
     load_page_dimensions(force_now);
     create_toc_tree(top_level_toc_nodes);
-    get_flat_toc(top_level_toc_nodes, flat_toc_names, flat_toc_pages);
+    get_flat_toc(top_level_toc_nodes, flat_toc_names, flat_toc_position);
     //invalid_flag_pointer = invalid_flag;
 
     // we don't need to index figures in helper documents

@@ -122,7 +122,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS = {
     {L"current_page", L"previous_page"},
     {L"num_pages", L"previous_page"},
-    {L"chapter_name", L"previous_chapter"},
+    {L"chapter_name", L"prev_chapter"},
     {L"preview_index", L"previous_overview"},
     {L"tts_status", L"decrease_tts_rate"},
     {L"tts_rate", L"decrease_tts_rate"},

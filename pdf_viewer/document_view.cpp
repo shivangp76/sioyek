@@ -1070,7 +1070,7 @@ void DocumentView::persist(bool persist_drawings) {
 }
 
 int DocumentView::get_current_chapter_index() {
-    const std::vector<int>& chapter_pages = current_document->get_flat_toc_pages();
+    const std::vector<DocumentPos>& chapter_pages = current_document->get_flat_toc_pages();
 
     if (chapter_pages.size() == 0) {
         return -1;
@@ -1081,8 +1081,8 @@ int DocumentView::get_current_chapter_index() {
     int current_chapter_index = 0;
 
     int index = 0;
-    for (int p : chapter_pages) {
-        if (p <= cp) {
+    for (auto pos : chapter_pages) {
+        if (pos.page <= cp) {
             current_chapter_index = index;
         }
         index++;
@@ -1105,12 +1105,12 @@ std::optional<std::pair<int, int>> DocumentView::get_current_page_range() {
     if (ci < 0) {
         return {};
     }
-    const std::vector<int>& chapter_pages = current_document->get_flat_toc_pages();
-    int range_begin = chapter_pages[ci];
+    const std::vector<DocumentPos>& chapter_pages = current_document->get_flat_toc_pages();
+    int range_begin = chapter_pages[ci].page;
     int range_end = current_document->num_pages() - 1;
 
     if ((size_t)ci < chapter_pages.size() - 1) {
-        range_end = chapter_pages[ci + 1];
+        range_end = chapter_pages[ci + 1].page;
     }
 
     return std::make_pair(range_begin, range_end);
@@ -1144,16 +1144,20 @@ std::vector<int> DocumentView::get_current_chapter_recursive_index() {
 }
 
 void DocumentView::goto_chapter(int diff) {
-    const std::vector<int>& chapter_pages = current_document->get_flat_toc_pages();
+    const std::vector<DocumentPos>& chapter_pages = current_document->get_flat_toc_pages();
     int curr_page = get_center_page_number();
+    DocumentPos curr_pos = get_offsets().to_document(doc());
 
     int index = 0;
 
-    while ((size_t)index < chapter_pages.size() && chapter_pages[index] < curr_page) {
+    while ((size_t)index < chapter_pages.size() &&
+            ((chapter_pages[index].page < curr_page) ||
+            (chapter_pages[index].page == curr_page && (chapter_pages[index].y - curr_pos.y) < -0.1f))) {
         index++;
     }
 
-    if (index < chapter_pages.size() && chapter_pages[index] > curr_page) {
+    if (index < chapter_pages.size() && (chapter_pages[index].page > curr_page ||
+        (chapter_pages[index].page == curr_page && (chapter_pages[index].y - curr_pos.y) > 0.1f))) {
         index--;
     }
 
@@ -1165,7 +1169,8 @@ void DocumentView::goto_chapter(int diff) {
         goto_end();
     }
     else {
-        goto_page(chapter_pages[new_index]);
+        goto_offset_within_page(chapter_pages[new_index].page, chapter_pages[new_index].y);
+        //goto_page(chapter_pages[new_index].page);
     }
 }
 

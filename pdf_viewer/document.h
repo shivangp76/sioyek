@@ -98,7 +98,8 @@ private:
     // flattened table of contents entries when we don't want to (or can't)
     // show a tree view (e.g. due to performance reasons on PC and lack of availablity on mobile)
     std::vector<std::wstring> flat_toc_names;
-    std::vector<int> flat_toc_pages;
+    //std::vector<int> flat_toc_pages;
+    std::vector<DocumentPos> flat_toc_position;
     std::optional<QDateTime> drawings_last_server_mofication_time = {};
 
     std::map<int, PageMergedLinesInfoAbsolute> cached_page_line_info;
@@ -310,7 +311,7 @@ public:
     const std::vector<TocNode*>& get_toc();
     bool has_toc();
     const std::vector<std::wstring>& get_flat_toc_names();
-    const std::vector<int>& get_flat_toc_pages();
+    const std::vector<DocumentPos>& get_flat_toc_pages();
     bool open(bool force_load_dimensions = false, std::string password = "", bool temp = false);
     void reload(std::string password = "");
     QDateTime get_last_edit_time();

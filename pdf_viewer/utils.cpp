@@ -144,12 +144,16 @@ void get_path_epub_size(const std::wstring& path, float* out_width, float* out_h
     *out_height = height;
 }
 
-void get_flat_toc(const std::vector<TocNode*>& roots, std::vector<std::wstring>& output, std::vector<int>& pages) {
+void get_flat_toc(const std::vector<TocNode*>& roots, std::vector<std::wstring>& output, std::vector<DocumentPos>& pages) {
     // Enumerate ToC nodes in DFS order
 
     for (const auto& root : roots) {
         output.push_back(root->title);
-        pages.push_back(root->page);
+        DocumentPos pos;
+        pos.page = root->page;
+        pos.x = 0;
+        pos.y = root->y;
+        pages.push_back(pos);
         get_flat_toc(root->children, output, pages);
     }
 }
