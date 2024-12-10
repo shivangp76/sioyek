@@ -807,6 +807,8 @@ protected:
     void wheelEvent(QWheelEvent* wevent) override;
     bool event(QEvent* event);
     bool is_mouse_cursor_in_overview();
+    bool is_mouse_cursor_in_statusbar();
+    std::wstring get_status_part_name_under_cursor();
 
 public:
 

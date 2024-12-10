@@ -41,6 +41,7 @@ bool DEBUG = false;
 bool ADD_NEWLINES_WHEN_COPYING_TEXT = false;
 bool ALWAYS_COPY_SELECTED_TEXT = false;
 bool SHOW_DOCUMENTATION_IN_WIDGET = false;
+float TTS_RATE_INCREMENT = 0.05f;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -116,6 +117,24 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
     {L"tts_status", L"stop_reading"},
     {L"tts_rate", L"setconfig_tts_rate"},
     {L"download", L"cancel_all_downloads"},
+};
+
+std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS = {
+    {L"current_page", L"previous_page"},
+    {L"num_pages", L"previous_page"},
+    {L"chapter_name", L"previous_chapter"},
+    {L"preview_index", L"previous_overview"},
+    {L"tts_status", L"decrease_tts_rate"},
+    {L"tts_rate", L"decrease_tts_rate"},
+};
+
+std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_DOWN_COMMANDS = {
+    {L"current_page", L"next_page"},
+    {L"num_pages", L"next_page"},
+    {L"chapter_name", L"next_chapter"},
+    {L"preview_index", L"next_overview"},
+    {L"tts_status", L"increase_tts_rate"},
+    {L"tts_rate", L"increase_tts_rate"},
 };
 
 float BLACK_COLOR[3] = { 0.0f, 0.0f, 0.0f };
@@ -245,6 +264,7 @@ bool START_WITH_HELPER_WINDOW = false;
 bool FANCY_UI_MENUS = true;
 bool SCROLLBAR = false;
 bool STATUSBAR = true;
+bool STATUSBAR_HANDLES_WHEEL_EVENTS = true;
 std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 
 
@@ -1128,6 +1148,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"smooth_scroll_speed", &SMOOTH_SCROLL_SPEED, FloatExtras{0.0f, 20.0f});
     add_float(L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, FloatExtras{10.0f, 10000.0f});
     add_float(L"box_highlight_bookmark_transparency", &BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY, FloatExtras{0.0f, 1.0f});
+    add_float(L"tts_rate_increment", &TTS_RATE_INCREMENT, FloatExtras{0.0f, 1.0f});
     add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f})->set_change_fn([](MainWidget* w){
         w->invalidate_render();
     });
@@ -1199,6 +1220,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"fancy_ui_menus", &FANCY_UI_MENUS);
     add_bool(L"scrollbar", &SCROLLBAR);
     add_bool(L"statusbar", &STATUSBAR);
+    add_bool(L"statusbar_handles_wheel_events", &STATUSBAR_HANDLES_WHEEL_EVENTS);
     add_bool(L"prerender_next_page_presentation", &PRERENDER_NEXT_PAGE);
     add_bool(L"highlight_middle_click", &HIGHLIGHT_MIDDLE_CLICK);
     add_bool(L"auto_rename_downloaded_papers", &AUTO_RENAME_DOWNLOADED_PAPERS);
@@ -1428,13 +1450,42 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
     for (int i = 0; i < STATUS_STRING_PARTS.size(); i++) {
         std::wstring config_name = L"status_" + STATUS_STRING_PARTS[i].toStdWString() + L"_command";
+        std::wstring wheel_up_config_name = L"status_" + STATUS_STRING_PARTS[i].toStdWString() + L"wheel_up_command";
+        std::wstring wheel_down_config_name = L"status_" + STATUS_STRING_PARTS[i].toStdWString() + L"wheel_down_command";
+
         if (STATUS_BAR_COMMANDS.find(config_name) == STATUS_BAR_COMMANDS.end()) {
             STATUS_BAR_COMMANDS[config_name] = L"";
         }
+        if (STATUS_BAR_WHEEL_UP_COMMANDS.find(config_name) == STATUS_BAR_WHEEL_UP_COMMANDS.end()) {
+            STATUS_BAR_WHEEL_UP_COMMANDS[wheel_up_config_name] = L"";
+        }
+
+        if (STATUS_BAR_WHEEL_DOWN_COMMANDS.find(config_name) == STATUS_BAR_WHEEL_DOWN_COMMANDS.end()) {
+            STATUS_BAR_WHEEL_DOWN_COMMANDS[wheel_down_config_name] = L"";
+        }
+
         configs.push_back(new Config{
             config_name,
             ConfigType::Macro,
             &STATUS_BAR_COMMANDS[STATUS_STRING_PARTS[i].toStdWString()],
+            string_serializer,
+            string_deserializer,
+            nullptr
+            });
+
+        configs.push_back(new Config{
+            wheel_up_config_name,
+            ConfigType::Macro,
+            &STATUS_BAR_WHEEL_UP_COMMANDS[STATUS_STRING_PARTS[i].toStdWString()],
+            string_serializer,
+            string_deserializer,
+            nullptr
+            });
+
+        configs.push_back(new Config{
+            wheel_down_config_name,
+            ConfigType::Macro,
+            &STATUS_BAR_WHEEL_DOWN_COMMANDS[STATUS_STRING_PARTS[i].toStdWString()],
             string_serializer,
             string_deserializer,
             nullptr

@@ -270,7 +270,14 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         return QString("");
         };
     auto network_status_fn = [widget=main_widget]() {
-        return " [ " + widget->get_network_status_string() + " ]";
+
+        auto network_string = widget->get_network_status_string();
+        if (network_string.size() > 0) {
+            return " [ " + network_string +" ]";
+        }
+        else {
+            return QString("");
+        }
         };
 
     auto tts_status_fn = [widget=main_widget]() {

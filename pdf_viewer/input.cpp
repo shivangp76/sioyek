@@ -44,6 +44,8 @@ extern bool USE_KEYBOARD_POINT_SELECTION;
 extern bool ADD_NEWLINES_WHEN_COPYING_TEXT;
 extern float EPUB_WIDTH;
 extern float EPUB_HEIGHT;
+extern float TTS_RATE;
+extern float TTS_RATE_INCREMENT;
 
 extern Path default_config_path;
 extern Path default_keys_path;
@@ -1407,6 +1409,40 @@ public:
 
     void perform() {
         widget->handle_start_reading();
+    }
+};
+
+class IncreaseTtsRateCommand : public Command {
+public:
+    static inline const std::string cname = "increase_tts_rate";
+    static inline const std::string hname = "Increase the tts speed.";
+    IncreaseTtsRateCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        float new_rate = TTS_RATE + TTS_RATE_INCREMENT;
+        if (new_rate > 1) new_rate = 1;
+        TTS_RATE = new_rate;
+        if (widget->is_reading) {
+            widget->handle_stop_reading();
+            widget->handle_start_reading();
+        }
+    }
+};
+
+class DecreaseTtsRateCommand : public Command {
+public:
+    static inline const std::string cname = "decrease_tts_rate";
+    static inline const std::string hname = "Decrease the tts speed.";
+    DecreaseTtsRateCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        float new_rate = TTS_RATE - TTS_RATE_INCREMENT;
+        if (new_rate < -1) new_rate = -1;
+        TTS_RATE = new_rate;
+        if (widget->is_reading) {
+            widget->handle_stop_reading();
+            widget->handle_start_reading();
+        }
     }
 };
 
@@ -8359,6 +8395,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<StartReadingCommand>(this);
     register_command<StartReadingHighQualityCommand>(this);
     register_command<StopReadingCommand>(this);
+    register_command<IncreaseTtsRateCommand>(this);
+    register_command<DecreaseTtsRateCommand>(this);
     register_command<ToggleReadingCommand>(this);
     register_command<AddKeybindCommand>(this);
     register_command<ScanNewFilesFromScanDirCommand>(this);
@@ -9114,6 +9152,8 @@ std::vector<std::string> InputHandler::get_key_mappings(std::string command_name
                 return value;
             }
         }
+        command_keymapping_cache[command_name] = {};
+        return {};
     }
 }
 

@@ -331,11 +331,14 @@ extern bool USE_KEYBOARD_POINT_SELECTION;
 
 extern bool SCROLLBAR;
 extern bool STATUSBAR;
+extern bool STATUSBAR_HANDLES_WHEEL_EVENTS;
 extern bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH;
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;
 extern bool TOUCH_MODE;
 extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS;
+extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS;
+extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_DOWN_COMMANDS;
 
 const int MAX_SCROLLBAR = 10000;
 
@@ -1115,18 +1118,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             return;
         }
 
-        QPoint mouse_pos = mapFromGlobal(QCursor::pos());
-        int cursor_pos = status_label_left->cursorPositionAt(mouse_pos);
-        QString text = status_label_left->text();
-        if (cursor_pos >= 0 && cursor_pos < last_status_string_ids.size()) {
-            //qDebug() << text.at(cursor_pos);
-            int type = last_status_string_ids[cursor_pos];
-            if (type >= 0 && type < STATUS_STRING_PARTS.size()) {
-                std::wstring status_part = STATUS_STRING_PARTS[type].toStdWString();
-                if (STATUS_BAR_COMMANDS.find(status_part) != STATUS_BAR_COMMANDS.end()) {
-                    execute_macro_if_enabled(STATUS_BAR_COMMANDS[status_part]);
-                }
-            }
+        std::wstring status_part_name = get_status_part_name_under_cursor();
+        if (status_part_name.size() > 0 && STATUS_BAR_COMMANDS.find(status_part_name) != STATUS_BAR_COMMANDS.end()) {
+            execute_macro_if_enabled(STATUS_BAR_COMMANDS[status_part_name]);
         }
         };
     //QObject::connect(status_label_left, &QWidget::cursorPositionChanged, [&](int a, int b) {
@@ -3067,6 +3061,31 @@ bool MainWidget::is_mouse_cursor_in_overview(){
     return dv()->is_window_point_in_overview(cursor_pos.to_window_normalized(dv()));
 }
 
+bool MainWidget::is_mouse_cursor_in_statusbar() {
+    auto cursor_pos = status_label->mapFromGlobal(QCursor::pos());
+
+    if (status_label->isVisible()) {
+        QRect rect = status_label->rect();
+        return status_label->rect().contains(cursor_pos);
+    }
+    return false;
+}
+
+std::wstring MainWidget::get_status_part_name_under_cursor() {
+    QPoint mouse_pos = mapFromGlobal(QCursor::pos());
+    int cursor_pos = status_label_left->cursorPositionAt(mouse_pos);
+    QString text = status_label_left->text();
+    if (cursor_pos >= 0 && cursor_pos < last_status_string_ids.size()) {
+        //qDebug() << text.at(cursor_pos);
+        int type = last_status_string_ids[cursor_pos];
+        if (type >= 0 && type < STATUS_STRING_PARTS.size()) {
+            std::wstring status_part = STATUS_STRING_PARTS[type].toStdWString();
+            return status_part;
+        }
+    }
+    return L"";
+}
+
 void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     if (IGNORE_SCROLL_EVENTS) return;
@@ -3119,6 +3138,18 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
     bool is_in_overview = is_mouse_cursor_in_overview();
+
+    if (STATUSBAR_HANDLES_WHEEL_EVENTS && is_mouse_cursor_in_statusbar()) {
+        std::wstring status_part = get_status_part_name_under_cursor();
+        const std::unordered_map<std::wstring, std::wstring>& command_map = wevent->angleDelta().y() > 0 ? STATUS_BAR_WHEEL_UP_COMMANDS : STATUS_BAR_WHEEL_DOWN_COMMANDS;
+        
+        if (command_map.find(status_part) != command_map.end()) {
+            const std::wstring command = command_map.find(status_part)->second;
+            execute_macro_if_enabled(command);
+        }
+
+        return;
+    }
 
     std::optional<VisibleObjectIndex> object_under_cursor = main_document_view->get_visible_object_at_pos(mouse_abs_pos);
     if ((!is_in_overview) && object_under_cursor.has_value() && (!main_document_view->visible_object_move_data.has_value())) {
