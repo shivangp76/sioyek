@@ -1583,6 +1583,7 @@ public:
 
 };
 
+
 class DownloadClipboardUrlCommand : public Command {
 public:
     static inline const std::string cname = "download_clipboard_url";
@@ -7694,16 +7695,20 @@ class ConfigCommand : public Command {
     std::optional<std::wstring> text = {};
     ConfigManager* config_manager;
     bool save_after_set = false;
+    bool force_touch = false;
+
 public:
     ConfigCommand(
         MainWidget* widget_,
         std::string config_name_,
         ConfigManager* config_manager_,
-        bool save_after_set_ = false) :
+        bool save_after_set_ = false,
+        bool force_touch_=false) :
         Command((save_after_set_ ? "setsaveconfig_" : "setconfig_") + config_name_, widget_), config_manager(config_manager_) {
 
         save_after_set = save_after_set_;
         config_name = config_name_;
+        force_touch = force_touch_;
     }
 
     void set_text_requirement(std::wstring value) {
@@ -7719,7 +7724,7 @@ public:
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
-        if (TOUCH_MODE) {
+        if (TOUCH_MODE || force_touch) {
             Config* config = config_manager->get_mut_config_with_name(utf8_decode(config_name));
             if ((!text.has_value()) && config->config_type == ConfigType::String) {
                 Requirement res;
@@ -7781,7 +7786,7 @@ public:
             widget->set_status_message(utf8_decode(config_name) + L" = '" + text.value() + L"'");
         }
 
-        if (TOUCH_MODE) {
+        if (TOUCH_MODE || force_touch) {
             Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
 
 
@@ -7877,175 +7882,25 @@ public:
 };
 
 
+class ShowTouchConfigCommand : public TextCommand {
+public:
+    static inline const std::string cname = "show_touch_ui_for_config";
+    static inline const std::string hname = "Show the touch config UI for the given config name.";
+    static inline const bool developer_only = true;
 
-//struct ParseState {
-//    QString str;
-//    int index;
-//
-//    QChar ch() {
-//        return str[index];
-//    }
-//
-//    void skip_whitespace() {
-//        while ((index < str.size()) && ch() == ' ') {
-//            index++;
-//        }
-//    }
-//
-//    bool expect(char c) {
-//        if (index < str.size() && str[index] == c) {
-//            index++;
-//            return true;
-//        }
-//        else {
-//            qDebug() << "Parse error: expected " << c << " but got " << str[index];
-//            return false;
-//        }
-//    }
-//
-//    std::optional<CommandInvocation> get_next_invocation() {
-//        skip_whitespace();
-//        QString next_command_name = get_next_command_name();
-//        skip_whitespace();
-//        if (next_command_name.size()) {
-//            QStringList next_command_args = get_command_args();
-//            return CommandInvocation{ next_command_name, next_command_args };
-//        }
-//        else {
-//            return {};
-//        }
-//    }
-//
-//    std::vector<CommandInvocation> parse() {
-//        std::vector<CommandInvocation> res;
-//
-//        while (true) {
-//            std::optional<CommandInvocation> next_invocation = get_next_invocation();
-//            if (!next_invocation.has_value()) break;
-//
-//            skip_whitespace();
-//
-//            if (index < str.size() && ch() == ';') expect(';');
-//
-//            if (next_invocation) {
-//                res.push_back(next_invocation.value());
-//            }
-//            
-//        }
-//        return res;
-//    }
-//
-//    QString get_argument() {
-//        bool is_prev_char_backslash = false;
-//        QString res;
-//
-//        while (index < str.size()) {
-//            if (!is_prev_char_backslash) {
-//                if (ch() == '\\') {
-//                    is_prev_char_backslash = true;
-//                    index++;
-//                }
-//                else if (ch() == '\'') {
-//                    return res;
-//                }
-//                else {
-//                    res.append(ch());
-//                    index++;
-//                }
-//            }
-//            else {
-//                if (ch() == '\\') {
-//                    res.append('\\');
-//                }
-//                else if (ch() == '\'') {
-//                    res.append('\'');
-//                }
-//                is_prev_char_backslash = false;
-//                index++;
-//            }
-//        }
-//        return res;
-//    }
-//
-//    bool is_next_non_whitespace_character_a_single_quote() {
-//        int i = index;
-//
-//        while (i < str.size() && i == ' ') {
-//            i++;
-//        }
-//
-//        if (i < str.size()) {
-//            if (str[i] == '\'') return true;
-//        }
-//
-//        return false;
-//    }
-//
-//    QStringList get_command_args() {
-//        if (index < str.size()) {
-//            if (ch() == ';') {
-//                return QStringList();
-//            }
-//
-//            QStringList res;
-//            expect('(');
-//            if (is_next_non_whitespace_character_a_single_quote()) {
-//                while (true) {
-//                    skip_whitespace();
-//                    expect('\'');
-//                    res.push_back(get_argument());
-//                    expect('\'');
-//                    skip_whitespace();
-//                    if (index < str.size()) {
-//                        if (ch() == ')') {
-//                            index++;
-//                            break;
-//                        }
-//                        if (ch() == ',') {
-//                            index++;
-//                            continue;
-//                        }
-//                    }
-//                    else {
-//                        break;
-//                    }
-//                }
-//                return res;
-//            }
-//            else {
-//                QString arg;
-//                while (index < str.size() && ch() != ')') {
-//                    arg.push_back(str[index]);
-//                    index++;
-//                }
-//                res.push_back(arg);
-//                expect(')');
-//                return res;
-//            }
-//        }
-//        else {
-//            return QStringList();
-//        }
-//
-//    }
-//
-//    bool can_current_char_be_command_name() {
-//        return str[index].isDigit() || str[index].isLetter() || (str[index] == '_') || (str[index] == '[') || (str[index] == ']');
-//    }
-//
-//    QString get_next_command_name() {
-//        skip_whitespace();
-//        QString res;
-//        while (index < str.size() && (can_current_char_be_command_name())) {
-//            res.push_back(ch());
-//            index++;
-//        }
-//        return res;
-//    }
-//
-//
-//};
+    ShowTouchConfigCommand(MainWidget* w) : TextCommand(cname, w) {
+    };
 
+    void perform() {
+        auto cmd = std::make_unique<ConfigCommand>(widget, utf8_encode(text.value()), widget->config_manager, false, true);
+        widget->handle_command_types(std::move(cmd), 0);
+    }
+
+    std::string text_requirement_name() {
+        return "Config Name";
+    }
+
+};
 
 
 class HoldableCommand : public Command {
@@ -8289,6 +8144,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DownloadLinkCommand>(this);
     register_command<KeyboardSelectLineCommand>(this);
     register_command<PortalToLinkCommand>(this);
+    register_command<ShowTouchConfigCommand>(this);
     register_command<CopyLinkCommand>(this);
     register_command<KeyboardSelectCommand>(this);
     register_command<KeyboardSmartjumpCommand>(this);

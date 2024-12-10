@@ -9,15 +9,15 @@
 class TouchSlider : public QWidget {
     Q_OBJECT
 public:
-    TouchSlider(int from, int to, int initial_value, QWidget* parent = nullptr);
+    TouchSlider(float from, float to, float initial_value, QWidget* parent = nullptr);
     void resizeEvent(QResizeEvent* resize_event) override;
 
 public slots:
-    void handleSelect(int item);
+    void handleSelect(double item);
     void handleCancel();
 
 signals:
-    void itemSelected(int);
+    void itemSelected(float);
     void canceled();
 
 private:

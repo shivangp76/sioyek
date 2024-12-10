@@ -945,11 +945,13 @@ FloatConfigUI::FloatConfigUI(std::string name, MainWidget* parent, float* config
     max_value = max_value_;
     float_location = config_location;
 
-    int current_value = static_cast<int>((*config_location - min_value) / (max_value - min_value) * 100);
-    slider = new TouchSlider(0, 100, current_value, this);
-    QObject::connect(slider, &TouchSlider::itemSelected, [&](int val) {
-        float value = min_value + (static_cast<float>(val) / 100.0f) * (max_value - min_value);
-        *float_location = value;
+    //int current_value = static_cast<int>((*config_location - min_value) / (max_value - min_value) * 100);
+    float current_value = *config_location;
+
+    slider = new TouchSlider(min_value, max_value, current_value, this);
+    QObject::connect(slider, &TouchSlider::itemSelected, [&](float val) {
+        //float value = min_value + (static_cast<float>(val) / 100.0f) * (max_value - min_value);
+        *float_location = val;
         on_change();
         main_widget->invalidate_render();
         main_widget->pop_current_widget();
@@ -958,6 +960,7 @@ FloatConfigUI::FloatConfigUI(std::string name, MainWidget* parent, float* config
     QObject::connect(slider, &TouchSlider::canceled, [&]() {
         main_widget->pop_current_widget();
         });
+
 
 }
 

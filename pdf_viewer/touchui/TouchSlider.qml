@@ -20,8 +20,9 @@ Rectangle {
     //    flags:  Qt.WA_AlwaysStackOnTop
     id: root
 
-    signal valueSelected(val: int)
+    signal valueSelected(val: real)
     signal canceled()
+
 
     Slider{
         from: _from
@@ -37,8 +38,16 @@ Rectangle {
             rightMargin: 10
         }
 
+    }
+    Text{
+        anchors{
+            bottom: my_slider.top
+            horizontalCenter: parent.horizontalCenter
+            bottomMargin: 10
+        }
 
-
+        text: Math.round(my_slider.value * 100) / 100
+        color: "white"
     }
 
     Row{

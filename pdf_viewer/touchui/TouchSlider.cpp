@@ -1,7 +1,7 @@
 #include "touchui/TouchSlider.h"
 
 
-TouchSlider::TouchSlider(int from, int to, int initial_value, QWidget* parent) : QWidget(parent) {
+TouchSlider::TouchSlider(float from, float to, float initial_value, QWidget* parent) : QWidget(parent) {
 
     //    quick_widget = new QQuickWidget(QUrl("qrc:/pdf_viewer/touchui/TouchSlider.qml"), this);
     quick_widget = new QQuickWidget(this);
@@ -17,12 +17,12 @@ TouchSlider::TouchSlider(int from, int to, int initial_value, QWidget* parent) :
     quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchSlider.qml"));
 
 
-    QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(valueSelected(int)), this, SLOT(handleSelect(int)));
+    QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(valueSelected(double)), this, SLOT(handleSelect(double)));
     QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(canceled()), this, SLOT(handleCancel()));
 
 }
 
-void TouchSlider::handleSelect(int item) {
+void TouchSlider::handleSelect(double item) {
     emit itemSelected(item);
 }
 
