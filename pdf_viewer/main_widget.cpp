@@ -259,6 +259,7 @@ extern bool FANCY_UI_MENUS;
 
 extern std::wstring COLOR_MODE;
 
+extern std::wstring TTS_VOICE;
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
 extern std::wstring CONTEXT_MENU_ITEMS;
@@ -8093,6 +8094,11 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
                 status_label->show();
             }
         }
+        if (confname == "tts_voice") {
+            if (tts) {
+                tts->set_voice(TTS_VOICE);
+            }
+        }
 
     }
     if (should_reflow) {
@@ -8654,6 +8660,9 @@ TextToSpeechHandler* MainWidget::get_tts() {
 #endif
 
 
+    if (TTS_VOICE.size() > 0) {
+        tts->set_voice(TTS_VOICE);
+    }
     //void sayingWord(const QString &word, qsizetype id, qsizetype start, qsizetype length);
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)

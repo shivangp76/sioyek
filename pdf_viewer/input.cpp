@@ -7728,6 +7728,15 @@ public:
                 return extras.possible_values[index];
             }
         }
+
+        if (config->name == L"tts_voice") {
+            auto voices = widget->get_tts()->get_available_voices();
+            if (voices.size() > 0) {
+                index = index % voices.size();
+                return voices[index];
+            }
+        }
+
         return {};
     }
 

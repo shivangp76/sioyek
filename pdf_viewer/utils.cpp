@@ -4616,6 +4616,13 @@ QtTextToSpeechHandler::QtTextToSpeechHandler() {
     tts = new QTextToSpeech();
 }
 
+std::vector<std::wstring> TextToSpeechHandler::get_available_voices() {
+    return {};
+}
+
+void TextToSpeechHandler::set_voice(std::wstring voice) {
+}
+
 QtTextToSpeechHandler::~QtTextToSpeechHandler() {
     QObject::disconnect(tts, &QTextToSpeech::sayingWord, nullptr, nullptr);
     QObject::disconnect(tts, &QTextToSpeech::stateChanged, nullptr, nullptr);
@@ -5596,4 +5603,22 @@ std::wstring clip_string_to_length(const std::wstring& input, int length) {
         return input.substr(0, length) + L"...";
     }
     return input;
+}
+
+std::vector<std::wstring> QtTextToSpeechHandler::get_available_voices() {
+    auto voices = tts->availableVoices();
+    std::vector<std::wstring> res;
+    for (auto voice : voices) {
+        res.push_back(voice.name().toStdWString());
+    }
+    return res;
+}
+
+void QtTextToSpeechHandler::set_voice(std::wstring voice_name) {
+    auto voices = tts->availableVoices();
+    for (auto voice : voices) {
+        if (voice.name() == QString::fromStdWString(voice_name)) {
+            tts->setVoice(voice);
+        }
+    }
 }

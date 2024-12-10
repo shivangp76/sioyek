@@ -351,6 +351,7 @@ float MACOS_DARK_TITLEBAR_COLOR[3] = {-1.0f, -1.0f, -1.0f};
 bool MACOS_HIDE_TITLEBAR = false;
 #endif
 
+std::wstring TTS_VOICE = L"";
 std::wstring RULER_DISPLAY_MODE = L"underline";
 std::wstring COLOR_MODE = L"light";
 std::wstring EPUB_CSS = L"";
@@ -1286,6 +1287,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"status_custom_message_b", &STATUS_STRING_CUSTOM_MESSAGE_B_STR);
     add_string(L"status_custom_message_c", &STATUS_STRING_CUSTOM_MESSAGE_C_STR);
     add_string(L"status_custom_message_d", &STATUS_STRING_CUSTOM_MESSAGE_D_STR);
+    add_string(L"tts_voice", &TTS_VOICE);
+
 
     add_macro(L"startup_commands", &STARTUP_COMMANDS);
     add_macro(L"shift_click_command", &SHIFT_CLICK_COMMAND);
