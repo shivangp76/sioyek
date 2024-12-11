@@ -249,7 +249,13 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         std::string selected_highlight_uuid = widget->main_document_view->get_selected_highlight_uuid();
         if (selected_highlight_uuid.size() > 0) {
             Highlight* hl = widget->doc()->get_highlight_with_uuid(selected_highlight_uuid);
-            return " [ " + QString::fromStdWString(hl->text_annot) + " ]";
+            if (hl->text_annot.size() > 0) {
+                return " [ " + QString::fromStdWString(hl->text_annot) + " ]";
+            }
+            else {
+
+                return QString(" [ <no annotation> ]");
+            }
         }
         return QString("");
         };
