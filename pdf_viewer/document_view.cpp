@@ -5949,10 +5949,17 @@ void DocumentView::update_overview_highlighted_paper_with_position(DocumentPos d
     std::optional<PaperNameWithRects> paper_name_with_rects = get_direct_paper_name_under_pos(docpos);
     if (paper_name_with_rects){
         std::vector<PagelessDocumentRect> paper_name_rects = paper_name_with_rects->character_rects;
-        std::vector<DocumentRect> paper_name_rects_with_page;
+        std::deque<AbsoluteRect> paper_name_rects_with_page;
 
         for (auto rect : paper_name_rects) {
-            paper_name_rects_with_page.push_back(DocumentRect(rect, docpos.page));
+            paper_name_rects_with_page.push_back(DocumentRect(rect, docpos.page).to_absolute(doc()));
+        }
+        std::vector<AbsoluteRect> merged_paper_name_rects_abs;
+        std::vector<DocumentRect> merged_paper_name_rects;
+        merge_selected_character_rects<AbsoluteRect>(paper_name_rects_with_page, merged_paper_name_rects_abs);
+
+        for (auto absrect : merged_paper_name_rects_abs) {
+            merged_paper_name_rects.push_back(absrect.to_document(doc()));
         }
 
         if ((index_into_candidates >= 0) && (index_into_candidates < smart_view_candidates.size())){
@@ -5962,10 +5969,10 @@ void DocumentView::update_overview_highlighted_paper_with_position(DocumentPos d
                 smart_view_candidates[index_into_candidates].target_pos = docpos;
                 smart_view_candidates[index_into_candidates].target_reference_text = paper_name_with_rects->paper_name;
 
-                smart_view_candidates[index_into_candidates].set_highlight_rects(paper_name_rects_with_page);
+                smart_view_candidates[index_into_candidates].set_highlight_rects(merged_paper_name_rects);
 
                 if (overview_page){
-                    overview_page->highlight_rects = paper_name_rects_with_page;
+                    overview_page->highlight_rects = merged_paper_name_rects;
                 }
             }
         }
