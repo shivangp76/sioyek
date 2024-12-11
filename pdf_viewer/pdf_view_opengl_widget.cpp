@@ -78,6 +78,7 @@ extern bool PRESERVE_IMAGE_COLORS;
 extern bool INVERTED_PRESERVED_IMAGE_COLORS;
 extern int SELECTED_TEXT_HIGHLIGHT_STYLE;
 extern int HIGHLIGHT_STYLE;
+extern int OVERVIEW_HIGHLIGHT_STYLE;
 extern bool VISUALIZE_RULER_THRESHOLDS;
 extern bool DEBUG;
 
@@ -2453,11 +2454,19 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                 else if (highlight->type == '_') {
                     flags |= HRF_STRIKE;
                 }
+
+
                 if (flags == 0) {
-                    flags |= HRF_FILL;
-                    if (HIGHLIGHT_STYLE == HighlightStyle::HighlightBackground) {
-                        flags |= HRF_PAINTOVER;
+                    if (HIGHLIGHT_STYLE == HighlightStyle::HighlightBorder) {
+                        flags = HRF_BORDER;
                     }
+                    else {
+                        flags |= HRF_FILL;
+                        if (HIGHLIGHT_STYLE == HighlightStyle::HighlightBackground) {
+                            flags |= HRF_PAINTOVER;
+                        }
+                    }
+
 
                     if (highlight->uuid == document_view->get_selected_highlight_uuid()) {
                         borders_to_draw.push_back(highlight->highlight_rects[j]);
@@ -3198,7 +3207,15 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
         //glUniform3fv(g_shared_resources.highlight_color_uniform_location, 1, highlight_color_temp);
         for (auto rect : overview.highlight_rects) {
             NormalizedWindowRect target = document_view->document_to_overview_rect(rect);
-            render_highlight_window(target, HRF_FILL);
+            if (OVERVIEW_HIGHLIGHT_STYLE == HighlightStyle::HighlightTransparent) {
+                render_highlight_window(target, HRF_FILL);
+            }
+            else if (OVERVIEW_HIGHLIGHT_STYLE == HighlightStyle::HighlightBorder) {
+                render_highlight_window(target, HRF_BORDER);
+            }
+            else {
+                render_highlight_window(target, HRF_FILL | HRF_PAINTOVER);
+            }
         }
     }
 

@@ -223,6 +223,7 @@ bool ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL = false;
 //bool INVERT_SELECTED_TEXT = false;
 int SELECTED_TEXT_HIGHLIGHT_STYLE = SelectedTextHighlightStyle::Transparent;
 int HIGHLIGHT_STYLE = HighlightStyle::HighlightTransparent;
+int OVERVIEW_HIGHLIGHT_STYLE = HighlightStyle::HighlightTransparent;
 bool IGNORE_SCROLL_EVENTS = false;
 
 #ifdef SIOYEK_MOBILE
@@ -1429,7 +1430,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"}}));
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
     add_enum(L"selected_text_highlight_style", &SELECTED_TEXT_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"inverted", L"background"}}));
-    add_enum(L"highlight_style", &HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"background"}}));
+    add_enum(L"highlight_style", &HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"background", L"border"}}));
+    add_enum(L"overview_highlight_style", &OVERVIEW_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"background", L"border"}}));
 
     Config* dark_mode_background_config = add_color3(L"dark_mode_background_color", std::get<ColorExtras>(background_color_config->extras).dark_mode, false);
     Config* custom_mode_background_config = add_color3(L"custom_color_mode_empty_background_color", std::get<ColorExtras>(background_color_config->extras).custom_mode, false);

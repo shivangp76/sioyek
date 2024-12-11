@@ -104,7 +104,8 @@ enum SelectedTextHighlightStyle {
 
 enum HighlightStyle {
     HighlightTransparent = 0,
-    HighlightBackground = 1
+    HighlightBackground = 1,
+    HighlightBorder=2
 };
 
 struct EnumExtras {
