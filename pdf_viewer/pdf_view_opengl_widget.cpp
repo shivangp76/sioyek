@@ -2803,7 +2803,12 @@ void PdfViewOpenGLWidget::render_highlight_window_opengl_backend(NormalizedWindo
         glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_ZERO, GL_ONE, GL_ZERO);
     }
     else if (flags & HighlightRenderFlags::HRF_PAINTOVER) {
-        glBlendFuncSeparate( GL_ONE_MINUS_SRC_COLOR, GL_SRC_COLOR, GL_ONE, GL_ONE);
+        if (is_background_dark()) {
+            glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_DST_COLOR, GL_ONE, GL_ONE);
+        }
+        else {
+            glBlendFuncSeparate(GL_ONE_MINUS_SRC_COLOR, GL_SRC_COLOR, GL_ONE, GL_ONE);
+        }
     }
     else {
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
@@ -3430,12 +3435,22 @@ void PdfViewOpenGLWidget::render_highlight_window_qpainter_backend(NormalizedWin
         }
         else if (flags & HRF_PAINTOVER){
             auto original_composition_mode = painter.compositionMode();
-            painter.setCompositionMode(QPainter::RasterOp_NotSourceOrDestination);
+            bool is_dark = is_background_dark();
+
             QColor color = painter.pen().color();
             color.setAlpha(255);
-            color.setRed(255 - color.red());
-            color.setGreen(255 - color.green());
-            color.setBlue(255 - color.blue());
+
+            if (is_dark) {
+                painter.setCompositionMode(QPainter::RasterOp_SourceOrDestination);
+                color = color.darker();
+            }
+            else {
+                color.setRed(255 - color.red());
+                color.setGreen(255 - color.green());
+                color.setBlue(255 - color.blue());
+                painter.setCompositionMode(QPainter::RasterOp_NotSourceAndDestination);
+            }
+
             painter.fillRect(pixel_window_rect, QBrush(color));
             painter.setCompositionMode(original_composition_mode);
         }
@@ -3532,3 +3547,14 @@ const QPainter& PdfViewOpenGLWidget::get_painter() {
 //        is_latex_initialized = true;
 //    }
 //}
+
+bool PdfViewOpenGLWidget::is_background_dark() {
+    bool is_dark = false;
+    if (document_view->get_current_color_mode() == ColorPalette::Dark) {
+        is_dark = true;
+    }
+    else if (document_view->get_current_color_mode() == ColorPalette::Custom) {
+        is_dark = CUSTOM_BACKGROUND_COLOR[0] + CUSTOM_BACKGROUND_COLOR[1] + CUSTOM_BACKGROUND_COLOR[2] < 1.0f;
+    }
+    return is_dark;
+}

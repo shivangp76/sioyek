@@ -3870,7 +3870,7 @@ CommandManager* MainWidget::get_command_manager() {
 }
 
 void MainWidget::toggle_dark_mode() {
-    if (COLOR_MODE == ColorMode::Light) {
+    if (COLOR_MODE == ColorMode::Dark) {
         COLOR_MODE = ColorMode::Light;
     }
     else {
@@ -12400,6 +12400,7 @@ void MainWidget::screenshot_js(QString file_path, QJsonObject window_rect_js) {
 }
 
 void MainWidget::framebuffer_screenshot_js(QString file_path, QJsonObject window_rect_js) {
+#ifdef SIOYEK_OPENGL_BACKEND
     WindowRect window_rect;
     window_rect.x0 = window_rect_js["x0"].toDouble();
     window_rect.x1 = window_rect_js["x1"].toDouble();
@@ -12415,5 +12416,8 @@ void MainWidget::framebuffer_screenshot_js(QString file_path, QJsonObject window
 
         pixmap.save(file_path);
     }
+#else
+    return screenshot_js(file_path, window_rect_js);
+#endif
 }
 
