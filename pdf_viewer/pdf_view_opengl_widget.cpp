@@ -69,7 +69,7 @@ extern bool SLICED_RENDERING;
 extern bool RENDER_FREETEXT_BORDERS;
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern float STRIKE_LINE_WIDTH;
-extern std::wstring RULER_DISPLAY_MODE;
+extern int RULER_DISPLAY_MODE;
 extern float RULER_COLOR[3];
 extern float RULER_MARKER_COLOR[3];
 extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
@@ -1040,17 +1040,17 @@ void PdfViewOpenGLWidget::my_render() {
             ruler_rect = dv()->document_to_window_rect_pixel_perfect(ruler_document_rect, ruler_pixel_width, ruler_pixel_height, false);
         }
 
-        if ((!ruler_rect.has_value()) || (RULER_DISPLAY_MODE == L"slit") || (RULER_DISPLAY_MODE == L"highlight_below")) {
+        if ((!ruler_rect.has_value()) || (RULER_DISPLAY_MODE == RulerDisplayMode::Slit) || (RULER_DISPLAY_MODE == RulerDisplayMode::HighlightBelow)) {
             render_line_window(vertical_line_end, dv()->get_ruler_window_rect());
         }
         else {
             int flags = 0;
 
-            if (RULER_DISPLAY_MODE == L"underline") {
+            if (RULER_DISPLAY_MODE == RulerDisplayMode::Underline) {
                 flags |= HRF_UNDERLINE;
             }
 
-            else if (RULER_DISPLAY_MODE == L"box") {
+            else if (RULER_DISPLAY_MODE == RulerDisplayMode::Box) {
                 flags |= HRF_BORDER;
             }
 
@@ -2737,7 +2737,7 @@ void PdfViewOpenGLWidget::render_line_window_opengl_backend(float gl_vertical_po
     glBufferData(GL_ARRAY_BUFFER, sizeof(bar_data), bar_data, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    if ((RULER_DISPLAY_MODE != L"highlight_below") && ruler_rect.has_value()) {
+    if ((RULER_DISPLAY_MODE != RulerDisplayMode::HighlightBelow) && ruler_rect.has_value()) {
         float gl_vertical_begin_pos = ruler_rect->y0;
         float ruler_left_pos = ruler_rect->x0;
         float ruler_right_pos = ruler_rect->x1;
@@ -2795,9 +2795,13 @@ void PdfViewOpenGLWidget::render_highlight_window_opengl_backend(NormalizedWindo
     if (flags & HighlightRenderFlags::HRF_INVERTED) {
         glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_ZERO, GL_ONE, GL_ZERO);
     }
+    else if (flags & HighlightRenderFlags::HRF_PAINTOVER) {
+        glBlendFuncSeparate( GL_ONE_MINUS_SRC_COLOR, GL_SRC_COLOR, GL_ONE, GL_ONE);
+    }
     else {
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
     }
+
     glDisable(GL_CULL_FACE);
 
     glUseProgram(shared_gl_objects.highlight_program);

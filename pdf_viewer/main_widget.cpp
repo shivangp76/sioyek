@@ -257,7 +257,7 @@ extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 
-extern std::wstring COLOR_MODE;
+extern int COLOR_MODE;
 
 extern std::wstring TTS_VOICE;
 extern std::wstring PAPERS_FOLDER_PATH;
@@ -270,7 +270,7 @@ extern std::wstring CONTEXT_MENU_ITEMS_FOR_BOOKMARKS;
 extern std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW;
 extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
-extern std::wstring DOCUMENT_LOCATION_MISMATCH_STRATEGY;
+extern int DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern int NUM_PAGE_COLUMNS;
 extern Path python_api_base_path;
 
@@ -3870,11 +3870,11 @@ CommandManager* MainWidget::get_command_manager() {
 }
 
 void MainWidget::toggle_dark_mode() {
-    if (COLOR_MODE == L"dark") {
-        COLOR_MODE = L"light";
+    if (COLOR_MODE == ColorMode::Light) {
+        COLOR_MODE = ColorMode::Light;
     }
     else {
-        COLOR_MODE = L"dark";
+        COLOR_MODE = ColorMode::Dark;
     }
 
     //main_document_view->toggle_dark_mode();
@@ -3888,11 +3888,11 @@ void MainWidget::toggle_dark_mode() {
 }
 
 void MainWidget::toggle_custom_color_mode() {
-    if (COLOR_MODE == L"custom") {
-        COLOR_MODE = L"light";
+    if (COLOR_MODE == ColorMode::Custom) {
+        COLOR_MODE = ColorMode::Light;
     }
     else {
-        COLOR_MODE = L"custom";
+        COLOR_MODE = ColorMode::Custom;
     }
     //main_document_view->toggle_custom_color_mode();
     ensure_titlebar_colors_match_color_mode();
@@ -6933,21 +6933,21 @@ int MainWidget::get_current_colorscheme_index() {
 
 void MainWidget::set_dark_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Dark) {
-        COLOR_MODE = L"dark";
+        COLOR_MODE = ColorMode::Dark;
         config_manager->handle_set_color_palette(this, ColorPalette::Dark);
     }
 }
 
 void MainWidget::set_light_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Normal) {
-        COLOR_MODE = L"light";
+        COLOR_MODE = ColorMode::Light;
         config_manager->handle_set_color_palette(this, ColorPalette::Normal);
     }
 }
 
 void MainWidget::set_custom_color_mode() {
     if (main_document_view->get_current_color_mode() != ColorPalette::Custom) {
-        COLOR_MODE = L"custom";
+        COLOR_MODE = ColorMode::Custom;
         config_manager->handle_set_color_palette(this, ColorPalette::Custom);
     }
 }
@@ -11539,17 +11539,17 @@ void MainWidget::handle_sync_open_document() {
 }
 
 void MainWidget::handle_server_document_location_mismatch(float local_offset_y, float server_offset_y) {
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == L"local") return;
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == L"server") {
+    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::Local) return;
+    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::Server) {
         long_jump_to_destination(server_offset_y);
     }
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == L"ask") {
+    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::Ask) {
         int res = show_option_buttons(L"Do you want to move to server location?", { L"Yes", L"No" });
         if (res == 0) {
             long_jump_to_destination(server_offset_y);
         }
     }
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == L"show_button") {
+    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::ShowButton) {
         if (main_document_view) {
             if (doc() && doc()->get_checksum_fast()) {
                 sioyek_network_manager->set_last_server_location(doc()->get_checksum_fast().value(), server_offset_y);

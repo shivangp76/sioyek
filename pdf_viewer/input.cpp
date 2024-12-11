@@ -38,7 +38,7 @@ extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 extern std::wstring SEARCH_URLS[26];
 extern bool NUMERIC_TAGS;
 extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
-extern std::wstring TABLE_EXTRACT_BEHAVIOUR;
+extern int TABLE_EXTRACT_BEHAVIOUR;
 
 extern bool USE_KEYBOARD_POINT_SELECTION;
 extern bool ADD_NEWLINES_WHEN_COPYING_TEXT;
@@ -2599,12 +2599,12 @@ public:
         MainWidget* w = widget;
         AbsoluteRect r = rect_.value();
         widget->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, bookmark_type_ = bookmark_type_](QString data) {
-            if (TABLE_EXTRACT_BEHAVIOUR == L"copy") {
+            if (TABLE_EXTRACT_BEHAVIOUR == TableExtractBehaviour::Copy) {
 
                 copy_to_clipboard(data.toStdWString());
                 show_error_message(L"The result was copied to your clipboard");
             }
-            else if (TABLE_EXTRACT_BEHAVIOUR == L"bookmark") {
+            else if (TABLE_EXTRACT_BEHAVIOUR == TableExtractBehaviour::Bookmark) {
                 std::wstring desc = ("#" + bookmark_type_.value() + "\n" + data).toStdWString();
                 w->doc()->add_freetext_bookmark(desc, r);
                 w->invalidate_render();

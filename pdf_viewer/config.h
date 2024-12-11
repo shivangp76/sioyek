@@ -71,6 +71,31 @@ struct IntExtras {
     int max_val;
 };
 
+enum DocumentLocationMismatchStrategy {
+    Local = 0,
+    Server = 1,
+    Ask = 2,
+    ShowButton = 3
+};
+
+enum RulerDisplayMode {
+    Box = 0,
+    Slit = 1,
+    Underline = 2,
+    HighlightBelow = 3,
+};
+
+enum ColorMode {
+    Light = 0,
+    Dark = 1,
+    Custom = 2
+};
+
+enum TableExtractBehaviour {
+    Bookmark = 0,
+    Copy = 1
+};
+
 struct EnumExtras {
     std::vector<std::wstring> possible_values;
 };

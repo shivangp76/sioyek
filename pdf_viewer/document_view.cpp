@@ -40,7 +40,7 @@ extern float HORIZONTAL_MOVE_AMOUNT;
 extern float TOUCHPAD_SENSITIVITY;
 extern float SCROLL_VIEW_SENSITIVITY;
 extern bool AUTOCENTER_VISUAL_SCROLL;
-extern std::wstring COLOR_MODE;
+extern int COLOR_MODE;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -3002,9 +3002,9 @@ DocumentPos DocumentView::window_pos_to_overview_pos(NormalizedWindowPos window_
 }
 
 ColorPalette DocumentView::get_current_color_mode() {
-    if (COLOR_MODE == L"light") return ColorPalette::Normal;
-    if (COLOR_MODE == L"dark") return ColorPalette::Dark;
-    if (COLOR_MODE == L"custom") return ColorPalette::Custom;
+    if (COLOR_MODE == ColorMode::Light) return ColorPalette::Normal;
+    if (COLOR_MODE == ColorMode::Dark) return ColorPalette::Dark;
+    if (COLOR_MODE == ColorMode::Custom) return ColorPalette::Custom;
     return ColorPalette::None;
 }
 

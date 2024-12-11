@@ -192,7 +192,7 @@ std::wstring UI_FONT_FACE_NAME = L"";
 std::wstring STATUS_FONT_FACE_NAME = L"";
 std::wstring DEFAULT_OPEN_FILE_PATH = L"";
 std::wstring ANNOTATIONS_DIR_PATH = L"";
-std::wstring DOCUMENT_LOCATION_MISMATCH_STRATEGY = L"local";
+int DOCUMENT_LOCATION_MISMATCH_STRATEGY = DocumentLocationMismatchStrategy::Local;
 bool SHOULD_LOAD_TUTORIAL_WHEN_NO_OTHER_FILE = true;
 bool SHOULD_LAUNCH_NEW_INSTANCE = false;
 bool SHOULD_LAUNCH_NEW_WINDOW = false;
@@ -372,14 +372,14 @@ bool MACOS_HIDE_TITLEBAR = false;
 #endif
 
 std::wstring TTS_VOICE = L"";
-std::wstring RULER_DISPLAY_MODE = L"underline";
-std::wstring COLOR_MODE = L"light";
+int RULER_DISPLAY_MODE = RulerDisplayMode::Underline;
+int COLOR_MODE = ColorMode::Light;
 std::wstring EPUB_CSS = L"";
 QString EPUB_TEMPLATE = "p {\
 line-height: %{line_spacing}em!important;\
 }";
 
-std::wstring TABLE_EXTRACT_BEHAVIOUR = L"bookmark";
+int TABLE_EXTRACT_BEHAVIOUR = TableExtractBehaviour::Bookmark;
 
 UIRect PORTRAIT_EDIT_PORTAL_UI_RECT = { true, -0.2f, 0.2f, -1.0f, -0.7f };
 UIRect LANDSCAPE_EDIT_PORTAL_UI_RECT = { true, -0.2f, 0.2f, -1.0f, -0.7f };
@@ -762,7 +762,6 @@ auto color_3_validator = colorn_validator<3>;
 auto color_4_validator = colorn_validator<4>;
 
 class ConfigBuilder{
-
 private:
     std::wstring name;
     ConfigType config_type;
@@ -770,9 +769,9 @@ private:
     std::function<void(void*, std::wstringstream&)> serialize = nullptr;
     std::function<void*(std::wstringstream&, void* res, bool* changed)> deserialize = nullptr;
     std::function<bool(const std::wstring& value)> validator = nullptr;
-    Extras extras = EmptyExtras{};
     bool is_auto = false;
     std::optional<std::function<void(MainWidget*)>> on_change = {};
+    Extras extras = EmptyExtras{};
 
     std::function<void(void*, std::wstringstream&)> get_serializer(){
         if (serialize) return serialize;
@@ -790,7 +789,15 @@ private:
         case ConfigType::EnableRectangle: return rect_serializer;
         case ConfigType::Range: return fvec2_serializer;
         case ConfigType::Macro: return string_serializer;
-        case ConfigType::Enum: return string_serializer;
+        case ConfigType::Enum: return [this, extras=extras](void* value, std::wstringstream& stream) {
+            int enum_index = *static_cast<int*>(value);
+            EnumExtras enum_extras = std::get<EnumExtras>(extras);
+            if (enum_index >= 0 && enum_index < enum_extras.possible_values.size()) {
+                std::wstring enum_string = enum_extras.possible_values[enum_index];
+                stream << enum_string;
+            }
+
+            };
         default: assert(false);
         }
     }
@@ -811,7 +818,27 @@ private:
         case ConfigType::EnableRectangle: return rect_deserializer;
         case ConfigType::Range: return fvec2_deserializer;
         case ConfigType::Macro: return string_deserializer;
-        case ConfigType::Enum: return string_deserializer;
+        case ConfigType::Enum: return [this, extras=extras](std::wstringstream& stream, void* res_, bool* changed) {
+
+            int prev_index = *static_cast<int*>(res_);
+            std::wstring enum_string;
+            std::getline(stream, enum_string);
+            enum_string = strip_string(enum_string);
+
+            int new_index = prev_index;
+            EnumExtras enum_extras = std::get<EnumExtras>(extras);
+            for (int i = 0; i < enum_extras.possible_values.size(); i++) {
+                if (enum_extras.possible_values[i] == enum_string) {
+                    new_index = i;
+                    *static_cast<int*>(res_) = new_index;
+                    break;
+                }
+            }
+            if (changed && new_index != prev_index) {
+                *changed = true;
+            }
+            return res_;
+            };
         default: assert(false);
         }
 
@@ -874,7 +901,7 @@ public:
         return ConfigBuilder(config_name, ConfigType::Macro, val);
     }
 
-    static ConfigBuilder enumeration(std::wstring config_name, std::wstring* val, EnumExtras ex){
+    static ConfigBuilder enumeration(std::wstring config_name, int* val, EnumExtras ex){
         return ConfigBuilder(config_name, ConfigType::Enum, val).extra(ex);
     }
 
@@ -1059,7 +1086,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         return configs.back();
     };
 
-    auto add_enum = [&](std::wstring name, std::wstring* location, EnumExtras extras){
+    auto add_enum = [&](std::wstring name, int* location, EnumExtras extras){
         configs.push_back(
             ConfigBuilder::enumeration(name, location, extras).build()
             );
