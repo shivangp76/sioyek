@@ -2423,6 +2423,8 @@ void PdfViewOpenGLWidget::render_text_highlights(){
 }
 
 void PdfViewOpenGLWidget::render_highlight_annotations(){
+    std::vector<AbsoluteRect> borders_to_draw;
+
     if (doc()->can_use_highlights()) {
         const std::vector<Highlight>& highlights = doc()->get_highlights();
         std::vector<std::string> visible_highlight_uuids = dv()->get_visible_highlight_uuids();
@@ -2438,6 +2440,11 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                 auto adjusted_highlight_color = cc3(get_highlight_type_color(highlight->type));
                 get_color_for_current_mode(get_highlight_type_color(highlight->type), &adjusted_highlight_color[0]);
 
+                if (highlight->uuid == document_view->get_selected_highlight_uuid()) {
+                    adjusted_highlight_color[0] *= 0.5f;
+                    adjusted_highlight_color[1] *= 0.5f;
+                    adjusted_highlight_color[2] *= 0.5f;
+                }
                 set_highlight_color(&adjusted_highlight_color[0], 0.3f);
                 int flags = 0;
                 if (std::isupper(highlight->type)) {
@@ -2453,12 +2460,20 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                     }
 
                     if (highlight->uuid == document_view->get_selected_highlight_uuid()) {
-                        flags |= HRF_BORDER;
+                        borders_to_draw.push_back(highlight->highlight_rects[j]);
                     }
                 }
                 render_highlight_absolute(highlight->highlight_rects[j],
                     flags);
             }
+        }
+    }
+    if (borders_to_draw.size() > 0) {
+
+        float border_color[3] = { 0 };
+        glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &border_color[0]);
+        for (auto border_rect : borders_to_draw) {
+            render_highlight_absolute(border_rect, HRF_BORDER);
         }
     }
 
@@ -2855,6 +2870,7 @@ void PdfViewOpenGLWidget::render_highlight_window_opengl_backend(NormalizedWindo
     }
 
     if (flags & HRF_BORDER) {
+
         float line_data[] = {
             window_rect.x0, window_rect.y0,
             window_rect.x1, window_rect.y0,

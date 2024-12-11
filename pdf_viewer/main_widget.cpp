@@ -8377,7 +8377,7 @@ std::string MainWidget::get_current_mode_string() {
     res += (main_document_view->is_ruler_mode()) ? "r" : "R";
     res += main_document_view->is_line_select_mode() ? "l" : "L";
     res += (synctex_mode) ? "x" : "X";
-    res += (is_select_highlight_mode) ? "h" : "H";
+    //res += (is_select_highlight_mode) ? "h" : "H";
     res += (freehand_drawing_mode == DrawingMode::Drawing) ? "q" : "Q";
     res += (freehand_drawing_mode == DrawingMode::PenDrawing) ? "e" : "E";
     res += (mouse_drag_mode) ? "d" : "D";
@@ -8386,6 +8386,7 @@ std::string MainWidget::get_current_mode_string() {
     res += main_document_view->scratchpad ? "s" : "S";
     res += (main_document_view->get_is_searching(nullptr)) ? "f" : "F";
     res += (is_menu_focused()) ? "m" : "M";
+    res += main_document_view->selected_object_index.has_value() ? "h" : "H";
 
     if (main_document_view) {
         res += (main_document_view->selected_character_rects.size() > 0) ? "t" : "T";
