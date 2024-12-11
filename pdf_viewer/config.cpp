@@ -220,7 +220,9 @@ int RULER_UNDERLINE_PIXEL_WIDTH = 2;
 bool AUTO_RENAME_DOWNLOADED_PAPERS = false;
 bool SHOW_MOST_RECENT_COMMANDS_FIRST = true;
 bool ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL = false;
-bool INVERT_SELECTED_TEXT = false;
+//bool INVERT_SELECTED_TEXT = false;
+int SELECTED_TEXT_HIGHLIGHT_STYLE = SelectedTextHighlightStyle::Transparent;
+int HIGHLIGHT_STYLE = HighlightStyle::HighlightTransparent;
 bool IGNORE_SCROLL_EVENTS = false;
 
 #ifdef SIOYEK_MOBILE
@@ -1202,7 +1204,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"right_click_context_menu", &SHOW_RIGHT_CLICK_CONTEXT_MENU);
     add_bool(L"preserve_image_colors_in_dark_mode", &PRESERVE_IMAGE_COLORS);
     add_bool(L"inverted_preserved_image_colors", &INVERTED_PRESERVED_IMAGE_COLORS);
-    add_bool(L"invert_selected_text", &INVERT_SELECTED_TEXT);
+    //add_bool(L"invert_selected_text", &INVERT_SELECTED_TEXT);
     add_bool(L"ignore_scroll_events", &IGNORE_SCROLL_EVENTS);
     add_bool(L"dont_center_if_synctex_rect_is_visible", &DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE);
     add_bool(L"gg_uses_labels", &GG_USES_LABELS);
@@ -1422,10 +1424,12 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_rect(L"landscape_visual_mark_next", &LANDSCAPE_VISUAL_MARK_NEXT);
     add_rect(L"landscape_visual_mark_prev", &LANDSCAPE_VISUAL_MARK_PREV);
 
-    add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({ {L"local", L"server", L"ask", L"show_button"}}));
+    add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({{L"local", L"server", L"ask", L"show_button"}}));
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below"}}));
     add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"}}));
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
+    add_enum(L"selected_text_highlight_style", &SELECTED_TEXT_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"inverted", L"background"}}));
+    add_enum(L"highlight_style", &HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"background"}}));
 
     Config* dark_mode_background_config = add_color3(L"dark_mode_background_color", std::get<ColorExtras>(background_color_config->extras).dark_mode, false);
     Config* custom_mode_background_config = add_color3(L"custom_color_mode_empty_background_color", std::get<ColorExtras>(background_color_config->extras).custom_mode, false);

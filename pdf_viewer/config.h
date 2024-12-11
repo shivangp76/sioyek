@@ -96,6 +96,17 @@ enum TableExtractBehaviour {
     Copy = 1
 };
 
+enum SelectedTextHighlightStyle {
+    Transparent = 0,
+    Inverted = 1,
+    Background = 2
+};
+
+enum HighlightStyle {
+    HighlightTransparent = 0,
+    HighlightBackground = 1
+};
+
 struct EnumExtras {
     std::vector<std::wstring> possible_values;
 };

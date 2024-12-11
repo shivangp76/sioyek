@@ -76,7 +76,8 @@ extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
 extern bool HIDE_OVERLAPPING_LINK_LABELS;
 extern bool PRESERVE_IMAGE_COLORS;
 extern bool INVERTED_PRESERVED_IMAGE_COLORS;
-extern bool INVERT_SELECTED_TEXT;
+extern int SELECTED_TEXT_HIGHLIGHT_STYLE;
+extern int HIGHLIGHT_STYLE;
 extern bool VISUALIZE_RULER_THRESHOLDS;
 extern bool DEBUG;
 
@@ -2405,8 +2406,11 @@ void PdfViewOpenGLWidget::render_text_highlights(){
 
         int line_pending_flags = HRF_FILL | HRF_INVERTED;
         int normal_flags = HRF_FILL | HRF_BORDER;
-        if (INVERT_SELECTED_TEXT) {
+        if (SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::Inverted) {
             std::swap(line_pending_flags, normal_flags);
+        }
+        else if (SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::Background) {
+            normal_flags = HRF_PAINTOVER | HRF_FILL;
         }
 
         if (dv()->is_line_select_mode()) {
@@ -2439,11 +2443,14 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                 if (std::isupper(highlight->type)) {
                     flags |= HRF_UNDERLINE;
                 }
-                if (highlight->type == '_') {
+                else if (highlight->type == '_') {
                     flags |= HRF_STRIKE;
                 }
                 if (flags == 0) {
                     flags |= HRF_FILL;
+                    if (HIGHLIGHT_STYLE == HighlightStyle::HighlightBackground) {
+                        flags |= HRF_PAINTOVER;
+                    }
 
                     if (highlight->uuid == document_view->get_selected_highlight_uuid()) {
                         flags |= HRF_BORDER;
