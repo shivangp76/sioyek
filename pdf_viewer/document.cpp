@@ -2341,6 +2341,8 @@ void Document::import_annotations() {
 
 void Document::embed_annotations(std::wstring new_file_path) {
 
+    bool is_same_file = new_file_path == get_path();
+
     std::unordered_map<int, fz_page*> cached_pages;
     std::vector<std::pair<pdf_page*, pdf_annot*>> created_annotations;
 
@@ -2355,11 +2357,29 @@ void Document::embed_annotations(std::wstring new_file_path) {
         }
     };
 
+    std::vector<Highlight> pdf_highlights;
+    std::vector<BookMark> pdf_bookmarks;
+    std::vector<FreehandDrawing> pdf_drawings;
+
+    get_pdf_annotations(pdf_bookmarks, pdf_highlights, pdf_drawings);
+
+    fz_buffer* buffer = nullptr;
+
+    //fz_drop_document(context, doc);
+
     std::string new_file_path_utf8 = utf8_encode(new_file_path);
     fz_output* output_file = nullptr;
 
     fz_try(context) {
-        output_file = fz_new_output_with_path(context, new_file_path_utf8.c_str(), 0);
+        if (is_same_file) {
+            QFileInfo file_info(QString::fromStdWString(get_path()));
+            int file_size = file_info.size();
+            buffer = fz_new_buffer(context, file_size * 2);
+            output_file = fz_new_output_with_buffer(context, buffer);
+        }
+        else {
+            output_file = fz_new_output_with_path(context, new_file_path_utf8.c_str(), 0);
+        }
     }
     fz_catch(context) {
         output_file = nullptr;
@@ -2371,11 +2391,6 @@ void Document::embed_annotations(std::wstring new_file_path) {
     }
 
     pdf_document* pdf_doc = pdf_specifics(context, doc);
-    std::vector<Highlight> pdf_highlights;
-    std::vector<BookMark> pdf_bookmarks;
-    std::vector<FreehandDrawing> pdf_drawings;
-
-    get_pdf_annotations(pdf_bookmarks, pdf_highlights, pdf_drawings);
 
     const std::vector<Highlight>& doc_highlights = get_new_sioyek_highlights(pdf_highlights);
     const std::vector<BookMark>& doc_bookmarks = get_new_sioyek_bookmarks(pdf_bookmarks);
@@ -2558,6 +2573,18 @@ void Document::embed_annotations(std::wstring new_file_path) {
     }
     for (auto [num, page] : cached_pages) {
         fz_drop_page(context, page);
+    }
+
+    if (is_same_file) {
+        fz_drop_document(context, doc);
+
+        // write the in-memory output_file into an actual file
+        fz_output* file_output = fz_new_output_with_path(context, new_file_path_utf8.c_str(), 0);
+        fz_write_buffer(context, file_output, buffer);
+
+        fz_drop_buffer(context, buffer);
+        fz_drop_output(context, file_output);
+        doc = open_document_with_file_name(context, new_file_path);
     }
 }
 
