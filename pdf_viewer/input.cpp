@@ -2730,11 +2730,13 @@ public:
     void perform() {
         auto pending_bookmark = widget->doc()->get_bookmark_with_uuid(pending_uuid);
         if (pending_bookmark) {
-            QSizeF bookmark_size = widget->dv()->get_bookmark_text_size(*pending_bookmark);
-            float new_width = bookmark_size.width() / dv()->get_zoom_level();
-            float new_height = bookmark_size.height() / dv()->get_zoom_level();
-            pending_bookmark->end_x = pending_bookmark->begin_x + new_width;
-            pending_bookmark->end_y = pending_bookmark->begin_y + new_height;
+            float height = widget->background_bookmark_renderer->get_cached_bookmark_height(pending_uuid);
+            float zoom_level = dv()->get_zoom_level();
+
+            if (height > 0 && height < pending_bookmark->get_rectangle()->height() * zoom_level) {
+                float new_height = height / dv()->get_zoom_level();
+                pending_bookmark->end_y = pending_bookmark->begin_y + new_height;
+            }
 
             result = widget->handle_freetext_bookmark_perform(text.value(), pending_uuid);
         }
