@@ -7309,6 +7309,63 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 void MainWidget::handle_debug_command() {
 }
 
+WindowRect MainWidget::get_largest_empty_rect() {
+    const int REDUCE_FACTOR = 8;
+#ifdef SIOYEK_OPENGL_BACKEND
+    QImage image = opengl_widget->grabFramebuffer();
+#else
+    QPixmap pixmap(size());
+    render(&pixmap, QPoint(), QRegion(rect()));
+    QImage image = pixmap.toImage();
+#endif
+    image = image.scaled(image.width() / REDUCE_FACTOR, image.height() / REDUCE_FACTOR);
+
+    std::unordered_map<int, int> counts;
+
+    QRgb mode_color = image.pixel(QPoint(0, 0));
+    int mode_count = 1;
+
+    for (int j = 0; j < image.height(); j++) {
+        for (int i = 0; i < image.width(); i++) {
+            QRgb pixel = image.pixel(QPoint(i, j));
+
+            if (counts.find(pixel) == counts.end()) {
+                counts[pixel] = 1;
+            }
+            else {
+                counts[pixel] += 1;
+            }
+            if (counts[pixel] > mode_count) {
+                mode_count = counts[pixel];
+                mode_color = pixel;
+            }
+        }
+    }
+
+    std::vector<std::vector<bool>> binary_matrix;
+    for (int j = 0; j < image.height(); j++) {
+        std::vector<bool> row;
+        for (int i = 0; i < image.width(); i++) {
+            QRgb pixel = image.pixel(QPoint(i, j));
+            if (pixel == mode_color) {
+                row.push_back(true);
+            }
+            else {
+                row.push_back(false);
+            }
+        }
+        binary_matrix.push_back(row);
+    }
+
+    MaximumRectangleResult largest_rect = maximum_rectangle(binary_matrix);
+    WindowRect window_rect;
+    window_rect.x0 = largest_rect.begin_col * REDUCE_FACTOR;
+    window_rect.x1 = largest_rect.end_col * REDUCE_FACTOR;
+    window_rect.y0 = largest_rect.begin_row * REDUCE_FACTOR;
+    window_rect.y1 = largest_rect.end_row * REDUCE_FACTOR;
+    return window_rect;
+}
+
 void MainWidget::show_command_menu() {
     std::vector<QString> command_names;
     std::vector<QStringList> command_keybinds;

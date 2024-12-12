@@ -5626,3 +5626,127 @@ void QtTextToSpeechHandler::set_voice(std::wstring voice_name) {
         }
     }
 }
+
+struct LargestRectangleEndingAt {
+    int index;
+    int area_height;
+    int actual_height;
+    int width;
+};
+
+int largest_rectangle_area_helper(std::vector<int>& heights, int* max_begin_index, int* max_end_index) {
+    std::vector<LargestRectangleEndingAt> smaller_values_stack;
+
+    int max_area = 0;
+    int max_area_begin_index = -1;
+    int max_area_end_index = -1;
+    LargestRectangleEndingAt dummy = { -1, -1, -1 };
+    for (int i = 0; i < heights.size(); i++) {
+        if (i == 4) {
+            int a = 2;
+        }
+        while (!smaller_values_stack.empty() && smaller_values_stack.back().actual_height >= heights[i]) {
+            smaller_values_stack.pop_back();
+        }
+        LargestRectangleEndingAt prev_smaller_ending = smaller_values_stack.empty() ? dummy : smaller_values_stack.back();
+        int area = heights[i] * (i - prev_smaller_ending.index);
+        int area_with_prev_at_top = prev_smaller_ending.area_height * (i - prev_smaller_ending.index + prev_smaller_ending.width);
+        int area_height = heights[i];
+        if (prev_smaller_ending.index == -1) {
+            area = heights[i] * (i - prev_smaller_ending.index);
+        }
+        if (area_with_prev_at_top > area) {
+            area = area_with_prev_at_top;
+            prev_smaller_ending.index -= prev_smaller_ending.width;
+            area_height = prev_smaller_ending.area_height;
+        }
+        if (area > max_area) {
+            max_area = area;
+            max_area_begin_index = prev_smaller_ending.index;
+            max_area_end_index = i;
+        }
+        LargestRectangleEndingAt current;
+        current.index = i;
+        current.area_height = area_height;
+        current.actual_height = heights[i];
+        current.width = i - prev_smaller_ending.index;
+        smaller_values_stack.push_back(current);
+    }
+    if (max_begin_index) {
+        *max_begin_index = max_area_begin_index;
+    }
+
+    if (max_end_index) {
+        *max_end_index = max_area_end_index;
+    }
+    return max_area;
+
+}
+
+int largest_rectangle_area(std::vector<int>& heights, int* max_begin_index, int* max_end_index) {
+    std::vector<int> reversed;
+    reversed.reserve(heights.size());
+    for (int i = heights.size() - 1; i >= 0; i--) {
+        reversed.push_back(heights[i]);
+    }
+    int forward_max_begin_index, forward_max_end_index;
+    int backward_max_begin_index, backward_max_end_index;
+    int forward_area = largest_rectangle_area_helper(heights, &forward_max_begin_index, &forward_max_end_index);
+    int backward_area = largest_rectangle_area_helper(reversed, &backward_max_begin_index, &backward_max_end_index);
+    if (forward_area > backward_area) {
+        *max_begin_index = forward_max_begin_index;
+        *max_end_index = forward_max_end_index;
+        return forward_area;
+    }
+    else {
+        *max_begin_index = heights.size() - backward_max_end_index - 1;
+        *max_end_index = heights.size() - backward_max_begin_index - 1;
+        return backward_area;
+    }
+}
+
+std::vector<std::vector<int>> get_histogram_heights(const std::vector<std::vector<bool>>& matrix) {
+    std::vector<std::vector<int>> histogram_heights;
+    for (int i = 0; i < matrix.size(); i++) {
+        std::vector<int> heights;
+        for (int j = 0; j < matrix[0].size(); j++) {
+            heights.push_back(0);
+        }
+        histogram_heights.push_back(heights);
+    }
+
+    for (int j = 0; j < matrix.size(); j++) {
+        for (int i = 0; i < matrix[0].size(); i++) {
+            int prev_height = j == 0 ? 0 : histogram_heights[j - 1][i];
+            if (matrix[j][i]) {
+                histogram_heights[j][i] = prev_height + 1;
+            }
+        }
+    }
+    return histogram_heights;
+
+}
+
+MaximumRectangleResult maximum_rectangle(std::vector<std::vector<bool>>& rect) {
+    auto hist = get_histogram_heights(rect);
+    //int max_rect_size = 0;
+    MaximumRectangleResult res;
+    res.area = 0;
+
+    for (int row_index = 0; row_index < rect.size(); row_index++) {
+        std::vector<int> row_histogram;
+        for (int j = 0; j < rect[0].size(); j++) {
+            row_histogram.push_back(hist[row_index][j]);
+        }
+        int begin_col, end_col;
+        int max_area = largest_rectangle_area(row_histogram, &begin_col, &end_col);
+        if (max_area > res.area) {
+            res.area = max_area;
+            res.begin_col = begin_col;
+            res.end_col = end_col;
+            res.begin_row = row_index - max_area / (end_col - begin_col + 1) + 1;
+            res.end_row = row_index;
+        }
+    }
+    return res;
+}

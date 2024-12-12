@@ -964,3 +964,13 @@ bool is_process_still_running(qint64 pid);
 void kill_process(qint64 pid);
 std::vector<std::wstring> get_last_opened_file_name();
 std::wstring clip_string_to_length(const std::wstring& input, int length);
+
+struct MaximumRectangleResult {
+    int area;
+    int begin_row;
+    int end_row;
+    int begin_col;
+    int end_col;
+};
+
+MaximumRectangleResult maximum_rectangle(std::vector<std::vector<bool>>& rect);

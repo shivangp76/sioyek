@@ -1100,6 +1100,7 @@ public:
     void push_deleted_portal(std::optional<Portal> portal);
 
     void undo_delete();
+    WindowRect get_largest_empty_rect();
 
 
 public slots:

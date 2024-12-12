@@ -2681,6 +2681,67 @@ public:
     }
 };
 
+class AddFreetextBookmarkAutoCommand : public TextCommand {
+
+public:
+    static inline const std::string cname = "add_freetext_bookmark_auto";
+    static inline const std::string hname = "Add a text bookmark in an automatically selected rectangle.";
+    AddFreetextBookmarkAutoCommand(MainWidget* w) : TextCommand(cname, w) {};
+    std::string pending_uuid = "";
+
+    void on_text_change(const QString& new_text) override {
+        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
+        BookMark* bookmark = widget->doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
+
+        if (bookmark) {
+            bookmark->description = new_text.toStdWString();
+        }
+    }
+
+    void pre_perform() override {
+        WindowRect largest_rect = widget->get_largest_empty_rect();
+        AbsoluteRect absrect = largest_rect.to_absolute(dv());
+
+        BookMark incomplete_bookmark;
+
+        incomplete_bookmark.begin_x = absrect.x0;
+        incomplete_bookmark.begin_y = absrect.y0;
+        incomplete_bookmark.end_x = absrect.x1;
+        incomplete_bookmark.end_y = absrect.y1;
+        incomplete_bookmark.color[0] = FREETEXT_BOOKMARK_COLOR[0];
+        incomplete_bookmark.color[1] = FREETEXT_BOOKMARK_COLOR[1];
+        incomplete_bookmark.color[2] = FREETEXT_BOOKMARK_COLOR[2];
+
+        pending_uuid = widget->doc()->add_incomplete_bookmark(incomplete_bookmark);
+        dv()->set_selected_bookmark_uuid(pending_uuid);
+
+        widget->clear_selected_rect();
+        widget->validate_render();
+
+    }
+
+    void on_cancel() {
+
+        if (pending_uuid.size() > 0) {
+            widget->doc()->undo_pending_bookmark(pending_uuid);
+        }
+    }
+
+    void perform() {
+        auto pending_bookmark = widget->doc()->get_bookmark_with_uuid(pending_uuid);
+        if (pending_bookmark) {
+            QSizeF bookmark_size = widget->dv()->get_bookmark_text_size(*pending_bookmark);
+            float new_width = bookmark_size.width() / dv()->get_zoom_level();
+            float new_height = bookmark_size.height() / dv()->get_zoom_level();
+            pending_bookmark->end_x = pending_bookmark->begin_x + new_width;
+            pending_bookmark->end_y = pending_bookmark->begin_y + new_height;
+
+            result = widget->handle_freetext_bookmark_perform(text.value(), pending_uuid);
+        }
+    }
+
+};
+
 class AddBookmarkFreetextCommand : public Command {
 
 public:
@@ -8073,6 +8134,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<AddBookmarkCommand>(this);
     register_command<AddBookmarkMarkedCommand>(this);
     register_command<AddBookmarkFreetextCommand>(this);
+    register_command<AddFreetextBookmarkAutoCommand>(this);
     register_command<CopyDrawingsFromScratchpadCommand>(this);
     register_command<CopyScreenshotToScratchpad>(this);
     register_command<ConvertToLatexCommand>(this);
