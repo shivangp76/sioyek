@@ -4294,6 +4294,7 @@ bool DocumentView::handle_visible_object_click(WindowPos click_pos, AbsoluteDocu
                     brd.original_mouse_pos = abs_doc_pos;
                     brd.original_rect = bookmark->rect();
                     visible_object_resize_data = brd;
+                    selected_object_index = VisibleObjectIndex{ VisibleObjectType::Bookmark, bookmark->uuid };
                     return true;
                 }
             }

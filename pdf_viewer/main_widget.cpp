@@ -2501,6 +2501,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
         if (visible_object) {
             if (main_document_view->handle_visible_object_click(click_pos, abs_doc_pos, visible_object)) {
+                invalidate_render();
                 return;
             }
         }
