@@ -2482,6 +2482,13 @@ std::pair<pdf_page*, pdf_annot*> Document::embed_bookmark(pdf_document* pdf_doc,
 
 
 PdfSpecificsInfo Document::open_pdf_document_for_current_doc() {
+
+    if (document_indexing_thread.has_value()) {
+        stop_indexing();
+        document_indexing_thread.value().join();
+        document_indexing_thread = {};
+    }
+
     QFileInfo file_info(QString::fromStdWString(get_path()));
     int file_size = file_info.size();
     fz_buffer* buffer = fz_new_buffer(context, file_size * 2);
