@@ -7415,6 +7415,37 @@ public:
     }
 };
 
+class EmbedSelectedAnnotation : public Command {
+public:
+    static inline const std::string cname = "embed_selected_annotation";
+    static inline const std::string hname = "Embed the selected annotation into a PDF annotation.";
+    EmbedSelectedAnnotation(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        if (dv()->selected_object_index.has_value()) {
+            std::string uuid = dv()->selected_object_index->uuid;
+            widget->free_renderer_resources_for_current_document();
+            widget->doc()->embed_single_annot(uuid);
+        }
+    }
+};
+
+class DeleteAllPDFAnnotations : public Command {
+public:
+    static inline const std::string cname = "delete_all_pdf_annotations";
+    static inline const std::string hname = "Delete all PDF annotations.";
+    DeleteAllPDFAnnotations(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        int btn_index = show_option_buttons(L"This will irreversibly delete all PDF annotations. Are you sure you want to continue?", { L"No", L"Yes" });
+
+        if (btn_index == 3) {
+            widget->free_renderer_resources_for_current_document();
+            widget->doc()->delete_pdf_annotations();
+        }
+    }
+};
+
 class CopyWindowSizeConfigCommand : public Command {
 public:
     static inline const std::string cname = "copy_window_size_config";
@@ -8307,6 +8338,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ToggleHorizontalLockCommand>(this);
     register_command<ExecuteCommand>(this, "execute_shell_command");
     register_command<EmbedAnnotationsCommand>(this);
+    register_command<EmbedSelectedAnnotation>(this);
+    register_command<DeleteAllPDFAnnotations>(this);
     register_command<ImportAnnotationsCommand>(this);
     register_command<CopyWindowSizeConfigCommand>(this);
     register_command<ToggleSelectHighlightCommand>(this);

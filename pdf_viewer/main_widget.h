@@ -972,6 +972,7 @@ public:
     QPoint cursor_pos();
     void clear_current_page_drawings();
     void clear_current_document_drawings();
+    void free_renderer_resources_for_current_document();
 
     // void set_selected_highlight_uuid(std::string uuid);
     // void set_selected_bookmark_uuid(std::string uuid);

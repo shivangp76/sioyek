@@ -7306,16 +7306,12 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 }
 
 
+void MainWidget::free_renderer_resources_for_current_document() {
+    pdf_renderer->free_all_resources_for_document(doc()->get_path());
+
+}
 
 void MainWidget::handle_debug_command() {
-    std::string uuid = dv()->selected_object_index->uuid;
-
-    //std::string highlight_uuid = dv()->get_selected_highlight_uuid();
-    if (uuid.size() > 0) {
-        pdf_renderer->free_all_resources_for_document(doc()->get_path());
-        doc()->embed_single_annot(uuid);
-
-    }
 }
 
 WindowRect MainWidget::get_largest_empty_rect() {

@@ -2480,6 +2480,54 @@ std::pair<pdf_page*, pdf_annot*> Document::embed_bookmark(pdf_document* pdf_doc,
     return std::make_pair(pdf_page, bookmark_annot);
 }
 
+
+void Document::delete_pdf_annotations() {
+    QFileInfo file_info(QString::fromStdWString(get_path()));
+    int file_size = file_info.size();
+    fz_buffer* buffer = fz_new_buffer(context, file_size * 2);
+    fz_output* output_file = fz_new_output_with_buffer(context, buffer);
+    pdf_document* pdf_doc = pdf_specifics(context, doc);
+
+    int n_pages = num_pages();
+
+    for (int i = 0; i < n_pages; i++) {
+        fz_page* page = fz_load_page(context, doc, i);
+        pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
+
+        pdf_annot* annot = pdf_first_annot(context, pdf_page);
+        std::vector<pdf_annot*> page_annotations;
+        while (annot) {
+            page_annotations.push_back(annot);
+            annot = pdf_next_annot(context, annot);
+        }
+        for (auto annot : page_annotations) {
+            pdf_delete_annot(context, pdf_page, annot);
+        }
+
+        pdf_drop_page(context, pdf_page);
+        fz_drop_page(context, page);
+
+    }
+
+
+    pdf_write_options pwo{};
+    pdf_write_document(context, pdf_doc, output_file, &pwo);
+    fz_close_output(context, output_file);
+    fz_drop_output(context, output_file);
+
+    fz_drop_document(context, doc);
+
+    // write the in-memory output_file into an actual file
+    std::string encoded_path = utf8_encode(get_path());
+    fz_output* file_output = fz_new_output_with_path(context, encoded_path.c_str(), 0);
+    fz_write_buffer(context, file_output, buffer);
+
+    fz_drop_buffer(context, buffer);
+    fz_drop_output(context, file_output);
+    doc = open_document_with_file_name(context, get_path());
+
+}
+
 void Document::embed_single_annot(const std::string& uuid){
     Highlight* highlight = get_highlight_with_uuid(uuid);
     BookMark* bookmark = get_bookmark_with_uuid(uuid);
