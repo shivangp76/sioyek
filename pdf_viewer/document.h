@@ -407,7 +407,8 @@ public:
     int get_page_offset();
     void set_page_offset(int new_offset);
     std::pair<pdf_page*, pdf_annot*> embed_highlight(pdf_document* pdf_doc, fz_page* page, const Highlight& hl);
-    void embed_single_highlight(const Highlight& hl);
+    void embed_single_annot(const std::string& uuid);
+    void delete_pdf_annotations();
     std::pair<pdf_page*, pdf_annot*> embed_bookmark(pdf_document* pdf_doc, fz_page* page, const BookMark& bm);
     void embed_annotations(std::wstring new_file_path);
     void get_pdf_annotations(std::vector<BookMark>& pdf_bookmarks, std::vector<Highlight>& pdf_highlights, std::vector<FreehandDrawing>& pdf_drawings);

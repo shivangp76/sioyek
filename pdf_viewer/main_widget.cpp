@@ -7308,11 +7308,12 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
 
 
 void MainWidget::handle_debug_command() {
-    std::string highlight_uuid = dv()->get_selected_highlight_uuid();
-    if (highlight_uuid.size() > 0) {
-        auto hl = doc()->get_highlight_with_uuid(highlight_uuid);
+    std::string uuid = dv()->selected_object_index->uuid;
+
+    //std::string highlight_uuid = dv()->get_selected_highlight_uuid();
+    if (uuid.size() > 0) {
         pdf_renderer->free_all_resources_for_document(doc()->get_path());
-        doc()->embed_single_highlight(*hl);
+        doc()->embed_single_annot(uuid);
 
     }
 }

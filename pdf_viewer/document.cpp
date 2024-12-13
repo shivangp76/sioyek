@@ -2480,17 +2480,41 @@ std::pair<pdf_page*, pdf_annot*> Document::embed_bookmark(pdf_document* pdf_doc,
     return std::make_pair(pdf_page, bookmark_annot);
 }
 
-void Document::embed_single_highlight(const Highlight& hl){
+void Document::embed_single_annot(const std::string& uuid){
+    Highlight* highlight = get_highlight_with_uuid(uuid);
+    BookMark* bookmark = get_bookmark_with_uuid(uuid);
+    if (!highlight && !bookmark) return;
+
     QFileInfo file_info(QString::fromStdWString(get_path()));
     int file_size = file_info.size();
     fz_buffer* buffer = fz_new_buffer(context, file_size * 2);
     fz_output* output_file = fz_new_output_with_buffer(context, buffer);
     pdf_document* pdf_doc = pdf_specifics(context, doc);
 
-    int page_number = hl.selection_begin.to_document(this).page;
+    int page_number = -1;
+    if (highlight) {
+        page_number = highlight->selection_begin.to_document(this).page;
+    }
+    if (bookmark) {
+        page_number = bookmark->begin_pos().to_document(this).page;
+    }
+
 
     fz_page* page = fz_load_page(context, doc, page_number);
-    auto [pdf_page, pdf_annot] = embed_highlight(pdf_doc, page, hl);
+    pdf_page* pdf_page;
+    pdf_annot* pdf_annot;
+
+    if (highlight) {
+        auto [highlight_page, highlight_annot] = embed_highlight(pdf_doc, page, *highlight);
+        pdf_page = highlight_page;
+        pdf_annot = highlight_annot;
+    }
+
+    if (bookmark) {
+        auto [bookmark_page, bookmark_annot] = embed_bookmark(pdf_doc, page, *bookmark);
+        pdf_page = bookmark_page;
+        pdf_annot = bookmark_annot;
+    }
 
     pdf_write_options pwo{};
     pdf_write_document(context, pdf_doc, output_file, &pwo);
