@@ -2436,8 +2436,17 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
 
             if (!highlight) continue;
 
+            float last_bottom = -1;
             for (size_t j = 0; j < highlight->highlight_rects.size(); j++) {
-                //glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, &HIGHLIGHT_COLORS[(highlights[i].type - 'a') * 3]);
+                NormalizedWindowRect window_rect = highlight->highlight_rects[j].to_window_normalized(dv());
+                if (j > 0) {
+                    // making sure the highlights are air tight
+                    if (std::abs(window_rect.y0 - last_bottom) < 0.01f) {
+                        window_rect.y0 = last_bottom;
+                    }
+                }
+                last_bottom = window_rect.y1;
+
                 auto adjusted_highlight_color = cc3(get_highlight_type_color(highlight->type));
                 get_color_for_current_mode(get_highlight_type_color(highlight->type), &adjusted_highlight_color[0]);
 
@@ -2472,8 +2481,7 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                         borders_to_draw.push_back(highlight->highlight_rects[j]);
                     }
                 }
-                render_highlight_absolute(highlight->highlight_rects[j],
-                    flags);
+                render_highlight_window(window_rect, flags);
             }
         }
     }
@@ -2733,7 +2741,6 @@ void PdfViewOpenGLWidget::initializeGL() {
 }
 
 void PdfViewOpenGLWidget::render_line_window_opengl_backend(float gl_vertical_pos, std::optional<NormalizedWindowRect> ruler_rect) {
-
 
     float bar_height = 4.0f;
 
