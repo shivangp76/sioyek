@@ -3442,12 +3442,19 @@ float vec3_distance_squared(float* v1, float* v2) {
     return dx * dx + dy * dy + dz * dz;
 }
 
+float highlight_color_distance(float color1[3], float color2[3]) {
+    QColor c1 = QColor::fromRgbF(color1[0], color1[1], color1[2]);
+    QColor c2 = QColor::fromRgbF(color2[0], color2[1], color2[2]);
+    return std::abs(c1.hslHueF() - c2.hslHueF());
+}
+
 char get_highlight_color_type(float color[3]) {
     float min_distance = 1000;
     int min_index = -1;
 
     for (int i = 0; i < 26; i++) {
-        float dist = vec3_distance_squared(color, &HIGHLIGHT_COLORS[i * 3]);
+        //float dist = vec3_distance_squared(color, &HIGHLIGHT_COLORS[i * 3]);
+        float dist = highlight_color_distance(color, &HIGHLIGHT_COLORS[i * 3]);
         if (dist < min_distance) {
             min_distance = dist;
             min_index = i;
