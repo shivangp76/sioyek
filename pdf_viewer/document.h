@@ -37,6 +37,11 @@ struct RegexMatchInfo {
     std::pair<int, int> match_range;
 };
 
+struct PdfSpecificsInfo {
+    fz_buffer* buffer;
+    fz_output* output;
+    pdf_document* pdf_doc;
+};
 
 class CharacterIterator {
     fz_stext_block* block = nullptr;
@@ -249,6 +254,9 @@ public:
     const std::wstring& get_super_fast_index();
     const std::vector<int>& get_super_fast_page_begin_indices();
 
+    PdfSpecificsInfo open_pdf_document_for_current_doc();
+    void finalize_pdf_document_for_current_file(PdfSpecificsInfo info);
+
     void update_last_local_edit_time();
     std::optional<QDateTime> last_server_update_time();
 
@@ -409,6 +417,7 @@ public:
     std::pair<pdf_page*, pdf_annot*> embed_highlight(pdf_document* pdf_doc, fz_page* page, const Highlight& hl);
     void embed_single_annot(const std::string& uuid);
     void delete_pdf_annotations();
+    void delete_intersecting_annotations(AbsoluteRect rect);
     std::pair<pdf_page*, pdf_annot*> embed_bookmark(pdf_document* pdf_doc, fz_page* page, const BookMark& bm);
     void embed_annotations(std::wstring new_file_path);
     void get_pdf_annotations(std::vector<BookMark>& pdf_bookmarks, std::vector<Highlight>& pdf_highlights, std::vector<FreehandDrawing>& pdf_drawings);

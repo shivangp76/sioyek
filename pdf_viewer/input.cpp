@@ -7446,6 +7446,45 @@ public:
     }
 };
 
+class DeleteIntersectingPDFAnnotations : public Command {
+public:
+    static inline const std::string cname = "delete_intersecting_pdf_annotations";
+    static inline const std::string hname = "Delete all PDF annotations intersecting with the selected rectangle.";
+    DeleteIntersectingPDFAnnotations(MainWidget* w) : Command(cname, w) {};
+    std::optional<AbsoluteRect> rect_;
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) override {
+
+        if (!rect_.has_value()) {
+            Requirement req = { RequirementType::Rect, "Command Rect" };
+            return req;
+        }
+        return {};
+    }
+
+    void set_rect_requirement(AbsoluteRect rect) override {
+        if (rect.x0 > rect.x1) {
+            std::swap(rect.x0, rect.x1);
+        }
+        if (rect.y0 > rect.y1) {
+            std::swap(rect.y0, rect.y1);
+        }
+
+        rect_ = rect;
+    }
+
+    void on_cancel() override {
+        widget->set_rect_select_mode(false);
+    }
+
+    void perform() override {
+
+        widget->free_renderer_resources_for_current_document();
+        widget->doc()->delete_intersecting_annotations(rect_.value());
+        widget->set_rect_select_mode(false);
+    }
+};
+
 class CopyWindowSizeConfigCommand : public Command {
 public:
     static inline const std::string cname = "copy_window_size_config";
@@ -8340,6 +8379,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<EmbedAnnotationsCommand>(this);
     register_command<EmbedSelectedAnnotation>(this);
     register_command<DeleteAllPDFAnnotations>(this);
+    register_command<DeleteIntersectingPDFAnnotations>(this);
     register_command<ImportAnnotationsCommand>(this);
     register_command<CopyWindowSizeConfigCommand>(this);
     register_command<ToggleSelectHighlightCommand>(this);
