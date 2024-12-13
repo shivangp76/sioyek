@@ -5563,6 +5563,7 @@ void MainWidget::handle_goto_highlight() {
 
     auto handle_delete_fn = [&](Highlight hl) {
         delete_current_document_highlight(&hl);
+        invalidate_render();
         };
 
     if (TOUCH_MODE) {
