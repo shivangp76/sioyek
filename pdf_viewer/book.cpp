@@ -696,15 +696,15 @@ float BookMark::get_y_offset() const{
     return y_offset_;
 }
 
-AbsoluteDocumentPos BookMark::begin_pos() {
+AbsoluteDocumentPos BookMark::begin_pos() const {
     return AbsoluteDocumentPos{ begin_x, begin_y };
 }
 
-AbsoluteDocumentPos BookMark::end_pos() {
+AbsoluteDocumentPos BookMark::end_pos() const {
     return AbsoluteDocumentPos{ end_x, end_y };
 }
 
-AbsoluteRect BookMark::rect() {
+AbsoluteRect BookMark::rect() const {
     return AbsoluteRect(begin_pos(), end_pos());
 }
 
@@ -882,7 +882,7 @@ std::optional<QColor> get_color_from_type(std::optional<char> t) {
     return {};
 }
 
-std::optional<QColor> BookMark::get_background_color() {
+std::optional<QColor> BookMark::get_background_color() const {
     std::optional<char> background_type = get_background_type();
     if (background_type.has_value()) {
         return get_color_from_type(background_type);
@@ -891,7 +891,7 @@ std::optional<QColor> BookMark::get_background_color() {
     return {};
 }
 
-std::optional<QColor> BookMark::get_border_color() {
+std::optional<QColor> BookMark::get_border_color() const {
     std::optional<char> border_type = get_type();
     if (border_type.has_value()) {
         return get_color_from_type(border_type);
@@ -899,7 +899,7 @@ std::optional<QColor> BookMark::get_border_color() {
     return {};
 }
 
-std::optional<QColor> BookMark::get_text_color() {
+std::optional<QColor> BookMark::get_text_color() const {
     std::optional<char> text_type = get_text_type();
     if (text_type.has_value()) {
         return get_color_from_type(text_type);

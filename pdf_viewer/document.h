@@ -16,6 +16,8 @@
 #include <qdatetime.h>
 
 #include <mupdf/fitz.h>
+#include <mupdf/pdf.h>
+#include <mupdf/pdf/annot.h>
 #include <qobject.h>
 #include <qnetworkreply.h>
 #include <qjsondocument.h>
@@ -28,6 +30,7 @@
 
 class CachedChecksummer;
 class DatabaseManager;
+
 
 struct RegexMatchInfo {
     std::wstring match_text;
@@ -403,6 +406,9 @@ public:
 
     int get_page_offset();
     void set_page_offset(int new_offset);
+    std::pair<pdf_page*, pdf_annot*> embed_highlight(pdf_document* pdf_doc, fz_page* page, const Highlight& hl);
+    void embed_single_highlight(const Highlight& hl);
+    std::pair<pdf_page*, pdf_annot*> embed_bookmark(pdf_document* pdf_doc, fz_page* page, const BookMark& bm);
     void embed_annotations(std::wstring new_file_path);
     void get_pdf_annotations(std::vector<BookMark>& pdf_bookmarks, std::vector<Highlight>& pdf_highlights, std::vector<FreehandDrawing>& pdf_drawings);
     void import_annotations();

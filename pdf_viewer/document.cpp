@@ -2339,6 +2339,183 @@ void Document::import_annotations() {
     }
 }
 
+std::pair<pdf_page*, pdf_annot*> Document::embed_highlight(pdf_document* pdf_doc, fz_page* page, const Highlight& highlight) {
+    int page_number = get_offset_page_number(highlight.selection_begin.y);
+
+    std::deque<AbsoluteRect> selected_characters;
+    std::vector<AbsoluteRect> merged_characters;
+    std::vector<PagelessDocumentRect> selected_characters_page_rects;
+    std::wstring selected_text;
+
+    get_text_selection(highlight.selection_begin, highlight.selection_end, !EXACT_HIGHLIGHT_SELECT, selected_characters, selected_text);
+    merge_selected_character_rects(selected_characters, merged_characters, highlight.type != '_');
+
+    for (auto absrect : merged_characters) {
+        selected_characters_page_rects.push_back(absrect.to_document(this).rect);
+    }
+    //absolute_to_page_pos
+    std::vector<fz_quad> selected_character_quads = quads_from_rects(selected_characters_page_rects);
+
+    //fz_page* page = load_cached_page(page_number);
+    pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
+    pdf_annot* highlight_annot;
+    if (highlight.type == '_') {
+        highlight_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_STRIKE_OUT);
+    }
+    else if (std::isupper(highlight.type)) {
+        highlight_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_UNDERLINE);
+    }
+    else {
+        highlight_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_HIGHLIGHT);
+    }
+    float* color_ = get_highlight_type_color(highlight.type);
+    float color[3];
+    // lighten highlight colors before embedding (because we use alpha to make it lighter but
+    // the color doesn't take it into accout). Also see: https://github.com/ahrm/sioyek/issues/667
+    lighten_color(color_, color);
+
+    pdf_set_annot_color(context, highlight_annot, 3, color);
+    if (highlight.text_annot.size() > 0) {
+        std::string encoded_highlight_text = utf8_encode(highlight.text_annot);
+        pdf_set_annot_contents(context, highlight_annot, encoded_highlight_text.c_str());
+    }
+
+    pdf_set_annot_quad_points(context, highlight_annot, selected_character_quads.size(), &selected_character_quads[0]);
+    pdf_update_annot(context, highlight_annot);
+
+    return std::make_pair(pdf_page, highlight_annot);
+
+}
+
+std::pair<pdf_page*, pdf_annot*> Document::embed_bookmark(pdf_document* pdf_doc, fz_page* page, const BookMark& bookmark) {
+    auto [page_number, doc_x, doc_y] = absolute_to_page_pos({ 0, bookmark.get_y_offset() });
+
+    pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
+    pdf_annot* bookmark_annot;
+    int bm_size = BookMark::get_display_markdown_or_text(QString::fromStdWString(bookmark.description)).size();
+
+    QString display_text = BookMark::get_display_markdown_or_text(QString::fromStdWString(bookmark.description));
+
+    float bookmark_text_color[3];
+    bookmark_text_color[0] = bookmark.color[0];
+    bookmark_text_color[1] = bookmark.color[1];
+    bookmark_text_color[2] = bookmark.color[2];
+
+    if (bookmark.is_freetext() && (!bookmark.is_box() || display_text.size() != 0)) {
+        bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_FREE_TEXT);
+
+        std::optional<QColor> border_color = bookmark.get_border_color();
+        std::optional<QColor> background_color = bookmark.get_background_color();
+        std::optional<QColor> text_color = bookmark.get_text_color();
+
+        if (text_color.has_value()) {
+            bookmark_text_color[0] = text_color->redF();
+            bookmark_text_color[1] = text_color->greenF();
+            bookmark_text_color[2] = text_color->blueF();
+        }
+
+
+        if (border_color.has_value()) {
+            pdf_set_annot_border_width(context, bookmark_annot, 1);
+        }
+
+        if (background_color.has_value()) {
+            float bg[3] = { 0 };
+            background_color->getRgbF(&bg[0], &bg[1], &bg[2]);
+            pdf_obj* bg_color = pdf_new_array(context, pdf_doc, 3);
+            pdf_array_push_real(context, bg_color, bg[0]);
+            pdf_array_push_real(context, bg_color, bg[1]);
+            pdf_array_push_real(context, bg_color, bg[2]);
+            pdf_dict_put(context, pdf_annot_obj(context, bookmark_annot), PDF_NAME(C), bg_color);
+            pdf_drop_obj(context, bg_color);
+        }
+    }
+    else if (bookmark.is_box()) {
+        bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_SQUARE);
+
+        float default_color[3] = { 0, 0, 0 };
+        float* color = &default_color[0];
+        std::optional<char> bm_type = bookmark.get_type();
+        if (bm_type) {
+            color = get_highlight_type_color(bm_type.value());
+        }
+
+        pdf_set_annot_color(context, bookmark_annot, 3, color);
+        //pdf_set_annot_interior_color(context, bookmark_annot, 3, color);
+    }
+    else {
+        bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_TEXT);
+    }
+
+    std::string encoded_bookmark_text = display_text.toStdString();
+
+    PagelessDocumentRect annot_rect;
+    if (bookmark.is_freetext()) {
+        annot_rect = bookmark.rect().to_document(this).rect;
+
+        std::string encoded_font_face = utf8_encode(bookmark.font_face);
+        const char* font_face = bookmark.font_face.size() == 0 ? "Times New Roman" : encoded_font_face.c_str();
+        pdf_set_annot_default_appearance(context, bookmark_annot, font_face, bookmark.font_size, 3, bookmark_text_color);
+    }
+    else if (bookmark.is_marked()) {
+        //DocumentPos begin_page_pos = absolute_to_page_pos_uncentered({ bookmark.begin_x, bookmark.begin_y });
+        DocumentPos begin_page_pos = bookmark.begin_pos().to_document(this);
+
+        annot_rect.x0 = begin_page_pos.x - 6;
+        annot_rect.x1 = begin_page_pos.x + 6;
+        annot_rect.y0 = begin_page_pos.y - 6;
+        annot_rect.y1 = begin_page_pos.y + 6;
+    }
+    else {
+        annot_rect.x0 = 10;
+        annot_rect.x1 = 20;
+        annot_rect.y0 = doc_y;
+        annot_rect.y1 = doc_y + 10;
+    }
+
+    pdf_set_annot_rect(context, bookmark_annot, annot_rect);
+    pdf_set_annot_contents(context, bookmark_annot, encoded_bookmark_text.c_str());
+    pdf_update_annot(context, bookmark_annot);
+
+    return std::make_pair(pdf_page, bookmark_annot);
+}
+
+void Document::embed_single_highlight(const Highlight& hl){
+    QFileInfo file_info(QString::fromStdWString(get_path()));
+    int file_size = file_info.size();
+    fz_buffer* buffer = fz_new_buffer(context, file_size * 2);
+    fz_output* output_file = fz_new_output_with_buffer(context, buffer);
+    pdf_document* pdf_doc = pdf_specifics(context, doc);
+
+    int page_number = hl.selection_begin.to_document(this).page;
+
+    fz_page* page = fz_load_page(context, doc, page_number);
+    auto [pdf_page, pdf_annot] = embed_highlight(pdf_doc, page, hl);
+
+    pdf_write_options pwo{};
+    pdf_write_document(context, pdf_doc, output_file, &pwo);
+    fz_close_output(context, output_file);
+    fz_drop_output(context, output_file);
+
+
+    pdf_delete_annot(context, pdf_page, pdf_annot);
+    pdf_drop_annot(context, pdf_annot);
+
+    fz_drop_page(context, page);
+
+    fz_drop_document(context, doc);
+
+    // write the in-memory output_file into an actual file
+    std::string encoded_path = utf8_encode(get_path());
+    fz_output* file_output = fz_new_output_with_path(context, encoded_path.c_str(), 0);
+    fz_write_buffer(context, file_output, buffer);
+
+    fz_drop_buffer(context, buffer);
+    fz_drop_output(context, file_output);
+    doc = open_document_with_file_name(context, get_path());
+
+}
+
 void Document::embed_annotations(std::wstring new_file_path) {
 
     bool is_same_file = new_file_path == get_path();
@@ -2397,144 +2574,16 @@ void Document::embed_annotations(std::wstring new_file_path) {
 
     for (auto highlight : doc_highlights) {
         int page_number = get_offset_page_number(highlight.selection_begin.y);
-
-        std::deque<AbsoluteRect> selected_characters;
-        std::vector<AbsoluteRect> merged_characters;
-        std::vector<PagelessDocumentRect> selected_characters_page_rects;
-        std::wstring selected_text;
-
-        get_text_selection(highlight.selection_begin, highlight.selection_end, !EXACT_HIGHLIGHT_SELECT, selected_characters, selected_text);
-        merge_selected_character_rects(selected_characters, merged_characters, highlight.type != '_');
-
-        for (auto absrect : merged_characters) {
-            selected_characters_page_rects.push_back(absrect.to_document(this).rect);
-        }
-        //absolute_to_page_pos
-        std::vector<fz_quad> selected_character_quads = quads_from_rects(selected_characters_page_rects);
-
         fz_page* page = load_cached_page(page_number);
-        pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
-        pdf_annot* highlight_annot;
-        if (highlight.type == '_') {
-            highlight_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_STRIKE_OUT);
-        }
-        else if (std::isupper(highlight.type)) {
-            highlight_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_UNDERLINE);
-        }
-        else {
-            highlight_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_HIGHLIGHT);
-        }
-        float* color_ = get_highlight_type_color(highlight.type);
-        float color[3];
-        // lighten highlight colors before embedding (because we use alpha to make it lighter but
-        // the color doesn't take it into accout). Also see: https://github.com/ahrm/sioyek/issues/667
-        lighten_color(color_, color);
-
-        pdf_set_annot_color(context, highlight_annot, 3, color);
-        if (highlight.text_annot.size() > 0) {
-            std::string encoded_highlight_text = utf8_encode(highlight.text_annot);
-            pdf_set_annot_contents(context, highlight_annot, encoded_highlight_text.c_str());
-        }
-
-        pdf_set_annot_quad_points(context, highlight_annot, selected_character_quads.size(), &selected_character_quads[0]);
-        pdf_update_annot(context, highlight_annot);
-
-        created_annotations.push_back(std::make_pair(pdf_page, highlight_annot));
+        created_annotations.push_back(embed_highlight(pdf_doc, page, highlight));
 
     }
 
     for (auto bookmark : doc_bookmarks) {
         auto [page_number, doc_x, doc_y] = absolute_to_page_pos({ 0, bookmark.get_y_offset()});
-
         fz_page* page = load_cached_page(page_number);
-        pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
-        pdf_annot* bookmark_annot;
-        int bm_size = BookMark::get_display_markdown_or_text(QString::fromStdWString(bookmark.description)).size();
+        created_annotations.push_back(embed_bookmark(pdf_doc, page, bookmark));
 
-        QString display_text = BookMark::get_display_markdown_or_text(QString::fromStdWString(bookmark.description));
-
-        float bookmark_text_color[3];
-        bookmark_text_color[0] = bookmark.color[0];
-        bookmark_text_color[1] = bookmark.color[1];
-        bookmark_text_color[2] = bookmark.color[2];
-
-        if (bookmark.is_freetext() && (!bookmark.is_box() || display_text.size() != 0)) {
-            bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_FREE_TEXT);
-
-            std::optional<QColor> border_color = bookmark.get_border_color();
-            std::optional<QColor> background_color = bookmark.get_background_color();
-            std::optional<QColor> text_color = bookmark.get_text_color();
-
-            if (text_color.has_value()) {
-                bookmark_text_color[0] = text_color->redF();
-                bookmark_text_color[1] = text_color->greenF();
-                bookmark_text_color[2] = text_color->blueF();
-            }
-
-
-            if (border_color.has_value()) {
-                pdf_set_annot_border_width(context, bookmark_annot, 1);
-            }
-
-            if (background_color.has_value()) {
-                float bg[3] = {0};
-                background_color->getRgbF(&bg[0], &bg[1], &bg[2]);
-                pdf_obj* bg_color = pdf_new_array(context, pdf_doc, 3);
-                pdf_array_push_real(context, bg_color, bg[0]);
-                pdf_array_push_real(context, bg_color, bg[1]);
-                pdf_array_push_real(context, bg_color, bg[2]);
-                pdf_dict_put(context, pdf_annot_obj(context, bookmark_annot), PDF_NAME(C), bg_color);
-                pdf_drop_obj(context, bg_color);
-            }
-        }
-        else if (bookmark.is_box()) {
-            bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_SQUARE);
-
-            float default_color[3] = { 0, 0, 0 };
-            float* color = &default_color[0];
-            std::optional<char> bm_type = bookmark.get_type();
-            if (bm_type) {
-                color = get_highlight_type_color(bm_type.value());
-            }
-
-            pdf_set_annot_color(context, bookmark_annot, 3, color);
-            //pdf_set_annot_interior_color(context, bookmark_annot, 3, color);
-        }
-        else {
-            bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_TEXT);
-        }
-
-        std::string encoded_bookmark_text = display_text.toStdString();
-
-        PagelessDocumentRect annot_rect;
-        if (bookmark.is_freetext()) {
-            annot_rect = bookmark.rect().to_document(this).rect;
-
-            std::string encoded_font_face = utf8_encode(bookmark.font_face);
-            const char* font_face = bookmark.font_face.size() == 0 ? "Times New Roman" : encoded_font_face.c_str();
-            pdf_set_annot_default_appearance(context, bookmark_annot, font_face, bookmark.font_size, 3, bookmark_text_color);
-        }
-        else if (bookmark.is_marked()) {
-            //DocumentPos begin_page_pos = absolute_to_page_pos_uncentered({ bookmark.begin_x, bookmark.begin_y });
-            DocumentPos begin_page_pos = bookmark.begin_pos().to_document(this);
-
-            annot_rect.x0 = begin_page_pos.x - 6;
-            annot_rect.x1 = begin_page_pos.x + 6;
-            annot_rect.y0 = begin_page_pos.y - 6;
-            annot_rect.y1 = begin_page_pos.y + 6;
-        }
-        else {
-            annot_rect.x0 = 10;
-            annot_rect.x1 = 20;
-            annot_rect.y0 = doc_y;
-            annot_rect.y1 = doc_y + 10;
-        }
-
-        pdf_set_annot_rect(context, bookmark_annot, annot_rect);
-        pdf_set_annot_contents(context, bookmark_annot, encoded_bookmark_text.c_str());
-        pdf_update_annot(context, bookmark_annot);
-
-        created_annotations.push_back(std::make_pair(pdf_page, bookmark_annot));
     }
 
     for (auto [page_number, drawings] : page_freehand_drawings) {

@@ -201,9 +201,9 @@ struct BookMark : Annotation {
 
     QString get_question_or_summary_markdown() const;
     static QString get_display_markdown_or_text(QString bookmark_desc);
-    AbsoluteDocumentPos begin_pos();
-    AbsoluteDocumentPos end_pos();
-    AbsoluteRect rect();
+    AbsoluteDocumentPos begin_pos() const ;
+    AbsoluteDocumentPos end_pos() const ;
+    AbsoluteRect rect() const;
     QJsonObject to_json(std::string doc_checksum) const;
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
     float get_y_offset() const;
@@ -224,9 +224,9 @@ struct BookMark : Annotation {
     std::wstring  get_style_text() const;
     QString get_render_text() const;
 
-    std::optional<QColor> get_background_color();
-    std::optional<QColor> get_border_color();
-    std::optional<QColor> get_text_color();
+    std::optional<QColor> get_background_color() const;
+    std::optional<QColor> get_border_color() const;
+    std::optional<QColor> get_text_color() const;
 
     std::optional<AbsoluteRect> get_rectangle() const override;
     std::optional<AbsoluteRect> get_selection_rectangle() const;
