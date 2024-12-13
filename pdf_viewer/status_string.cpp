@@ -95,7 +95,10 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         
         if (widget->main_document_view != nullptr && widget->main_document_view->get_document() != nullptr &&
             widget->main_document_view->get_document()->get_is_indexing()) {
-            return QString(" | indexing ... ");
+            float progress = widget->doc()->get_indexing_progress();
+            int progress_percent = static_cast<int>(progress * 100);
+            QString progress_string = QString::number(progress_percent);
+            return QString(" | indexing ... " + progress_string + "%");
         }
         return QString("");
         };

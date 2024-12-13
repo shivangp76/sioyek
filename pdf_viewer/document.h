@@ -171,6 +171,7 @@ private:
     std::optional<std::thread> background_page_dimensions_thread = {};
     bool is_document_indexing_required = true;
     bool is_indexing = false;
+    float indexing_progress = 0.0f;
     bool are_highlights_loaded = false;
     bool should_render_annotations = true;
     bool should_reload_annotations = false;
@@ -520,6 +521,7 @@ public:
 
     int get_page_merged_line_index_from_unmerged_index(int page, int unmerged_index);
     bool super_fast_search_index_is_new();
+    float get_indexing_progress();
 
     std::vector<DocumentRect> get_rects_for_highlight_indices(const std::vector<std::string>& indices);
     std::vector <DocumentRect> get_rects_for_bookmark_indices(const std::vector<std::string>& indices);

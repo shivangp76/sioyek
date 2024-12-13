@@ -1488,6 +1488,7 @@ void Document::index_document() {
 
     is_document_indexing_required = true;
     is_indexing = true;
+    indexing_progress = 0.0f;
 
     this->document_indexing_thread = std::thread([this, n]() {
         std::vector<IndexedData> local_generic_data;
@@ -1538,6 +1539,11 @@ void Document::index_document() {
                 }
 
                 fz_drop_stext_page(context_, stext_page);
+                indexing_progress = static_cast<float>(i) / n;
+                if (i % 100 == 0) {
+                    // we want to update the indexing progress in the UI
+                    is_document_validation_data_changed = true;
+                }
             }
 
 
@@ -5561,4 +5567,8 @@ void Document::validate() {
 
 bool Document::get_valid() {
     return !is_document_validation_data_changed;
+}
+
+float Document::get_indexing_progress() {
+    return indexing_progress;
 }
