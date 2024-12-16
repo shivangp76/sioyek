@@ -1363,18 +1363,10 @@ void PdfViewOpenGLWidget::my_render() {
             QColor rect_inverted_color;
             if (dv()->should_highlight_rect_mode) {
 
-                float rect_highlight_colors[] = {
-                    1, 0, 0,
-                    0, 1, 0,
-                    0, 0, 1,
-                    0.3f, 0.3f, 0.3f,
-                };
-
-                int index = i % 4;
-                // make the rects more visible for debug purposes
-                rect_highlight_color = QColor::fromRgbF(rect_highlight_colors[3 * (index % 26)], rect_highlight_colors[3 * (index % 26) + 1], rect_highlight_colors[3 * (index % 26) + 2], 0.3f);
-                rect_highlight_color_opaque = QColor::fromRgbF(rect_highlight_colors[3 * (index % 26)], rect_highlight_colors[3 * (index % 26) + 1], rect_highlight_colors[3 * (index % 26) + 2]);
-                rect_inverted_color = QColor::fromRgbF(1.0f - rect_highlight_colors[3 * (index % 26)], 1.0f - rect_highlight_colors[3 * (index % 26) + 1], 1.0f - rect_highlight_colors[3 * (index % 26) + 2]);
+                int index = i % 26;
+                rect_highlight_color = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2], 0.3f);
+                rect_highlight_color_opaque = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
+                rect_inverted_color = QColor::fromRgbF(1.0f - HIGHLIGHT_COLORS[3 * (index % 26)], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 1], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
                 WindowRect wr = window_rect.to_window(dv());
                 painter.fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
             }
