@@ -257,6 +257,9 @@ extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 
+extern float AUTO_BOOKMARK_VERTICAL_MARGIN;
+extern float AUTO_BOOKMARK_HORIZONTAL_MARGIN;
+
 extern int COLOR_MODE;
 
 extern std::wstring TTS_VOICE;
@@ -7313,9 +7316,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    std::string uuid = dv()->get_selected_bookmark_uuid();
-    BookMark* bookmark = doc()->get_bookmark_with_uuid(uuid);
-    bookmark->begin_y += 1;
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -7372,10 +7372,10 @@ std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
     std::vector<WindowRect> window_rects;
     for (auto largest_rect : largest_rects) {
         WindowRect window_rect;
-        window_rect.x0 = largest_rect.begin_col * REDUCE_FACTOR;
-        window_rect.x1 = largest_rect.end_col * REDUCE_FACTOR;
-        window_rect.y0 = largest_rect.begin_row * REDUCE_FACTOR;
-        window_rect.y1 = largest_rect.end_row * REDUCE_FACTOR;
+        window_rect.x0 = largest_rect.begin_col * REDUCE_FACTOR + AUTO_BOOKMARK_HORIZONTAL_MARGIN;
+        window_rect.x1 = largest_rect.end_col * REDUCE_FACTOR - AUTO_BOOKMARK_HORIZONTAL_MARGIN;
+        window_rect.y0 = largest_rect.begin_row * REDUCE_FACTOR + AUTO_BOOKMARK_VERTICAL_MARGIN;
+        window_rect.y1 = largest_rect.end_row * REDUCE_FACTOR - AUTO_BOOKMARK_VERTICAL_MARGIN;
         window_rects.push_back(window_rect);
     }
     return window_rects;

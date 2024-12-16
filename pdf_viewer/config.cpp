@@ -42,6 +42,8 @@ bool ADD_NEWLINES_WHEN_COPYING_TEXT = false;
 bool ALWAYS_COPY_SELECTED_TEXT = false;
 bool SHOW_DOCUMENTATION_IN_WIDGET = false;
 float TTS_RATE_INCREMENT = 0.05f;
+float AUTO_BOOKMARK_VERTICAL_MARGIN = 1.0f;
+float AUTO_BOOKMARK_HORIZONTAL_MARGIN = 1.0f;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1179,6 +1181,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, FloatExtras{10.0f, 10000.0f});
     add_float(L"box_highlight_bookmark_transparency", &BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY, FloatExtras{0.0f, 1.0f});
     add_float(L"tts_rate_increment", &TTS_RATE_INCREMENT, FloatExtras{0.0f, 1.0f});
+    add_float(L"auto_bookmark_vertical_margin", &AUTO_BOOKMARK_VERTICAL_MARGIN, FloatExtras{0.0f, 30.0f});
+    add_float(L"auto_bookmark_horizontal_margin", &AUTO_BOOKMARK_HORIZONTAL_MARGIN, FloatExtras{0.0f, 30.0f});
     add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f})->set_change_fn([](MainWidget* w){
         w->invalidate_render();
     });
