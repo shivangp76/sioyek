@@ -109,6 +109,7 @@ void DocumentView::handle_escape() {
         should_highlight_links = false;
     }
     should_highlight_words = false;
+    should_highlight_rect_mode = false;
     should_show_numbers = false;
     highlighted_tags = {};
     character_highlight_rect = {};
@@ -3057,9 +3058,11 @@ std::vector<int> DocumentView::get_ruler_unmerged_line_indices() {
 //    return std::make_pair(nullptr, nullptr);
 //}
 
-void DocumentView::set_should_highlight_words(bool should_highlight) {
+void DocumentView::set_should_highlight_words(bool should_highlight, bool rect_mode) {
     this->should_highlight_words = should_highlight;
+    should_highlight_rect_mode = rect_mode;
 }
+
 
 std::vector<DocumentRect> DocumentView::get_highlight_word_rects() {
     return word_rects;

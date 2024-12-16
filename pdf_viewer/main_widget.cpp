@@ -7315,7 +7315,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 void MainWidget::handle_debug_command() {
 }
 
-WindowRect MainWidget::get_largest_empty_rect() {
+std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
     const int REDUCE_FACTOR = 8;
 #ifdef SIOYEK_OPENGL_BACKEND
     QImage image = opengl_widget->grabFramebuffer();
@@ -7363,13 +7363,19 @@ WindowRect MainWidget::get_largest_empty_rect() {
         binary_matrix.push_back(row);
     }
 
-    MaximumRectangleResult largest_rect = maximum_rectangle(binary_matrix);
-    WindowRect window_rect;
-    window_rect.x0 = largest_rect.begin_col * REDUCE_FACTOR;
-    window_rect.x1 = largest_rect.end_col * REDUCE_FACTOR;
-    window_rect.y0 = largest_rect.begin_row * REDUCE_FACTOR;
-    window_rect.y1 = largest_rect.end_row * REDUCE_FACTOR;
-    return window_rect;
+    std::vector<MaximumRectangleResult> largest_rects = maximum_rectangle(binary_matrix);
+
+
+    std::vector<WindowRect> window_rects;
+    for (auto largest_rect : largest_rects) {
+        WindowRect window_rect;
+        window_rect.x0 = largest_rect.begin_col * REDUCE_FACTOR;
+        window_rect.x1 = largest_rect.end_col * REDUCE_FACTOR;
+        window_rect.y0 = largest_rect.begin_row * REDUCE_FACTOR;
+        window_rect.y1 = largest_rect.end_row * REDUCE_FACTOR;
+        window_rects.push_back(window_rect);
+    }
+    return window_rects;
 }
 
 void MainWidget::show_command_menu() {

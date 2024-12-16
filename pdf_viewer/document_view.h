@@ -141,6 +141,7 @@ public:
 
     bool should_highlight_links = false;
     bool should_highlight_words = false;
+    bool should_highlight_rect_mode = false;
     bool should_show_numbers = false;
     bool should_show_rect_hints = false;
 
@@ -276,7 +277,7 @@ public:
 
     void toggle_highlight_words();
     void set_highlight_words(std::vector<DocumentRect> rects);
-    void set_should_highlight_words(bool should_highlight);
+    void set_should_highlight_words(bool should_highlight, bool rect_mode=false);
     std::vector<DocumentRect> get_highlight_word_rects();
     void show_rect_hints();
     void hide_rect_hints();

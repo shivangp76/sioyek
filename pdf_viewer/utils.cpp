@@ -5652,7 +5652,21 @@ std::vector<int> largest_rectangle_helper(const std::vector<int>& heights) {
     return offsets;
 }
 
-int largest_rectangle_area(const std::vector<int>& heights, int* bindex, int* eindex) {
+struct LargestRectangleOutput {
+    std::vector<int> areas;
+    std::vector<int> begin_indices;
+    std::vector<int> end_indices;
+};
+
+struct LargestRectangleOutputMatrix {
+    std::vector<std::vector<int>> areas;
+    std::vector<std::vector<int>> begin_indices;
+    std::vector<std::vector<int>> end_indices;
+};
+
+LargestRectangleOutput largest_rectangle(const std::vector<int>& heights){
+    LargestRectangleOutput res;
+
     std::vector<int> reversed;
     reversed.reserve(heights.size());
     for (int i = 0; i < heights.size(); i++) {
@@ -5662,67 +5676,164 @@ int largest_rectangle_area(const std::vector<int>& heights, int* bindex, int* ei
     std::vector<int> prev_offsets = largest_rectangle_helper(heights);
     std::vector<int> next_offsets = largest_rectangle_helper(reversed);
 
-    int max_area = 0;
-    int max_begin_index = -1;
-    int max_end_index = -1;
 
     for (int i = 0; i < heights.size(); i++) {
         int begin_index = i - prev_offsets[i];
         int end_index = i + next_offsets[heights.size() - 1 - i];
         int area = heights[i] * (end_index - begin_index + 1);
-        if (area > max_area) {
-            max_begin_index = begin_index;
-            max_end_index = end_index;
-            max_area = area;
-        }
+        res.areas.push_back(area);
+        res.begin_indices.push_back(begin_index);
+        res.end_indices.push_back(end_index);
     }
-    *bindex = max_begin_index;
-    *eindex = max_end_index;
-    return max_area;
+    return res;
 }
 
-std::vector<std::vector<int>> get_histogram_heights(const std::vector<std::vector<bool>>& matrix) {
-    std::vector<std::vector<int>> histogram_heights;
-    for (int i = 0; i < matrix.size(); i++) {
-        std::vector<int> heights;
-        for (int j = 0; j < matrix[0].size(); j++) {
-            heights.push_back(0);
+std::vector<std::vector<bool>> char_matrix_to_bool_matrix(const std::vector<std::vector<char>>& m) {
+    std::vector<std::vector<bool>> res;
+    for (int i = 0; i < m.size(); i++) {
+        std::vector<bool> row;
+
+        for (int j = 0; j < m[0].size(); j++) {
+            row.push_back(m[i][j] == '1');
         }
-        histogram_heights.push_back(heights);
+
+        res.push_back(row);
+    }
+    return res;
+}
+
+
+LargestRectangleOutputMatrix areas_from_hist(const std::vector<std::vector<int>>& hist_matrix) {
+    LargestRectangleOutputMatrix res;
+
+    for (int i = 0; i < hist_matrix.size(); i++) {
+        LargestRectangleOutput row_areas = largest_rectangle(hist_matrix[i]);
+        res.areas.push_back(row_areas.areas);
+        res.begin_indices.push_back(row_areas.begin_indices);
+        res.end_indices.push_back(row_areas.end_indices);
+    }
+    return res;
+
+}
+
+std::vector<std::vector<int>> histogram_matrix_from_bool_matrix(const std::vector<std::vector<bool>>& bmatrix) {
+    std::vector<std::vector<int>> res;
+    for (int i = 0; i < bmatrix.size(); i++) {
+        std::vector<int> row;
+        for (int j = 0; j < bmatrix[0].size(); j++) {
+            row.push_back(0);
+        }
+        res.push_back(row);
     }
 
-    for (int j = 0; j < matrix.size(); j++) {
-        for (int i = 0; i < matrix[0].size(); i++) {
-            int prev_height = j == 0 ? 0 : histogram_heights[j - 1][i];
-            if (matrix[j][i]) {
-                histogram_heights[j][i] = prev_height + 1;
+    for (int i = 0; i < bmatrix.size(); i++) {
+        for (int j = 0; j < bmatrix[0].size(); j++) {
+            if (bmatrix[i][j]) {
+                if (i > 0) {
+                    res[i][j] = res[i - 1][j] + 1;
+                }
+                else {
+                    res[i][j] = 1;
+                }
+
             }
         }
     }
-    return histogram_heights;
-
+    return res;
 }
 
-MaximumRectangleResult maximum_rectangle(std::vector<std::vector<bool>>& rect) {
-    auto hist = get_histogram_heights(rect);
-    //int max_rect_size = 0;
+std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bool>>& rect) {
+    auto hist = histogram_matrix_from_bool_matrix(rect);
+    LargestRectangleOutputMatrix largest_rectangles = areas_from_hist(hist);
     MaximumRectangleResult res;
     res.area = 0;
 
-    for (int row_index = 0; row_index < rect.size(); row_index++) {
-        std::vector<int> row_histogram;
-        for (int j = 0; j < rect[0].size(); j++) {
-            row_histogram.push_back(hist[row_index][j]);
-        }
-        int begin_col, end_col;
-        int max_area = largest_rectangle_area(row_histogram, &begin_col, &end_col);
-        if (max_area > res.area) {
-            res.area = max_area;
-            res.begin_col = begin_col;
-            res.end_col = end_col;
-            res.begin_row = row_index - max_area / (end_col - begin_col + 1) + 1;
-            res.end_row = row_index;
+    for (int i = 0; i < largest_rectangles.areas.size(); i++) {
+
+        for (int j = 0; j < largest_rectangles.areas[0].size(); j++) {
+            if (largest_rectangles.areas[i][j] > res.area) {
+                res.area = largest_rectangles.areas[i][j];
+                res.begin_col = largest_rectangles.begin_indices[i][j];
+                res.end_col = largest_rectangles.end_indices[i][j];
+                res.end_row = i;
+                res.begin_row = i - res.area / (res.end_col - res.begin_col + 1);
+            }
         }
     }
-    return res;
+    int threshold = res.area / 4;
+
+    std::vector<std::pair<int, int>> large_non_dominated_indices;
+
+    for (int i = 0; i < largest_rectangles.areas.size(); i++) {
+        for (int j = 0; j < largest_rectangles.areas[0].size(); j++) {
+            int index_area = largest_rectangles.areas[i][j];
+            if (index_area < threshold) continue;
+            if (i < largest_rectangles.areas.size() - 1) {
+                int next_row_area = largest_rectangles.areas[i + 1][j];
+                if (next_row_area >= index_area) continue;
+            }
+            if (j < largest_rectangles.areas[0].size() - 1) {
+                int next_col_area = largest_rectangles.areas[i][j+1];
+                if (next_col_area >= index_area) continue;
+            }
+            large_non_dominated_indices.push_back(std::make_pair(i, j));
+        }
+    }
+
+    std::vector<MaximumRectangleResult> large_results;
+    for (auto [i, j] : large_non_dominated_indices) {
+        MaximumRectangleResult index_result;
+        index_result.area = largest_rectangles.areas[i][j];
+        index_result.begin_col = largest_rectangles.begin_indices[i][j];
+        index_result.end_col = largest_rectangles.end_indices[i][j];
+        index_result.end_row = i;
+        index_result.begin_row = i - index_result.area / (index_result.end_col - index_result.begin_col + 1);
+        large_results.push_back(index_result);
+
+    }
+
+    std::sort(large_results.begin(), large_results.end(), [&](const MaximumRectangleResult& lhs, const MaximumRectangleResult& rhs) {
+        return lhs.area > rhs.area;
+        });
+
+    while (large_results.size() > 20) {
+        large_results.pop_back();
+    }
+
+    std::vector<MaximumRectangleResult> final_results;
+    final_results.push_back(large_results[0]);
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < large_results.size(); j++) {
+            bool is_acceptable = true;
+            for (int k = 0; k < final_results.size(); k++) {
+                WindowRect current_rect;
+                current_rect.x0 = large_results[j].begin_col;
+                current_rect.x1 = large_results[j].end_col;
+                current_rect.y0 = large_results[j].begin_row;
+                current_rect.y1 = large_results[j].end_row;
+                int current_area = current_rect.area();
+
+                WindowRect accepted_rect;
+                accepted_rect.x0 = final_results[k].begin_col;
+                accepted_rect.x1 = final_results[k].end_col;
+                accepted_rect.y0 = final_results[k].begin_row;
+                accepted_rect.y1 = final_results[k].end_row;
+                int accepted_area = accepted_rect.area();
+
+                auto intersection_rect = current_rect.intersect_rect(accepted_rect);
+                int intersection_area = intersection_rect.area();
+                int threshold = std::min(current_area, accepted_area) / 2;
+                if (intersection_area > threshold) {
+                    is_acceptable = false;
+                }
+            }
+            if (is_acceptable) {
+                final_results.push_back(large_results[j]);
+                break;
+            }
+        }
+    }
+
+    return final_results;
+
 }

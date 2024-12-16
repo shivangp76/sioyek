@@ -1334,7 +1334,12 @@ void PdfViewOpenGLWidget::my_render() {
             int window_x0 = static_cast<int>(window_rect.x0 * view_width / 2 + view_width / 2);
             int window_y0 = static_cast<int>(-window_rect.y0 * view_height / 2 + view_height / 2);
 
-            if (i > 0) {
+            if (dv()->should_highlight_rect_mode) {
+                auto center = window_rect.to_window(dv()).center();
+                window_x0 = center.x - painter.font().pixelSize() / 2;
+            }
+
+            if (i > 0 && (!dv()->should_highlight_rect_mode)) {
                 if (std::abs(document_view->word_rects[i - 1].rect.x0 - current_word_rect.rect.x0) < 5) {
                     window_y0 = static_cast<int>(-window_rect.y1 * view_height / 2 + view_height / 2);
                 }
@@ -1352,6 +1357,27 @@ void PdfViewOpenGLWidget::my_render() {
                     remaining_tag = "";
                 }
             }
+
+            QColor rect_highlight_color;
+            QColor rect_highlight_color_opaque;
+            QColor rect_inverted_color;
+            if (dv()->should_highlight_rect_mode) {
+
+                float rect_highlight_colors[] = {
+                    1, 0, 0,
+                    0, 1, 0,
+                    0, 0, 1,
+                    0.3f, 0.3f, 0.3f,
+                };
+
+                int index = i % 4;
+                // make the rects more visible for debug purposes
+                rect_highlight_color = QColor::fromRgbF(rect_highlight_colors[3 * (index % 26)], rect_highlight_colors[3 * (index % 26) + 1], rect_highlight_colors[3 * (index % 26) + 2], 0.3f);
+                rect_highlight_color_opaque = QColor::fromRgbF(rect_highlight_colors[3 * (index % 26)], rect_highlight_colors[3 * (index % 26) + 1], rect_highlight_colors[3 * (index % 26) + 2]);
+                rect_inverted_color = QColor::fromRgbF(1.0f - rect_highlight_colors[3 * (index % 26)], 1.0f - rect_highlight_colors[3 * (index % 26) + 1], 1.0f - rect_highlight_colors[3 * (index % 26) + 2]);
+                WindowRect wr = window_rect.to_window(dv());
+                painter.fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
+            }
             
             if (remaining_tag.size() > 0) {
                 if (highlighted) {
@@ -1364,6 +1390,11 @@ void PdfViewOpenGLWidget::my_render() {
                     painter.setBackground(original_background);
                 }
                 else {
+                    if (dv()->should_highlight_rect_mode) {
+                        painter.setPen(rect_inverted_color);
+                        painter.setBackground(rect_highlight_color_opaque);
+                    }
+
                     painter.drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
                 }
             }

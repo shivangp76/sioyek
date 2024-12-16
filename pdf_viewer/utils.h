@@ -973,4 +973,4 @@ struct MaximumRectangleResult {
     int end_col;
 };
 
-MaximumRectangleResult maximum_rectangle(std::vector<std::vector<bool>>& rect);
+std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bool>>& rect);

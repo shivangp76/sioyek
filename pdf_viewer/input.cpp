@@ -2681,68 +2681,6 @@ public:
     }
 };
 
-class AddFreetextBookmarkAutoCommand : public TextCommand {
-
-public:
-    static inline const std::string cname = "add_freetext_bookmark_auto";
-    static inline const std::string hname = "Add a text bookmark in an automatically selected rectangle.";
-    AddFreetextBookmarkAutoCommand(MainWidget* w) : TextCommand(cname, w) {};
-    std::string pending_uuid = "";
-
-    void on_text_change(const QString& new_text) override {
-        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
-        BookMark* bookmark = widget->doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
-
-        if (bookmark) {
-            bookmark->description = new_text.toStdWString();
-        }
-    }
-
-    void pre_perform() override {
-        WindowRect largest_rect = widget->get_largest_empty_rect();
-        AbsoluteRect absrect = largest_rect.to_absolute(dv());
-
-        BookMark incomplete_bookmark;
-
-        incomplete_bookmark.begin_x = absrect.x0;
-        incomplete_bookmark.begin_y = absrect.y0;
-        incomplete_bookmark.end_x = absrect.x1;
-        incomplete_bookmark.end_y = absrect.y1;
-        incomplete_bookmark.color[0] = FREETEXT_BOOKMARK_COLOR[0];
-        incomplete_bookmark.color[1] = FREETEXT_BOOKMARK_COLOR[1];
-        incomplete_bookmark.color[2] = FREETEXT_BOOKMARK_COLOR[2];
-
-        pending_uuid = widget->doc()->add_incomplete_bookmark(incomplete_bookmark);
-        dv()->set_selected_bookmark_uuid(pending_uuid);
-
-        widget->clear_selected_rect();
-        widget->validate_render();
-
-    }
-
-    void on_cancel() {
-
-        if (pending_uuid.size() > 0) {
-            widget->doc()->undo_pending_bookmark(pending_uuid);
-        }
-    }
-
-    void perform() {
-        auto pending_bookmark = widget->doc()->get_bookmark_with_uuid(pending_uuid);
-        if (pending_bookmark) {
-            float height = widget->background_bookmark_renderer->get_cached_bookmark_height(pending_uuid);
-            float zoom_level = dv()->get_zoom_level();
-
-            if (height > 0 && height < pending_bookmark->get_rectangle()->height() * zoom_level) {
-                float new_height = height / dv()->get_zoom_level();
-                pending_bookmark->end_y = pending_bookmark->begin_y + new_height;
-            }
-
-            result = widget->handle_freetext_bookmark_perform(text.value(), pending_uuid);
-        }
-    }
-
-};
 
 class AddBookmarkFreetextCommand : public Command {
 
@@ -2813,6 +2751,57 @@ public:
         //widget->doc()->add_freetext_bookmark(text_.value(), rect_.value());
         result = widget->handle_freetext_bookmark_perform(text_.value(), pending_uuid);
     }
+};
+
+class AddFreetextBookmarkAutoCommand : public Command {
+
+public:
+    static inline const std::string cname = "add_freetext_bookmark_auto";
+    static inline const std::string hname = "Add a text bookmark in an automatically selected rectangle.";
+    AddFreetextBookmarkAutoCommand(MainWidget* w) : Command(cname, w) {};
+    std::string pending_uuid = "";
+    std::optional<DocumentRect> rect;
+    std::vector<DocumentRect> possible_targets;
+
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) override {
+        if (rect.has_value()) {
+            return {};
+        }
+        return Requirement { RequirementType::Symbol, "Bookmark Location" };
+    }
+
+    void set_symbol_requirement(char value) override {
+        std::string tag;
+        tag.push_back(value);
+        int index = get_index_from_tag(tag);
+        if (index < possible_targets.size() && index >= 0) {
+            rect = possible_targets[index];
+        }
+
+    }
+
+    void pre_perform() override {
+        auto largest_rects = widget->get_largest_empty_rects();
+        for (auto r : largest_rects) {
+            possible_targets.push_back(r.to_absolute(dv()).to_document(widget->doc()));
+        }
+
+        if (possible_targets.size() > 0) {
+            dv()->set_highlight_words(possible_targets);
+            dv()->set_should_highlight_words(true, true);
+        }
+    }
+
+    void perform() {
+        dv()->set_highlight_words({});
+        dv()->set_should_highlight_words(false);
+
+        std::unique_ptr<AddBookmarkFreetextCommand> add_freetext_bookmark_command = std::make_unique<AddBookmarkFreetextCommand>(widget);
+        add_freetext_bookmark_command->set_rect_requirement(rect.value().to_absolute(widget->doc()));
+        widget->handle_command_types(std::move(add_freetext_bookmark_command), 1);
+    }
+
 };
 
 class GotoBookmarkCommand : public GenericGotoLocationCommand {
