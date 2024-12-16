@@ -7313,6 +7313,9 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    std::string uuid = dv()->get_selected_bookmark_uuid();
+    BookMark* bookmark = doc()->get_bookmark_with_uuid(uuid);
+    bookmark->begin_y += 1;
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

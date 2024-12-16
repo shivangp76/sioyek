@@ -3995,6 +3995,43 @@ public:
     }
 };
 
+class ResizePendingBookmark : public TextCommand {
+public:
+    static inline const std::string cname = "resize_pending_bookmark";
+    static inline const std::string hname = "Resize the current freetext bookmark that is being edited.";
+    ResizePendingBookmark(MainWidget* w) : TextCommand(cname, w) {};
+
+    void perform() {
+        std::wstring text_ = text.value();
+        QString qtext = QString::fromStdWString(text_);
+        QStringList parts = qtext.split(' ');
+        if (parts.size() == 4) {
+            float d_top = parts[0].toFloat();
+            float d_bottom = parts[1].toFloat();
+            float d_left = parts[2].toFloat();
+            float d_right = parts[3].toFloat();
+            std::string bookmark_uuid = dv()->get_selected_bookmark_uuid();
+            if (bookmark_uuid.size() > 0) {
+                auto bookmark = widget->doc()->get_bookmark_with_uuid(bookmark_uuid);
+                if (bookmark && bookmark->is_freetext()) {
+                    bookmark->begin_x += d_left;
+                    bookmark->end_x += d_right;
+                    bookmark->begin_y += d_top;
+                    bookmark->end_y += d_bottom;
+                }
+            }
+        }
+    }
+
+    std::string text_requirement_name() {
+        return "Top Bottom Left Right";
+    }
+
+    bool pushes_state() {
+        return true;
+    }
+};
+
 class MoveSelectedBookmarkCommand : public Command {
 public:
     static inline const std::string cname = "move_selected_bookmark";
@@ -8417,6 +8454,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<PrintNonDefaultConfigs>(this);
     register_command<SetWindowRectCommand>(this);
     register_command<MoveSelectedBookmarkCommand>(this);
+    register_command<ResizePendingBookmark>(this);
     register_command<LoginCommand>(this);
     register_command<LoginWithGoogleCommand>(this);
     register_command<LogoutCommand>(this);
