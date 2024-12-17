@@ -5824,6 +5824,7 @@ void MainWidget::handle_goto_toc() {
                         advance_command(std::move(pending_command_instance));
 
                     }
+                pop_current_widget();
                     }, this));
                 show_current_widget();
             }
@@ -5845,6 +5846,7 @@ void MainWidget::handle_goto_toc() {
                         advance_command(std::move(pending_command_instance));
                     }
                 }
+                pop_current_widget();
                     }, this, selected_index));
                 show_current_widget();
             }
