@@ -83,6 +83,7 @@ enum RulerDisplayMode {
     Slit = 1,
     Underline = 2,
     HighlightBelow = 3,
+    HighlightRuler = 4,
 };
 
 enum ColorMode {

@@ -142,6 +142,7 @@ extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;
 extern bool SHOULD_USE_MULTIPLE_MONITORS;
 extern bool MULTILINE_MENUS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
+extern bool SORT_HIGHLIGHTS_BY_LOCATION;
 extern bool FLAT_TABLE_OF_CONTENTS;
 extern bool HOVER_OVERVIEW;
 extern bool WHEEL_ZOOM_ON_CURSOR;
@@ -5535,7 +5536,14 @@ char MainWidget::get_current_selected_highlight_type() {
 }
 
 void MainWidget::handle_goto_highlight() {
-    std::vector<Highlight> highlights = doc()->get_highlights_sorted();
+    std::vector<Highlight> highlights;
+
+    if (SORT_HIGHLIGHTS_BY_LOCATION) {
+        highlights = doc()->get_highlights_sorted();
+    }
+    else {
+        highlights = doc()->get_highlights();
+    }
 
     std::vector<QString> page_numbers;
     page_numbers.reserve(highlights.size());

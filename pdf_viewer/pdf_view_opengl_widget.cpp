@@ -1052,12 +1052,23 @@ void PdfViewOpenGLWidget::my_render() {
                 flags |= HRF_UNDERLINE;
             }
 
+            else if (RULER_DISPLAY_MODE == RulerDisplayMode::HighlightRuler) {
+                flags |= HRF_PAINTOVER;
+                flags |= HRF_FILL;
+            }
             else if (RULER_DISPLAY_MODE == RulerDisplayMode::Box) {
                 flags |= HRF_BORDER;
             }
 
 
-            set_highlight_color(RULER_COLOR, 1.0f);
+            //auto ruler_color_adjusted = cc3(RULER_COLOR);
+            float* ruler_color = RULER_COLOR;
+            auto ruler_color_adjusted = cc3(RULER_COLOR);
+            if (ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE) {
+                ruler_color = &ruler_color_adjusted[0];
+            }
+
+            set_highlight_color(&ruler_color[0], 1.0f);
             render_highlight_window(ruler_rect.value(), flags, RULER_UNDERLINE_PIXEL_WIDTH);
         }
         if (document_view->underline) {
