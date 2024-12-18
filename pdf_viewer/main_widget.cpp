@@ -2754,14 +2754,22 @@ void MainWidget::handle_click(WindowPos click_pos) {
     auto link = main_document_view->get_link_in_pos(click_pos);
 
     std::string selected_uuid = main_document_view->get_highlight_uuid_in_pos(click_pos);
+    // when clicking on some items (e.g. freetext bookmarks) we want to override the possible
+    // link underneath the item
+    bool override_link = false;
+
     if (selected_uuid.size() > 0) {
-        main_document_view->set_selected_highlight_uuid(selected_uuid);
+        // if we are clicking on a link within a highlight, we probably want to go to the link instead of selecting the highlight
+        if (!link.has_value()) {
+            main_document_view->set_selected_highlight_uuid(selected_uuid);
+        }
     }
     else if ((selected_uuid = doc()->get_bookmark_uuid_at_pos(mouse_abspos)).size() > 0) {
         bool was_bookmark_anchor_link_click = false;
         BookMark* bookmark = doc()->get_bookmark_with_uuid(selected_uuid);
 
         if (bookmark) {
+            override_link = true;
             if (BookMark::should_be_displayed_as_markdown(QString::fromStdWString(bookmark->description))) {
                 QString anchor_string = main_document_view->get_markdown_bookmark_anchor_text_under_pos(QPoint(click_pos.x, click_pos.y));
                 if (anchor_string.size() > 0) {
@@ -2825,7 +2833,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
     }
 
 
-    if (link.has_value()) {
+    if ((!override_link) && link.has_value()) {
         handle_link_click(link.value());
         return;
     }
