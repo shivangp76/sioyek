@@ -3778,7 +3778,7 @@ void MainWidget::long_jump_to_destination(DocumentPos pos) {
 
     if (!main_document_view->is_pending_link_source_filled()) {
         push_state();
-        main_document_view->set_offsets(pos.x, abs_pos.y);
+        main_document_view->set_offsets(pos.x, abs_pos.y, true);
         //main_document_view->goto_offset_within_page({ pos.page, pos.x, pos.y });
     }
     else {

@@ -125,8 +125,9 @@ void DocumentView::exit_ruler_mode() {
 }
 
 void DocumentView::set_book_state(OpenedBookState state) {
-    set_offsets(state.offset_x, state.offset_y);
-    set_zoom_level(state.zoom_level, true);
+    set_offsets(state.offset_x, state.offset_y, true);
+
+    set_zoom_level(state.zoom_level, true, false);
     presentation_page_number = state.presentation_page;
     is_ruler_mode_ = state.ruler_mode;
     ruler_pos = state.ruler_pos;
