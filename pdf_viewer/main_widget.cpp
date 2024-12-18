@@ -6104,6 +6104,58 @@ void MainWidget::handle_overview_link(const std::wstring& text) {
     reset_highlight_links();
 }
 
+void MainWidget::handle_find_references_to_link(const std::wstring& text) {
+    auto selected_link = get_selected_link(text);
+    std::vector<SearchResult> results;
+
+    if (selected_link.has_value()) {
+        std::vector<PdfLink> references = doc()->find_references(selected_link->uri);
+        for (auto ref : references) {
+            if (ref.rects.size() == 0) continue;
+
+            DocumentRect link_rect;
+            link_rect.page = ref.source_page;
+            link_rect.rect = ref.rects[0];
+
+            AbsoluteRect link_absrect = link_rect.to_absolute(doc());
+
+            SearchResult result;
+            result.page = link_rect.page;
+            result.rects = { ref.rects[0] };
+
+            results.push_back(result);
+        }
+    }
+    dv()->set_search_results(std::move(results));
+}
+
+void MainWidget::handle_find_references_to_selected_text() {
+
+    std::vector<SearchResult> results;
+    if (dv()->selected_character_rects.size() == 0) return;
+
+    float begin_y = dv()->selected_character_rects[0].top_left().y;
+    float end_y = dv()->selected_character_rects.back().bottom_right().y;
+
+    std::vector<PdfLink> references = doc()->find_references_to_range(begin_y, end_y);
+    for (auto ref : references) {
+        if (ref.rects.size() == 0) continue;
+
+        DocumentRect link_rect;
+        link_rect.page = ref.source_page;
+        link_rect.rect = ref.rects[0];
+
+        AbsoluteRect link_absrect = link_rect.to_absolute(doc());
+
+        SearchResult result;
+        result.page = link_rect.page;
+        result.rects = { ref.rects[0] };
+
+        results.push_back(result);
+    }
+    dv()->set_search_results(std::move(results));
+}
+
 void MainWidget::handle_portal_to_link(const std::wstring& text) {
 
     auto selected_link_ = get_selected_link(text);

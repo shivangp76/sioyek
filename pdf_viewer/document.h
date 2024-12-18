@@ -265,6 +265,9 @@ public:
     void set_is_synced(bool synced);
     bool get_drawings_are_dirty();
 
+    std::vector<PdfLink> find_references(std::string uri);
+    std::vector<PdfLink> find_references_to_range(float begin_y, float end_y);
+
     std::vector<fz_stext_char*> get_flat_chars_around_pos(DocumentPos docpos, int count=-1);
     void fill_highlight_rects(fz_context* ctx, fz_document* doc);
     void fill_index_highlight_rects(int highlight_index, fz_context* thread_context = nullptr, fz_document* thread_document = nullptr);

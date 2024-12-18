@@ -5397,6 +5397,36 @@ public:
     }
 };
 
+class FindReferencesCommand : public OpenLinkCommand {
+public:
+    static inline const std::string cname = "find_references";
+    static inline const std::string hname = "Find links to the selected text/link.";
+    FindReferencesCommand(MainWidget* w) : OpenLinkCommand(w) {};
+public:
+
+
+    virtual std::optional<Requirement> next_requirement(MainWidget* widget) override{
+        if (dv()->selected_character_rects.size() > 0) {
+            return {};
+        }
+        return OpenLinkCommand::next_requirement(widget);
+    }
+
+    virtual void perform() {
+        widget->push_state();
+        if (dv()->selected_character_rects.size() > 0) {
+            widget->handle_find_references_to_selected_text();
+        }
+        else {
+            if (text.has_value()) {
+                widget->handle_find_references_to_link(text.value());
+            }
+        }
+        widget->reset_highlight_links();
+    }
+
+};
+
 class KeyboardSelectLineCommand : public Command {
 public:
     static inline const std::string cname = "keyboard_select_line";
@@ -8306,6 +8336,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<OverviewLinkCommand>(this);
     register_command<DownloadLinkCommand>(this);
     register_command<KeyboardSelectLineCommand>(this);
+    register_command<FindReferencesCommand>(this);
     register_command<PortalToLinkCommand>(this);
     register_command<ShowTouchConfigCommand>(this);
     register_command<CopyLinkCommand>(this);

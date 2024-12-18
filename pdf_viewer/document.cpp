@@ -5575,3 +5575,41 @@ bool Document::get_valid() {
 float Document::get_indexing_progress() {
     return indexing_progress;
 }
+
+std::vector<PdfLink> Document::find_references(std::string uri) {
+    std::vector<PdfLink> res;
+
+    for (int i = 0; i < num_pages(); i++) {
+
+        const std::vector<PdfLink>& links = get_page_merged_pdf_links(i);
+        for (auto link : links) {
+            if (link.uri == uri) {
+                res.push_back(link);
+            }
+        }
+    }
+    return res;
+}
+
+std::vector<PdfLink> Document::find_references_to_range(float begin_y, float end_y) {
+    std::vector<PdfLink> res;
+
+    for (int i = 0; i < num_pages(); i++) {
+
+        const std::vector<PdfLink>& links = get_page_merged_pdf_links(i);
+        for (auto link : links) {
+            ParsedUri parsed_uri = parse_uri(context, doc, link.uri);
+            if (parsed_uri.page >= 0 && parsed_uri.y >= 0) {
+                DocumentPos pos;
+                pos.page = parsed_uri.page - 1;
+                pos.y = parsed_uri.y;
+                pos.x = 0;
+                AbsoluteDocumentPos abspos = pos.to_absolute(this);
+                if (abspos.y >= (begin_y - 1) && abspos.y <= (end_y + 1)) {
+                    res.push_back(link);
+                }
+            }
+        }
+    }
+    return res;
+}

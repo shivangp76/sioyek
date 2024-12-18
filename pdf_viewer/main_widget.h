@@ -602,6 +602,8 @@ public:
     MainWidget* handle_new_window();
     void handle_open_link(const std::wstring& text, bool copy = false);
     void handle_overview_link(const std::wstring& text);
+    void handle_find_references_to_link(const std::wstring& text);
+    void handle_find_references_to_selected_text();
     void handle_portal_to_link(const std::wstring& text);
     void handle_keys_user_all();
     void handle_prefs_user_all();
