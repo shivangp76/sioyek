@@ -6495,6 +6495,9 @@ public:
             //widget->set_overview_position(widget->smart_view_candidates[widget->index_into_candidates].page, widget->smart_view_candidates[widget->index_into_candidates].y);
             widget->goto_ith_next_overview(1);
         }
+        else if (dv()->search_results.size() > 0) {
+            dv()->goto_search_result(1, true);
+        }
     }
 
 };
@@ -6509,6 +6512,9 @@ public:
             //widget->index_into_candidates = mod(widget->index_into_candidates - 1, widget->smart_view_candidates.size());
             //widget->set_overview_position(widget->smart_view_candidates[widget->index_into_candidates].page, widget->smart_view_candidates[widget->index_into_candidates].y);
             widget->goto_ith_next_overview(-1);
+        }
+        else if (dv()->search_results.size() > 0) {
+            dv()->goto_search_result(-1, true);
         }
     }
 };
