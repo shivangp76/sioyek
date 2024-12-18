@@ -4967,8 +4967,8 @@ void Document::fill_search_result(SearchResult* result) {
     int begin_index = result->begin_index_in_page;
     int end_index = result->end_index_in_page;
 
-    std::deque<fz_rect> raw_rects;
-    std::vector<fz_rect> compressed_rects;
+    std::deque<PagelessDocumentRect> raw_rects;
+    std::vector<PagelessDocumentRect> compressed_rects;
     end_index = std::min<int>(end_index, page_index.rects.size());
 
     for (int i = begin_index; i < end_index; i++) {

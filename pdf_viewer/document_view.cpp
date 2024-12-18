@@ -3835,8 +3835,8 @@ void DocumentView::focus_page_text(int page, const std::wstring& text) {
     int end_index = -1;
     int score = similarity_score(page_text, text, &start_index, &end_index, 0.5f);
 
-    std::deque<fz_rect> character_rects;
-    std::vector<fz_rect> merged_character_rects;
+    std::deque<PagelessDocumentRect> character_rects;
+    std::vector<PagelessDocumentRect> merged_character_rects;
 
     if (start_index >= 0) {
         for (int i = start_index; i < end_index; i++) {

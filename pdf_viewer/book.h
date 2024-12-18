@@ -440,7 +440,7 @@ struct OverviewState {
 bool operator==(const DocumentViewState& lhs, const DocumentViewState& rhs);
 
 struct SearchResult {
-    std::vector<fz_rect> rects;
+    std::vector<PagelessDocumentRect> rects;
     int page;
     int begin_index_in_page;
     int end_index_in_page;
