@@ -272,6 +272,7 @@ bool SCROLLBAR = false;
 bool STATUSBAR = true;
 bool STATUSBAR_HANDLES_WHEEL_EVENTS = true;
 std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
+bool LIGHTEN_COLORS_WHEN_EMBEDDING_ANNOTATIONS = true;
 
 
 std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
@@ -1260,6 +1261,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"scrollbar", &SCROLLBAR);
     add_bool(L"statusbar", &STATUSBAR);
     add_bool(L"statusbar_handles_wheel_events", &STATUSBAR_HANDLES_WHEEL_EVENTS);
+    add_bool(L"lighten_colors_when_embedding_annotations", &LIGHTEN_COLORS_WHEN_EMBEDDING_ANNOTATIONS);
     add_bool(L"prerender_next_page_presentation", &PRERENDER_NEXT_PAGE);
     add_bool(L"highlight_middle_click", &HIGHLIGHT_MIDDLE_CLICK);
     add_bool(L"auto_rename_downloaded_papers", &AUTO_RENAME_DOWNLOADED_PAPERS);
