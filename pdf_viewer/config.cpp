@@ -379,6 +379,8 @@ bool MACOS_HIDE_TITLEBAR = false;
 
 std::wstring TTS_VOICE = L"";
 int RULER_DISPLAY_MODE = RulerDisplayMode::Underline;
+float LINE_SELECT_RULER_COLOR[3] = { 1.0f, 0.0f, 1.0f };
+int LINE_SELECT_RULER_DISPLAY_MODE = RulerDisplayMode::HighlightRuler;
 int COLOR_MODE = ColorMode::Light;
 std::wstring EPUB_CSS = L"";
 QString EPUB_TEMPLATE = "p {\
@@ -1114,6 +1116,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"synctex_highlight_color", DEFAULT_SYNCTEX_HIGHLIGHT_COLOR);
     add_color3(L"overview_reference_highlight_color", OVERVIEW_REFERENCE_HIGHLIGHT_COLOR);
     add_color3(L"ruler_color", RULER_COLOR);
+    add_color3(L"line_select_ruler_color", LINE_SELECT_RULER_COLOR);
     add_color3(L"ruler_marker_color", RULER_MARKER_COLOR);
     Config* background_color_config = add_color3(L"background_color", BACKGROUND_COLOR);
     //add_color3(L"dark_mode_background_color", DARK_MODE_BACKGROUND_COLOR);
@@ -1433,6 +1436,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
     add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({{L"local", L"server", L"ask", L"show_button"}}));
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
+    add_enum(L"line_select_ruler_display_mode", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
     add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"}}));
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
     add_enum(L"selected_text_highlight_style", &SELECTED_TEXT_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"inverted", L"background"}}));

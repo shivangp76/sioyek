@@ -121,6 +121,9 @@ extern UIRect LANDSCAPE_MIDDLE_RIGHT_UI_RECT;
 extern UIRect PORTRAIT_EDIT_PORTAL_UI_RECT;
 extern UIRect LANDSCAPE_EDIT_PORTAL_UI_RECT;
 
+extern float LINE_SELECT_RULER_COLOR[3];
+extern int LINE_SELECT_RULER_DISPLAY_MODE;
+
 extern std::wstring BACK_RECT_TAP_COMMAND;
 extern std::wstring BACK_RECT_HOLD_COMMAND;
 extern std::wstring FORWARD_RECT_TAP_COMMAND;
@@ -1042,28 +1045,40 @@ void PdfViewOpenGLWidget::my_render() {
             ruler_rect = dv()->document_to_window_rect_pixel_perfect(ruler_document_rect, ruler_pixel_width, ruler_pixel_height, false);
         }
 
-        if ((!ruler_rect.has_value()) || (RULER_DISPLAY_MODE == RulerDisplayMode::Slit) || (RULER_DISPLAY_MODE == RulerDisplayMode::HighlightBelow)) {
+        auto ruler_display_mode = get_ruler_display_mode();
+        if ((!ruler_rect.has_value()) || (ruler_display_mode == RulerDisplayMode::Slit) || (ruler_display_mode == RulerDisplayMode::HighlightBelow)) {
             render_line_window(vertical_line_end, dv()->get_ruler_window_rect());
         }
         else {
             int flags = 0;
 
-            if (RULER_DISPLAY_MODE == RulerDisplayMode::Underline) {
+            if (ruler_display_mode == RulerDisplayMode::Underline) {
                 flags |= HRF_UNDERLINE;
             }
 
-            else if (RULER_DISPLAY_MODE == RulerDisplayMode::HighlightRuler) {
+            else if (ruler_display_mode == RulerDisplayMode::HighlightRuler) {
                 flags |= HRF_PAINTOVER;
                 flags |= HRF_FILL;
             }
-            else if (RULER_DISPLAY_MODE == RulerDisplayMode::Box) {
+            else if (ruler_display_mode == RulerDisplayMode::Box) {
                 flags |= HRF_BORDER;
             }
 
 
             //auto ruler_color_adjusted = cc3(RULER_COLOR);
             float* ruler_color = RULER_COLOR;
-            auto ruler_color_adjusted = cc3(RULER_COLOR);
+
+            float inverted_line_select_ruler_color[3] = {
+                1.0f - LINE_SELECT_RULER_COLOR[0],
+                1.0f - LINE_SELECT_RULER_COLOR[1],
+                1.0f - LINE_SELECT_RULER_COLOR[2],
+            };
+
+            if (dv()->is_line_select_mode()) {
+                ruler_color = inverted_line_select_ruler_color;
+            }
+
+            auto ruler_color_adjusted = cc3(ruler_color);
             if (ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE) {
                 ruler_color = &ruler_color_adjusted[0];
             }
@@ -2432,7 +2447,20 @@ void PdfViewOpenGLWidget::render_ui_icon_for_current_color_mode(const QIcon& ico
 
 void PdfViewOpenGLWidget::render_text_highlights(){
 
-    std::array<float, 3> text_highlight_color = cc3(DEFAULT_TEXT_HIGHLIGHT_COLOR);
+    std::array<float, 3> text_highlight_color;
+
+    bool is_inverted = false;
+    if ((SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::Inverted) || (dv()->is_line_select_mode())) {
+        is_inverted = true;
+    }
+
+    if (is_inverted) {
+        text_highlight_color = { 1, 1, 1 };
+    }
+    else {
+        text_highlight_color = cc3(DEFAULT_TEXT_HIGHLIGHT_COLOR);
+    }
+
     set_highlight_color(&text_highlight_color[0], 0.3f);
     std::vector<AbsoluteRect> bounding_rects;
     merge_selected_character_rects(*dv()->get_selected_character_rects(), bounding_rects);
@@ -2809,7 +2837,7 @@ void PdfViewOpenGLWidget::render_line_window_opengl_backend(float gl_vertical_po
     glBufferData(GL_ARRAY_BUFFER, sizeof(bar_data), bar_data, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    if ((RULER_DISPLAY_MODE != RulerDisplayMode::HighlightBelow) && ruler_rect.has_value()) {
+    if ((get_ruler_display_mode() != RulerDisplayMode::HighlightBelow) && ruler_rect.has_value()) {
         float gl_vertical_begin_pos = ruler_rect->y0;
         float ruler_left_pos = ruler_rect->x0;
         float ruler_right_pos = ruler_rect->x1;
@@ -3631,4 +3659,11 @@ bool PdfViewOpenGLWidget::is_background_dark() {
         is_dark = CUSTOM_BACKGROUND_COLOR[0] + CUSTOM_BACKGROUND_COLOR[1] + CUSTOM_BACKGROUND_COLOR[2] < 1.0f;
     }
     return is_dark;
+}
+
+int PdfViewOpenGLWidget::get_ruler_display_mode() {
+    if (dv()->is_line_select_mode()) {
+        return LINE_SELECT_RULER_DISPLAY_MODE;
+    }
+    return RULER_DISPLAY_MODE;
 }

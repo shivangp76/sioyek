@@ -269,5 +269,7 @@ public:
     void clear_background_color();
     ColorPalette get_actual_color_palette(ColorPalette forced_color_palette);
     const QPainter& get_painter();
+
+    int get_ruler_display_mode();
     //void initialize_latex();
 };
