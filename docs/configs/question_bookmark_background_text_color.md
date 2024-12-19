@@ -25,7 +25,7 @@ for color in LIGHT_COLORS:
     time.sleep(1)
 
 for color in DARK_COLORS:
-    s.setconfig_question_bookmark_background_color(color)
+    s.setconfig_question_bookmark_background_color(color + " 1")
     time.sleep(1)
 
 

@@ -13,7 +13,7 @@ s.toggleconfig_keyboard_point_selection()
 start_recording(RECORDING_FILE_NAME)
 time.sleep(2)
 
-s.add_freetext_bookmark('', wait=False)
+s.add_freetext_bookmark(wait=False)
 time.sleep(0.3)
 s.send_symbol('a')
 s.send_symbol('a')
@@ -28,7 +28,7 @@ sizes = [5, 10, 20]
 
 for size in sizes:
     s.setconfig_freetext_bookmark_font_size(f'{size}')
-    s.add_freetext_bookmark('', wait=False)
+    s.add_freetext_bookmark(wait=False)
     time.sleep(0.3)
     s.send_symbol('a')
     s.send_symbol('a')

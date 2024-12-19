@@ -16,12 +16,13 @@ start_recording(RECORDING_FILE_NAME)
 
 time.sleep(2)
 
-for i in range(3):
-    s.setconfig_invert_selected_text('1')
+highlight_styles = ['transparent', 'inverted', 'background']
+for style in highlight_styles:
+    s.setconfig_selected_text_highlight_style(style)
     time.sleep(2)
 
-    s.setconfig_invert_selected_text('0')
-    time.sleep(2)
+    # s.setconfig_invert_selected_text('0')
+    # time.sleep(2)
 
 
 time.sleep(1)

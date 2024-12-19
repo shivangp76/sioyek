@@ -44,7 +44,7 @@ def show_run_command(s, command):
     s.control_menu('select')
 
 def type_words(s, command, delay=0.1, final_delay=0.5, select=True):
-    special_chars = [' ', ',', ')']
+    special_chars = [',', ')']
     for ch in command:
         if ch in special_chars:
             s.type_text("'" + ch + "'")

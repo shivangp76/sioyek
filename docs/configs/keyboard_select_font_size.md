@@ -11,7 +11,7 @@ s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
 s.toggleconfig_show_setconfig_in_statusbar()
 s.goto_page_with_page_number(1)
 
-s.keyboard_select('', wait=False)
+s.keyboard_select(wait=False)
 
 start_recording(RECORDING_FILE_NAME)
 time.sleep(2)

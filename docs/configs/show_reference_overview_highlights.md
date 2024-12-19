@@ -7,14 +7,15 @@ demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
 s.open_document(PDF_FILES_PATH + '/attention.pdf')
+s.wait_for_indexing_to_finish()
 s.toggleconfig_show_setconfig_in_statusbar()
 s.goto_page_with_page_number(2)
+s.setconfig_show_reference_overview_highlights('1')
 s.overview_link('a')
 # s.focus_text('fullscreen')
 
 start_recording(RECORDING_FILE_NAME)
 
-s.setconfig_show_reference_overview_highlights('1')
 time.sleep(2)
 
 s.escape()

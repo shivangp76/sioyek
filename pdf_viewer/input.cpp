@@ -5722,6 +5722,7 @@ public:
     KeyboardSelectCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     std::vector<DocumentRect> tag_rects;
+    bool has_pre_performed = false;
 
     void on_text_change(const QString& new_text) override {
         std::vector<std::string> selected_tags;
@@ -5738,11 +5739,20 @@ public:
     }
 
     void perform() {
+
+        if (!has_pre_performed) {
+            // when running the command from the command line or e.g. python api, the pre_perform
+            // might not be called, since this command relies the the pre-perform for its logic
+            // we need to call it if it is not already called
+            pre_perform();
+        }
+
         dv()->handle_keyboard_select(text.value(), tag_rects);
         widget->set_highlighted_tags({});
     }
 
     void pre_perform() {
+        has_pre_performed = true;
         tag_rects = dv()->highlight_words();
         widget->clear_tag_prefix();
 

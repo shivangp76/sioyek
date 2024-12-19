@@ -10,7 +10,7 @@ s.toggleconfig_show_setconfig_in_statusbar()
 s.goto_page_with_page_number(1)
 s.toggleconfig_keyboard_point_selection()
 
-s.add_freetext_bookmark('', wait=False)
+s.add_freetext_bookmark(wait=False)
 time.sleep(0.3)
 s.send_symbol('a')
 s.send_symbol('a')

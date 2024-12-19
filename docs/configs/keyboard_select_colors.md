@@ -12,7 +12,7 @@ s.toggleconfig_show_setconfig_in_statusbar()
 s.goto_page_with_page_number(1)
 
 start_recording(RECORDING_FILE_NAME)
-s.keyboard_select('', wait=False)
+s.keyboard_select(wait=False)
 time.sleep(0.3)
 type_words(s, 'aa ', select=False)
 

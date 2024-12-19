@@ -14,7 +14,7 @@ s.wait_for_indexing_to_finish('')
 
 start_recording(RECORDING_FILE_NAME)
 
-s.search('', wait=False)
+s.search(wait=False)
 time.sleep(1)
 
 type_words(s, 'sioyek', delay=0.5)

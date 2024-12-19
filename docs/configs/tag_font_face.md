@@ -14,7 +14,7 @@ s.goto_page_with_page_number(2)
 
 start_recording(RECORDING_FILE_NAME)
 
-s.open_link('', wait=False)
+s.open_link(wait=False)
 time.sleep(2)
 
 s.setconfig_tag_font_face('Times New Roman')

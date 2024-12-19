@@ -54,7 +54,8 @@ def parse_typed_config_str(lines):
 
 class Sioyek(SioyekBase):
 
-    def __init__(self, sioyek_path, local_database_path=None, shared_database_path=None, last_file_path=None, force_binary=False, launch_if_not_exists=False, launch_args=dict()):
+    def __init__(self, sioyek_path='', local_database_path=None, shared_database_path=None, last_file_path=None, force_binary=False, launch_if_not_exists=False, launch_args=dict()):
+
         self.path = sioyek_path
         self.is_dummy_mode = False
 
@@ -215,12 +216,19 @@ class Sioyek(SioyekBase):
 
     def run_command(self, command_name, text=None, focus=False, wait=True, window_id=None):
 
+        def escape_arg(arg):
+            if type(arg) == str:
+                return arg.replace('\\', '\\\\')
+            else:
+                return str(arg)
         if type(text) == list or type(text) == tuple:
-            if len(text) == 1 and type(text[0]) == list or type(text[0]) == tuple:
+            if len(text) == 0:
+                text = None
+            elif len(text) == 1 and type(text[0]) == list or type(text[0]) == tuple or text[0] is None:
                 text = text[0]
 
         if type(text) == list or type(text) == tuple:
-            text = ["'" + t + "'" for t in text]
+            text = ["'" + escape_arg(t) + "'" for t in text]
             args_string = ', '.join(text)
             params = [self.path, '--execute-command', command_name + '(' + args_string + ')']
         else:
