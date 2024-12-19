@@ -5172,6 +5172,17 @@ int Document::get_first_line_index_after_block(int page, int after_index) {
     return -1;
 }
 
+int Document::get_last_line_of_block(int page, int after_index) {
+    int index = 0;
+    for (auto [block, line, _] : page_iterator(page, true)) {
+        if (index >= after_index && line->next == nullptr) {
+            return index;
+        }
+        index++;
+    }
+    return -1;
+}
+
 int Document::get_first_line_before_block(int page, int before_index) {
     int index = 0;
     fz_stext_line* last_line = nullptr;

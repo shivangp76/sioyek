@@ -4007,8 +4007,10 @@ void DocumentView::goto_next_block() {
         else {
 
             int after_index = unmerged_line_indices.front();
-            int next_line_unmerged_index = current_document->get_first_line_index_after_block(ruler_page, after_index);
+            //int next_line_unmerged_index = current_document->get_first_line_index_after_block(ruler_page, after_index);
+            int next_line_unmerged_index = current_document->get_last_line_of_block(ruler_page, after_index);
             int merged_index = current_document->get_page_merged_line_index_from_unmerged_index(ruler_page, next_line_unmerged_index);
+            if (merged_index == prev_merged_index) merged_index++;
             set_line_index(merged_index, ruler_page);
 
             if (merged_index >= 0) {

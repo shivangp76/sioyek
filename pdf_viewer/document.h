@@ -510,6 +510,7 @@ public:
     AbsoluteRect to_absolute(int page, PagelessDocumentRect rect);
 
     int get_first_line_index_after_block(int page, int after_index);
+    int get_last_line_of_block(int page, int after_index);
     int get_first_line_before_block(int page, int before_index);
 
     void validate();
