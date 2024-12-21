@@ -1,0 +1,380 @@
+\contentsline {section}{\numberline {1}Commands}{11}{section.1}%
+\contentsline {subsection}{\numberline {1.1}\texttt {add\_annot\_to\_highlight}}{11}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}\texttt {add\_bookmark}}{11}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}\texttt {add\_freetext\_bookmark, add\_freetext\_bookmark\_auto}}{11}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}\texttt {add\_highlight}}{13}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}\texttt {add\_highlight\_with\_current\_type}}{13}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}\texttt {add\_keybind}}{13}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.7}\texttt {add\_marked\_bookmark}}{13}{subsection.1.7}%
+\contentsline {subsection}{\numberline {1.8}\texttt {add\_marked\_data, remove\_marked\_data, export\_marked\_data, undo\_marked\_data, goto\_random\_page}}{14}{subsection.1.8}%
+\contentsline {subsection}{\numberline {1.9}\texttt {cancel\_all\_downloads}}{14}{subsection.1.9}%
+\contentsline {subsection}{\numberline {1.10}\texttt {change\_highlight}}{14}{subsection.1.10}%
+\contentsline {subsection}{\numberline {1.11}\texttt {citers}}{14}{subsection.1.11}%
+\contentsline {subsection}{\numberline {1.12}\texttt {clear\_current\_page\_drawings, clear\_current\_document\_drawings}}{14}{subsection.1.12}%
+\contentsline {subsection}{\numberline {1.13}\texttt {clear\_scratchpad}}{15}{subsection.1.13}%
+\contentsline {subsection}{\numberline {1.14}\texttt {close\_overview}}{15}{subsection.1.14}%
+\contentsline {subsection}{\numberline {1.15}\texttt {close\_window}}{15}{subsection.1.15}%
+\contentsline {subsection}{\numberline {1.16}\texttt {command}}{15}{subsection.1.16}%
+\contentsline {subsection}{\numberline {1.17}\texttt {command\_palette}}{15}{subsection.1.17}%
+\contentsline {subsection}{\numberline {1.18}\texttt {control\_menu}}{16}{subsection.1.18}%
+\contentsline {subsection}{\numberline {1.19}\texttt {convert\_to\_latex}}{17}{subsection.1.19}%
+\contentsline {subsection}{\numberline {1.20}\texttt {copy}}{17}{subsection.1.20}%
+\contentsline {subsection}{\numberline {1.21}\texttt {copy\_drawings\_from\_scratchpad}}{17}{subsection.1.21}%
+\contentsline {subsection}{\numberline {1.22}\texttt {copy\_link}}{17}{subsection.1.22}%
+\contentsline {subsection}{\numberline {1.23}\texttt {copy\_screenshot\_to\_clipboard}}{17}{subsection.1.23}%
+\contentsline {subsection}{\numberline {1.24}\texttt {copy\_screenshot\_to\_scratchpad}}{17}{subsection.1.24}%
+\contentsline {subsection}{\numberline {1.25}\texttt {copy\_window\_size\_config}}{18}{subsection.1.25}%
+\contentsline {subsection}{\numberline {1.26}\texttt {create\_fulltext\_index\_for\_current\_document}}{18}{subsection.1.26}%
+\contentsline {subsection}{\numberline {1.27}\texttt {create\_visible\_portal}}{18}{subsection.1.27}%
+\contentsline {subsection}{\numberline {1.28}\texttt {delete\_all\_pdf\_annotations, delete\_intersecting\_pdf\_annotations}}{18}{subsection.1.28}%
+\contentsline {subsection}{\numberline {1.29}\texttt {delete\_current\_file\_from\_server}}{18}{subsection.1.29}%
+\contentsline {subsection}{\numberline {1.30}\texttt {delete\_document\_from\_fulltext\_search\_index}}{19}{subsection.1.30}%
+\contentsline {subsection}{\numberline {1.31}\texttt {delete\_freehand\_drawings}}{19}{subsection.1.31}%
+\contentsline {subsection}{\numberline {1.32}\texttt {delete\_highlight\_under\_cursor}}{19}{subsection.1.32}%
+\contentsline {subsection}{\numberline {1.33}\texttt {delete\_portal, delete\_bookmark, delete\_highlight}}{19}{subsection.1.33}%
+\contentsline {subsection}{\numberline {1.34}\texttt {delete\_visible\_bookmark}}{19}{subsection.1.34}%
+\contentsline {subsection}{\numberline {1.35}\texttt {documentation\_search}}{20}{subsection.1.35}%
+\contentsline {subsection}{\numberline {1.36}\texttt {donate}}{20}{subsection.1.36}%
+\contentsline {subsection}{\numberline {1.37}\texttt {download\_paper\_with\_url, download\_clipboard\_url}}{20}{subsection.1.37}%
+\contentsline {subsection}{\numberline {1.38}\texttt {download\_link}}{20}{subsection.1.38}%
+\contentsline {subsection}{\numberline {1.39}\texttt {download\_overview\_paper, download\_overview\_paper\_no\_prompt}}{20}{subsection.1.39}%
+\contentsline {subsection}{\numberline {1.40}\texttt {download\_paper\_under\_cursor}}{21}{subsection.1.40}%
+\contentsline {subsection}{\numberline {1.41}\texttt {download\_paper\_with\_name}}{21}{subsection.1.41}%
+\contentsline {subsection}{\numberline {1.42}\texttt {download\_unsynced\_files}}{21}{subsection.1.42}%
+\contentsline {subsection}{\numberline {1.43}\texttt {edit\_portal}}{21}{subsection.1.43}%
+\contentsline {subsection}{\numberline {1.44}\texttt {edit\_selected\_bookmark}}{21}{subsection.1.44}%
+\contentsline {subsection}{\numberline {1.45}\texttt {edit\_selected\_highlight}}{22}{subsection.1.45}%
+\contentsline {subsection}{\numberline {1.46}\texttt {edit\_visible\_bookmark}}{22}{subsection.1.46}%
+\contentsline {subsection}{\numberline {1.47}\texttt {embed\_annotations}}{22}{subsection.1.47}%
+\contentsline {subsection}{\numberline {1.48}\texttt {embed\_selected\_annotation}}{22}{subsection.1.48}%
+\contentsline {subsection}{\numberline {1.49}\texttt {enter\_password}}{22}{subsection.1.49}%
+\contentsline {subsection}{\numberline {1.50}\texttt {enter\_visual\_mark\_mode}}{23}{subsection.1.50}%
+\contentsline {subsection}{\numberline {1.51}\texttt {escape}}{23}{subsection.1.51}%
+\contentsline {subsection}{\numberline {1.52}\texttt {execute, execute\_shell\_command}}{23}{subsection.1.52}%
+\contentsline {subsection}{\numberline {1.53}\texttt {execute\_macro}}{23}{subsection.1.53}%
+\contentsline {subsection}{\numberline {1.54}\texttt {exit\_ruler\_mode, close\_visual\_mark}}{23}{subsection.1.54}%
+\contentsline {subsection}{\numberline {1.55}\texttt {export}}{24}{subsection.1.55}%
+\contentsline {subsection}{\numberline {1.56}\texttt {external\_search}}{24}{subsection.1.56}%
+\contentsline {subsection}{\numberline {1.57}\texttt {extract\_table, extract\_table\_with\_prompt}}{24}{subsection.1.57}%
+\contentsline {subsection}{\numberline {1.58}\texttt {find\_references}}{24}{subsection.1.58}%
+\contentsline {subsection}{\numberline {1.59}\texttt {fit\_epub\_to\_window}}{24}{subsection.1.59}%
+\contentsline {subsection}{\numberline {1.60}\texttt {fit\_to\_overview\_width}}{25}{subsection.1.60}%
+\contentsline {subsection}{\numberline {1.61}\texttt {fit\_to\_page\_width\_ratio}}{25}{subsection.1.61}%
+\contentsline {subsection}{\numberline {1.62}\texttt {fit\_to\_page\_width, fit\_to\_page\_height, fit\_to\_page\_width\_smart, fit\_to\_page\_height\_smart, fit\_to\_page\_smart}}{25}{subsection.1.62}%
+\contentsline {subsection}{\numberline {1.63}\texttt {focus\_text}}{25}{subsection.1.63}%
+\contentsline {subsection}{\numberline {1.64}\texttt {force\_download\_annotations}}{25}{subsection.1.64}%
+\contentsline {subsection}{\numberline {1.65}\texttt {framebuffer\_screenshot}}{25}{subsection.1.65}%
+\contentsline {subsection}{\numberline {1.66}\texttt {fulltext\_search\_current\_document}}{25}{subsection.1.66}%
+\contentsline {subsection}{\numberline {1.67}\texttt {fuzzy\_search}}{26}{subsection.1.67}%
+\contentsline {subsection}{\numberline {1.68}\texttt {generic\_delete}}{26}{subsection.1.68}%
+\contentsline {subsection}{\numberline {1.69}\texttt {generic\_select}}{26}{subsection.1.69}%
+\contentsline {subsection}{\numberline {1.70}\texttt {get\_annotations\_json}}{26}{subsection.1.70}%
+\contentsline {subsection}{\numberline {1.71}\texttt {get\_config\_no\_dialog}}{27}{subsection.1.71}%
+\contentsline {subsection}{\numberline {1.72}\texttt {get\_config\_value}}{27}{subsection.1.72}%
+\contentsline {subsection}{\numberline {1.73}\texttt {get\_mode\_string}}{27}{subsection.1.73}%
+\contentsline {subsection}{\numberline {1.74}\texttt {get\_overview\_paper\_name}}{27}{subsection.1.74}%
+\contentsline {subsection}{\numberline {1.75}\texttt {get\_paper\_name}}{28}{subsection.1.75}%
+\contentsline {subsection}{\numberline {1.76}\texttt {get\_state\_json}}{28}{subsection.1.76}%
+\contentsline {subsection}{\numberline {1.77}\texttt {goto\_beginning, goto\_end}}{28}{subsection.1.77}%
+\contentsline {subsection}{\numberline {1.78}\texttt {goto\_bookmark, goto\_bookmark\_g}}{28}{subsection.1.78}%
+\contentsline {subsection}{\numberline {1.79}\texttt {goto\_definition}}{29}{subsection.1.79}%
+\contentsline {subsection}{\numberline {1.80}\texttt {goto\_highlight, goto\_highlight\_g}}{29}{subsection.1.80}%
+\contentsline {subsection}{\numberline {1.81}\texttt {goto\_left, goto\_right, goto\_left\_smart, goto\_right\_smart}}{29}{subsection.1.81}%
+\contentsline {subsection}{\numberline {1.82}\texttt {goto\_mark}}{29}{subsection.1.82}%
+\contentsline {subsection}{\numberline {1.83}\texttt {goto\_next\_highlight, goto\_prev\_highlight}}{30}{subsection.1.83}%
+\contentsline {subsection}{\numberline {1.84}\texttt {goto\_next\_highlight\_of\_type, goto\_prev\_highlight\_of\_type}}{30}{subsection.1.84}%
+\contentsline {subsection}{\numberline {1.85}\texttt {goto\_overview}}{30}{subsection.1.85}%
+\contentsline {subsection}{\numberline {1.86}\texttt {goto\_page\_with\_label}}{30}{subsection.1.86}%
+\contentsline {subsection}{\numberline {1.87}\texttt {goto\_page\_with\_page\_number}}{30}{subsection.1.87}%
+\contentsline {subsection}{\numberline {1.88}\texttt {goto\_portal}}{30}{subsection.1.88}%
+\contentsline {subsection}{\numberline {1.89}\texttt {goto\_portal\_list}}{31}{subsection.1.89}%
+\contentsline {subsection}{\numberline {1.90}\texttt {goto\_selected\_text}}{31}{subsection.1.90}%
+\contentsline {subsection}{\numberline {1.91}\texttt {goto\_tab}}{31}{subsection.1.91}%
+\contentsline {subsection}{\numberline {1.92}\texttt {goto\_toc}}{31}{subsection.1.92}%
+\contentsline {subsection}{\numberline {1.93}\texttt {goto\_top\_of\_page, goto\_bottom\_of\_page}}{31}{subsection.1.93}%
+\contentsline {subsection}{\numberline {1.94}\texttt {goto\_window}}{31}{subsection.1.94}%
+\contentsline {subsection}{\numberline {1.95}\texttt {import}}{31}{subsection.1.95}%
+\contentsline {subsection}{\numberline {1.96}\texttt {import\_annotations}}{32}{subsection.1.96}%
+\contentsline {subsection}{\numberline {1.97}\texttt {import\_local\_database, import\_shared\_database}}{32}{subsection.1.97}%
+\contentsline {subsection}{\numberline {1.98}\texttt {increase\_freetext\_font\_size, decrease\_freetext\_font\_size}}{32}{subsection.1.98}%
+\contentsline {subsection}{\numberline {1.99}\texttt {increase\_tts\_rate, decrease\_tts\_rate}}{32}{subsection.1.99}%
+\contentsline {subsection}{\numberline {1.100}\texttt {keyboard\_overview}}{32}{subsection.1.100}%
+\contentsline {subsection}{\numberline {1.101}\texttt {keyboard\_select}}{32}{subsection.1.101}%
+\contentsline {subsection}{\numberline {1.102}\texttt {keyboard\_select\_line}}{33}{subsection.1.102}%
+\contentsline {subsection}{\numberline {1.103}\texttt {keyboard\_smart\_jump}}{33}{subsection.1.103}%
+\contentsline {subsection}{\numberline {1.104}\texttt {keys}}{33}{subsection.1.104}%
+\contentsline {subsection}{\numberline {1.105}\texttt {keys\_user}}{33}{subsection.1.105}%
+\contentsline {subsection}{\numberline {1.106}\texttt {keys\_user\_all}}{33}{subsection.1.106}%
+\contentsline {subsection}{\numberline {1.107}\texttt {load\_annotations\_file, import\_annotations\_file\_sync\_deleted}}{34}{subsection.1.107}%
+\contentsline {subsection}{\numberline {1.108}\texttt {load\_scratchpad}}{34}{subsection.1.108}%
+\contentsline {subsection}{\numberline {1.109}\texttt {login}}{34}{subsection.1.109}%
+\contentsline {subsection}{\numberline {1.110}\texttt {login\_using\_access\_token}}{34}{subsection.1.110}%
+\contentsline {subsection}{\numberline {1.111}\texttt {logout}}{34}{subsection.1.111}%
+\contentsline {subsection}{\numberline {1.112}\texttt {maximize}}{35}{subsection.1.112}%
+\contentsline {subsection}{\numberline {1.113}\texttt {move\_left, move\_right, move\_down, move\_up}}{35}{subsection.1.113}%
+\contentsline {subsection}{\numberline {1.114}\texttt {move\_left\_in\_overview, move\_right\_in\_overview}}{35}{subsection.1.114}%
+\contentsline {subsection}{\numberline {1.115}\texttt {move\_ruler\_up, move\_ruler\_down, move\_visual\_mark\_up, move\_visual\_mark\_down}}{35}{subsection.1.115}%
+\contentsline {subsection}{\numberline {1.116}\texttt {move\_ruler\_to\_next\_block, move\_ruler\_to\_prev\_block}}{35}{subsection.1.116}%
+\contentsline {subsection}{\numberline {1.117}\texttt {move\_ruler\_next, move\_ruler\_prev, move\_visual\_mark\_next, move\_visual\_mark\_prev}}{36}{subsection.1.117}%
+\contentsline {subsection}{\numberline {1.118}\texttt {move\_window, set\_window\_rect}}{36}{subsection.1.118}%
+\contentsline {subsection}{\numberline {1.119}\texttt {new\_window}}{36}{subsection.1.119}%
+\contentsline {subsection}{\numberline {1.120}\texttt {next\_overview, previous\_overview}}{36}{subsection.1.120}%
+\contentsline {subsection}{\numberline {1.121}\texttt {next\_chapter, prev\_chapter}}{36}{subsection.1.121}%
+\contentsline {subsection}{\numberline {1.122}\texttt {next\_item, previous\_item}}{36}{subsection.1.122}%
+\contentsline {subsection}{\numberline {1.123}\texttt {next\_page, previous\_page}}{37}{subsection.1.123}%
+\contentsline {subsection}{\numberline {1.124}\texttt {next\_state, prev\_state}}{37}{subsection.1.124}%
+\contentsline {subsection}{\numberline {1.125}\texttt {noop}}{37}{subsection.1.125}%
+\contentsline {subsection}{\numberline {1.126}\texttt {open\_containing\_folder}}{37}{subsection.1.126}%
+\contentsline {subsection}{\numberline {1.127}\texttt {open\_document}}{37}{subsection.1.127}%
+\contentsline {subsection}{\numberline {1.128}\texttt {open\_document\_embedded}}{37}{subsection.1.128}%
+\contentsline {subsection}{\numberline {1.129}\texttt {open\_document\_embedded\_from\_current\_path}}{37}{subsection.1.129}%
+\contentsline {subsection}{\numberline {1.130}\texttt {open\_external\_text\_editor}}{38}{subsection.1.130}%
+\contentsline {subsection}{\numberline {1.131}\texttt {open\_last\_document}}{38}{subsection.1.131}%
+\contentsline {subsection}{\numberline {1.132}\texttt {open\_link}}{38}{subsection.1.132}%
+\contentsline {subsection}{\numberline {1.133}\texttt {open\_local\_database\_containing\_folder, open\_shared\_database\_containing\_folder}}{38}{subsection.1.133}%
+\contentsline {subsection}{\numberline {1.134}\texttt {open\_prev\_doc}}{38}{subsection.1.134}%
+\contentsline {subsection}{\numberline {1.135}\texttt {open\_server\_only\_file}}{38}{subsection.1.135}%
+\contentsline {subsection}{\numberline {1.136}\texttt {overview\_definition}}{39}{subsection.1.136}%
+\contentsline {subsection}{\numberline {1.137}\texttt {overview\_link}}{39}{subsection.1.137}%
+\contentsline {subsection}{\numberline {1.138}\texttt {overview\_next\_item, overview\_prev\_item}}{39}{subsection.1.138}%
+\contentsline {subsection}{\numberline {1.139}\texttt {overview\_to\_portal}}{39}{subsection.1.139}%
+\contentsline {subsection}{\numberline {1.140}\texttt {overview\_to\_ruler\_portal, goto\_ruler\_portal}}{39}{subsection.1.140}%
+\contentsline {subsection}{\numberline {1.141}\texttt {overview\_under\_cursor}}{40}{subsection.1.141}%
+\contentsline {subsection}{\numberline {1.142}\texttt {pin\_overview\_as\_portal}}{40}{subsection.1.142}%
+\contentsline {subsection}{\numberline {1.143}\texttt {portal}}{40}{subsection.1.143}%
+\contentsline {subsection}{\numberline {1.144}\texttt {portal\_to\_definition}}{40}{subsection.1.144}%
+\contentsline {subsection}{\numberline {1.145}\texttt {portal\_to\_link}}{41}{subsection.1.145}%
+\contentsline {subsection}{\numberline {1.146}\texttt {portal\_to\_overview}}{41}{subsection.1.146}%
+\contentsline {subsection}{\numberline {1.147}\texttt {prefs}}{41}{subsection.1.147}%
+\contentsline {subsection}{\numberline {1.148}\texttt {prefs\_user}}{41}{subsection.1.148}%
+\contentsline {subsection}{\numberline {1.149}\texttt {prefs\_user\_all}}{41}{subsection.1.149}%
+\contentsline {subsection}{\numberline {1.150}\texttt {quit}}{42}{subsection.1.150}%
+\contentsline {subsection}{\numberline {1.151}\texttt {regex\_search}}{42}{subsection.1.151}%
+\contentsline {subsection}{\numberline {1.152}\texttt {reload}}{42}{subsection.1.152}%
+\contentsline {subsection}{\numberline {1.153}\texttt {reload\_config}}{42}{subsection.1.153}%
+\contentsline {subsection}{\numberline {1.154}\texttt {reload\_no\_flicker}}{43}{subsection.1.154}%
+\contentsline {subsection}{\numberline {1.155}\texttt {rename}}{43}{subsection.1.155}%
+\contentsline {subsection}{\numberline {1.156}\texttt {resume\_to\_server}}{43}{subsection.1.156}%
+\contentsline {subsection}{\numberline {1.157}\texttt {resync\_document}}{43}{subsection.1.157}%
+\contentsline {subsection}{\numberline {1.158}\texttt {rotate\_clockwise, rotate\_counterclockwise}}{43}{subsection.1.158}%
+\contentsline {subsection}{\numberline {1.159}\texttt {ruler\_under\_cursor, visual\_mark\_under\_cursor}}{43}{subsection.1.159}%
+\contentsline {subsection}{\numberline {1.160}\texttt {ruler\_under\_selected\_point}}{44}{subsection.1.160}%
+\contentsline {subsection}{\numberline {1.161}\texttt {save\_scratchpad}}{44}{subsection.1.161}%
+\contentsline {subsection}{\numberline {1.162}\texttt {scan\_new\_files}}{44}{subsection.1.162}%
+\contentsline {subsection}{\numberline {1.163}\texttt {screenshot}}{44}{subsection.1.163}%
+\contentsline {subsection}{\numberline {1.164}\texttt {screen\_down, screen\_up}}{44}{subsection.1.164}%
+\contentsline {subsection}{\numberline {1.165}\texttt {scroll\_selected\_bookmark\_down, scroll\_selected\_bookmark\_up}}{44}{subsection.1.165}%
+\contentsline {subsection}{\numberline {1.166}\texttt {search, chapter\_search}}{44}{subsection.1.166}%
+\contentsline {subsection}{\numberline {1.167}\texttt {search\_all\_indexed\_documents}}{45}{subsection.1.167}%
+\contentsline {subsection}{\numberline {1.168}\texttt {select\_current\_search\_match}}{45}{subsection.1.168}%
+\contentsline {subsection}{\numberline {1.169}\texttt {select\_freehand\_drawings}}{45}{subsection.1.169}%
+\contentsline {subsection}{\numberline {1.170}\texttt {select\_rect}}{45}{subsection.1.170}%
+\contentsline {subsection}{\numberline {1.171}\texttt {select\_ruler\_text}}{45}{subsection.1.171}%
+\contentsline {subsection}{\numberline {1.172}\texttt {semantic\_search}}{45}{subsection.1.172}%
+\contentsline {subsection}{\numberline {1.173}\texttt {semantic\_search\_extractive}}{46}{subsection.1.173}%
+\contentsline {subsection}{\numberline {1.174}\texttt {set\_freehand\_alpha}}{46}{subsection.1.174}%
+\contentsline {subsection}{\numberline {1.175}\texttt {set\_freehand\_thickness}}{46}{subsection.1.175}%
+\contentsline {subsection}{\numberline {1.176}\texttt {set\_freehand\_type}}{46}{subsection.1.176}%
+\contentsline {subsection}{\numberline {1.177}\texttt {set\_mark}}{47}{subsection.1.177}%
+\contentsline {subsection}{\numberline {1.178}\texttt {set\_page\_offset}}{47}{subsection.1.178}%
+\contentsline {subsection}{\numberline {1.179}\texttt {set\_select\_highlight\_type}}{47}{subsection.1.179}%
+\contentsline {subsection}{\numberline {1.180}\texttt {set\_status\_string, clear\_status\_string}}{47}{subsection.1.180}%
+\contentsline {subsection}{\numberline {1.181}\texttt {set\_view\_state}}{47}{subsection.1.181}%
+\contentsline {subsection}{\numberline {1.182}\texttt {show\_context\_menu}}{48}{subsection.1.182}%
+\contentsline {subsection}{\numberline {1.183}\texttt {show\_custom\_context\_menu}}{48}{subsection.1.183}%
+\contentsline {subsection}{\numberline {1.184}\texttt {show\_custom\_options}}{48}{subsection.1.184}%
+\contentsline {subsection}{\numberline {1.185}\texttt {show\_text\_prompt}}{48}{subsection.1.185}%
+\contentsline {subsection}{\numberline {1.186}\texttt {show\_touch\_draw\_controls}}{49}{subsection.1.186}%
+\contentsline {subsection}{\numberline {1.187}\texttt {show\_touch\_highlight\_type\_select}}{49}{subsection.1.187}%
+\contentsline {subsection}{\numberline {1.188}\texttt {show\_touch\_main\_menu}}{49}{subsection.1.188}%
+\contentsline {subsection}{\numberline {1.189}\texttt {show\_touch\_page\_select}}{49}{subsection.1.189}%
+\contentsline {subsection}{\numberline {1.190}\texttt {show\_touch\_settings\_menu}}{49}{subsection.1.190}%
+\contentsline {subsection}{\numberline {1.191}\texttt {show\_touch\_ui\_for\_config}}{49}{subsection.1.191}%
+\contentsline {subsection}{\numberline {1.192}\texttt {smart\_jump\_under\_cursor}}{50}{subsection.1.192}%
+\contentsline {subsection}{\numberline {1.193}\texttt {move\_down\_smooth, move\_up\_smooth}}{50}{subsection.1.193}%
+\contentsline {subsection}{\numberline {1.194}\texttt {start\_mobile\_text\_selection\_at\_point}}{50}{subsection.1.194}%
+\contentsline {subsection}{\numberline {1.195}\texttt {start\_reading, stop\_reading}}{50}{subsection.1.195}%
+\contentsline {subsection}{\numberline {1.196}\texttt {start\_reading\_high\_quality}}{50}{subsection.1.196}%
+\contentsline {subsection}{\numberline {1.197}\texttt {synchronize}}{50}{subsection.1.197}%
+\contentsline {subsection}{\numberline {1.198}\texttt {synctex\_forward\_search}}{51}{subsection.1.198}%
+\contentsline {subsection}{\numberline {1.199}\texttt {synctex\_under\_cursor}}{51}{subsection.1.199}%
+\contentsline {subsection}{\numberline {1.200}\texttt {synctex\_under\_ruler}}{51}{subsection.1.200}%
+\contentsline {subsection}{\numberline {1.201}\texttt {sync\_current\_file\_location}}{51}{subsection.1.201}%
+\contentsline {subsection}{\numberline {1.202}\texttt {test\_command, export\_config\_names, open\_selected\_url, toggle\_smooth\_scroll\_mode, export\_python\_api, print\_undocumented\_commands, print\_non\_default\_configs, export\_default\_config\_file, unregister\_url\_handler, toggle\_one\_window, register\_url\_handler, export\_command\_names, goto\_begining, send\_symbol, open\_all\_docs, print\_undocumented\_configs, toggle\_show\_last\_command, move\_selected\_bookmark, type\_text}}{52}{subsection.1.202}%
+\contentsline {subsection}{\numberline {1.203}\texttt {toggle\_text\_mark, move\_text\_mark\_forward, move\_text\_mark\_backward, move\_text\_mark\_forward\_word, move\_text\_mark\_backward\_word, move\_text\_mark\_down, move\_text\_mark\_up}}{52}{subsection.1.203}%
+\contentsline {subsection}{\numberline {1.204}\texttt {toggle\_custom\_color}}{52}{subsection.1.204}%
+\contentsline {subsection}{\numberline {1.205}\texttt {toggle\_dark\_mode}}{52}{subsection.1.205}%
+\contentsline {subsection}{\numberline {1.206}\texttt {toggle\_drawing\_mask}}{53}{subsection.1.206}%
+\contentsline {subsection}{\numberline {1.207}\texttt {toggle\_fastread}}{53}{subsection.1.207}%
+\contentsline {subsection}{\numberline {1.208}\texttt {toggle\_freehand\_drawing\_mode}}{53}{subsection.1.208}%
+\contentsline {subsection}{\numberline {1.209}\texttt {toggle\_fullscreen}}{53}{subsection.1.209}%
+\contentsline {subsection}{\numberline {1.210}\texttt {toggle\_highlight\_links}}{53}{subsection.1.210}%
+\contentsline {subsection}{\numberline {1.211}\texttt {toggle\_horizontal\_scroll\_lock}}{53}{subsection.1.211}%
+\contentsline {subsection}{\numberline {1.212}\texttt {toggle\_line\_select\_cursor}}{54}{subsection.1.212}%
+\contentsline {subsection}{\numberline {1.213}\texttt {toggle\_menu\_collapse}}{54}{subsection.1.213}%
+\contentsline {subsection}{\numberline {1.214}\texttt {toggle\_mouse\_drag\_mode}}{54}{subsection.1.214}%
+\contentsline {subsection}{\numberline {1.215}\texttt {toggle\_pdf\_annotations}}{54}{subsection.1.215}%
+\contentsline {subsection}{\numberline {1.216}\texttt {toggle\_pen\_drawing\_mode}}{54}{subsection.1.216}%
+\contentsline {subsection}{\numberline {1.217}\texttt {toggle\_presentation\_mode, turn\_on\_presentation\_mode}}{54}{subsection.1.217}%
+\contentsline {subsection}{\numberline {1.218}\texttt {toggle\_reading}}{54}{subsection.1.218}%
+\contentsline {subsection}{\numberline {1.219}\texttt {toggle\_rect\_hints}}{54}{subsection.1.219}%
+\contentsline {subsection}{\numberline {1.220}\texttt {toggle\_ruler\_scroll\_mode, toggle\_visual\_scroll}}{55}{subsection.1.220}%
+\contentsline {subsection}{\numberline {1.221}\texttt {toggle\_scratchpad\_mode}}{55}{subsection.1.221}%
+\contentsline {subsection}{\numberline {1.222}\texttt {toggle\_scrollbar}}{55}{subsection.1.222}%
+\contentsline {subsection}{\numberline {1.223}\texttt {toggle\_select\_highlight}}{55}{subsection.1.223}%
+\contentsline {subsection}{\numberline {1.224}\texttt {toggle\_statusbar}}{55}{subsection.1.224}%
+\contentsline {subsection}{\numberline {1.225}\texttt {toggle\_synctex, turn\_on\_synctex}}{55}{subsection.1.225}%
+\contentsline {subsection}{\numberline {1.226}\texttt {toggle\_titlebar}}{56}{subsection.1.226}%
+\contentsline {subsection}{\numberline {1.227}\texttt {toggle\_two\_page\_mode}}{56}{subsection.1.227}%
+\contentsline {subsection}{\numberline {1.228}\texttt {toggle\_typing\_mode}}{56}{subsection.1.228}%
+\contentsline {subsection}{\numberline {1.229}\texttt {toggle\_window\_configuration}}{56}{subsection.1.229}%
+\contentsline {subsection}{\numberline {1.230}\texttt {turn\_on\_all\_drawings, turn\_off\_all\_drawings}}{56}{subsection.1.230}%
+\contentsline {subsection}{\numberline {1.231}\texttt {undo\_delete}}{56}{subsection.1.231}%
+\contentsline {subsection}{\numberline {1.232}\texttt {undo\_drawing}}{56}{subsection.1.232}%
+\contentsline {subsection}{\numberline {1.233}\texttt {upload\_current\_file}}{57}{subsection.1.233}%
+\contentsline {subsection}{\numberline {1.234}\texttt {wait}}{57}{subsection.1.234}%
+\contentsline {subsection}{\numberline {1.235}\texttt {wait\_for\_renders\_to\_finish, wait\_for\_search\_to\_finish, wait\_for\_indexing\_to\_finish, wait\_for\_downloads\_to\_finish}}{57}{subsection.1.235}%
+\contentsline {subsection}{\numberline {1.236}\texttt {write\_annotations\_file}}{57}{subsection.1.236}%
+\contentsline {subsection}{\numberline {1.237}\texttt {zoom\_in, zoom\_out, zoom\_in\_cursor, zoom\_out\_cursor}}{57}{subsection.1.237}%
+\contentsline {subsection}{\numberline {1.238}\texttt {zoom\_in\_overview, zoom\_out\_overview}}{58}{subsection.1.238}%
+\contentsline {section}{\numberline {2}Configs}{58}{section.2}%
+\contentsline {subsection}{\numberline {2.1}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {adjust\_annotation\_colors\_for\_dark\_mode}}{58}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {align\_link\_dest\_to\_top}}{58}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {allow\_horizontal\_drag\_when\_document\_is\_small}}{58}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {allow\_main\_view\_scroll\_while\_in\_overview}}{58}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {annotations\_directory}}{59}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {autocenter\_ruler}}{59}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {automatically\_download\_matching\_paper\_name}}{59}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {automatically\_index\_documents\_for\_fulltext\_search}}{59}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {automatically\_update\_checksum\_when\_document\_is\_changed}}{59}{subsection.2.9}%
+\contentsline {subsection}{\numberline {2.10}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {automatically\_upload\_portal\_destination\_for\_synced\_documents}}{60}{subsection.2.10}%
+\contentsline {subsection}{\numberline {2.11}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {auto\_login\_on\_startup}}{60}{subsection.2.11}%
+\contentsline {subsection}{\numberline {2.12}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {auto\_rename\_downloaded\_papers}}{60}{subsection.2.12}%
+\contentsline {subsection}{\numberline {2.13}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {background\_bookmarks\_pixel\_budget}}{60}{subsection.2.13}%
+\contentsline {subsection}{\numberline {2.14}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {background\_color, custom\_color\_mode\_empty\_background\_color, dark\_mode\_background\_color}}{60}{subsection.2.14}%
+\contentsline {subsection}{\numberline {2.15}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {box\_highlight\_bookmark\_transparency}}{60}{subsection.2.15}%
+\contentsline {subsection}{\numberline {2.16}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {case\_sensitive\_search}}{60}{subsection.2.16}%
+\contentsline {subsection}{\numberline {2.17}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {check\_for\_updates\_on\_startup}}{61}{subsection.2.17}%
+\contentsline {subsection}{\numberline {2.18}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {shift\_click\_command, control\_click\_command, command\_click\_command, hold\_middle\_click\_command, tablet\_pen\_click\_command, tablet\_pen\_double\_click\_command, right\_click\_command, middle\_click\_command, shift\_middle\_click\_command, control\_middle\_click\_command, command\_middle\_click\_command, alt\_middle\_click\_command, shift\_right\_click\_command, control\_right\_click\_command, command\_right\_click\_command, alt\_click\_command, alt\_right\_click\_command}}{61}{subsection.2.18}%
+\contentsline {subsection}{\numberline {2.19}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {collapsed\_toc}}{61}{subsection.2.19}%
+\contentsline {subsection}{\numberline {2.20}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {context\_menu\_items, context\_menu\_items\_for\_links, context\_menu\_items\_for\_selected\_text, context\_menu\_items\_for\_highlights, context\_menu\_items\_for\_bookmarks, context\_menu\_items\_for\_overview}}{61}{subsection.2.20}%
+\contentsline {subsection}{\numberline {2.21}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {create\_table\_of\_contents\_if\_not\_exists}}{62}{subsection.2.21}%
+\contentsline {subsection}{\numberline {2.22}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {custom\_color\_contrast}}{62}{subsection.2.22}%
+\contentsline {subsection}{\numberline {2.23}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {custom\_text\_color, custom\_background\_color}}{62}{subsection.2.23}%
+\contentsline {subsection}{\numberline {2.24}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {dark\_mode\_contrast}}{62}{subsection.2.24}%
+\contentsline {subsection}{\numberline {2.25}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {default\_open\_file\_path}}{63}{subsection.2.25}%
+\contentsline {subsection}{\numberline {2.26}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {documentation\_font\_size}}{63}{subsection.2.26}%
+\contentsline {subsection}{\numberline {2.27}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {document\_location\_mismatch\_strategy}}{63}{subsection.2.27}%
+\contentsline {subsection}{\numberline {2.28}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {dont\_center\_if\_synctex\_rect\_is\_visible}}{63}{subsection.2.28}%
+\contentsline {subsection}{\numberline {2.29}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {epub\_css}}{63}{subsection.2.29}%
+\contentsline {subsection}{\numberline {2.30}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {epub\_width, epub\_height, epub\_font\_size}}{63}{subsection.2.30}%
+\contentsline {subsection}{\numberline {2.31}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {exact\_highlight\_select}}{63}{subsection.2.31}%
+\contentsline {subsection}{\numberline {2.32}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {external\_text\_editor\_command}}{64}{subsection.2.32}%
+\contentsline {subsection}{\numberline {2.33}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {extract\_table\_prompt}}{64}{subsection.2.33}%
+\contentsline {subsection}{\numberline {2.34}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {fill\_textbar\_with\_selected\_text}}{64}{subsection.2.34}%
+\contentsline {subsection}{\numberline {2.35}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {fit\_to\_page\_width\_ratio}}{64}{subsection.2.35}%
+\contentsline {subsection}{\numberline {2.36}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {flat\_toc}}{65}{subsection.2.36}%
+\contentsline {subsection}{\numberline {2.37}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {font\_size}}{65}{subsection.2.37}%
+\contentsline {subsection}{\numberline {2.38}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {freetext\_bookmark\_color}}{65}{subsection.2.38}%
+\contentsline {subsection}{\numberline {2.39}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {freetext\_bookmark\_font\_size}}{65}{subsection.2.39}%
+\contentsline {subsection}{\numberline {2.40}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {fuzzy\_searching}}{65}{subsection.2.40}%
+\contentsline {subsection}{\numberline {2.41}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {gamma}}{66}{subsection.2.41}%
+\contentsline {subsection}{\numberline {2.42}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {hide\_overlapping\_link\_labels}}{66}{subsection.2.42}%
+\contentsline {subsection}{\numberline {2.43}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {highlight\_color\_[a-z]}}{66}{subsection.2.43}%
+\contentsline {subsection}{\numberline {2.44}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {highlight\_links}}{66}{subsection.2.44}%
+\contentsline {subsection}{\numberline {2.45}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {highlight\_middle\_click}}{66}{subsection.2.45}%
+\contentsline {subsection}{\numberline {2.46}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {hover\_overview}}{66}{subsection.2.46}%
+\contentsline {subsection}{\numberline {2.47}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {ignore\_scroll\_events}}{67}{subsection.2.47}%
+\contentsline {subsection}{\numberline {2.48}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {ignore\_whitespace\_in\_presentation\_mode}}{67}{subsection.2.48}%
+\contentsline {subsection}{\numberline {2.49}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {incremental\_search}}{67}{subsection.2.49}%
+\contentsline {subsection}{\numberline {2.50}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {initial\_snapped\_dragging}}{67}{subsection.2.50}%
+\contentsline {subsection}{\numberline {2.51}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {inverse\_search\_command}}{67}{subsection.2.51}%
+\contentsline {subsection}{\numberline {2.52}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {inverted\_horizontal\_scrolling}}{67}{subsection.2.52}%
+\contentsline {subsection}{\numberline {2.53}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {invert\_selected\_text}}{68}{subsection.2.53}%
+\contentsline {subsection}{\numberline {2.54}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {keyboard\_point\_selection}}{68}{subsection.2.54}%
+\contentsline {subsection}{\numberline {2.55}\textcolor {gray}{\texttt {[\texttt {color4}]}} \texttt {keyboard\_select\_background\_color, keyboard\_select\_text\_color, keyboard\_selected\_tag\_background\_color, keyboard\_selected\_tag\_text\_color}}{68}{subsection.2.55}%
+\contentsline {subsection}{\numberline {2.56}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {keyboard\_select\_font\_size}}{68}{subsection.2.56}%
+\contentsline {subsection}{\numberline {2.57}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {linear\_filter}}{68}{subsection.2.57}%
+\contentsline {subsection}{\numberline {2.58}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {link\_highlight\_color}}{68}{subsection.2.58}%
+\contentsline {subsection}{\numberline {2.59}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {max\_created\_toc\_size}}{69}{subsection.2.59}%
+\contentsline {subsection}{\numberline {2.60}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {menu\_matched\_search\_highlight}}{69}{subsection.2.60}%
+\contentsline {subsection}{\numberline {2.61}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {menu\_screen\_width\_ratio, menu\_screen\_height\_ratio}}{69}{subsection.2.61}%
+\contentsline {subsection}{\numberline {2.62}\textcolor {gray}{\texttt {[\texttt {symbol}]}} \texttt {middle\_click\_search\_engine, shift\_middle\_click\_search\_engine}}{69}{subsection.2.62}%
+\contentsline {subsection}{\numberline {2.63}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {move\_screen\_ratio, move\_screen\_percentage}}{70}{subsection.2.63}%
+\contentsline {subsection}{\numberline {2.64}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {numeric\_tags}}{70}{subsection.2.64}%
+\contentsline {subsection}{\numberline {2.65}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {num\_cached\_pages}}{70}{subsection.2.65}%
+\contentsline {subsection}{\numberline {2.66}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {num\_prerendered\_next\_slides, num\_prerendered\_prev\_slides}}{70}{subsection.2.66}%
+\contentsline {subsection}{\numberline {2.67}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {num\_two\_page\_columns}}{70}{subsection.2.67}%
+\contentsline {subsection}{\numberline {2.68}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {overview\_reference\_highlight\_color}}{71}{subsection.2.68}%
+\contentsline {subsection}{\numberline {2.69}\textcolor {gray}{\texttt {[\texttt {int/color3}]}} \texttt {page\_separator\_width, page\_separator\_color}}{71}{subsection.2.69}%
+\contentsline {subsection}{\numberline {2.70}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {page\_space\_x, page\_space\_y}}{71}{subsection.2.70}%
+\contentsline {subsection}{\numberline {2.71}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {papers\_folder\_path}}{71}{subsection.2.71}%
+\contentsline {subsection}{\numberline {2.72}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {paper\_download\_should\_create\_portal}}{71}{subsection.2.72}%
+\contentsline {subsection}{\numberline {2.73}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {prerendered\_page\_count}}{71}{subsection.2.73}%
+\contentsline {subsection}{\numberline {2.74}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {prerender\_next\_page\_presentation}}{72}{subsection.2.74}%
+\contentsline {subsection}{\numberline {2.75}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {preserve\_image\_colors\_in\_dark\_mode, inverted\_preserved\_image\_colors}}{72}{subsection.2.75}%
+\contentsline {subsection}{\numberline {2.76}\textcolor {gray}{\texttt {[\texttt {color4/color3}]}} \texttt {question\_bookmark\_background\_color, question\_bookmark\_text\_color}}{72}{subsection.2.76}%
+\contentsline {subsection}{\numberline {2.77}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {real\_page\_separation}}{72}{subsection.2.77}%
+\contentsline {subsection}{\numberline {2.78}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {reload\_interval\_miliseconds}}{72}{subsection.2.78}%
+\contentsline {subsection}{\numberline {2.79}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {render\_freetext\_borders}}{73}{subsection.2.79}%
+\contentsline {subsection}{\numberline {2.80}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {render\_pdf\_annotations}}{73}{subsection.2.80}%
+\contentsline {subsection}{\numberline {2.81}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {resize\_command}}{73}{subsection.2.81}%
+\contentsline {subsection}{\numberline {2.82}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {right\_click\_context\_menu}}{73}{subsection.2.82}%
+\contentsline {subsection}{\numberline {2.83}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {ruler\_auto\_move\_sensitivity}}{73}{subsection.2.83}%
+\contentsline {subsection}{\numberline {2.84}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {ruler\_auto\_move\_threshold\_distance}}{74}{subsection.2.84}%
+\contentsline {subsection}{\numberline {2.85}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {ruler\_color}}{74}{subsection.2.85}%
+\contentsline {subsection}{\numberline {2.86}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {ruler\_display\_mode}}{74}{subsection.2.86}%
+\contentsline {subsection}{\numberline {2.87}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {ruler\_marker\_color}}{74}{subsection.2.87}%
+\contentsline {subsection}{\numberline {2.88}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {ruler\_next\_page\_end\_pos, ruler\_next\_page\_begin\_pos}}{74}{subsection.2.88}%
+\contentsline {subsection}{\numberline {2.89}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {ruler\_padding, ruler\_x\_padding}}{75}{subsection.2.89}%
+\contentsline {subsection}{\numberline {2.90}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {ruler\_pixel\_width}}{75}{subsection.2.90}%
+\contentsline {subsection}{\numberline {2.91}\textcolor {gray}{\texttt {[\texttt {color4}]}} \texttt {ruler\_slit\_color}}{75}{subsection.2.91}%
+\contentsline {subsection}{\numberline {2.92}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {save\_externally\_edited\_text\_on\_focus}}{76}{subsection.2.92}%
+\contentsline {subsection}{\numberline {2.93}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {scrollview\_sensitivity}}{76}{subsection.2.93}%
+\contentsline {subsection}{\numberline {2.94}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {scroll\_zoom\_inc\_factor}}{76}{subsection.2.94}%
+\contentsline {subsection}{\numberline {2.95}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {search\_highlight\_color}}{76}{subsection.2.95}%
+\contentsline {subsection}{\numberline {2.96}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {search\_url\_[a-z]}}{76}{subsection.2.96}%
+\contentsline {subsection}{\numberline {2.97}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {server\_and\_local\_document\_mismatch\_threshold}}{77}{subsection.2.97}%
+\contentsline {subsection}{\numberline {2.98}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {shared\_database\_path}}{77}{subsection.2.98}%
+\contentsline {subsection}{\numberline {2.99}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {should\_highlight\_unselected\_search}}{77}{subsection.2.99}%
+\contentsline {subsection}{\numberline {2.100}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {should\_launch\_new\_window}}{77}{subsection.2.100}%
+\contentsline {subsection}{\numberline {2.101}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {should\_load\_tutorial\_when\_no\_other\_file}}{77}{subsection.2.101}%
+\contentsline {subsection}{\numberline {2.102}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {should\_warn\_about\_user\_key\_override}}{78}{subsection.2.102}%
+\contentsline {subsection}{\numberline {2.103}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {show\_most\_recent\_commands\_first}}{78}{subsection.2.103}%
+\contentsline {subsection}{\numberline {2.104}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {show\_reference\_overview\_highlights}}{78}{subsection.2.104}%
+\contentsline {subsection}{\numberline {2.105}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {single\_click\_selects\_words}}{78}{subsection.2.105}%
+\contentsline {subsection}{\numberline {2.106}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {sliced\_rendering}}{78}{subsection.2.106}%
+\contentsline {subsection}{\numberline {2.107}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {smartcase\_search}}{78}{subsection.2.107}%
+\contentsline {subsection}{\numberline {2.108}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {smooth\_move\_max\_velocity}}{79}{subsection.2.108}%
+\contentsline {subsection}{\numberline {2.109}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {smooth\_scroll\_mode}}{79}{subsection.2.109}%
+\contentsline {subsection}{\numberline {2.110}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {smooth\_scroll\_speed, smooth\_scroll\_drag}}{79}{subsection.2.110}%
+\contentsline {subsection}{\numberline {2.111}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {sort\_bookmarks\_by\_location}}{79}{subsection.2.111}%
+\contentsline {subsection}{\numberline {2.112}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {startup\_commands}}{79}{subsection.2.112}%
+\contentsline {subsection}{\numberline {2.113}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {status\_bar\_color, status\_bar\_text\_color}}{80}{subsection.2.113}%
+\contentsline {subsection}{\numberline {2.114}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {status\_bar\_font\_size}}{80}{subsection.2.114}%
+\contentsline {subsection}{\numberline {2.115}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {status\_bar\_format, right\_status\_bar\_format, status\_*\_command}}{80}{subsection.2.115}%
+\contentsline {subsection}{\numberline {2.116}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {status\_custom\_message\_[a-d], status\_custom\_message\_[a-d]\_command}}{82}{subsection.2.116}%
+\contentsline {subsection}{\numberline {2.117}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {status\_font}}{82}{subsection.2.117}%
+\contentsline {subsection}{\numberline {2.118}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {strike\_line\_width}}{82}{subsection.2.118}%
+\contentsline {subsection}{\numberline {2.119}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {super\_fast\_search}}{82}{subsection.2.119}%
+\contentsline {subsection}{\numberline {2.120}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {synctex\_highlight\_color}}{82}{subsection.2.120}%
+\contentsline {subsection}{\numberline {2.121}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {synctex\_highlight\_timeout}}{83}{subsection.2.121}%
+\contentsline {subsection}{\numberline {2.122}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {table\_extract\_behaviour}}{83}{subsection.2.122}%
+\contentsline {subsection}{\numberline {2.123}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {tag\_font\_face}}{83}{subsection.2.123}%
+\contentsline {subsection}{\numberline {2.124}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {text\_highlight\_color}}{83}{subsection.2.124}%
+\contentsline {subsection}{\numberline {2.125}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {toc\_jump\_align\_top}}{84}{subsection.2.125}%
+\contentsline {subsection}{\numberline {2.126}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {touchpad\_sensitivity}}{84}{subsection.2.126}%
+\contentsline {subsection}{\numberline {2.127}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {touch\_mode}}{84}{subsection.2.127}%
+\contentsline {subsection}{\numberline {2.128}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {back\_rect\_tap\_command, back\_rect\_hold\_command, forward\_rect\_tap\_command, forward\_rect\_hold\_command, middle\_left\_rect\_tap\_command, middle\_left\_rect\_hold\_command, middle\_right\_rect\_tap\_command, middle\_right\_rect\_hold\_command, ruler\_next\_tap\_command, ruler\_next\_hold\_command, ruler\_prev\_tap\_command, ruler\_prev\_hold\_command}}{84}{subsection.2.128}%
+\contentsline {subsection}{\numberline {2.129}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {tts\_rate}}{84}{subsection.2.129}%
+\contentsline {subsection}{\numberline {2.130}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {tts\_rate\_increment}}{85}{subsection.2.130}%
+\contentsline {subsection}{\numberline {2.131}\textcolor {gray}{\texttt {[\texttt {string}]}} \texttt {ui\_font}}{85}{subsection.2.131}%
+\contentsline {subsection}{\numberline {2.132}\textcolor {gray}{\texttt {[\texttt {rect}]}} \texttt {portrait\_back\_ui\_rect, portrait\_forward\_ui\_rect, landscape\_back\_ui\_rect, landscape\_forward\_ui\_rect, portrait\_visual\_mark\_next, portrait\_visual\_mark\_prev, landscape\_visual\_mark\_next, landscape\_visual\_mark\_prev, landscape\_middle\_right\_rect, portrait\_middle\_right\_rect, landscape\_middle\_left\_rect, portrait\_middle\_left\_rect}}{85}{subsection.2.132}%
+\contentsline {subsection}{\numberline {2.133}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {ui\_text\_color, ui\_background\_color, ui\_selected\_text\_color, ui\_selected\_background\_color}}{85}{subsection.2.133}%
+\contentsline {subsection}{\numberline {2.134}\textcolor {gray}{\texttt {[\texttt {color3}]}} \texttt {unselected\_search\_highlight\_color}}{85}{subsection.2.134}%
+\contentsline {subsection}{\numberline {2.135}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {use\_ruler\_to\_highlight\_synctex\_line}}{86}{subsection.2.135}%
+\contentsline {subsection}{\numberline {2.136}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {use\_system\_theme, use\_custom\_color\_as\_dark\_system\_theme}}{86}{subsection.2.136}%
+\contentsline {subsection}{\numberline {2.137}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {vertical\_move\_amount, horizontal\_move\_amount}}{86}{subsection.2.137}%
+\contentsline {subsection}{\numberline {2.138}\textcolor {gray}{\texttt {[\texttt {bool}]}} \texttt {wheel\_zoom\_in\_cursor}}{86}{subsection.2.138}%
+\contentsline {subsection}{\numberline {2.139}\textcolor {gray}{\texttt {[\texttt {int}]}} \texttt {main\_window\_size, helper\_window\_size, main\_window\_move, helper\_window\_move, single\_main\_window\_size, single\_main\_window\_move, overview\_size, overview\_offset}}{87}{subsection.2.139}%
+\contentsline {subsection}{\numberline {2.140}\textcolor {gray}{\texttt {[\texttt {float}]}} \texttt {zoom\_inc\_factor}}{87}{subsection.2.140}%
