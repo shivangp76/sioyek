@@ -139,7 +139,6 @@ extern int next_window_id;
 extern std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 
 extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;
-extern bool SHOULD_USE_MULTIPLE_MONITORS;
 extern bool MULTILINE_MENUS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
 extern bool SORT_HIGHLIGHTS_BY_LOCATION;

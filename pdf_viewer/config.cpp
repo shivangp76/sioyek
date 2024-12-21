@@ -181,7 +181,6 @@ int PERSIST_MILIES = 1000 * 60;
 int PAGE_PADDINGS = 0;
 int MAX_PENDING_REQUESTS = 31;
 bool FLAT_TABLE_OF_CONTENTS = false;
-bool SHOULD_USE_MULTIPLE_MONITORS = false;
 bool SHOULD_CHECK_FOR_LATEST_VERSION_ON_STARTUP = false;
 bool USE_SYSTEM_THEME = false;
 bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME = false;
@@ -1216,7 +1215,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"ignore_scroll_events", &IGNORE_SCROLL_EVENTS);
     add_bool(L"dont_center_if_synctex_rect_is_visible", &DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE);
     add_bool(L"gg_uses_labels", &GG_USES_LABELS);
-    add_bool(L"should_use_multiple_monitors", &SHOULD_USE_MULTIPLE_MONITORS);
     add_bool(L"paper_download_should_create_portal", &PAPER_DOWNLOAD_CREATE_PORTAL);
     add_bool(L"automatically_download_matching_paper_name", &AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME);
     add_bool(L"should_load_tutorial_when_no_other_file", &SHOULD_LOAD_TUTORIAL_WHEN_NO_OTHER_FILE);
