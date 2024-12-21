@@ -168,7 +168,8 @@ extern float HORIZONTAL_MOVE_AMOUNT;
 
 extern std::wstring TITLEBAR_FORMAT;
 extern Path standard_data_path;
-extern Path documentation_path;
+//extern Path documentation_path;
+Path documentation_path(L":/data/sioyek_documentation.pdf");
 extern Path default_config_path;
 extern Path default_keys_path;
 extern Path sioyek_js_path;
@@ -639,8 +640,9 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             int distance = current_window_pos.manhattan(ruler_moving_last_window_pos);
             ruler_moving_last_window_pos = current_window_pos;
             ruler_moving_distance_traveled += distance;
+            float auto_move_thresh = 1.0f / (1 - RULER_AUTO_MOVE_SENSITIVITY) * 100;
             int num_next = ruler_moving_distance_traveled /
-                static_cast<int>(std::max(RULER_AUTO_MOVE_SENSITIVITY, 1.0f));
+                static_cast<int>(std::max(auto_move_thresh, 1.0f));
             if (num_next > 0) {
                 ruler_moving_distance_traveled = 0;
             }

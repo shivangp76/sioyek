@@ -334,7 +334,7 @@ float KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO[] = { 0.0f , 0.0f, 0.0f, 1.0f };
 bool AUTOCENTER_VISUAL_SCROLL = false;
 // bool ALPHABETIC_LINK_TAGS = true;
 bool VIMTEX_WSL_FIX = false;
-float RULER_AUTO_MOVE_SENSITIVITY = 40.0f;
+float RULER_AUTO_MOVE_SENSITIVITY = 0.5f;
 float TTS_RATE = 0.0f;
 bool VERBOSE = false;
 bool FILL_TEXTBAR_WITH_SELECTED_TEXT = true;
@@ -1175,7 +1175,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"fit_to_page_width_ratio", &FIT_TO_PAGE_WIDTH_RATIO, FloatExtras{0.25f, 1.0f});
     add_float(L"ruler_padding", &RULER_PADDING, FloatExtras{0.0f, 10.0f});
     add_float(L"ruler_x_padding", &RULER_X_PADDING, FloatExtras{0.0f, 10.0f});
-    add_float(L"ruler_auto_move_sensitivity", &RULER_AUTO_MOVE_SENSITIVITY, FloatExtras{0.0f, 200.0f});
+    add_float(L"ruler_auto_move_sensitivity", &RULER_AUTO_MOVE_SENSITIVITY, FloatExtras{0.0f, 1.0f});
     add_float(L"ruler_auto_move_threshold_distance", &RULER_AUTO_MOVE_SENSITIVITY, FloatExtras{0.0f, 200.0f});
     add_float(L"fastread_opacity", &FASTREAD_OPACITY, FloatExtras{0.0f, 1.0f});
     add_float(L"page_space_x", &PAGE_SPACE_X, FloatExtras{0.0f, 100.0f});
