@@ -376,6 +376,9 @@
         "automatically_index_documents_for_fulltext_search": "automatically_index_documents_for_fulltext_search",
         "automatically_update_checksum_when_document_is_changed": "automatically_update_checksum_when_document_is_changed",
         "automatically_upload_portal_destination_for_synced_documents": "automatically_upload_portal_destination_for_synced_documents",
+        "auto_bookmark_horizontal_margin": "auto_bookmark_horizontal_margin-auto_bookmark_vertical_margin",
+        "auto_bookmark_vertical_margin": "auto_bookmark_horizontal_margin-auto_bookmark_vertical_margin",
+        "auto_bookmark_horizontal_vertical_margin": "auto_bookmark_horizontal_margin-auto_bookmark_vertical_margin",
         "auto_login_on_startup": "auto_login_on_startup",
         "auto_rename_downloaded_papers": "auto_rename_downloaded_papers",
         "background_bookmarks_pixel_budget": "background_bookmarks_pixel_budget",
@@ -420,6 +423,7 @@
         "documentation_font_size": "documentation_font_size",
         "document_location_mismatch_strategy": "document_location_mismatch_strategy",
         "dont_center_if_synctex_rect_is_visible": "dont_center_if_synctex_rect_is_visible",
+        "draw_unrendered_pages": "draw_unrendered_pages",
         "epub_css": "epub_css",
         "epub_width": "epub_width-epub_height-epub_font_size",
         "epub_height": "epub_width-epub_height-epub_font_size",
@@ -428,14 +432,17 @@
         "exact_highlight_select": "exact_highlight_select",
         "external_text_editor_command": "external_text_editor_command",
         "extract_table_prompt": "extract_table_prompt",
+        "fancy_ui_menus": "fancy_ui_menus",
         "fill_textbar_with_selected_text": "fill_textbar_with_selected_text",
         "fit_to_page_width_ratio": "fit_to_page_width_ratio",
         "flat_toc": "flat_toc",
         "font_size": "font_size",
+        "force_custom_line_algorithm": "force_custom_line_algorithm",
         "freetext_bookmark_color": "freetext_bookmark_color",
         "freetext_bookmark_font_size": "freetext_bookmark_font_size",
         "fuzzy_searching": "fuzzy_searching",
         "gamma": "gamma",
+        "gg_uses_labels": "gg_uses_labels",
         "hide_overlapping_link_labels": "hide_overlapping_link_labels",
         "highlight_color_[a-z]": "highlight_color_[a-z]",
         "highlight_color_a_z": "highlight_color_[a-z]",
@@ -506,6 +513,7 @@
         "ruler_pixel_width": "ruler_pixel_width",
         "ruler_slit_color": "ruler_slit_color",
         "save_externally_edited_text_on_focus": "save_externally_edited_text_on_focus",
+        "scrollbar": "scrollbar",
         "scrollview_sensitivity": "scrollview_sensitivity",
         "scroll_zoom_inc_factor": "scroll_zoom_inc_factor",
         "search_highlight_color": "search_highlight_color",
@@ -518,6 +526,7 @@
         "should_launch_new_window": "should_launch_new_window",
         "should_load_tutorial_when_no_other_file": "should_load_tutorial_when_no_other_file",
         "should_warn_about_user_key_override": "should_warn_about_user_key_override",
+        "show_full_doc_path": "show_full_doc_path",
         "show_most_recent_commands_first": "show_most_recent_commands_first",
         "show_reference_overview_highlights": "show_reference_overview_highlights",
         "single_click_selects_words": "single_click_selects_words",
@@ -528,8 +537,11 @@
         "smooth_scroll_speed": "smooth_scroll_speed-smooth_scroll_drag",
         "smooth_scroll_drag": "smooth_scroll_speed-smooth_scroll_drag",
         "smooth_scroll_speed_drag": "smooth_scroll_speed-smooth_scroll_drag",
-        "sort_bookmarks_by_location": "sort_bookmarks_by_location",
+        "sort_bookmarks_by_location": "sort_bookmarks_by_location-sort_highlights_by_location",
+        "sort_highlights_by_location": "sort_bookmarks_by_location-sort_highlights_by_location",
         "startup_commands": "startup_commands",
+        "statusbar": "statusbar",
+        "statusbar_handles_wheel_events": "statusbar_handles_wheel_events",
         "status_bar_color": "status_bar_color-status_bar_text_color",
         "status_bar_text_color": "status_bar_color-status_bar_text_color",
         "statusbar_text_background_color": "status_bar_color-status_bar_text_color",
@@ -592,7 +604,8 @@
         "vertical_move_amount": "vertical_move_amount-horizontal_move_amount",
         "horizontal_move_amount": "vertical_move_amount-horizontal_move_amount",
         "vertical_horizontal_move_amount": "vertical_move_amount-horizontal_move_amount",
-        "wheel_zoom_in_cursor": "wheel_zoom_in_cursor",
+        "wheel_zoom_on_cursor": "wheel_zoom_on_cursor",
+        "wheel_zoom_in_cursor": "wheel_zoom_on_cursor",
         "main_window_size": "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset",
         "helper_window_size": "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset",
         "main_window_move": "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset",
@@ -840,6 +853,7 @@
         "automatically_index_documents_for_fulltext_search": "# automatically_index_documents_for_fulltext_search\nAutomatically index opened documents for fulltext search.",
         "automatically_update_checksum_when_document_is_changed": "# automatically_update_checksum_when_document_is_changed\nWhen the document is changed (e.g. a latex document being edited) automatically update the checksum.",
         "automatically_upload_portal_destination_for_synced_documents": "# automatically_upload_portal_destination_for_synced_documents\nWhen uploading a document to sioyek servers, also upload the portal destinations for portals in that document.",
+        "auto_bookmark_horizontal_margin-auto_bookmark_vertical_margin": "# auto_bookmark_horizontal_margin, auto_bookmark_vertical_margin\nThe horizontal and vertical margin of the auto bookmarks. When adding auto bookmarks, sioyek automatically detects large empty spaces in the current screen and suggests those as auto bookmarks. This config controls the margin around those empty spaces.",
         "auto_login_on_startup": "# auto_login_on_startup\nAutomatically login to sioyek servers on startup (if previous credentials are available).",
         "auto_rename_downloaded_papers": "# auto_rename_downloaded_papers\nIf set, sioyek renames the downloaded papers to an automatically determined file name (e.g. instead of a cryptic name like `23434.234.pdf` it will be renamed to something like `some_paper_title.pdf`).",
         "background_bookmarks_pixel_budget": "# background_bookmarks_pixel_budget\nMaximum number of pixels allocated to cached freetext bookmarks.",
@@ -858,19 +872,23 @@
         "documentation_font_size": "# documentation_font_size\nFont size of documentation, when viewing the embedded documentation widget.",
         "document_location_mismatch_strategy": "# document_location_mismatch_strategy\nSpecifies what to do when there is a mistmatch between a local document and the last location uploaded to sioyek servers.\nPossible values are:\n\n- `local`: remain in the local position\n- `server`: move to the server position\n- `ask`: prompt the user to choose a position\n- `show_button`: show a resume button in sioyek statusbar",
         "dont_center_if_synctex_rect_is_visible": "# dont_center_if_synctex_rect_is_visible\nWhen performing a synctex search, if the target is already visible on the screen we don't move the document to center on the target.",
+        "draw_unrendered_pages": "# draw_unrendered_pages\nIf set, we draw a white rectangle for unrendered pages.",
         "epub_css": "# epub_css\nCSS to apply to epub documents.",
         "epub_width-epub_height-epub_font_size": "# epub_width, epub_height, epub_font_size\nConfigure the appearance of epub documents.",
         "exact_highlight_select": "# exact_highlight_select\nWhen adding the selected highlight, add the exact highlighted text (otherwise we highlight an entire word event when a part of it is selected).",
         "external_text_editor_command": "# external_text_editor_command\nThe command line program to use when running [`open_external_text_editor`](commands.md#open_external_text_editor) command. In this config, `%{file}` expands to the file that should be opened. For example:\n\n```\nexternal_text_editor_command nvim \"%{file}\"\n```",
         "extract_table_prompt": "# extract_table_prompt\nThe plain english prompt to use when extracting table data using a large language model with [`extract_table`](commands.md#extract_table-extract_table_with_prompt) command.\n\nExample:\n```\nextract_table_prompt Extract the table in this image into a markdown table. Take your time and make sure the result is 100% correct. Split muticolumns into separate columns.\n```",
+        "fancy_ui_menus": "# fancy_ui_menus\nIf set, we use a custom prettier painter to draw the menus as opposed to the default painter.",
         "fill_textbar_with_selected_text": "# fill_textbar_with_selected_text\nWhen opening the textbar (e.g. when executing [`search`](commands.md#search-chapter_search) or any other command that requires text input) automatically fill the input with the selected text.",
         "fit_to_page_width_ratio": "# fit_to_page_width_ratio\nThe screen width ratio when using [`fit_to_page_width_ratio`](commands.md#fit_to_page_width_ratio) command.",
         "flat_toc": "# flat_toc\nShow the table of contents as a flat list instead of a hierarchial tree. This can improve the performance on documents with extremely large table of contents.",
         "font_size": "# font_size\nThe font size for UI menus.",
+        "force_custom_line_algorithm": "# force_custom_line_algorithm\nIf set, we use a custom image-based heuristic to detect the page lines. Otherwise we use the PDF engine's returned page lines which should be much more accurate in most cases.",
         "freetext_bookmark_color": "# freetext_bookmark_color\nText color to use when adding new freetext bookmarks.",
         "freetext_bookmark_font_size": "# freetext_bookmark_font_size\nFont size to use when adding new freetext bookmarks.",
         "fuzzy_searching": "# fuzzy_searching\n(Deprecated) Whether we should employ fuzzy searching in menus. As we are using a fuzzy algorithm by default in more and more menus this option is becoming less relevant as time goes on.",
         "gamma": "# gamma\nThe gamma value, each pixel value `p` will be replace with `p^gamma`. Higher gamma values make fonts look thicker and lower gamma values make them look thinner.",
+        "gg_uses_labels": "# gg_uses_labels\nIf set, then goto_beginning command uses page labels instead of the absolute page number when using `<num>gg` command. For example pressing `2gg` normally jumps to the second page of the document, but in some documents there are page labels like \"i\", \"ii\", \"iii\", etc. So the page labeled 2 might not actually be the second page of the document. If this config is set, then `2gg` will jump to the page labeled \"2\" instead of the second page of the document.",
         "hide_overlapping_link_labels": "# hide_overlapping_link_labels\nWhen highlighting links in a document with overlapping links, show the label only for one of the overlapping links (avoids clutter in some malformed documents).",
         "highlight_color_[a-z]": "# highlight_color_[a-z]\nSpecifies the color for each of highlight types. For example `highlight_color_r` specifies the color of highlights with symbol `r`.",
         "highlight_links": "# highlight_links\nWhether we should highlight PDF links.",
@@ -922,6 +940,7 @@
         "ruler_pixel_width": "# ruler_pixel_width\nRuler thickness when [`ruler_display_mode`](configs.md#ruler_display_mode) is set to `underline`.",
         "ruler_slit_color": "# ruler_slit_color\nRuler color when [`ruler_display_mode`](configs.md#ruler_display_mode) is set to `slit`.",
         "save_externally_edited_text_on_focus": "# save_externally_edited_text_on_focus\nIf this option is set, when editing text using [`open_external_text_editor`](commands.md#open_external_text_editor) command, we accept the externally edited text when the sioyek window gains focus again (otherwise the user has to manually press enter to accept the input).",
+        "scrollbar": "# scrollbar\nIf set, we draw a scrollbar on the right side of the window.",
         "scrollview_sensitivity": "# scrollview_sensitivity\nThe relative sensitivity when scrolling the overview window.",
         "scroll_zoom_inc_factor": "# scroll_zoom_inc_factor\nThe amount to multiply/divide the zoom level when executing zoom commands by holding control and using the mouse wheel.",
         "search_highlight_color": "# search_highlight_color\nHighligh color of search matches.",
@@ -932,6 +951,7 @@
         "should_launch_new_window": "# should_launch_new_window\nWhen opening a new file from command line, use a new sioyek window if one already exists.",
         "should_load_tutorial_when_no_other_file": "# should_load_tutorial_when_no_other_file\nWhen there is no other file to open (e.g. due to sioyek being opened for the first time) show the sioyek tutorial.",
         "should_warn_about_user_key_override": "# should_warn_about_user_key_override\nPrint a warning message in console when a key override is detected in `keys_user.config`.",
+        "show_full_doc_path": "# show_full_doc_path\nNormally we just show the file name in the documents list, if this option is set, we show the full document path instead.",
         "show_most_recent_commands_first": "# show_most_recent_commands_first\nWhen opening the command menu show the most recent commands executed in the current session first.",
         "show_reference_overview_highlights": "# show_reference_overview_highlights\nHighlight the reference paper name in overview window (this is the automatically detected paper name which will be downloaded with [`download_overview_paper`](commands.md#download_overview_paper-download_overview_paper_no_prompt) command).",
         "single_click_selects_words": "# single_click_selects_words\nNormally when selecting text using mouse, we select individual characters, unless the user has double clicked to initiate the selection, in which case we select entire words instead of individual characters.\n\nIf [`single_click_selects_words`](configs.md#single_click_selects_words) is set, then we select words even when user uses single-click to initiate text selection.",
@@ -940,8 +960,10 @@
         "smooth_move_max_velocity": "# smooth_move_max_velocity\nThe speed of `move_*_smooth` commands.",
         "smooth_scroll_mode": "# smooth_scroll_mode\nWhen enabled, using the mouse wheel will scroll the document smoothly instead of discrete jumps. The speed of the scroll can be adjusted with the @config(`smooth_scroll_speed`) and the deceleration rate can be adjusted with the @config(`smooth_scroll_drag`).",
         "smooth_scroll_speed-smooth_scroll_drag": "# smooth_scroll_speed, smooth_scroll_drag\nThe speed and deceleration rate of the smooth scroll when [`smooth_scroll_mode`](configs.md#smooth_scroll_mode) is enabled.",
-        "sort_bookmarks_by_location": "# sort_bookmarks_by_location\nSort bookmarks by location (instead of creation date).",
+        "sort_bookmarks_by_location-sort_highlights_by_location": "# sort_bookmarks_by_location, sort_highlights_by_location\nSort bookmarks/highlights by location (instead of creation date).",
         "startup_commands": "# startup_commands\n`macro` commands to run then sioyek starts up. For example:\n\n```\nstartup_commands toggle_dark_mode;toggle_scrollbar;set_status_string(hi there)\n```\n\nWill set the color scheme to dark mode and enable scrollbar and show a message in sioyek statusbar when sioyek starts up.",
+        "statusbar": "# statusbar\nIf set, we draw a statusbar at the bottom of the window.",
+        "statusbar_handles_wheel_events": "# statusbar_handles_wheel_events\nIf set, the statusbar will handle wheel events when the mouse is over it. For example, if the mouse cursor is over the page number in the statusbar and the user scrolls the mouse wheel, the page will change.",
         "status_bar_color-status_bar_text_color": "# status_bar_color, status_bar_text_color\nText and background colors of statusbar.",
         "status_bar_font_size": "# status_bar_font_size\nFont size of the status bar.",
         "status_bar_format-right_status_bar_format-status_*_command": "# status_bar_format, right_status_bar_format, status_*_command\nThe items and format to show in the statusbar. The default value is:\n\n```\n[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}\n%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}\n%{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{freehand_drawing}\n%{rect_select}%{custom_message}%{download}%{download_button}%{network_status}\n%{tts_status}%{tts_rate}\n```\n\n\nThe [`right_status_bar_format`](configs.md#status_bar_format-right_status_bar_format-status_*_command) is similar, but determines what to display on right-aligned statusbar.\n\nHere is what each of the `%{}` variables expand to:\n\n- `%{current_page}` expands to the current page number\n- `%{current_page_label}` expands to the the label of the current page (might be different from `current_page` for example some documents have pages labeled with roman numerals, e.g. XII)\n- `%{num_pages}` expands to the total number of pages in current document\n- `%{chapter_name}` expands to the name of current chapter\n- `%{document_name}` expands to the file name of current document\n- `%{auto_name}` expands to automatically detected document name\n- `%{search_results}` expands to the search results (if there is a search active)\n- `%{search_progress}` expands to the current search progress (if there is one in progress)\n- `%{link_status}` specifies whether we are linking (that is the source of a [`portal`](commands.md#portal) has been set and we are waiting for the destination)\n- `%{waiting_for_symbol}` specifies if a command is expecting a symbol to be entered\n- `%{indexing}` specifies if the current document is currently being indexed\n- `%{preview_index}` if there are more than one possible overviews available for the overview window, this option shows how many there are and what is the current index \n- `%{synctex}` displays if we are in synctex mode ([`toggle_synctex`](commands.md#toggle_synctex-turn_on_synctex))\n- `%{drag}` displays if we are in mouse drag mode ([`toggle_mouse_drag_mode`](commands.md#toggle_mouse_drag_mode))\n- `%{presentation}` displays if we are in presentation mode ([`toggle_presentation_mode`](commands.md#toggle_presentation_mode-turn_on_presentation_mode))\n- `%{visual_scroll}` displays if we are in ruler scorll mode ([`toggle_ruler_scroll_mode`](commands.md#toggle_ruler_scroll_mode-toggle_visual_scroll))\n- `%{locked_scroll}` displays if we have locked horizontal scrolling ([`toggle_horizontal_scroll_lock`](commands.md#toggle_horizontal_scroll_lock))\n- `%{highlight}` displays information about the current highlight state ([`set_select_highlight_type`](commands.md#set_select_highlight_type)) \n- `%{freehand_drawing}` displays if we are in freehand drawing mode ([`toggle_freehand_drawing_mode`](commands.md#toggle_freehand_drawing_mode))\n- `%{rect_select}` displays if a command requires a rectangle to be selected\n- `%{point_select}` displays if a command requires a point to be selected\n- `%{custom_message}` user message that can be set using [`set_status_string`](commands.md#set_status_string-clear_status_string)\n- `%{download}` displays if we are currently downloading a paper\n- `%{download_button}` a button that displays when the current overview is a reference to a paper, clickin on this button downloads the paper\n- `%{closest_bookmark}` displays the closest bookmark to current location\n- `%{closest_portal}` displays the closest portal to the current location\n- `%{selected_highlight}` displays the comment of the selected highlight\n- `%{mode_string}` displays the current mode string (this can be useful when defining `macro`s)\n- `%{network_status}` displays the current network status\n- `%{tts_status}` displays the current text to speech status\n- `%{tts_rate}` displays the current text to speech speed\n- `%{custom_message_a}` to `%{custom_message_d}` expands to a custom message which can be set using @config(status_custom_message_[a-d])\n\nNote that clicking on many of these items performs a relevant command. For example clicking on the text expanded from `${current_page}` shows a page-selection widget or clicking on `%{chapter_name}` opens the table of contents. The exact command executed when some part of the statusbar is clicked can be configured using @config(status_*_command) config options where `*` can be any of the options described above. For example if we have the following in the `prefs_user.config` file:\n\n```\nstatus_num_pages_command toggle_dark_mode\n```\n\nthen clicking on the number of pages in the statusbar toggles dark mode.",
@@ -967,7 +989,7 @@
         "use_ruler_to_highlight_synctex_line": "# use_ruler_to_highlight_synctex_line\nUse the ruler to highlight the synctex search result (instead of highlighting it with a color).",
         "use_system_theme-use_custom_color_as_dark_system_theme": "# use_system_theme, use_custom_color_as_dark_system_theme\nTry to use system theme for light/dark modes (might not work in some operating systems).\nIf [`use_custom_color_as_dark_system_theme`](configs.md#use_system_theme-use_custom_color_as_dark_system_theme) is set, then we use the custom color mode instead of dark mode when system theme is set to dark.",
         "vertical_move_amount-horizontal_move_amount": "# vertical_move_amount, horizontal_move_amount\nThe amount to move when executing movement commands (including mouse wheel).",
-        "wheel_zoom_in_cursor": "# wheel_zoom_in_cursor\nWhen performing zoom using control+mouse wheel, zoom on the mouse cursor instead of the center of the screen.",
+        "wheel_zoom_on_cursor": "# wheel_zoom_on_cursor\nWhen performing zoom using control+mouse wheel, zoom on the mouse cursor instead of the center of the screen.",
         "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": "# main_window_size, helper_window_size, main_window_move, helper_window_move, single_main_window_size, single_main_window_move, overview_size, overview_offset\nDefault size and offset of sioyek windows. the `single_*` is used when only the main sioyek window is visible (no helper window) otherwise we use the other values.",
         "zoom_inc_factor": "# zoom_inc_factor\nThe amount to multiply/divide the zoom level when executing zoom commands. For example, if the current zoom level is 2 and `zoom_inc_factor` is 1.5, then after executing [`zoom_in`](commands.md#zoom_in-zoom_out-zoom_in_cursor-zoom_out_cursor), the zoom level will be `2 * 1.5 = 3`."
     },
@@ -1996,6 +2018,9 @@
         ],
         "automatically_update_checksum_when_document_is_changed": [],
         "automatically_upload_portal_destination_for_synced_documents": [],
+        "auto_bookmark_horizontal_margin-auto_bookmark_vertical_margin": [
+            "add_freetext_bookmark_auto"
+        ],
         "auto_login_on_startup": [],
         "auto_rename_downloaded_papers": [
             "download_link",
@@ -2037,6 +2062,7 @@
         "dont_center_if_synctex_rect_is_visible": [
             "toggle_synctex"
         ],
+        "draw_unrendered_pages": [],
         "epub_css": [],
         "epub_width-epub_height-epub_font_size": [],
         "exact_highlight_select": [
@@ -2048,6 +2074,11 @@
         "extract_table_prompt": [
             "extract_table"
         ],
+        "fancy_ui_menus": [
+            "goto_highlight",
+            "goto_bookmark",
+            "open_prev_doc"
+        ],
         "fill_textbar_with_selected_text": [
             "search"
         ],
@@ -2058,6 +2089,9 @@
             "goto_toc"
         ],
         "font_size": [],
+        "force_custom_line_algorithm": [
+            "ruler_under_cursor"
+        ],
         "freetext_bookmark_color": [
             "add_freetext_bookmark"
         ],
@@ -2066,6 +2100,9 @@
         ],
         "fuzzy_searching": [],
         "gamma": [],
+        "gg_uses_labels": [
+            "goto_beginning"
+        ],
         "hide_overlapping_link_labels": [
             "open_link"
         ],
@@ -2210,6 +2247,7 @@
         "save_externally_edited_text_on_focus": [
             "open_external_text_editor"
         ],
+        "scrollbar": [],
         "scrollview_sensitivity": [
             "overview_definition"
         ],
@@ -2231,6 +2269,9 @@
         "should_launch_new_window": [],
         "should_load_tutorial_when_no_other_file": [],
         "should_warn_about_user_key_override": [],
+        "show_full_doc_path": [
+            "open_prev_doc"
+        ],
         "show_most_recent_commands_first": [
             "command"
         ],
@@ -2249,10 +2290,12 @@
         ],
         "smooth_scroll_mode": [],
         "smooth_scroll_speed-smooth_scroll_drag": [],
-        "sort_bookmarks_by_location": [
+        "sort_bookmarks_by_location-sort_highlights_by_location": [
             "goto_bookmark"
         ],
         "startup_commands": [],
+        "statusbar": [],
+        "statusbar_handles_wheel_events": [],
         "status_bar_color-status_bar_text_color": [
             "toggle_statusbar"
         ],
@@ -2326,7 +2369,7 @@
             "move_ruler_down",
             "move_ruler_up"
         ],
-        "wheel_zoom_in_cursor": [],
+        "wheel_zoom_on_cursor": [],
         "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": [],
         "zoom_inc_factor": [
             "zoom_in",
@@ -2346,6 +2389,7 @@
         "automatically_index_documents_for_fulltext_search": [],
         "automatically_update_checksum_when_document_is_changed": [],
         "automatically_upload_portal_destination_for_synced_documents": [],
+        "auto_bookmark_horizontal_margin-auto_bookmark_vertical_margin": [],
         "auto_login_on_startup": [],
         "auto_rename_downloaded_papers": [],
         "background_bookmarks_pixel_budget": [],
@@ -2371,17 +2415,20 @@
             "synctex_highlight_timeout",
             "synctex_highlight_color"
         ],
+        "draw_unrendered_pages": [],
         "epub_css": [],
         "epub_width-epub_height-epub_font_size": [],
         "exact_highlight_select": [],
         "external_text_editor_command": [],
         "extract_table_prompt": [],
+        "fancy_ui_menus": [],
         "fill_textbar_with_selected_text": [],
         "fit_to_page_width_ratio": [],
         "flat_toc": [],
         "font_size": [
             "status_bar_font_size"
         ],
+        "force_custom_line_algorithm": [],
         "freetext_bookmark_color": [
             "freetext_bookmark_font_size"
         ],
@@ -2390,6 +2437,7 @@
         ],
         "fuzzy_searching": [],
         "gamma": [],
+        "gg_uses_labels": [],
         "hide_overlapping_link_labels": [],
         "highlight_color_[a-z]": [],
         "highlight_links": [],
@@ -2464,6 +2512,7 @@
             "ruler_display_mode"
         ],
         "save_externally_edited_text_on_focus": [],
+        "scrollbar": [],
         "scrollview_sensitivity": [],
         "scroll_zoom_inc_factor": [
             "zoom_inc_factor"
@@ -2478,6 +2527,7 @@
         "should_launch_new_window": [],
         "should_load_tutorial_when_no_other_file": [],
         "should_warn_about_user_key_override": [],
+        "show_full_doc_path": [],
         "show_most_recent_commands_first": [],
         "show_reference_overview_highlights": [],
         "single_click_selects_words": [],
@@ -2491,8 +2541,10 @@
         "smooth_scroll_speed-smooth_scroll_drag": [
             "smooth_scroll_mode"
         ],
-        "sort_bookmarks_by_location": [],
+        "sort_bookmarks_by_location-sort_highlights_by_location": [],
         "startup_commands": [],
+        "statusbar": [],
+        "statusbar_handles_wheel_events": [],
         "status_bar_color-status_bar_text_color": [],
         "status_bar_font_size": [],
         "status_bar_format-right_status_bar_format-status_*_command": [],
@@ -2537,7 +2589,7 @@
         "vertical_move_amount-horizontal_move_amount": [
             "touchpad_sensitivity"
         ],
-        "wheel_zoom_in_cursor": [],
+        "wheel_zoom_on_cursor": [],
         "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": [],
         "zoom_inc_factor": []
     },
@@ -2971,6 +3023,10 @@
         "automatically_index_documents_for_fulltext_search": "automatically_index_documents_for_fulltext_search",
         "automatically_update_checksum_when_document_is_changed": "automatically_update_checksum_when_document_is_changed",
         "automatically_upload_portal_destination_for_synced_documents": "automatically_upload_portal_destination_for_synced_documents",
+        "auto_bookmark_horizontal_margin": "auto_bookmark_horizontal_vertical_margin",
+        "auto_bookmark_vertical_margin": "auto_bookmark_horizontal_vertical_margin",
+        "auto_bookmark_horizontal_vertical_margin": "auto_bookmark_horizontal_vertical_margin",
+        "auto_bookmark_horizontal_margin-auto_bookmark_vertical_margin": "auto_bookmark_horizontal_vertical_margin",
         "auto_login_on_startup": "auto_login_on_startup",
         "auto_rename_downloaded_papers": "auto_rename_downloaded_papers",
         "background_bookmarks_pixel_budget": "background_bookmarks_pixel_budget",
@@ -3019,6 +3075,7 @@
         "documentation_font_size": "documentation_font_size",
         "document_location_mismatch_strategy": "document_location_mismatch_strategy",
         "dont_center_if_synctex_rect_is_visible": "dont_center_if_synctex_rect_is_visible",
+        "draw_unrendered_pages": "draw_unrendered_pages",
         "epub_css": "epub_css",
         "epub_width": "epub_width_height_font_size",
         "epub_height": "epub_width_height_font_size",
@@ -3028,14 +3085,17 @@
         "exact_highlight_select": "exact_highlight_select",
         "external_text_editor_command": "external_text_editor_command",
         "extract_table_prompt": "extract_table_prompt",
+        "fancy_ui_menus": "fancy_ui_menus",
         "fill_textbar_with_selected_text": "fill_textbar_with_selected_text",
         "fit_to_page_width_ratio": "fit_to_page_width_ratio",
         "flat_toc": "flat_toc",
         "font_size": "font_size",
+        "force_custom_line_algorithm": "force_custom_line_algorithm",
         "freetext_bookmark_color": "freetext_bookmark_color",
         "freetext_bookmark_font_size": "freetext_bookmark_font_size",
         "fuzzy_searching": "fuzzy_searching",
         "gamma": "gamma",
+        "gg_uses_labels": "gg_uses_labels",
         "hide_overlapping_link_labels": "hide_overlapping_link_labels",
         "highlight_color_[a-z]": "highlight_color_a_z",
         "highlight_color_a": "highlight_color_a_z",
@@ -3143,6 +3203,7 @@
         "ruler_pixel_width": "ruler_pixel_width",
         "ruler_slit_color": "ruler_slit_color",
         "save_externally_edited_text_on_focus": "save_externally_edited_text_on_focus",
+        "scrollbar": "scrollbar",
         "scrollview_sensitivity": "scrollview_sensitivity",
         "scroll_zoom_inc_factor": "scroll_zoom_inc_factor",
         "search_highlight_color": "search_highlight_color",
@@ -3181,6 +3242,7 @@
         "should_launch_new_window": "should_launch_new_window",
         "should_load_tutorial_when_no_other_file": "should_load_tutorial_when_no_other_file",
         "should_warn_about_user_key_override": "should_warn_about_user_key_override",
+        "show_full_doc_path": "show_full_doc_path",
         "show_most_recent_commands_first": "show_most_recent_commands_first",
         "show_reference_overview_highlights": "show_reference_overview_highlights",
         "single_click_selects_words": "single_click_selects_words",
@@ -3193,7 +3255,11 @@
         "smooth_scroll_speed_drag": "smooth_scroll_speed_drag",
         "smooth_scroll_speed-smooth_scroll_drag": "smooth_scroll_speed_drag",
         "sort_bookmarks_by_location": "sort_bookmarks_by_location",
+        "sort_highlights_by_location": "sort_bookmarks_by_location",
+        "sort_bookmarks_by_location-sort_highlights_by_location": "sort_bookmarks_by_location",
         "startup_commands": "startup_commands",
+        "statusbar": "statusbar",
+        "statusbar_handles_wheel_events": "statusbar_handles_wheel_events",
         "status_bar_color": "statusbar_text_background_color",
         "status_bar_text_color": "statusbar_text_background_color",
         "statusbar_text_background_color": "statusbar_text_background_color",
@@ -3302,6 +3368,7 @@
         "horizontal_move_amount": "vertical_horizontal_move_amount",
         "vertical_horizontal_move_amount": "vertical_horizontal_move_amount",
         "vertical_move_amount-horizontal_move_amount": "vertical_horizontal_move_amount",
+        "wheel_zoom_on_cursor": "wheel_zoom_in_cursor",
         "wheel_zoom_in_cursor": "wheel_zoom_in_cursor",
         "main_window_size": "window_sizes",
         "helper_window_size": "window_sizes",
