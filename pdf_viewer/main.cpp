@@ -160,7 +160,6 @@ extern std::wstring SHARED_DATABASE_PATH;
 extern std::wstring SEARCH_URLS[26];
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool NO_AUTO_CONFIG;
-extern bool DEFAULT_DARK_MODE;
 extern std::wstring VOLUME_UP_COMMAND;
 extern std::wstring VOLUME_DOWN_COMMAND;
 extern int NUM_CACHED_PAGES;
@@ -992,10 +991,6 @@ int main(int argc, char* args[]) {
         //main_widget->on_socket_deleted(deleted_socket);
         });
 #endif
-
-    if (DEFAULT_DARK_MODE && !USE_SYSTEM_THEME) {
-        main_widget->toggle_dark_mode();
-    }
 
     //QString startup_commands_list = QString::fromStdWString(STARTUP_COMMANDS);
     //QStringList startup_commands = startup_commands_list.split(";");

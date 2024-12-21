@@ -183,7 +183,6 @@ int MAX_PENDING_REQUESTS = 31;
 bool FLAT_TABLE_OF_CONTENTS = false;
 bool SHOULD_USE_MULTIPLE_MONITORS = false;
 bool SHOULD_CHECK_FOR_LATEST_VERSION_ON_STARTUP = false;
-bool DEFAULT_DARK_MODE = false;
 bool USE_SYSTEM_THEME = false;
 bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME = false;
 bool SORT_BOOKMARKS_BY_LOCATION = true;
@@ -1202,7 +1201,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"epub_height", &EPUB_HEIGHT, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_font_size", &EPUB_FONT_SIZE, FloatExtras{0.0f, 100.0f});
 
-    add_bool(L"default_dark_mode", &DEFAULT_DARK_MODE);
     add_bool(L"smooth_scroll_mode", &SMOOTH_SCROLL_MODE);
     add_bool(L"use_system_theme", &USE_SYSTEM_THEME)->set_change_fn([](MainWidget* w){
         w->set_color_mode_to_system_theme();
