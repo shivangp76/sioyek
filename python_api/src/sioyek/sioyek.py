@@ -218,10 +218,12 @@ class Sioyek(SioyekBase):
 
         def escape_arg(arg):
             if type(arg) == str:
-                return arg.replace('\\', '\\\\')
+                return arg.replace('\\', '\\\\').replace("'", "\\'")
             else:
                 return str(arg)
         if type(text) == list or type(text) == tuple:
+            # if type(text[0]) == str:
+            #     text = text[0]
             if len(text) == 0:
                 text = None
             elif len(text) == 1 and type(text[0]) == list or type(text[0]) == tuple or text[0] is None:
@@ -256,6 +258,8 @@ class Sioyek(SioyekBase):
             params.append('--window-id')
             params.append(str(window_id))
         
+        # print('params was:')
+        # print(params)
         if self.is_dummy_mode:
             print('dummy mode, executing: ', params)
             return ""
