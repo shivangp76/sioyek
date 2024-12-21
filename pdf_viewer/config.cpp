@@ -1220,7 +1220,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"should_load_tutorial_when_no_other_file", &SHOULD_LOAD_TUTORIAL_WHEN_NO_OTHER_FILE);
     add_bool(L"should_launch_new_instance", &SHOULD_LAUNCH_NEW_INSTANCE);
     add_bool(L"should_launch_new_window", &SHOULD_LAUNCH_NEW_WINDOW);
-    add_bool(L"should_draw_unrendered_pages", &SHOULD_DRAW_UNRENDERED_PAGES);
+    add_bool(L"draw_unrendered_pages", &SHOULD_DRAW_UNRENDERED_PAGES);
     add_bool(L"hide_overlapping_link_labels", &HIDE_OVERLAPPING_LINK_LABELS);
     add_bool(L"real_page_separation", &REAL_PAGE_SEPARATION);
     add_bool(L"fill_textbar_with_selected_text", &FILL_TEXTBAR_WITH_SELECTED_TEXT);
