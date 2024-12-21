@@ -1245,7 +1245,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"force_custom_line_algorithm", &FORCE_CUSTOM_LINE_ALGORITHM);
     add_bool(L"ignore_whitespace_in_presentation_mode", &IGNORE_WHITESPACE_IN_PRESENTATION_MODE);
     add_bool(L"exact_highlight_select", &EXACT_HIGHLIGHT_SELECT);
-    add_bool(L"show_doc_path", &SHOW_DOC_PATH);
+    add_bool(L"show_full_doc_path", &SHOW_DOC_PATH);
     add_bool(L"should_warn_about_user_key_override", &SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE);
     add_bool(L"single_click_selects_words", &SINGLE_CLICK_SELECTS_WORDS);
     add_bool(L"allow_horizontal_drag_when_document_is_small", &ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL);
