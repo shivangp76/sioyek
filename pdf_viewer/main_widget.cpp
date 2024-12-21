@@ -226,6 +226,7 @@ extern float CUSTOM_TEXT_COLOR[3];
 extern float HYPERDRIVE_SPEED_FACTOR;
 extern float SMOOTH_SCROLL_SPEED;
 extern float SMOOTH_SCROLL_DRAG;
+extern bool SMOOTH_SCROLL_MODE;
 extern bool SUPER_FAST_SEARCH;
 extern bool INCREMENTAL_SEARCH;
 extern bool CASE_SENSITIVE_SEARCH;
@@ -1336,6 +1337,15 @@ void MainWidget::handle_validation_interval_timeout(){
 
         focus_on_high_quality_text_being_read();
 
+        int frame_msecs = 1000 / screen()->refreshRate();
+
+        if (dv()->is_moving() && (validation_interval_timer->interval() > frame_msecs)) {
+            validation_interval_timer->setInterval(frame_msecs);
+        }
+        if (!dv()->is_moving() && !is_dragging && (validation_interval_timer->interval() != INTERVAL_TIME)) {
+            validation_interval_timer->setInterval(INTERVAL_TIME);
+        }
+
         if (download_checksum_when_ready.has_value() && (sioyek_network_manager->status == ServerStatus::LoggedIn)){
             std::string checksum = download_checksum_when_ready.value();
             download_checksum_when_ready = {};
@@ -1569,13 +1579,14 @@ void MainWidget::keyReleaseEvent(QKeyEvent* kevent) {
 
 void MainWidget::validate_render() {
 
-    if (smooth_scroll_mode) {
+    if (SMOOTH_SCROLL_MODE) {
         if (main_document_view_has_document()) {
             float secs = static_cast<float>(-QTime::currentTime().msecsTo(last_speed_update_time)) / 1000.0f;
 
             if (secs > 0.1f) {
                 secs = 0.0f;
             }
+            const float smooth_scroll_speed = dv()->velocity_y;
 
             if (!main_document_view->get_overview_page()) {
                 float current_offset = main_document_view->get_offset_y();
@@ -1590,13 +1601,13 @@ void MainWidget::validate_render() {
             }
             float accel = SMOOTH_SCROLL_DRAG;
             if (smooth_scroll_speed > 0) {
-                smooth_scroll_speed -= secs * accel;
-                if (smooth_scroll_speed < 0) smooth_scroll_speed = 0;
+                dv()->velocity_y -= secs * accel;
+                if (dv()->velocity_y < 0) dv()->velocity_y = 0;
 
             }
             else {
-                smooth_scroll_speed += secs * accel;
-                if (smooth_scroll_speed > 0) smooth_scroll_speed = 0;
+                dv()->velocity_y += secs * accel;
+                if (dv()->velocity_y > 0) dv()->velocity_y = 0;
             }
 
 
@@ -1651,7 +1662,7 @@ void MainWidget::validate_render() {
     }
 
     is_render_invalidated = false;
-    if (smooth_scroll_mode && (smooth_scroll_speed != 0)) {
+    if (SMOOTH_SCROLL_MODE && (dv()->velocity_y != 0)) {
         is_render_invalidated = true;
     }
     if (main_document_view->is_moving()) {
@@ -4072,12 +4083,13 @@ void MainWidget::move_vertical(float amount) {
         return;
     }
 
-    if (!smooth_scroll_mode) {
+    if (!SMOOTH_SCROLL_MODE) {
         dv()->move_document(0, amount);
         validate_render();
     }
     else {
-        smooth_scroll_speed += amount * SMOOTH_SCROLL_SPEED;
+        dv()->velocity_y += amount * SMOOTH_SCROLL_SPEED;
+        validation_interval_timer->setInterval(1000 / screen()->refreshRate());
         validate_render();
     }
 }
@@ -6289,14 +6301,7 @@ void MainWidget::handle_goto_window() {
 }
 
 void MainWidget::handle_toggle_smooth_scroll_mode() {
-    smooth_scroll_mode = !smooth_scroll_mode;
-
-    if (smooth_scroll_mode) {
-        validation_interval_timer->setInterval(16);
-    }
-    else {
-        validation_interval_timer->setInterval(INTERVAL_TIME);
-    }
+    SMOOTH_SCROLL_MODE = !SMOOTH_SCROLL_MODE;
 }
 
 

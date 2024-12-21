@@ -284,6 +284,7 @@ std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 bool PRERENDER_NEXT_PAGE = true;
 bool HIGHLIGHT_MIDDLE_CLICK = false;
 float HYPERDRIVE_SPEED_FACTOR = 10.0f;
+bool SMOOTH_SCROLL_MODE = false;
 float SMOOTH_SCROLL_SPEED = 3.0f;
 float SMOOTH_SCROLL_DRAG = 3000.0f;
 int PRERENDERED_PAGE_COUNT = 0;
@@ -1204,6 +1205,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"epub_font_size", &EPUB_FONT_SIZE, FloatExtras{0.0f, 100.0f});
 
     add_bool(L"default_dark_mode", &DEFAULT_DARK_MODE);
+    add_bool(L"smooth_scroll_mode", &SMOOTH_SCROLL_MODE);
     add_bool(L"use_system_theme", &USE_SYSTEM_THEME)->set_change_fn([](MainWidget* w){
         w->set_color_mode_to_system_theme();
     });

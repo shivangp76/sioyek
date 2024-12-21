@@ -254,8 +254,9 @@ public:
 
     // in smooth scroll mode we scroll the document smoothly instead of jumping to the target
     // `smooth_scroll_speed` is used to keep track of our speed in this mode
-    bool smooth_scroll_mode = false;
-    float smooth_scroll_speed = 0.0f;
+    //bool smooth_scroll_mode = false;
+
+    //float smooth_scroll_speed = 0.0f;
 
     // the timer which periodically checks if the UI/rendering needs updating. Normally the timer value is
     // set to be INTERVAL_TIME (which is 200ms at the time of writing this comment), however, it is set to a much
