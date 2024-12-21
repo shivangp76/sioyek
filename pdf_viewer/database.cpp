@@ -23,7 +23,6 @@
 #include "path.h"
 
 extern bool DEBUG;
-extern float HIGHLIGHT_DELETE_THRESHOLD;
 extern int DATABASE_VERSION;
 //extern Path old_local_database_file_path;
 //extern Path old_global_database_file_path;
@@ -1371,7 +1370,6 @@ bool DatabaseManager::delete_bookmark(const std::string& uuid) {
 bool DatabaseManager::delete_highlight(const std::string& uuid) {
 
     std::wstringstream ss;
-    std::wstring threshold = QString::number(HIGHLIGHT_DELETE_THRESHOLD).toStdWString();
     ss << std::setprecision(10) << "DELETE FROM highlights where uuid='" << esc(uuid) << "';";
 
     char* error_message = nullptr;

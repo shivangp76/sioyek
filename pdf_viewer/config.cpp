@@ -325,7 +325,6 @@ bool FUZZY_SEARCHING = false;
 bool INVERTED_HORIZONTAL_SCROLLING = false;
 bool TOC_JUMP_ALIGN_TOP = false;
 float CUSTOM_COLOR_CONTRAST = 0.5f;
-float HIGHLIGHT_DELETE_THRESHOLD = 0.1f;
 float SCROLL_VIEW_SENSITIVITY = 1.0f;
 float KEYBOARD_SELECT_BACKGROUND_COLOR[] = { 0.9f , 0.75f, 0.0f, 1.0f };
 float KEYBOARD_SELECT_TEXT_COLOR[] = { 0.0f , 0.0f, 0.5f, 1.0f };
@@ -1192,7 +1191,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f})->set_change_fn([](MainWidget* w){
         w->invalidate_render();
     });
-    add_float(L"highlight_delete_threshold", &HIGHLIGHT_DELETE_THRESHOLD, FloatExtras{0.0f, 0.1f});
     add_float(L"tts_rate", &TTS_RATE, FloatExtras{-1.0f, 1.0f})->set_change_fn([](MainWidget* w){
         if (w->is_reading) {
             w->handle_stop_reading();
