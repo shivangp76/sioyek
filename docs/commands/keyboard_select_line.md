@@ -11,7 +11,7 @@ show_run_command(s, 'keyboard_select_line')
 time.sleep(2)
 s.send_symbol('g')
 time.sleep(1)
-s.send_symbol('a')
+s.send_symbol('c')
 time.sleep(3)
 end_recording()
 ```

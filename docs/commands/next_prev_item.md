@@ -3,7 +3,7 @@ demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True)
 start_recording(RECORDING_FILE_NAME)
-s.search('', wait=False)
+s.search(wait=False)
 time.sleep(0.3)
 # print('I am here')
 # s.type_text('S')

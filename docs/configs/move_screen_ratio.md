@@ -34,7 +34,7 @@ time.sleep(1)
 end_recording()
 ```
 
-for_configs: 
+for_configs: move_screen_ratio move_screen_percentage
 
 doc_body:
 The ratio of screen height to move when executing @command(screen_down) and @command(screen_up).

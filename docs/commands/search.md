@@ -13,7 +13,7 @@ for i in range(3):
 
 s.escape()
 s.goto_page_with_page_number(1)
-s.search('', wait=False)
+s.search(wait=False)
 time.sleep(0.3)
 type_words(s, '<3,4>sioyek')
 for i in range(3):

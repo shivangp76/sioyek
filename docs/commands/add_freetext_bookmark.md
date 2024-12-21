@@ -3,7 +3,7 @@ related_configs: new_shell_bookmark_command
 
 demo_code:
 ```python
-s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
+s = sioyek.Sioyek(launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
 s.goto_page_with_page_number(1)
 start_recording(RECORDING_FILE_NAME)
 show_run_command(s, 'add_freetext_bookmark')
@@ -11,7 +11,7 @@ time.sleep(1)
 s.escape()
 s.toggleconfig_keyboard_point_selection()
 
-s.add_freetext_bookmark('', wait=False)
+s.add_freetext_bookmark(wait=False)
 pause_recording()
 time.sleep(0.1)
 s.send_symbol('c')
@@ -22,7 +22,7 @@ resume_recording()
 time.sleep(0.3)
 type_words(s, 'This is a freetext bookmark', delay=0.03)
 
-s.add_freetext_bookmark('', wait=False)
+s.add_freetext_bookmark(wait=False)
 pause_recording()
 time.sleep(0.1)
 s.send_symbol('h')
@@ -33,7 +33,7 @@ resume_recording()
 time.sleep(0.3)
 type_words(s, '#b', final_delay=1)
 
-s.add_freetext_bookmark('', wait=False)
+s.add_freetext_bookmark(wait=False)
 pause_recording()
 time.sleep(0.1)
 s.send_symbol('m')
@@ -44,7 +44,7 @@ resume_recording()
 time.sleep(0.3)
 type_words(s, '#markdown This is a **markdown** <span style="color:red">bookmark</span>', delay=0.03)
 
-s.add_freetext_bookmark('', wait=False)
+s.add_freetext_bookmark(wait=False)
 pause_recording()
 time.sleep(0.1)
 s.send_symbol('a')
@@ -68,10 +68,10 @@ end_recording()
 
 ```
 
-for_commands:
+for_commands: add_freetext_bookmark add_freetext_bookmark_auto
 
 doc_body:
-Add a freetext bookmark in the selected rectangle. Freetext bookmarks are visible in the document. You can change the display style of the bookmark using the following prefixes:
+Add a freetext bookmark in the selected rectangle. The @command(add_freetext_bookmark) prompts the user to select the rectangle while the @command(add_freetext_bookmark_auto) command doesn't ask for a rectangle, instead it automatically detects possible large empty spaces in the current screen and asks the user to pick one of those. Freetext bookmarks are visible in the document. You can change the display style of the bookmark using the following prefixes:
 
 - If the bookmark text starts with `#` followed by a symbol, it will draw a box with the symbol's color (the same color as the highlighs of the symbol).
 - If the bookmark text starts with `#markdown`, the rest of the bookmark will be rendered as markdown

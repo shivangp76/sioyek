@@ -9,9 +9,9 @@ for i in range(3):
 
 s.goto_left_smart()
 
-s.keyboard_select_line('', wait=False)
+s.keyboard_select_line(wait=False)
 time.sleep(1)
-s.send_symbol('c')
+s.send_symbol('a')
 s.send_symbol('a')
 start_recording(RECORDING_FILE_NAME)
 time.sleep(1)

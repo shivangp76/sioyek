@@ -4,7 +4,7 @@ demo_code:
 ```python
 s = sioyek.Sioyek('', launch_if_not_exists=True, launch_args=LAUNCH_ARGS)
 s.goto_page_with_page_number(1)
-s.keyboard_select_line('', wait=False)
+s.keyboard_select_line(wait=False)
 time.sleep(0.3)
 s.send_symbol('c')
 start_recording(RECORDING_FILE_NAME)

@@ -8,7 +8,11 @@ time.sleep(1)
 start_recording(RECORDING_FILE_NAME)
 time.sleep(1)
 show_run_command(s, 'keyboard_smart_jump')
-type_words(s, 'sa', delay=1, final_delay=2)
+time.sleep(1)
+s.send_symbol('s')
+time.sleep(1)
+s.send_symbol('a')
+# type_words(s, 'sa', delay=1, final_delay=2)
 
 time.sleep(3)
 
