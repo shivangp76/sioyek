@@ -14,6 +14,7 @@ CONFIGS_PATH = DOCUMENTATION_PATH / "configs"
 OUTPUT_DIR = DOCUMENTATION_PATH.parent / "bak" / "doc"
 DOCUMENTATION_JSON_PATH = pathlib.Path(__file__).parent.parent.parent / "data" / "sioyek_documentation.json"
 PANDOC_CACHE_PATH = DOCUMENTATION_PATH.parent / "bak" / "doc" / "pandoc_cache"
+DOCUMENTATION_TEX_PATH = OUTPUT_DIR / 'sioyek_documentation.tex'
 
 @dataclass
 class Documentation:
@@ -331,10 +332,13 @@ def get_latex_documentation():
 
     return documentation 
 
-if __name__ == '__main__':
+def latex_main():
     docs = get_latex_documentation()
     docs = docs.replace('\r', '')
-    with open(OUTPUT_DIR / 'sioyek_documentation.tex', 'w', encoding='utf8') as outfile:
+    with open(DOCUMENTATION_TEX_PATH, 'w', encoding='utf8') as outfile:
         outfile.write(docs)
+
+if __name__ == '__main__':
+    latex_main()
 
 #%%

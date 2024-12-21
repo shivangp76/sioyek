@@ -46,12 +46,11 @@ def show_run_command(s, command):
 def type_words(s, command, delay=0.1, final_delay=0.5, select=True):
     special_chars = [',', ')']
     for ch in command:
-        if ch in special_chars:
-            s.type_text("'" + ch + "'")
-        elif ch == "'":
-            s.type_text("'\\''")
-        else:
-            s.type_text(ch)
+        s.type_text(ch)
+        # if ch in special_chars:
+        #     s.type_text("'" + ch + "'")
+        # else:
+        #     s.type_text(ch)
         time.sleep(delay)
     
     if select:
@@ -126,9 +125,9 @@ def generate_video_for_new_markdown_files():
     print('-----------------')
     markdown_files_paths = []
 
-    # for file in os.listdir(docs_base_path / 'commands'):
-    #     markdown_file_path = docs_base_path / 'commands' / file
-    #     markdown_files_paths.append(markdown_file_path)
+    for file in os.listdir(docs_base_path / 'commands'):
+        markdown_file_path = docs_base_path / 'commands' / file
+        markdown_files_paths.append(markdown_file_path)
 
     for file in os.listdir(docs_base_path / 'configs'):
         markdown_file_path = docs_base_path / 'configs' / file

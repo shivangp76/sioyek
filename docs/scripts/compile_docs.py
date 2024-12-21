@@ -26,7 +26,10 @@ def create_arg_parser():
         prog='sioyek_database_utils',
         )
 
-    parser.add_argument('--output-dir', type=str, help='Path to the local database file (local.db)', default='.')
+    parser.add_argument('--output-dir', type=str, help='Directory to put output files', default='.')
+    parser.add_argument('--copy', action='store_true'  , help='Copy the sioyek_documentation.json file to sioyek_path/data')
+    parser.add_argument('--latex', action='store_true'  , help='Build the latex documentation.')
+    parser.add_argument('--compile-latex', action='store_true'  , help='Compile the generated latex documentation.')
     return parser
 
 def get_video_file_path_for_markdown_file(markdown_file_path):
@@ -54,11 +57,11 @@ def resolve_configs_and_commands(
     # of parentheisized part
     def translate_command(match):
         command_name = match.group()[9:-1]
-        return f'[`{command_name}`]({commands_file_name}#{commands_title_map[command_name]})'
+        return f'[`{command_name}`]({commands_file_name}#{commands_title_map.get(command_name, "")})'
     
     def translate_config(match):
         config_name = match.group()[8:-1]
-        return f'[`{config_name}`]({configs_file_name}#{configs_title_map[config_name]})'
+        return f'[`{config_name}`]({configs_file_name}#{configs_title_map.get(config_name, "")})'
     
     # markdown = config_regex.sub(lambda x: '`' + x.group()[8:-1] + '`', markdown)
     # markdown = command_regex.sub(lambda x: '`' + x.group()[9:-1] + '`', markdown)
@@ -267,13 +270,17 @@ if __name__ == '__main__':
     generate_restructured_text_documentation(args.output_dir)
     generate_json_documentation(args.output_dir)
 
-    # doc_data = get_documentation_maps('compiled_commands.md', 'compiled_configs.md')
+    if args.latex or args.compile_latex:
+        from generate_latex_doc import latex_main, DOCUMENTATION_TEX_PATH
+        latex_main()
+        if args.compile_latex:
+            # compile pdflatex with support for links, etc.
+            os.system(f"xelatex -interaction=nonstopmode -output-directory={args.output_dir} {DOCUMENTATION_TEX_PATH}")
 
-    # command_name_to_title_map = doc_data['command_name_to_title_map']
-    # config_name_to_title_map = doc_data['config_name_to_title_map']
-    # command_title_to_documentation_map = doc_data['command_title_to_documentation_map']
-    # config_title_to_documentation_map = doc_data['config_title_to_documentation_map']
-#%%
-# found = config_regex.findall(s)
-# print(found)
-# %%
+    if args.copy:
+
+        shutil.copy(args.output_dir + '/sioyek_documentation.json', pathlib.Path(__file__).parent.parent.parent / 'data' / 'sioyek_documentation.json')
+        if args.latex or args.compile_latex:
+            shutil.copy(args.output_dir + '/sioyek_documentation.pdf', pathlib.Path(__file__).parent.parent.parent / 'data' / 'sioyek_documentation.pdf')
+            print('sioyek_documentation.pdf file copied to sioyek_path/data')
+        print('sioyek_documentation.json file copied to sioyek_path/data')
