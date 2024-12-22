@@ -1434,7 +1434,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
 
     add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({{L"local", L"server", L"ask", L"show_button"}}));
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
-    add_enum(L"line_select_ruler_display_mode", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
+    add_enum(L"ruler_style", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
+    add_enum(L"line_select_ruler_display_style", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
     add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"}}));
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
     add_enum(L"selected_text_highlight_style", &SELECTED_TEXT_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"inverted", L"background"}}));
