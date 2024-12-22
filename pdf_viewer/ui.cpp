@@ -2893,7 +2893,7 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     int text_highlight_begin = -1, text_highlight_end=-1;
     int text_similarity = similarity_score_cached(bookmark_text.toLower(), pattern, &text_highlight_begin, &text_highlight_end);
 
-    if (text_similarity > 0 && text_highlight_begin >= 0) {
+    if (bookmark_text.size() > 0 && text_similarity > 0 && text_highlight_begin >= 0) {
         bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
     }
 
@@ -2916,6 +2916,25 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     painter->fillRect(option.rect, is_selected ? convert_float3_to_qcolor(UI_SELECTED_BACKGROUND_COLOR) : convert_float3_to_qcolor(UI_BACKGROUND_COLOR));
     //painter->fillRect(option.rect, is_selected ? Qt::red : Qt::blue);
 
+    if (bookmark_text.size() == 0) {
+        if (bookmark.description.size() > 1 && bookmark.description[0] == '#') {
+            if (bookmark.description[1] >= 'a' && bookmark.description[1] <= 'z') {
+                int symbol_index = bookmark.description[1] - 'a';
+                float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
+                QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2]);
+                painter->save();
+                painter->setPen(qcolor);
+                painter->drawRect(option.rect);
+                painter->restore();
+            }
+            if (bookmark.description[1] >= 'A' && bookmark.description[1] <= 'Z') {
+                int symbol_index = bookmark.description[1] - 'A';
+                float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
+                QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2], 0.5f);
+                painter->fillRect(option.rect, QBrush(qcolor));
+            }
+        }
+    }
     painter->translate(option.rect.topLeft());
     painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
     //qDebug() << "size in paint is :" << bookmark_document.toPlainText().size() << " " << index;
