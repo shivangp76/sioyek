@@ -444,6 +444,17 @@ public:
         initialize_from_invocations(command_invocations);
     }
 
+    MacroCommand(MainWidget* widget_, CommandManager* manager, std::string name_, std::vector<std::unique_ptr<Command>>&& cmds) : Command(name_, widget_) {
+        command_manager = manager;
+        name = name_;
+
+        for (auto&& cmd : cmds) {
+            commands.push_back(std::move(cmd));
+            performed.push_back(false);
+            pre_performed.push_back(false);
+        }
+    }
+
     MacroCommand(MainWidget* widget_, CommandManager* manager, std::string name_, QString command_name, QStringList args) : Command(name_, widget_) {
         command_manager = manager;
         name = name_;
@@ -5516,7 +5527,12 @@ public:
             widget->handle_start_reading();
         }
         else {
-            widget->execute_macro_if_enabled(L"keyboard_select_line;start_reading");
+            std::vector<std::unique_ptr<Command>> cmds;
+            cmds.push_back(std::move(std::make_unique<KeyboardSelectLineCommand>(widget)));
+            cmds.push_back(std::move(std::make_unique<StartReadingCommand>(widget)));
+
+            widget->handle_command_types(
+                std::make_unique<MacroCommand>(widget, widget->command_manager, cname, std::move(cmds)), 1);
         }
     }
 };
