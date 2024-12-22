@@ -3,7 +3,7 @@ related_configs:
 
 type: string
 
-for_configs: 
+for_configs: ruler_display_mode ruler_style
 
 demo_code:
 ```python
