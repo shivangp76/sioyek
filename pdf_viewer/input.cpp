@@ -1404,16 +1404,6 @@ public:
     }
 };
 
-class StartReadingCommand : public Command {
-public:
-    static inline const std::string cname = "start_reading";
-    static inline const std::string hname = "Read using local text to speech";
-    StartReadingCommand(MainWidget* w) : Command(cname, w) {};
-
-    void perform() {
-        widget->handle_start_reading();
-    }
-};
 
 class IncreaseTtsRateCommand : public Command {
 public:
@@ -5511,6 +5501,22 @@ public:
 
         if (!is_done()) {
             widget->set_tag_prefix(text.value());
+        }
+    }
+};
+
+class StartReadingCommand : public Command {
+public:
+    static inline const std::string cname = "start_reading";
+    static inline const std::string hname = "Read using local text to speech";
+    StartReadingCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        if (dv()->is_ruler_mode()) {
+            widget->handle_start_reading();
+        }
+        else {
+            widget->execute_macro_if_enabled(L"keyboard_select_line;start_reading");
         }
     }
 };
