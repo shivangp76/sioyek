@@ -5613,6 +5613,7 @@ std::vector<PdfLink> Document::find_references(std::string uri) {
 
 std::vector<PdfLink> Document::find_references_to_range(float begin_y, float end_y) {
     std::vector<PdfLink> res;
+    std::vector<PdfLink> close_ones;
 
     for (int i = 0; i < num_pages(); i++) {
 
@@ -5625,11 +5626,15 @@ std::vector<PdfLink> Document::find_references_to_range(float begin_y, float end
                 pos.y = parsed_uri.y;
                 pos.x = 0;
                 AbsoluteDocumentPos abspos = pos.to_absolute(this);
+                float dist = std::min(std::abs(abspos.y - begin_y), std::abs(end_y - abspos.y));
                 if (abspos.y >= (begin_y - 1) && abspos.y <= (end_y + 1)) {
                     res.push_back(link);
+                }
+                else if (dist < 10){
+                    close_ones.push_back(link);
                 }
             }
         }
     }
-    return res;
+    return res.size() > 0 ? res : close_ones;
 }
