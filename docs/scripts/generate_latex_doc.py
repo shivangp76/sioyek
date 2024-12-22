@@ -264,7 +264,6 @@ def get_latex_documentation():
 \title{Sioyek Documentation}
 \date{}
 \maketitle
-\tableofcontents
 \section{Commands}
 '''
 
