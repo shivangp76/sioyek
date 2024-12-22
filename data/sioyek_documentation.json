@@ -366,12 +366,16 @@
         "zoom_in_out_overview": "zoom_in_overview-zoom_out_overview"
     },
     "config_name_to_title_map": {
+        "add_newlines_when_copying_text": "add_newlines_when_copying_text",
         "adjust_annotation_colors_for_dark_mode": "adjust_annotation_colors_for_dark_mode",
         "align_link_dest_to_top": "align_link_dest_to_top",
         "allow_horizontal_drag_when_document_is_small": "allow_horizontal_drag_when_document_is_small",
         "allow_main_view_scroll_while_in_overview": "allow_main_view_scroll_while_in_overview",
+        "always_copy_selected_text": "always_copy_selected_text",
+        "always_render_bookmarks": "always_render_bookmarks",
         "annotations_directory": "annotations_directory",
-        "autocenter_ruler": "autocenter_ruler",
+        "autocenter_ruler": "autocenter_ruler-autocenter_visual_scroll",
+        "autocenter_visual_scroll": "autocenter_ruler-autocenter_visual_scroll",
         "automatically_download_matching_paper_name": "automatically_download_matching_paper_name",
         "automatically_index_documents_for_fulltext_search": "automatically_index_documents_for_fulltext_search",
         "automatically_update_checksum_when_document_is_changed": "automatically_update_checksum_when_document_is_changed",
@@ -385,6 +389,7 @@
         "background_color": "background_color-custom_color_mode_empty_background_color-dark_mode_background_color",
         "custom_color_mode_empty_background_color": "background_color-custom_color_mode_empty_background_color-dark_mode_background_color",
         "dark_mode_background_color": "background_color-custom_color_mode_empty_background_color-dark_mode_background_color",
+        "bookmark_font_facr": "bookmark_font_facr",
         "box_highlight_bookmark_transparency": "box_highlight_bookmark_transparency",
         "case_sensitive_search": "case_sensitive_search",
         "check_for_updates_on_startup": "check_for_updates_on_startup",
@@ -407,6 +412,7 @@
         "alt_right_click_command": "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command",
         "click_commands": "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command",
         "collapsed_toc": "collapsed_toc",
+        "color_mode": "color_mode",
         "context_menu_items": "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview",
         "context_menu_items_for_links": "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview",
         "context_menu_items_for_selected_text": "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview",
@@ -448,6 +454,8 @@
         "highlight_color_a_z": "highlight_color_[a-z]",
         "highlight_links": "highlight_links",
         "highlight_middle_click": "highlight_middle_click",
+        "highlight_style": "highlight_style-selected_highlight_style",
+        "selected_highlight_style": "highlight_style-selected_highlight_style",
         "hover_overview": "hover_overview",
         "ignore_scroll_events": "ignore_scroll_events",
         "ignore_whitespace_in_presentation_mode": "ignore_whitespace_in_presentation_mode",
@@ -463,7 +471,9 @@
         "keyboard_selected_tag_text_color": "keyboard_select_background_color-keyboard_select_text_color-keyboard_selected_tag_background_color-keyboard_selected_tag_text_color",
         "keyboard_select_colors": "keyboard_select_background_color-keyboard_select_text_color-keyboard_selected_tag_background_color-keyboard_selected_tag_text_color",
         "keyboard_select_font_size": "keyboard_select_font_size",
+        "lighten_colors_when_embedding_annotations": "lighten_colors_when_embedding_annotations",
         "linear_filter": "linear_filter",
+        "line_select_ruler_display_style": "highlight_style-selected_highlight_style",
         "link_highlight_color": "link_highlight_color",
         "max_created_toc_size": "max_created_toc_size",
         "menu_matched_search_highlight": "menu_matched_search_highlight",
@@ -473,11 +483,13 @@
         "shift_middle_click_search_engine": "middle_click_search_engine-shift_middle_click_search_engine",
         "move_screen_ratio": "move_screen_ratio-move_screen_percentage",
         "move_screen_percentage": "move_screen_ratio-move_screen_percentage",
+        "multiline_menus": "multiline_menus",
         "numeric_tags": "numeric_tags",
         "num_cached_pages": "num_cached_pages",
         "num_prerendered_next_slides": "num_prerendered_next_slides-num_prerendered_prev_slides",
         "num_prerendered_prev_slides": "num_prerendered_next_slides-num_prerendered_prev_slides",
         "num_two_page_columns": "num_two_page_columns",
+        "overview_highlight_style": "overview_highlight_style",
         "overview_reference_highlight_color": "overview_reference_highlight_color",
         "page_separator_width": "page_separator_width-page_separator_color",
         "page_separator_color": "page_separator_width-page_separator_color",
@@ -503,7 +515,8 @@
         "ruler_auto_move_sensitivity": "ruler_auto_move_sensitivity",
         "ruler_auto_move_threshold_distance": "ruler_auto_move_threshold_distance",
         "ruler_color": "ruler_color",
-        "ruler_display_mode": "ruler_display_mode",
+        "ruler_display_mode": "ruler_display_mode-ruler_style",
+        "ruler_style": "ruler_display_mode-ruler_style",
         "ruler_marker_color": "ruler_marker_color",
         "ruler_next_page_end_pos": "ruler_next_page_end_pos-ruler_next_page_begin_pos",
         "ruler_next_page_begin_pos": "ruler_next_page_end_pos-ruler_next_page_begin_pos",
@@ -513,6 +526,7 @@
         "ruler_pixel_width": "ruler_pixel_width",
         "ruler_slit_color": "ruler_slit_color",
         "save_externally_edited_text_on_focus": "save_externally_edited_text_on_focus",
+        "scan_path": "scan_path",
         "scrollbar": "scrollbar",
         "scrollview_sensitivity": "scrollview_sensitivity",
         "scroll_zoom_inc_factor": "scroll_zoom_inc_factor",
@@ -526,6 +540,7 @@
         "should_launch_new_window": "should_launch_new_window",
         "should_load_tutorial_when_no_other_file": "should_load_tutorial_when_no_other_file",
         "should_warn_about_user_key_override": "should_warn_about_user_key_override",
+        "show_documentation_in_widget": "show_documentation_in_widget",
         "show_full_doc_path": "show_full_doc_path",
         "show_most_recent_commands_first": "show_most_recent_commands_first",
         "show_reference_overview_highlights": "show_reference_overview_highlights",
@@ -560,24 +575,28 @@
         "table_extract_behaviour": "table_extract_behaviour",
         "tag_font_face": "tag_font_face",
         "text_highlight_color": "text_highlight_color",
+        "titlebar_format": "titlebar_format",
         "toc_jump_align_top": "toc_jump_align_top",
         "touchpad_sensitivity": "touchpad_sensitivity",
         "touch_mode": "touch_mode",
-        "back_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "back_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "forward_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "forward_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "middle_left_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "middle_left_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "middle_right_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "middle_right_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "ruler_next_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "ruler_next_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "ruler_prev_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "ruler_prev_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
-        "touch_rect_commands": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command",
+        "back_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "back_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "forward_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "forward_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "middle_left_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "middle_left_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "middle_right_rect_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "middle_right_rect_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "ruler_next_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "ruler_next_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "ruler_prev_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "ruler_prev_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "top_center_tap_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "top_center_hold_command": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
+        "touch_rect_commands": "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command",
         "tts_rate": "tts_rate",
         "tts_rate_increment": "tts_rate_increment",
+        "tts_voice": "tts_voice",
         "ui_font": "ui_font",
         "portrait_back_ui_rect": "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect",
         "portrait_forward_ui_rect": "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect",
@@ -598,12 +617,16 @@
         "ui_selected_background_color": "ui_text_color-ui_background_color-ui_selected_text_color-ui_selected_background_color",
         "ui_text_background_selected_color": "ui_text_color-ui_background_color-ui_selected_text_color-ui_selected_background_color",
         "unselected_search_highlight_color": "unselected_search_highlight_color",
+        "use_legacy_keybinds": "use_legacy_keybinds",
         "use_ruler_to_highlight_synctex_line": "use_ruler_to_highlight_synctex_line",
         "use_system_theme": "use_system_theme-use_custom_color_as_dark_system_theme",
         "use_custom_color_as_dark_system_theme": "use_system_theme-use_custom_color_as_dark_system_theme",
         "vertical_move_amount": "vertical_move_amount-horizontal_move_amount",
         "horizontal_move_amount": "vertical_move_amount-horizontal_move_amount",
         "vertical_horizontal_move_amount": "vertical_move_amount-horizontal_move_amount",
+        "volume_up_command": "volume_up_command-volume_down_command",
+        "volume_down_command": "volume_up_command-volume_down_command",
+        "volume_up_down_command": "volume_up_command-volume_down_command",
         "wheel_zoom_on_cursor": "wheel_zoom_on_cursor",
         "wheel_zoom_in_cursor": "wheel_zoom_on_cursor",
         "main_window_size": "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset",
@@ -774,6 +797,7 @@
         "rotate_clockwise-rotate_counterclockwise": "# rotate_clockwise, rotate_counterclockwise\nRotate the document.",
         "ruler_under_cursor-visual_mark_under_cursor": "# ruler_under_cursor, visual_mark_under_cursor\nCreate a ruler under the line under mouse cursor.",
         "save_scratchpad": "# save_scratchpad\nSave the current scratchpad state to a file. This file can be loaded later using [`load_scratchpad`](commands.md#load_scratchpad).",
+        "scan_new_files": "# scan_new_files\nAutomatically scan the PDF files in [`scan_path`](configs.md#scan_path) and add them to the library.",
         "screenshot": "# screenshot\nTake a screenshot from sioyek window and save it to the given path. This is mainly used for testing purposes.",
         "screen_down-screen_up": "# screen_down, screen_up\nMove one screen up or down. The amount of movement can be configured using [`move_screen_ratio`](configs.md#move_screen_ratio-move_screen_percentage).",
         "scroll_selected_bookmark_down-scroll_selected_bookmark_up": "# scroll_selected_bookmark_down, scroll_selected_bookmark_up\nScroll the contents of a freetext bookmark up or down.",
@@ -843,12 +867,15 @@
         "zoom_in_overview-zoom_out_overview": "# zoom_in_overview, zoom_out_overview\nZoom in/out in the overview window."
     },
     "config_title_to_documentation_map": {
+        "add_newlines_when_copying_text": "# add_newlines_when_copying_text\nIf this options is set, we automatically add newlines at the end of the lines when copying text, otherwise we copy the text as is.",
         "adjust_annotation_colors_for_dark_mode": "# adjust_annotation_colors_for_dark_mode\nAutomatically adjust annotation colors to be more appropriate in dark/custom color modes.",
         "align_link_dest_to_top": "# align_link_dest_to_top\nNormally when jumping to links, we align the middle of the screen with the link destination. If this option is set we align the top of the screen instead.",
         "allow_horizontal_drag_when_document_is_small": "# allow_horizontal_drag_when_document_is_small\nNormally when the document is smaller than screen width, we center in the screen and disallow horizontal mouse dragging to keep the document centered. If this option is set, then we allow the document to be dragged even when it is smaller than the screen width.",
         "allow_main_view_scroll_while_in_overview": "# allow_main_view_scroll_while_in_overview\nAllow the main document to be scrolled when overview is opened (otherwise we use scrolling outside the overview while the overview window is opened to move between possible overview targets).",
+        "always_copy_selected_text": "# always_copy_selected_text\nIf this options is set, we automatically copy the selected text each time a new piece of text is selected.",
+        "always_render_bookmarks": "# always_render_bookmarks\nIf this option is set, we always render freetext bookmarks. Normally, we render freetext bookmarks in another thread to avoid blocking the main thread. This means that sometimes freetext bookmarks are not rendered immediately. If you want to always render freetext bookmarks immediately, you can set this option, but it might caues performance degradation.",
         "annotations_directory": "# annotations_directory\nNormally sioyek keeps some annotations files next to the pdf files (e.g. the freehand drawings file). If you don't want this you can specify the [`annotations_directory`](configs.md#annotations_directory) and then sioyek keeps the annotations files in that directory.",
-        "autocenter_ruler": "# autocenter_ruler\nAlways center the document on the ruler when moving the ruler.",
+        "autocenter_ruler-autocenter_visual_scroll": "# autocenter_ruler, autocenter_visual_scroll\nAlways center the document on the ruler when moving the ruler.",
         "automatically_download_matching_paper_name": "# automatically_download_matching_paper_name\nIf this config is not set, when downloading papers, we search the paper name and show the user a list of matching papers and download it when the user selects one of the options. If this option is set and one of the found paper matches the query title exactly, we no longer show the user a list and automatically download the matching paper.",
         "automatically_index_documents_for_fulltext_search": "# automatically_index_documents_for_fulltext_search\nAutomatically index opened documents for fulltext search.",
         "automatically_update_checksum_when_document_is_changed": "# automatically_update_checksum_when_document_is_changed\nWhen the document is changed (e.g. a latex document being edited) automatically update the checksum.",
@@ -858,11 +885,13 @@
         "auto_rename_downloaded_papers": "# auto_rename_downloaded_papers\nIf set, sioyek renames the downloaded papers to an automatically determined file name (e.g. instead of a cryptic name like `23434.234.pdf` it will be renamed to something like `some_paper_title.pdf`).",
         "background_bookmarks_pixel_budget": "# background_bookmarks_pixel_budget\nMaximum number of pixels allocated to cached freetext bookmarks.",
         "background_color-custom_color_mode_empty_background_color-dark_mode_background_color": "# background_color, custom_color_mode_empty_background_color, dark_mode_background_color\nThe empty background color in light/dark/custom color modes.",
+        "bookmark_font_facr": "# bookmark_font_facr\nFont face to use for freetext bookmarks.",
         "box_highlight_bookmark_transparency": "# box_highlight_bookmark_transparency\nThe transparency of box freetext bookmarks. The freetext bookmarks that start with `#` followed by a capital letter will be rendered as transparent boxes, this config controls the transparency of those boxes. The value should be between 0 and 1, where 0 is fully transparent and 1 is fully opaque.",
         "case_sensitive_search": "# case_sensitive_search\nIf set, we match the search queries in a case-sensitive manner.",
         "check_for_updates_on_startup": "# check_for_updates_on_startup\nCheck for software updates when sioyek starts.",
         "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command": "# shift_click_command, control_click_command, command_click_command, hold_middle_click_command, tablet_pen_click_command, tablet_pen_double_click_command, right_click_command, middle_click_command, shift_middle_click_command, control_middle_click_command, command_middle_click_command, alt_middle_click_command, shift_right_click_command, control_right_click_command, command_right_click_command, alt_click_command, alt_right_click_command\n`macro` commands to run when the corresponding button is clicked (while possibly holding modifier keys). Example:\n\n```\nalt_click_command toggle_dark_mode;toggle_scrollbar;set_status_string('hi there')\n```",
         "collapsed_toc": "# collapsed_toc\nOpen the table of contents in collapsed state by default.",
+        "color_mode": "# color_mode\nThe default color mode when launching sioyek. Possible values are `light`, `dark`, and `custom`. See [`toggle_dark_mode`](commands.md#toggle_dark_mode) and [`toggle_custom_color`](commands.md#toggle_custom_color) for more information about those color modes.",
         "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview": "# context_menu_items, context_menu_items_for_links, context_menu_items_for_selected_text, context_menu_items_for_highlights, context_menu_items_for_bookmarks, context_menu_items_for_overview\nItems in context menu to show when [`show_context_menu`](commands.md#show_context_menu) is executed and the cursor is on the object specific to the option ([`context_menu_items`](configs.md#context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview) is for the case where no special object is under the cursor).\n\nIf [`right_click_context_menu`](configs.md#right_click_context_menu) is set, you can open this all these menus (except for [`context_menu_items`](configs.md#context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview)) by right-clicking on objects in the page.",
         "create_table_of_contents_if_not_exists": "# create_table_of_contents_if_not_exists\nIf the document doesn't have a table of contents, try to automatically generate one (this is a heuristic and doesn't work perfectly all the time).",
         "custom_color_contrast": "# custom_color_contrast\nSpecifies how much should we try to stick with original colors vs how much we want to improve the contrast for readability. If the value is 0, then we try to stick with the original colors as much as possible. If the value is 1, then we try to improve the contrast as much as possible. And the intermediate values are a mix of these two extremes.",
@@ -893,6 +922,7 @@
         "highlight_color_[a-z]": "# highlight_color_[a-z]\nSpecifies the color for each of highlight types. For example `highlight_color_r` specifies the color of highlights with symbol `r`.",
         "highlight_links": "# highlight_links\nWhether we should highlight PDF links.",
         "highlight_middle_click": "# highlight_middle_click\nIf set, middle clicking on selected text highlights it with the current highlight type.",
+        "highlight_style-selected_highlight_style": "# highlight_style, selected_highlight_style\nSpecifies how to render the selected line in line select mode. Possible values are the same as [`ruler_style`](configs.md#ruler_display_mode-ruler_style).",
         "hover_overview": "# hover_overview\nOpen the overview page when mouse cursor hovers over a link (I don't recommend using this config because it might not work well with other sioyek features, just right click on the link to create the overview).",
         "ignore_scroll_events": "# ignore_scroll_events\nIgnore scroll events (e.g. useful to avoid moving in presentation mode when accidentally touching the touchpad).",
         "ignore_whitespace_in_presentation_mode": "# ignore_whitespace_in_presentation_mode\nIgnore whitespace when fitting pages to screen in presentation mode.",
@@ -904,6 +934,7 @@
         "keyboard_point_selection": "# keyboard_point_selection\nIf set, when executing commands that require a point on the screen to be selected, we show a list of labels on the screen and allow the user to select the point by typing the label using keyboard.",
         "keyboard_select_background_color-keyboard_select_text_color-keyboard_selected_tag_background_color-keyboard_selected_tag_text_color": "# keyboard_select_background_color, keyboard_select_text_color, keyboard_selected_tag_background_color, keyboard_selected_tag_text_color\nThe color of the tags displayed for keyboard commands.",
         "keyboard_select_font_size": "# keyboard_select_font_size\nThe font size of the tags displayed for keyboard commands.",
+        "lighten_colors_when_embedding_annotations": "# lighten_colors_when_embedding_annotations\nWhen embedding sioyek annotations to PDF annotations, if this option is set we try to make the background color of dark annotations lighter so that the text on top of them is more visible. If this option is not set, we keep the original colors of the annotations.",
         "linear_filter": "# linear_filter\nPerform linear texture filtering instead of nearest neighbor (should not be necessary unless you use non-interger render scales).",
         "link_highlight_color": "# link_highlight_color\nHighlight color to use when highlighting links.",
         "max_created_toc_size": "# max_created_toc_size\nThe maximum size of automatically generated table of contents.",
@@ -911,10 +942,12 @@
         "menu_screen_width_ratio-menu_screen_height_ratio": "# menu_screen_width_ratio, menu_screen_height_ratio\nThe ratio of screen width/height to use for menus.",
         "middle_click_search_engine-shift_middle_click_search_engine": "# middle_click_search_engine, shift_middle_click_search_engine\nWhen middle clicking on a paper name, we will search for it in the engine (as configured in @config(search_url_[a-z])) set here.\n\nFor example:\n```\nsearch_url_s https://scholar.google.com/scholar?q=\nmiddle_click_search_engine s\n```\nmeans that we will search the paper name in google scholar when user middle clicks on a paper name.",
         "move_screen_ratio-move_screen_percentage": "# move_screen_ratio, move_screen_percentage\nThe ratio of screen height to move when executing [`screen_down`](commands.md#screen_down-screen_up) and [`screen_up`](commands.md#screen_down-screen_up).",
+        "multiline_menus": "# multiline_menus\nAllow menu items to span multiple lines. This looks better but can have a performance impact.",
         "numeric_tags": "# numeric_tags\nWhen performing `keyboard_` commands that require a point to be selected, we associate a tag with each possible target. If this option is set, the tags only use numerical values instead of alphabetical values.",
         "num_cached_pages": "# num_cached_pages\nTotal number of cached rendered pages. Higher values may reduce flickering and power consumption (because pages have to be re-rendered less) at the cost of increased memory usage.",
         "num_prerendered_next_slides-num_prerendered_prev_slides": "# num_prerendered_next_slides, num_prerendered_prev_slides\nNumber of next/previous pages to prerender in presentation mode.",
         "num_two_page_columns": "# num_two_page_columns\nChanges the number of page columns in \"two\" page mode.",
+        "overview_highlight_style": "# overview_highlight_style\nSpecifies how to render reference highlights in the overview page. Possible values are the same as [`ruler_style`](configs.md#ruler_display_mode-ruler_style).",
         "overview_reference_highlight_color": "# overview_reference_highlight_color\nHighlight color to use when highlighting the automatically detected overview paper name.",
         "page_separator_width-page_separator_color": "# page_separator_width, page_separator_color\nColor and size of separator between pages.",
         "page_space_x-page_space_y": "# page_space_x, page_space_y\nSpacing between pages in two page mode.",
@@ -933,13 +966,14 @@
         "ruler_auto_move_sensitivity": "# ruler_auto_move_sensitivity\nIn touch mode, you can move the ruler by pressing on the ruler next rect (by default it is in the bottom-right of the screen) and dragging it. This configuration controls how sensitive the ruler is to your touch. A higher value will make the ruler move faster when you drag it. A lower value will make the ruler move slower when you drag it.",
         "ruler_auto_move_threshold_distance": "# ruler_auto_move_threshold_distance\nIn touch mode, you are able to move the ruler by pressing on the move down rect and then moving the cursor, each time the cursor moves `ruler_auto_move_threshold_distance` we move to the next line.",
         "ruler_color": "# ruler_color\nRuler color.",
-        "ruler_display_mode": "# ruler_display_mode\nSpecifies how the ruler should be rendered. The possible values are:\n\n- `box`: draw a box around selected line\n- `slit`: draw a shadow on everything except the selected line\n- `underline`: draw a line under the selected line\n- `highlight_below`: highlight the entire screen area below the line\n- `highlight`: highlights the ruler line",
+        "ruler_display_mode-ruler_style": "# ruler_display_mode, ruler_style\nSpecifies how the ruler should be rendered. The possible values are:\n\n- `box`: draw a box around selected line\n- `slit`: draw a shadow on everything except the selected line\n- `underline`: draw a line under the selected line\n- `highlight_below`: highlight the entire screen area below the line\n- `highlight`: highlights the ruler line",
         "ruler_marker_color": "# ruler_marker_color\nThe ruler marker color to highlight the next left side of the screen when using [`move_ruler_next`](commands.md#move_ruler_next-move_ruler_prev-move_visual_mark_next-move_visual_mark_prev).",
         "ruler_next_page_end_pos-ruler_next_page_begin_pos": "# ruler_next_page_end_pos, ruler_next_page_begin_pos\n[`ruler_next_page_end_pos`](configs.md#ruler_next_page_end_pos-ruler_next_page_begin_pos) determines when we should move to the next page when using the ruler and when we do so, [`ruler_next_page_begin_pos`](configs.md#ruler_next_page_end_pos-ruler_next_page_begin_pos) determines where the new location of the ruler should be in the screen.\n\n[`ruler_next_page_begin_pos`](configs.md#ruler_next_page_end_pos-ruler_next_page_begin_pos) is relative to the center of the screen and [`ruler_next_page_end_pos`](configs.md#ruler_next_page_end_pos-ruler_next_page_begin_pos) is relative to the bottom of the screen. For example, [`ruler_next_page_begin_pos`](configs.md#ruler_next_page_end_pos-ruler_next_page_begin_pos)=1 means we move one unit (each unit is half screen height) up from the middle of the screen which means we move to the top of the screen when moving to the next page.",
         "ruler_padding-ruler_x_padding": "# ruler_padding, ruler_x_padding\nRuler padding when using `slit` ruler display mode.",
-        "ruler_pixel_width": "# ruler_pixel_width\nRuler thickness when [`ruler_display_mode`](configs.md#ruler_display_mode) is set to `underline`.",
-        "ruler_slit_color": "# ruler_slit_color\nRuler color when [`ruler_display_mode`](configs.md#ruler_display_mode) is set to `slit`.",
+        "ruler_pixel_width": "# ruler_pixel_width\nRuler thickness when [`ruler_display_mode`](configs.md#ruler_display_mode-ruler_style) is set to `underline`.",
+        "ruler_slit_color": "# ruler_slit_color\nRuler color when [`ruler_display_mode`](configs.md#ruler_display_mode-ruler_style) is set to `slit`.",
         "save_externally_edited_text_on_focus": "# save_externally_edited_text_on_focus\nIf this option is set, when editing text using [`open_external_text_editor`](commands.md#open_external_text_editor) command, we accept the externally edited text when the sioyek window gains focus again (otherwise the user has to manually press enter to accept the input).",
+        "scan_path": "# scan_path\nPath to scan for new files when executing the [`scan_new_files`](commands.md#scan_new_files) command.",
         "scrollbar": "# scrollbar\nIf set, we draw a scrollbar on the right side of the window.",
         "scrollview_sensitivity": "# scrollview_sensitivity\nThe relative sensitivity when scrolling the overview window.",
         "scroll_zoom_inc_factor": "# scroll_zoom_inc_factor\nThe amount to multiply/divide the zoom level when executing zoom commands by holding control and using the mouse wheel.",
@@ -951,6 +985,7 @@
         "should_launch_new_window": "# should_launch_new_window\nWhen opening a new file from command line, use a new sioyek window if one already exists.",
         "should_load_tutorial_when_no_other_file": "# should_load_tutorial_when_no_other_file\nWhen there is no other file to open (e.g. due to sioyek being opened for the first time) show the sioyek tutorial.",
         "should_warn_about_user_key_override": "# should_warn_about_user_key_override\nPrint a warning message in console when a key override is detected in `keys_user.config`.",
+        "show_documentation_in_widget": "# show_documentation_in_widget\nNormally when showing documentation (e.g. by appending a ? in the command menu or using [`documentation_search`](commands.md#documentation_search)) we open the corresponding location in the documentation PDF file. If this option is set we open the documentation in a widget instead.",
         "show_full_doc_path": "# show_full_doc_path\nNormally we just show the file name in the documents list, if this option is set, we show the full document path instead.",
         "show_most_recent_commands_first": "# show_most_recent_commands_first\nWhen opening the command menu show the most recent commands executed in the current session first.",
         "show_reference_overview_highlights": "# show_reference_overview_highlights\nHighlight the reference paper name in overview window (this is the automatically detected paper name which will be downloaded with [`download_overview_paper`](commands.md#download_overview_paper-download_overview_paper_no_prompt) command).",
@@ -976,19 +1011,23 @@
         "table_extract_behaviour": "# table_extract_behaviour\nWhat to do with extracted table. The possible values are:\n\n- `bookmark`: Create a freetext bookmark with the extracted table\n- `copy`: Copy the extracted table into clipboard",
         "tag_font_face": "# tag_font_face\nFont face to use for keyboard tags.",
         "text_highlight_color": "# text_highlight_color\nThe highlight color of selected text (e.g. when user selects text using mouse or using commands like [`keyboard_select`](commands.md#keyboard_select)).",
+        "titlebar_format": "# titlebar_format\nFormat of sioyek titlebar. The syntax and available options are the same as [`status_bar_format`](configs.md#status_bar_format-right_status_bar_format-status_*_command).",
         "toc_jump_align_top": "# toc_jump_align_top\nWhen jumping to a table of contents entry, align the top of the screen with the target location (instead of center of the screen).",
         "touchpad_sensitivity": "# touchpad_sensitivity\nRelative scrolling sensitivity when using touchpad or mouse wheel, this is a multiplier that modifies [`vertical_move_amount`](configs.md#vertical_move_amount-horizontal_move_amount) so the overal move amount when using touchpad or mouse wheel is `touchpad_sensitivity * vertical_move_amount`.",
         "touch_mode": "# touch_mode\nThis config is suitable for touch devices, if set, many behaviours of sioyek change to better support touch devices. For exmaple dragging on the screen moves the document instead of selecting text and menus are now optimized for touch devices.",
-        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command": "# back_rect_tap_command, back_rect_hold_command, forward_rect_tap_command, forward_rect_hold_command, middle_left_rect_tap_command, middle_left_rect_hold_command, middle_right_rect_tap_command, middle_right_rect_hold_command, ruler_next_tap_command, ruler_next_hold_command, ruler_prev_tap_command, ruler_prev_hold_command\n`macro` commands to run when the corresponding rectangle is tapped or held (only works in touch mode). You can view the location of these rectangles by executing executing [`toggle_rect_hints`](commands.md#toggle_rect_hints).",
+        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command": "# back_rect_tap_command, back_rect_hold_command, forward_rect_tap_command, forward_rect_hold_command, middle_left_rect_tap_command, middle_left_rect_hold_command, middle_right_rect_tap_command, middle_right_rect_hold_command, ruler_next_tap_command, ruler_next_hold_command, ruler_prev_tap_command, ruler_prev_hold_command, top_center_tap_command, top_center_hold_command\n`macro` commands to run when the corresponding rectangle is tapped or held (only works in touch mode). You can view the location of these rectangles by executing executing [`toggle_rect_hints`](commands.md#toggle_rect_hints).",
         "tts_rate": "# tts_rate\nThe text to speech speaking speed when using text to speech commands.",
         "tts_rate_increment": "# tts_rate_increment\nHow much to increase/decrease the rate of the text-to-speech (TTS) engine by when using the [`increase_tts_rate`](commands.md#increase_tts_rate-decrease_tts_rate) and [`decrease_tts_rate`](commands.md#increase_tts_rate-decrease_tts_rate) commands.",
+        "tts_voice": "# tts_voice\nThe voice to use for text-to-speech when reading text. Possible values are system-dependent, you can scroll through them by running `setconfig_tts_voice` and pressing up and down arrows to scroll through the list.",
         "ui_font": "# ui_font\nFont face to use for menus.",
-        "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect": "# portrait_back_ui_rect, portrait_forward_ui_rect, landscape_back_ui_rect, landscape_forward_ui_rect, portrait_visual_mark_next, portrait_visual_mark_prev, landscape_visual_mark_next, landscape_visual_mark_prev, landscape_middle_right_rect, portrait_middle_right_rect, landscape_middle_left_rect, portrait_middle_left_rect\nConfigures the rectangles in touch mode. If the user taps on these rectangles, we execute the corresponding command as configured in [`touch_rect_commands`](configs.md#back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command).",
+        "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect": "# portrait_back_ui_rect, portrait_forward_ui_rect, landscape_back_ui_rect, landscape_forward_ui_rect, portrait_visual_mark_next, portrait_visual_mark_prev, landscape_visual_mark_next, landscape_visual_mark_prev, landscape_middle_right_rect, portrait_middle_right_rect, landscape_middle_left_rect, portrait_middle_left_rect\nConfigures the rectangles in touch mode. If the user taps on these rectangles, we execute the corresponding command as configured in [`touch_rect_commands`](configs.md#back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command).",
         "ui_text_color-ui_background_color-ui_selected_text_color-ui_selected_background_color": "# ui_text_color, ui_background_color, ui_selected_text_color, ui_selected_background_color\nText and background colors of ui menus.",
         "unselected_search_highlight_color": "# unselected_search_highlight_color\nThe highlight color to highlight unselected search matches when [`should_highlight_unselected_search`](configs.md#should_highlight_unselected_search) is set.",
+        "use_legacy_keybinds": "# use_legacy_keybinds\nUse old-style keybinds when parsing key config files. This is kept for compatiblity with old config files and should be disabled for new configs.",
         "use_ruler_to_highlight_synctex_line": "# use_ruler_to_highlight_synctex_line\nUse the ruler to highlight the synctex search result (instead of highlighting it with a color).",
         "use_system_theme-use_custom_color_as_dark_system_theme": "# use_system_theme, use_custom_color_as_dark_system_theme\nTry to use system theme for light/dark modes (might not work in some operating systems).\nIf [`use_custom_color_as_dark_system_theme`](configs.md#use_system_theme-use_custom_color_as_dark_system_theme) is set, then we use the custom color mode instead of dark mode when system theme is set to dark.",
         "vertical_move_amount-horizontal_move_amount": "# vertical_move_amount, horizontal_move_amount\nThe amount to move when executing movement commands (including mouse wheel).",
+        "volume_up_command-volume_down_command": "# volume_up_command, volume_down_command\n`macro` commands to run when the volume up or down key is pressed on mobile devices.",
         "wheel_zoom_on_cursor": "# wheel_zoom_on_cursor\nWhen performing zoom using control+mouse wheel, zoom on the mouse cursor instead of the center of the screen.",
         "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": "# main_window_size, helper_window_size, main_window_move, helper_window_move, single_main_window_size, single_main_window_move, overview_size, overview_offset\nDefault size and offset of sioyek windows. the `single_*` is used when only the main sioyek window is visible (no helper window) otherwise we use the other values.",
         "zoom_inc_factor": "# zoom_inc_factor\nThe amount to multiply/divide the zoom level when executing zoom commands. For example, if the current zoom level is 2 and `zoom_inc_factor` is 1.5, then after executing [`zoom_in`](commands.md#zoom_in-zoom_out-zoom_in_cursor-zoom_out_cursor), the zoom level will be `2 * 1.5 = 3`."
@@ -1518,6 +1557,7 @@
             "toggle_scratchpad",
             "load_scratchpad"
         ],
+        "scan_new_files": [],
         "screenshot": [],
         "screen_down-screen_up": [],
         "scroll_selected_bookmark_down-scroll_selected_bookmark_up": [
@@ -1898,6 +1938,9 @@
         "rotate_clockwise-rotate_counterclockwise": [],
         "ruler_under_cursor-visual_mark_under_cursor": [],
         "save_scratchpad": [],
+        "scan_new_files": [
+            "scan_path"
+        ],
         "screenshot": [],
         "screen_down-screen_up": [],
         "scroll_selected_bookmark_down-scroll_selected_bookmark_up": [],
@@ -1993,6 +2036,9 @@
         "zoom_in_overview-zoom_out_overview": []
     },
     "config_related_commands_map": {
+        "add_newlines_when_copying_text": [
+            "copy"
+        ],
         "adjust_annotation_colors_for_dark_mode": [
             "add_highlight",
             "add_freetext_bookmark"
@@ -2000,11 +2046,17 @@
         "align_link_dest_to_top": [],
         "allow_horizontal_drag_when_document_is_small": [],
         "allow_main_view_scroll_while_in_overview": [],
+        "always_copy_selected_text": [
+            "copy"
+        ],
+        "always_render_bookmarks": [
+            "add_freetext_bookmark"
+        ],
         "annotations_directory": [
             "toggle_freehand_drawing_mode",
             "write_annotations_file"
         ],
-        "autocenter_ruler": [
+        "autocenter_ruler-autocenter_visual_scroll": [
             "ruler_under_cursor",
             "toggle_ruler_scroll_mode"
         ],
@@ -2028,6 +2080,9 @@
         ],
         "background_bookmarks_pixel_budget": [],
         "background_color-custom_color_mode_empty_background_color-dark_mode_background_color": [],
+        "bookmark_font_facr": [
+            "add_freetext_bookmark"
+        ],
         "box_highlight_bookmark_transparency": [
             "add_freetext_bookmarks"
         ],
@@ -2038,6 +2093,10 @@
         "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command": [],
         "collapsed_toc": [
             "goto_toc"
+        ],
+        "color_mode": [
+            "toggle_dark_mode",
+            "toggle_custom_color"
         ],
         "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview": [
             "show_context_menu"
@@ -2115,6 +2174,9 @@
             "add_highlight_with_current_type",
             "set_select_highlight_type"
         ],
+        "highlight_style-selected_highlight_style": [
+            "select_ruler_text"
+        ],
         "hover_overview": [],
         "ignore_scroll_events": [],
         "ignore_whitespace_in_presentation_mode": [
@@ -2140,6 +2202,10 @@
             "open_link",
             "keyboard_select"
         ],
+        "lighten_colors_when_embedding_annotations": [
+            "embed_annotations",
+            "embed_selected_annotation"
+        ],
         "linear_filter": [],
         "link_highlight_color": [
             "open_link",
@@ -2160,6 +2226,11 @@
             "screen_down",
             "screen_up"
         ],
+        "multiline_menus": [
+            "goto_highlight",
+            "goto_bookmark",
+            "open_prev_doc"
+        ],
         "numeric_tags": [
             "keyboard_select"
         ],
@@ -2169,6 +2240,10 @@
         ],
         "num_two_page_columns": [
             "toggle_two_page_mode"
+        ],
+        "overview_highlight_style": [
+            "overview_definition",
+            "overview_under_cursor"
         ],
         "overview_reference_highlight_color": [
             "overview_definition",
@@ -2220,7 +2295,7 @@
         "ruler_color": [
             "keyboard_select_line"
         ],
-        "ruler_display_mode": [
+        "ruler_display_mode-ruler_style": [
             "ruler_under_cursor"
         ],
         "ruler_marker_color": [
@@ -2247,6 +2322,9 @@
         "save_externally_edited_text_on_focus": [
             "open_external_text_editor"
         ],
+        "scan_path": [
+            "scan_new_files"
+        ],
         "scrollbar": [],
         "scrollview_sensitivity": [
             "overview_definition"
@@ -2269,6 +2347,9 @@
         "should_launch_new_window": [],
         "should_load_tutorial_when_no_other_file": [],
         "should_warn_about_user_key_override": [],
+        "show_documentation_in_widget": [
+            "documentation_search"
+        ],
         "show_full_doc_path": [
             "open_prev_doc"
         ],
@@ -2330,6 +2411,7 @@
         "text_highlight_color": [
             "keyboard_select"
         ],
+        "titlebar_format": [],
         "toc_jump_align_top": [],
         "touchpad_sensitivity": [
             "move_down",
@@ -2338,7 +2420,7 @@
             "move_right"
         ],
         "touch_mode": [],
-        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command": [],
+        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command": [],
         "tts_rate": [
             "start_reading",
             "start_reading_high_quality"
@@ -2348,6 +2430,9 @@
             "increase_tts_rate",
             "decrease_tts_rate"
         ],
+        "tts_voice": [
+            "start_reading"
+        ],
         "ui_font": [],
         "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect": [],
         "ui_text_color-ui_background_color-ui_selected_text_color-ui_selected_background_color": [],
@@ -2356,6 +2441,10 @@
             "regex_search",
             "semantic_search",
             "semantic_search_extractive"
+        ],
+        "use_legacy_keybinds": [
+            "keys",
+            "keys_user"
         ],
         "use_ruler_to_highlight_synctex_line": [
             "toggle_synctex"
@@ -2369,6 +2458,7 @@
             "move_ruler_down",
             "move_ruler_up"
         ],
+        "volume_up_command-volume_down_command": [],
         "wheel_zoom_on_cursor": [],
         "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": [],
         "zoom_inc_factor": [
@@ -2379,12 +2469,15 @@
         ]
     },
     "config_related_configs_map": {
+        "add_newlines_when_copying_text": [],
         "adjust_annotation_colors_for_dark_mode": [],
         "align_link_dest_to_top": [],
         "allow_horizontal_drag_when_document_is_small": [],
         "allow_main_view_scroll_while_in_overview": [],
+        "always_copy_selected_text": [],
+        "always_render_bookmarks": [],
         "annotations_directory": [],
-        "autocenter_ruler": [],
+        "autocenter_ruler-autocenter_visual_scroll": [],
         "automatically_download_matching_paper_name": [],
         "automatically_index_documents_for_fulltext_search": [],
         "automatically_update_checksum_when_document_is_changed": [],
@@ -2394,6 +2487,7 @@
         "auto_rename_downloaded_papers": [],
         "background_bookmarks_pixel_budget": [],
         "background_color-custom_color_mode_empty_background_color-dark_mode_background_color": [],
+        "bookmark_font_facr": [],
         "box_highlight_bookmark_transparency": [],
         "case_sensitive_search": [
             "smartcase_search"
@@ -2401,6 +2495,7 @@
         "check_for_updates_on_startup": [],
         "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command": [],
         "collapsed_toc": [],
+        "color_mode": [],
         "context_menu_items-context_menu_items_for_links-context_menu_items_for_selected_text-context_menu_items_for_highlights-context_menu_items_for_bookmarks-context_menu_items_for_overview": [
             "right_click_context_menu"
         ],
@@ -2442,6 +2537,7 @@
         "highlight_color_[a-z]": [],
         "highlight_links": [],
         "highlight_middle_click": [],
+        "highlight_style-selected_highlight_style": [],
         "hover_overview": [],
         "ignore_scroll_events": [],
         "ignore_whitespace_in_presentation_mode": [],
@@ -2460,6 +2556,7 @@
             "tag_font_face",
             "keyboard_point_selection"
         ],
+        "lighten_colors_when_embedding_annotations": [],
         "linear_filter": [],
         "link_highlight_color": [],
         "max_created_toc_size": [
@@ -2471,12 +2568,14 @@
             "search_url_[a-z]"
         ],
         "move_screen_ratio-move_screen_percentage": [],
+        "multiline_menus": [],
         "numeric_tags": [],
         "num_cached_pages": [],
         "num_prerendered_next_slides-num_prerendered_prev_slides": [
             "prerender_next_page_presentation"
         ],
         "num_two_page_columns": [],
+        "overview_highlight_style": [],
         "overview_reference_highlight_color": [],
         "page_separator_width-page_separator_color": [],
         "page_space_x-page_space_y": [],
@@ -2499,7 +2598,7 @@
         "ruler_auto_move_sensitivity": [],
         "ruler_auto_move_threshold_distance": [],
         "ruler_color": [],
-        "ruler_display_mode": [],
+        "ruler_display_mode-ruler_style": [],
         "ruler_marker_color": [],
         "ruler_next_page_end_pos-ruler_next_page_begin_pos": [],
         "ruler_padding-ruler_x_padding": [
@@ -2512,6 +2611,7 @@
             "ruler_display_mode"
         ],
         "save_externally_edited_text_on_focus": [],
+        "scan_path": [],
         "scrollbar": [],
         "scrollview_sensitivity": [],
         "scroll_zoom_inc_factor": [
@@ -2527,6 +2627,7 @@
         "should_launch_new_window": [],
         "should_load_tutorial_when_no_other_file": [],
         "should_warn_about_user_key_override": [],
+        "show_documentation_in_widget": [],
         "show_full_doc_path": [],
         "show_most_recent_commands_first": [],
         "show_reference_overview_highlights": [],
@@ -2567,15 +2668,17 @@
         "table_extract_behaviour": [],
         "tag_font_face": [],
         "text_highlight_color": [],
+        "titlebar_format": [],
         "toc_jump_align_top": [],
         "touchpad_sensitivity": [
             "vertical_move_amount",
             "horizontal_move_amount"
         ],
         "touch_mode": [],
-        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command": [],
+        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command": [],
         "tts_rate": [],
         "tts_rate_increment": [],
+        "tts_voice": [],
         "ui_font": [],
         "portrait_back_ui_rect-portrait_forward_ui_rect-landscape_back_ui_rect-landscape_forward_ui_rect-portrait_visual_mark_next-portrait_visual_mark_prev-landscape_visual_mark_next-landscape_visual_mark_prev-landscape_middle_right_rect-portrait_middle_right_rect-landscape_middle_left_rect-portrait_middle_left_rect": [
             "touch_rect_commands"
@@ -2584,11 +2687,13 @@
         "unselected_search_highlight_color": [
             "should_highlight_unselected_search"
         ],
+        "use_legacy_keybinds": [],
         "use_ruler_to_highlight_synctex_line": [],
         "use_system_theme-use_custom_color_as_dark_system_theme": [],
         "vertical_move_amount-horizontal_move_amount": [
             "touchpad_sensitivity"
         ],
+        "volume_up_command-volume_down_command": [],
         "wheel_zoom_on_cursor": [],
         "main_window_size-helper_window_size-main_window_move-helper_window_move-single_main_window_size-single_main_window_move-overview_size-overview_offset": [],
         "zoom_inc_factor": []
@@ -3013,12 +3118,17 @@
         "zoom_in_overview-zoom_out_overview": "zoom_in_out_overview"
     },
     "config_name_to_file_name_map": {
+        "add_newlines_when_copying_text": "add_newlines_when_copying_text",
         "adjust_annotation_colors_for_dark_mode": "adjust_annotation_colors_for_dark_mode",
         "align_link_dest_to_top": "align_link_dest_to_top",
         "allow_horizontal_drag_when_document_is_small": "allow_horizontal_drag_when_document_is_small",
         "allow_main_view_scroll_while_in_overview": "allow_main_view_scroll_while_in_overview",
+        "always_copy_selected_text": "always_copy_selected_text",
+        "always_render_bookmarks": "always_render_bookmarks",
         "annotations_directory": "annotations_directory",
         "autocenter_ruler": "autocenter_ruler",
+        "autocenter_visual_scroll": "autocenter_ruler",
+        "autocenter_ruler-autocenter_visual_scroll": "autocenter_ruler",
         "automatically_download_matching_paper_name": "automatically_download_matching_paper_name",
         "automatically_index_documents_for_fulltext_search": "automatically_index_documents_for_fulltext_search",
         "automatically_update_checksum_when_document_is_changed": "automatically_update_checksum_when_document_is_changed",
@@ -3034,6 +3144,7 @@
         "custom_color_mode_empty_background_color": "background_color",
         "dark_mode_background_color": "background_color",
         "background_color-custom_color_mode_empty_background_color-dark_mode_background_color": "background_color",
+        "bookmark_font_facr": "bookmark_font_facr",
         "box_highlight_bookmark_transparency": "box_highlight_bookmark_transparency",
         "case_sensitive_search": "case_sensitive_search",
         "check_for_updates_on_startup": "check_for_updates_on_startup",
@@ -3057,6 +3168,7 @@
         "click_commands": "click_commands",
         "shift_click_command-control_click_command-command_click_command-hold_middle_click_command-tablet_pen_click_command-tablet_pen_double_click_command-right_click_command-middle_click_command-shift_middle_click_command-control_middle_click_command-command_middle_click_command-alt_middle_click_command-shift_right_click_command-control_right_click_command-command_right_click_command-alt_click_command-alt_right_click_command": "click_commands",
         "collapsed_toc": "collapsed_toc",
+        "color_mode": "color_mode",
         "context_menu_items": "context_menu_items",
         "context_menu_items_for_links": "context_menu_items",
         "context_menu_items_for_selected_text": "context_menu_items",
@@ -3127,6 +3239,9 @@
         "highlight_color_a_z": "highlight_color_a_z",
         "highlight_links": "highlight_links",
         "highlight_middle_click": "highlight_middle_click",
+        "highlight_style": "line_select_ruler_display_style",
+        "selected_highlight_style": "line_select_ruler_display_style",
+        "highlight_style-selected_highlight_style": "line_select_ruler_display_style",
         "hover_overview": "hover_overview",
         "ignore_scroll_events": "ignore_scroll_events",
         "ignore_whitespace_in_presentation_mode": "ignore_whitespace_in_presentation_mode",
@@ -3143,7 +3258,9 @@
         "keyboard_select_colors": "keyboard_select_colors",
         "keyboard_select_background_color-keyboard_select_text_color-keyboard_selected_tag_background_color-keyboard_selected_tag_text_color": "keyboard_select_colors",
         "keyboard_select_font_size": "keyboard_select_font_size",
+        "lighten_colors_when_embedding_annotations": "lighten_colors_when_embedding_annotations",
         "linear_filter": "linear_filter",
+        "line_select_ruler_display_style": "line_select_ruler_display_style",
         "link_highlight_color": "link_highlight_color",
         "max_created_toc_size": "max_created_toc_size",
         "menu_matched_search_highlight": "menu_matched_search_highlight",
@@ -3156,12 +3273,14 @@
         "move_screen_ratio": "move_screen_ratio",
         "move_screen_percentage": "move_screen_ratio",
         "move_screen_ratio-move_screen_percentage": "move_screen_ratio",
+        "multiline_menus": "multiline_menus",
         "numeric_tags": "numeric_tags",
         "num_cached_pages": "num_cached_pages",
         "num_prerendered_next_slides": "num_prerendered_next_slides",
         "num_prerendered_prev_slides": "num_prerendered_next_slides",
         "num_prerendered_next_slides-num_prerendered_prev_slides": "num_prerendered_next_slides",
         "num_two_page_columns": "num_two_page_columns",
+        "overview_highlight_style": "overview_highlight_style",
         "overview_reference_highlight_color": "overview_reference_highlight_color",
         "page_separator_width": "page_separator_width_and_color",
         "page_separator_color": "page_separator_width_and_color",
@@ -3192,6 +3311,8 @@
         "ruler_auto_move_threshold_distance": "ruler_auto_move_threshold_distance",
         "ruler_color": "ruler_color",
         "ruler_display_mode": "ruler_display_mode",
+        "ruler_style": "ruler_display_mode",
+        "ruler_display_mode-ruler_style": "ruler_display_mode",
         "ruler_marker_color": "ruler_marker_color",
         "ruler_next_page_end_pos": "ruler_next_page_begin_end_pos",
         "ruler_next_page_begin_pos": "ruler_next_page_begin_end_pos",
@@ -3203,6 +3324,7 @@
         "ruler_pixel_width": "ruler_pixel_width",
         "ruler_slit_color": "ruler_slit_color",
         "save_externally_edited_text_on_focus": "save_externally_edited_text_on_focus",
+        "scan_path": "scan_path",
         "scrollbar": "scrollbar",
         "scrollview_sensitivity": "scrollview_sensitivity",
         "scroll_zoom_inc_factor": "scroll_zoom_inc_factor",
@@ -3242,6 +3364,7 @@
         "should_launch_new_window": "should_launch_new_window",
         "should_load_tutorial_when_no_other_file": "should_load_tutorial_when_no_other_file",
         "should_warn_about_user_key_override": "should_warn_about_user_key_override",
+        "show_documentation_in_widget": "show_documentation_in_widget",
         "show_full_doc_path": "show_full_doc_path",
         "show_most_recent_commands_first": "show_most_recent_commands_first",
         "show_reference_overview_highlights": "show_reference_overview_highlights",
@@ -3319,6 +3442,7 @@
         "table_extract_behaviour": "table_extract_behaviour",
         "tag_font_face": "tag_font_face",
         "text_highlight_color": "text_highlight_color",
+        "titlebar_format": "titlebar_format",
         "toc_jump_align_top": "toc_jump_align_top",
         "touchpad_sensitivity": "touchpad_sensitivity",
         "touch_mode": "touch_mode",
@@ -3334,10 +3458,13 @@
         "ruler_next_hold_command": "touch_rect_commands",
         "ruler_prev_tap_command": "touch_rect_commands",
         "ruler_prev_hold_command": "touch_rect_commands",
+        "top_center_tap_command": "touch_rect_commands",
+        "top_center_hold_command": "touch_rect_commands",
         "touch_rect_commands": "touch_rect_commands",
-        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command": "touch_rect_commands",
+        "back_rect_tap_command-back_rect_hold_command-forward_rect_tap_command-forward_rect_hold_command-middle_left_rect_tap_command-middle_left_rect_hold_command-middle_right_rect_tap_command-middle_right_rect_hold_command-ruler_next_tap_command-ruler_next_hold_command-ruler_prev_tap_command-ruler_prev_hold_command-top_center_tap_command-top_center_hold_command": "touch_rect_commands",
         "tts_rate": "tts_rate",
         "tts_rate_increment": "tts_rate_increment",
+        "tts_voice": "tts_voice",
         "ui_font": "ui_font",
         "portrait_back_ui_rect": "ui_rects",
         "portrait_forward_ui_rect": "ui_rects",
@@ -3360,6 +3487,7 @@
         "ui_text_background_selected_color": "ui_text_background_selected_color",
         "ui_text_color-ui_background_color-ui_selected_text_color-ui_selected_background_color": "ui_text_background_selected_color",
         "unselected_search_highlight_color": "unselected_search_highlight_color",
+        "use_legacy_keybinds": "use_legacy_keybinds",
         "use_ruler_to_highlight_synctex_line": "use_ruler_to_highlight_synctex_line",
         "use_system_theme": "use_system_theme",
         "use_custom_color_as_dark_system_theme": "use_system_theme",
@@ -3368,6 +3496,10 @@
         "horizontal_move_amount": "vertical_horizontal_move_amount",
         "vertical_horizontal_move_amount": "vertical_horizontal_move_amount",
         "vertical_move_amount-horizontal_move_amount": "vertical_horizontal_move_amount",
+        "volume_up_command": "volume_up_down_command",
+        "volume_down_command": "volume_up_down_command",
+        "volume_up_down_command": "volume_up_down_command",
+        "volume_up_command-volume_down_command": "volume_up_down_command",
         "wheel_zoom_on_cursor": "wheel_zoom_in_cursor",
         "wheel_zoom_in_cursor": "wheel_zoom_in_cursor",
         "main_window_size": "window_sizes",
