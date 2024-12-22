@@ -28,7 +28,7 @@ for i in range(20):
 end_recording()
 ```
 
-for_configs: 
+for_configs: autocenter_ruler autocenter_visual_scroll
 
 doc_body:
 Always center the document on the ruler when moving the ruler.
