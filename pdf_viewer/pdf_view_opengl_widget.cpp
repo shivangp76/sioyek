@@ -1036,9 +1036,11 @@ void PdfViewOpenGLWidget::my_render() {
         float vertical_line_end = dv()->get_ruler_window_y();
         /* std::optional<NormalizedWindowRect> ruler_rect = document_view->get_ruler_window_rect(); */
         // NormalizedWindowRect DocumentView::document_to_window_rect_pixel_perfect(DocumentRect doc_rect, int pixel_width, int pixel_height, bool banded) {
-        std::optional<NormalizedWindowRect> ruler_rect = {};
+        //std::optional<NormalizedWindowRect> ruler_rect = {};
+        std::optional<NormalizedWindowRect> ruler_rect = dv()->get_ruler_window_rect();
 
-        if (dv()->get_ruler_rect()){
+        if (dv()->is_line_select_mode()){
+            // in line select mode we want the ruler to just fit to the line (no x and y padding)
             DocumentRect ruler_document_rect = dv()->get_ruler_rect()->to_document(doc());
             int ruler_pixel_width = static_cast<int>(ruler_document_rect.rect.width() * dv()->get_zoom_level());
             int ruler_pixel_height = static_cast<int>(ruler_document_rect.rect.height() * dv()->get_zoom_level());
