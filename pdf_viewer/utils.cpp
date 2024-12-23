@@ -153,6 +153,10 @@ void get_flat_toc(const std::vector<TocNode*>& roots, std::vector<std::wstring>&
         pos.page = root->page;
         pos.x = 0;
         pos.y = root->y;
+        // if pos.y is nan, set it to 0
+        if (std::isnan(pos.y)) {
+            pos.y = 0;
+        }
         pages.push_back(pos);
         get_flat_toc(root->children, output, pages);
     }

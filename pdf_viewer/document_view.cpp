@@ -1147,8 +1147,13 @@ std::vector<int> DocumentView::get_current_chapter_recursive_index() {
 
 void DocumentView::goto_chapter(int diff) {
     const std::vector<DocumentPos>& chapter_pages = current_document->get_flat_toc_pages();
-    int curr_page = get_center_page_number();
-    DocumentPos curr_pos = get_offsets().to_document(doc());
+    AbsoluteDocumentPos current_abspos = get_offsets();
+
+    current_abspos.y += 1; // hack to count the end of a page as the next page
+    DocumentPos curr_pos = current_abspos.to_document(doc());
+    curr_pos.y -= 1;
+
+    int curr_page = curr_pos.page;
 
     int index = 0;
 
