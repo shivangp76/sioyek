@@ -253,6 +253,7 @@ public:
     void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
     void render_text_highlights();
     void render_highlight_annotations();
+    void render_bookmark_annotations();
     std::array<float, 3> cc3(const float* input_color);
     std::array<float, 4> cc4(const float* input_color);
     QColor qcc3(const float* input_color);

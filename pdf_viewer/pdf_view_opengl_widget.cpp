@@ -1128,7 +1128,6 @@ void PdfViewOpenGLWidget::my_render() {
     draw_pending_freehand_drawings(visible_pages);
 
 
-    const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
     const std::vector<Portal>& portals = doc()->get_portals();
     prepare_highlight_pipeline();
     float color[] = {1, 1, 1};
@@ -1211,136 +1210,6 @@ void PdfViewOpenGLWidget::my_render() {
             }
         }
 
-        for (int i = 0; i < bookmarks.size(); i++) {
-            if (bookmarks[i].begin_y != -1) {
-                if (bookmarks[i].end_x == -1) {
-
-                    NormalizedWindowPos bookmark_window_pos = dv()->absolute_to_window_pos(
-                        { bookmarks[i].begin_x, bookmarks[i].begin_y }
-                    );
-
-                    if (bookmark_window_pos.x > -1.5f && bookmark_window_pos.x < 1.5f &&
-                        bookmark_window_pos.y > -1.5f && bookmark_window_pos.y < 1.5f) {
-
-                        NormalizedWindowRect bookmark_normalized_window_rect = bookmarks[i].get_rectangle()->to_window_normalized(dv());
-
-                        fz_irect window_rect = dv()->normalized_to_window_rect(bookmark_normalized_window_rect);
-                        QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        //bool is_highlighted = i == document_view->get_selected_bookmark_index();
-                        bool is_highlighted = document_view->get_selected_bookmark_uuid() == bookmarks[i].uuid;
-
-                        render_ui_icon_for_current_color_mode(bookmark_icon, bookmark_icon_white, window_qrect, is_highlighted);
-
-                    }
-                }
-                else {
-                    WindowRect window_rect = bookmarks[i].get_rectangle()->to_window(dv());
-                    NormalizedWindowRect window_rect_normalized = bookmarks[i].get_rectangle()->to_window_normalized(dv());
-                    if (!window_rect_normalized.is_visible()) {
-                        continue;
-                    }
-
-                    QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-
-                    float scroll_amount = document_view->get_bookmark_scroll_amount(bookmarks[i].uuid);
-
-                    if (RENDER_FREETEXT_BORDERS) {
-                        painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                    }
-
-
-                    QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
-
-                    if (bookmarks[i].uuid == document_view->get_selected_bookmark_uuid()) {
-                        painter.save();
-                        QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
-                        painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
-                        QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
-                        painter.drawRect(
-                            window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2,
-                            window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2,
-                            fz_irect_width(window_rect)+SELECTED_BORDER_PEN_SIZE,
-                            fz_irect_height(window_rect)+SELECTED_BORDER_PEN_SIZE
-                        );
-                        painter.restore();
-                    }
-
-                    if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
-                        QColor question_background_color = qcc4(QUESTION_BOOKMARK_BACKGROUND_COLOR);
-                        QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        painter.fillRect(fill_rect, question_background_color);
-
-                    }
-                    else{
-                        std::optional<char> background_type = bookmarks[i].get_background_type();
-                        if (background_type && background_type.value() >= 'a' && background_type.value() <= 'z') {
-                            QColor highlight_background_color = qcc3(&HIGHLIGHT_COLORS[3 * (background_type.value() - 'a')]);
-                            QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                            painter.fillRect(fill_rect, highlight_background_color);
-                        }
-                    }
-
-                    std::optional<char> bm_type = bookmarks[i].get_type();
-                    if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#summarize"))) {
-
-                        QString box_text = desc_qstring.split(' ')[0];
-                        if (bm_type.has_value()) {
-                            painter.setPen(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * (bm_type.value() - 'a')]));
-                            painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        }
-
-                        if (!bm_type.has_value()){
-                            //painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        }
-                        else{
-                            char mode = bm_type.value();
-                            // draw an empty box with the color type of lowercase and draw a transparent filled box if uppercase
-                            if (mode >= 'a' && mode <= 'z') {
-                                std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
-                                painter.setPen(convert_float3_to_qcolor(&box_color[0]));
-                            }
-                            else if (mode >= 'A' && mode <= 'Z') {
-                                mode = mode - 'A' + 'a';
-                                std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
-                                float box_color_with_alpha[4];
-                                box_color_with_alpha[0] = box_color[0];
-                                box_color_with_alpha[1] = box_color[1];
-                                box_color_with_alpha[2] = box_color[2];
-                                box_color_with_alpha[3] = BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY;
-
-                                QColor qcolor = convert_float4_to_qcolor(box_color_with_alpha);
-                                QBrush brush(qcolor);
-
-                                painter.fillRect(window_rect.to_qrect(), brush);
-                            }
-                        }
-                    }
-
-                    auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->get_current_color_mode());
-                    if (pixmap && (was_exact || bookmarks[i].is_latex() || (!ALWAYS_RENDER_BOOKMARKS))) {
-                        painter.drawPixmap(window_qrect, *pixmap);
-                    }
-                    else {
-                        if (ALWAYS_RENDER_BOOKMARKS) {
-                            // rendering bookmarks on the main thrad can prevent flickering, but may
-                            // cause the UI to slow down a little e.g. when zooming
-                            pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
-                                    bookmarks[i],
-                                    &painter,
-                                    dv()->get_zoom_level(),
-                                    scroll_amount,
-                                    devicePixelRatioF(),
-                                    window_qrect,
-                                    dv()->get_current_color_mode(),
-                                    true);
-                        }
-                    }
-
-                }
-
-            }
-        }
     }
 
 
@@ -1504,6 +1373,7 @@ void PdfViewOpenGLWidget::my_render() {
     prepare_highlight_pipeline();
     render_highlight_annotations();
     render_text_highlights();
+    render_bookmark_annotations();
 
     if (VISUALIZE_RULER_THRESHOLDS){
         render_ruler_thresholds();
@@ -2515,6 +2385,7 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                 std::array<float, 3> adjusted_highlight_color;
 
                 if ((HIGHLIGHT_STYLE == HighlightStyle::HighlightBackground) && (BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS > 0)) {
+                    // make sure the lightness of background highlights is at least BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS
                     auto raw_color_ = get_highlight_type_color(highlight->type);
                     std::array<float, 3> raw_color;
                     raw_color[0] = raw_color_[0];
@@ -3689,4 +3560,141 @@ int PdfViewOpenGLWidget::get_ruler_display_mode() {
         return LINE_SELECT_RULER_DISPLAY_MODE;
     }
     return RULER_DISPLAY_MODE;
+}
+
+void PdfViewOpenGLWidget::render_bookmark_annotations() {
+
+    if (!doc()->can_use_highlights()) return;
+
+    const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
+    for (int i = 0; i < bookmarks.size(); i++) {
+        if (bookmarks[i].begin_y != -1) {
+            if (bookmarks[i].end_x == -1) {
+
+                NormalizedWindowPos bookmark_window_pos = dv()->absolute_to_window_pos(
+                    { bookmarks[i].begin_x, bookmarks[i].begin_y }
+                );
+
+                if (bookmark_window_pos.x > -1.5f && bookmark_window_pos.x < 1.5f &&
+                    bookmark_window_pos.y > -1.5f && bookmark_window_pos.y < 1.5f) {
+
+                    NormalizedWindowRect bookmark_normalized_window_rect = bookmarks[i].get_rectangle()->to_window_normalized(dv());
+
+                    fz_irect window_rect = dv()->normalized_to_window_rect(bookmark_normalized_window_rect);
+                    QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                    //bool is_highlighted = i == document_view->get_selected_bookmark_index();
+                    bool is_highlighted = document_view->get_selected_bookmark_uuid() == bookmarks[i].uuid;
+
+                    render_ui_icon_for_current_color_mode(bookmark_icon, bookmark_icon_white, window_qrect, is_highlighted);
+
+                }
+            }
+            else {
+                WindowRect window_rect = bookmarks[i].get_rectangle()->to_window(dv());
+                NormalizedWindowRect window_rect_normalized = bookmarks[i].get_rectangle()->to_window_normalized(dv());
+                if (!window_rect_normalized.is_visible()) {
+                    continue;
+                }
+
+                QRect window_qrect = QRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+
+                float scroll_amount = document_view->get_bookmark_scroll_amount(bookmarks[i].uuid);
+
+                if (RENDER_FREETEXT_BORDERS) {
+                    painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                }
+
+
+                QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
+
+                if (bookmarks[i].uuid == document_view->get_selected_bookmark_uuid()) {
+                    painter.save();
+                    QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
+                    painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
+                    QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                    painter.fillRect(fill_rect, QColor(255, 255, 0, 128));
+                    painter.drawRect(
+                        window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2,
+                        window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2,
+                        fz_irect_width(window_rect) + SELECTED_BORDER_PEN_SIZE,
+                        fz_irect_height(window_rect) + SELECTED_BORDER_PEN_SIZE
+                    );
+                    painter.restore();
+                }
+
+                if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
+                    QColor question_background_color = qcc4(QUESTION_BOOKMARK_BACKGROUND_COLOR);
+                    QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                    painter.fillRect(fill_rect, question_background_color);
+
+                }
+                else {
+                    std::optional<char> background_type = bookmarks[i].get_background_type();
+                    if (background_type && background_type.value() >= 'a' && background_type.value() <= 'z') {
+                        QColor highlight_background_color = qcc3(&HIGHLIGHT_COLORS[3 * (background_type.value() - 'a')]);
+                        QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        painter.fillRect(fill_rect, highlight_background_color);
+                    }
+                }
+
+                std::optional<char> bm_type = bookmarks[i].get_type();
+                if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#summarize"))) {
+
+                    QString box_text = desc_qstring.split(' ')[0];
+                    if (bm_type.has_value()) {
+                        painter.setPen(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * (bm_type.value() - 'a')]));
+                        painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        }
+
+                    if (!bm_type.has_value()) {
+                        //painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                    }
+                    else {
+                        char mode = bm_type.value();
+                        // draw an empty box with the color type of lowercase and draw a transparent filled box if uppercase
+                        if (mode >= 'a' && mode <= 'z') {
+                            std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
+                            painter.setPen(convert_float3_to_qcolor(&box_color[0]));
+                        }
+                        else if (mode >= 'A' && mode <= 'Z') {
+                            mode = mode - 'A' + 'a';
+                            std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
+                            float box_color_with_alpha[4];
+                            box_color_with_alpha[0] = box_color[0];
+                            box_color_with_alpha[1] = box_color[1];
+                            box_color_with_alpha[2] = box_color[2];
+                            box_color_with_alpha[3] = BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY;
+
+                            QColor qcolor = convert_float4_to_qcolor(box_color_with_alpha);
+                            QBrush brush(qcolor);
+
+                            painter.fillRect(window_rect.to_qrect(), brush);
+                        }
+                    }
+                    }
+
+                auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, devicePixelRatioF(), dv()->get_current_color_mode());
+                if (pixmap && (was_exact || bookmarks[i].is_latex() || (!ALWAYS_RENDER_BOOKMARKS))) {
+                    painter.drawPixmap(window_qrect, *pixmap);
+                }
+                else {
+                    if (ALWAYS_RENDER_BOOKMARKS) {
+                        // rendering bookmarks on the main thrad can prevent flickering, but may
+                        // cause the UI to slow down a little e.g. when zooming
+                        pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
+                            bookmarks[i],
+                            &painter,
+                            dv()->get_zoom_level(),
+                            scroll_amount,
+                            devicePixelRatioF(),
+                            window_qrect,
+                            dv()->get_current_color_mode(),
+                            true);
+                    }
+                }
+
+                }
+
+            }
+        }
 }
