@@ -81,6 +81,7 @@ extern int HIGHLIGHT_STYLE;
 extern int OVERVIEW_HIGHLIGHT_STYLE;
 extern bool VISUALIZE_RULER_THRESHOLDS;
 extern bool DEBUG;
+extern int BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS;
 
 extern float BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY;
 
@@ -2511,8 +2512,28 @@ void PdfViewOpenGLWidget::render_highlight_annotations(){
                 }
                 last_bottom = window_rect.y1;
 
-                auto adjusted_highlight_color = cc3(get_highlight_type_color(highlight->type));
-                get_color_for_current_mode(get_highlight_type_color(highlight->type), &adjusted_highlight_color[0]);
+                std::array<float, 3> adjusted_highlight_color;
+
+                if ((HIGHLIGHT_STYLE == HighlightStyle::HighlightBackground) && (BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS > 0)) {
+                    auto raw_color_ = get_highlight_type_color(highlight->type);
+                    std::array<float, 3> raw_color;
+                    raw_color[0] = raw_color_[0];
+                    raw_color[1] = raw_color_[1];
+                    raw_color[2] = raw_color_[2];
+
+                    QColor qcolor = QColor::fromRgbF(raw_color[0], raw_color[1], raw_color[2]);
+                    int h, s, l;
+                    qcolor.getHsl(&h, &s, &l);
+                    qcolor.setHsl(h, s, std::max(qcolor.lightness(), BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS));
+                    raw_color[0] = qcolor.redF();
+                    raw_color[1] = qcolor.greenF();
+                    raw_color[2] = qcolor.blueF();
+                    get_color_for_current_mode(&raw_color[0], &adjusted_highlight_color[0]);
+                }
+                else {
+                    get_color_for_current_mode(get_highlight_type_color(highlight->type), &adjusted_highlight_color[0]);
+                }
+
 
                 if (highlight->uuid == document_view->get_selected_highlight_uuid()) {
                     adjusted_highlight_color[0] *= 0.5f;

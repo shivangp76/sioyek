@@ -271,6 +271,7 @@ bool STATUSBAR = true;
 bool STATUSBAR_HANDLES_WHEEL_EVENTS = true;
 std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 bool LIGHTEN_COLORS_WHEN_EMBEDDING_ANNOTATIONS = true;
+int BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS = 150;
 
 
 std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
@@ -1390,6 +1391,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_macro(L"ruler_prev_hold_command", &VISUAL_MARK_PREV_HOLD_COMMAND);
 
     add_int(L"font_size", &FONT_SIZE, IntExtras{1, 100});
+    add_int(L"background_highlight_minimum_lightness", &BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS, IntExtras{-1, 255});
     add_int(L"ruler_pixel_width", &RULER_UNDERLINE_PIXEL_WIDTH, IntExtras{1, 100});
     add_int(L"num_prerendered_next_slides", &NUM_PRERENDERED_NEXT_SLIDES, IntExtras{0, 5});
     add_int(L"num_cached_pages", &NUM_CACHED_PAGES, IntExtras{0, 100});
