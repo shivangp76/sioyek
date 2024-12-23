@@ -997,7 +997,6 @@ void PdfViewOpenGLWidget::my_render() {
     
     render_selected_rectangle();
 
-    render_ruler();
 
     render_debug_highlights();
 
@@ -1035,6 +1034,7 @@ void PdfViewOpenGLWidget::my_render() {
     prepare_highlight_pipeline();
     render_highlight_annotations();
     render_text_highlights();
+    render_ruler();
     render_bookmark_annotations();
 
     bind_default();
@@ -2998,7 +2998,7 @@ void PdfViewOpenGLWidget::prepare_link_highlight_state(){
 #endif
 }
 
-void PdfViewOpenGLWidget::set_highlight_color(float* color, float alpha){
+void PdfViewOpenGLWidget::set_highlight_color(const float* color, float alpha){
 #ifdef SIOYEK_OPENGL_BACKEND
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, color);
     glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, alpha);
@@ -3437,16 +3437,16 @@ void PdfViewOpenGLWidget::render_ruler() {
 
 
             //auto ruler_color_adjusted = cc3(RULER_COLOR);
-            float* ruler_color = RULER_COLOR;
+            const float* ruler_color = RULER_COLOR;
 
-            float inverted_line_select_ruler_color[3] = {
-                1.0f - LINE_SELECT_RULER_COLOR[0],
-                1.0f - LINE_SELECT_RULER_COLOR[1],
-                1.0f - LINE_SELECT_RULER_COLOR[2],
-            };
+            //float inverted_line_select_ruler_color[3] = {
+            //    1.0f - LINE_SELECT_RULER_COLOR[0],
+            //    1.0f - LINE_SELECT_RULER_COLOR[1],
+            //    1.0f - LINE_SELECT_RULER_COLOR[2],
+            //};
 
             if (dv()->is_line_select_mode()) {
-                ruler_color = inverted_line_select_ruler_color;
+                ruler_color = LINE_SELECT_RULER_COLOR;
             }
 
             auto ruler_color_adjusted = cc3(ruler_color);

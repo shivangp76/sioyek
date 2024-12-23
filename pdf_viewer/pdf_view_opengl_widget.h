@@ -206,7 +206,7 @@ protected:
     void prepare_non_compiled_line_drawing_pipeline();
     void enable_multisampling();
     void disable_multisampling();
-    void set_highlight_color(float* color, float alpha);
+    void set_highlight_color(const float* color, float alpha);
     void draw_pending_freehand_drawings(const std::vector<int>& visible_pages);
     void render_highlights_and_bookmarks();
     void do_paint();
