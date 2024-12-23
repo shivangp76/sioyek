@@ -3278,6 +3278,9 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     else {
                         /* move_visual_mark_command(-num_repeats); */
                         move_ruler_prev();
+                        if (AUTOCENTER_VISUAL_SCROLL) {
+                            dv()->goto_vertical_line_pos();
+                        }
                         validate_render();
                         return;
                     }
@@ -3305,6 +3308,9 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     else {
                         /* move_visual_mark_command(num_repeats); */
                         move_ruler_next();
+                        if (AUTOCENTER_VISUAL_SCROLL) {
+                            dv()->goto_vertical_line_pos();
+                        }
                         validate_render();
                         return;
                     }
