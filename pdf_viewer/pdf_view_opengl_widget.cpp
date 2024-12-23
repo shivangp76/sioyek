@@ -856,7 +856,6 @@ void PdfViewOpenGLWidget::my_render() {
 
     clear_background_color();
 
-    std::vector<PdfLink> all_visible_links;
 
     if (dv()->is_presentation_mode()) {
         int presentation_page_number = dv()->get_presentation_page_number().value();
@@ -1000,239 +999,13 @@ void PdfViewOpenGLWidget::my_render() {
 
     render_ruler();
 
-    if (dv()->debug_highlight_rects.size() > 0) {
+    render_debug_highlights();
 
-        //float dbg_color[3] = { 1, 0, 1 };
-        for (int i = 0; i < dv()->debug_highlight_rects.size(); i++) {
-
-            int index = i % 26;
-            std::array<float, 3> text_highlight_color = cc3(&HIGHLIGHT_COLORS[3 * index]);
-            set_highlight_color(&text_highlight_color[0], 0.3f);
-
-            for (int j = 0; j < dv()->debug_highlight_rects[i].size(); j++) {
-                render_highlight_absolute(dv()->debug_highlight_rects[i][j], HRF_FILL | HRF_BORDER);
-            }
-        }
-    }
     draw_pending_freehand_drawings(visible_pages);
 
+    render_portals();
 
-    const std::vector<Portal>& portals = doc()->get_portals();
-    prepare_highlight_pipeline();
-    float color[] = {1, 1, 1};
-    set_highlight_color(color, 0.3f);
-    if (doc()->can_use_highlights()) {
-        for (int i = 0; i < portals.size(); i++) {
-            if (portals[i].is_icon()) {
-                if (!portals[i].is_merged_rect_valid) {
-                    portals[i].update_merged_rect(doc());
-                    portals[i].is_merged_rect_valid = true;
-                }
-                if (portals[i].merged_rect) {
-                    render_highlight_absolute(portals[i].get_rectangle().value(), HRF_FILL | HRF_INVERTED);
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < portals.size(); i++) {
-        if (portals[i].is_pinned()) {
-            bool is_portal_selected = dv()->get_selected_pinned_portal_uuid() == portals[i].uuid;
-            float selected_border_color[] = {1, 0, 0};
-            OverviewState portal_overview_state;
-
-            portal_overview_state.source_rect = portals[i].get_rectangle();
-            portal_overview_state.absolute_offset_x = portals[i].dst.book_state.offset_x;
-            portal_overview_state.absolute_offset_y = portals[i].dst.book_state.offset_y;
-            portal_overview_state.zoom_level = portals[i].dst.book_state.zoom_level * dv()->get_zoom_level();
-            portal_overview_state.source_portal = portals[i];
-
-            portal_overview_state.doc = document_manager->get_document_with_checksum(portals[i].dst.document_checksum);
-            if (portal_overview_state.doc) {
-                if (!portal_overview_state.doc->get_is_opened()) {
-                    portal_overview_state.doc->open(true);
-                }
-
-                render_overview(portal_overview_state, !is_portal_selected);
-                if (is_portal_selected) {
-                    //draw_overview_border(portal_overview_state, selected_border_color);
-                    end_native_painting();
-
-                    WindowRect window_rect = portal_overview_state.source_rect->to_window(dv());
-                    QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
-                    painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
-                    painter.drawRect(
-                        window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2 - 1,
-                        window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2 + 1,
-                        fz_irect_width(window_rect) + SELECTED_BORDER_PEN_SIZE + 1,
-                        fz_irect_height(window_rect) + SELECTED_BORDER_PEN_SIZE + 1
-                    );
-                    begin_native_painting();
-                }
-            }
-        }
-    }
-
-    end_native_painting();
-
-
-    if (doc()->can_use_highlights()) {
-
-        for (int i = 0; i < document_view->pending_download_portals.size(); i++) {
-            auto pending_rect = document_view->pending_download_portals[i].pending_portal.get_rectangle();
-            if (pending_rect.has_value()){
-                render_portal_rect(pending_rect.value(), true, document_view->pending_download_portals[i].downloaded_fraction);
-            }
-        }
-        for (int i = 0; i < portals.size(); i++) {
-            if (portals[i].is_icon()) {
-                if (!portals[i].merged_rect) {
-                    render_portal_rect(portals[i].get_rectangle().value(), false, {});
-                }
-            }
-        }
-
-        if (document_view->current_pending_portal){
-            Portal portal = document_view->current_pending_portal->second;
-            if (portal.is_visible()){
-                render_portal_rect(portal.get_rectangle().value(), true, {});
-            }
-        }
-
-    }
-
-
-    if (document_view->should_highlight_words && (!document_view->overview_page)) {
-        setup_text_painter();
-
-        std::vector<std::string> tags = get_tags(document_view->word_rects.size());
-
-        for (size_t i = 0; i < document_view->word_rects.size(); i++) {
-            //auto [rect, page] = word_rects[i];
-            DocumentRect current_word_rect = document_view->word_rects[i];
-            if (current_word_rect.page == -1) continue;
-
-
-            NormalizedWindowRect window_rect = current_word_rect.to_window_normalized(dv());
-
-            int view_width = static_cast<float>(dv()->get_view_width());
-            int view_height = static_cast<float>(dv()->get_view_height());
-
-            int window_x0 = static_cast<int>(window_rect.x0 * view_width / 2 + view_width / 2);
-            int window_y0 = static_cast<int>(-window_rect.y0 * view_height / 2 + view_height / 2);
-
-            if (dv()->should_highlight_rect_mode) {
-                auto center = window_rect.to_window(dv()).center();
-                window_x0 = center.x - painter.font().pixelSize() / 2;
-            }
-
-            if (i > 0 && (!dv()->should_highlight_rect_mode)) {
-                if (std::abs(document_view->word_rects[i - 1].rect.x0 - current_word_rect.rect.x0) < 5) {
-                    window_y0 = static_cast<int>(-window_rect.y1 * view_height / 2 + view_height / 2);
-                }
-            }
-
-            int window_y1 = static_cast<int>(-window_rect.y1 * view_height / 2 + view_height / 2);
-
-            bool highlighted = document_view->is_tag_highlighted(tags[i]);
-            QString remaining_tag = QString::fromStdString(tags[i]);
-            if (document_view->tag_prefix.size() > 0) {
-                if (remaining_tag.startsWith(QString::fromStdString(document_view->tag_prefix))) {
-                    remaining_tag = remaining_tag.mid(document_view->tag_prefix.size());
-                }
-                else {
-                    remaining_tag = "";
-                }
-            }
-
-            QColor rect_highlight_color;
-            QColor rect_highlight_color_opaque;
-            QColor rect_inverted_color;
-            if (dv()->should_highlight_rect_mode) {
-
-                int index = i % 26;
-                rect_highlight_color = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2], 0.3f);
-                rect_highlight_color_opaque = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
-                rect_inverted_color = QColor::fromRgbF(1.0f - HIGHLIGHT_COLORS[3 * (index % 26)], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 1], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
-                WindowRect wr = window_rect.to_window(dv());
-                painter.fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
-            }
-            
-            if (remaining_tag.size() > 0) {
-                if (highlighted) {
-                    auto original_pen = painter.pen();
-                    auto original_background = painter.background();
-                    painter.setPen(qcc4(KEYBOARD_SELECTED_TAG_TEXT_COLOR));
-                    painter.setBackground(qcc4(KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO));
-                    painter.drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
-                    painter.setPen(original_pen);
-                    painter.setBackground(original_background);
-                }
-                else {
-                    if (dv()->should_highlight_rect_mode) {
-                        painter.setPen(rect_inverted_color);
-                        painter.setBackground(rect_highlight_color_opaque);
-                    }
-
-                    painter.drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
-                }
-            }
-        }
-    }
-
-    if (document_view->should_highlight_links && document_view->should_show_numbers && (!document_view->overview_page)) {
-
-        dv()->get_visible_links(all_visible_links);
-        setup_text_painter();
-        for (size_t i = 0; i < all_visible_links.size(); i++) {
-            std::stringstream ss;
-            ss << i;
-            std::string index_string = ss.str();
-
-            if (!NUMERIC_TAGS) {
-                index_string = get_aplph_tag(i, all_visible_links.size());
-            }
-
-            //auto [page, link] = all_visible_links[i];
-            auto link = all_visible_links[i];
-
-            bool should_draw = true;
-
-            // some malformed doucments have multiple overlapping links which makes reading
-            // the link labels difficult. Here we only draw the link text if there are no
-            // other close links. This has quadratic runtime but it should not matter since
-            // there are not many links in a single PDF page.
-            if (HIDE_OVERLAPPING_LINK_LABELS) {
-                for (int j = i + 1; j < all_visible_links.size(); j++) {
-                    auto other_link = all_visible_links[j];
-                    float distance = std::abs(other_link.rects[0].x0 - link.rects[0].x0) + std::abs(other_link.rects[0].y0 - link.rects[0].y0);
-                    if (distance < 10) {
-                        should_draw = false;
-                    }
-                }
-            }
-
-            NormalizedWindowRect window_rect = DocumentRect(link.rects[0], link.source_page).to_window_normalized(dv());
-
-            int view_width = static_cast<float>(dv()->get_view_width());
-            int view_height = static_cast<float>(dv()->get_view_height());
-
-            int window_x = static_cast<int>(window_rect.x0 * view_width / 2 + view_width / 2);
-            int window_y = static_cast<int>(-window_rect.y0 * view_height / 2 + view_height / 2);
-
-            if (document_view->tag_prefix.size() > 0) {
-                if (index_string.find(document_view->tag_prefix) != 0) {
-                    should_draw = false;
-                }
-                else {
-                    index_string = index_string.substr(document_view->tag_prefix.size());
-                }
-            }
-            if (should_draw) {
-                painter.drawText(window_x, window_y, index_string.c_str());
-            }
-        }
-    }
+    render_tags();
 
 
 
@@ -3703,6 +3476,248 @@ void PdfViewOpenGLWidget::render_ruler() {
             underline_window_rect.y1 = mid_y + underline_height / 2;
 
             render_highlight_window(underline_window_rect, HRF_FILL);
+        }
+    }
+
+}
+
+void PdfViewOpenGLWidget::render_debug_highlights(){
+
+    if (dv()->debug_highlight_rects.size() > 0) {
+
+        //float dbg_color[3] = { 1, 0, 1 };
+        for (int i = 0; i < dv()->debug_highlight_rects.size(); i++) {
+
+            int index = i % 26;
+            std::array<float, 3> text_highlight_color = cc3(&HIGHLIGHT_COLORS[3 * index]);
+            set_highlight_color(&text_highlight_color[0], 0.3f);
+
+            for (int j = 0; j < dv()->debug_highlight_rects[i].size(); j++) {
+                render_highlight_absolute(dv()->debug_highlight_rects[i][j], HRF_FILL | HRF_BORDER);
+            }
+        }
+    }
+}
+
+void PdfViewOpenGLWidget::render_portals() {
+
+    const std::vector<Portal>& portals = doc()->get_portals();
+    prepare_highlight_pipeline();
+    float color[] = { 1, 1, 1 };
+    set_highlight_color(color, 0.3f);
+    if (doc()->can_use_highlights()) {
+        for (int i = 0; i < portals.size(); i++) {
+            if (portals[i].is_icon()) {
+                if (!portals[i].is_merged_rect_valid) {
+                    portals[i].update_merged_rect(doc());
+                    portals[i].is_merged_rect_valid = true;
+                }
+                if (portals[i].merged_rect) {
+                    render_highlight_absolute(portals[i].get_rectangle().value(), HRF_FILL | HRF_INVERTED);
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < portals.size(); i++) {
+        if (portals[i].is_pinned()) {
+            bool is_portal_selected = dv()->get_selected_pinned_portal_uuid() == portals[i].uuid;
+            float selected_border_color[] = { 1, 0, 0 };
+            OverviewState portal_overview_state;
+
+            portal_overview_state.source_rect = portals[i].get_rectangle();
+            portal_overview_state.absolute_offset_x = portals[i].dst.book_state.offset_x;
+            portal_overview_state.absolute_offset_y = portals[i].dst.book_state.offset_y;
+            portal_overview_state.zoom_level = portals[i].dst.book_state.zoom_level * dv()->get_zoom_level();
+            portal_overview_state.source_portal = portals[i];
+
+            portal_overview_state.doc = document_manager->get_document_with_checksum(portals[i].dst.document_checksum);
+            if (portal_overview_state.doc) {
+                if (!portal_overview_state.doc->get_is_opened()) {
+                    portal_overview_state.doc->open(true);
+                }
+
+                render_overview(portal_overview_state, !is_portal_selected);
+                if (is_portal_selected) {
+                    //draw_overview_border(portal_overview_state, selected_border_color);
+                    end_native_painting();
+
+                    WindowRect window_rect = portal_overview_state.source_rect->to_window(dv());
+                    QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
+                    painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
+                    painter.drawRect(
+                        window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2 - 1,
+                        window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2 + 1,
+                        fz_irect_width(window_rect) + SELECTED_BORDER_PEN_SIZE + 1,
+                        fz_irect_height(window_rect) + SELECTED_BORDER_PEN_SIZE + 1
+                    );
+                    begin_native_painting();
+                }
+            }
+        }
+    }
+
+    end_native_painting();
+
+
+    if (doc()->can_use_highlights()) {
+
+        for (int i = 0; i < document_view->pending_download_portals.size(); i++) {
+            auto pending_rect = document_view->pending_download_portals[i].pending_portal.get_rectangle();
+            if (pending_rect.has_value()) {
+                render_portal_rect(pending_rect.value(), true, document_view->pending_download_portals[i].downloaded_fraction);
+            }
+        }
+        for (int i = 0; i < portals.size(); i++) {
+            if (portals[i].is_icon()) {
+                if (!portals[i].merged_rect) {
+                    render_portal_rect(portals[i].get_rectangle().value(), false, {});
+                }
+            }
+        }
+
+        if (document_view->current_pending_portal) {
+            Portal portal = document_view->current_pending_portal->second;
+            if (portal.is_visible()) {
+                render_portal_rect(portal.get_rectangle().value(), true, {});
+            }
+        }
+
+    }
+}
+
+void PdfViewOpenGLWidget::render_tags() {
+
+    std::vector<PdfLink> all_visible_links;
+    if (document_view->should_highlight_words && (!document_view->overview_page)) {
+        setup_text_painter();
+
+        std::vector<std::string> tags = get_tags(document_view->word_rects.size());
+
+        for (size_t i = 0; i < document_view->word_rects.size(); i++) {
+            //auto [rect, page] = word_rects[i];
+            DocumentRect current_word_rect = document_view->word_rects[i];
+            if (current_word_rect.page == -1) continue;
+
+
+            NormalizedWindowRect window_rect = current_word_rect.to_window_normalized(dv());
+
+            int view_width = static_cast<float>(dv()->get_view_width());
+            int view_height = static_cast<float>(dv()->get_view_height());
+
+            int window_x0 = static_cast<int>(window_rect.x0 * view_width / 2 + view_width / 2);
+            int window_y0 = static_cast<int>(-window_rect.y0 * view_height / 2 + view_height / 2);
+
+            if (dv()->should_highlight_rect_mode) {
+                auto center = window_rect.to_window(dv()).center();
+                window_x0 = center.x - painter.font().pixelSize() / 2;
+            }
+
+            if (i > 0 && (!dv()->should_highlight_rect_mode)) {
+                if (std::abs(document_view->word_rects[i - 1].rect.x0 - current_word_rect.rect.x0) < 5) {
+                    window_y0 = static_cast<int>(-window_rect.y1 * view_height / 2 + view_height / 2);
+                }
+            }
+
+            int window_y1 = static_cast<int>(-window_rect.y1 * view_height / 2 + view_height / 2);
+
+            bool highlighted = document_view->is_tag_highlighted(tags[i]);
+            QString remaining_tag = QString::fromStdString(tags[i]);
+            if (document_view->tag_prefix.size() > 0) {
+                if (remaining_tag.startsWith(QString::fromStdString(document_view->tag_prefix))) {
+                    remaining_tag = remaining_tag.mid(document_view->tag_prefix.size());
+                }
+                else {
+                    remaining_tag = "";
+                }
+            }
+
+            QColor rect_highlight_color;
+            QColor rect_highlight_color_opaque;
+            QColor rect_inverted_color;
+            if (dv()->should_highlight_rect_mode) {
+
+                int index = i % 26;
+                rect_highlight_color = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2], 0.3f);
+                rect_highlight_color_opaque = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
+                rect_inverted_color = QColor::fromRgbF(1.0f - HIGHLIGHT_COLORS[3 * (index % 26)], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 1], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
+                WindowRect wr = window_rect.to_window(dv());
+                painter.fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
+            }
+
+            if (remaining_tag.size() > 0) {
+                if (highlighted) {
+                    auto original_pen = painter.pen();
+                    auto original_background = painter.background();
+                    painter.setPen(qcc4(KEYBOARD_SELECTED_TAG_TEXT_COLOR));
+                    painter.setBackground(qcc4(KEYBOARD_SELECTED_TAG_BACKGROUND_COLRO));
+                    painter.drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
+                    painter.setPen(original_pen);
+                    painter.setBackground(original_background);
+                }
+                else {
+                    if (dv()->should_highlight_rect_mode) {
+                        painter.setPen(rect_inverted_color);
+                        painter.setBackground(rect_highlight_color_opaque);
+                    }
+
+                    painter.drawText(window_x0, (window_y0 + window_y1) / 2, remaining_tag);
+                }
+            }
+        }
+    }
+
+    if (document_view->should_highlight_links && document_view->should_show_numbers && (!document_view->overview_page)) {
+
+        dv()->get_visible_links(all_visible_links);
+        setup_text_painter();
+        for (size_t i = 0; i < all_visible_links.size(); i++) {
+            std::stringstream ss;
+            ss << i;
+            std::string index_string = ss.str();
+
+            if (!NUMERIC_TAGS) {
+                index_string = get_aplph_tag(i, all_visible_links.size());
+            }
+
+            //auto [page, link] = all_visible_links[i];
+            auto link = all_visible_links[i];
+
+            bool should_draw = true;
+
+            // some malformed doucments have multiple overlapping links which makes reading
+            // the link labels difficult. Here we only draw the link text if there are no
+            // other close links. This has quadratic runtime but it should not matter since
+            // there are not many links in a single PDF page.
+            if (HIDE_OVERLAPPING_LINK_LABELS) {
+                for (int j = i + 1; j < all_visible_links.size(); j++) {
+                    auto other_link = all_visible_links[j];
+                    float distance = std::abs(other_link.rects[0].x0 - link.rects[0].x0) + std::abs(other_link.rects[0].y0 - link.rects[0].y0);
+                    if (distance < 10) {
+                        should_draw = false;
+                    }
+                }
+            }
+
+            NormalizedWindowRect window_rect = DocumentRect(link.rects[0], link.source_page).to_window_normalized(dv());
+
+            int view_width = static_cast<float>(dv()->get_view_width());
+            int view_height = static_cast<float>(dv()->get_view_height());
+
+            int window_x = static_cast<int>(window_rect.x0 * view_width / 2 + view_width / 2);
+            int window_y = static_cast<int>(-window_rect.y0 * view_height / 2 + view_height / 2);
+
+            if (document_view->tag_prefix.size() > 0) {
+                if (index_string.find(document_view->tag_prefix) != 0) {
+                    should_draw = false;
+                }
+                else {
+                    index_string = index_string.substr(document_view->tag_prefix.size());
+                }
+            }
+            if (should_draw) {
+                painter.drawText(window_x, window_y, index_string.c_str());
+            }
         }
     }
 
