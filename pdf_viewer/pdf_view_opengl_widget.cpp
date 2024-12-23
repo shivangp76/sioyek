@@ -962,41 +962,7 @@ void PdfViewOpenGLWidget::my_render() {
     }
 #endif
 
-    document_view->search_results_mutex.lock();
-    if (document_view->search_results.size() > 0) {
-
-        int index = document_view->current_search_result_index;
-        if (index == -1) index = 0;
-
-        SearchResult& current_search_result = document_view->search_results[index];
-        current_search_result.fill(doc());
-
-        prepare_highlight_pipeline();
-
-        std::array<float, 3> unselected_search_highlight_color = cc3(UNSELECTED_SEARCH_HIGHLIGHT_COLOR);
-
-        if (SHOULD_HIGHLIGHT_UNSELECTED_SEARCH) {
-
-            std::vector<int> visible_search_indices = document_view->get_visible_search_results(visible_pages);
-            set_highlight_color(&unselected_search_highlight_color[0], 0.3f);
-            for (int visible_search_index : visible_search_indices) {
-                if (visible_search_index != document_view->current_search_result_index) {
-                    SearchResult& res = document_view->search_results[visible_search_index];
-                    res.fill(doc());
-                    for (auto rect : res.rects) {
-                        render_highlight_document(DocumentRect { rect, res.page });
-                    }
-                }
-            }
-        }
-
-        std::array<float, 3> search_highlight_color = cc3(DEFAULT_SEARCH_HIGHLIGHT_COLOR);
-        set_highlight_color(&search_highlight_color[0], 0.3f);
-        for (auto rect : current_search_result.rects) {
-            render_highlight_document(DocumentRect { rect, current_search_result.page });
-        }
-    }
-    document_view->search_results_mutex.unlock();
+    render_search_result_highlights(visible_pages);
 
     prepare_highlight_pipeline();
 
@@ -1032,84 +998,7 @@ void PdfViewOpenGLWidget::my_render() {
     
     render_selected_rectangle();
 
-    if (dv()->is_ruler_mode()) {
-
-        float vertical_line_end = dv()->get_ruler_window_y();
-        /* std::optional<NormalizedWindowRect> ruler_rect = document_view->get_ruler_window_rect(); */
-        // NormalizedWindowRect DocumentView::document_to_window_rect_pixel_perfect(DocumentRect doc_rect, int pixel_width, int pixel_height, bool banded) {
-        //std::optional<NormalizedWindowRect> ruler_rect = {};
-        std::optional<NormalizedWindowRect> ruler_rect = dv()->get_ruler_window_rect();
-
-        if (dv()->is_line_select_mode()){
-            // in line select mode we want the ruler to just fit to the line (no x and y padding)
-            DocumentRect ruler_document_rect = dv()->get_ruler_rect()->to_document(doc());
-            int ruler_pixel_width = static_cast<int>(ruler_document_rect.rect.width() * dv()->get_zoom_level());
-            int ruler_pixel_height = static_cast<int>(ruler_document_rect.rect.height() * dv()->get_zoom_level());
-            ruler_rect = dv()->document_to_window_rect_pixel_perfect(ruler_document_rect, ruler_pixel_width, ruler_pixel_height, false);
-        }
-
-        auto ruler_display_mode = get_ruler_display_mode();
-        if ((!ruler_rect.has_value()) || (ruler_display_mode == RulerDisplayMode::Slit) || (ruler_display_mode == RulerDisplayMode::HighlightBelow)) {
-            render_line_window(vertical_line_end, dv()->get_ruler_window_rect());
-        }
-        else {
-            int flags = 0;
-
-            if (ruler_display_mode == RulerDisplayMode::Underline) {
-                flags |= HRF_UNDERLINE;
-            }
-
-            else if (ruler_display_mode == RulerDisplayMode::HighlightRuler) {
-                flags |= HRF_PAINTOVER;
-                flags |= HRF_FILL;
-            }
-            else if (ruler_display_mode == RulerDisplayMode::Box) {
-                flags |= HRF_BORDER;
-            }
-
-
-            //auto ruler_color_adjusted = cc3(RULER_COLOR);
-            float* ruler_color = RULER_COLOR;
-
-            float inverted_line_select_ruler_color[3] = {
-                1.0f - LINE_SELECT_RULER_COLOR[0],
-                1.0f - LINE_SELECT_RULER_COLOR[1],
-                1.0f - LINE_SELECT_RULER_COLOR[2],
-            };
-
-            if (dv()->is_line_select_mode()) {
-                ruler_color = inverted_line_select_ruler_color;
-            }
-
-            auto ruler_color_adjusted = cc3(ruler_color);
-            if (ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE) {
-                ruler_color = &ruler_color_adjusted[0];
-            }
-
-            set_highlight_color(&ruler_color[0], 1.0f);
-            render_highlight_window(ruler_rect.value(), flags, RULER_UNDERLINE_PIXEL_WIDTH);
-        }
-        if (document_view->underline) {
-            prepare_highlight_pipeline();
-            set_highlight_color(RULER_MARKER_COLOR, 1.0f);
-
-            AbsoluteRect underline_rect;
-            underline_rect.x0 = document_view->underline->x - 3.0f;
-            underline_rect.x1 = document_view->underline->x + 3.0f;
-
-            underline_rect.y0 = document_view->underline->y - 1.0f;
-            underline_rect.y1 = document_view->underline->y + 1.0f;
-            NormalizedWindowRect underline_window_rect = underline_rect.to_window_normalized(dv());
-            float mid_y = ruler_rect->y1;
-            /* float underline_height = underline_window_rect.width() / 2.0f; */
-            /* float underline_height = ruler_rect->height(); */
-            float underline_height = 4 * static_cast<float>(RULER_UNDERLINE_PIXEL_WIDTH) / static_cast<float>(dv()->get_view_height());
-            underline_window_rect.y0 = mid_y - underline_height / 2;
-            underline_window_rect.y1 = mid_y + underline_height / 2;
-
-            render_highlight_window(underline_window_rect, HRF_FILL);
-        }
-    }
+    render_ruler();
 
     if (dv()->debug_highlight_rects.size() > 0) {
 
@@ -1375,16 +1264,16 @@ void PdfViewOpenGLWidget::my_render() {
     render_text_highlights();
     render_bookmark_annotations();
 
-    if (VISUALIZE_RULER_THRESHOLDS){
-        render_ruler_thresholds();
-    }
+    bind_default();
+    { // require bind_default
+        if (VISUALIZE_RULER_THRESHOLDS) {
+            prepare_highlight_pipeline();
+            render_ruler_thresholds();
+        }
 
-    //for (auto overview : persisted_overviews) {
-    //    render_overview(overview);
-    //}
-
-    if (document_view->overview_page) {
-        render_overview(document_view->overview_page.value());
+        if (document_view->overview_page) {
+            render_overview(document_view->overview_page.value());
+        }
     }
 
     end_native_painting();
@@ -3697,4 +3586,124 @@ void PdfViewOpenGLWidget::render_bookmark_annotations() {
 
             }
         }
+}
+
+void PdfViewOpenGLWidget::render_search_result_highlights(const std::vector<int>& visible_pages) {
+    document_view->search_results_mutex.lock();
+    if (document_view->search_results.size() > 0) {
+
+        int index = document_view->current_search_result_index;
+        if (index == -1) index = 0;
+
+        SearchResult& current_search_result = document_view->search_results[index];
+        current_search_result.fill(doc());
+
+        prepare_highlight_pipeline();
+
+        std::array<float, 3> unselected_search_highlight_color = cc3(UNSELECTED_SEARCH_HIGHLIGHT_COLOR);
+
+        if (SHOULD_HIGHLIGHT_UNSELECTED_SEARCH) {
+
+            std::vector<int> visible_search_indices = document_view->get_visible_search_results(visible_pages);
+            set_highlight_color(&unselected_search_highlight_color[0], 0.3f);
+            for (int visible_search_index : visible_search_indices) {
+                if (visible_search_index != document_view->current_search_result_index) {
+                    SearchResult& res = document_view->search_results[visible_search_index];
+                    res.fill(doc());
+                    for (auto rect : res.rects) {
+                        render_highlight_document(DocumentRect { rect, res.page });
+                    }
+                }
+            }
+        }
+
+        std::array<float, 3> search_highlight_color = cc3(DEFAULT_SEARCH_HIGHLIGHT_COLOR);
+        set_highlight_color(&search_highlight_color[0], 0.3f);
+        for (auto rect : current_search_result.rects) {
+            render_highlight_document(DocumentRect { rect, current_search_result.page });
+        }
+    }
+    document_view->search_results_mutex.unlock();
+}
+
+void PdfViewOpenGLWidget::render_ruler() {
+    if (dv()->is_ruler_mode()) {
+
+        float vertical_line_end = dv()->get_ruler_window_y();
+        /* std::optional<NormalizedWindowRect> ruler_rect = document_view->get_ruler_window_rect(); */
+        // NormalizedWindowRect DocumentView::document_to_window_rect_pixel_perfect(DocumentRect doc_rect, int pixel_width, int pixel_height, bool banded) {
+        //std::optional<NormalizedWindowRect> ruler_rect = {};
+        std::optional<NormalizedWindowRect> ruler_rect = dv()->get_ruler_window_rect();
+
+        if (dv()->is_line_select_mode()) {
+            // in line select mode we want the ruler to just fit to the line (no x and y padding)
+            DocumentRect ruler_document_rect = dv()->get_ruler_rect()->to_document(doc());
+            int ruler_pixel_width = static_cast<int>(ruler_document_rect.rect.width() * dv()->get_zoom_level());
+            int ruler_pixel_height = static_cast<int>(ruler_document_rect.rect.height() * dv()->get_zoom_level());
+            ruler_rect = dv()->document_to_window_rect_pixel_perfect(ruler_document_rect, ruler_pixel_width, ruler_pixel_height, false);
+        }
+
+        auto ruler_display_mode = get_ruler_display_mode();
+        if ((!ruler_rect.has_value()) || (ruler_display_mode == RulerDisplayMode::Slit) || (ruler_display_mode == RulerDisplayMode::HighlightBelow)) {
+            render_line_window(vertical_line_end, dv()->get_ruler_window_rect());
+        }
+        else {
+            int flags = 0;
+
+            if (ruler_display_mode == RulerDisplayMode::Underline) {
+                flags |= HRF_UNDERLINE;
+            }
+
+            else if (ruler_display_mode == RulerDisplayMode::HighlightRuler) {
+                flags |= HRF_PAINTOVER;
+                flags |= HRF_FILL;
+            }
+            else if (ruler_display_mode == RulerDisplayMode::Box) {
+                flags |= HRF_BORDER;
+            }
+
+
+            //auto ruler_color_adjusted = cc3(RULER_COLOR);
+            float* ruler_color = RULER_COLOR;
+
+            float inverted_line_select_ruler_color[3] = {
+                1.0f - LINE_SELECT_RULER_COLOR[0],
+                1.0f - LINE_SELECT_RULER_COLOR[1],
+                1.0f - LINE_SELECT_RULER_COLOR[2],
+            };
+
+            if (dv()->is_line_select_mode()) {
+                ruler_color = inverted_line_select_ruler_color;
+            }
+
+            auto ruler_color_adjusted = cc3(ruler_color);
+            if (ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE) {
+                ruler_color = &ruler_color_adjusted[0];
+            }
+
+            set_highlight_color(&ruler_color[0], 1.0f);
+            render_highlight_window(ruler_rect.value(), flags, RULER_UNDERLINE_PIXEL_WIDTH);
+        }
+        if (document_view->underline) {
+            prepare_highlight_pipeline();
+            set_highlight_color(RULER_MARKER_COLOR, 1.0f);
+
+            AbsoluteRect underline_rect;
+            underline_rect.x0 = document_view->underline->x - 3.0f;
+            underline_rect.x1 = document_view->underline->x + 3.0f;
+
+            underline_rect.y0 = document_view->underline->y - 1.0f;
+            underline_rect.y1 = document_view->underline->y + 1.0f;
+            NormalizedWindowRect underline_window_rect = underline_rect.to_window_normalized(dv());
+            float mid_y = ruler_rect->y1;
+            /* float underline_height = underline_window_rect.width() / 2.0f; */
+            /* float underline_height = ruler_rect->height(); */
+            float underline_height = 4 * static_cast<float>(RULER_UNDERLINE_PIXEL_WIDTH) / static_cast<float>(dv()->get_view_height());
+            underline_window_rect.y0 = mid_y - underline_height / 2;
+            underline_window_rect.y1 = mid_y + underline_height / 2;
+
+            render_highlight_window(underline_window_rect, HRF_FILL);
+        }
+    }
+
 }

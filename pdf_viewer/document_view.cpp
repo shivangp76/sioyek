@@ -2395,7 +2395,7 @@ bool DocumentView::fast_coordinates() {
 }
 
 
-std::vector<int> DocumentView::get_visible_search_results(std::vector<int>& visible_pages) {
+std::vector<int> DocumentView::get_visible_search_results(const std::vector<int>& visible_pages) {
     std::vector<int> res;
 
     int index = find_search_index_for_visible_pages(visible_pages);
@@ -2437,7 +2437,7 @@ std::vector<int> DocumentView::get_visible_search_results(std::vector<int>& visi
     return res;
 }
 
-int DocumentView::find_search_index_for_visible_pages(std::vector<int>& visible_pages) {
+int DocumentView::find_search_index_for_visible_pages(const std::vector<int>& visible_pages) {
     // finds some search index located in the visible pages
 
     int breakpoint = find_search_results_breakpoint();

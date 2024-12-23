@@ -403,7 +403,7 @@ public:
     void get_visible_pages(int window_height, std::vector<int>& visible_pages);
     void move_pages(int num_pages);
 
-    std::vector<int> get_visible_search_results(std::vector<int>& visible_pages);
+    std::vector<int> get_visible_search_results(const std::vector<int>& visible_pages);
     int find_search_index_for_visible_page(int page, int breakpoint);
     int find_search_results_breakpoint();
     int find_search_result_for_page_range(int page, int range_begin, int range_end);
@@ -442,7 +442,7 @@ public:
     void set_overview_rect(NormalizedWindowRect rect);
     void get_overview_size(float* width, float* height);
 
-    int find_search_index_for_visible_pages(std::vector<int>& visible_pages);
+    int find_search_index_for_visible_pages(const std::vector<int>& visible_pages);
     void move_screens(int num_screens);
     void reset_doc_state();
     void open_document(const std::wstring& doc_path, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false, std::string downloaded_checksum="");

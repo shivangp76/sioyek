@@ -254,6 +254,8 @@ public:
     void render_text_highlights();
     void render_highlight_annotations();
     void render_bookmark_annotations();
+    void render_ruler();
+    void render_search_result_highlights(const std::vector<int>& visible_pages);
     std::array<float, 3> cc3(const float* input_color);
     std::array<float, 4> cc4(const float* input_color);
     QColor qcc3(const float* input_color);
