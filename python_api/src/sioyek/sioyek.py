@@ -54,7 +54,7 @@ def parse_typed_config_str(lines):
 
 class Sioyek(SioyekBase):
 
-    def __init__(self, sioyek_path='', local_database_path=None, shared_database_path=None, last_file_path=None, force_binary=False, launch_if_not_exists=False, launch_args=dict()):
+    def __init__(self, sioyek_path='', local_database_path=None, shared_database_path=None, last_file_path=None, force_binary=False, launch_if_not_exists=False, launch_args=dict(), instance_name=''):
 
         self.path = sioyek_path
         self.is_dummy_mode = False
@@ -69,6 +69,7 @@ class Sioyek(SioyekBase):
         self.connected = False
         self.socket = None
         self.last_file_path = last_file_path
+        self.socket_name = 'sioyek'
 
         if not force_binary:
             self.try_to_connect()
@@ -96,6 +97,10 @@ class Sioyek(SioyekBase):
                 last_file_path = os.getenv('SIOYEK_LAST_FILE_PATH')
 
             args = [self.path]
+
+            if instance_name != '':
+                self.socket_name = instance_name
+                args.extend(['--instance-name', instance_name])
 
             if local_database_path != None:
                 self.local_database_path = local_database_path
@@ -129,7 +134,7 @@ class Sioyek(SioyekBase):
     
     def try_to_connect(self):
         self.socket = QLocalSocket()
-        self.socket.connectToServer('sioyek')
+        self.socket.connectToServer(self.socket_name)
         if self.socket.waitForConnected(1000):
             self.connected = True
 
