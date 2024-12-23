@@ -1436,7 +1436,12 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
     add_enum(L"ruler_style", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
     add_enum(L"line_select_ruler_display_style", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
-    add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"}}));
+    add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"} }))->set_change_fn([&](MainWidget* widget) {
+        ColorPalette palette = ColorPalette::Normal;
+        if (COLOR_MODE == ColorMode::Dark) palette = ColorPalette::Dark;
+        else if (COLOR_MODE == ColorMode::Custom) palette = ColorPalette::Custom;
+        handle_set_color_palette(widget, palette);
+        });
     add_enum(L"table_extract_behaviour", &TABLE_EXTRACT_BEHAVIOUR, EnumExtras({ {L"bookmark", L"copy"}}));
     add_enum(L"selected_text_highlight_style", &SELECTED_TEXT_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"inverted", L"background"}}));
     add_enum(L"highlight_style", &HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"background", L"border"}}));
