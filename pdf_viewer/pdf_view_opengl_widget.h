@@ -125,7 +125,7 @@ protected:
     virtual void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) = 0;
     virtual void begin_native_painting() = 0;
     virtual void end_native_painting() = 0;
-    virtual void render_texture(SioyekTextureType texture, NormalizedWindowRect rect, ColorPalette palette) = 0;
+    virtual void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) = 0;
     virtual void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) = 0;
     void render_highlight_absolute(AbsoluteRect absolute_document_rect, int flags);
     ScratchPad* scratch();
@@ -179,6 +179,12 @@ protected:
     int get_ruler_display_mode();
     void render_portal_rect(AbsoluteRect portal_absolute_rect, bool is_pending, std::optional<float> completion_ratio);
     void setup_text_painter();
+    void get_background_color(float out_background[3]);
+    void get_overview_window_vertices(float out_vertices[2 * 4], std::optional<OverviewState> maybe_overview = {});
+    std::vector<int> get_overview_visible_pages(const OverviewState& overview);
+    void render_scratchpad();
+
+    void draw_pixmap(QRect rect, QPixmap* pixmap);
 
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
@@ -188,6 +194,10 @@ protected:
     void render_overview(OverviewState overview, bool draw_border=true);
     virtual void render_page_separator(int page_number, float* page_vertices) = 0;
 
+    virtual void prepare_non_compiled_line_drawing_pipeline() = 0;
+    virtual void render_compiled_drawings() = 0;
+    virtual void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) = 0;
+    virtual void prepare_line_drawing_pipeline() = 0;
     virtual void enable_multisampling() = 0;
     virtual void disable_multisampling() = 0;
     virtual void bind_default() = 0;
@@ -208,6 +218,9 @@ public:
     Document* doc(std::optional<OverviewState> overview = {});
     const QPainter& get_painter();
     bool is_background_dark();
+    void register_on_link_edit_listener(std::function<void(const OpenedBookState&)> listener);
+    void handle_escape();
+    void clear_all_selections();
 
 };
 
@@ -257,15 +270,13 @@ protected:
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
     void begin_native_painting() override;
     void end_native_painting() override;
-    void render_texture(SioyekTextureType texture, NormalizedWindowRect rect, ColorPalette palette);
+    void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) override;
 
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
-    void render_scratchpad();
     void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
     void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
-    void render_compiled_drawings();
-    void render_line(DocumentView* dv, FreehandDrawing drawing);
+    void render_compiled_drawings() override;
 
     void enable_stencil() override;
     void write_to_stencil() override;
@@ -286,11 +297,10 @@ protected:
     void bind_program(ColorPalette forced_palette=ColorPalette::None);
     void bind_points(const std::vector<float>& points);
     void bind_default() override;
-    void bind_vertex_array();
-    void draw_pixmap(QRect rect, QPixmap* pixmap);
-    void prepare_line_drawing_pipeline();
+    void bind_vertex_array() override;
+    void prepare_line_drawing_pipeline() override;
     void prepare_highlight_pipeline() override;
-    void prepare_non_compiled_line_drawing_pipeline();
+    void prepare_non_compiled_line_drawing_pipeline() override;
     void enable_multisampling() override;
     void disable_multisampling() override;
     void set_highlight_color(const float* color, float alpha) override;
@@ -308,28 +318,86 @@ public:
     PdfViewOpenGLWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
     ~PdfViewOpenGLWidget();
 
-    void handle_escape();
-
-    std::vector<int> get_overview_visible_pages(const OverviewState& overview);
     void mouseMoveEvent(QMouseEvent* mouse_event) override;
     void mousePressEvent(QMouseEvent* mevent) override;
     void mouseReleaseEvent(QMouseEvent* mevent) override;
     void wheelEvent(QWheelEvent* wevent) override;
-    void register_on_link_edit_listener(std::function<void(const OpenedBookState&)> listener);
-    std::vector<NormalizedWindowRect> get_overview_border_rects();
 
-    void get_overview_window_vertices(float out_vertices[2 * 4], std::optional<OverviewState> maybe_overview = {});
-
-    void clear_all_selections();
-    Document* get_current_overview_document();
-
-    void get_background_color(float out_background[3]);
     void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
     void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
-    //void draw_markdown_text(QString text, QRect window_rect, const QFont& font);
 
     bool can_use_cached_scratchpad_framebuffer();
-    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
-
-    //void initialize_latex();
+    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
 };
+
+//class PdfViewQPainterWidget : public QWidget, public SioyekRendererBackend{
+//
+//protected:
+//    void paintEvent(QPaintEvent* event) override;
+//    void resizeEvent(QResizeEvent* event) override;
+//    void render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
+//    void render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true);
+//
+//
+//    void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
+//    void begin_native_painting() override;
+//    void end_native_painting() override;
+//    void render_texture(SioyekTextureType texture, NormalizedWindowRect rect, ColorPalette palette) override;
+//
+//    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
+//    void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
+//    void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
+//    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+//    void render_compiled_drawings() override;
+//
+//    void enable_stencil() override;
+//    void write_to_stencil() override;
+//    void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) override;
+//    void draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects) override;
+//    void use_stencil_to_write(bool eq) override;
+//    void disable_stencil() override;
+//    float get_device_pixel_ratio() override;
+//
+//    void render_page_separator(int page_number, float* page_vertices) override;
+//
+//    void render_transparent_background() override;
+//
+//    Qt::ScreenOrientation get_orientation() override;
+//    int get_width() override;
+//    int get_height() override;
+//
+//    void bind_program(ColorPalette forced_palette=ColorPalette::None);
+//    void bind_points(const std::vector<float>& points);
+//    void bind_default() override;
+//    void bind_vertex_array() override;
+//    void prepare_line_drawing_pipeline() override;
+//    void prepare_highlight_pipeline() override;
+//    void prepare_non_compiled_line_drawing_pipeline() override;
+//    void enable_multisampling() override;
+//    void disable_multisampling() override;
+//    void set_highlight_color(const float* color, float alpha) override;
+//
+//    void prepare_for_line_drawing() override;
+//    void render_highlights_and_bookmarks();
+//    void do_paint();
+//
+//    void prepare_initial_render_pipeline() override;
+//    void prepare_link_highlight_state() override;
+//public:
+//    //std::vector<OverviewState> persisted_overviews;
+//
+//
+//    PdfViewQPainterWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
+//    ~PdfViewQPainterWidget();
+//
+//    void mouseMoveEvent(QMouseEvent* mouse_event) override;
+//    void mousePressEvent(QMouseEvent* mevent) override;
+//    void mouseReleaseEvent(QMouseEvent* mevent) override;
+//    void wheelEvent(QWheelEvent* wevent) override;
+//
+//    void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
+//    void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
+//
+//    bool can_use_cached_scratchpad_framebuffer();
+//    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+//};

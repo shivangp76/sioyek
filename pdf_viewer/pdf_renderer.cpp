@@ -153,7 +153,7 @@ void PdfRenderer::add_request(std::wstring document_path,
 
 //should only be called from the main thread
 
-SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
+std::optional<SioyekTextureType> PdfRenderer::find_rendered_page(std::wstring path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
     //fz_document* doc = get_document_with_path(path);
     if (path.size() > 0) {
         RenderRequest req;
@@ -167,7 +167,7 @@ SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, C
         req.should_render_annotations = should_render_annotations;
         req.color_palette = palette;
         cached_response_mutex.lock();
-        SioyekTextureType result = 0;
+        std::optional<SioyekTextureType> result = {};
         for (auto& cached_resp : cached_responses) {
             if (cached_resp.pending) continue;
 
@@ -180,7 +180,7 @@ SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, C
                 // We can only use OpenGL in the main thread, so we can not upload the rendered
                 // pixmap into a texture in the worker thread, so whenever we get a rendered page
                 // in the main thread, we initialize its OpenGL texture if it is not initialized already
-                if (cached_resp.texture != 0) {
+                if (cached_resp.texture.has_value()) {
                     result = cached_resp.texture;
                 }
                 else {
@@ -197,7 +197,7 @@ SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, C
             }
         }
         cached_response_mutex.unlock();
-        if (result == 0) {
+        if (!result.has_value()) {
             if (TOUCH_MODE) {
                 if (!no_rerender) {
                     add_request(path, page, should_render_annotations, zoom_level, display_scale, index, num_h_slices, num_v_slices, palette);
@@ -225,7 +225,7 @@ SioyekTextureType PdfRenderer::find_rendered_page(std::wstring path, int page, C
     return 0;
 }
 
-SioyekTextureType PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
+std::optional<SioyekTextureType> PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
     /*
     If the requested page is not available, we try to find the rendered page with the closest
     possible zoom level to our request and return that instead
@@ -233,7 +233,7 @@ SioyekTextureType PdfRenderer::try_closest_rendered_page(std::wstring doc_path, 
     cached_response_mutex.lock();
 
     float min_diff = 10000.0f;
-    SioyekTextureType best_texture = 0;
+    std::optional<SioyekTextureType> best_texture = {};
 
     for (const auto& cached_resp : cached_responses) {
         if (cached_resp.pending) continue;
@@ -247,7 +247,7 @@ SioyekTextureType PdfRenderer::try_closest_rendered_page(std::wstring doc_path, 
             (cached_resp.request.color_palette == palette) &&
 #endif
             (cached_resp.request.page == page) &&
-            (cached_resp.texture != 0)) {
+            (cached_resp.texture.has_value())) {
             float diff = cached_resp.request.zoom_level - zoom_level;
             if (diff <= min_diff) {
                 min_diff = diff;
@@ -320,13 +320,13 @@ void PdfRenderer::delete_old_pages(bool force_all, bool invalidate_all) {
         RenderResponse resp = cached_responses[index_to_delete];
 
         pixmap_drop_mutex[resp.thread].lock();
-        if (resp.texture == 0) {
+        if (!resp.texture.has_value()) {
             pixmaps_to_drop[resp.thread].push_back(resp.pixmap);
         }
         pixmap_drop_mutex[resp.thread].unlock();
 
-        if (resp.texture != 0) {
-            release_texture(resp.texture);
+        if (resp.texture.has_value()) {
+            release_texture(resp.texture.value());
         }
 
         cached_responses.erase(cached_responses.begin() + index_to_delete);
@@ -503,7 +503,7 @@ void PdfRenderer::run(int thread_index) {
             pending_requests_mutex.unlock();
             cached_response_mutex.lock();
             for (int i = 0; i < cached_responses.size(); i++) {
-                if ((cached_responses[i].thread == thread_index) && (cached_responses[i].texture == 0) && (cached_responses[i].pixmap == nullptr)) {
+                if ((cached_responses[i].thread == thread_index) && (cached_responses[i].texture.has_value()) && (cached_responses[i].pixmap == nullptr)) {
                     cached_responses[i].invalid = true;
                 }
             }
@@ -541,7 +541,7 @@ void PdfRenderer::run(int thread_index) {
             resp.thread = thread_index;
             resp.request = req;
             resp.last_access_time = QDateTime::currentMSecsSinceEpoch();
-            resp.texture = 0;
+            resp.texture = {};
             resp.invalid = false;
             resp.pending = true;
             cached_responses.push_back(resp);
@@ -636,7 +636,7 @@ void PdfRenderer::run(int thread_index) {
                 RenderResponse resp;
                 resp.thread = thread_index;
                 resp.request = req;
-                resp.texture = 0;
+                resp.texture = {};
                 resp.invalid = false;
 
                 cached_response_mutex.lock();
@@ -808,9 +808,11 @@ BackgroundBookmarkRenderer* PdfRenderer::get_bookmark_renderer() {
 }
 
 void PdfRenderer::release_texture(SioyekTextureType texture){
-#ifdef SIOYEK_OPENGL_BACKEND
-    glDeleteTextures(1, &texture);
-#else
-    delete texture;
-#endif
+    if (std::holds_alternative<GLuint>(texture)) {
+        GLuint t = std::get<GLuint>(texture);
+        glDeleteTextures(1, &t);
+    }
+    else if (std::holds_alternative<QPixmap*>(texture)) {
+        delete std::get<QPixmap*>(texture);
+    }
 }

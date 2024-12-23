@@ -17,6 +17,7 @@
 
 #include <qobject.h>
 #include <qtimer.h>
+#include <variant>
 
 #include "book.h"
 
@@ -27,11 +28,12 @@ class BackgroundBookmarkRenderer;
  #define SIOYEK_OPENGL_BACKEND
 #endif
 
-#ifdef SIOYEK_OPENGL_BACKEND
-using SioyekTextureType = GLuint;
-#else
-using SioyekTextureType = QPixmap*;
-#endif
+//#ifdef SIOYEK_OPENGL_BACKEND
+//using SioyekTextureType = GLuint;
+//#else
+//using SioyekTextureType = QPixmap*;
+//#endif
+using SioyekTextureType = std::variant<GLuint, QPixmap*>;
 
 struct RenderRequest {
     std::wstring path;
@@ -64,7 +66,7 @@ struct RenderResponse {
     fz_pixmap* pixmap = nullptr;
     int width = -1;
     int height = -1;
-    SioyekTextureType texture = 0;
+    std::optional<SioyekTextureType> texture = {};
     bool invalid = false;
     bool pending = true;
 };
@@ -117,7 +119,7 @@ class PdfRenderer : public QObject {
 
     fz_context* init_context();
     fz_document* get_document_with_path(int thread_index, fz_context* mupdf_context, std::wstring path);
-    SioyekTextureType try_closest_rendered_page(std::wstring doc_path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
+    std::optional<SioyekTextureType> try_closest_rendered_page(std::wstring doc_path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
     void delete_old_pixmaps(int thread_index, fz_context* mupdf_context);
     void run(int thread_index);
     void run_search(int thread_index);
@@ -160,7 +162,7 @@ public:
         std::optional<std::pair<int,
         int>> range = {});
 
-    SioyekTextureType find_rendered_page(std::wstring path, int page, ColorPalette color_palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
+    std::optional<SioyekTextureType> find_rendered_page(std::wstring path, int page, ColorPalette color_palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
     void delete_old_pages(bool force_all = false, bool invalidate_all = false);
     void add_password(std::wstring path, std::string password);
     void debug();
