@@ -145,7 +145,7 @@ protected:
     virtual void enable_stencil() = 0;
     virtual void write_to_stencil() = 0;
     virtual void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) = 0;
-    virtual void draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects) = 0;
+    virtual void draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects);
     virtual void use_stencil_to_write(bool eq) = 0;
     virtual void disable_stencil() = 0;
     virtual void render_transparent_background() = 0;
@@ -155,6 +155,7 @@ protected:
     virtual void prepare_highlight_pipeline() = 0;
 
     void render_search_result_highlights(const std::vector<int>& visible_pages);
+    void initialize_stuff();
 
     std::array<float, 3> cc3(const float* input_color);
     std::array<float, 4> cc4(const float* input_color);
@@ -183,7 +184,9 @@ protected:
     void get_overview_window_vertices(float out_vertices[2 * 4], std::optional<OverviewState> maybe_overview = {});
     std::vector<int> get_overview_visible_pages(const OverviewState& overview);
     void render_scratchpad();
+    void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
 
+    bool can_use_cached_scratchpad_framebuffer();
     void draw_pixmap(QRect rect, QPixmap* pixmap);
 
     bool is_normalized_y_in_window(float y);
@@ -274,14 +277,12 @@ protected:
 
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
-    void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
     void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
     void render_compiled_drawings() override;
 
     void enable_stencil() override;
     void write_to_stencil() override;
     void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) override;
-    void draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects) override;
     void use_stencil_to_write(bool eq) override;
     void disable_stencil() override;
     float get_device_pixel_ratio() override;
@@ -326,78 +327,74 @@ public:
     void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
     void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
 
-    bool can_use_cached_scratchpad_framebuffer();
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
 };
 
-//class PdfViewQPainterWidget : public QWidget, public SioyekRendererBackend{
-//
-//protected:
-//    void paintEvent(QPaintEvent* event) override;
-//    void resizeEvent(QResizeEvent* event) override;
-//    void render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
-//    void render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true);
-//
-//
-//    void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
-//    void begin_native_painting() override;
-//    void end_native_painting() override;
-//    void render_texture(SioyekTextureType texture, NormalizedWindowRect rect, ColorPalette palette) override;
-//
-//    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
-//    void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
-//    void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
-//    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
-//    void render_compiled_drawings() override;
-//
-//    void enable_stencil() override;
-//    void write_to_stencil() override;
-//    void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) override;
-//    void draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects) override;
-//    void use_stencil_to_write(bool eq) override;
-//    void disable_stencil() override;
-//    float get_device_pixel_ratio() override;
-//
-//    void render_page_separator(int page_number, float* page_vertices) override;
-//
-//    void render_transparent_background() override;
-//
-//    Qt::ScreenOrientation get_orientation() override;
-//    int get_width() override;
-//    int get_height() override;
-//
-//    void bind_program(ColorPalette forced_palette=ColorPalette::None);
-//    void bind_points(const std::vector<float>& points);
-//    void bind_default() override;
-//    void bind_vertex_array() override;
-//    void prepare_line_drawing_pipeline() override;
-//    void prepare_highlight_pipeline() override;
-//    void prepare_non_compiled_line_drawing_pipeline() override;
-//    void enable_multisampling() override;
-//    void disable_multisampling() override;
-//    void set_highlight_color(const float* color, float alpha) override;
-//
-//    void prepare_for_line_drawing() override;
-//    void render_highlights_and_bookmarks();
-//    void do_paint();
-//
-//    void prepare_initial_render_pipeline() override;
-//    void prepare_link_highlight_state() override;
-//public:
-//    //std::vector<OverviewState> persisted_overviews;
-//
-//
-//    PdfViewQPainterWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
-//    ~PdfViewQPainterWidget();
-//
-//    void mouseMoveEvent(QMouseEvent* mouse_event) override;
-//    void mousePressEvent(QMouseEvent* mevent) override;
-//    void mouseReleaseEvent(QMouseEvent* mevent) override;
-//    void wheelEvent(QWheelEvent* wevent) override;
-//
-//    void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
-//    void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
-//
-//    bool can_use_cached_scratchpad_framebuffer();
-//    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
-//};
+class PdfViewQPainterWidget : public QWidget, public SioyekRendererBackend{
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+    void render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
+    void render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true);
+
+
+    void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
+    void begin_native_painting() override;
+    void end_native_painting() override;
+    void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) override;
+
+    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
+    void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
+    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+    void render_compiled_drawings() override;
+
+    void enable_stencil() override;
+    void write_to_stencil() override;
+    void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) override;
+    void use_stencil_to_write(bool eq) override;
+    void disable_stencil() override;
+    float get_device_pixel_ratio() override;
+
+    void render_page_separator(int page_number, float* page_vertices) override;
+
+    void render_transparent_background() override;
+
+    Qt::ScreenOrientation get_orientation() override;
+    int get_width() override;
+    int get_height() override;
+
+    void bind_program(ColorPalette forced_palette=ColorPalette::None);
+    void bind_points(const std::vector<float>& points);
+    void bind_default() override;
+    void bind_vertex_array() override;
+    void prepare_line_drawing_pipeline() override;
+    void prepare_highlight_pipeline() override;
+    void prepare_non_compiled_line_drawing_pipeline() override;
+    void enable_multisampling() override;
+    void disable_multisampling() override;
+    void set_highlight_color(const float* color, float alpha) override;
+
+    void prepare_for_line_drawing() override;
+    void render_highlights_and_bookmarks();
+    void do_paint();
+
+    void prepare_initial_render_pipeline() override;
+    void prepare_link_highlight_state() override;
+public:
+    //std::vector<OverviewState> persisted_overviews;
+
+
+    PdfViewQPainterWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
+    ~PdfViewQPainterWidget();
+
+    void mouseMoveEvent(QMouseEvent* mouse_event) override;
+    void mousePressEvent(QMouseEvent* mevent) override;
+    void mouseReleaseEvent(QMouseEvent* mevent) override;
+    void wheelEvent(QWheelEvent* wevent) override;
+
+    void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
+    void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
+
+    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+};

@@ -283,29 +283,11 @@ std::string read_file_contents(const Path& path) {
 }
 
 void PdfViewOpenGLWidget::render_line_window(float gl_vertical_pos, std::optional<NormalizedWindowRect> ruler_rect) {
-#ifdef SIOYEK_OPENGL_BACKEND
     render_line_window_opengl_backend(gl_vertical_pos, ruler_rect);
-#else
-    if (ruler_rect.has_value()){
-        QRect ruler_qrect = document_view->normalized_to_window_qrect(ruler_rect.value());
-        ruler_qrect.adjust(-20, 0, 20, 0);
-
-        QColor ruler_color = qcc4(DEFAULT_VERTICAL_LINE_COLOR);
-        QRegion full_region(rect());
-        QRegion clip_region = full_region.subtracted(ruler_qrect);
-        QBrush ruler_brush(ruler_color);
-        painter.setClipRegion(clip_region);
-        painter.fillRect(rect(), ruler_brush);
-    }
-#endif
 }
 
 void PdfViewOpenGLWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
-#ifdef SIOYEK_OPENGL_BACKEND
     render_highlight_window_opengl_backend(window_rect, flags,  line_width_in_pixels);
-#else
-    render_highlight_window_qpainter_backend(window_rect, flags, line_width_in_pixels);
-#endif
 }
 
 
@@ -426,6 +408,10 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
 
 #endif
 
+    initialize_stuff();
+}
+
+void SioyekRendererBackend::initialize_stuff() {
     for (int i = 0; i < 26; i++) {
         document_view->visible_drawing_mask[i] = true;
     }
@@ -511,7 +497,6 @@ void PdfViewOpenGLWidget::draw_overview_background(std::optional<OverviewState> 
     float bg_color[] = { 1.0f, 1.0f, 1.0f };
     get_background_color(bg_color);
 
-#ifdef SIOYEK_OPENGL_BACKEND
     glDisable(GL_BLEND);
 
     glUseProgram(shared_gl_objects.highlight_program);
@@ -521,23 +506,13 @@ void PdfViewOpenGLWidget::draw_overview_background(std::optional<OverviewState> 
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, bg_color);
     glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-#else
-    QRect overview_qrect = document_view->normalized_to_window_qrect(document_view->get_overview_rect());
-    painter.fillRect(overview_qrect, QBrush(convert_float3_to_qcolor(bg_color)));
-#endif
 }
 
 void PdfViewOpenGLWidget::draw_overview_border(std::optional<OverviewState> maybe_overview, float* color){
     float border_color[3] = {0.5f, 0.5f, 0.5f};
-#ifdef SIOYEK_OPENGL_BACKEND
     glUseProgram(shared_gl_objects.highlight_program);
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, color ? color : border_color);
     render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
-#else
-
-    set_highlight_color(border_color, 1);
-    render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
-#endif
 }
 
 Document* SioyekRendererBackend::doc(std::optional<OverviewState> overview){
@@ -1221,7 +1196,6 @@ void SioyekRendererBackend::draw_empty_helper_message(QString message) {
 
 
 void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
-#ifdef SIOYEK_OPENGL_BACKEND
     ColorPalette mode = forced_palette == ColorPalette::None ? document_view->get_current_color_mode() : forced_palette;
 
     if (mode == ColorPalette::Dark) {
@@ -1239,26 +1213,20 @@ void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
         glUseProgram(shared_gl_objects.rendered_program);
         //glUniform1f(shared_gl_objects.gamma_uniform_location, GAMMA);
     }
-#endif
 }
 
 
 void PdfViewOpenGLWidget::enable_stencil() {
-#ifdef SIOYEK_OPENGL_BACKEND
     glEnable(GL_STENCIL_TEST);
     glStencilMask(0xFF);
-#endif
 }
 
 void PdfViewOpenGLWidget::write_to_stencil() {
-#ifdef SIOYEK_OPENGL_BACKEND
     glStencilFunc(GL_NEVER, 1, 0xFF);
     glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-#endif
 }
 
 void PdfViewOpenGLWidget::use_stencil_to_write(bool eq) {
-#ifdef SIOYEK_OPENGL_BACKEND
     if (eq) {
         glStencilFunc(GL_EQUAL, 1, 0xFF);
     }
@@ -1266,19 +1234,13 @@ void PdfViewOpenGLWidget::use_stencil_to_write(bool eq) {
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     }
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-#endif
 }
 
 void PdfViewOpenGLWidget::disable_stencil() {
-#ifdef SIOYEK_OPENGL_BACKEND
-    glDisable(GL_STENCIL_TEST);
-#else
     painter.setClipRect(rect());
-#endif
 }
 
 void PdfViewOpenGLWidget::render_transparent_background() {
-#ifdef SIOYEK_OPENGL_BACKEND
 
     float bar_data[] = {
         -1, -1,
@@ -1322,11 +1284,9 @@ void PdfViewOpenGLWidget::render_transparent_background() {
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     glDisable(GL_BLEND);
-#endif
 }
 
 void PdfViewOpenGLWidget::draw_stencil_rects(const std::vector<NormalizedWindowRect>& rects) {
-#ifdef SIOYEK_OPENGL_BACKEND
     std::vector<float> window_rects;
 
     for (auto rect : rects) {
@@ -1352,11 +1312,10 @@ void PdfViewOpenGLWidget::draw_stencil_rects(const std::vector<NormalizedWindowR
     glBufferData(GL_ARRAY_BUFFER, window_rects.size() * sizeof(float), window_rects.data(), GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, rects.size() * 6);
     glDisableVertexAttribArray(0);
-#endif
 
 }
 
-void PdfViewOpenGLWidget::draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects) {
+void SioyekRendererBackend::draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects) {
     std::vector<NormalizedWindowRect> normalized_rects;
     for (auto rect : rects) {
         normalized_rects.push_back(DocumentRect(rect, page).to_window_normalized(dv()));
@@ -1437,29 +1396,23 @@ void SioyekRendererBackend::clear_all_selections() {
 }
 
 void PdfViewOpenGLWidget::bind_points(const std::vector<float>& points) {
-#ifdef SIOYEK_OPENGL_BACKEND
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.line_points_buffer_object);
     glBufferData(GL_ARRAY_BUFFER, sizeof(points[0]) * points.size(), &points[0], GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-#else
-    qDebug() << "bind_points not implemented";
-#endif
 }
 
 void PdfViewOpenGLWidget::bind_default() {
-#ifdef SIOYEK_OPENGL_BACKEND
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.uv_buffer_object);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-#endif
 }
 
-void PdfViewOpenGLWidget::add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates){
+void SioyekRendererBackend::add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates){
 
-    float thickness_x = dv->get_zoom_level() / width();
-    float thickness_y = dv->get_zoom_level() / height();
+    float thickness_x = dv->get_zoom_level() / get_width();
+    float thickness_y = dv->get_zoom_level() / get_height();
 
     out_coordinates.push_back(window_x);
     out_coordinates.push_back(window_y);
@@ -1531,41 +1484,12 @@ FreehandDrawing smoothen_drawing(FreehandDrawing original) {
 }
 
 void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) {
-#ifdef SIOYEK_OPENGL_BACKEND
     return compile_drawings_opengl_backend(dv, drawings);
-#else
-
-
-    if (drawings.size() == 0) {
-        dv->scratchpad->on_compile();
-    }
-
-    QPixmap pixmap(rect().size());
-    pixmap.fill(Qt::transparent);
-    QPainter pixmap_painter(&pixmap);
-    pixmap_painter.setRenderHints(QPainter::RenderHint::Antialiasing, true);
-    render_drawings(&pixmap_painter, dv, drawings);
-
-    CachedScratchpadPixmapData cached_pixmap_data;
-    cached_pixmap_data.offset_x = dv->get_offset_x();
-    cached_pixmap_data.offset_y = dv->get_offset_y();
-    cached_pixmap_data.zoom_level = dv->get_zoom_level();
-    cached_pixmap_data.pixmap = pixmap;
-    dv->scratchpad->cached_pixmap = std::make_unique<CachedScratchpadPixmapData>(cached_pixmap_data);
-    dv->scratchpad->on_compile();
-
-
-#endif
 }
-
-
-
-//void PdfViewOpenGLWidget::compile_drawings_into_vertex_and_index_buffers(std::vector<float>& line_coordinates) {
 
 
 void PdfViewOpenGLWidget::render_compiled_drawings() {
 
-#ifdef SIOYEK_OPENGL_BACKEND
     float mode_highlight_colors[26 * 3];
     for (int i = 0; i < 26; i++) {
         auto res = cc3(&HIGHLIGHT_COLORS[3 * i]);
@@ -1630,16 +1554,9 @@ void PdfViewOpenGLWidget::render_compiled_drawings() {
         glDisable(GL_BLEND);
 
     }
-#else
-    if (dv()->scratchpad->cached_pixmap) {
-        painter.drawPixmap(rect(), dv()->scratchpad->cached_pixmap->pixmap);
-    }
-#endif
 }
 
 void PdfViewOpenGLWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
-
-#ifdef SIOYEK_OPENGL_BACKEND
     if (drawings.size() == 0) return;
 
     glEnable(GL_BLEND);
@@ -1812,47 +1729,6 @@ void PdfViewOpenGLWidget::render_drawings(QPainter* p, DocumentView* dv, const s
     }
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-#else
-
-
-
-    float last_thickness = -1;
-    char last_drawing_type = 0;
-
-    for (auto& drawing: drawings){
-        if (drawing.points.size() > 0 && ((drawing.points[0].thickness != last_thickness) || (drawing.type != last_drawing_type))){
-            float current_thickness = drawing.points[0].thickness * dv->get_zoom_level();
-            float current_drawing_color_[4] = { HIGHLIGHT_COLORS[(drawing.type - 'a') * 3],
-                HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 1],
-                 HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 2],
-                drawing.alpha
-            };
-            QColor color(convert_float4_to_qcolor(current_drawing_color_));
-            last_thickness = current_thickness;
-            last_drawing_type = drawing.type;
-
-            if (highlighted){
-                color = Qt::yellow;
-                current_thickness *= 3;
-            }
-            p->setPen(QPen(color, current_thickness, Qt::PenStyle::SolidLine, Qt::PenCapStyle::RoundCap, Qt::PenJoinStyle::RoundJoin));
-        }
-        if (drawing.points.size() == 1){
-            WindowPos begin = drawing.points[0].pos.to_window(dv);
-            p->drawPoint(QPoint(begin.x, begin.y));
-        }
-        else{
-
-            for (int i = 1; i < drawing.points.size(); i++){
-                WindowPos begin = drawing.points[i-1].pos.to_window(dv);
-                WindowPos end = drawing.points[i].pos.to_window(dv);
-                p->drawLine(QLine(begin.x, begin.y, end.x, end.y));
-            }
-        }
-    }
-
-    
-#endif
 }
 
 
@@ -2193,7 +2069,7 @@ void SioyekRendererBackend::render_selected_rectangle() {
     }
 }
 
-bool PdfViewOpenGLWidget::can_use_cached_scratchpad_framebuffer() {
+bool SioyekRendererBackend::can_use_cached_scratchpad_framebuffer() {
     auto scratchpad = scratch();
     float current_offset_x = scratchpad->get_offset_x();
     float current_offset_y = scratchpad->get_offset_y();
@@ -2921,55 +2797,33 @@ void SioyekRendererBackend::fill_rect(QRect rect, const QColor& color){
 }
 
 void PdfViewOpenGLWidget::prepare_line_drawing_pipeline(){
-
-#ifdef SIOYEK_OPENGL_BACKEND
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
     glBindVertexArray(vertex_array_object);
     bind_default();
-#endif
 }
 
 void PdfViewOpenGLWidget::prepare_non_compiled_line_drawing_pipeline(){
-
-#ifdef SIOYEK_OPENGL_BACKEND
      glEnableVertexAttribArray(0);
      glUseProgram(shared_gl_objects.line_program);
-#else
-    qDebug() << "prepare_non_compiled_line_drawing_pipeline not implemented";
-#endif
 }
 
 void PdfViewOpenGLWidget::enable_multisampling(){
-
-#ifdef SIOYEK_OPENGL_BACKEND
      glEnable(GL_MULTISAMPLE);
-#else
-    painter.setRenderHints(QPainter::RenderHint::Antialiasing, true);
-#endif
 }
 
 void PdfViewOpenGLWidget::disable_multisampling(){
-
-#ifdef SIOYEK_OPENGL_BACKEND
      glDisable(GL_MULTISAMPLE);
-#else
-    painter.setRenderHints(QPainter::RenderHint::Antialiasing, false);
-#endif
 }
 
 void PdfViewOpenGLWidget::prepare_highlight_pipeline(){
-
-#ifdef SIOYEK_OPENGL_BACKEND
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
     glUseProgram(shared_gl_objects.highlight_program);
-#endif
 }
 
 void PdfViewOpenGLWidget::render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect window_rect, ColorPalette forced_color_palette){
 
 
-#ifdef SIOYEK_OPENGL_BACKEND
     float vertices[8];
     rect_to_quad(window_rect, vertices);
     if (texture.has_value() && std::holds_alternative<GLuint>(texture.value())) {
@@ -2996,46 +2850,29 @@ void PdfViewOpenGLWidget::render_texture(std::optional<SioyekTextureType> textur
     glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
     glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float), vertices, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-#else
-    if (!texture) return;
-    QRect window_qrect = document_view->normalized_to_window_qrect(window_rect);
-    painter.drawPixmap(window_qrect, *texture);
-
-#endif
 }
 
 void PdfViewOpenGLWidget::prepare_initial_render_pipeline(){
-#ifdef SIOYEK_OPENGL_BACKEND
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
     glBindVertexArray(vertex_array_object);
     bind_default();
-#endif
 }
 
 void PdfViewOpenGLWidget::prepare_link_highlight_state(){
     std::array<float, 3> link_highlight_color = cc3(DEFAULT_LINK_HIGHLIGHT_COLOR);
-#ifdef SIOYEK_OPENGL_BACKEND
 
     glUseProgram(shared_gl_objects.highlight_program);
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location,
                  1,
                  &link_highlight_color[0]);
     glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, 0.3f);
-#else
-    set_highlight_color(&link_highlight_color[0], 0.3f);
-#endif
 }
 
 
 void PdfViewOpenGLWidget::set_highlight_color(const float* color, float alpha){
-#ifdef SIOYEK_OPENGL_BACKEND
     glUniform3fv(shared_gl_objects.highlight_color_uniform_location, 1, color);
     glUniform1f(shared_gl_objects.highlight_opacity_uniform_location, alpha);
-#else
-    float rgba[4] = {color[0], color[1], color[2], alpha};
-    painter.setPen(convert_float4_to_qcolor(rgba));
-#endif
 }
 
 void PdfViewOpenGLWidget::prepare_for_line_drawing() {
@@ -3620,154 +3457,393 @@ float PdfViewOpenGLWidget::get_device_pixel_ratio() {
     return devicePixelRatioF();
 }
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//void PdfViewQPainterWidget::paintEvent(QPaintEvent* event){
-//    do_paint();
-//}
-//
-//
-//void PdfViewQPainterWidget::render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
-//    if (document_view->is_rotated()) {
-//        return;
-//    }
-//
-//    float scale_factor = dv()->get_zoom_level() / dv()->get_view_height();
-//
-//    float line_width_window = STRIKE_LINE_WIDTH * scale_factor;
-//
-//    if (line_width_in_pixels > 0){
-//        line_width_window = static_cast<float>(line_width_in_pixels) / dv()->get_view_height();
-//    }
-//
-//    QRect pixel_window_rect = document_view->normalized_to_window_qrect(window_rect);
-//    auto bottom_right = pixel_window_rect.bottomRight();
-//    auto top_left = pixel_window_rect.topLeft();
-//    auto center = pixel_window_rect.center();
-//
-//
-//    if (flags & HRF_UNDERLINE) {
-//        auto current_color = painter.pen().color();
-//        current_color.setAlpha(255);
-//        painter.setPen(QPen(current_color, line_width_in_pixels));
-//        painter.drawLine(bottom_right.x(), bottom_right.y(), top_left.x(), bottom_right.y());
-//        return;
-//    }
-//    else if (flags & HRF_STRIKE) {
-//        auto current_color = painter.pen().color();
-//        current_color.setAlpha(255);
-//        QRect strike_rect(top_left.x(), center.y(), pixel_window_rect.width(), static_cast<int>(line_width_window * height()));
-//        painter.fillRect(strike_rect, QBrush(current_color));
-//        return;
-//    }
-//
-//    // no need to draw the fill color if we are in underline/strike mode
-//    if (flags & HRF_FILL) {
-//
-//        if (flags & HRF_INVERTED){
-//            auto original_composition_mode = painter.compositionMode();
-//            painter.setCompositionMode(QPainter::RasterOp_SourceXorDestination);
-//            painter.setPen(QColor(0xff, 0xff, 0xff));
-//            painter.fillRect(pixel_window_rect, QBrush(QColor(0xff, 0xff, 0xff)));
-//            painter.setCompositionMode(original_composition_mode);
-//        }
-//        else if (flags & HRF_PAINTOVER){
-//            auto original_composition_mode = painter.compositionMode();
-//            bool is_dark = is_background_dark();
-//
-//            QColor color = painter.pen().color();
-//            color.setAlpha(255);
-//
-//            if (is_dark) {
-//                painter.setCompositionMode(QPainter::RasterOp_SourceOrDestination);
-//                color = color.darker();
-//            }
-//            else {
-//                color.setRed(255 - color.red());
-//                color.setGreen(255 - color.green());
-//                color.setBlue(255 - color.blue());
-//                painter.setCompositionMode(QPainter::RasterOp_NotSourceAndDestination);
-//            }
-//
-//            painter.fillRect(pixel_window_rect, QBrush(color));
-//            painter.setCompositionMode(original_composition_mode);
-//        }
-//        else{
-//            painter.fillRect(pixel_window_rect, QBrush(painter.pen().color()));
-//        }
-//    }
-//
-//    if (flags & HRF_BORDER) {
-//        auto original_color = painter.pen().color();
-//        auto dealphad = original_color;
-//        dealphad.setAlpha(255);
-//        painter.setPen(dealphad);
-//        // painter.pen().color().setAlpha(255);
-//        painter.drawRect(pixel_window_rect);
-//        painter.setPen(original_color);
-//    }
-//}
-//
-//void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
-//
-//    QRect overview_rect = document_view->normalized_to_window_qrect(window_rect);
-//    QRegion overview_region = QRegion(overview_rect);
-//    painter.setClipRegion(overview_region);
-//
-//    draw_overview_background();
-//
-//    for (auto page : get_overview_visible_pages(overview)) {
-//        render_page(page, overview, ColorPalette::None, false);
-//    }
-//
-//    std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
-//    if (highlighted_result) {
-//
-//        set_highlight_color(&DEFAULT_SEARCH_HIGHLIGHT_COLOR[0], 0.3f);
-//        for (auto rect : highlighted_result->rects) {
-//            NormalizedWindowRect target = document_view->document_to_overview_rect(DocumentRect{ rect, highlighted_result->page }, overview);
-//            render_highlight_window(target, HRF_FILL | HRF_BORDER);
-//        }
-//    }
-//    if (overview.highlight_rects.size() > 0) {
-//        set_highlight_color(&OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0], 0.3f);
-//        for (auto rect : overview.highlight_rects) {
-//            NormalizedWindowRect target = document_view->document_to_overview_rect(rect, overview);
-//            render_highlight_window(target, HRF_FILL);
-//        }
-//    }
-//    painter.setClipRect(rect());
-//
-//    if (draw_border) {
-//        draw_overview_border(overview);
-//    }
-//}
-//
-//void PdfViewQPainterWidget::resizeEvent(QResizeEvent* event){
-//    QWidget::resizeEvent(event);
-//
-//    if (dv()) {
-//        dv()->on_view_size_change(event->size().width(), event->size().height());
-//    }
-//}
-//
-//void PdfViewQPainterWidget::clear_background_buffers(float r, float g, float b, GLuint buffer_flags){
-//    if (buffer_flags & GL_COLOR_BUFFER_BIT){
-//        int r_ = static_cast<int>(r * 255.0f);
-//        int g_ = static_cast<int>(g * 255.0f);
-//        int b_ = static_cast<int>(b * 255.0f);
-//        QBrush background_brush(QColor(r_, g_, b_));
-//        painter.fillRect(rect(), background_brush);
-//    }
-//}
-//
-//void PdfViewQPainterWidget::begin_native_painting(){
-//}
-//
-//void PdfViewQPainterWidget::end_native_painting(){
-//}
-//
-//void PdfViewQPainterWidget::render_texture(SioyekTextureType texture, NormalizedWindowRect window_rect, ColorPalette forced_color_palette){
-//    if (!texture) return;
-//    QRect window_qrect = document_view->normalized_to_window_qrect(window_rect);
-//    painter.drawPixmap(window_qrect, *texture);
-//}
+void PdfViewQPainterWidget::paintEvent(QPaintEvent* event){
+    do_paint();
+}
+
+
+void PdfViewQPainterWidget::render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
+    if (document_view->is_rotated()) {
+        return;
+    }
+
+    float scale_factor = dv()->get_zoom_level() / dv()->get_view_height();
+
+    float line_width_window = STRIKE_LINE_WIDTH * scale_factor;
+
+    if (line_width_in_pixels > 0){
+        line_width_window = static_cast<float>(line_width_in_pixels) / dv()->get_view_height();
+    }
+
+    QRect pixel_window_rect = document_view->normalized_to_window_qrect(window_rect);
+    auto bottom_right = pixel_window_rect.bottomRight();
+    auto top_left = pixel_window_rect.topLeft();
+    auto center = pixel_window_rect.center();
+
+
+    if (flags & HRF_UNDERLINE) {
+        auto current_color = painter.pen().color();
+        current_color.setAlpha(255);
+        painter.setPen(QPen(current_color, line_width_in_pixels));
+        painter.drawLine(bottom_right.x(), bottom_right.y(), top_left.x(), bottom_right.y());
+        return;
+    }
+    else if (flags & HRF_STRIKE) {
+        auto current_color = painter.pen().color();
+        current_color.setAlpha(255);
+        QRect strike_rect(top_left.x(), center.y(), pixel_window_rect.width(), static_cast<int>(line_width_window * height()));
+        painter.fillRect(strike_rect, QBrush(current_color));
+        return;
+    }
+
+    // no need to draw the fill color if we are in underline/strike mode
+    if (flags & HRF_FILL) {
+
+        if (flags & HRF_INVERTED){
+            auto original_composition_mode = painter.compositionMode();
+            painter.setCompositionMode(QPainter::RasterOp_SourceXorDestination);
+            painter.setPen(QColor(0xff, 0xff, 0xff));
+            painter.fillRect(pixel_window_rect, QBrush(QColor(0xff, 0xff, 0xff)));
+            painter.setCompositionMode(original_composition_mode);
+        }
+        else if (flags & HRF_PAINTOVER){
+            auto original_composition_mode = painter.compositionMode();
+            bool is_dark = is_background_dark();
+
+            QColor color = painter.pen().color();
+            color.setAlpha(255);
+
+            if (is_dark) {
+                painter.setCompositionMode(QPainter::RasterOp_SourceOrDestination);
+                color = color.darker();
+            }
+            else {
+                color.setRed(255 - color.red());
+                color.setGreen(255 - color.green());
+                color.setBlue(255 - color.blue());
+                painter.setCompositionMode(QPainter::RasterOp_NotSourceAndDestination);
+            }
+
+            painter.fillRect(pixel_window_rect, QBrush(color));
+            painter.setCompositionMode(original_composition_mode);
+        }
+        else{
+            painter.fillRect(pixel_window_rect, QBrush(painter.pen().color()));
+        }
+    }
+
+    if (flags & HRF_BORDER) {
+        auto original_color = painter.pen().color();
+        auto dealphad = original_color;
+        dealphad.setAlpha(255);
+        painter.setPen(dealphad);
+        // painter.pen().color().setAlpha(255);
+        painter.drawRect(pixel_window_rect);
+        painter.setPen(original_color);
+    }
+}
+
+void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
+
+    QRect overview_rect = document_view->normalized_to_window_qrect(window_rect);
+    QRegion overview_region = QRegion(overview_rect);
+    painter.setClipRegion(overview_region);
+
+    draw_overview_background();
+
+    for (auto page : get_overview_visible_pages(overview)) {
+        render_page(page, overview, ColorPalette::None, false);
+    }
+
+    std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
+    if (highlighted_result) {
+
+        set_highlight_color(&DEFAULT_SEARCH_HIGHLIGHT_COLOR[0], 0.3f);
+        for (auto rect : highlighted_result->rects) {
+            NormalizedWindowRect target = document_view->document_to_overview_rect(DocumentRect{ rect, highlighted_result->page }, overview);
+            render_highlight_window(target, HRF_FILL | HRF_BORDER);
+        }
+    }
+    if (overview.highlight_rects.size() > 0) {
+        set_highlight_color(&OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[0], 0.3f);
+        for (auto rect : overview.highlight_rects) {
+            NormalizedWindowRect target = document_view->document_to_overview_rect(rect, overview);
+            render_highlight_window(target, HRF_FILL);
+        }
+    }
+    painter.setClipRect(rect());
+
+    if (draw_border) {
+        draw_overview_border(overview);
+    }
+}
+
+void PdfViewQPainterWidget::resizeEvent(QResizeEvent* event){
+    QWidget::resizeEvent(event);
+
+    if (dv()) {
+        dv()->on_view_size_change(event->size().width(), event->size().height());
+    }
+}
+
+void PdfViewQPainterWidget::clear_background_buffers(float r, float g, float b, GLuint buffer_flags){
+    if (buffer_flags & GL_COLOR_BUFFER_BIT){
+        int r_ = static_cast<int>(r * 255.0f);
+        int g_ = static_cast<int>(g * 255.0f);
+        int b_ = static_cast<int>(b * 255.0f);
+        QBrush background_brush(QColor(r_, g_, b_));
+        painter.fillRect(rect(), background_brush);
+    }
+}
+
+void PdfViewQPainterWidget::begin_native_painting(){
+}
+
+void PdfViewQPainterWidget::end_native_painting(){
+}
+
+void PdfViewQPainterWidget::render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect window_rect, ColorPalette forced_color_palette){
+    if (!texture.has_value() || !std::holds_alternative<QPixmap*>(texture.value())) return;
+    QRect window_qrect = document_view->normalized_to_window_qrect(window_rect);
+    painter.drawPixmap(window_qrect, *std::get<QPixmap*>(texture.value()));
+}
+
+void PdfViewQPainterWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
+    render_highlight_window_qpainter_backend(window_rect, flags, line_width_in_pixels);
+}
+
+void PdfViewQPainterWidget::render_line_window(float gl_vertical_pos, std::optional<NormalizedWindowRect> ruler_rect) {
+    if (ruler_rect.has_value()){
+        QRect ruler_qrect = document_view->normalized_to_window_qrect(ruler_rect.value());
+        ruler_qrect.adjust(-20, 0, 20, 0);
+
+        QColor ruler_color = qcc4(DEFAULT_VERTICAL_LINE_COLOR);
+        QRegion full_region(rect());
+        QRegion clip_region = full_region.subtracted(ruler_qrect);
+        QBrush ruler_brush(ruler_color);
+        painter.setClipRegion(clip_region);
+        painter.fillRect(rect(), ruler_brush);
+    }
+}
+
+void PdfViewQPainterWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
+
+    float last_thickness = -1;
+    char last_drawing_type = 0;
+
+    for (auto& drawing: drawings){
+        if (drawing.points.size() > 0 && ((drawing.points[0].thickness != last_thickness) || (drawing.type != last_drawing_type))){
+            float current_thickness = drawing.points[0].thickness * dv->get_zoom_level();
+            float current_drawing_color_[4] = { HIGHLIGHT_COLORS[(drawing.type - 'a') * 3],
+                HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 1],
+                 HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 2],
+                drawing.alpha
+            };
+            QColor color(convert_float4_to_qcolor(current_drawing_color_));
+            last_thickness = current_thickness;
+            last_drawing_type = drawing.type;
+
+            if (highlighted){
+                color = Qt::yellow;
+                current_thickness *= 3;
+            }
+            p->setPen(QPen(color, current_thickness, Qt::PenStyle::SolidLine, Qt::PenCapStyle::RoundCap, Qt::PenJoinStyle::RoundJoin));
+        }
+        if (drawing.points.size() == 1){
+            WindowPos begin = drawing.points[0].pos.to_window(dv);
+            p->drawPoint(QPoint(begin.x, begin.y));
+        }
+        else{
+
+            for (int i = 1; i < drawing.points.size(); i++){
+                WindowPos begin = drawing.points[i-1].pos.to_window(dv);
+                WindowPos end = drawing.points[i].pos.to_window(dv);
+                p->drawLine(QLine(begin.x, begin.y, end.x, end.y));
+            }
+        }
+    }
+
+}
+
+void PdfViewQPainterWidget::render_compiled_drawings() {
+
+    if (dv()->scratchpad->cached_pixmap) {
+        painter.drawPixmap(rect(), dv()->scratchpad->cached_pixmap->pixmap);
+    }
+}
+
+void PdfViewQPainterWidget::enable_stencil() {
+}
+
+void PdfViewQPainterWidget::write_to_stencil() {
+}
+
+void PdfViewQPainterWidget::draw_stencil_rects(const std::vector<NormalizedWindowRect>& rects) {
+}
+
+
+void PdfViewQPainterWidget::use_stencil_to_write(bool eq) {
+}
+
+void PdfViewQPainterWidget::disable_stencil() {
+    painter.setClipRect(rect());
+}
+
+float PdfViewQPainterWidget::get_device_pixel_ratio() {
+    return devicePixelRatioF();
+}
+
+void PdfViewQPainterWidget::render_page_separator(int page_number, float* page_vertices) {
+}
+
+void PdfViewQPainterWidget::render_transparent_background() {
+}
+
+Qt::ScreenOrientation PdfViewQPainterWidget::get_orientation() {
+    return screen()->orientation();
+}
+
+int PdfViewQPainterWidget::get_width() {
+    return width();
+}
+
+int PdfViewQPainterWidget::get_height() {
+    return height();
+}
+
+void PdfViewQPainterWidget::bind_program(ColorPalette forced_palette) {
+}
+
+void PdfViewQPainterWidget::bind_points(const std::vector<float>& points) {
+}
+
+void PdfViewQPainterWidget::bind_default() {
+}
+
+void PdfViewQPainterWidget::bind_vertex_array() {
+}
+
+void PdfViewQPainterWidget::prepare_line_drawing_pipeline(){
+}
+
+void PdfViewQPainterWidget::prepare_highlight_pipeline(){
+}
+
+void PdfViewQPainterWidget::prepare_non_compiled_line_drawing_pipeline(){
+}
+
+void PdfViewQPainterWidget::enable_multisampling(){
+    painter.setRenderHints(QPainter::RenderHint::Antialiasing, true);
+}
+
+void PdfViewQPainterWidget::disable_multisampling(){
+    painter.setRenderHints(QPainter::RenderHint::Antialiasing, false);
+}
+
+void PdfViewQPainterWidget::set_highlight_color(const float* color, float alpha){
+    float rgba[4] = {color[0], color[1], color[2], alpha};
+    painter.setPen(convert_float4_to_qcolor(rgba));
+}
+
+void PdfViewQPainterWidget::prepare_for_line_drawing() {
+}
+
+void PdfViewQPainterWidget::do_paint(){
+
+    painter.begin(this);
+
+    QColor red_color = QColor::fromRgb(255, 0, 0);
+    painter.setPen(red_color);
+
+    if (scratch() == nullptr) {
+        my_render();
+    }
+    else {
+        render_scratchpad();
+    }
+    painter.end();
+}
+
+void PdfViewQPainterWidget::prepare_initial_render_pipeline(){
+}
+
+void PdfViewQPainterWidget::prepare_link_highlight_state(){
+    std::array<float, 3> link_highlight_color = cc3(DEFAULT_LINK_HIGHLIGHT_COLOR);
+    set_highlight_color(&link_highlight_color[0], 0.3f);
+}
+
+void PdfViewQPainterWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
+
+    if (handle_mouse_move_event(mouse_event)) update();
+}
+
+void PdfViewQPainterWidget::mousePressEvent(QMouseEvent* mevent) {
+
+    if (handle_mouse_press_event(mevent)) update();
+}
+
+void PdfViewQPainterWidget::mouseReleaseEvent(QMouseEvent* mouse_event) {
+
+    if (handle_mouse_release_event(mouse_event)) update();
+}
+
+void PdfViewQPainterWidget::wheelEvent(QWheelEvent* wevent) {
+    if (handle_wheel_event(wevent)) update();
+
+}
+
+void PdfViewQPainterWidget::draw_overview_background(std::optional<OverviewState> maybe_overview){
+
+    float border_vertices[4 * 2];
+    get_overview_window_vertices(border_vertices, maybe_overview);
+
+    float bg_color[] = { 1.0f, 1.0f, 1.0f };
+    get_background_color(bg_color);
+
+    QRect overview_qrect = document_view->normalized_to_window_qrect(document_view->get_overview_rect());
+    painter.fillRect(overview_qrect, QBrush(convert_float3_to_qcolor(bg_color)));
+}
+
+void PdfViewQPainterWidget::draw_overview_border(std::optional<OverviewState> maybe_overview, float* color){
+    float border_color[3] = {0.5f, 0.5f, 0.5f};
+
+    set_highlight_color(border_color, 1);
+    render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
+}
+
+void PdfViewQPainterWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) {
+
+    if (drawings.size() == 0) {
+        dv->scratchpad->on_compile();
+    }
+
+    QPixmap pixmap(rect().size());
+    pixmap.fill(Qt::transparent);
+    QPainter pixmap_painter(&pixmap);
+    pixmap_painter.setRenderHints(QPainter::RenderHint::Antialiasing, true);
+    render_drawings(&pixmap_painter, dv, drawings);
+
+    CachedScratchpadPixmapData cached_pixmap_data;
+    cached_pixmap_data.offset_x = dv->get_offset_x();
+    cached_pixmap_data.offset_y = dv->get_offset_y();
+    cached_pixmap_data.zoom_level = dv->get_zoom_level();
+    cached_pixmap_data.pixmap = pixmap;
+    dv->scratchpad->cached_pixmap = std::make_unique<CachedScratchpadPixmapData>(cached_pixmap_data);
+    dv->scratchpad->on_compile();
+
+}
+
+PdfViewQPainterWidget::~PdfViewQPainterWidget() {
+}
+
+PdfViewQPainterWidget::PdfViewQPainterWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer_, DocumentManager* docman, bool is_helper_, QWidget* parent) :
+    QWidget(parent)
+{
+    document_view = document_view_;
+    pdf_renderer = pdf_renderer_;
+    document_manager = docman;
+    is_helper = is_helper_;
+
+
+    initialize_stuff();
+}
