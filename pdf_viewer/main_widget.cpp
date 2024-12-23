@@ -4550,7 +4550,11 @@ void MainWidget::handle_close_event() {
         should_sync_drawings = doc()->get_drawings_are_dirty();
     }
 
-    save_auto_config();
+    if (!close_event_already_handled) {
+        close_event_already_handled = true;
+        save_auto_config();
+    }
+
 #ifndef SIOYEK_ANDROID
     persist(true);
 #endif

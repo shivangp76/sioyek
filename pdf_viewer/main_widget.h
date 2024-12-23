@@ -337,6 +337,7 @@ public:
     // (I used it when recording sioyek's video tutorial to show the command being executed)
     bool should_show_last_command = false;
 
+    bool close_event_already_handled = false;
 
     // the command used to perform synctex inverse searches
     std::wstring inverse_search_command;
