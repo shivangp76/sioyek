@@ -974,3 +974,9 @@ struct MaximumRectangleResult {
 };
 
 std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bool>>& rect);
+
+enum RenderBackend {
+    SioyekNoRendererBackend = 0,
+    SioyekOpenGLRendererBackend = 1,
+    SioyekQPainterRendererBackend = 2
+};

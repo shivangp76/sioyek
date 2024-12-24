@@ -689,9 +689,7 @@ public:
 
     std::vector<PixmapDrawing> pixmaps;
     std::optional<CompiledDrawingData> cached_compiled_drawing_data = {};
-#ifndef SIOYEK_OPENGL_BACKEND
     std::unique_ptr<CachedScratchpadPixmapData> cached_pixmap = {};
-#endif
 
     ScratchPad();
     bool set_offsets(float new_offset_x, float new_offset_y, bool force = false, bool is_dragging=false) override;

@@ -22,18 +22,9 @@
 #include "book.h"
 
 class BackgroundBookmarkRenderer;
-#ifdef SIOYEK_ANDROID
-#define SIOYEK_OPENGL_BACKEND
-#else
- #define SIOYEK_OPENGL_BACKEND
-#endif
 
-//#ifdef SIOYEK_OPENGL_BACKEND
-//using SioyekTextureType = GLuint;
-//#else
-//using SioyekTextureType = QPixmap*;
-//#endif
 using SioyekTextureType = std::variant<GLuint, QPixmap*>;
+
 
 struct RenderRequest {
     std::wstring path;

@@ -18,6 +18,7 @@ extern float CUSTOM_TEXT_COLOR[3];
 extern float CUSTOM_COLOR_CONTRAST;
 extern int MAX_PENDING_REQUESTS;
 extern unsigned int CACHE_INVALID_MILIES;
+extern int RENDERER_BACKEND;
 
 PdfRenderer::PdfRenderer(BackgroundBookmarkRenderer* bm_renderer, int num_threads, bool* should_quit_pointer, fz_context* context_to_clone) : context_to_clone(context_to_clone),
 bookmark_renderer(bm_renderer),
@@ -243,9 +244,7 @@ std::optional<SioyekTextureType> PdfRenderer::try_closest_rendered_page(std::wst
             (cached_resp.request.path == doc_path) &&
             (cached_resp.request.display_scale == display_scale) &&
             (cached_resp.request.should_render_annotations == should_render_annotations) &&
-#ifndef SIOYEK_OPENGL_BACKEND
-            (cached_resp.request.color_palette == palette) &&
-#endif
+            (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend || cached_resp.request.color_palette == palette) &&
             (cached_resp.request.page == page) &&
             (cached_resp.texture.has_value())) {
             float diff = cached_resp.request.zoom_level - zoom_level;
@@ -607,31 +606,32 @@ void PdfRenderer::run(int thread_index) {
 
 
 
-#ifndef SIOYEK_OPENGL_BACKEND
-                if (req.color_palette == ColorPalette::Dark){
-                    convert_pixels_with_converter(rendered_pixmap->samples,
-                        rendered_pixmap->w,
-                        rendered_pixmap->h,
-                        rendered_pixmap->stride,
-                        rendered_pixmap->n,
-                        [&](unsigned char* pixel){
-                        convert_pixel_to_dark_mode(pixel);
-                    });
-                }
-                if (req.color_palette == ColorPalette::Custom){
-                    float transform_matrix[16];
-                    get_custom_color_transform_matrix(transform_matrix);
+                if (RENDERER_BACKEND == RenderBackend::SioyekQPainterRendererBackend) {
 
-                    convert_pixels_with_converter(rendered_pixmap->samples,
-                        rendered_pixmap->w,
-                        rendered_pixmap->h,
-                        rendered_pixmap->stride,
-                        rendered_pixmap->n,
-                        [&](unsigned char* pixel){
-                        convert_pixel_to_custom_color(pixel, transform_matrix);
-                    });
+                    if (req.color_palette == ColorPalette::Dark) {
+                        convert_pixels_with_converter(rendered_pixmap->samples,
+                            rendered_pixmap->w,
+                            rendered_pixmap->h,
+                            rendered_pixmap->stride,
+                            rendered_pixmap->n,
+                            [&](unsigned char* pixel) {
+                                convert_pixel_to_dark_mode(pixel);
+                            });
+                    }
+                    if (req.color_palette == ColorPalette::Custom) {
+                        float transform_matrix[16];
+                        get_custom_color_transform_matrix(transform_matrix);
+
+                        convert_pixels_with_converter(rendered_pixmap->samples,
+                            rendered_pixmap->w,
+                            rendered_pixmap->h,
+                            rendered_pixmap->stride,
+                            rendered_pixmap->n,
+                            [&](unsigned char* pixel) {
+                                convert_pixel_to_custom_color(pixel, transform_matrix);
+                            });
+                    }
                 }
-#endif
 
                 RenderResponse resp;
                 resp.thread = thread_index;
@@ -693,11 +693,11 @@ bool operator==(const RenderRequest& lhs, const RenderRequest& rhs) {
     if (rhs.should_render_annotations != lhs.should_render_annotations) {
         return false;
     }
-#ifndef SIOYEK_OPENGL_BACKEND
-    if (rhs.color_palette != lhs.color_palette){
-        return false;
+    if (RENDERER_BACKEND == RenderBackend::SioyekQPainterRendererBackend) {
+        if (rhs.color_palette != lhs.color_palette) {
+            return false;
+        }
     }
-#endif
     return true;
 }
 
@@ -763,44 +763,46 @@ void PdfRenderer::set_num_cached_pages(int n_cached_pages) {
 }
 
 SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap){
-#ifdef SIOYEK_OPENGL_BACKEND
-    GLuint result = 0;
-    glGenTextures(1, &result);
-    glBindTexture(GL_TEXTURE_2D, result);
+    if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
 
-    if (LINEAR_TEXTURE_FILTERING) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    else {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    }
+        GLuint result = 0;
+        glGenTextures(1, &result);
+        glBindTexture(GL_TEXTURE_2D, result);
+
+        if (LINEAR_TEXTURE_FILTERING) {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+        else {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
 
 #ifdef GL_CLAMP
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 #else
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 #endif
 
-    // OpenGL usually expects powers of two textures and since our pixmaps dimensions are
-    // often not powers of two, we set the unpack alignment to 1 (no alignment)
+        // OpenGL usually expects powers of two textures and since our pixmaps dimensions are
+        // often not powers of two, we set the unpack alignment to 1 (no alignment)
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pixmap->w, pixmap->h, 0, GL_RGB, GL_UNSIGNED_BYTE, pixmap->samples);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pixmap->w, pixmap->h, 0, GL_RGB, GL_UNSIGNED_BYTE, pixmap->samples);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    return result;
-#else
+        return result;
+    }
+    else {
 
+        QImage image(pixmap->samples, pixmap->w, pixmap->h, pixmap->stride, QImage::Format::Format_RGB888);
+        QPixmap* result = new QPixmap(QPixmap::fromImage(image));
 
-    QImage image(pixmap->samples, pixmap->w, pixmap->h, pixmap->stride, QImage::Format::Format_RGB888);
-    QPixmap* result = new QPixmap(QPixmap::fromImage(image));
+        return result;
+    }
 
-    return result;
-#endif
 }
 
 BackgroundBookmarkRenderer* PdfRenderer::get_bookmark_renderer() {

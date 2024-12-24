@@ -379,6 +379,14 @@ bool MACOS_HIDE_TITLEBAR = false;
 
 std::wstring TTS_VOICE = L"";
 int RULER_DISPLAY_MODE = RulerDisplayMode::Underline;
+
+#ifdef Q_OS_IOS
+int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
+#else
+int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
+//int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
+#endif
+
 float LINE_SELECT_RULER_COLOR[3] = { 1.0f, 0.0f, 1.0f };
 int LINE_SELECT_RULER_DISPLAY_MODE = RulerDisplayMode::HighlightRuler;
 int COLOR_MODE = ColorMode::Light;
@@ -1438,6 +1446,13 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
     add_enum(L"ruler_style", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
     add_enum(L"line_select_ruler_display_style", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
+    add_enum(L"renderer_backend", &RENDERER_BACKEND, EnumExtras({ {L"none", L"opengl", L"qpainter"} }))->set_change_fn([&](MainWidget* widget) {
+        RenderBackend backend = RenderBackend::SioyekOpenGLRendererBackend;
+        if (RENDERER_BACKEND == 2) {
+            backend = RenderBackend::SioyekQPainterRendererBackend;
+        }
+        widget->set_renderer_backend(backend);
+        });
     add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"} }))->set_change_fn([&](MainWidget* widget) {
         ColorPalette palette = ColorPalette::Normal;
         if (COLOR_MODE == ColorMode::Dark) palette = ColorPalette::Dark;

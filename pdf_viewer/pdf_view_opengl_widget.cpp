@@ -374,25 +374,14 @@ void SioyekRendererBackend::render_scratchpad() {
 }
 
 
-#ifdef SIOYEK_OPENGL_BACKEND
 PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer_, DocumentManager* docman, bool is_helper_, QWidget* parent) :
     QOpenGLWidget(parent)
-#else
-PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent) :
-    QWidget(parent),
-    painter(this),
-    document_view(document_view_),
-    pdf_renderer(pdf_renderer),
-    document_manager(docman),
-    is_helper(is_helper)
-#endif
 {
     document_view = document_view_;
     pdf_renderer = pdf_renderer_;
     document_manager = docman;
     is_helper = is_helper_;
 
-#ifdef SIOYEK_OPENGL_BACKEND
     QSurfaceFormat format;
 #ifdef SIOYEK_ANDROID
     format.setVersion(3, 1);
@@ -404,9 +393,6 @@ PdfViewOpenGLWidget::PdfViewOpenGLWidget(DocumentView* document_view_, PdfRender
     format.setSamples(4);
     format.setProfile(QSurfaceFormat::CoreProfile);
     this->setFormat(format);
-#else
-
-#endif
 
     initialize_stuff();
 }
@@ -466,13 +452,6 @@ void SioyekRendererBackend::render_overview(OverviewState overview, bool draw_bo
     // overview.highlight_rects = overview.ge
 
     render_overview_backend(window_rect, overview, draw_border);
-#ifdef SIOYEK_OPENGL_BACKEND
-#else
-    if (window_rect.height() > 0) {
-        std::swap(window_rect.y0, window_rect.y1);
-    }
-    render_overview_qpainter_backend(window_rect, overview, draw_border);
-#endif
 
     if (dv()->overview_page && (dv()->overview_page->highlight_rects.size() > 0)) {
 
@@ -635,25 +614,7 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
             }
         }
 
-#ifdef SIOYEK_OPENGL_BACKEND
-        if (BACKGROUND_PIXEL_FIX || (document_view->is_two_page_mode() && (stencils_allowed))) {
-            if (BACKGROUND_PIXEL_FIX) {
-                page_content.x1 -= 1.0f / zoom_level;
-                page_content.y1 -= 1.0f / zoom_level;
-            }
-
-            glClear(GL_STENCIL_BUFFER_BIT);
-            enable_stencil();
-            write_to_stencil();
-            draw_stencil_rects(page_number, {page_content});
-            use_stencil_to_write(true);
-        }
-#else
-        if (dv()->is_two_page_mode()){
-            QRect window_rect = DocumentRect{page_content, page_number}.to_window(document_view).to_qrect();
-            painter.setClipRect(window_rect);
-        }
-#endif
+        set_stencil_for_two_page(page_number, page_content, stencils_allowed, zoom_level);
 
         if (is_sliced) {
 
@@ -730,35 +691,66 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
             disable_stencil();
         }
 
-#ifdef SIOYEK_OPENGL_BACKEND
-        if ((document_view->get_current_color_mode() != ColorPalette::Normal) &&
-            (PRESERVE_IMAGE_COLORS) && (!overview.has_value()) &&
-            (forced_color_palette == ColorPalette::None) &&
-            (stencils_allowed)) {
-            // render images in forced palette mode
-            fz_stext_page * stext_page = dv()->get_document()->get_stext_with_page_number(page_number);
-            std::vector<PagelessDocumentRect> image_rects = get_image_blocks_from_stext_page(stext_page);
-
-            glClear(GL_STENCIL_BUFFER_BIT);
-            enable_stencil();
-            write_to_stencil();
-            draw_stencil_rects(page_number, image_rects);
-            use_stencil_to_write(true);
-            ColorPalette target_palette = ColorPalette::Normal;
-            if (document_view->get_current_color_mode() == ColorPalette::Custom && INVERTED_PRESERVED_IMAGE_COLORS) {
-                target_palette = ColorPalette::Dark;
-            }
-
-            render_page(page_number, overview, target_palette, false);
-            disable_stencil();
-        }
+        render_original_color_images(page_number, overview, forced_color_palette, stencils_allowed);
 
         if (!dv()->is_presentation_mode() && (!overview.has_value()) && (!dv()->is_two_page_mode())){
             render_page_separator(page_number, page_vertices);
         }
-#endif // SIOYEK_OPENGL_BACKEND
     }
 
+}
+
+void PdfViewOpenGLWidget::render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) {
+
+    if ((document_view->get_current_color_mode() != ColorPalette::Normal) &&
+        (PRESERVE_IMAGE_COLORS) && (!overview.has_value()) &&
+        (forced_color_palette == ColorPalette::None) &&
+        (stencils_allowed)) {
+        // render images in forced palette mode
+        fz_stext_page* stext_page = dv()->get_document()->get_stext_with_page_number(page_number);
+        std::vector<PagelessDocumentRect> image_rects = get_image_blocks_from_stext_page(stext_page);
+
+        glClear(GL_STENCIL_BUFFER_BIT);
+        enable_stencil();
+        write_to_stencil();
+        draw_stencil_rects_with_page(page_number, image_rects);
+        use_stencil_to_write(true);
+        ColorPalette target_palette = ColorPalette::Normal;
+        if (document_view->get_current_color_mode() == ColorPalette::Custom && INVERTED_PRESERVED_IMAGE_COLORS) {
+            target_palette = ColorPalette::Dark;
+        }
+
+        render_page(page_number, overview, target_palette, false);
+        disable_stencil();
+    }
+
+}
+
+void PdfViewQPainterWidget::render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) {
+}
+
+void PdfViewOpenGLWidget::set_stencil_for_two_page(int page_number, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) {
+
+    if (BACKGROUND_PIXEL_FIX || (document_view->is_two_page_mode() && (stencils_allowed))) {
+        if (BACKGROUND_PIXEL_FIX) {
+            page_content.x1 -= 1.0f / zoom_level;
+            page_content.y1 -= 1.0f / zoom_level;
+        }
+
+        glClear(GL_STENCIL_BUFFER_BIT);
+        enable_stencil();
+        write_to_stencil();
+        std::vector<PagelessDocumentRect> rects = { page_content };
+        draw_stencil_rects_with_page(page_number, rects);
+        use_stencil_to_write(true);
+    }
+}
+
+void PdfViewQPainterWidget::set_stencil_for_two_page(int page_number, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) {
+    if (dv()->is_two_page_mode()) {
+        QRect window_rect = DocumentRect{ page_content, page_number }.to_window(document_view).to_qrect();
+        painter.setClipRect(window_rect);
+    }
 }
 
 void PdfViewOpenGLWidget::render_page_separator(int page_number, float* page_vertices) {
@@ -925,22 +917,20 @@ void SioyekRendererBackend::my_render() {
         }
     }
 
-#ifdef SIOYEK_OPENGL_BACKEND
-    if (document_view->fastread_mode) {
+    if (document_view->fastread_mode && is_opengl()) {
 
         auto rects = dv()->get_document()->get_highlighted_character_masks(dv()->get_center_page_number());
 
         if (rects.size() > 0) {
             enable_stencil();
             write_to_stencil();
-            draw_stencil_rects(dv()->get_center_page_number(), rects);
+            draw_stencil_rects_with_page(dv()->get_center_page_number(), rects);
             use_stencil_to_write(false);
             render_transparent_background();
             disable_stencil();
 
         }
     }
-#endif
 
     render_search_result_highlights(visible_pages);
 
@@ -1033,6 +1023,14 @@ void SioyekRendererBackend::my_render() {
 
 void PdfViewOpenGLWidget::bind_vertex_array() {
     glBindVertexArray(vertex_array_object);
+}
+
+bool PdfViewOpenGLWidget::is_opengl() {
+    return true;
+}
+
+bool PdfViewQPainterWidget::is_opengl() {
+    return false;
 }
 
 void SioyekRendererBackend::render_ruler_thresholds(){
@@ -1237,7 +1235,7 @@ void PdfViewOpenGLWidget::use_stencil_to_write(bool eq) {
 }
 
 void PdfViewOpenGLWidget::disable_stencil() {
-    painter.setClipRect(rect());
+    glDisable(GL_STENCIL_TEST);
 }
 
 void PdfViewOpenGLWidget::render_transparent_background() {
@@ -1315,7 +1313,7 @@ void PdfViewOpenGLWidget::draw_stencil_rects(const std::vector<NormalizedWindowR
 
 }
 
-void SioyekRendererBackend::draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects) {
+void SioyekRendererBackend::draw_stencil_rects_with_page(int page, const std::vector<PagelessDocumentRect>& rects) {
     std::vector<NormalizedWindowRect> normalized_rects;
     for (auto rect : rects) {
         normalized_rects.push_back(DocumentRect(rect, page).to_window_normalized(dv()));
@@ -2104,7 +2102,6 @@ ScratchPad* SioyekRendererBackend::scratch(){
     return document_view->scratchpad;
 }
 
-#ifdef SIOYEK_OPENGL_BACKEND
 
 GLuint PdfViewOpenGLWidget::LoadShaders(Path vertex_file_path, Path fragment_file_path) {
     //const wchar_t* vertex_file_path = vertex_file_path_.c_str();
@@ -2772,7 +2769,6 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
     return;
 }
 
-#endif  // SIOYEK_OPENGL_BACKEND
 
 void PdfViewOpenGLWidget::begin_native_painting(){
     painter.beginNativePainting();
@@ -3846,4 +3842,18 @@ PdfViewQPainterWidget::PdfViewQPainterWidget(DocumentView* document_view_, PdfRe
 
 
     initialize_stuff();
+}
+void PdfViewQPainterWidget::render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border) {
+    if (window_rect.height() > 0) {
+        std::swap(window_rect.y0, window_rect.y1);
+    }
+    render_overview_qpainter_backend(window_rect, overview, draw_border);
+}
+
+QWidget* PdfViewQPainterWidget::get_widget() {
+    return this;
+}
+
+QWidget* PdfViewOpenGLWidget::get_widget() {
+    return this;
 }

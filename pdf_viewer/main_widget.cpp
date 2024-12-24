@@ -259,6 +259,8 @@ extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 
+extern int RENDERER_BACKEND;
+
 extern float AUTO_BOOKMARK_VERTICAL_MARGIN;
 extern float AUTO_BOOKMARK_HORIZONTAL_MARGIN;
 
@@ -987,7 +989,12 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     scratchpad = &global_scratchpad;
 
     main_document_view = new DocumentView(db_manager, document_manager, checksummer);
-    opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
+    if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
+        opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
+    }
+    else {
+        opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
+    }
 
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
@@ -1036,7 +1043,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     status_label->setLayout(status_label_layout);
 
-    opengl_widget->stackUnder(status_label);
+    opengl_widget->get_widget()->stackUnder(status_label);
 
     // automatically open the helper window in second monitor
     int num_screens = QGuiApplication::screens().size();
@@ -1185,23 +1192,23 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
 
     scroll_bar = new QScrollBar(this);
-    QVBoxLayout* layout = new QVBoxLayout;
+    layout = new QVBoxLayout;
     QHBoxLayout* hlayout = new QHBoxLayout;
 
 
-    hlayout->addWidget(opengl_widget);
+    hlayout->addWidget(opengl_widget->get_widget());
     hlayout->addWidget(scroll_bar);
 
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
-    opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+    opengl_widget->get_widget()->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addLayout(hlayout);
 
 #ifdef SIOYEK_ANDROID
      setLayout(layout);
 #elif !defined(SIOYEK_IOS)
     central_widget->setLayout(layout);
-    opengl_widget->stackUnder(status_label);
+    opengl_widget->get_widget()->stackUnder(status_label);
     setCentralWidget(central_widget);
 #endif
 
@@ -1653,11 +1660,11 @@ void MainWidget::validate_render() {
     validate_ui();
     update();
     if (opengl_widget != nullptr) {
-        opengl_widget->update();
+        opengl_widget->get_widget()->update();
     }
 
-    if (is_helper_visible() && (should_update_portal || helper_opengl_widget()->hasFocus() || helper_opengl_widget()->is_helper_waiting_for_render)) {
-        helper_opengl_widget()->update();
+    if (is_helper_visible() && (should_update_portal || helper_opengl_widget()->get_widget()->hasFocus() || helper_opengl_widget()->is_helper_waiting_for_render)) {
+        helper_opengl_widget()->get_widget()->update();
     }
 
     is_render_invalidated = false;
@@ -3473,8 +3480,8 @@ bool MainWidget::helper_window_overlaps_main_window() {
 
 void MainWidget::toggle_window_configuration() {
 
-    QWidget* helper_window = get_top_level_widget(helper_opengl_widget());
-    QWidget* main_window = get_top_level_widget(opengl_widget);
+    QWidget* helper_window = get_top_level_widget(helper_opengl_widget()->get_widget());
+    QWidget* main_window = get_top_level_widget(opengl_widget->get_widget());
 
     if (is_helper_visible()){
         apply_window_params_for_one_window_mode();
@@ -3496,12 +3503,12 @@ void MainWidget::toggle_two_window_mode() {
 
     //main_widget.resize(window_width, window_height);
 
-    QWidget* helper_window = get_top_level_widget(helper_opengl_widget());
+    QWidget* helper_window = get_top_level_widget(helper_opengl_widget()->get_widget());
 
     if (!is_helper_visible()) {
 
-        QPoint pos = helper_opengl_widget()->pos();
-        QSize size = helper_opengl_widget()->size();
+        QPoint pos = helper_opengl_widget()->get_widget()->pos();
+        QSize size = helper_opengl_widget()->get_widget()->size();
         helper_window->show();
         helper_window->resize(size);
         helper_window->move(pos);
@@ -3760,13 +3767,13 @@ void MainWidget::handle_pending_text_command(std::wstring text) {
 void MainWidget::toggle_fullscreen() {
     if (isFullScreen()) {
         if (is_helper_visible()){
-            helper_opengl_widget()->setWindowState(Qt::WindowState::WindowMaximized);
+            helper_opengl_widget()->get_widget()->setWindowState(Qt::WindowState::WindowMaximized);
         }
         setWindowState(Qt::WindowState::WindowMaximized);
     }
     else {
         if (is_helper_visible()){
-            helper_opengl_widget()->setWindowState(Qt::WindowState::WindowFullScreen);
+            helper_opengl_widget()->get_widget()->setWindowState(Qt::WindowState::WindowFullScreen);
         }
         setWindowState(Qt::WindowState::WindowFullScreen);
     }
@@ -3913,7 +3920,7 @@ void MainWidget::toggle_dark_mode() {
 
     if (helper_opengl_widget_) {
         //helper_document_view_->toggle_dark_mode();
-        helper_opengl_widget_->update();
+        helper_opengl_widget_->get_widget()->update();
     }
     config_manager->handle_set_color_palette(this, main_document_view->get_current_color_mode());
 }
@@ -3930,7 +3937,7 @@ void MainWidget::toggle_custom_color_mode() {
 
     if (helper_opengl_widget_) {
         //helper_document_view_->toggle_custom_color_mode();
-        helper_opengl_widget_->update();
+        helper_opengl_widget_->get_widget()->update();
     }
     config_manager->handle_set_color_palette(this, main_document_view->get_current_color_mode());
 }
@@ -4224,7 +4231,7 @@ void MainWidget::get_window_params_for_two_window_mode(int* main_window_size, in
 
 void MainWidget::apply_window_params_for_one_window_mode(bool force_resize) {
 
-    QWidget* main_window = get_top_level_widget(opengl_widget);
+    QWidget* main_window = get_top_level_widget(opengl_widget->get_widget());
 
     int main_window_width = get_current_monitor_width();
 
@@ -4250,15 +4257,15 @@ void MainWidget::apply_window_params_for_one_window_mode(bool force_resize) {
 
 
     if (helper_opengl_widget_ != nullptr) {
-        helper_opengl_widget_->hide();
-        helper_opengl_widget_->move(0, 0);
-        helper_opengl_widget_->resize(main_window_size[0], main_window_size[1]);
+        helper_opengl_widget_->get_widget()->hide();
+        helper_opengl_widget_->get_widget()->move(0, 0);
+        helper_opengl_widget_->get_widget()->resize(main_window_size[0], main_window_size[1]);
     }
 }
 
 void MainWidget::apply_window_params_for_two_window_mode() {
-    QWidget* main_window = get_top_level_widget(opengl_widget);
-    QWidget* helper_window = get_top_level_widget(helper_opengl_widget());
+    QWidget* main_window = get_top_level_widget(opengl_widget->get_widget());
+    QWidget* helper_window = get_top_level_widget(helper_opengl_widget()->get_widget());
 
 #ifdef Q_OS_MACOS
     if (MACOS_HIDE_TITLEBAR) {
@@ -4302,8 +4309,8 @@ QRect MainWidget::get_main_window_rect() {
 }
 
 QRect MainWidget::get_helper_window_rect() {
-    QPoint helper_window_pos = helper_opengl_widget_->pos();
-    QSize helper_window_size = helper_opengl_widget_->size();
+    QPoint helper_window_pos = helper_opengl_widget_->get_widget()->pos();
+    QSize helper_window_size = helper_opengl_widget_->get_widget()->size();
     return QRect(helper_window_pos, helper_window_size);
 }
 
@@ -4507,10 +4514,10 @@ std::wstring MainWidget::get_window_configuration_string() {
     QString helper_window_move_y = QString::number(-1);
 
     if (is_helper_visible()) {
-        helper_window_size_w = QString::number(helper_opengl_widget_->size().width());
-        helper_window_size_h = QString::number(helper_opengl_widget_->size().height());
-        helper_window_move_x = QString::number(helper_opengl_widget_->pos().x());
-        helper_window_move_y = QString::number(helper_opengl_widget_->pos().y());
+        helper_window_size_w = QString::number(helper_opengl_widget_->get_widget()->size().width());
+        helper_window_size_h = QString::number(helper_opengl_widget_->get_widget()->size().height());
+        helper_window_move_x = QString::number(helper_opengl_widget_->get_widget()->pos().x());
+        helper_window_move_y = QString::number(helper_opengl_widget_->get_widget()->pos().y());
         return (config_string_multi.arg(main_window_size_w,
             main_window_size_h,
             main_window_move_x,
@@ -7406,13 +7413,18 @@ void MainWidget::handle_debug_command() {
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
     const int REDUCE_FACTOR = 8;
-#ifdef SIOYEK_OPENGL_BACKEND
-    QImage image = opengl_widget->grabFramebuffer();
-#else
-    QPixmap pixmap(size());
-    render(&pixmap, QPoint(), QRegion(rect()));
-    QImage image = pixmap.toImage();
-#endif
+    QImage image;
+    if (opengl_widget->is_opengl()) {
+
+        QOpenGLWidget* w = dynamic_cast<QOpenGLWidget*>(opengl_widget);
+        image = w->grabFramebuffer();
+    }
+    else {
+        QPixmap pixmap(size());
+        render(&pixmap, QPoint(), QRegion(rect()));
+        image = pixmap.toImage();
+    }
+
     image = image.scaled(image.width() / REDUCE_FACTOR, image.height() / REDUCE_FACTOR);
 
     std::unordered_map<int, int> counts;
@@ -9848,15 +9860,13 @@ void MainWidget::screenshot(std::wstring file_path) {
 }
 
 void MainWidget::framebuffer_screenshot(std::wstring file_path) {
-#ifdef SIOYEK_OPENGL_BACKEND
-    QImage image = opengl_widget->grabFramebuffer();
-    QPixmap pixmap = QPixmap::fromImage(image);
-    pixmap.save(QString::fromStdWString(file_path));
-#endif
+    if (opengl_widget->is_opengl()) {
 
-    //QPixmap pixmap(size());
-    //render(&pixmap, QPoint(), QRegion(rect()));
-    //pixmap.save(QString::fromStdWString(file_path));
+        QOpenGLWidget* w = dynamic_cast<QOpenGLWidget*>(opengl_widget);
+        QImage image = w->grabFramebuffer();
+        QPixmap pixmap = QPixmap::fromImage(image);
+        pixmap.save(QString::fromStdWString(file_path));
+    }
 }
 
 bool MainWidget::is_render_ready(){
@@ -10107,7 +10117,7 @@ bool MainWidget::is_helper_visible() {
     if (helper_document_view_ == nullptr) return false;
 
     if (helper_document_view() && helper_opengl_widget()) {
-        return helper_opengl_widget()->isVisible();
+        return helper_opengl_widget()->get_widget()->isVisible();
     }
     return false;
 }
@@ -10409,12 +10419,19 @@ bool MainWidget::does_current_widget_consume_quicktap_event(){
 
 void MainWidget::initialize_helper(){
     helper_document_view_ = new DocumentView(db_manager, document_manager, checksummer);
-    helper_opengl_widget_ = new PdfViewOpenGLWidget(helper_document_view_, pdf_renderer, document_manager, true);
+
+    if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
+        helper_opengl_widget_ = new PdfViewOpenGLWidget(helper_document_view_, pdf_renderer, document_manager, true);
+    }
+    else {
+        helper_opengl_widget_ = new PdfViewQPainterWidget(helper_document_view_, pdf_renderer, document_manager, true);
+    }
+
 #ifdef Q_OS_WIN
     // seems to be required only on windows though. TODO: test this on macos.
     // weird hack, should not be necessary but application crashes without it when toggling window configuration
-    helper_opengl_widget_->show();
-    helper_opengl_widget_->hide();
+    helper_opengl_widget_->get_widget()->show();
+    helper_opengl_widget_->get_widget()->hide();
 #endif
 #ifdef Q_OS_MACOS
     QWidget* helper_window = get_top_level_widget(helper_opengl_widget_);
@@ -10432,7 +10449,7 @@ void MainWidget::initialize_helper(){
             });
 }
 
-PdfViewOpenGLWidget* MainWidget::helper_opengl_widget(){
+SioyekRendererBackend* MainWidget::helper_opengl_widget(){
 
     if (helper_opengl_widget_ == nullptr){
         initialize_helper();
@@ -12559,24 +12576,77 @@ void MainWidget::screenshot_js(QString file_path, QJsonObject window_rect_js) {
 }
 
 void MainWidget::framebuffer_screenshot_js(QString file_path, QJsonObject window_rect_js) {
-#ifdef SIOYEK_OPENGL_BACKEND
-    WindowRect window_rect;
-    window_rect.x0 = window_rect_js["x0"].toDouble();
-    window_rect.x1 = window_rect_js["x1"].toDouble();
-    window_rect.y0 = window_rect_js["y0"].toDouble();
-    window_rect.y1 = window_rect_js["y1"].toDouble();
-    QRect window_qrect = QRect(window_rect.x0, window_rect.y0, window_rect.x1 - window_rect.x0, std::abs(window_rect.y1 - window_rect.y0));
+    if (opengl_widget->is_opengl()) {
+        WindowRect window_rect;
+        window_rect.x0 = window_rect_js["x0"].toDouble();
+        window_rect.x1 = window_rect_js["x1"].toDouble();
+        window_rect.y0 = window_rect_js["y0"].toDouble();
+        window_rect.y1 = window_rect_js["y1"].toDouble();
+        QRect window_qrect = QRect(window_rect.x0, window_rect.y0, window_rect.x1 - window_rect.x0, std::abs(window_rect.y1 - window_rect.y0));
 
-    if (window_qrect.width() > 0 && window_qrect.height() > 0) {
+        if (window_qrect.width() > 0 && window_qrect.height() > 0) {
 
-        QImage image = opengl_widget->grabFramebuffer();
-        QPixmap pixmap = QPixmap::fromImage(image);
-        pixmap = pixmap.copy(window_qrect);
+            QOpenGLWidget* w = dynamic_cast<QOpenGLWidget*>(opengl_widget);
+            QImage image = w->grabFramebuffer();
+            QPixmap pixmap = QPixmap::fromImage(image);
+            pixmap = pixmap.copy(window_qrect);
 
-        pixmap.save(file_path);
+            pixmap.save(file_path);
+        }
+
     }
-#else
-    return screenshot_js(file_path, window_rect_js);
-#endif
+    else {
+
+        return screenshot_js(file_path, window_rect_js);
+    }
 }
 
+void MainWidget::delete_old_backend() {
+    if (dynamic_cast<PdfViewOpenGLWidget*>(opengl_widget)) {
+        dynamic_cast<PdfViewOpenGLWidget*>(opengl_widget)->deleteLater();
+    }
+    else if (dynamic_cast<PdfViewQPainterWidget*>(opengl_widget)) {
+        dynamic_cast<PdfViewQPainterWidget*>(opengl_widget)->deleteLater();
+    }
+
+}
+
+void MainWidget::delete_old_helper() {
+    if (helper_opengl_widget_ == nullptr) return;
+
+    if (dynamic_cast<PdfViewOpenGLWidget*>(helper_opengl_widget_)) {
+        dynamic_cast<PdfViewOpenGLWidget*>(helper_opengl_widget_)->deleteLater();
+        helper_opengl_widget_ = nullptr;
+    }
+    else if (dynamic_cast<PdfViewQPainterWidget*>(helper_opengl_widget_)) {
+        dynamic_cast<PdfViewQPainterWidget*>(helper_opengl_widget_)->deleteLater();
+        helper_opengl_widget_ = nullptr;
+    }
+
+}
+void MainWidget::set_renderer_backend(RenderBackend backend) {
+    pdf_renderer->delete_old_pages(true, true);
+
+    if (backend == RenderBackend::SioyekOpenGLRendererBackend) {
+        auto new_opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
+         layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
+
+        delete_old_backend();
+        delete_old_helper();
+
+        opengl_widget = new_opengl_widget;
+        new_opengl_widget->stackUnder(status_label);
+        new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+    }
+    else {
+        auto new_opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
+        layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
+
+        delete_old_backend();
+        delete_old_helper();
+
+        opengl_widget = new_opengl_widget;
+        new_opengl_widget->stackUnder(status_label);
+        new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+    }
+}

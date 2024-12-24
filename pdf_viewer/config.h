@@ -86,6 +86,7 @@ enum RulerDisplayMode {
     HighlightRuler = 4,
 };
 
+
 enum ColorMode {
     Light = 0,
     Dark = 1,

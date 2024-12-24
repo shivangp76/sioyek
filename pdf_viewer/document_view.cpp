@@ -41,6 +41,7 @@ extern float TOUCHPAD_SENSITIVITY;
 extern float SCROLL_VIEW_SENSITIVITY;
 extern bool AUTOCENTER_VISUAL_SCROLL;
 extern int COLOR_MODE;
+extern int RENDERER_BACKEND;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -2097,17 +2098,18 @@ void ScratchPad::clear() {
 }
 
 bool ScratchPad::is_compile_invalid() {
-#ifdef SIOYEK_OPENGL_BACKEND
-    return !is_compile_valid;
-#else
-    if (!is_compile_valid) return true;
-    if (cached_pixmap) {
-        if (cached_pixmap->zoom_level != zoom_level) return true;
-        if (cached_pixmap->offset_x != offset.x) return true;
-        if (cached_pixmap->offset_y != offset.y) return true;
+    if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
+        return !is_compile_valid;
     }
-    return false;
-#endif
+    else {
+        if (!is_compile_valid) return true;
+        if (cached_pixmap) {
+            if (cached_pixmap->zoom_level != zoom_level) return true;
+            if (cached_pixmap->offset_x != offset.x) return true;
+            if (cached_pixmap->offset_y != offset.y) return true;
+        }
+        return false;
+    }
 }
 
 std::vector<std::string> DocumentView::get_visible_bookmark_uuids() {

@@ -17,6 +17,7 @@
 #include <qjsondocument.h>
 #include <qmainwindow.h>
 #include <qfilesystemwatcher.h>
+#include <qlayout.h>
 
 #ifdef SIOYEK_IOS
 #include <QApplicationStateChangeEvent>
@@ -61,7 +62,7 @@ class PdfRenderer;
 class CachedChecksummer;
 class CommandManager;
 class Command;
-class PdfViewOpenGLWidget;
+class SioyekRendererBackend;
 class DatabaseManager;
 class DocumentManager;
 class TextToSpeechHandler;
@@ -164,8 +165,9 @@ public:
     std::vector<PagelessDocumentRect> tts_corresponding_char_rects;
     std::optional<PagelessDocumentRect> last_focused_rect = {};
 
-    PdfViewOpenGLWidget* opengl_widget = nullptr;
-    PdfViewOpenGLWidget* helper_opengl_widget_ = nullptr;
+    SioyekRendererBackend* opengl_widget = nullptr;
+    SioyekRendererBackend* helper_opengl_widget_ = nullptr;
+
     QScrollBar* scroll_bar = nullptr;
     QMediaPlayer* media_player = nullptr;
 
@@ -308,6 +310,7 @@ public:
 
     QMap<QString, QVariant> js_variables;
 
+    QVBoxLayout* layout;
     QWidget* text_command_line_edit_container = nullptr;
     QLabel* text_command_line_edit_label = nullptr;
     QLineEdit* text_command_line_edit = nullptr;
@@ -937,7 +940,7 @@ public:
     void export_json(std::wstring json_file_path);
     void import_json(std::wstring json_file_path);
     bool does_current_widget_consume_quicktap_event();
-    PdfViewOpenGLWidget* helper_opengl_widget();
+    SioyekRendererBackend* helper_opengl_widget();
     DocumentView* helper_document_view();
     void initialize_helper();
     void hide_command_line_edit();
@@ -1105,6 +1108,9 @@ public:
     void push_deleted_portal(std::optional<Portal> portal);
 
     void undo_delete();
+    void set_renderer_backend(RenderBackend backend);
+    void delete_old_backend();
+    void delete_old_helper();
     std::vector<WindowRect> get_largest_empty_rects();
 
 

@@ -145,11 +145,12 @@ protected:
     virtual void enable_stencil() = 0;
     virtual void write_to_stencil() = 0;
     virtual void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) = 0;
-    virtual void draw_stencil_rects(int page, const std::vector<PagelessDocumentRect>& rects);
+    virtual void draw_stencil_rects_with_page(int page, const std::vector<PagelessDocumentRect>& rects);
     virtual void use_stencil_to_write(bool eq) = 0;
     virtual void disable_stencil() = 0;
     virtual void render_transparent_background() = 0;
     virtual void render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true) = 0;
+    virtual void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) = 0;
 
     virtual void set_highlight_color(const float* color, float alpha) = 0;
     virtual void prepare_highlight_pipeline() = 0;
@@ -208,6 +209,7 @@ protected:
     virtual Qt::ScreenOrientation get_orientation() = 0;
     virtual int get_width() = 0;
     virtual int get_height() = 0;
+    virtual void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) = 0;
 
     bool handle_mouse_move_event(QMouseEvent* mouse_event);
     bool handle_mouse_press_event(QMouseEvent* mevent);
@@ -224,29 +226,22 @@ public:
     void register_on_link_edit_listener(std::function<void(const OpenedBookState&)> listener);
     void handle_escape();
     void clear_all_selections();
+    virtual bool is_opengl() = 0;
+    virtual QWidget* get_widget() = 0;
 
 };
 
-#ifdef SIOYEK_OPENGL_BACKEND
 class PdfViewOpenGLWidget : public SioyekRendererBackend, public QOpenGLWidget, protected QOpenGLExtraFunctions {
-#else
-class PdfViewOpenGLWidget : public QWidget{
-#endif
 //class PdfViewOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_1 {
 public:
 
 
 private:
 
-#ifdef SIOYEK_OPENGL_BACKEND
     OpenGLSharedResources shared_gl_objects;
     GLuint vertex_array_object;
-#endif
-
-
 
 protected:
-#ifdef SIOYEK_OPENGL_BACKEND
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
@@ -262,12 +257,6 @@ protected:
         const std::vector<float>& dot_coordinates,
         const std::vector<unsigned int>& dot_indices,
         const std::vector<GLint>& dot_type_indices);
-#else
-    void paintEvent(QPaintEvent* event) override;
-    void resizeEvent(QResizeEvent* event) override;
-    void render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
-    void render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true);
-#endif
 
 
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
@@ -305,6 +294,7 @@ protected:
     void enable_multisampling() override;
     void disable_multisampling() override;
     void set_highlight_color(const float* color, float alpha) override;
+    void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) override;
 
     void prepare_for_line_drawing() override;
     void render_highlights_and_bookmarks();
@@ -312,6 +302,7 @@ protected:
 
     void prepare_initial_render_pipeline() override;
     void prepare_link_highlight_state() override;
+    void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
 public:
     //std::vector<OverviewState> persisted_overviews;
 
@@ -328,6 +319,8 @@ public:
     void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
 
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+    bool is_opengl() override;
+    QWidget* get_widget() override;
 };
 
 class PdfViewQPainterWidget : public QWidget, public SioyekRendererBackend{
@@ -381,7 +374,11 @@ protected:
 
     void prepare_initial_render_pipeline() override;
     void prepare_link_highlight_state() override;
+    void render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border = true) override;
+    void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) override;
+    void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
 public:
+    bool is_opengl() override;
     //std::vector<OverviewState> persisted_overviews;
 
 
@@ -397,4 +394,5 @@ public:
     void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
 
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+    QWidget* get_widget() override;
 };
