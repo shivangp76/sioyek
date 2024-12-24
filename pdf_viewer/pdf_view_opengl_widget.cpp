@@ -1006,6 +1006,8 @@ void SioyekRendererBackend::my_render() {
 
     bind_default();
     render_portals();
+
+    bind_default();
     { // require bind_default
         if (VISUALIZE_RULER_THRESHOLDS) {
             prepare_highlight_pipeline();
