@@ -388,7 +388,7 @@ int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
 #endif
 
 float LINE_SELECT_RULER_COLOR[3] = { 1.0f, 0.0f, 1.0f };
-int LINE_SELECT_RULER_DISPLAY_MODE = RulerDisplayMode::HighlightRuler;
+int LINE_SELECT_RULER_DISPLAY_MODE = RulerDisplayMode::RulerHighlightTransparent;
 int COLOR_MODE = ColorMode::Light;
 std::wstring EPUB_CSS = L"";
 QString EPUB_TEMPLATE = "p {\
