@@ -1050,6 +1050,7 @@ void SioyekRendererBackend::render_ruler_thresholds(){
 }
 
 PdfViewOpenGLWidget::~PdfViewOpenGLWidget() {
+    int a = 2;
 }
 
 bool SioyekRendererBackend::handle_mouse_move_event(QMouseEvent* mouse_event) {

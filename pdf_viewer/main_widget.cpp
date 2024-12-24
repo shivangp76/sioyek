@@ -1334,7 +1334,8 @@ MainWidget::~MainWidget() {
     }
 
     if (helper_document_view_ != nullptr && helper_document_view_ != main_document_view) {
-        delete helper_document_view();
+        delete_old_helper();
+        //delete helper_document_view();
         helper_document_view_ = nullptr;
     }
 }
@@ -4578,8 +4579,9 @@ void MainWidget::handle_close_event() {
     // we need to delete this here (instead of destructor) to ensure that application
     // closes immediately after the main window is closed
     if (helper_opengl_widget_){
-        delete helper_opengl_widget_;
-        helper_opengl_widget_ = nullptr;
+        delete_old_helper();
+        //delete helper_opengl_widget_;
+        //helper_opengl_widget_ = nullptr;
     }
 }
 
