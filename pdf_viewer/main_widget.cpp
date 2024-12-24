@@ -12627,6 +12627,16 @@ void MainWidget::delete_old_helper() {
 
 }
 void MainWidget::set_renderer_backend(RenderBackend backend) {
+    bool current_backend_is_opengl = opengl_widget->is_opengl();
+
+    if (backend == RenderBackend::SioyekOpenGLRendererBackend && current_backend_is_opengl) {
+        return;
+    }
+
+    if (backend != RenderBackend::SioyekOpenGLRendererBackend && !current_backend_is_opengl) {
+        return;
+    }
+
     pdf_renderer->delete_old_pages(true, true);
 
     if (backend == RenderBackend::SioyekOpenGLRendererBackend) {
