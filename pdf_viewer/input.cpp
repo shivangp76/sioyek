@@ -5485,6 +5485,10 @@ public:
         }
     }
 
+    std::wstring get_text_default_value() override{
+        return L"";
+    }
+
     void pre_perform() {
         if (already_pre_performed) return;
 
@@ -5758,6 +5762,10 @@ public:
     void on_cancel() override {
         widget->set_highlighted_tags({});
 
+    }
+
+    std::wstring get_text_default_value() override{
+        return L"";
     }
 
     void perform() {
