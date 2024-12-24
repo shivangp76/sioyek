@@ -1902,7 +1902,7 @@ void SioyekRendererBackend::render_text_highlights(){
     std::array<float, 3> text_highlight_color;
 
     bool is_inverted = false;
-    if ((SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::Inverted) || (dv()->is_line_select_mode())) {
+    if ((SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::SelectedTextHighlightInverted) || (dv()->is_line_select_mode())) {
         is_inverted = true;
     }
 
@@ -1930,10 +1930,10 @@ void SioyekRendererBackend::render_text_highlights(){
 
         int line_pending_flags = HRF_FILL | HRF_INVERTED;
         int normal_flags = HRF_FILL | HRF_BORDER;
-        if (SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::Inverted) {
+        if (SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::SelectedTextHighlightInverted) {
             std::swap(line_pending_flags, normal_flags);
         }
-        else if (SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::Background) {
+        else if (SELECTED_TEXT_HIGHLIGHT_STYLE == SelectedTextHighlightStyle::SelectedTextHighlightBackground) {
             normal_flags = HRF_PAINTOVER | HRF_FILL;
         }
 
@@ -3163,6 +3163,7 @@ void SioyekRendererBackend::render_ruler() {
         }
         else {
             int flags = 0;
+            float alpha = 1.0f;
 
             if (ruler_display_mode == RulerDisplayMode::Underline) {
                 flags |= HRF_UNDERLINE;
@@ -3174,6 +3175,10 @@ void SioyekRendererBackend::render_ruler() {
             }
             else if (ruler_display_mode == RulerDisplayMode::Box) {
                 flags |= HRF_BORDER;
+            }
+            else if (ruler_display_mode == RulerDisplayMode::RulerHighlightTransparent) {
+                flags |= HRF_FILL;
+                alpha = 0.3f;
             }
 
 
@@ -3189,7 +3194,7 @@ void SioyekRendererBackend::render_ruler() {
                 ruler_color = &ruler_color_adjusted[0];
             }
 
-            set_highlight_color(&ruler_color[0], 1.0f);
+            set_highlight_color(&ruler_color[0], alpha);
             render_highlight_window(ruler_rect.value(), flags, RULER_UNDERLINE_PIXEL_WIDTH);
         }
         if (document_view->underline) {

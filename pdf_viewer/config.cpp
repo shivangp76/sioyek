@@ -222,7 +222,7 @@ bool AUTO_RENAME_DOWNLOADED_PAPERS = false;
 bool SHOW_MOST_RECENT_COMMANDS_FIRST = true;
 bool ALLOW_HORIZONTAL_DRAG_WHEN_DOCUMENT_IS_SMALL = false;
 //bool INVERT_SELECTED_TEXT = false;
-int SELECTED_TEXT_HIGHLIGHT_STYLE = SelectedTextHighlightStyle::Transparent;
+int SELECTED_TEXT_HIGHLIGHT_STYLE = SelectedTextHighlightStyle::SelectedTextHighlightTransparent;
 int HIGHLIGHT_STYLE = HighlightStyle::HighlightTransparent;
 int OVERVIEW_HIGHLIGHT_STYLE = HighlightStyle::HighlightTransparent;
 bool IGNORE_SCROLL_EVENTS = false;
@@ -1443,9 +1443,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_rect(L"landscape_visual_mark_prev", &LANDSCAPE_VISUAL_MARK_PREV);
 
     add_enum(L"document_location_mismatch_strategy", &DOCUMENT_LOCATION_MISMATCH_STRATEGY, EnumExtras({{L"local", L"server", L"ask", L"show_button"}}));
-    add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
+    add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight", L"transparent"}}));
     add_enum(L"ruler_style", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
-    add_enum(L"line_select_ruler_display_style", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
+    add_enum(L"line_select_ruler_display_style", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight", L"transparent"}}));
     add_enum(L"renderer_backend", &RENDERER_BACKEND, EnumExtras({ {L"none", L"opengl", L"qpainter"} }))->set_change_fn([&](MainWidget* widget) {
         RenderBackend backend = RenderBackend::SioyekOpenGLRendererBackend;
         if (RENDERER_BACKEND == 2) {

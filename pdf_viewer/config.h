@@ -84,6 +84,7 @@ enum RulerDisplayMode {
     Underline = 2,
     HighlightBelow = 3,
     HighlightRuler = 4,
+    RulerHighlightTransparent = 5,
 };
 
 
@@ -98,16 +99,17 @@ enum TableExtractBehaviour {
     Copy = 1
 };
 
-enum SelectedTextHighlightStyle {
-    Transparent = 0,
-    Inverted = 1,
-    Background = 2
-};
 
 enum HighlightStyle {
     HighlightTransparent = 0,
     HighlightBackground = 1,
     HighlightBorder=2
+};
+
+enum SelectedTextHighlightStyle {
+    SelectedTextHighlightTransparent = 0,
+    SelectedTextHighlightInverted = 1,
+    SelectedTextHighlightBackground = 2
 };
 
 struct EnumExtras {
