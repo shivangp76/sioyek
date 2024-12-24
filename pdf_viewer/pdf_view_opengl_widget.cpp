@@ -1917,7 +1917,16 @@ void SioyekRendererBackend::render_text_highlights(){
     std::vector<AbsoluteRect> bounding_rects;
     merge_selected_character_rects(*dv()->get_selected_character_rects(), bounding_rects);
 
+    std::optional<float> last_bottom = {};
     for (auto rect : bounding_rects) {
+
+        NormalizedWindowRect window_rect = rect.to_window_normalized(dv());
+        if (last_bottom.has_value()) {
+            if (std::abs(window_rect.y0 - last_bottom.value()) < 0.01f) {
+                window_rect.y0 = last_bottom.value(); // make sure highlights are air-tight
+            }
+        }
+        last_bottom = window_rect.y1;
 
         int line_pending_flags = HRF_FILL | HRF_INVERTED;
         int normal_flags = HRF_FILL | HRF_BORDER;
@@ -1929,10 +1938,10 @@ void SioyekRendererBackend::render_text_highlights(){
         }
 
         if (dv()->is_line_select_mode()) {
-            render_highlight_absolute(rect, line_pending_flags);
+            render_highlight_window(window_rect, line_pending_flags);
         }
         else {
-            render_highlight_absolute(rect, normal_flags);
+            render_highlight_window(window_rect, normal_flags);
         }
     }
 }
