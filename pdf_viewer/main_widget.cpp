@@ -6383,6 +6383,7 @@ std::optional<Highlight> MainWidget::handle_delete_selected_highlight() {
         deleted_highlight = delete_current_document_highlight_with_uuid(selected_highlight_uuid);
     }
     validate_render();
+    main_document_view->clear_selected_object();
     return deleted_highlight;
 }
 
@@ -6393,6 +6394,7 @@ std::optional<BookMark> MainWidget::handle_delete_selected_bookmark() {
         main_document_view->set_selected_bookmark_uuid("");
         deleted_bookmark = delete_current_document_bookmark(selected_bookmark_uuid);
     }
+    main_document_view->clear_selected_object();
     validate_render();
     return deleted_bookmark;
 }
@@ -6408,6 +6410,7 @@ std::optional<Portal> MainWidget::handle_delete_selected_portal() {
         }
         //push_deleted_portal(deleted_portal);
     }
+    main_document_view->clear_selected_object();
     validate_render();
     return deleted_portal;
 }
