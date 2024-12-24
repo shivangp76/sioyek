@@ -973,7 +973,6 @@ void SioyekRendererBackend::my_render() {
 
     draw_pending_freehand_drawings(visible_pages);
 
-    render_portals();
 
     render_tags();
 
@@ -1007,6 +1006,7 @@ void SioyekRendererBackend::my_render() {
     render_bookmark_annotations();
 
     bind_default();
+    render_portals();
     { // require bind_default
         if (VISUALIZE_RULER_THRESHOLDS) {
             prepare_highlight_pipeline();
