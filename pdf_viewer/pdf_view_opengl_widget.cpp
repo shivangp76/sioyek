@@ -3550,7 +3550,7 @@ void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRec
     QRegion overview_region = QRegion(overview_rect);
     painter.setClipRegion(overview_region);
 
-    draw_overview_background();
+    draw_overview_background(overview);
 
     for (auto page : get_overview_visible_pages(overview)) {
         render_page(page, overview, ColorPalette::None, false);
@@ -3795,13 +3795,10 @@ void PdfViewQPainterWidget::wheelEvent(QWheelEvent* wevent) {
 
 void PdfViewQPainterWidget::draw_overview_background(std::optional<OverviewState> maybe_overview){
 
-    float border_vertices[4 * 2];
-    get_overview_window_vertices(border_vertices, maybe_overview);
-
     float bg_color[] = { 1.0f, 1.0f, 1.0f };
     get_background_color(bg_color);
 
-    QRect overview_qrect = document_view->normalized_to_window_qrect(document_view->get_overview_rect());
+    QRect overview_qrect = document_view->normalized_to_window_qrect(document_view->get_overview_rect(maybe_overview));
     painter.fillRect(overview_qrect, QBrush(convert_float3_to_qcolor(bg_color)));
 }
 
