@@ -974,7 +974,6 @@ void SioyekRendererBackend::my_render() {
     draw_pending_freehand_drawings(visible_pages);
 
 
-    render_tags();
 
 
 
@@ -1019,6 +1018,7 @@ void SioyekRendererBackend::my_render() {
     }
 
     end_native_painting();
+    render_tags();
 }
 
 void PdfViewOpenGLWidget::bind_vertex_array() {
