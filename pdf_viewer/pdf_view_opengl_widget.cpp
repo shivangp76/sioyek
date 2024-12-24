@@ -1050,7 +1050,6 @@ void SioyekRendererBackend::render_ruler_thresholds(){
 }
 
 PdfViewOpenGLWidget::~PdfViewOpenGLWidget() {
-    int a = 2;
 }
 
 bool SioyekRendererBackend::handle_mouse_move_event(QMouseEvent* mouse_event) {
@@ -3246,7 +3245,11 @@ void SioyekRendererBackend::render_portals() {
         }
     }
 
+    int selected_pinned_portal_index = -1;
+    OverviewState selected_portal_overview_state;
+
     for (int i = 0; i < portals.size(); i++) {
+
         if (portals[i].is_pinned()) {
             bool is_portal_selected = dv()->get_selected_pinned_portal_uuid() == portals[i].uuid;
             float selected_border_color[] = { 1, 0, 0 };
@@ -3266,25 +3269,26 @@ void SioyekRendererBackend::render_portals() {
 
                 render_overview(portal_overview_state, !is_portal_selected);
                 if (is_portal_selected) {
-                    //draw_overview_border(portal_overview_state, selected_border_color);
-                    end_native_painting();
-
-                    WindowRect window_rect = portal_overview_state.source_rect->to_window(dv());
-                    QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
-                    painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
-                    painter.drawRect(
-                        window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2 - 1,
-                        window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2 + 1,
-                        fz_irect_width(window_rect) + SELECTED_BORDER_PEN_SIZE + 1,
-                        fz_irect_height(window_rect) + SELECTED_BORDER_PEN_SIZE + 1
-                    );
-                    begin_native_painting();
+                    selected_pinned_portal_index = i;
+                    selected_portal_overview_state = portal_overview_state;
                 }
             }
         }
     }
-
     end_native_painting();
+
+    if (selected_pinned_portal_index >= 0) {
+        // draw the border of the selected portal
+        WindowRect window_rect = selected_portal_overview_state.source_rect->to_window(dv());
+        QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
+        painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
+        painter.drawRect(
+            window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2 - 1,
+            window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2 + 1,
+            fz_irect_width(window_rect) + SELECTED_BORDER_PEN_SIZE + 1,
+            fz_irect_height(window_rect) + SELECTED_BORDER_PEN_SIZE + 1
+        );
+    }
 
 
     if (doc()->can_use_highlights()) {
