@@ -4375,6 +4375,7 @@ void DocumentView::begin_bookmark_move(const std::string& uuid, AbsoluteDocument
 
         move_data.initial_mouse_position = begin_cursor_pos;
         visible_object_move_data = move_data;
+        selected_object_index = VisibleObjectIndex{ VisibleObjectType::Bookmark, uuid };
     }
 }
 
@@ -4392,6 +4393,7 @@ void DocumentView::begin_portal_move(const std::string& uuid, AbsoluteDocumentPo
 
             move_data.initial_mouse_position = begin_cursor_pos;
             visible_object_move_data = move_data;
+            selected_object_index = VisibleObjectIndex{ VisibleObjectType::PendingPortal, uuid };
         }
     }
     else {
@@ -4403,6 +4405,12 @@ void DocumentView::begin_portal_move(const std::string& uuid, AbsoluteDocumentPo
 
             move_data.initial_mouse_position = begin_cursor_pos;
             visible_object_move_data = move_data;
+            if (portal->is_pinned()) {
+                selected_object_index = VisibleObjectIndex{ VisibleObjectType::PinnedPortal, uuid };
+            }
+            else {
+                selected_object_index = VisibleObjectIndex{ VisibleObjectType::Portal, uuid };
+            }
         }
     }
 }
