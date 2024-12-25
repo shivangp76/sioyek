@@ -272,7 +272,37 @@ void PdfRenderer::delete_old_pages(bool force_all, bool invalidate_all) {
         return;
     }
 
-    cached_response_mutex.lock();
+
+    //cached_response_mutex.lock();
+
+    std::vector<bool> thread_is_locked;
+    for (int i = 0; i < thread_rendering_mutex.size(); i++) {
+        thread_is_locked.push_back(false);
+    }
+
+    while (true) {
+        cached_response_mutex.lock();
+
+        bool failed = false;
+        for (int i = 0; i < thread_rendering_mutex.size(); i++) {
+            if (thread_is_locked[i]) continue;
+            bool locked = thread_rendering_mutex[i].try_lock();
+            if (!locked) {
+                failed = true;
+            }
+            else {
+                thread_is_locked[i] = true;
+            }
+        }
+        if (!failed) {
+            break;
+        }
+        else {
+            cached_response_mutex.unlock();
+            sleep_ms(100);
+        }
+    }
+
     std::vector<int> indices_to_delete;
     unsigned int now = QDateTime::currentMSecsSinceEpoch();
     std::vector<int> cached_response_times;
@@ -330,6 +360,11 @@ void PdfRenderer::delete_old_pages(bool force_all, bool invalidate_all) {
 
         cached_responses.erase(cached_responses.begin() + index_to_delete);
     }
+
+    for (int i = 0; i < thread_rendering_mutex.size(); i++) {
+        thread_rendering_mutex[i].unlock();
+    }
+
     cached_response_mutex.unlock();
 }
 
