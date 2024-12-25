@@ -3552,7 +3552,7 @@ void PdfViewQPainterWidget::render_highlight_window_qpainter_backend(NormalizedW
     if (flags & HRF_BORDER) {
         auto original_color = painter.pen().color();
         auto dealphad = original_color;
-        dealphad.setAlpha(255);
+        //dealphad.setAlpha(255);
         painter.setPen(dealphad);
         // painter.pen().color().setAlpha(255);
         painter.drawRect(pixel_window_rect);
@@ -3821,7 +3821,7 @@ void PdfViewQPainterWidget::draw_overview_background(std::optional<OverviewState
 void PdfViewQPainterWidget::draw_overview_border(std::optional<OverviewState> maybe_overview, float* color){
     float border_color[3] = {0.5f, 0.5f, 0.5f};
 
-    set_highlight_color(border_color, 1);
+    set_highlight_color(border_color, 0.3f);
     render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
 }
 
