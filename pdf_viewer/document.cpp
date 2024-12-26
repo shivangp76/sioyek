@@ -1762,7 +1762,7 @@ std::optional<std::pair<std::wstring, std::wstring>> Document::get_generic_link_
     DocumentPos position,
     std::pair<int, int>* out_range) {
 
-    std::wstring regex(L"[a-zA-Z]{3,}(\.){0,1}[ \t]+[0-9]+(\\.[0-9]+)*");
+    std::wstring regex(L"[a-zA-Z]{3,}(\.){0,1}[ \t]+[0-9]+((\\.|\\-)[0-9]+)*");
     std::optional<std::wstring> match_string = get_regex_match_at_position(regex, flat_chars, position, out_range);
     if (match_string) {
         std::vector<std::wstring> parts = split_whitespace(match_string.value());
