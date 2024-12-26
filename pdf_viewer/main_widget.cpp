@@ -1074,7 +1074,13 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
     on_command_done = [&](std::string command_name, std::string query_text) {
         if (query_text.size() > 0 && (query_text.back() == '?' || query_text[0] == '?')) {
-            show_command_documentation(QString::fromStdString(command_name));
+            if (query_text.size() == 1) {
+                open_documentation_file_for_name("", "");
+                invalidate_render();
+            }
+            else {
+                show_command_documentation(QString::fromStdString(command_name));
+            }
         }
         else {
             bool is_numeric = false;
@@ -7104,6 +7110,13 @@ float MainWidget::get_align_to_top_offset() {
 }
 
 void MainWidget::open_documentation_file_for_name(QString doctype, QString name) {
+    if (name == "") {
+        push_state();
+        open_document_at_location(documentation_path.get_path(), 0, 0, 0, {}, false);
+        main_document_view->scroll_mid_to_top();
+        return;
+    }
+
     std::string nameddest_link = "file://sioyek_documentation.pdf#nameddest=" + doctype.toStdString() + ":" + name.toStdString();
     Document* documentation_document = document_manager->get_document(documentation_path.get_path());
 
