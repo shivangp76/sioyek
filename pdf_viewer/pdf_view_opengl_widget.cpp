@@ -3368,6 +3368,11 @@ void SioyekRendererBackend::render_tags() {
 
             int window_y1 = static_cast<int>(-window_rect.y1 * view_height / 2 + view_height / 2);
 
+            if (window_x0 < -1) {
+                // if the left side of the word is outside the view, we tag the right side instead
+                window_x0 = static_cast<int>(window_rect.x1 * view_width / 2 + view_width / 2);
+            }
+
             bool highlighted = document_view->is_tag_highlighted(tags[i]);
             QString remaining_tag = QString::fromStdString(tags[i]);
             if (document_view->tag_prefix.size() > 0) {
