@@ -21,6 +21,9 @@ void StatusLabelLineEdit::mousePressEvent(QMouseEvent* mevent) {
         on_click.value()();
     }
 }
+void StatusLabelLineEdit::contextMenuEvent(QContextMenuEvent* event) {
+    return;
+}
 
 std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QString status_string, MainWidget* main_widget) {
 

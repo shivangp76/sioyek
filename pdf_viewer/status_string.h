@@ -48,6 +48,8 @@ public:
     StatusLabelLineEdit(QWidget* parent = nullptr);
 
     void mousePressEvent(QMouseEvent* mevent);
+    void contextMenuEvent(QContextMenuEvent* event) override;
+
 };
 
 std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QString status_string, MainWidget* widget);
