@@ -167,9 +167,9 @@ protected:
     void render_selected_rectangle();
     void render_debug_highlights();
     void draw_pending_freehand_drawings(const std::vector<int>& visible_pages);
-    void render_portals();
     void render_tags();
     std::vector<std::pair<QRect, QString>> get_hint_rect_and_texts();
+    void render_portals(const std::vector<int>& visible_pages);
     void render_highlight_annotations(const std::vector<int>& visible_pages);
     void render_bookmark_annotations(const std::vector<int>& visible_pages);
     void render_text_highlights();

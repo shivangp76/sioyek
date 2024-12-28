@@ -5199,9 +5199,13 @@ void DocumentView::handle_portal_move(AbsoluteDocumentPos current_mouse_abspos) 
         }
     }
     else {
-        Portal* portal = current_document->get_portal_with_uuid(uuid);
+        int portal_index = doc()->get_portal_index_with_uuid(uuid);
+        Portal* portal = doc()->get_portal_pointer_with_index(portal_index);
+        //Portal* portal = current_document->get_portal_with_uuid(uuid);
 
         if (portal) {
+            std::optional<AbsoluteRect> old_rect = portal->get_rectangle();
+
             if (portal->is_pinned()) {
                 float width = portal->get_rectangle()->width();
                 float height = portal->get_rectangle()->height();
@@ -5215,6 +5219,24 @@ void DocumentView::handle_portal_move(AbsoluteDocumentPos current_mouse_abspos) 
                 portal->update_merged_rect(current_document);
                 portal->src_offset_x = visible_object_move_data->initial_position.x + diff_x;
                 portal->src_offset_y = visible_object_move_data->initial_position.y + diff_y;
+            }
+
+            if (old_rect.has_value()) {
+                // if the portal has moved between pages we need to update the page_portal_indices of the document
+                auto new_rect = portal->get_rectangle();
+                int old_begin_page = old_rect->top_left().to_document(doc()).page;
+                int old_end_page = old_rect->bottom_right().to_document(doc()).page;
+
+                int new_begin_page = new_rect->top_left().to_document(doc()).page;
+                int new_end_page = new_rect->bottom_right().to_document(doc()).page;
+
+                if (old_begin_page != new_begin_page) {
+                    doc()->add_portal_index_to_page(new_begin_page, portal_index);
+                }
+                if (old_end_page != new_end_page && (new_end_page != new_begin_page)) {
+                    doc()->add_portal_index_to_page(new_end_page, portal_index);
+                }
+
             }
         }
 
@@ -5288,6 +5310,7 @@ void DocumentView::handle_portal_move_finish() {
             }
         }
     }
+    doc()->invalidate_page_visible_portals();
 }
 
 const std::wstring& DocumentView::get_selected_text(bool insert_newlines) {

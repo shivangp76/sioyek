@@ -159,8 +159,7 @@ void Document::load_document_metadata_from_db() {
     marks.clear();
     bookmarks.clear();
     highlights.clear();
-    portals.clear();
-    portals.clear();
+    invalidate_page_visible_portals();
     invalidate_page_visible_bookmarks();
     invalidate_page_visible_highlights();
 
@@ -392,6 +391,7 @@ std::string Document::add_portal_with_existing_uuid(const Portal& portal) {
         );
 
     portals.push_back(portal);
+    on_portal_added();
     is_annotations_dirty = true;
     return portal.uuid;
 }
@@ -439,6 +439,7 @@ std::string Document::add_portal(Portal portal, bool insert_into_database) {
     portal.uuid = new_uuid_utf8();
     portal.update_creation_time();
     portals.push_back(portal);
+    on_portal_added();
     int index = portals.size() - 1;
     if (insert_into_database) {
         //if (portal.is_visible()) {
@@ -586,6 +587,7 @@ std::optional<Portal> Document::delete_portal_with_index(int index) {
 
     db_manager->delete_portal(portal_to_delete.uuid);
     portals.erase(portals.begin() + index);
+    on_portal_deleted();
     is_annotations_dirty = true;
     return portal_to_delete;
 }
@@ -615,6 +617,7 @@ bool Document::update_portal(Portal new_portal) {
     for (auto& portal : portals) {
         if (portal.src_offset_y == new_portal.src_offset_y) {
             portal.dst.book_state = new_portal.dst.book_state;
+            invalidate_page_visible_portals();
             return true;
         }
     }
@@ -627,6 +630,7 @@ std::optional<Portal> Document::delete_closest_portal(float to_offset_y) {
         Portal deleted_portal = portals[closest_index];
         db_manager->delete_portal(deleted_portal.uuid);
         portals.erase(portals.begin() + closest_index);
+        on_portal_deleted();
         is_annotations_dirty = true;
         return deleted_portal;
     }
@@ -653,6 +657,7 @@ std::optional<Portal> Document::delete_portal_with_uuid(const std::string& uuid,
         Portal deleted_portal = portals[index];
         db_manager->delete_portal(uuid);
         portals.erase(portals.begin() + index);
+        on_portal_deleted();
         return deleted_portal;
     }
     return {};
@@ -3920,6 +3925,7 @@ void Document::load_annotations(bool sync) {
 
     invalidate_page_visible_highlights();
     invalidate_page_visible_bookmarks();
+    invalidate_page_visible_portals();
 
     //if (document_indexing_thread.has_value() && document_indexing_thread->)
     should_reload_annotations = false;
@@ -4440,6 +4446,13 @@ BookMark* Document::get_bookmark_with_uuid(const std::string& uuid) {
 BookMark* Document::get_bookmark_pointer_with_index(int index) {
     if (index >= 0 && index < bookmarks.size()) {
         return &bookmarks[index];
+    }
+    return nullptr;
+}
+
+Portal* Document::get_portal_pointer_with_index(int index) {
+    if (index >= 0 && index < portals.size()) {
+        return &portals[index];
     }
     return nullptr;
 }
@@ -5467,6 +5480,11 @@ std::vector<int> Document::get_page_visible_annot_indices<BookMark>(int page) {
 }
 
 template <>
+std::vector<int> Document::get_page_visible_annot_indices<Portal>(int page) {
+    return get_page_visible_portal_indices(page);
+}
+
+template <>
 std::vector<Highlight>& Document::get_annots_mut<Highlight>() {
     return highlights;
 }
@@ -5709,6 +5727,25 @@ void Document::rebuild_page_bookmark_indices() {
     }
 }
 
+void Document::rebuild_page_portal_indices() {
+    if ((portals.size() > 0) && (page_portal_indices.size() == 0)) {
+        for (int i = 0; i < portals.size(); i++) {
+
+            std::optional<AbsoluteRect> rect = portals[i].get_rectangle();
+            if (!rect.has_value()) continue;
+
+            int begin_page = rect->top_left().to_document(this).page;
+            int end_page = rect->bottom_right().to_document(this).page;
+            if (begin_page > end_page) {
+                std::swap(begin_page, end_page);
+            }
+            for (int p = begin_page; p <= end_page; p++) {
+                page_portal_indices[p].push_back(i);
+            }
+        }
+    }
+}
+
 std::vector<int> Document::get_page_visible_highlight_indices(int page) {
     rebuild_page_highlight_indices();
 
@@ -5729,6 +5766,16 @@ std::vector<int> Document::get_page_visible_bookmark_indices(int page) {
     return page_bookmark_indices[page];
 }
 
+std::vector<int> Document::get_page_visible_portal_indices(int page) {
+    rebuild_page_portal_indices();
+
+    if (page_portal_indices.find(page) == page_portal_indices.end()) {
+        return {};
+    }
+
+    return page_portal_indices[page];
+}
+
 void Document::add_bookmark_index_to_page(int page, int index) {
     if (page_bookmark_indices.find(page) == page_bookmark_indices.end()) {
         page_bookmark_indices[page] = { index };
@@ -5742,12 +5789,28 @@ void Document::add_bookmark_index_to_page(int page, int index) {
     }
 }
 
+void Document::add_portal_index_to_page(int page, int index) {
+    if (page_portal_indices.find(page) == page_portal_indices.end()) {
+        page_portal_indices[page] = { index };
+    }
+    else {
+        auto it = std::find(page_portal_indices[page].begin(), page_portal_indices[page].end(), index);
+        bool already_exists = it != page_portal_indices[page].end();
+        if (!already_exists) {
+            page_portal_indices[page].push_back(index);
+        }
+    }
+}
+
 void Document::invalidate_page_visible_bookmarks() {
     page_bookmark_indices.clear();
 }
 
 void Document::invalidate_page_visible_highlights() {
     page_highlight_indices.clear();
+}
+void Document::invalidate_page_visible_portals() {
+    page_portal_indices.clear();
 }
 
 
@@ -5767,8 +5830,16 @@ void Document::on_highlight_deleted() {
     invalidate_page_visible_highlights();
 }
 
+void Document::on_portal_added() {
+    invalidate_page_visible_portals();
+}
+
+void Document::on_portal_deleted() {
+    invalidate_page_visible_portals();
+}
+
 void Document::debug() {
-    for (auto [page, indices] : page_bookmark_indices) {
+    for (auto [page, indices] : page_portal_indices) {
         qDebug() << page << ": "  << indices;
     }
 }

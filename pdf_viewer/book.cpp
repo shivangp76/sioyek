@@ -686,6 +686,7 @@ AbsoluteRect Portal::get_actual_rectangle() const{
 
 std::optional<AbsoluteRect> Portal::get_rectangle() const{
 
+    if (!src_offset_x.has_value()) return {};
     if (merged_rect && is_icon()) return merged_rect.value();
     return get_actual_rectangle();
 

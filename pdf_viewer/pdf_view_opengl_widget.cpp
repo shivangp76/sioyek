@@ -1005,7 +1005,7 @@ void SioyekRendererBackend::my_render() {
     render_bookmark_annotations(visible_pages);
 
     bind_default();
-    render_portals();
+    render_portals(visible_pages);
 
     bind_default();
     { // require bind_default
@@ -3243,14 +3243,15 @@ void SioyekRendererBackend::render_debug_highlights(){
     }
 }
 
-void SioyekRendererBackend::render_portals() {
+void SioyekRendererBackend::render_portals(const std::vector<int>& visible_pages) {
 
     const std::vector<Portal>& portals = doc()->get_portals();
+    std::vector<int> visible_portal_indices = dv()->get_visible_annot_indices<Portal>(visible_pages);
     prepare_highlight_pipeline();
     float color[] = { 1, 1, 1 };
     set_highlight_color(color, 0.3f);
     if (doc()->can_use_highlights()) {
-        for (int i = 0; i < portals.size(); i++) {
+        for (auto i : visible_portal_indices) {
             if (portals[i].is_icon()) {
                 if (!portals[i].is_merged_rect_valid) {
                     portals[i].update_merged_rect(doc());
@@ -3266,7 +3267,7 @@ void SioyekRendererBackend::render_portals() {
     int selected_pinned_portal_index = -1;
     OverviewState selected_portal_overview_state;
 
-    for (int i = 0; i < portals.size(); i++) {
+    for (auto i : visible_portal_indices) {
 
         if (portals[i].is_pinned()) {
             bool is_portal_selected = dv()->get_selected_pinned_portal_uuid() == portals[i].uuid;
@@ -3317,7 +3318,7 @@ void SioyekRendererBackend::render_portals() {
                 render_portal_rect(pending_rect.value(), true, document_view->pending_download_portals[i].downloaded_fraction);
             }
         }
-        for (int i = 0; i < portals.size(); i++) {
+        for (auto i : visible_portal_indices) {
             if (portals[i].is_icon()) {
                 if (!portals[i].merged_rect) {
                     render_portal_rect(portals[i].get_rectangle().value(), false, {});

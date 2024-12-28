@@ -99,6 +99,7 @@ private:
     std::vector<Portal> portals;
     std::unordered_map<int, std::vector<int>> page_highlight_indices;
     std::unordered_map<int, std::vector<int>> page_bookmark_indices;
+    std::unordered_map<int, std::vector<int>> page_portal_indices;
 
     DatabaseManager* db_manager = nullptr;
     std::vector<TocNode*> top_level_toc_nodes;
@@ -207,6 +208,7 @@ private:
     int find_highlight_index_with_uuid(const std::string& uuid);
     void rebuild_page_highlight_indices();
     void rebuild_page_bookmark_indices();
+    void rebuild_page_portal_indices();
 public:
 
     fz_document* doc = nullptr;
@@ -462,6 +464,7 @@ public:
     Portal* get_portal_with_uuid(const std::string& uuid);
     BookMark* get_bookmark_with_uuid(const std::string& uuid);
     BookMark* get_bookmark_pointer_with_index(int index);
+    Portal* get_portal_pointer_with_index(int index);
     Highlight* get_highlight_with_uuid(const std::string& uuid);
 
     //void create_table_of_contents(std::vector<TocNode*>& top_nodes);
@@ -594,18 +597,25 @@ public:
 
     std::vector<int> get_page_visible_highlight_indices(int page);
     std::vector<int> get_page_visible_bookmark_indices(int page);
+    std::vector<int> get_page_visible_portal_indices(int page);
 
     void debug();
     //void add_highlight_index_to_page(int page, int index);
     void add_bookmark_index_to_page(int page, int index);
+    void add_portal_index_to_page(int page, int index);
+
     void invalidate_page_visible_bookmarks();
     void invalidate_page_visible_highlights();
+    void invalidate_page_visible_portals();
 
     void on_bookmark_added();
     void on_bookmark_deleted();
 
     void on_highlight_added();
     void on_highlight_deleted();
+
+    void on_portal_added();
+    void on_portal_deleted();
 
     friend class DocumentManager;
 };
@@ -663,4 +673,7 @@ std::vector<int> Document::get_page_visible_annot_indices<Highlight>(int page);
 
 template <>
 std::vector<int> Document::get_page_visible_annot_indices<BookMark>(int page);
+
+template <>
+std::vector<int> Document::get_page_visible_annot_indices<Portal>(int page);
 
