@@ -1952,7 +1952,6 @@ void SioyekRendererBackend::render_highlight_annotations(){
     std::vector<AbsoluteRect> borders_to_draw;
 
     if (doc()->can_use_highlights()) {
-        const std::vector<Highlight>& highlights = doc()->get_highlights();
         std::vector<std::string> visible_highlight_uuids = dv()->get_visible_highlight_uuids();
 
         for (size_t ind = 0; ind < visible_highlight_uuids.size(); ind++) {
