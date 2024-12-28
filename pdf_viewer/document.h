@@ -581,9 +581,6 @@ public:
     std::vector<T>& get_annots_mut() = delete;
 
     template <typename T>
-    std::vector<int> get_page_visible_annot_indices(int page) = delete;
-
-    template <typename T>
     std::vector<T> get_unsynced_annots() {
         auto all_annots = get_annots<T>();
         std::vector<T> res;
@@ -620,14 +617,36 @@ public:
     void set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids);
     ParsedUri parse_link(const PdfLink& link);
 
-    std::vector<int> get_page_visible_highlight_indices(int page);
-    std::vector<int> get_page_visible_bookmark_indices(int page);
-    std::vector<int> get_page_visible_portal_indices(int page);
+    template<typename T>
+    std::vector<int> get_page_visible_annot_indices(int page) {
+
+        rebuild_page_annot_indices<T>();
+        std::unordered_map<int, std::vector<int>>& annot_page_indices = get_annot_page_indices<T>();
+
+        if (annot_page_indices.find(page) == annot_page_indices.end()) {
+            return {};
+        }
+
+        return annot_page_indices[page];
+    }
 
     void debug();
-    //void add_highlight_index_to_page(int page, int index);
-    void add_bookmark_index_to_page(int page, int index);
-    void add_portal_index_to_page(int page, int index);
+
+    template<typename T>
+    void add_annot_index_to_page(int page, int index) {
+        std::unordered_map<int, std::vector<int>>& annot_page_indices = get_annot_page_indices<T>();
+
+        if (annot_page_indices.find(page) == annot_page_indices.end()) {
+            annot_page_indices[page] = { index };
+        }
+        else {
+            auto it = std::find(annot_page_indices[page].begin(), annot_page_indices[page].end(), index);
+            bool already_exists = it != annot_page_indices[page].end();
+            if (!already_exists) {
+                annot_page_indices[page].push_back(index);
+            }
+        }
+    }
 
     void invalidate_page_visible_bookmarks();
     void invalidate_page_visible_highlights();
@@ -693,14 +712,6 @@ std::vector<BookMark>& Document::get_annots_mut<BookMark>();
 template <>
 std::vector<Portal>& Document::get_annots_mut<Portal>();
 
-template <>
-std::vector<int> Document::get_page_visible_annot_indices<Highlight>(int page);
-
-template <>
-std::vector<int> Document::get_page_visible_annot_indices<BookMark>(int page);
-
-template <>
-std::vector<int> Document::get_page_visible_annot_indices<Portal>(int page);
 
 template <>
 std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Highlight>();

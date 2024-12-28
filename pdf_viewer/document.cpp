@@ -5470,21 +5470,6 @@ const std::vector<Portal>& Document::get_annots<Portal>() {
 }
 
 template <>
-std::vector<int> Document::get_page_visible_annot_indices<Highlight>(int page) {
-    return get_page_visible_highlight_indices(page);
-}
-
-template <>
-std::vector<int> Document::get_page_visible_annot_indices<BookMark>(int page) {
-    return get_page_visible_bookmark_indices(page);
-}
-
-template <>
-std::vector<int> Document::get_page_visible_annot_indices<Portal>(int page) {
-    return get_page_visible_portal_indices(page);
-}
-
-template <>
 std::vector<Highlight>& Document::get_annots_mut<Highlight>() {
     return highlights;
 }
@@ -5693,62 +5678,6 @@ std::vector<PdfLink> Document::find_references_to_range(float begin_y, float end
     return res.size() > 0 ? res : close_ones;
 }
 
-
-std::vector<int> Document::get_page_visible_highlight_indices(int page) {
-    rebuild_page_annot_indices<Highlight>();
-
-    if (page_highlight_indices.find(page) == page_highlight_indices.end()) {
-        return {};
-    }
-
-    return page_highlight_indices[page];
-}
-
-std::vector<int> Document::get_page_visible_bookmark_indices(int page) {
-    rebuild_page_annot_indices<BookMark>();
-
-    if (page_bookmark_indices.find(page) == page_bookmark_indices.end()) {
-        return {};
-    }
-
-    return page_bookmark_indices[page];
-}
-
-std::vector<int> Document::get_page_visible_portal_indices(int page) {
-    rebuild_page_annot_indices<Portal>();
-
-    if (page_portal_indices.find(page) == page_portal_indices.end()) {
-        return {};
-    }
-
-    return page_portal_indices[page];
-}
-
-void Document::add_bookmark_index_to_page(int page, int index) {
-    if (page_bookmark_indices.find(page) == page_bookmark_indices.end()) {
-        page_bookmark_indices[page] = { index };
-    }
-    else {
-        auto it = std::find(page_bookmark_indices[page].begin(), page_bookmark_indices[page].end(), index);
-        bool already_exists = it != page_bookmark_indices[page].end();
-        if (!already_exists) {
-            page_bookmark_indices[page].push_back(index);
-        }
-    }
-}
-
-void Document::add_portal_index_to_page(int page, int index) {
-    if (page_portal_indices.find(page) == page_portal_indices.end()) {
-        page_portal_indices[page] = { index };
-    }
-    else {
-        auto it = std::find(page_portal_indices[page].begin(), page_portal_indices[page].end(), index);
-        bool already_exists = it != page_portal_indices[page].end();
-        if (!already_exists) {
-            page_portal_indices[page].push_back(index);
-        }
-    }
-}
 
 void Document::invalidate_page_visible_bookmarks() {
     page_bookmark_indices.clear();

@@ -5231,10 +5231,10 @@ void DocumentView::handle_portal_move(AbsoluteDocumentPos current_mouse_abspos) 
                 int new_end_page = new_rect->bottom_right().to_document(doc()).page;
 
                 if (old_begin_page != new_begin_page) {
-                    doc()->add_portal_index_to_page(new_begin_page, portal_index);
+                    doc()->add_annot_index_to_page<Portal>(new_begin_page, portal_index);
                 }
                 if (old_end_page != new_end_page && (new_end_page != new_begin_page)) {
-                    doc()->add_portal_index_to_page(new_end_page, portal_index);
+                    doc()->add_annot_index_to_page<Portal>(new_end_page, portal_index);
                 }
 
             }
@@ -5276,11 +5276,11 @@ void DocumentView::handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos
         // when moving bookmarks, we need to update the page index of the bookmarks
         // we don't delete the bookmark index from the previous page, we handle that in handle_bookmark_move_finish
         if ((new_begin_page != prev_begin_page)){
-            doc()->add_bookmark_index_to_page(new_begin_page, bookmark_index);
+            doc()->add_annot_index_to_page<BookMark>(new_begin_page, bookmark_index);
         }
 
         if ((new_end_page != prev_end_page) && (new_end_page != new_begin_page)){
-            doc()->add_bookmark_index_to_page(new_end_page, bookmark_index);
+            doc()->add_annot_index_to_page<BookMark>(new_end_page, bookmark_index);
         }
     }
 }
