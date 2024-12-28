@@ -97,6 +97,8 @@ private:
     std::vector<BookMark> bookmarks;
     std::vector<Highlight> highlights;
     std::vector<Portal> portals;
+    std::unordered_map<int, std::vector<int>> page_highlight_indices;
+
     DatabaseManager* db_manager = nullptr;
     std::vector<TocNode*> top_level_toc_nodes;
     //bool only_for_portal = true;
@@ -202,6 +204,7 @@ private:
     void clear_toc_nodes();
     void clear_toc_node(TocNode* node);
     int find_highlight_index_with_uuid(const std::string& uuid);
+    void rebuild_page_highlight_indices();
 public:
 
     fz_document* doc = nullptr;
@@ -583,6 +586,8 @@ public:
     void set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids);
     ParsedUri parse_link(const PdfLink& link);
 
+    std::vector<int> get_page_visible_highlight_indices(int page);
+
     friend class DocumentManager;
 };
 
@@ -616,6 +621,7 @@ public:
     void update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     std::vector<std::wstring> get_new_files_from_scan_directory();
     void scan_new_files_from_scan_directory();
+
     ~DocumentManager();
 };
 

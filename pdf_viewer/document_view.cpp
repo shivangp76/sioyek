@@ -2168,31 +2168,56 @@ std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices()
 
 }
 
-std::vector<std::string> DocumentView::get_visible_highlight_uuids() {
-
+std::vector<std::string> DocumentView::get_visible_highlight_uuids(std::vector<int> visible_pages) {
     const std::vector<Highlight>& highlights = get_document()->get_highlights();
 
-    std::vector<std::string> res;
+    if (visible_pages.size() == 0) {
+        get_visible_pages(get_view_height(), visible_pages);
+    }
 
-    for (size_t i = 0; i < highlights.size(); i++) {
 
-        NormalizedWindowPos selection_begin_window_pos = absolute_to_window_pos(
-            { highlights[i].selection_begin.x, highlights[i].selection_begin.y }
-        );
-
-        NormalizedWindowPos selection_end_window_pos = absolute_to_window_pos(
-            { highlights[i].selection_end.x, highlights[i].selection_end.y }
-        );
-
-        if (selection_begin_window_pos.y > selection_end_window_pos.y) {
-            std::swap(selection_begin_window_pos.y, selection_end_window_pos.y);
-        }
-        if (range_intersects(selection_begin_window_pos.y, selection_end_window_pos.y, -1.0f, 1.0f)) {
-            res.push_back(highlights[i].uuid);
+    std::vector<int> page_range_highlights;
+    for (auto page : visible_pages) {
+        std::vector<int> page_highlights = doc()->get_page_visible_highlight_indices(page);
+        for (auto ind : page_highlights) {
+            page_range_highlights.push_back(ind);
         }
     }
 
+    std::sort(page_range_highlights.begin(), page_range_highlights.end());
+    auto last = std::unique(page_range_highlights.begin(), page_range_highlights.end());
+    int last_index = std::distance(page_range_highlights.begin(), last);
+    std::vector<std::string> res;
+    res.reserve(last_index);
+
+    for (int i = 0; i < last_index; i++) {
+        res.push_back(highlights[page_range_highlights[i]].uuid);
+    }
     return res;
+
+//    std::vector<std::string> res;
+//
+//    for (size_t i = 0; i < highlights.size(); i++) {
+//
+//        NormalizedWindowPos selection_begin_window_pos = absolute_to_window_pos(
+//            { highlights[i].selection_begin.x, highlights[i].selection_begin.y }
+//        );
+//
+//        NormalizedWindowPos selection_end_window_pos = absolute_to_window_pos(
+//            { highlights[i].selection_end.x, highlights[i].selection_end.y }
+//        );
+//
+//        if (selection_begin_window_pos.y > selection_end_window_pos.y) {
+//            std::swap(selection_begin_window_pos.y, selection_end_window_pos.y);
+//        }
+//        if (range_intersects(selection_begin_window_pos.y, selection_end_window_pos.y, -1.0f, 1.0f)) {
+//            res.push_back(highlights[i].uuid);
+//        }
+//    }
+//    return res;
+//}
+
+
 }
 
 void DocumentView::set_presentation_page_number(std::optional<int> page) {

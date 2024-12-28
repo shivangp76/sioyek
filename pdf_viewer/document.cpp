@@ -159,6 +159,7 @@ void Document::load_document_metadata_from_db() {
     marks.clear();
     bookmarks.clear();
     highlights.clear();
+    page_highlight_indices.clear();
     portals.clear();
     portals.clear();
 
@@ -350,6 +351,7 @@ std::string Document::add_highlight(const std::wstring& annot, AbsoluteDocumentP
         highlight.type,
         utf8_decode(highlight.uuid))) {
         highlights.push_back(highlight);
+        page_highlight_indices.clear();
         is_annotations_dirty = true;
     }
 
@@ -359,6 +361,7 @@ std::string Document::add_highlight(const std::wstring& annot, AbsoluteDocumentP
 std::string Document::add_highlight_with_existing_uuid(const Highlight& highlight) {
     db_manager->insert_highlight_synced(get_checksum(), highlight);
     highlights.push_back(highlight);
+    page_highlight_indices.clear();
     fill_index_highlight_rects(highlights.size()-1);
     is_annotations_dirty = true;
     return highlight.uuid;
@@ -407,6 +410,7 @@ std::string Document::add_highlight(const std::wstring& desc,
     highlight.update_creation_time();
 
     highlights.push_back(highlight);
+    page_highlight_indices.clear();
     db_manager->insert_highlight(
         get_checksum(),
         desc,
@@ -531,6 +535,7 @@ std::optional<Highlight> Document::delete_highlight_with_index(int index) {
 
     db_manager->delete_highlight(highlight_to_delete.uuid);
     highlights.erase(highlights.begin() + index);
+    page_highlight_indices.clear();
     is_annotations_dirty = true;
     return highlight_to_delete;
 }
@@ -5637,4 +5642,29 @@ std::vector<PdfLink> Document::find_references_to_range(float begin_y, float end
         }
     }
     return res.size() > 0 ? res : close_ones;
+}
+
+void Document::rebuild_page_highlight_indices() {
+    if ((highlights.size() > 0) && (page_highlight_indices.size() == 0)) {
+        for (int i = 0; i < highlights.size(); i++) {
+            int begin_page = highlights[i].selection_begin.to_document(this).page;
+            int end_page = highlights[i].selection_end.to_document(this).page;
+            if (begin_page > end_page) {
+                std::swap(begin_page, end_page);
+            }
+            for (int p = begin_page; p <= end_page; p++) {
+                page_highlight_indices[p].push_back(i);
+            }
+        }
+    }
+}
+
+std::vector<int> Document::get_page_visible_highlight_indices(int page) {
+    rebuild_page_highlight_indices();
+
+    if (page_highlight_indices.find(page) == page_highlight_indices.end()) {
+        return {};
+    }
+
+    return page_highlight_indices[page];
 }

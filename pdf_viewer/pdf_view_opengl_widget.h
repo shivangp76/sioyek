@@ -170,7 +170,7 @@ protected:
     void render_portals();
     void render_tags();
     std::vector<std::pair<QRect, QString>> get_hint_rect_and_texts();
-    void render_highlight_annotations();
+    void render_highlight_annotations(std::vector<int>& visible_pages);
     void render_text_highlights();
     void render_ruler_thresholds();
     void render_ruler();

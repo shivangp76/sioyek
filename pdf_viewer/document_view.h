@@ -520,7 +520,7 @@ public:
 
     std::vector<VisibleObjectIndex> get_generic_visible_item_indices();
 
-    std::vector<std::string> get_visible_highlight_uuids();
+    std::vector<std::string> get_visible_highlight_uuids(std::vector<int> visible_pages = {});
     std::vector<std::string> get_visible_bookmark_uuids();
     std::vector<std::string> get_visible_portal_uuids();
 

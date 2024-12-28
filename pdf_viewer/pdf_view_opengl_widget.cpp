@@ -999,7 +999,7 @@ void SioyekRendererBackend::my_render() {
     bind_vertex_array();
     bind_default();
     prepare_highlight_pipeline();
-    render_highlight_annotations();
+    render_highlight_annotations(visible_pages);
     render_text_highlights();
     render_ruler();
     render_bookmark_annotations();
@@ -1948,11 +1948,11 @@ void SioyekRendererBackend::render_text_highlights(){
     }
 }
 
-void SioyekRendererBackend::render_highlight_annotations(){
+void SioyekRendererBackend::render_highlight_annotations(std::vector<int>& visible_pages){
     std::vector<AbsoluteRect> borders_to_draw;
 
     if (doc()->can_use_highlights()) {
-        std::vector<std::string> visible_highlight_uuids = dv()->get_visible_highlight_uuids();
+        std::vector<std::string> visible_highlight_uuids = dv()->get_visible_highlight_uuids(visible_pages);
 
         for (size_t ind = 0; ind < visible_highlight_uuids.size(); ind++) {
             std::string uuid = visible_highlight_uuids[ind];
