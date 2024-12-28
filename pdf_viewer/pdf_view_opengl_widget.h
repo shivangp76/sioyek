@@ -297,7 +297,7 @@ protected:
     void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) override;
 
     void prepare_for_line_drawing() override;
-    void render_highlights_and_bookmarks();
+    //void render_highlights_and_bookmarks();
     void do_paint();
 
     void prepare_initial_render_pipeline() override;
@@ -369,7 +369,7 @@ protected:
     void set_highlight_color(const float* color, float alpha) override;
 
     void prepare_for_line_drawing() override;
-    void render_highlights_and_bookmarks();
+    //void render_highlights_and_bookmarks();
     void do_paint();
 
     void prepare_initial_render_pipeline() override;
