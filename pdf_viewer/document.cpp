@@ -5716,9 +5716,6 @@ void Document::on_portal_deleted() {
 }
 
 void Document::debug() {
-    for (auto [page, indices] : page_portal_indices) {
-        qDebug() << page << ": "  << indices;
-    }
 }
 
 template <>

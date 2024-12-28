@@ -89,6 +89,7 @@ protected:
     float zoom_level = 0.0f;
     VirtualPos offset = {0, 0};
     std::vector<VirtualRect> cached_virtual_rects;
+    float max_cached_y_offset = 0;
     bool two_page_mode = false;
 
 

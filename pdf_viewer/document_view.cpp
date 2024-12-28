@@ -690,6 +690,10 @@ bool DocumentView::move_absolute(float dx, float dy, bool force) {
 bool DocumentView::move_virtual(float dx, float dy, bool force) {
     offset.x += dx;
     offset.y += dy;
+
+    if (offset.y < 0) offset.y = 0;
+    if (offset.y > max_cached_y_offset) offset.y = max_cached_y_offset;
+
     return false;
 }
 
@@ -2322,6 +2326,7 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
 
     if ((cached_virtual_rects.size() == 0) || force) {
         cached_virtual_rects.clear();
+        max_cached_y_offset = 0;
         int num_pages = current_document->num_pages();
 
         if (two_page_mode) {
@@ -2349,6 +2354,9 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
                     page_rect.x1 = page_rect.x0 + page_width +  page_space_x;
 
                 }
+                if (page_rect.y1 > max_cached_y_offset) {
+                    max_cached_y_offset = page_rect.y1;
+                }
 
                 cached_virtual_rects.push_back(page_rect);
 
@@ -2365,6 +2373,9 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
                     page_rect.x1 = page_width / 2;
                     page_rect.y0 = cum_offset;
                     page_rect.y1 = cum_offset + page_height;
+                    if (page_rect.y1 > max_cached_y_offset) {
+                        max_cached_y_offset = page_rect.y1;
+                    }
 
                     cached_virtual_rects.push_back(page_rect);
 
@@ -3836,9 +3847,6 @@ bool DocumentView::is_line_select_mode() {
 }
 
 void DocumentView::debug() {
-    qDebug() << "_______";
-    qDebug() << ruler_line_index->merged_index;
-    qDebug() << ruler_line_index->unmerged_indices;
 }
 
 std::string DocumentView::get_selected_highlight_uuid() {
