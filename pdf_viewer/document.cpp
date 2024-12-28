@@ -5693,61 +5693,9 @@ std::vector<PdfLink> Document::find_references_to_range(float begin_y, float end
     return res.size() > 0 ? res : close_ones;
 }
 
-void Document::rebuild_page_highlight_indices() {
-    if ((highlights.size() > 0) && (page_highlight_indices.size() == 0)) {
-        for (int i = 0; i < highlights.size(); i++) {
-            int begin_page = highlights[i].selection_begin.to_document(this).page;
-            int end_page = highlights[i].selection_end.to_document(this).page;
-            if (begin_page > end_page) {
-                std::swap(begin_page, end_page);
-            }
-            for (int p = begin_page; p <= end_page; p++) {
-                page_highlight_indices[p].push_back(i);
-            }
-        }
-    }
-}
-
-void Document::rebuild_page_bookmark_indices() {
-    if ((bookmarks.size() > 0) && (page_bookmark_indices.size() == 0)) {
-        for (int i = 0; i < bookmarks.size(); i++) {
-
-            std::optional<AbsoluteRect> rect = bookmarks[i].get_rectangle();
-            if (!rect.has_value()) continue;
-
-            int begin_page = rect->top_left().to_document(this).page;
-            int end_page = rect->bottom_right().to_document(this).page;
-            if (begin_page > end_page) {
-                std::swap(begin_page, end_page);
-            }
-            for (int p = begin_page; p <= end_page; p++) {
-                page_bookmark_indices[p].push_back(i);
-            }
-        }
-    }
-}
-
-void Document::rebuild_page_portal_indices() {
-    if ((portals.size() > 0) && (page_portal_indices.size() == 0)) {
-        for (int i = 0; i < portals.size(); i++) {
-
-            std::optional<AbsoluteRect> rect = portals[i].get_rectangle();
-            if (!rect.has_value()) continue;
-
-            int begin_page = rect->top_left().to_document(this).page;
-            int end_page = rect->bottom_right().to_document(this).page;
-            if (begin_page > end_page) {
-                std::swap(begin_page, end_page);
-            }
-            for (int p = begin_page; p <= end_page; p++) {
-                page_portal_indices[p].push_back(i);
-            }
-        }
-    }
-}
 
 std::vector<int> Document::get_page_visible_highlight_indices(int page) {
-    rebuild_page_highlight_indices();
+    rebuild_page_annot_indices<Highlight>();
 
     if (page_highlight_indices.find(page) == page_highlight_indices.end()) {
         return {};
@@ -5757,7 +5705,7 @@ std::vector<int> Document::get_page_visible_highlight_indices(int page) {
 }
 
 std::vector<int> Document::get_page_visible_bookmark_indices(int page) {
-    rebuild_page_bookmark_indices();
+    rebuild_page_annot_indices<BookMark>();
 
     if (page_bookmark_indices.find(page) == page_bookmark_indices.end()) {
         return {};
@@ -5767,7 +5715,7 @@ std::vector<int> Document::get_page_visible_bookmark_indices(int page) {
 }
 
 std::vector<int> Document::get_page_visible_portal_indices(int page) {
-    rebuild_page_portal_indices();
+    rebuild_page_annot_indices<Portal>();
 
     if (page_portal_indices.find(page) == page_portal_indices.end()) {
         return {};
@@ -5842,4 +5790,19 @@ void Document::debug() {
     for (auto [page, indices] : page_portal_indices) {
         qDebug() << page << ": "  << indices;
     }
+}
+
+template <>
+std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Highlight>() {
+    return page_highlight_indices;
+}
+
+template <>
+std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<BookMark>() {
+    return page_bookmark_indices;
+}
+
+template <>
+std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Portal>() {
+    return page_portal_indices;
 }

@@ -206,9 +206,31 @@ private:
     void clear_toc_nodes();
     void clear_toc_node(TocNode* node);
     int find_highlight_index_with_uuid(const std::string& uuid);
-    void rebuild_page_highlight_indices();
-    void rebuild_page_bookmark_indices();
-    void rebuild_page_portal_indices();
+
+    template<typename T>
+    void rebuild_page_annot_indices() {
+
+        const std::vector<T>& annots = get_annots<T>();
+        std::unordered_map<int, std::vector<int>>& annot_page_indices = get_annot_page_indices<T>();
+
+        if ((annots.size() > 0) && (annot_page_indices.size() == 0)) {
+            for (int i = 0; i < annots.size(); i++) {
+
+                std::optional<AbsoluteRect> rect = annots[i].get_rectangle();
+                if (!rect.has_value()) continue;
+
+                int begin_page = rect->top_left().to_document(this).page;
+                int end_page = rect->bottom_right().to_document(this).page;
+                if (begin_page > end_page) {
+                    std::swap(begin_page, end_page);
+                }
+                for (int p = begin_page; p <= end_page; p++) {
+                    annot_page_indices[p].push_back(i);
+                }
+            }
+        }
+    }
+
 public:
 
     fz_document* doc = nullptr;
@@ -551,6 +573,9 @@ public:
     template <typename T>
     const std::vector<T>& get_annots() = delete;
 
+    template <typename T>
+    std::unordered_map<int, std::vector<int>>& get_annot_page_indices() = delete;
+
 
     template <typename T>
     std::vector<T>& get_annots_mut() = delete;
@@ -677,3 +702,11 @@ std::vector<int> Document::get_page_visible_annot_indices<BookMark>(int page);
 template <>
 std::vector<int> Document::get_page_visible_annot_indices<Portal>(int page);
 
+template <>
+std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Highlight>();
+
+template <>
+std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<BookMark>();
+
+template <>
+std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Portal>();

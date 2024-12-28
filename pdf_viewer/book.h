@@ -260,6 +260,7 @@ struct Highlight : Annotation {
 
     QJsonObject to_json(std::string doc_checksum) const;
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
+    std::optional<AbsoluteRect> get_rectangle() const override;
 
 };
 

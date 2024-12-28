@@ -384,6 +384,15 @@ QJsonObject Highlight::to_json(std::string doc_checksum) const
     return res;
 }
 
+std::optional<AbsoluteRect> Highlight::get_rectangle() const{
+    auto top_left = selection_begin;
+    auto bottom_right = selection_end;
+    if (top_left.y > bottom_right.y) {
+        std::swap(top_left, bottom_right);
+    }
+    return AbsoluteRect(top_left, bottom_right);
+}
+
 void Highlight::add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) {
     tuples.push_back({ Highlight::SELECTION_BEGIN_X_COLUMN_NAME, selection_begin.x });
     tuples.push_back({ Highlight::SELECTION_BEGIN_Y_COLUMN_NAME, selection_begin.y });
