@@ -2117,15 +2117,17 @@ bool ScratchPad::is_compile_invalid() {
 }
 
 
-std::vector<std::string> DocumentView::get_visible_portal_uuids() {
-    const std::vector<Portal>& portals = get_document()->get_portals();
-    std::vector<std::string> res;
-    for (int i = 0; i < portals.size(); i++) {
-        if (portals[i].is_visible() && portals[i].get_rectangle()->to_window_normalized(this).is_visible()) {
-            res.push_back(portals[i].uuid);
-        }
-    }
-    return res;
+std::vector<std::string> DocumentView::get_visible_portal_uuids(std::vector<int> visible_pages) {
+    return get_visible_annot_uuids<Portal>(visible_pages);
+
+    //const std::vector<Portal>& portals = get_document()->get_portals();
+    //std::vector<std::string> res;
+    //for (int i = 0; i < portals.size(); i++) {
+    //    if (portals[i].is_visible() && portals[i].get_rectangle()->to_window_normalized(this).is_visible()) {
+    //        res.push_back(portals[i].uuid);
+    //    }
+    //}
+    //return res;
 }
 
 std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices() {

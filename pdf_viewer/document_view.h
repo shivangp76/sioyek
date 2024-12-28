@@ -563,7 +563,7 @@ public:
 
     std::vector<std::string> get_visible_highlight_uuids(std::vector<int> visible_pages = {});
     std::vector<std::string> get_visible_bookmark_uuids(std::vector<int> visible_pages = {});
-    std::vector<std::string> get_visible_portal_uuids();
+    std::vector<std::string> get_visible_portal_uuids(std::vector<int> visible_pages = {});
 
     void set_presentation_page_number(std::optional<int> page);
     std::optional<int> get_presentation_page_number();
