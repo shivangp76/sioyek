@@ -7427,6 +7427,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    doc()->debug();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -9071,6 +9072,7 @@ void MainWidget::update_portal_with_uuid(const std::string& uuid) {
 void MainWidget::handle_bookmark_move_finish() {
     std::string uuid = main_document_view->visible_object_move_data->index.uuid;
     update_bookmark_with_uuid(uuid);
+    main_document_view->handle_bookmark_move_finish();
 }
 
 void MainWidget::handle_portal_move_finish() {

@@ -2112,18 +2112,6 @@ bool ScratchPad::is_compile_invalid() {
     }
 }
 
-std::vector<std::string> DocumentView::get_visible_bookmark_uuids() {
-    const std::vector<BookMark>& bookmarks = get_document()->get_bookmarks();
-    std::vector<std::string> res;
-    for (int i = 0; i < bookmarks.size(); i++) {
-        if (bookmarks[i].is_marked() || bookmarks[i].is_freetext()) {
-            if (bookmarks[i].get_rectangle()->to_window_normalized(this).is_visible()) {
-                res.push_back(bookmarks[i].uuid);
-            }
-        }
-    }
-    return res;
-}
 
 std::vector<std::string> DocumentView::get_visible_portal_uuids() {
     const std::vector<Portal>& portals = get_document()->get_portals();
@@ -2168,32 +2156,56 @@ std::vector<VisibleObjectIndex> DocumentView::get_generic_visible_item_indices()
 
 }
 
+//std::vector<int> DocumentView::get_visible_highlight_indices(const std::vector<int>& visible_pages) {
+//    std::vector<int> page_range_highlights;
+//    for (auto page : visible_pages) {
+//        std::vector<int> page_highlights = doc()->get_page_visible_highlight_indices(page);
+//        for (auto ind : page_highlights) {
+//            page_range_highlights.push_back(ind);
+//        }
+//    }
+//
+//    std::sort(page_range_highlights.begin(), page_range_highlights.end());
+//    auto last = std::unique(page_range_highlights.begin(), page_range_highlights.end());
+//    int last_index = std::distance(page_range_highlights.begin(), last);
+//    page_range_highlights.erase(last, page_range_highlights.end());
+//    return page_range_highlights;
+//
+//}
+//
+//std::vector<int> DocumentView::get_visible_bookmark_indices(const std::vector<int>& visible_pages) {
+//
+//    std::vector<int> page_range_bookmarks;
+//    for (auto page : visible_pages) {
+//        std::vector<int> page_highlights = doc()->get_page_visible_bookmark_indices(page);
+//        for (auto ind : page_highlights) {
+//            page_range_bookmarks.push_back(ind);
+//        }
+//    }
+//
+//    std::sort(page_range_bookmarks.begin(), page_range_bookmarks.end());
+//    auto last = std::unique(page_range_bookmarks.begin(), page_range_bookmarks.end());
+//    int last_index = std::distance(page_range_bookmarks.begin(), last);
+//    page_range_bookmarks.erase(last, page_range_bookmarks.end());
+//    return page_range_bookmarks;
+//}
+
+std::vector<std::string> DocumentView::get_visible_bookmark_uuids(std::vector<int> visible_pages) {
+    return get_visible_annot_uuids<BookMark>(visible_pages);
+    //const std::vector<BookMark>& bookmarks = get_document()->get_bookmarks();
+    //std::vector<std::string> res;
+    //for (int i = 0; i < bookmarks.size(); i++) {
+    //    if (bookmarks[i].is_marked() || bookmarks[i].is_freetext()) {
+    //        if (bookmarks[i].get_rectangle()->to_window_normalized(this).is_visible()) {
+    //            res.push_back(bookmarks[i].uuid);
+    //        }
+    //    }
+    //}
+    //return res;
+}
+
 std::vector<std::string> DocumentView::get_visible_highlight_uuids(std::vector<int> visible_pages) {
-    const std::vector<Highlight>& highlights = get_document()->get_highlights();
-
-    if (visible_pages.size() == 0) {
-        get_visible_pages(get_view_height(), visible_pages);
-    }
-
-
-    std::vector<int> page_range_highlights;
-    for (auto page : visible_pages) {
-        std::vector<int> page_highlights = doc()->get_page_visible_highlight_indices(page);
-        for (auto ind : page_highlights) {
-            page_range_highlights.push_back(ind);
-        }
-    }
-
-    std::sort(page_range_highlights.begin(), page_range_highlights.end());
-    auto last = std::unique(page_range_highlights.begin(), page_range_highlights.end());
-    int last_index = std::distance(page_range_highlights.begin(), last);
-    std::vector<std::string> res;
-    res.reserve(last_index);
-
-    for (int i = 0; i < last_index; i++) {
-        res.push_back(highlights[page_range_highlights[i]].uuid);
-    }
-    return res;
+    return get_visible_annot_uuids<Highlight>(visible_pages);
 
 //    std::vector<std::string> res;
 //
@@ -5215,9 +5227,14 @@ void DocumentView::handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos
     float diff_y = current_mouse_abspos.y - visible_object_move_data->initial_mouse_position.y;
 
     //BookMark& bookmark = doc()->get_bookmarks()[visible_object_move_data->index.index];
-    BookMark* bookmark = current_document->get_bookmark_with_uuid(visible_object_move_data->index.uuid);
+    int bookmark_index = doc()->get_bookmark_index_with_uuid(visible_object_move_data->index.uuid);
+    BookMark* bookmark = doc()->get_bookmark_pointer_with_index(bookmark_index);
+    //BookMark* bookmark = current_document->get_bookmark_with_uuid(visible_object_move_data->index.uuid);
 
     if (bookmark) {
+        AbsoluteRect prev_rect = bookmark->get_rectangle().value();
+        int prev_begin_page = prev_rect.top_left().to_document(doc()).page;
+        int prev_end_page = prev_rect.top_left().to_document(doc()).page;
 
         auto bm_width = bookmark->rect().width();
         auto bm_height = bookmark->rect().height();
@@ -5229,11 +5246,29 @@ void DocumentView::handle_bookmark_move(AbsoluteDocumentPos current_mouse_abspos
             bookmark->end_x = bookmark->begin_x + bm_width;
             bookmark->end_y = bookmark->begin_y + bm_height;
         }
+
+        AbsoluteRect new_rect = bookmark->get_rectangle().value();
+        int new_begin_page = new_rect.top_left().to_document(doc()).page;
+        int new_end_page = new_rect.top_left().to_document(doc()).page;
+
+        // when moving bookmarks, we need to update the page index of the bookmarks
+        // we don't delete the bookmark index from the previous page, we handle that in handle_bookmark_move_finish
+        if ((new_begin_page != prev_begin_page)){
+            doc()->add_bookmark_index_to_page(new_begin_page, bookmark_index);
+        }
+
+        if ((new_end_page != prev_end_page) && (new_end_page != new_begin_page)){
+            doc()->add_bookmark_index_to_page(new_end_page, bookmark_index);
+        }
     }
 }
 
 Document* DocumentView::doc(){
     return current_document;
+}
+
+void DocumentView::handle_bookmark_move_finish() {
+    doc()->invalidate_page_visible_bookmarks();
 }
 
 void DocumentView::handle_portal_move_finish() {

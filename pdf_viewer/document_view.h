@@ -15,6 +15,7 @@
 
 #include "coordinates.h"
 #include "book.h"
+#include "document.h"
 
 extern float ZOOM_INC_FACTOR;
 extern float SCROLL_ZOOM_INC_FACTOR;
@@ -520,8 +521,47 @@ public:
 
     std::vector<VisibleObjectIndex> get_generic_visible_item_indices();
 
+    template<typename T>
+    std::vector<int> get_visible_annot_indices(const std::vector<int>& visible_pages) {
+        std::vector<int> page_range_annots;
+        for (auto page : visible_pages) {
+            std::vector<int> page_highlights = doc()->get_page_visible_annot_indices<T>(page);
+            for (auto ind : page_highlights) {
+                page_range_annots.push_back(ind);
+            }
+        }
+
+        std::sort(page_range_annots.begin(), page_range_annots.end());
+        auto last = std::unique(page_range_annots.begin(), page_range_annots.end());
+        int last_index = std::distance(page_range_annots.begin(), last);
+        page_range_annots.erase(last, page_range_annots.end());
+        return page_range_annots;
+    }
+
+    //std::vector<int> get_visible_highlight_indices(const std::vector<int>& visible_pages);
+    //std::vector<int> get_visible_bookmark_indices(const std::vector<int>& visible_pages);
+
+    template<typename T>
+    std::vector<std::string> get_visible_annot_uuids(std::vector<int> visible_pages = {}) {
+
+        const std::vector<T>& annots = doc()->get_annots<T>();
+        if (visible_pages.size() == 0) {
+            get_visible_pages(get_view_height(), visible_pages);
+        }
+
+        std::vector<int> indices = get_visible_annot_indices<T>(visible_pages);
+
+        std::vector<std::string> res;
+        res.reserve(indices.size());
+
+        for (auto index : indices) {
+            res.push_back(annots[index].uuid);
+        }
+        return res;
+    }
+
     std::vector<std::string> get_visible_highlight_uuids(std::vector<int> visible_pages = {});
-    std::vector<std::string> get_visible_bookmark_uuids();
+    std::vector<std::string> get_visible_bookmark_uuids(std::vector<int> visible_pages = {});
     std::vector<std::string> get_visible_portal_uuids();
 
     void set_presentation_page_number(std::optional<int> page);
@@ -722,5 +762,4 @@ public:
 
 
 };
-
 

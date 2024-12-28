@@ -159,9 +159,10 @@ void Document::load_document_metadata_from_db() {
     marks.clear();
     bookmarks.clear();
     highlights.clear();
-    page_highlight_indices.clear();
     portals.clear();
     portals.clear();
+    invalidate_page_visible_bookmarks();
+    invalidate_page_visible_highlights();
 
     std::optional<std::string> checksum_ = get_checksum_fast();
     if (checksum_) {
@@ -210,6 +211,7 @@ std::string Document::add_bookmark(const std::wstring& desc, float y_offset) {
     bookmark.uuid = new_uuid_utf8();
     bookmark.update_creation_time();
     bookmarks.push_back(bookmark);
+    on_bookmark_added();
     db_manager->insert_bookmark(get_checksum(), desc, y_offset, utf8_decode(bookmark.uuid));
     is_annotations_dirty = true;
     return bookmark.uuid;
@@ -226,6 +228,7 @@ std::string Document::add_marked_bookmark(const std::wstring& desc, AbsoluteDocu
 
     if (db_manager->insert_bookmark_marked(get_checksum(), desc, pos.x, pos.y, utf8_decode(bookmark.uuid))) {
         bookmarks.push_back(bookmark);
+        on_bookmark_added();
         is_annotations_dirty = true;
     }
     return bookmark.uuid;
@@ -234,6 +237,7 @@ std::string Document::add_marked_bookmark(const std::wstring& desc, AbsoluteDocu
 std::string Document::add_incomplete_bookmark(BookMark incomplete_bookmark){
     incomplete_bookmark.uuid = new_uuid_utf8();
     bookmarks.push_back(incomplete_bookmark);
+    on_bookmark_added();
     return incomplete_bookmark.uuid;
 }
 
@@ -262,6 +266,7 @@ void Document::undo_pending_bookmark(const std::string& uuid) {
     int index = get_bookmark_index_with_uuid(uuid);
     if (index >= 0 && index < bookmarks.size()) {
         bookmarks.erase(bookmarks.begin() + index);
+        on_bookmark_deleted();
     }
 }
 
@@ -284,6 +289,7 @@ void Document::add_freetext_bookmark_with_color(const std::wstring& desc, Absolu
 
     if (db_manager->insert_bookmark_freetext(get_checksum(), bookmark)) {
         bookmarks.push_back(bookmark);
+        on_bookmark_added();
         is_annotations_dirty = true;
     }
 }
@@ -351,7 +357,7 @@ std::string Document::add_highlight(const std::wstring& annot, AbsoluteDocumentP
         highlight.type,
         utf8_decode(highlight.uuid))) {
         highlights.push_back(highlight);
-        page_highlight_indices.clear();
+        on_highlight_added();
         is_annotations_dirty = true;
     }
 
@@ -361,7 +367,7 @@ std::string Document::add_highlight(const std::wstring& annot, AbsoluteDocumentP
 std::string Document::add_highlight_with_existing_uuid(const Highlight& highlight) {
     db_manager->insert_highlight_synced(get_checksum(), highlight);
     highlights.push_back(highlight);
-    page_highlight_indices.clear();
+    on_highlight_added();
     fill_index_highlight_rects(highlights.size()-1);
     is_annotations_dirty = true;
     return highlight.uuid;
@@ -374,6 +380,7 @@ std::string Document::add_bookmark_with_existing_uuid(const BookMark& bookmark) 
         );
 
     bookmarks.push_back(bookmark);
+    on_bookmark_added();
     is_annotations_dirty = true;
     return bookmark.uuid;
 }
@@ -410,7 +417,7 @@ std::string Document::add_highlight(const std::wstring& desc,
     highlight.update_creation_time();
 
     highlights.push_back(highlight);
-    page_highlight_indices.clear();
+    on_highlight_added();
     db_manager->insert_highlight(
         get_checksum(),
         desc,
@@ -512,6 +519,7 @@ std::optional<BookMark> Document::delete_closest_bookmark(float to_y_offset) {
         db_manager->delete_bookmark(deleted_bookmark.uuid);
         is_annotations_dirty = true;
         bookmarks.erase(bookmarks.begin() + closest_index);
+        on_bookmark_deleted();
         return deleted_bookmark;
     }
     return {};
@@ -523,6 +531,7 @@ std::optional<BookMark> Document::delete_bookmark(int index) {
         if (db_manager->delete_bookmark(bookmarks[index].uuid)) {
             BookMark deleted_bookmark = bookmarks[index];
             bookmarks.erase(bookmarks.begin() + index);
+            on_bookmark_added();
             is_annotations_dirty = true;
             return deleted_bookmark;
         }
@@ -535,7 +544,7 @@ std::optional<Highlight> Document::delete_highlight_with_index(int index) {
 
     db_manager->delete_highlight(highlight_to_delete.uuid);
     highlights.erase(highlights.begin() + index);
-    page_highlight_indices.clear();
+    on_highlight_deleted();
     is_annotations_dirty = true;
     return highlight_to_delete;
 }
@@ -567,6 +576,7 @@ std::optional<BookMark> Document::delete_bookmark_with_index(int index) {
 
     db_manager->delete_bookmark(bookmark_to_delete.uuid);
     bookmarks.erase(bookmarks.begin() + index);
+    on_bookmark_deleted();
     is_annotations_dirty = true;
     return bookmark_to_delete;
 }
@@ -3367,6 +3377,8 @@ void Document::clear_document_caches() {
     cached_fastread_highlights.clear();
     cached_page_index.clear();
     cached_page_line_info.clear();
+    invalidate_page_visible_highlights();
+    invalidate_page_visible_bookmarks();
 
 
     for (auto [_, cached_small_pixmap] : cached_small_pixmaps) {
@@ -3906,6 +3918,9 @@ void Document::load_drawings_async() {
 
 void Document::load_annotations(bool sync) {
 
+    invalidate_page_visible_highlights();
+    invalidate_page_visible_bookmarks();
+
     //if (document_indexing_thread.has_value() && document_indexing_thread->)
     should_reload_annotations = false;
     if (highlights.size() > 0 && (highlights[0].highlight_rects.size() == 0)) {
@@ -4419,6 +4434,13 @@ Portal* Document::get_portal_with_uuid(const std::string& uuid) {
 BookMark* Document::get_bookmark_with_uuid(const std::string& uuid) {
     int index = get_bookmark_index_with_uuid(uuid);
     if (index >= 0) return &bookmarks[index];
+    return nullptr;
+}
+
+BookMark* Document::get_bookmark_pointer_with_index(int index) {
+    if (index >= 0 && index < bookmarks.size()) {
+        return &bookmarks[index];
+    }
     return nullptr;
 }
 
@@ -5434,6 +5456,15 @@ const std::vector<Portal>& Document::get_annots<Portal>() {
     return get_portals();
 }
 
+template <>
+std::vector<int> Document::get_page_visible_annot_indices<Highlight>(int page) {
+    return get_page_visible_highlight_indices(page);
+}
+
+template <>
+std::vector<int> Document::get_page_visible_annot_indices<BookMark>(int page) {
+    return get_page_visible_bookmark_indices(page);
+}
 
 template <>
 std::vector<Highlight>& Document::get_annots_mut<Highlight>() {
@@ -5659,6 +5690,25 @@ void Document::rebuild_page_highlight_indices() {
     }
 }
 
+void Document::rebuild_page_bookmark_indices() {
+    if ((bookmarks.size() > 0) && (page_bookmark_indices.size() == 0)) {
+        for (int i = 0; i < bookmarks.size(); i++) {
+
+            std::optional<AbsoluteRect> rect = bookmarks[i].get_rectangle();
+            if (!rect.has_value()) continue;
+
+            int begin_page = rect->top_left().to_document(this).page;
+            int end_page = rect->bottom_right().to_document(this).page;
+            if (begin_page > end_page) {
+                std::swap(begin_page, end_page);
+            }
+            for (int p = begin_page; p <= end_page; p++) {
+                page_bookmark_indices[p].push_back(i);
+            }
+        }
+    }
+}
+
 std::vector<int> Document::get_page_visible_highlight_indices(int page) {
     rebuild_page_highlight_indices();
 
@@ -5667,4 +5717,58 @@ std::vector<int> Document::get_page_visible_highlight_indices(int page) {
     }
 
     return page_highlight_indices[page];
+}
+
+std::vector<int> Document::get_page_visible_bookmark_indices(int page) {
+    rebuild_page_bookmark_indices();
+
+    if (page_bookmark_indices.find(page) == page_bookmark_indices.end()) {
+        return {};
+    }
+
+    return page_bookmark_indices[page];
+}
+
+void Document::add_bookmark_index_to_page(int page, int index) {
+    if (page_bookmark_indices.find(page) == page_bookmark_indices.end()) {
+        page_bookmark_indices[page] = { index };
+    }
+    else {
+        auto it = std::find(page_bookmark_indices[page].begin(), page_bookmark_indices[page].end(), index);
+        bool already_exists = it != page_bookmark_indices[page].end();
+        if (!already_exists) {
+            page_bookmark_indices[page].push_back(index);
+        }
+    }
+}
+
+void Document::invalidate_page_visible_bookmarks() {
+    page_bookmark_indices.clear();
+}
+
+void Document::invalidate_page_visible_highlights() {
+    page_highlight_indices.clear();
+}
+
+
+void Document::on_bookmark_added() {
+    invalidate_page_visible_bookmarks();
+}
+
+void Document::on_bookmark_deleted() {
+    invalidate_page_visible_bookmarks();
+}
+
+void Document::on_highlight_added() {
+    invalidate_page_visible_highlights();
+}
+
+void Document::on_highlight_deleted() {
+    invalidate_page_visible_highlights();
+}
+
+void Document::debug() {
+    for (auto [page, indices] : page_bookmark_indices) {
+        qDebug() << page << ": "  << indices;
+    }
 }

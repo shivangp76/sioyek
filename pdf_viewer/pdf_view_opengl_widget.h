@@ -170,11 +170,11 @@ protected:
     void render_portals();
     void render_tags();
     std::vector<std::pair<QRect, QString>> get_hint_rect_and_texts();
-    void render_highlight_annotations(std::vector<int>& visible_pages);
+    void render_highlight_annotations(const std::vector<int>& visible_pages);
+    void render_bookmark_annotations(const std::vector<int>& visible_pages);
     void render_text_highlights();
     void render_ruler_thresholds();
     void render_ruler();
-    void render_bookmark_annotations();
     void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
     void fill_rect(QRect rect, const QColor& color);
     ColorPalette get_actual_color_palette(ColorPalette forced_color_palette);

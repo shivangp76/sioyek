@@ -1002,7 +1002,7 @@ void SioyekRendererBackend::my_render() {
     render_highlight_annotations(visible_pages);
     render_text_highlights();
     render_ruler();
-    render_bookmark_annotations();
+    render_bookmark_annotations(visible_pages);
 
     bind_default();
     render_portals();
@@ -1948,15 +1948,16 @@ void SioyekRendererBackend::render_text_highlights(){
     }
 }
 
-void SioyekRendererBackend::render_highlight_annotations(std::vector<int>& visible_pages){
+void SioyekRendererBackend::render_highlight_annotations(const std::vector<int>& visible_pages){
     std::vector<AbsoluteRect> borders_to_draw;
 
     if (doc()->can_use_highlights()) {
-        std::vector<std::string> visible_highlight_uuids = dv()->get_visible_highlight_uuids(visible_pages);
+        std::vector<int> visible_highlight_indices = dv()->get_visible_annot_indices<Highlight>(visible_pages);
+        auto highlights = doc()->get_highlights();
 
-        for (size_t ind = 0; ind < visible_highlight_uuids.size(); ind++) {
-            std::string uuid = visible_highlight_uuids[ind];
-            Highlight* highlight = doc()->get_highlight_with_uuid(uuid);
+        for (auto highlight_index : visible_highlight_indices) {
+            //std::string uuid = visible_highlight_uuids[ind];
+            Highlight* highlight = &highlights[highlight_index];
 
             if (!highlight) continue;
 
@@ -2966,12 +2967,14 @@ int SioyekRendererBackend::get_ruler_display_mode() {
     return RULER_DISPLAY_MODE;
 }
 
-void SioyekRendererBackend::render_bookmark_annotations() {
+void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& visible_pages) {
 
     if (!doc()->can_use_highlights()) return;
 
     const std::vector<BookMark>& bookmarks = doc()->get_bookmarks();
-    for (int i = 0; i < bookmarks.size(); i++) {
+    std::vector<int> visible_bookmark_indices = dv()->get_visible_annot_indices<BookMark>(visible_pages);
+
+    for (auto i : visible_bookmark_indices) {
         if (bookmarks[i].begin_y != -1) {
             if (bookmarks[i].end_x == -1) {
 

@@ -98,6 +98,7 @@ private:
     std::vector<Highlight> highlights;
     std::vector<Portal> portals;
     std::unordered_map<int, std::vector<int>> page_highlight_indices;
+    std::unordered_map<int, std::vector<int>> page_bookmark_indices;
 
     DatabaseManager* db_manager = nullptr;
     std::vector<TocNode*> top_level_toc_nodes;
@@ -205,6 +206,7 @@ private:
     void clear_toc_node(TocNode* node);
     int find_highlight_index_with_uuid(const std::string& uuid);
     void rebuild_page_highlight_indices();
+    void rebuild_page_bookmark_indices();
 public:
 
     fz_document* doc = nullptr;
@@ -459,6 +461,7 @@ public:
 
     Portal* get_portal_with_uuid(const std::string& uuid);
     BookMark* get_bookmark_with_uuid(const std::string& uuid);
+    BookMark* get_bookmark_pointer_with_index(int index);
     Highlight* get_highlight_with_uuid(const std::string& uuid);
 
     //void create_table_of_contents(std::vector<TocNode*>& top_nodes);
@@ -545,9 +548,12 @@ public:
     template <typename T>
     const std::vector<T>& get_annots() = delete;
 
+
     template <typename T>
     std::vector<T>& get_annots_mut() = delete;
 
+    template <typename T>
+    std::vector<int> get_page_visible_annot_indices(int page) = delete;
 
     template <typename T>
     std::vector<T> get_unsynced_annots() {
@@ -587,6 +593,19 @@ public:
     ParsedUri parse_link(const PdfLink& link);
 
     std::vector<int> get_page_visible_highlight_indices(int page);
+    std::vector<int> get_page_visible_bookmark_indices(int page);
+
+    void debug();
+    //void add_highlight_index_to_page(int page, int index);
+    void add_bookmark_index_to_page(int page, int index);
+    void invalidate_page_visible_bookmarks();
+    void invalidate_page_visible_highlights();
+
+    void on_bookmark_added();
+    void on_bookmark_deleted();
+
+    void on_highlight_added();
+    void on_highlight_deleted();
 
     friend class DocumentManager;
 };
@@ -638,3 +657,10 @@ template <>
 std::vector<BookMark>& Document::get_annots_mut<BookMark>();
 template <>
 std::vector<Portal>& Document::get_annots_mut<Portal>();
+
+template <>
+std::vector<int> Document::get_page_visible_annot_indices<Highlight>(int page);
+
+template <>
+std::vector<int> Document::get_page_visible_annot_indices<BookMark>(int page);
+
