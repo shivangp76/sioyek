@@ -8065,7 +8065,7 @@ public:
                 widget->show_current_widget();
             }
             if (config->config_type == ConfigType::Color3) {
-                widget->push_current_widget(new Color3ConfigUI(config_name, widget, (float*)config->value));
+                widget->push_current_widget(new Color3ConfigUI(config_name, widget, (float*)config->value), false);
                 widget->show_current_widget();
             }
             if (config->config_type == ConfigType::Enum) {

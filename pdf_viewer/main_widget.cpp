@@ -3865,8 +3865,8 @@ void MainWidget::set_current_widget(QWidget* new_widget) {
     //}
 }
 
-void MainWidget::push_current_widget(QWidget* new_widget) {
-    if (current_widget_stack.size() > 0) {
+void MainWidget::push_current_widget(QWidget* new_widget, bool hide_previous) {
+    if (hide_previous && current_widget_stack.size() > 0) {
         current_widget_stack.back()->hide();
     }
     current_widget_stack.push_back(new_widget);

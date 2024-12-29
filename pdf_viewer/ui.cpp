@@ -853,6 +853,14 @@ Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* conf
     color_picker = new QColorDialog(initial_color, this);
     color_picker->show();
 
+    connect(color_picker, &QColorDialog::finished, [&]() {
+        main_widget->pop_current_widget();
+        });
+
+    connect(color_picker, &QDialog::rejected, [&, initial_color=initial_color]() {
+        convert_qcolor_to_float3(initial_color, color_location);
+        });
+
     connect(color_picker, &QColorDialog::colorSelected, [&](const QColor& color) {
         convert_qcolor_to_float3(color, color_location);
         main_widget->invalidate_render();
@@ -865,7 +873,7 @@ Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* conf
 
     connect(color_picker, &QColorDialog::currentColorChanged, [&](const QColor& color) {
         convert_qcolor_to_float3(color, color_location);
-        main_widget->validate_render();
+        main_widget->invalidate_render();
         });
 
     //    QQmlEngine* engine = new QQmlEngine();

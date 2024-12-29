@@ -539,7 +539,7 @@ public:
     // void schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
     void update_closest_link_with_opened_book_state(const OpenedBookState& new_state);
     void set_current_widget(QWidget* new_widget);
-    void push_current_widget(QWidget* new_widget);
+    void push_current_widget(QWidget* new_widget, bool hide_previous=true);
     bool pop_current_widget(bool canceled = false);
     void show_current_widget();
     // bool focus_on_visual_mark_pos(bool moving_down);
