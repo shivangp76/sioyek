@@ -1,17 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <regex>
 #include <fstream>
-#include <sstream>
-#include <unordered_map>
-#include <thread>
 #include <mutex>
 #include <optional>
 #include <utility>
-#include <memory>
 #include <filesystem>
-#include <map>
 
 #ifdef SIOYEK_ANDROID
 #include <QtCore/private/qandroidextras_p.h>
@@ -27,7 +21,7 @@
 #include <qopenglfunctions.h>
 #include <qopengl.h>
 #include <qwindow.h>
-#include <qkeyevent.h>
+#include <QKeyEvent>
 #include <qlineedit.h>
 #include <qtreeview.h>
 #include <qsortfilterproxymodel.h>
@@ -65,13 +59,12 @@
 #include "database.h"
 #include "book.h"
 #include "utils.h"
-#include "ui.h"
 #include "pdf_renderer.h"
+#include "ui.h"
 #include "document.h"
 #include "document_view.h"
 #include "pdf_view_opengl_widget.h"
 #include "config.h"
-#include "utf8.h"
 #include "main_widget.h"
 #include "path.h"
 #include "RunGuard.h"

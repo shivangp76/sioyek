@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include <qjsondocument.h>
-#include <qkeyevent.h>
+#include <QKeyEvent>
 #include <qstring.h>
 #include <qstringlist.h>
 #include <qlocalsocket.h>
@@ -3502,8 +3502,11 @@ public:
 
 class MoveSmoothCommand : public Command {
     bool was_held = false;
+    float velocity_multiplier = 1.0f;
 public:
-    MoveSmoothCommand(std::string name, MainWidget* w) : Command(name, w) {};
+    MoveSmoothCommand(std::string name, MainWidget* w, float velocity_mult=1.0f) : Command(name, w) {
+        velocity_multiplier = velocity_mult;
+    };
 
     virtual bool is_down() = 0;
 
@@ -3513,7 +3516,7 @@ public:
         }
         else {
             widget->handle_move_smooth_hold(is_down());
-            widget->set_fixed_velocity(is_down() ? -SMOOTH_MOVE_MAX_VELOCITY : SMOOTH_MOVE_MAX_VELOCITY);
+            widget->set_fixed_velocity(is_down() ? -SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier : SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier);
         }
     }
 
@@ -3558,6 +3561,28 @@ public:
     static inline const std::string cname = "move_down_smooth";
     static inline const std::string hname = "";
     MoveDownSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w) {};
+
+    bool is_down() {
+        return true;
+    }
+};
+
+class ScreenUpSmoothCommand : public MoveSmoothCommand {
+public:
+    static inline const std::string cname = "screen_up_smooth";
+    static inline const std::string hname = "Move screen up smoothly";
+    ScreenUpSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w, 3.0f) {};
+
+    bool is_down() {
+        return false;
+    }
+};
+
+class ScreenDownSmoothCommand : public MoveSmoothCommand {
+public:
+    static inline const std::string cname = "screen_down_smooth";
+    static inline const std::string hname = "Move screen down smoothly";
+    ScreenDownSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w, 3.0f) {};
 
     bool is_down() {
         return true;
@@ -8549,6 +8574,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ResyncDocumentCommand>(this);
     register_command<DownloadUnsyncedFilesCommand>(this);
     register_command<SyncCurrentFileLocation>(this);
+    register_command<ScreenUpSmoothCommand>(this);
+    register_command<ScreenDownSmoothCommand>(this);
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {
         std::string command_name = utf8_encode(command_name_);

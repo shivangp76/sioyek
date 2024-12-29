@@ -15,7 +15,7 @@
 #include <qcommandlineparser.h>
 #include <qvariantmap.h>
 
-#include <qkeyevent.h>
+#include <QKeyEvent>
 #include <qstandarditemmodel.h>
 #include <qpoint.h>
 #include <qjsonarray.h>

@@ -3,8 +3,10 @@ project(sioyek VERSION 2.0.0 LANGUAGES C CXX)
 
 option(USE_SYSTEM_MUPDF "Use system mupdf" OFF)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS 3DInput Gui Network OpenGL QuickWidgets Svg TextToSpeech Widgets)
@@ -225,6 +227,10 @@ target_link_libraries(sioyek PRIVATE
     Qt::OpenGLWidgets
 )
 
+# find_package(ZLIB REQUIRED)
+# find_package(HarfBuzz REQUIRED)
+# find_package(SQLite3 REQUIRED)
+
 if(ANDROID)
     target_compile_definitions(sioyek PRIVATE
         SIOYEK_ANDROID
@@ -280,6 +286,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 endif()
 
+#add_library(fzf STATIC
+#    fzf/fzf.c
+#    fzf/fzf.h
+#)
 
 if(WIN32)
 
