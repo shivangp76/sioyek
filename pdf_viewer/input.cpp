@@ -8069,15 +8069,10 @@ public:
                 widget->show_current_widget();
             }
             if (config->config_type == ConfigType::Enum) {
-                std::wstring current_value = *(std::wstring*)config->value;
+                int current_value = *(int*)config->value;
                 std::vector<std::wstring> possible_values = std::get<EnumExtras>(config->extras).possible_values;
-                int index = -1;
-                for (int i = 0; i < possible_values.size(); i++) {
-                    if (current_value == possible_values[i]) {
-                        index = i;
-                    }
-                }
-                widget->push_current_widget(new EnumConfigUI(config_name, widget, possible_values, index));
+
+                widget->push_current_widget(new EnumConfigUI(config_name, widget, possible_values, current_value));
                 widget->show_current_widget();
             }
 
