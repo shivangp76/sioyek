@@ -328,9 +328,14 @@ def get_latex_documentation():
                 dict_key = 'configs'
             
             video_timestamp = None
+
             for item in command.get_items():
                 if item in video_timestamps[dict_key]:
                     video_timestamp = video_timestamps[dict_key][item]
+                    break
+            if video_timestamp is None:
+                video_timestamp = video_timestamps[dict_key].get(name_to_file_map[command.title], None)
+
             if video_timestamp is not None:
                 # link to the youtube video in timestamp
                 latex_video_unicode_symbol = '\\inputencoding{utf8}{\\symbol{{57344}}'
