@@ -1422,7 +1422,7 @@ void index_generic(const std::vector<fz_stext_char*>& flat_chars, int page_numbe
         }
     }
 
-    std::wregex index_dst_regex(L"(^|\n)[A-Z][a-zA-Z]{2,}\.?[ \t]+[0-9]+((\\.|\\-)[0-9]+)*");
+    std::wregex index_dst_regex(L"(^|\n)[A-Z][a-zA-Z]{2,}\\.?[ \t]+[0-9]+((\\.|\\-)[0-9]+)*");
     //std::wregex index_dst_regex(L"(^|\n)[A-Z][a-zA-Z]{2,}[ \t]+[0-9]+(\-[0-9]+)*");
     //std::wregex index_src_regex(L"[a-zA-Z]{3,}[ \t]+[0-9]+(\.[0-9]+)*");
     std::wsmatch match;
@@ -4210,7 +4210,7 @@ bool is_text_refernce_rather_than_paper_name(QString text) {
         return true;
     }
 
-    QStringList parts = text.split(QRegularExpression("[ \(\)]"));
+    QStringList parts = text.split(QRegularExpression("[ \\(\\)]"));
     for (int i = 0; i < parts.size(); i++) {
         if (is_year(parts[i])) {
             return true;

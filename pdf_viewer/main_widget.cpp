@@ -3962,8 +3962,6 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
 
     QString qtext = QString::fromStdWString(command);
 
-    qtext.arg(qfile_path);
-
 #ifdef SIOYEK_QT6
     QStringList command_parts_ = qtext.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
 #else

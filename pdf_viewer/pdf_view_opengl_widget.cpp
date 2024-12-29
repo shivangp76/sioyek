@@ -1194,7 +1194,6 @@ void SioyekRendererBackend::draw_empty_helper_message(QString message) {
     painter.drawText(view_width / 2 - message_width / 2, view_height / 2 - message_height / 2, message);
 }
 
-
 void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
     ColorPalette mode = forced_palette == ColorPalette::None ? document_view->get_current_color_mode() : forced_palette;
 
