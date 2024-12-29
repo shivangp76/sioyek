@@ -1323,13 +1323,19 @@ QString translate_command_search_string(QString actual_text) {
         actual_text = "setsaveconfig_" + actual_text.right(actual_text.size() - 2);
     }
 
+
     if (actual_text.startsWith("!")) {
         actual_text = "toggleconfig_" + actual_text.right(actual_text.size() - 1);
+    }
+
+    if (actual_text.startsWith("==")) {
+        actual_text = "setconfig_" + actual_text.right(actual_text.size() - 2);
     }
 
     if (actual_text.startsWith("=")) {
         actual_text = "setconfig_" + actual_text.right(actual_text.size() - 1);
     }
+
 
     if (actual_text.startsWith("+")) {
         actual_text = "saveconfig_" + actual_text.right(actual_text.size() - 1);

@@ -1073,7 +1073,14 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     //QObject::connect(dynamic_cast<MyLineEdit*>(text_command_line_edit), &MyLineEdit::prev_suggestion, this, &MainWidget::on_prev_text_suggestion);
 
     on_command_done = [&](std::string command_name, std::string query_text) {
-        if (query_text.size() > 0 && (query_text.back() == '?' || query_text[0] == '?')) {
+        if (query_text.size() >= 2 && query_text.substr(0, 2) == "==") {
+            if (QString::fromStdString(command_name).startsWith("setconfig_")) {
+                std::string config_name = command_name.substr(10);
+                execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(config_name) + L")");
+            }
+            //qDebug() << command_name;
+        }
+        else if (query_text.size() > 0 && (query_text.back() == '?' || query_text[0] == '?')) {
             if (query_text.size() == 1) {
                 open_documentation_file_for_name("", "");
                 invalidate_render();
