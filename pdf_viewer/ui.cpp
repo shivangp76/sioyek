@@ -849,7 +849,8 @@ void ConfigUI::resizeEvent(QResizeEvent* resize_event) {
 
 Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* config_location_) : ConfigUI(name, parent) {
     color_location = config_location_;
-    color_picker = new QColorDialog(this);
+    QColor initial_color = convert_float3_to_qcolor(color_location);
+    color_picker = new QColorDialog(initial_color, this);
     color_picker->show();
 
     connect(color_picker, &QColorDialog::colorSelected, [&](const QColor& color) {
@@ -860,6 +861,11 @@ Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* conf
         if (should_persist) {
             main_widget->persist_config();
         }
+        });
+
+    connect(color_picker, &QColorDialog::currentColorChanged, [&](const QColor& color) {
+        convert_qcolor_to_float3(color, color_location);
+        main_widget->validate_render();
         });
 
     //    QQmlEngine* engine = new QQmlEngine();
