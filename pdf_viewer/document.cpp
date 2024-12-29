@@ -3267,7 +3267,7 @@ const PageMergedLinesInfoAbsolute& Document::get_page_lines(int page) {
             PageMergedLinesInfoAbsolute res;
 
             fz_pixmap* pixmap = get_small_pixmap(page);
-            static const std::vector<AbsoluteRect> empty = {};
+            static const PageMergedLinesInfoAbsolute empty;
             if (pixmap == nullptr) return empty;
             std::vector<unsigned int> hist = get_max_width_histogram_from_pixmap(pixmap);
             std::vector<unsigned int> line_locations;
