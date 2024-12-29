@@ -7989,6 +7989,7 @@ public:
     std::optional<Requirement> next_requirement(MainWidget* widget) {
         if (TOUCH_MODE || force_touch) {
             Config* config = config_manager->get_mut_config_with_name(utf8_decode(config_name));
+            if (config == nullptr) return {};
             if ((!text.has_value()) && config->config_type == ConfigType::String) {
                 Requirement res;
                 res.type = RequirementType::Text;
@@ -8051,6 +8052,7 @@ public:
 
         if (TOUCH_MODE || force_touch) {
             Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
+            if (config == nullptr) return;
 
 
             if (config->config_type == ConfigType::String || config->config_type == ConfigType::FilePath || config->config_type == ConfigType::FolderPath) {
