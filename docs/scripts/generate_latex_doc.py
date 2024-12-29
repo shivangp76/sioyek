@@ -7,6 +7,7 @@ import pypandoc
 import tqdm
 import json
 import hashlib
+from upload_videos import VIDEO_TIMESTAMPS_FILE_PATH, VIDEO_ID_FILE_PATH
 
 DOCUMENTATION_PATH = pathlib.Path(__file__).parent.parent.absolute()
 COMMANDS_PATH = DOCUMENTATION_PATH / "commands"
@@ -32,6 +33,13 @@ class Documentation:
             return f"{', '.join(self.for_items)}"
         else:
             return self.title
+        
+    def get_items(self):
+
+        if self.for_items != []:
+            return self.for_items
+        else:
+            return [self.title]
 
 def get_attribute_list(attribute_name, file_content):
     attribute_index = file_content.find(attribute_name)
@@ -157,6 +165,12 @@ def get_latex_documentation():
     command_name_to_file_map = documentation_json["command_name_to_file_name_map"]
     config_name_to_file_map = documentation_json["config_name_to_file_name_map"]
 
+    vide_timestamps_exists = VIDEO_TIMESTAMPS_FILE_PATH.exists()
+    video_timestamps = json.loads(VIDEO_TIMESTAMPS_FILE_PATH.read_text()) if vide_timestamps_exists else dict()
+
+    youtube_id_exists = VIDEO_ID_FILE_PATH.exists()
+    youtube_id = VIDEO_ID_FILE_PATH.read_text() if youtube_id_exists else dict()
+
     documentation = r'''
 \documentclass{article}
 \usepackage{hyperref}
@@ -269,6 +283,14 @@ def get_latex_documentation():
 
     def handle_documentation(command, type_string):
         nonlocal documentation
+        # convert types to human-readable text understandable by non-technical people
+        config_type_translation_table = {
+            'float': 'real',
+            'int': 'integer',
+            'string': 'text',
+            'bool': 'boolean',
+        }
+
         style = 'arc=0mm, colback=white, colframe=black!75!black, coltitle=lightgray, fonttitle=\\bfseries'
 
         def get_item_link(type_string, map, item):
@@ -292,10 +314,34 @@ def get_latex_documentation():
 
         config_type_string = ''
         if command.data_type != '':
-            config_type_string = '\\textcolor{gray}{\\texttt{[' + escape_title(command.data_type) + ']}} '
+            config_datatype = config_type_translation_table.get(command.data_type, command.data_type)
+            config_type_string = '\\textcolor{gray}{\\texttt{[' + escape_title(config_datatype) + ']}} '
+        
+        video_link_latex = ''
+        if vide_timestamps_exists:
+            
+            if type_string == 'command':
+                name_to_file_map = command_name_to_file_map
+                dict_key = 'commands'
+            if type_string == 'config':
+                name_to_file_map = config_name_to_file_map
+                dict_key = 'configs'
+            
+            video_timestamp = None
+            for item in command.get_items():
+                if item in video_timestamps[dict_key]:
+                    video_timestamp = video_timestamps[dict_key][item]
+            if video_timestamp is not None:
+                # link to the youtube video in timestamp
+                latex_video_unicode_symbol = '\\inputencoding{utf8}{\\symbol{{57344}}'
+                video_link_latex = f"   \\href{{https://www.youtube.com/watch?v={youtube_id}&t={int(video_timestamp)}s}}{{\\textcolor{{gray}}{{\\texttt{{[video]}}}}}}"
+
+
+            
+        
 
         documentation += f'''
-\\subsection{{{config_type_string + escape_title(command.get_title())}}}\\label{{{type_string}:{command.title}}}\hypertarget{{{type_string}:{command.title}}}{{}}
+\\subsection{{{config_type_string + escape_title(command.get_title()) + video_link_latex}}}\\label{{{type_string}:{command.title}}}\hypertarget{{{type_string}:{command.title}}}{{}}
 
 {escape_content(command.content, command_name_to_label_map, config_name_to_label_map)}
 {example_text}
