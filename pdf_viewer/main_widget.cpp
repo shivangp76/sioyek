@@ -154,6 +154,7 @@ extern std::wstring INVERSE_SEARCH_COMMAND;
 extern bool FUZZY_SEARCHING;
 extern bool AUTO_RENAME_DOWNLOADED_PAPERS;
 extern bool SHOW_DOCUMENTATION_IN_WIDGET;
+extern bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER;
 
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
@@ -586,6 +587,19 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         main_document_view->handle_drawing_move(mouse_event->pos(), -1.0f);
         validate_render();
         return;
+    }
+
+    if (SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER) {
+        if (should_show_status_label(false)) {
+            if (!status_label->isVisible()) {
+                status_label->show();
+            }
+        }
+        else {
+            if (status_label->isVisible()) {
+                status_label->hide();
+            }
+        }
     }
 
     WindowPos mpos(mouse_event->pos());
@@ -8174,9 +8188,10 @@ void MainWidget::handle_pause() {
     is_reading = false;
     get_tts()->pause();
 }
-bool MainWidget::should_show_status_label() {
+
+bool MainWidget::should_show_status_label(bool check_network) {
     float prog;
-    if (is_network_manager_running()) {
+    if (check_network && is_network_manager_running()) {
         return true;
     }
 
@@ -8190,7 +8205,17 @@ bool MainWidget::should_show_status_label() {
         return false;
     }
     else {
-        return STATUSBAR || main_document_view->get_is_searching(&prog);
+        if (SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER) {
+            QRect status_label_rect = status_label->geometry();
+            QPoint mouse_cursor = mapFromGlobal(QCursor::pos());
+            if (status_label_rect.contains(mouse_cursor)) {
+                return true;
+            }
+            return false;
+        }
+        else {
+            return STATUSBAR || main_document_view->get_is_searching(&prog);
+        }
     }
 }
 

@@ -44,6 +44,7 @@ bool SHOW_DOCUMENTATION_IN_WIDGET = false;
 float TTS_RATE_INCREMENT = 0.05f;
 float AUTO_BOOKMARK_VERTICAL_MARGIN = 1.0f;
 float AUTO_BOOKMARK_HORIZONTAL_MARGIN = 1.0f;
+bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER = false;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1308,7 +1309,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"add_newlines_when_copying_text", &ADD_NEWLINES_WHEN_COPYING_TEXT);
     add_bool(L"always_copy_selected_text", &ALWAYS_COPY_SELECTED_TEXT);
     add_bool(L"show_documentation_in_widget", &SHOW_DOCUMENTATION_IN_WIDGET);
-
+    add_bool(L"show_statusbar_only_when_hovered", &SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER);
 
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);

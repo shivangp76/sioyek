@@ -219,6 +219,12 @@ if(NOT ANDROID AND NOT IOS)
     )
 endif()
 
+if(UNIX AND NOT APPLE)
+  target_link_libraries(sioyek PRIVATE
+        LINUX_STANDARD_PATHS
+  )
+endif()
+
 target_compile_definitions(sioyek PRIVATE
     SIOYEK_QT6
 )
