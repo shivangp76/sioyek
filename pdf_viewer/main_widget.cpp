@@ -9584,7 +9584,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                         function addHook(eventType, codeString){\
                             sioyek_api.register_hook_function(eventType, codeString);\
                         }\
-                        function addKeybind(keybind, callable){\
+                        function addKeybind(keybind, callable, command_name){\
                             let backtrace = __get_stacktrace();\
                             let line = new Error().stack;\
                             if (typeof(callable) == 'string'){\
@@ -9594,7 +9594,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                                 let name = '__sioyek_keybind_function_' + __sioyek_keybind_function_index;\
                                 __sioyek_keybind_function_index++;\
                                 this[name] = callable;\
-                                let hasWarning = sioyek_api.register_function_keybind(keybind, name, backtrace[0], backtrace[1]);\
+                                sioyek_api.register_function_keybind(keybind, name, command_name, backtrace[0], backtrace[1]);\
                                 return name;\
                             }\
                         }\
@@ -11415,14 +11415,23 @@ void MainWidget::report_js_error(QString error_message, QString error_file_path,
     }
 }
 
-bool MainWidget::register_function_keybind(QString keybind, QString function_name, QString file_name, int line_number){
+void MainWidget::register_function_keybind(QString keybind, QString function_name, QString command_name, QString file_name, int line_number){
 
-    return input_handler->add_keybind(
-        keybind.toStdWString(),
-        L"{jscall}" + function_name.toStdWString(),
-        file_name.toStdWString(),
-        line_number
-    );
+    if (keybind.size() > 0) {
+        input_handler->add_keybind(
+            keybind.toStdWString(),
+            L"{jscall}" + function_name.toStdWString(),
+            file_name.toStdWString(),
+            line_number
+        );
+    }
+    if (command_name.startsWith('_')) {
+        JsCommandInfo command_info;
+        command_info.js_file_path = file_name.toStdWString();
+        command_info.pref_file_path = file_name.toStdWString();
+        command_info.line_number = line_number;
+        command_manager->handle_new_javascript_command(command_name.toStdWString(), command_info, false, function_name.toStdWString() + L"()");
+    }
 }
 
 void MainWidget::register_function_keybind_async(QString keybind, QString code, QString command_name, QString file_name, int line_number){

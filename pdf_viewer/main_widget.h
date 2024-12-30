@@ -953,7 +953,7 @@ public:
     Q_INVOKABLE QString execute_macro_sync(QString macro, QStringList args = {});
     Q_INVOKABLE void set_variable(QString name, QVariant var);
     Q_INVOKABLE QVariant get_variable(QString name);
-    Q_INVOKABLE bool register_function_keybind(QString keybind, QString name, QString file_name, int line_number);
+    Q_INVOKABLE void register_function_keybind(QString keybind, QString name, QString command_name, QString file_name, int line_number);
     Q_INVOKABLE void register_hook_function(QString type, QString name);
     Q_INVOKABLE void register_function_keybind_async(QString keybind, QString code, QString command_name, QString file_name, int line_number);
     Q_INVOKABLE void report_js_error(QString error_message, QString error_file_path, int error_line);
