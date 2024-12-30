@@ -33,8 +33,15 @@
 
 struct JsCommandInfo {
     std::wstring pref_file_path;
+    int line_number = 0;
     std::wstring js_file_path;
     std::optional<std::wstring> entry_point;
+};
+
+struct CustomCommandInfo {
+    std::wstring text;
+    std::wstring definition_file_path;
+    int definition_line_number = 0;
 };
 
 struct MenuNode {

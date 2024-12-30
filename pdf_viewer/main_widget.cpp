@@ -217,8 +217,6 @@ extern std::wstring ALT_RIGHT_CLICK_COMMAND;
 extern Path local_database_file_path;
 extern Path global_database_file_path;
 extern Path downloaded_papers_path;
-extern std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
-extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 extern bool HIGHLIGHT_MIDDLE_CLICK;
 extern std::wstring STARTUP_COMMANDS;
 extern float CUSTOM_BACKGROUND_COLOR[3];
@@ -1111,9 +1109,18 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             else {
                 std::wstring file_path;
                 int line_number = 0;
-                bool found = input_handler->get_definition_file_and_line(command_name_qstring.toStdString(), file_path, line_number);
-                if (found) {
-                    open_text_editor_at_line(QString::fromStdWString(file_path), line_number);
+                if (command_name_qstring.startsWith('_')) {
+                    // find the definition of custom commands
+                    bool found = get_custom_command_definition_file_and_line_number(command_name_qstring.toStdWString(), file_path, line_number);
+                    if (found) {
+                        open_text_editor_at_line(QString::fromStdWString(file_path), line_number);
+                    }
+                }
+                else {
+                    bool found = input_handler->get_definition_file_and_line(command_name_qstring.toStdString(), file_path, line_number);
+                    if (found) {
+                        open_text_editor_at_line(QString::fromStdWString(file_path), line_number);
+                    }
                 }
             }
 

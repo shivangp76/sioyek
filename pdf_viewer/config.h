@@ -201,3 +201,4 @@ public:
     void handle_set_color_palette(MainWidget* w, ColorPalette palette);
 };
 
+bool get_custom_command_definition_file_and_line_number(std::wstring command_name, std::wstring& out_path, int& out_line_number);

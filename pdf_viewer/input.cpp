@@ -31,10 +31,10 @@ extern Path global_database_file_path;
 
 extern bool SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE;
 extern bool USE_LEGACY_KEYBINDS;
-extern std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
 extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
-extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
+extern std::map<std::wstring, CustomCommandInfo> ADDITIONAL_COMMANDS;
+extern std::map<std::wstring, CustomCommandInfo> ADDITIONAL_MACROS;
 extern std::wstring SEARCH_URLS[26];
 extern bool NUMERIC_TAGS;
 extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
@@ -8576,7 +8576,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {
         std::string command_name = utf8_encode(command_name_);
-        std::wstring local_command_value = command_value;
+        std::wstring local_command_value = command_value.text;
         new_commands[command_name] = [command_name, local_command_value, this](MainWidget* w) {return  std::make_unique<CustomCommand>(w, command_name, local_command_value); };
         command_required_prefixes[QString::fromStdString(command_name)] = "_";
     }
@@ -8594,7 +8594,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
 
     for (auto [command_name_, macro_value] : ADDITIONAL_MACROS) {
         std::string command_name = utf8_encode(command_name_);
-        std::wstring local_macro_value = macro_value;
+        std::wstring local_macro_value = macro_value.text;
         new_commands[command_name] = [command_name, local_macro_value, this](MainWidget* w) {return std::make_unique<MacroCommand>(w, this, command_name, local_macro_value); };
         command_required_prefixes[QString::fromStdString(command_name)] = "_";
     }
@@ -8656,7 +8656,7 @@ void CommandManager::update_command_last_use(std::string command_name) {
 
 void CommandManager::handle_new_javascript_command(std::wstring command_name_, JsCommandInfo info, bool is_async) {
     std::string command_name = utf8_encode(command_name_);
-    auto [command_parent_file_path, command_file_path, entry_point] = info;
+    auto [command_parent_file_path, line_number, command_file_path, entry_point] = info;
 
     QDir parent_dir = QFileInfo(QString::fromStdWString(command_parent_file_path)).dir();
     QFileInfo javascript_file_info(QString::fromStdWString(command_file_path));

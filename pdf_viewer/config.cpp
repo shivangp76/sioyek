@@ -270,14 +270,14 @@ bool FANCY_UI_MENUS = true;
 bool SCROLLBAR = false;
 bool STATUSBAR = true;
 bool STATUSBAR_HANDLES_WHEEL_EVENTS = true;
-std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 bool LIGHTEN_COLORS_WHEN_EMBEDDING_ANNOTATIONS = true;
 int BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS = 150;
 
 
 std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
 std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
-std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
+std::map<std::wstring, CustomCommandInfo> ADDITIONAL_COMMANDS;
+std::map<std::wstring, CustomCommandInfo> ADDITIONAL_MACROS;
 std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 
 std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
@@ -467,6 +467,37 @@ std::wstring STATUS_STRING_CUSTOM_MESSAGE_B_STR = L"";
 std::wstring STATUS_STRING_CUSTOM_MESSAGE_C_STR = L"";
 std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR = L"";
 
+bool get_custom_command_definition_file_and_line_number(std::wstring command_name, std::wstring& out_path, int& out_line_number) {
+    if (ADDITIONAL_MACROS.find(command_name) != ADDITIONAL_MACROS.end()) {
+        auto macro = ADDITIONAL_MACROS[command_name];
+        out_path = macro.definition_file_path;
+        out_line_number = macro.definition_line_number;
+        return true;
+    }
+
+    if (ADDITIONAL_COMMANDS.find(command_name) != ADDITIONAL_COMMANDS.end()) {
+        auto command = ADDITIONAL_COMMANDS[command_name];
+        out_path = command.definition_file_path;
+        out_line_number = command.definition_line_number;
+        return true;
+    }
+
+    if (ADDITIONAL_JAVASCRIPT_COMMANDS.find(command_name) != ADDITIONAL_JAVASCRIPT_COMMANDS.end()) {
+        auto command = ADDITIONAL_JAVASCRIPT_COMMANDS[command_name];
+        out_path = command.pref_file_path;
+        out_line_number = command.line_number;
+        return true;
+    }
+
+    if (ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS.find(command_name) != ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS.end()) {
+        auto command = ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS[command_name];
+        out_path = command.pref_file_path;
+        out_line_number = command.line_number;
+        return true;
+    }
+
+    return false;
+}
 
 
 bool UIRect::contains(NormalizedWindowPos window_pos) {
@@ -1708,13 +1739,21 @@ void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_na
                     std::wstring command_value = config_value.substr(space_index + 1, config_value.size() - space_index - 1);
 
                     if (conf_name == L"new_command") {
-                        ADDITIONAL_COMMANDS[new_command_name] = command_value;
+                        CustomCommandInfo command_info;
+                        command_info.text = command_value;
+                        command_info.definition_file_path = file_path.get_path();
+                        command_info.definition_line_number = line_number;
+                        ADDITIONAL_COMMANDS[new_command_name] = command_info;
                     }
                     if (conf_name == L"new_shell_bookmark_command"){
                         SHELL_BOOKMARK_COMMANDS[new_command_name] = command_value;
                     }
                     if (conf_name == L"new_macro") {
-                        ADDITIONAL_MACROS[new_command_name] = command_value;
+                        CustomCommandInfo macro_info;
+                        macro_info.text = command_value;
+                        macro_info.definition_file_path = file_path.get_path();
+                        macro_info.definition_line_number = line_number;
+                        ADDITIONAL_MACROS[new_command_name] = macro_info;
                     }
                     if (conf_name == L"new_js_command" || conf_name == L"new_async_js_command") {
                         QString qcommand_value = QString::fromStdWString(command_value);
@@ -1724,21 +1763,21 @@ void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_na
                         if (conf_name == L"new_js_command") {
                             if (has_entry_point) {
                                 ADDITIONAL_JAVASCRIPT_COMMANDS[new_command_name] = JsCommandInfo{
-                                    file_path.get_path(), parts.first().toStdWString(), parts.last().toStdWString()};
+                                    file_path.get_path(), line_number, parts.first().toStdWString(), parts.last().toStdWString()};
                             }
                             else {
                                 ADDITIONAL_JAVASCRIPT_COMMANDS[new_command_name] = JsCommandInfo{
-                                    file_path.get_path(), command_value, {} };
+                                    file_path.get_path(), line_number, command_value, {} };
                             }
                         }
                         if (conf_name == L"new_async_js_command") {
                             if (has_entry_point) {
                                 ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS[new_command_name] = JsCommandInfo{
-                                    file_path.get_path(), parts.first().toStdWString(), parts.last().toStdWString()};
+                                    file_path.get_path(), line_number, parts.first().toStdWString(), parts.last().toStdWString()};
                             }
                             else {
                                 ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS[new_command_name] = JsCommandInfo{
-                                    file_path.get_path(), command_value, {} };
+                                    file_path.get_path(), line_number, command_value, {} };
                             }
                         }
                     }
