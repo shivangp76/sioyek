@@ -9598,10 +9598,10 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                                 return name;\
                             }\
                         }\
-                        function addKeybindAsync(keybind, callable){\
+                        function addKeybindAsync(keybind, callable, command_name){\
                             let backtrace = __get_stacktrace();\
-                            if (typeof(callable) !== 'string'){console.log('Error in ' + backtrace[0] + ':' + backtrace[1] + ': async function should be a string, if you are passing a raw function, you can convert it to a string by surrounding it with `.'); return;}\
-                            sioyek_api.register_function_keybind_async(keybind, callable, backtrace[0], backtrace[1]);\
+                            if (typeof(callable) !== 'string'){sioyek_api.report_js_error('Error in ' + backtrace[0] + ':' + backtrace[1] + ': async function should be a string, if you are passing a raw function, you can convert it to a string by surrounding it with `.', backtrace[0], backtrace[1]); return;}\
+                            sioyek_api.register_function_keybind_async(keybind, callable, command_name, backtrace[0], backtrace[1]);\
                         }\
                         ");
         engine.evaluate("\
@@ -11408,6 +11408,13 @@ void MainWidget::register_hook_function(QString type, QString name) {
     }
 }
 
+void MainWidget::report_js_error(QString error_message, QString error_file_path, int error_line) {
+    int res = show_option_buttons(error_message.toStdWString(), {L"OK", L"Open File"});
+    if (res == 3) {
+        open_text_editor_at_line(error_file_path, error_line);
+    }
+}
+
 bool MainWidget::register_function_keybind(QString keybind, QString function_name, QString file_name, int line_number){
 
     return input_handler->add_keybind(
@@ -11418,13 +11425,26 @@ bool MainWidget::register_function_keybind(QString keybind, QString function_nam
     );
 }
 
-void MainWidget::register_function_keybind_async(QString keybind, QString code, QString file_name, int line_number){
-    input_handler->add_keybind(
-        keybind.toStdWString(),
-        L"{jsasync}" + code.toStdWString(),
-        file_name.toStdWString(),
-        line_number
-    );
+void MainWidget::register_function_keybind_async(QString keybind, QString code, QString command_name, QString file_name, int line_number){
+    qDebug() << "command name was: " << command_name;
+    if (keybind.size() > 0) {
+        input_handler->add_keybind(
+            keybind.toStdWString(),
+            L"{jsasync}" + code.toStdWString(),
+            file_name.toStdWString(),
+            line_number
+        );
+    }
+
+    if (command_name.startsWith('_')) {
+        JsCommandInfo command_info;
+        command_info.js_file_path = file_name.toStdWString();
+        command_info.pref_file_path = file_name.toStdWString();
+        command_info.line_number = line_number;
+        command_manager->handle_new_javascript_command(command_name.toStdWString(), command_info, true, L"(" + code.toStdWString() + L")()");
+    }
+    //JsCommandInfo command_info;
+    //command_info.entry_point
 }
 
 void MainWidget::register_string_keybind(QString keybind, QString commands_string, QString file_name, int line_number){

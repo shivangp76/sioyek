@@ -2598,6 +2598,9 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString>
         if (required_prefixes.find(command_name) != required_prefixes.end()) {
             required_prefix = required_prefixes[command_name];
         }
+        else if (command_name.startsWith("_")) {
+            required_prefix = "_";
+        }
 
         if (prefix_command_names.find(required_prefix) == prefix_command_names.end()) {
             prefix_command_names[required_prefix] = {};

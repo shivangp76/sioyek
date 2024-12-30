@@ -955,7 +955,8 @@ public:
     Q_INVOKABLE QVariant get_variable(QString name);
     Q_INVOKABLE bool register_function_keybind(QString keybind, QString name, QString file_name, int line_number);
     Q_INVOKABLE void register_hook_function(QString type, QString name);
-    Q_INVOKABLE void register_function_keybind_async(QString keybind, QString code, QString file_name, int line_number);
+    Q_INVOKABLE void register_function_keybind_async(QString keybind, QString code, QString command_name, QString file_name, int line_number);
+    Q_INVOKABLE void report_js_error(QString error_message, QString error_file_path, int error_line);
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
     void run_startup_js(bool first_run=false);
     void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);

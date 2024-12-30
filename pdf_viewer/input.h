@@ -102,7 +102,7 @@ public:
     std::unique_ptr<Command> create_macro_command(MainWidget* w, std::string name, std::wstring macro_string);
     std::unique_ptr<Command> create_macro_command_with_args(MainWidget* w, std::string name, QString command, QStringList args);
     QStringList get_all_command_names();
-    void handle_new_javascript_command(std::wstring command_name, JsCommandInfo command_files_pair, bool is_async);
+    void handle_new_javascript_command(std::wstring command_name, JsCommandInfo command_files_pair, bool is_async, std::wstring code=L"");
     void update_command_last_use(std::string command_name);
 
 };

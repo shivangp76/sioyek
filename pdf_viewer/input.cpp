@@ -8654,9 +8654,17 @@ void CommandManager::update_command_last_use(std::string command_name) {
     command_last_uses[command_name] = QDateTime::currentDateTime();
 }
 
-void CommandManager::handle_new_javascript_command(std::wstring command_name_, JsCommandInfo info, bool is_async) {
+void CommandManager::handle_new_javascript_command(std::wstring command_name_, JsCommandInfo info, bool is_async, std::wstring preloaded_code) {
+    // if the code is available in the preloaded_code, we can use that instead of reading from the file
     std::string command_name = utf8_encode(command_name_);
     auto [command_parent_file_path, line_number, command_file_path, entry_point] = info;
+
+    if (preloaded_code.size() > 0) {
+        new_commands[command_name] = [command_name, preloaded_code, entry_point = entry_point, is_async, this](MainWidget* w) {
+            return std::make_unique<JavascriptCommand>(command_name, preloaded_code, entry_point, is_async, w);
+            };
+        return;
+    }
 
     QDir parent_dir = QFileInfo(QString::fromStdWString(command_parent_file_path)).dir();
     QFileInfo javascript_file_info(QString::fromStdWString(command_file_path));
@@ -8972,6 +8980,11 @@ bool parse_line(
             else if (command_names.size() == 1 && (command_names[0].find("[") == -1) && (command_names[0].find("(") == -1)) {
                 if (command_manager->new_commands.find(command_names[0]) != command_manager->new_commands.end()) {
                     parent_node->generator = command_manager->new_commands[command_names[0]];
+                }
+                else if (command_name_qstr.startsWith("_")) {
+                    // it is possible that the macro will be defined later (e.g. maybe in .sioyek.js file) so we create
+                    // a lazy macro command here
+                    parent_node->generator = [single_command=command_names[0], command_manager](MainWidget* w) {return std::make_unique<MacroCommand>(w, command_manager, "", utf8_decode(single_command)); };
                 }
                 else {
                     has_warning = true;
