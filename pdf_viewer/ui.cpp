@@ -1346,6 +1346,12 @@ QString translate_command_search_string(QString actual_text) {
         actual_text = "deleteconfig_" + actual_text.right(actual_text.size() - 1);
     }
 
+    if (actual_text.endsWith("??")){
+        // when query ends with ?? we try to open the definition file of the keybind/config
+        actual_text = actual_text.left(actual_text.size()-2);
+    }
+
+    // when the query starts or ends with ? we open the documentation file for the command/config
     if (actual_text.endsWith("?")){
         actual_text = actual_text.left(actual_text.size()-1);
     }

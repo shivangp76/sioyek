@@ -81,6 +81,8 @@ extern std::wstring EPUB_CSS;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern float BLACK_COLOR[3];
 
+extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
+
 extern Path last_opened_file_address_path;
 
 extern float UI_BACKGROUND_COLOR[3];
@@ -5840,4 +5842,26 @@ std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bo
 
     return final_results;
 
+}
+
+void open_text_editor_at_line(QString file_path, int line_number) {
+    if (EXTERNAL_TEXT_EDITOR_COMMAND.size() > 0) {
+        std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND)
+            .replace("%{file}", file_path)
+            .replace("%{line}", QString::number(line_number))
+            .toStdWString();
+        QString command_qstring = QString::fromStdWString(command);
+        QStringList parts = QProcess::splitCommand(command_qstring);
+        QString command_name = parts[0];
+        QStringList args = parts.mid(1);
+
+        run_command(command_name.toStdWString(), args);
+        //QProcess::startDetached(command_name, args);
+
+    }
+    else {
+        if (!QDesktopServices::openUrl(QUrl::fromLocalFile(file_path))) {
+            show_error_message(("Could not open address: " + file_path).toStdWString());
+        }
+    }
 }

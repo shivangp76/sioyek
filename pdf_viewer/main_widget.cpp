@@ -1080,6 +1080,30 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             }
             //qDebug() << command_name;
         }
+        else if (query_text.size() >= 2 && query_text.substr(query_text.size() - 2, 2) == "??") {
+            bool is_config = false;
+            QString command_name_qstring = QString::fromStdString(command_name);
+            if (command_name_qstring.startsWith("setconfig_")) {
+                is_config = true;
+                command_name_qstring = command_name_qstring.mid(10);
+            }
+            if (is_config) {
+                auto conf = config_manager->get_mut_config_with_name(command_name_qstring.toStdWString());
+                if (conf) {
+                    open_text_editor_at_line(QString::fromStdWString(conf->definition_file), conf->definition_line);
+                    //qDebug() << conf->definition_file << " " << conf->definition_line;
+                }
+            }
+            else {
+                std::wstring file_path;
+                int line_number = 0;
+                bool found = input_handler->get_definition_file_and_line(command_name_qstring.toStdString(), file_path, line_number);
+                if (found) {
+                    open_text_editor_at_line(QString::fromStdWString(file_path), line_number);
+                }
+            }
+
+        }
         else if (query_text.size() > 0 && (query_text.back() == '?' || query_text[0] == '?')) {
             if (query_text.size() == 1) {
                 open_documentation_file_for_name("", "");

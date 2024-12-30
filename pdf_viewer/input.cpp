@@ -9281,6 +9281,34 @@ std::vector<std::string> InputHandler::get_key_mappings(std::string command_name
     }
 }
 
+bool InputHandler::get_definition_file_and_line_helper(InputParseTreeNode* parent, std::string command_name, std::wstring& out_file, int& out_line) const {
+    for (auto child : parent->children) {
+        if (child->is_final) {
+            for (auto name : child->name_) {
+                if (name == command_name) {
+                    out_file = child->defining_file_path;
+                    out_line = child->defining_file_line;
+                    return true;
+                }
+            }
+        }
+    }
+
+    for (auto child : root->children) {
+        if (!child->is_final) {
+            bool found = get_definition_file_and_line_helper(child, command_name, out_file, out_line);
+            if (found) return true;
+        }
+    }
+
+    return false;
+
+}
+
+bool InputHandler::get_definition_file_and_line(std::string command_name, std::wstring& out_file, int& out_line) const {
+    return get_definition_file_and_line_helper(root, command_name, out_file, out_line);
+}
+
 
 bool is_digit(int key) {
     return key >= Qt::Key::Key_0 && key <= Qt::Key::Key_9;
