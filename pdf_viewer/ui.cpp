@@ -1319,6 +1319,10 @@ void RangeConfigUI::resizeEvent(QResizeEvent* resize_event) {
 
 QString translate_command_search_string(QString actual_text) {
 
+    if (actual_text.startsWith("+==")) {
+        actual_text = "setsaveconfig_" + actual_text.right(actual_text.size() - 3);
+    }
+
     if (actual_text.startsWith("+=")) {
         actual_text = "setsaveconfig_" + actual_text.right(actual_text.size() - 2);
     }

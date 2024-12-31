@@ -1095,6 +1095,13 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             }
             //qDebug() << command_name;
         }
+        else if (query_text.size() >= 3 && query_text.substr(0, 3) == "+==") {
+            if (QString::fromStdString(command_name).startsWith("setsaveconfig_")) {
+                std::string config_name = command_name.substr(14);
+                execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(config_name) + L");saveconfig_" + utf8_decode(config_name));
+            }
+
+        }
         else if (query_text.size() >= 2 && query_text.substr(query_text.size() - 2, 2) == "??") {
             bool is_config = false;
             QString command_name_qstring = QString::fromStdString(command_name);
