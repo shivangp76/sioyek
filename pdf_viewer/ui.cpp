@@ -830,6 +830,10 @@ ConfigUI::ConfigUI(std::string name, MainWidget* parent) : QWidget(parent) {
     config_name = name;
 }
 
+ConfigUI::~ConfigUI() {
+    main_widget->on_config_changed(config_name, false);
+}
+
 void ConfigUI::on_change() {
     main_widget->on_config_changed(config_name);
 }

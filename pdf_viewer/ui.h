@@ -855,6 +855,7 @@ public:
     void resizeEvent(QResizeEvent* resize_event) override;
     void set_should_persist(bool val);
     void on_change();
+    ~ConfigUI();
 
 protected:
     MainWidget* main_widget;
