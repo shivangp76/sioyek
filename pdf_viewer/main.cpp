@@ -157,6 +157,7 @@ extern std::wstring VOLUME_UP_COMMAND;
 extern std::wstring VOLUME_DOWN_COMMAND;
 extern int NUM_CACHED_PAGES;
 extern int FONT_SIZE;
+extern int COLOR_MODE;
 
 std::string ACCESS_TOKEN = "";
 
@@ -1025,6 +1026,16 @@ int main(int argc, char* args[]) {
     else {
         main_widget->apply_window_params_for_one_window_mode();
     }
+
+    ColorPalette color_palette = ColorPalette::Normal;
+    if (COLOR_MODE == ColorMode::Dark) {
+        color_palette = ColorPalette::Dark;
+    }
+    if (COLOR_MODE == ColorMode::Custom) {
+        color_palette = ColorPalette::Custom;
+    }
+
+    config_manager.handle_set_color_palette(main_widget, color_palette);
 
     main_widget->show();
 
