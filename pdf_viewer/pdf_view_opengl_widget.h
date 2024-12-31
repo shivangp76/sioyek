@@ -190,7 +190,7 @@ protected:
     virtual void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) = 0;
     void draw_icon(const QIcon& icon, QRect rect);
     void render_overview(OverviewState overview, bool draw_border=true);
-    virtual void render_page_separator(int page_number, float* page_vertices) = 0;
+    void render_page_separator(int page_number);
 
     virtual void prepare_non_compiled_line_drawing_pipeline() = 0;
     virtual void render_compiled_drawings() = 0;
@@ -270,8 +270,6 @@ protected:
     void disable_stencil() override;
     float get_device_pixel_ratio() override;
 
-    void render_page_separator(int page_number, float* page_vertices) override;
-
     void render_transparent_background() override;
 
     Qt::ScreenOrientation get_orientation() override;
@@ -342,8 +340,6 @@ protected:
     void use_stencil_to_write(bool eq) override;
     void disable_stencil() override;
     float get_device_pixel_ratio() override;
-
-    void render_page_separator(int page_number, float* page_vertices) override;
 
     void render_transparent_background() override;
 

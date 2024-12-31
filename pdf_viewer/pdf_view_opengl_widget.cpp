@@ -585,7 +585,6 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
             std::swap(nh_, nv_);
         }
 
-        float page_vertices[4 * 2];
         float slice_height = doc(overview)->get_page_height(page_number) / nv_;
         float slice_width = doc(overview)->get_page_width(page_number) / nh_;
 
@@ -663,11 +662,7 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
         }
 
 
-#ifdef SIOYEK_QT6
         float device_pixel_ratio = static_cast<float>(get_device_pixel_ratio());
-#else
-        float device_pixel_ratio = QApplication::desktop()->devicePixelRatioF();
-#endif
 
         if (DISPLAY_RESOLUTION_SCALE > 0) {
             device_pixel_ratio *= DISPLAY_RESOLUTION_SCALE;
@@ -693,9 +688,6 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
 
         render_original_color_images(page_number, overview, forced_color_palette, stencils_allowed);
 
-        if (!dv()->is_presentation_mode() && (!overview.has_value()) && (!dv()->is_two_page_mode())){
-            render_page_separator(page_number, page_vertices);
-        }
     }
 
 }
@@ -753,30 +745,17 @@ void PdfViewQPainterWidget::set_stencil_for_two_page(int page_number, PagelessDo
     }
 }
 
-void PdfViewOpenGLWidget::render_page_separator(int page_number, float* page_vertices) {
-    // render page separator
-    glUseProgram(shared_gl_objects.separator_program);
-
-    PagelessDocumentRect separator_rect({
-        0,
-        doc()->get_page_height(page_number) - PAGE_SEPARATOR_WIDTH / 2,
-        doc()->get_page_width(page_number),
-        doc()->get_page_height(page_number) + PAGE_SEPARATOR_WIDTH / 2
-        });
-
-
+void SioyekRendererBackend::render_page_separator(int page_number){
     if (PAGE_SEPARATOR_WIDTH > 0) {
-
+        PagelessDocumentRect separator_rect({
+            0,
+            doc()->get_page_height(page_number) - PAGE_SEPARATOR_WIDTH / 2,
+            doc()->get_page_width(page_number),
+            doc()->get_page_height(page_number) + PAGE_SEPARATOR_WIDTH / 2
+            });
         NormalizedWindowRect separator_window_rect = DocumentRect(separator_rect, page_number).to_window_normalized(dv());
-        rect_to_quad(separator_window_rect, page_vertices);
-
-        glUniform3fv(shared_gl_objects.separator_background_color_uniform_location, 1, PAGE_SEPARATOR_COLOR);
-
-        glBindBuffer(GL_ARRAY_BUFFER, shared_gl_objects.vertex_buffer_object);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(page_vertices), page_vertices, GL_DYNAMIC_DRAW);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        render_highlight_window(separator_window_rect, HRF_FILL);
     }
-
 }
 
 
@@ -885,6 +864,13 @@ void SioyekRendererBackend::my_render() {
                         render_highlight_document({ link_rect, page });
                     }
                 }
+            }
+        }
+        if (PAGE_SEPARATOR_WIDTH > 0 && !dv()->is_presentation_mode() && (!dv()->is_two_page_mode())) {
+            prepare_highlight_pipeline();
+            set_highlight_color(PAGE_SEPARATOR_COLOR, 1.0f);
+            for (int page : visible_pages) {
+                render_page_separator(page);
             }
         }
         // prerender pages
@@ -3715,9 +3701,6 @@ void PdfViewQPainterWidget::disable_stencil() {
 
 float PdfViewQPainterWidget::get_device_pixel_ratio() {
     return devicePixelRatioF();
-}
-
-void PdfViewQPainterWidget::render_page_separator(int page_number, float* page_vertices) {
 }
 
 void PdfViewQPainterWidget::render_transparent_background() {
