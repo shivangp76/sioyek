@@ -877,6 +877,7 @@ Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* conf
 
     connect(color_picker, &QColorDialog::currentColorChanged, [&](const QColor& color) {
         convert_qcolor_to_float3(color, color_location);
+        on_change();
         main_widget->invalidate_render();
         });
 
@@ -920,6 +921,7 @@ Color4ConfigUI::Color4ConfigUI(std::string name, MainWidget* parent, float* conf
 
     connect(color_picker, &QColorDialog::currentColorChanged, [&](const QColor& color) {
         convert_qcolor_to_float4(color, color_location);
+        on_change();
         main_widget->invalidate_render();
         });
 }
