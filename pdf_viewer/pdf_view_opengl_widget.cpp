@@ -613,7 +613,9 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
             }
         }
 
-        set_stencil_for_two_page(page_number, page_content, stencils_allowed, zoom_level);
+        if (stencils_allowed) {
+            set_stencil_for_two_page(page_number, page_content, stencils_allowed, zoom_level);
+        }
 
         if (is_sliced) {
 
