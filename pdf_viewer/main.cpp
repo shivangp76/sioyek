@@ -441,9 +441,15 @@ void unlock_mutex(void* user, int lock) {
     (mut + lock)->unlock();
 }
 
-void add_paths_to_file_system_watcher(QFileSystemWatcher& watcher, const Path& default_path, const std::vector<Path>& user_paths) {
+void add_paths_to_file_system_watcher(QFileSystemWatcher& watcher, const Path& default_path, const std::vector<Path>& user_paths, std::optional<Path> auto_path = {}) {
     if (QFile::exists(QString::fromStdWString(default_path.get_path()))) {
         watcher.addPath(QString::fromStdWString(default_path.get_path()));
+    }
+
+    if (auto_path.has_value()) {
+        if (QFile::exists(QString::fromStdWString(auto_path->get_path()))) {
+            watcher.addPath(QString::fromStdWString(auto_path->get_path()));
+        }
     }
 
     for (auto user_path : user_paths) {
@@ -938,7 +944,7 @@ int main(int argc, char* args[]) {
     DocumentManager document_manager(mupdf_context, &db_manager, &checksummer);
 
     QFileSystemWatcher pref_file_watcher;
-    add_paths_to_file_system_watcher(pref_file_watcher, default_config_path, user_config_paths);
+    add_paths_to_file_system_watcher(pref_file_watcher, default_config_path, user_config_paths, auto_config_path);
 
 
     QFileSystemWatcher key_file_watcher;
