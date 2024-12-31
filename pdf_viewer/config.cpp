@@ -1907,9 +1907,6 @@ bool ConfigManager::deserialize_config(std::string config_name, std::wstring con
 
     bool changed = false;
     auto deserialization_result = conf->deserialize(config_value_stream, conf->value, &changed);
-    if (deserialization_result != nullptr) {
-        conf->value = deserialization_result;
-    }
     return changed;
 
 }
@@ -1992,11 +1989,41 @@ bool Config::is_empty_string() {
 
 void* Config::deserialize(std::wstringstream& stream, void* res, bool* changed){
 
-    void* result = this->deserialize_(stream, res, changed);
+    void* result = nullptr;
+    bool should_apply = false;
+    bool saved_to_light_mode = false;
+
+    if (this->config_type == ConfigType::Color3 || this->config_type == ConfigType::Color4) {
+        if (this->name.size() > 0 && (this->name[0] == 'D' || this->name[0] == 'C')) {
+            // if config is a DARK_ or CUSTOM_ config, we need to apply it
+            // becasue res refers to the custom_mode or dark_mode in ColorExtras
+            should_apply = true;
+        }
+        else {
+            //  otherwise we only should apply it if the current color mode is light
+            if (COLOR_MODE == ColorMode::Light) {
+                should_apply = true;
+            }
+        }
+    }
+    else {
+        should_apply = true;
+    }
+
+    if (should_apply) {
+        result = this->deserialize_(stream, res, changed);
+    }
+    else {
+        ColorExtras* color_extras = std::get_if<ColorExtras>(&extras);
+        if (color_extras) {
+            result = this->deserialize_(stream, color_extras->light_mode, changed);
+            saved_to_light_mode = true;
+        }
+    }
 
     // we save the default light mode value here, because if a DARK_* or CUSTOM_*
     // overwrites it, we need to original value in order to be able to restore it
-    if (config_type == ConfigType::Color3 || config_type == ConfigType::Color4) {
+    if ((!saved_to_light_mode) && (config_type == ConfigType::Color3 || config_type == ConfigType::Color4)) {
         ColorExtras* color_extras = std::get_if<ColorExtras>(&extras);
         if (color_extras) {
             for (int i = 0; i < 4; i++) {
