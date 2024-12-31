@@ -997,6 +997,7 @@ void SioyekRendererBackend::my_render() {
     { // require bind_default
         if (VISUALIZE_RULER_THRESHOLDS) {
             prepare_highlight_pipeline();
+            set_highlight_color(DEFAULT_TEXT_HIGHLIGHT_COLOR, 0.3f);
             render_ruler_thresholds();
         }
 
