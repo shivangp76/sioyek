@@ -1838,6 +1838,10 @@ void ConfigManager::deserialize(std::vector<std::string>* changed_config_names, 
     ADDITIONAL_KEYMAPS.clear();
     SHELL_BOOKMARK_COMMANDS.clear();
 
+    for (auto& it : configs) {
+        it->is_auto = false;
+    }
+
     deserialize_file(changed_config_names, default_file_path);
 
     if (!NO_AUTO_CONFIG) {
