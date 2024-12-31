@@ -693,7 +693,9 @@ bool DocumentView::move_virtual(float dx, float dy, bool force) {
     offset.y += dy;
 
     if (offset.y < 0) offset.y = 0;
-    if (offset.y > max_cached_y_offset) offset.y = max_cached_y_offset;
+    if (max_cached_y_offset > 0) {
+        if (offset.y > max_cached_y_offset) offset.y = max_cached_y_offset;
+    }
 
     return false;
 }
