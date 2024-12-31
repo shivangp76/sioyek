@@ -458,7 +458,7 @@ public:
     std::wstring get_serialized_configuration_string();
     void save_auto_config();
 
-    void handle_close_event();
+    void handle_close_event(bool is_quiting=false);
     void return_to_last_visual_mark();
     void reload(bool flush = true);
     QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);

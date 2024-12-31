@@ -4623,14 +4623,14 @@ void MainWidget::perform_sync_operations_when_document_is_closed(bool wait_for_s
     }
 }
 
-void MainWidget::handle_close_event() {
+void MainWidget::handle_close_event(bool is_quiting) {
 
     bool should_sync_drawings = false;
     if (doc()){
         should_sync_drawings = doc()->get_drawings_are_dirty();
     }
 
-    if (!close_event_already_handled) {
+    if ((is_quiting || windows.size() == 1) && !close_event_already_handled) {
         close_event_already_handled = true;
         save_auto_config();
     }

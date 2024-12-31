@@ -5316,7 +5316,7 @@ public:
     QuitCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->handle_close_event();
+        widget->handle_close_event(true);
         QApplication::quit();
     }
 
