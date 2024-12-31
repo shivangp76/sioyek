@@ -166,6 +166,9 @@ extern int STATUS_BAR_FONT_SIZE;
 extern float VERTICAL_MOVE_AMOUNT;
 extern float HORIZONTAL_MOVE_AMOUNT;
 
+extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
+extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
+
 extern std::wstring TITLEBAR_FORMAT;
 extern Path standard_data_path;
 //extern Path documentation_path;
@@ -11431,6 +11434,7 @@ void MainWidget::register_function_keybind(QString keybind, QString function_nam
         command_info.pref_file_path = file_name.toStdWString();
         command_info.line_number = line_number;
         command_manager->handle_new_javascript_command(command_name.toStdWString(), command_info, false, function_name.toStdWString() + L"()");
+        ADDITIONAL_JAVASCRIPT_COMMANDS[command_name.toStdWString()] = command_info;
     }
 }
 
@@ -11451,6 +11455,7 @@ void MainWidget::register_function_keybind_async(QString keybind, QString code, 
         command_info.pref_file_path = file_name.toStdWString();
         command_info.line_number = line_number;
         command_manager->handle_new_javascript_command(command_name.toStdWString(), command_info, true, L"(" + code.toStdWString() + L")()");
+        ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS[command_name.toStdWString()] = command_info;
     }
     //JsCommandInfo command_info;
     //command_info.entry_point
