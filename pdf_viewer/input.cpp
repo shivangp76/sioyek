@@ -7091,6 +7091,43 @@ public:
 
 };
 
+class SaveConfigWithNameCommand : public Command {
+public:
+    inline static const std::string cname = "save_config";
+    inline static const std::string hname = "Save the current value of a config to the auto config file.";
+
+    std::optional<std::wstring> config_name = {};
+
+    SaveConfigWithNameCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        auto conf = widget->config_manager->get_mut_config_with_name(config_name.value());
+        conf->is_auto = true;
+        widget->save_auto_config();
+    }
+
+    bool requires_document() override {
+        return false;
+    }
+
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) override {
+        if (!config_name.has_value()){
+            return Requirement{ RequirementType::Text, "Config Name" };
+        }
+
+        return {};
+    }
+
+    void set_text_requirement(std::wstring value) override {
+        if (!config_name.has_value()) {
+            config_name = value;
+        }
+    }
+
+
+};
+
 class UndoDeleteCommand : public Command {
 public:
     inline static const std::string cname = "undo_delete";
@@ -8629,6 +8666,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<UndoDeleteCommand>(this);
     register_command<SetConfigCommand>(this);
     register_command<ToggleConfigWithNameCommand>(this);
+    register_command<SaveConfigWithNameCommand>(this);
     register_command<FulltextSearchCommand>(this);
     register_command<DocumentationSearchCommand>(this);
     register_command<FulltextSearchCurrentDocumentCommand>(this);

@@ -1158,6 +1158,12 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         else if (qquery.startsWith("!") || qquery.startsWith("toggleconfig_")) {
             execute_macro_if_enabled(L"toggle_config(" + utf8_decode(command_name) + L")");
         }
+        else if (qquery.startsWith("+=") || qquery.startsWith("setsaveconfig_")) {
+            execute_macro_if_enabled(L"set_config("+ utf8_decode(command_name) + L");save_config(" + utf8_decode(command_name) + L")");
+        }
+        else if (qquery.startsWith("+") || qquery.startsWith("saveconfig_")) {
+            execute_macro_if_enabled(L"save_config(" + utf8_decode(command_name) + L")");
+        }
         else if (qquery.startsWith("=") || qquery.startsWith("setconfig_")) {
             execute_macro_if_enabled(L"set_config(" + utf8_decode(command_name) + L")");
         }
