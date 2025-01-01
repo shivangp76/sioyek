@@ -5356,7 +5356,7 @@ std::vector<MenuNode*> get_top_level_menu_nodes(){
             new MenuNode{ "toggle_statusbar", "", {} },
             new MenuNode{ "toggle_horizontal_scroll_lock", "", {} },
             new MenuNode{ "toggle_pdf_annotations", "", {} },
-            new MenuNode{ "toggleconfig_preserve_image_colors_in_dark_mode", "Toggle preserve image colors in dark mode", {} },
+            new MenuNode{ "toggle_config('preserve_image_colors_in_dark_mode')", "Toggle preserve image colors in dark mode", {} },
             overview_view_menu
         }
     };

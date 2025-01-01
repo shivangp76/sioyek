@@ -3806,12 +3806,12 @@ void SioyekDocumentationTextBrowser::doSetSource(const QUrl& url, QTextDocument:
     else if (url_string.startsWith("setconfig")) {
         QString config_name = url_string.split('-').at(1);
         main_widget->pop_current_widget();
-        main_widget->execute_macro_if_enabled(L"setconfig_" + config_name.toStdWString());
+        main_widget->execute_macro_if_enabled(L"set_config('" + config_name.toStdWString() + L"')");
     }
     else if (url_string.startsWith("setsaveconfig")) {
         QString config_name = url_string.split('-').at(1);
         main_widget->pop_current_widget();
-        main_widget->execute_macro_if_enabled(L"setsaveconfig_" + config_name.toStdWString());
+        main_widget->execute_macro_if_enabled(L"set_config('" + config_name.toStdWString() + L"');save_config('" + config_name.toStdWString() + L"')");
     }
     else if (url_string.startsWith("changeconfig")){
         QString config_name = url_string.split('-').at(1);
