@@ -1093,7 +1093,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(command_name) + L")");
         }
         else if (qquery.startsWith("+==")) {
-            execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(command_name) + L");saveconfig_" + utf8_decode(command_name));
+            execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(command_name) + L");save_config('" + utf8_decode(command_name) + L"')");
 
         }
         else if (qquery.endsWith("??")) {
