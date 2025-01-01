@@ -8726,8 +8726,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     //    }
 
     //}
-    command_required_prefixes["set_config"] = "setconfig_";
-    command_required_prefixes["toggle_config"] = "toggleconfig_";
+    //command_required_prefixes["set_config"] = "setconfig_";
+    //command_required_prefixes["toggle_config"] = "toggleconfig_";
 
     QDateTime current_time = QDateTime::currentDateTime();
     QDateTime older_time = current_time.addSecs(-1);

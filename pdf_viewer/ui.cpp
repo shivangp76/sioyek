@@ -2721,6 +2721,10 @@ CommandSelectorWidget::CommandSelectorWidget(
     for (auto [prefix, _] : prefix_model) {
         special_prefixes.push_back(prefix);
     }
+    special_prefixes.push_back("setconfig_");
+    special_prefixes.push_back("toggleconfig_");
+    special_prefixes.push_back("saveconfig_");
+    special_prefixes.push_back("setsaveconfig_");
 
     if (lv) {
         lv->setItemDelegate(new CommandItemDelegate());
