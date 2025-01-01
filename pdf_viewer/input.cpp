@@ -8081,214 +8081,327 @@ public:
 //};
 
 
-class ConfigCommand : public Command {
-    std::string config_name;
+//class ConfigCommand : public Command {
+//    std::string config_name;
+//    std::optional<std::wstring> text = {};
+//    ConfigManager* config_manager;
+//    bool save_after_set = false;
+//    bool force_touch = false;
+//
+//public:
+//    ConfigCommand(
+//        MainWidget* widget_,
+//        std::string config_name_,
+//        ConfigManager* config_manager_,
+//        bool save_after_set_ = false,
+//        bool force_touch_=false) :
+//        Command((save_after_set_ ? "setsaveconfig_" : "setconfig_") + config_name_, widget_), config_manager(config_manager_) {
+//
+//        save_after_set = save_after_set_;
+//        config_name = config_name_;
+//        force_touch = force_touch_;
+//    }
+//
+//    void set_text_requirement(std::wstring value) {
+//        text = value;
+//    }
+//
+//    void set_file_requirement(std::wstring value) {
+//        text = value;
+//    }
+//
+//    std::wstring get_text_default_value() {
+//        return config_manager->get_config_value_string(utf8_decode(config_name));
+//    }
+//
+//    std::optional<Requirement> next_requirement(MainWidget* widget) {
+//        if (TOUCH_MODE || force_touch) {
+//            Config* config = config_manager->get_mut_config_with_name(utf8_decode(config_name));
+//            if (config == nullptr) return {};
+//            if ((!text.has_value()) && config->config_type == ConfigType::String) {
+//                Requirement res;
+//                res.type = RequirementType::Text;
+//                res.name = "Config Value";
+//                return res;
+//            }
+//            else if ((!text.has_value()) && config->config_type == ConfigType::FilePath) {
+//                Requirement res;
+//                res.type = RequirementType::File;
+//                res.name = "Config Value";
+//                return res;
+//            }
+//            else if ((!text.has_value()) && config->config_type == ConfigType::FolderPath) {
+//                Requirement res;
+//                res.type = RequirementType::Folder;
+//                res.name = "Config Value";
+//                return res;
+//            }
+//            return {};
+//        }
+//        else {
+//            if (text.has_value()) {
+//                return {};
+//            }
+//            else {
+//
+//                Requirement res;
+//                res.type = RequirementType::Text;
+//                res.name = "Config Value";
+//                return res;
+//            }
+//        }
+//    }
+//
+//    std::optional<std::wstring> get_text_suggestion(int index) {
+//        const Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
+//        if (config->config_type == ConfigType::Enum) {
+//            const EnumExtras& extras = std::get<EnumExtras>(config->extras);
+//            if (extras.possible_values.size() > 0) {
+//                index = index % extras.possible_values.size();
+//                return extras.possible_values[index];
+//            }
+//        }
+//
+//        if (config->name == L"tts_voice") {
+//            auto voices = widget->get_tts()->get_available_voices();
+//            if (voices.size() > 0) {
+//                index = index % voices.size();
+//                return voices[index];
+//            }
+//        }
+//
+//        return {};
+//    }
+//
+//    void perform() {
+//        if (SHOW_SETCONFIG_IN_STATUSBAR) {
+//            widget->set_status_message(utf8_decode(config_name) + L" = '" + text.value() + L"'");
+//        }
+//
+//        if (TOUCH_MODE || force_touch) {
+//            Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
+//            if (config == nullptr) return;
+//
+//
+//            if (config->config_type == ConfigType::String || config->config_type == ConfigType::FilePath || config->config_type == ConfigType::FolderPath) {
+//                if (widget->config_manager->deserialize_config(config_name, text.value())) {
+//                    widget->on_config_changed(config_name);
+//                }
+//            }
+//            if (config->config_type == ConfigType::Macro) {
+//                widget->push_current_widget(new MacroConfigUI(config_name, widget, (std::wstring*)config->value, *(std::wstring*)config->value));
+//                widget->show_current_widget();
+//            }
+//            if (config->config_type == ConfigType::Color3) {
+//                widget->push_current_widget(new Color3ConfigUI(config_name, widget, (float*)config->value), false);
+//                widget->show_current_widget();
+//            }
+//            if (config->config_type == ConfigType::Enum) {
+//                int current_value = *(int*)config->value;
+//                std::vector<std::wstring> possible_values = std::get<EnumExtras>(config->extras).possible_values;
+//
+//                widget->push_current_widget(new EnumConfigUI(config_name, widget, possible_values, current_value));
+//                widget->show_current_widget();
+//            }
+//
+//            if (config->config_type == ConfigType::Color4) {
+//                widget->push_current_widget(new Color4ConfigUI(config_name, widget, (float*)config->value));
+//                widget->show_current_widget();
+//            }
+//            if (config->config_type == ConfigType::Bool) {
+//                widget->push_current_widget(new BoolConfigUI(config_name, widget, (bool*)config->value, QString::fromStdWString(config->name)));
+//                widget->show_current_widget();
+//            }
+//            if (config->config_type == ConfigType::EnableRectangle) {
+//                widget->push_current_widget(new RectangleConfigUI(config_name, widget, (UIRect*)config->value));
+//                widget->show_current_widget();
+//            }
+//            if (config->config_type == ConfigType::Float) {
+//                FloatExtras extras = std::get<FloatExtras>(config->extras);
+//                widget->push_current_widget(new FloatConfigUI(config_name, widget, (float*)config->value, extras.min_val, extras.max_val));
+//                widget->show_current_widget();
+//
+//            }
+//            if (config->config_type == ConfigType::Int) {
+//                IntExtras extras = std::get<IntExtras>(config->extras);
+//                widget->push_current_widget(new IntConfigUI(config_name, widget, (int*)config->value, extras.min_val, extras.max_val));
+//                widget->show_current_widget();
+//            }
+//
+//            //        config->serialize
+//        }
+//        else {
+//
+//
+//            if (text.value().size() > 1) {
+//                if (text.value().substr(0, 2) == L"+=" || text.value().substr(0, 2) == L"-=") {
+//                    std::wstring config_name_encoded = utf8_decode(config_name);
+//                    Config* config_mut = widget->config_manager->get_mut_config_with_name(config_name_encoded);
+//                    ConfigType config_type = config_mut->config_type;
+//
+//                    if (config_type == ConfigType::Int) {
+//                        int mult = text.value()[0] == '+' ? 1 : -1;
+//                        int* config_ptr = (int*)config_mut->value;
+//                        int prev_value = *config_ptr;
+//                        int new_value = QString::fromStdWString(text.value()).right(text.value().size() - 2).toInt();
+//                        *config_ptr += mult * new_value;
+//                        widget->on_config_changed(config_name, save_after_set);
+//                        return;
+//                    }
+//
+//                    if (config_type == ConfigType::Float) {
+//                        float mult = text.value()[0] == '+' ? 1 : -1;
+//                        float* config_ptr = (float*)config_mut->value;
+//                        float prev_value = *config_ptr;
+//                        float new_value = QString::fromStdWString(text.value()).right(text.value().size() - 2).toFloat();
+//                        *config_ptr += mult * new_value;
+//                        widget->on_config_changed(config_name, save_after_set);
+//                        return;
+//                    }
+//                }
+//            }
+//            if (widget->config_manager->deserialize_config(config_name, text.value())) {
+//                widget->on_config_changed(config_name, save_after_set);
+//            }
+//        }
+//    }
+//
+//    bool requires_document() { return false; }
+//};
+
+class ShowTouchConfigCommand : public Command {
+    std::wstring config_name;
     std::optional<std::wstring> text = {};
-    ConfigManager* config_manager;
-    bool save_after_set = false;
-    bool force_touch = false;
+    //bool save_after_set = false;
+    //bool force_touch = false;
 
 public:
-    ConfigCommand(
-        MainWidget* widget_,
-        std::string config_name_,
-        ConfigManager* config_manager_,
-        bool save_after_set_ = false,
-        bool force_touch_=false) :
-        Command((save_after_set_ ? "setsaveconfig_" : "setconfig_") + config_name_, widget_), config_manager(config_manager_) {
-
-        save_after_set = save_after_set_;
-        config_name = config_name_;
-        force_touch = force_touch_;
+    static inline const std::string cname = "show_touch_ui_for_config";
+    static inline const std::string hname = "Show the touch UI for the given configuration.";
+    ShowTouchConfigCommand(MainWidget* widget_) :Command(cname, widget_) {
     }
 
     void set_text_requirement(std::wstring value) {
-        text = value;
+        if (config_name.size() == 0) {
+            config_name = value;
+        }
+        else {
+            text = value;
+        }
     }
 
     void set_file_requirement(std::wstring value) {
         text = value;
     }
 
-    std::wstring get_text_default_value() {
-        return config_manager->get_config_value_string(utf8_decode(config_name));
-    }
-
     std::optional<Requirement> next_requirement(MainWidget* widget) {
-        if (TOUCH_MODE || force_touch) {
-            Config* config = config_manager->get_mut_config_with_name(utf8_decode(config_name));
-            if (config == nullptr) return {};
-            if ((!text.has_value()) && config->config_type == ConfigType::String) {
-                Requirement res;
-                res.type = RequirementType::Text;
-                res.name = "Config Value";
-                return res;
-            }
-            else if ((!text.has_value()) && config->config_type == ConfigType::FilePath) {
-                Requirement res;
-                res.type = RequirementType::File;
-                res.name = "Config Value";
-                return res;
-            }
-            else if ((!text.has_value()) && config->config_type == ConfigType::FolderPath) {
-                Requirement res;
-                res.type = RequirementType::Folder;
-                res.name = "Config Value";
-                return res;
-            }
-            return {};
-        }
-        else {
-            if (text.has_value()) {
-                return {};
-            }
-            else {
-
-                Requirement res;
-                res.type = RequirementType::Text;
-                res.name = "Config Value";
-                return res;
-            }
-        }
-    }
-
-    std::optional<std::wstring> get_text_suggestion(int index) {
-        const Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
-        if (config->config_type == ConfigType::Enum) {
-            const EnumExtras& extras = std::get<EnumExtras>(config->extras);
-            if (extras.possible_values.size() > 0) {
-                index = index % extras.possible_values.size();
-                return extras.possible_values[index];
-            }
+        if (config_name.size() == 0) {
+            Requirement res;
+            res.type = RequirementType::Text;
+            res.name = "Config Name";
+            return res;
         }
 
-        if (config->name == L"tts_voice") {
-            auto voices = widget->get_tts()->get_available_voices();
-            if (voices.size() > 0) {
-                index = index % voices.size();
-                return voices[index];
-            }
+        Config* config = widget->config_manager->get_mut_config_with_name(config_name);
+        if (config == nullptr) return {};
+        if ((!text.has_value()) && config->config_type == ConfigType::String) {
+            Requirement res;
+            res.type = RequirementType::Text;
+            res.name = "Config Value";
+            return res;
         }
-
+        else if ((!text.has_value()) && config->config_type == ConfigType::FilePath) {
+            Requirement res;
+            res.type = RequirementType::File;
+            res.name = "Config Value";
+            return res;
+        }
+        else if ((!text.has_value()) && config->config_type == ConfigType::FolderPath) {
+            Requirement res;
+            res.type = RequirementType::Folder;
+            res.name = "Config Value";
+            return res;
+        }
         return {};
     }
 
     void perform() {
-        if (SHOW_SETCONFIG_IN_STATUSBAR) {
-            widget->set_status_message(utf8_decode(config_name) + L" = '" + text.value() + L"'");
-        }
 
-        if (TOUCH_MODE || force_touch) {
-            Config* config = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
-            if (config == nullptr) return;
+        Config* config = widget->config_manager->get_mut_config_with_name(config_name);
+        if (config == nullptr) return;
 
 
-            if (config->config_type == ConfigType::String || config->config_type == ConfigType::FilePath || config->config_type == ConfigType::FolderPath) {
-                if (widget->config_manager->deserialize_config(config_name, text.value())) {
-                    widget->on_config_changed(config_name);
-                }
-            }
-            if (config->config_type == ConfigType::Macro) {
-                widget->push_current_widget(new MacroConfigUI(config_name, widget, (std::wstring*)config->value, *(std::wstring*)config->value));
-                widget->show_current_widget();
-            }
-            if (config->config_type == ConfigType::Color3) {
-                widget->push_current_widget(new Color3ConfigUI(config_name, widget, (float*)config->value), false);
-                widget->show_current_widget();
-            }
-            if (config->config_type == ConfigType::Enum) {
-                int current_value = *(int*)config->value;
-                std::vector<std::wstring> possible_values = std::get<EnumExtras>(config->extras).possible_values;
-
-                widget->push_current_widget(new EnumConfigUI(config_name, widget, possible_values, current_value));
-                widget->show_current_widget();
-            }
-
-            if (config->config_type == ConfigType::Color4) {
-                widget->push_current_widget(new Color4ConfigUI(config_name, widget, (float*)config->value));
-                widget->show_current_widget();
-            }
-            if (config->config_type == ConfigType::Bool) {
-                widget->push_current_widget(new BoolConfigUI(config_name, widget, (bool*)config->value, QString::fromStdWString(config->name)));
-                widget->show_current_widget();
-            }
-            if (config->config_type == ConfigType::EnableRectangle) {
-                widget->push_current_widget(new RectangleConfigUI(config_name, widget, (UIRect*)config->value));
-                widget->show_current_widget();
-            }
-            if (config->config_type == ConfigType::Float) {
-                FloatExtras extras = std::get<FloatExtras>(config->extras);
-                widget->push_current_widget(new FloatConfigUI(config_name, widget, (float*)config->value, extras.min_val, extras.max_val));
-                widget->show_current_widget();
-
-            }
-            if (config->config_type == ConfigType::Int) {
-                IntExtras extras = std::get<IntExtras>(config->extras);
-                widget->push_current_widget(new IntConfigUI(config_name, widget, (int*)config->value, extras.min_val, extras.max_val));
-                widget->show_current_widget();
-            }
-
-            //        config->serialize
-        }
-        else {
-
-
-            if (text.value().size() > 1) {
-                if (text.value().substr(0, 2) == L"+=" || text.value().substr(0, 2) == L"-=") {
-                    std::wstring config_name_encoded = utf8_decode(config_name);
-                    Config* config_mut = widget->config_manager->get_mut_config_with_name(config_name_encoded);
-                    ConfigType config_type = config_mut->config_type;
-
-                    if (config_type == ConfigType::Int) {
-                        int mult = text.value()[0] == '+' ? 1 : -1;
-                        int* config_ptr = (int*)config_mut->value;
-                        int prev_value = *config_ptr;
-                        int new_value = QString::fromStdWString(text.value()).right(text.value().size() - 2).toInt();
-                        *config_ptr += mult * new_value;
-                        widget->on_config_changed(config_name, save_after_set);
-                        return;
-                    }
-
-                    if (config_type == ConfigType::Float) {
-                        float mult = text.value()[0] == '+' ? 1 : -1;
-                        float* config_ptr = (float*)config_mut->value;
-                        float prev_value = *config_ptr;
-                        float new_value = QString::fromStdWString(text.value()).right(text.value().size() - 2).toFloat();
-                        *config_ptr += mult * new_value;
-                        widget->on_config_changed(config_name, save_after_set);
-                        return;
-                    }
-                }
-            }
-            if (widget->config_manager->deserialize_config(config_name, text.value())) {
-                widget->on_config_changed(config_name, save_after_set);
+        std::string confname = utf8_encode(config_name);
+        if (config->config_type == ConfigType::String || config->config_type == ConfigType::FilePath || config->config_type == ConfigType::FolderPath) {
+            if (widget->config_manager->deserialize_config(confname, text.value())) {
+                widget->on_config_changed(confname);
             }
         }
+        if (config->config_type == ConfigType::Macro) {
+            widget->push_current_widget(new MacroConfigUI(confname, widget, (std::wstring*)config->value, *(std::wstring*)config->value));
+            widget->show_current_widget();
+        }
+        if (config->config_type == ConfigType::Color3) {
+            widget->push_current_widget(new Color3ConfigUI(confname, widget, (float*)config->value), false);
+            widget->show_current_widget();
+        }
+        if (config->config_type == ConfigType::Enum) {
+            int current_value = *(int*)config->value;
+            std::vector<std::wstring> possible_values = std::get<EnumExtras>(config->extras).possible_values;
+
+            widget->push_current_widget(new EnumConfigUI(confname, widget, possible_values, current_value));
+            widget->show_current_widget();
+        }
+
+        if (config->config_type == ConfigType::Color4) {
+            widget->push_current_widget(new Color4ConfigUI(confname, widget, (float*)config->value));
+            widget->show_current_widget();
+        }
+        if (config->config_type == ConfigType::Bool) {
+            widget->push_current_widget(new BoolConfigUI(confname, widget, (bool*)config->value, QString::fromStdWString(config->name)));
+            widget->show_current_widget();
+        }
+        if (config->config_type == ConfigType::EnableRectangle) {
+            widget->push_current_widget(new RectangleConfigUI(confname, widget, (UIRect*)config->value));
+            widget->show_current_widget();
+        }
+        if (config->config_type == ConfigType::Float) {
+            FloatExtras extras = std::get<FloatExtras>(config->extras);
+            widget->push_current_widget(new FloatConfigUI(confname, widget, (float*)config->value, extras.min_val, extras.max_val));
+            widget->show_current_widget();
+
+        }
+        if (config->config_type == ConfigType::Int) {
+            IntExtras extras = std::get<IntExtras>(config->extras);
+            widget->push_current_widget(new IntConfigUI(confname, widget, (int*)config->value, extras.min_val, extras.max_val));
+            widget->show_current_widget();
+        }
+
+        //        config->serialize
     }
 
     bool requires_document() { return false; }
 };
 
-
-class ShowTouchConfigCommand : public TextCommand {
-public:
-    static inline const std::string cname = "show_touch_ui_for_config";
-    static inline const std::string hname = "Show the touch config UI for the given config name.";
-    static inline const bool developer_only = true;
-
-    ShowTouchConfigCommand(MainWidget* w) : TextCommand(cname, w) {
-    };
-
-    void perform() {
-        auto cmd = std::make_unique<ConfigCommand>(widget, utf8_encode(text.value()), widget->config_manager, false, true);
-        widget->handle_command_types(std::move(cmd), 0);
-    }
-
-    std::string text_requirement_name() {
-        return "Config Name";
-    }
-
-};
+//class ShowTouchConfigCommand : public TextCommand {
+//public:
+//    static inline const std::string cname = "show_touch_ui_for_config";
+//    static inline const std::string hname = "Show the touch config UI for the given config name.";
+//    static inline const bool developer_only = true;
+//
+//    ShowTouchConfigCommand(MainWidget* w) : TextCommand(cname, w) {
+//    };
+//
+//    void perform() {
+//        //auto cmd = std::make_unique<ConfigCommand>(widget, utf8_encode(text.value()), widget->config_manager, false, true);
+//        //widget->handle_command_types(std::move(cmd), 0);
+//    }
+//
+//    std::string text_requirement_name() {
+//        return "Config Name";
+//    }
+//
+//};
 
 
 class HoldableCommand : public Command {

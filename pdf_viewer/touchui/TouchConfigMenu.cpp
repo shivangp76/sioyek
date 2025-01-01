@@ -84,7 +84,8 @@ void TouchConfigMenu::handleTextConfigChanged(QString config_name, QString new_v
 
 void TouchConfigMenu::handleSetConfigPressed(QString config_name) {
     //command_manager->execute_command(CommandType::SetConfig, config_name.toStdWString());
-    main_widget->run_command_with_name((QString("setconfig_") + config_name).toStdString());
+    main_widget->execute_macro_if_enabled((L"show_touch_ui_for_config('" + config_name.toStdWString() + L"')"));
+    //main_widget->show_touch
     //auto command = main_widget->command_manager->get_command_with_name(main_widget, (QString("setconfig_") + config_name).toStdString());
     //main_widget->handle_command_types(std::move(command), 0);
 }
@@ -195,7 +196,11 @@ QVariant ConfigModel::data(const QModelIndex& index, int role) const {
                 return QVariant::fromValue(vals);
             }
 
-            if ((config_type == ConfigType::String) || (config_type == ConfigType::Macro) || (config_type == ConfigType::Enum) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
+            if (config_type == ConfigType::Enum) {
+                int index = *(int*)conf->value;
+                return QVariant::fromValue(QString::fromStdWString(std::get<EnumExtras>(conf->extras).possible_values[index]));
+            }
+            if ((config_type == ConfigType::String) || (config_type == ConfigType::Macro) || (config_type == ConfigType::FilePath) || (config_type == ConfigType::FolderPath)) {
                 //QColor::from
                 return QVariant::fromValue(QString::fromStdWString(*(std::wstring*)(conf->value)));
             }
