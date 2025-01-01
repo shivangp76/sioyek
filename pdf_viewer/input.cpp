@@ -7015,6 +7015,9 @@ public:
 
     void perform() {
         //widget->handle_debug_command();
+        if (SHOW_SETCONFIG_IN_STATUSBAR) {
+            widget->set_status_message(config_name.value() + L" = '" + config_value.value() + L"'");
+        }
         if (widget->config_manager->deserialize_config(utf8_encode(config_name.value()), config_value.value())) {
             widget->on_config_changed(utf8_encode(config_name.value()), false);
         }
