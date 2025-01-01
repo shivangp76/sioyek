@@ -1173,7 +1173,7 @@ TouchCommandSelector::TouchCommandSelector(bool is_fuzzy, const QStringList& com
     QObject::connect(list_view, &TouchListView::itemSelected, [&](QString val, int index) {
         //main_widget->current_widget = nullptr;
         main_widget->pop_current_widget();
-        main_widget->on_command_done(val.toStdString(), val.toStdString());
+        main_widget->on_command_done(val.toStdString(), val.toStdString(), false);
         //deleteLater();
         });
 }
@@ -2416,7 +2416,9 @@ QVariant CommandModel::data(const QModelIndex& index, int role) const {
             return commands[index.row()];
         }
         else if (index.column() == CommandModel::keybind) {
-            return keybinds[index.row()];
+            if (index.row() < keybinds.size()) {
+                return keybinds[index.row()];
+            }
         }
     }
     return QVariant();
@@ -2589,13 +2591,25 @@ QString BaseCustomDelegate::highlight_pattern(QString txt) const{
     return txt;
 }
 
-CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString> commands, std::vector<QStringList> keybinds, MainWidget* parent) {
+CommandSelectorWidget* CommandSelectorWidget::from_commands(
+    std::vector<QString> commands,
+    std::vector<QString> configs,
+    std::vector<QString> color_configs,
+    std::vector<QString> bool_configs,
+    std::vector<QStringList> keybinds,
+    MainWidget* parent
+) {
 
 
     std::unordered_map<QString, QStringList> command_to_keybind_map;
     std::unordered_map<QString, std::vector<QString>> prefix_command_names;
     std::unordered_map<QString, std::vector<QStringList>> prefix_keybinds;
     std::unordered_map<QString, QAbstractItemModel*> prefix_models;
+
+    CommandModel* configs_model = new CommandModel(configs, {});
+    CommandModel* bool_configs_model = new CommandModel(bool_configs, {});
+    CommandModel* color_configs_model = new CommandModel(color_configs, {});
+
 
     for (int i = 0; i < commands.size(); i++) {
         command_to_keybind_map[commands[i]] = keybinds[i];
@@ -2632,11 +2646,21 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(std::vector<QString>
     QListView* list_view = get_ui_new_listview();
     list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
-    CommandSelectorWidget* command_selector_widget = new CommandSelectorWidget(list_view, prefix_models, parent);
+    CommandSelectorWidget* command_selector_widget = new CommandSelectorWidget(
+        list_view,
+        prefix_models,
+        configs_model,
+        color_configs_model,
+        bool_configs_model,
+        parent
+    );
 
     for (auto [_, model] : prefix_models) {
         model->setParent(command_selector_widget);
     }
+    configs_model->setParent(command_selector_widget);
+    bool_configs_model->setParent(command_selector_widget);
+    color_configs_model->setParent(command_selector_widget);
 
     list_view->setParent(command_selector_widget);
 
@@ -2683,10 +2707,16 @@ bool BaseCustomSelectorWidget::on_text_change(const QString& text) {
 CommandSelectorWidget::CommandSelectorWidget(
     QAbstractItemView* view,
     std::unordered_map<QString, QAbstractItemModel*> prefix_model,
+    QAbstractItemModel* configs_model_,
+    QAbstractItemModel* color_configs_model_,
+    QAbstractItemModel* bool_configs_model_,
     MainWidget* parent) : BaseCustomSelectorWidget(view, prefix_model[""], parent) {
     w = parent;
 
     prefix_command_model = prefix_model;
+    configs_model = configs_model_;
+    color_configs_model = color_configs_model_;
+    bool_configs_model = bool_configs_model_;
 
     for (auto [prefix, _] : prefix_model) {
         special_prefixes.push_back(prefix);
@@ -2715,6 +2745,8 @@ bool CommandSelectorWidget::on_text_change(const QString& txt) {
     QString text = translate_command_search_string(txt);
 
     QString prefix = "";
+    QStringList config_required_prefixes = { "setconfig_", "toggleconfig_", "saveconfig_", "setsaveconfig_", "deleteconfig_" };
+
     for (auto p : special_prefixes) {
         if (text.startsWith(p)) {
             if (p.size() > prefix.size()) {
@@ -2722,16 +2754,59 @@ bool CommandSelectorWidget::on_text_change(const QString& txt) {
             }
         }
     }
+    bool is_config = false;
+    bool is_boolean_config = false;
+    bool is_color_config = false;
+    config_prefix = "";
+
+    if (config_required_prefixes.indexOf(prefix) != -1) {
+        is_config = true;
+        text = text.mid(prefix.size());
+    }
+    is_config_mode_ = is_config;
+    if (prefix == "toggleconfig_") {
+        is_boolean_config = true;
+    }
+    if (text.startsWith("DARK_") || text.startsWith("CUSTOM_")) {
+        is_color_config = true;
+        if (text.startsWith("DARK_")) {
+            text = text.mid(5);
+            prefix += "DARK_";
+            config_prefix = "DARK_";
+        }
+        else {
+            text = text.mid(7);
+            prefix += "CUSTOM_";
+            config_prefix = "CUSTOM_";
+        }
+    }
+
     if (prefix != last_prefix) {
 
         delete proxy_model;
         proxy_model = new MySortFilterProxyModel(true, false);
-        proxy_model->setSourceModel(prefix_command_model[prefix]);
+        if (is_config) {
+            if (is_boolean_config) {
+                proxy_model->setSourceModel(bool_configs_model);
+            }
+            else if (is_color_config) {
+                proxy_model->setSourceModel(color_configs_model);
+            }
+            else {
+                proxy_model->setSourceModel(configs_model);
+            }
+        }
+        else {
+            proxy_model->setSourceModel(prefix_command_model[prefix]);
+        }
         proxy_model->setParent(this);
         proxy_model->set_ignore_prefix(prefix);
         get_view()->setModel(proxy_model);
         auto delegate = dynamic_cast<CommandItemDelegate*>(get_view()->itemDelegate());
-        delegate->set_ignore_prefix(prefix);
+        if (!is_config) {
+
+            delegate->set_ignore_prefix(prefix);
+        }
         // auto command_item_delegate = dynamic_cast<BaseCustomDelegate*>(lv->itemDelegate());
 
         //proxy_model->setSourceModel(prefix_command_model[prefix]);
@@ -2741,6 +2816,14 @@ bool CommandSelectorWidget::on_text_change(const QString& txt) {
     }
 
     return BaseCustomSelectorWidget::on_text_change(text);
+}
+
+bool CommandSelectorWidget::is_config_mode() {
+    return is_config_mode_;
+}
+
+QString CommandSelectorWidget::get_config_prefix() {
+    return config_prefix;
 }
 
 void BaseSelectorWidget::paintEvent(QPaintEvent* paint_event){

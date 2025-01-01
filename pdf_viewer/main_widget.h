@@ -202,7 +202,7 @@ public:
     // code to execute when a command is pressed (for example when we type `goto_beginning` in the command)
     // menu, we will call on_command_done("goto_beginning"). The reason that this is a closure instead of just a
     // method is historical. I am too lazy to change it.
-    std::function<void(std::string, std::string)> on_command_done = nullptr;
+    std::function<void(std::string, std::string, bool)> on_command_done = nullptr;
 
     // List of previous locations in the current session. Note that we keep the history even across files
     // hence why `DocumentViewState` has a `document_path` member
@@ -899,10 +899,10 @@ public:
     void add_command_being_performed(Command* new_command);
     void remove_command_being_performed(Command* new_command);
     void load_sioyek_documentation();
-    QString get_command_documentation(QString command_name, QString* out_url, QString* out_file_name);
+    QString get_command_documentation(QString command_name, bool is_config, QString* out_url, QString* out_file_name);
     QString get_command_documentation_with_title(QString command_name);
     QString get_config_documentation_with_title(QString config, QString command_name);
-    void show_command_documentation(QString command_name);
+    void show_command_documentation(QString command_name, bool is_config);
     void show_documentation_with_title(QString doctype, QString title);
     void open_documentation_file_for_name(QString doctype, QString name);
     QString get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs);

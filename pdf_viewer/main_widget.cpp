@@ -1087,26 +1087,18 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     //QObject::connect(dynamic_cast<MyLineEdit*>(text_command_line_edit), &MyLineEdit::next_suggestion, this, &MainWidget::on_next_text_suggestion);
     //QObject::connect(dynamic_cast<MyLineEdit*>(text_command_line_edit), &MyLineEdit::prev_suggestion, this, &MainWidget::on_prev_text_suggestion);
 
-    on_command_done = [&](std::string command_name, std::string query_text) {
-        if (query_text.size() >= 2 && query_text.substr(0, 2) == "==") {
-            if (QString::fromStdString(command_name).startsWith("setconfig_")) {
-                std::string config_name = command_name.substr(10);
-                execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(config_name) + L")");
-            }
-            //qDebug() << command_name;
+    on_command_done = [&](std::string command_name, std::string query_text, bool is_config) {
+        QString qquery = QString::fromStdString(query_text);
+        if (qquery.startsWith("==")) {
+            execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(command_name) + L")");
         }
-        else if (query_text.size() >= 3 && query_text.substr(0, 3) == "+==") {
-            if (QString::fromStdString(command_name).startsWith("setsaveconfig_")) {
-                std::string config_name = command_name.substr(14);
-                execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(config_name) + L");saveconfig_" + utf8_decode(config_name));
-            }
+        else if (qquery.startsWith("+==")) {
+            execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(command_name) + L");saveconfig_" + utf8_decode(command_name));
 
         }
-        else if (query_text.size() >= 2 && query_text.substr(query_text.size() - 2, 2) == "??") {
-            bool is_config = false;
+        else if (qquery.endsWith("??")) {
             QString command_name_qstring = QString::fromStdString(command_name);
             if (command_name_qstring.startsWith("setconfig_")) {
-                is_config = true;
                 command_name_qstring = command_name_qstring.mid(10);
             }
             if (is_config) {
@@ -1154,14 +1146,20 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             }
 
         }
-        else if (query_text.size() > 0 && (query_text.back() == '?' || query_text[0] == '?')) {
+        else if (qquery.endsWith("?")) {
             if (query_text.size() == 1) {
                 open_documentation_file_for_name("", "");
                 invalidate_render();
             }
             else {
-                show_command_documentation(QString::fromStdString(command_name));
+                show_command_documentation(QString::fromStdString(command_name), is_config);
             }
+        }
+        else if (qquery.startsWith("!") || qquery.startsWith("toggleconfig_")) {
+            execute_macro_if_enabled(L"toggle_config(" + utf8_decode(command_name) + L")");
+        }
+        else if (qquery.startsWith("=") || qquery.startsWith("setconfig_")) {
+            execute_macro_if_enabled(L"set_config(" + utf8_decode(command_name) + L")");
         }
         else {
             bool is_numeric = false;
@@ -7276,7 +7274,7 @@ void MainWidget::show_documentation_with_title(QString doctype, QString title) {
 
 }
 
-void MainWidget::show_command_documentation(QString command_name) {
+void MainWidget::show_command_documentation(QString command_name, bool is_config) {
     if (SHOW_DOCUMENTATION_IN_WIDGET) {
         SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
         text_edit->setStyleSheet(get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE));
@@ -7290,7 +7288,7 @@ void MainWidget::show_command_documentation(QString command_name) {
 
         QString documentation_url = "";
         QString doucmentation_name;
-        auto doc = get_command_documentation(command_name, &documentation_url, &doucmentation_name);
+        auto doc = get_command_documentation(command_name, is_config, &documentation_url, &doucmentation_name);
 
         text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
 
@@ -7301,7 +7299,7 @@ void MainWidget::show_command_documentation(QString command_name) {
     else {
         QString documentation_url = "";
         QString doucmentation_name;
-        auto doc = get_command_documentation(command_name, &documentation_url, &doucmentation_name);
+        auto doc = get_command_documentation(command_name, is_config, &documentation_url, &doucmentation_name);
         QString doctype = documentation_url.startsWith("conf") ? "config" : "command";
         open_documentation_file_for_name(doctype, doucmentation_name);
     }
@@ -7594,6 +7592,26 @@ void MainWidget::show_command_menu() {
     }
 
     QStringList all_command_names = command_manager->get_all_command_names();
+    std::vector<QString> config_names;
+    std::vector<QString> color_config_names;
+    std::vector<QString> bool_config_names;
+
+    auto configs = config_manager->get_configs_ptr();
+    for (auto conf : *configs) {
+        QString confname = QString::fromStdWString(conf->name);
+        if (confname.startsWith("DARK") || confname.startsWith("CUSTOM")) {
+            continue;
+        }
+
+        config_names.push_back(QString::fromStdWString(conf->name));
+        if (conf->config_type == ConfigType::Bool) {
+            bool_config_names.push_back(confname);
+        }
+        else if (conf->config_type == ConfigType::Color3 || conf->config_type == ConfigType::Color4) {
+            color_config_names.push_back(confname);
+        }
+    }
+
     for (int i = 0; i < all_command_names.size(); i++) {
         QStringList keybindings;
         auto iterator = command_key_mappings.find(all_command_names[i].toStdString());
@@ -7606,12 +7624,20 @@ void MainWidget::show_command_menu() {
         command_keybinds.push_back(keybindings);
     }
 
-    CommandSelectorWidget* command_selector_widget = CommandSelectorWidget::from_commands(command_names, command_keybinds, this);
+    CommandSelectorWidget* command_selector_widget = CommandSelectorWidget::from_commands(
+        command_names,
+        config_names,
+        color_config_names,
+        bool_config_names,
+        command_keybinds,
+        this
+    );
     command_selector_widget->set_select_fn([&, command_selector_widget](int index){
 
         std::string query = command_selector_widget->line_edit->text().toStdString();
         bool is_numeric = false;
         QString::fromStdString(query).toInt(&is_numeric);
+        bool is_config = command_selector_widget->is_config_mode();
         if (is_numeric){
             int page_number = QString::fromStdString(query).toInt();
             main_document_view->goto_page(page_number - 1);
@@ -7622,9 +7648,12 @@ void MainWidget::show_command_menu() {
         }
         else{
             QString command_name = command_selector_widget->get_command_with_index(index);
+            if (is_config) {
+                command_name = command_selector_widget->get_config_prefix() + command_name;
+            }
             pop_current_widget();
             setFocus();
-            on_command_done(command_name.toStdString(), query);
+            on_command_done(command_name.toStdString(), query, is_config);
         }
 
         });
@@ -10825,16 +10854,16 @@ QString get_config_command_prefix(QString config_command_name) {
     return "";
 }
 
-QString MainWidget::get_command_documentation(QString command_name, QString* out_url, QString* out_file_name){
+QString MainWidget::get_command_documentation(QString command_name, bool is_config, QString* out_url, QString* out_file_name){
     load_sioyek_documentation();
 
     const QJsonObject& command_name_to_title_map = sioyek_documentation_json_document["command_name_to_title_map"].toObject();
     const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
     const QJsonObject& config_name_to_title_map = sioyek_documentation_json_document["config_name_to_title_map"].toObject();
 
-    int config_command_prefix_size = get_config_command_prefix(command_name).size();
-    if (config_command_prefix_size > 0) {
-        QString config_name = command_name.mid(config_command_prefix_size);
+    //int config_command_prefix_size = get_config_command_prefix(command_name).size();
+    if (is_config) {
+        QString config_name = command_name;
         const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
         const QJsonObject& config_name_to_file_name_map = sioyek_documentation_json_document["config_name_to_file_name_map"].toObject();
         const QJsonObject& config_related_commands_map = sioyek_documentation_json_document["config_related_commands_map"].toObject();

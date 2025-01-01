@@ -1199,19 +1199,36 @@ private:
     CommandSelectorWidget(
         QAbstractItemView* view,
         std::unordered_map<QString, QAbstractItemModel*> prefix_model,
+        QAbstractItemModel* configs_model,
+        QAbstractItemModel* color_configs_model,
+        QAbstractItemModel* bool_configs_model,
         MainWidget* parent
     );
     std::vector<QString> special_prefixes;
+    bool is_config_mode_ = false;
+    QString config_prefix = "";
 
 public:
 
     std::unordered_map<QString, QAbstractItemModel*> prefix_command_model;
+    QAbstractItemModel* configs_model;
+    QAbstractItemModel* color_configs_model;
+    QAbstractItemModel* bool_configs_model;
     QString last_prefix = "";
 
     QString get_command_with_index(int index);
-    static CommandSelectorWidget* from_commands(std::vector<QString> commands, std::vector<QStringList> keybinds, MainWidget* parent);
+    static CommandSelectorWidget* from_commands(
+        std::vector<QString> commands,
+        std::vector<QString> configs,
+        std::vector<QString> color_configs,
+        std::vector<QString> bool_configs,
+        std::vector<QStringList> keybinds,
+        MainWidget* parent
+    );
     bool on_text_change(const QString& text) override;
     void on_text_changed(const QString& text) override;
+    bool is_config_mode();
+    QString get_config_prefix();
 
 
     //void update_render() override;
