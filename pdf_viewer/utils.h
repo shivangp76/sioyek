@@ -921,7 +921,13 @@ template<typename T>
 float similarity_score(const T& haystack, const T& needle, int* out_begin = nullptr, int* out_end = nullptr, float size_threshold=0.5f) {
     bool unicode = has_unicode(haystack) || has_unicode(needle);
 
-    float size_discount_factor = 1.0f / haystack.size();
+    float size_discount_factor = 1.0f / (haystack.size() > 0 ? static_cast<float>(haystack.size()) : 1.0f);
+    if (needle.size() == 0) {
+        return 100;
+    }
+    if (haystack.size() == 0) {
+        return 0;
+    }
     if (haystack == needle) {
         if (out_begin) {
             *out_begin = 0;
@@ -930,9 +936,6 @@ float similarity_score(const T& haystack, const T& needle, int* out_begin = null
             *out_end = haystack.size();
         }
         return 110;
-    }
-    if (needle.size() == 0) {
-        return 100;
     }
     auto [begin, end] = unicode ? find_smallest_containing_substring_unicode<T>(haystack, needle) : find_smallest_containing_substring_ascii<T>(haystack, needle);
     if (out_begin && out_end) {
