@@ -5468,7 +5468,7 @@ std::vector<MenuNode*> get_top_level_menu_nodes(){
             new MenuNode{ "command", "Show the list of all commands", {} },
             new MenuNode{ "command_palette", "Show the command palette", {} },
             new MenuNode{ "toggle_reading", "", {} },
-            new MenuNode{ "setconfig_tts_rate", "Set reading speed", {} },
+            new MenuNode{ "set_config('tts_rate')", "Set reading speed", {} },
             new MenuNode{ "toggle_synctex", "", {} },
             scratchpad_menu,
             ruler_menu,
