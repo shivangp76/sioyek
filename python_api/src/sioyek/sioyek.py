@@ -132,6 +132,24 @@ class Sioyek(SioyekBase):
         if self.shared_database_path != None:
             self.shared_database = sqlite3.connect(self.shared_database_path)
     
+    def __getattr__(self, name):
+        if name in self.__dict__:
+            return self.__dict__[name]
+        else:
+            if name.startswith('setconfig_'):
+                def method(value):
+                    self.set_config(name[10:], value)
+                return method
+            elif name.startswith('toggleconfig_'):
+                def method():
+                    self.toggle_config(name[13:])
+                return method
+            elif name.startswith('saveconfig_'):
+                def method():
+                    self.save_config(name[11:])
+                return method
+            raise AttributeError(f"'Sioyek' object has no attribute '{name}'")
+
     def try_to_connect(self):
         self.socket = QLocalSocket()
         self.socket.connectToServer(self.socket_name)
