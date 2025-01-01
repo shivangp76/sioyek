@@ -10852,14 +10852,6 @@ QString MainWidget::get_command_documentation_with_title(QString title) {
     return "";
 }
 
-QString get_config_command_prefix(QString config_command_name) {
-    if (config_command_name.startsWith("setconfig_")) return "setconfig_";
-    if (config_command_name.startsWith("toggleconfig_")) return "toggleconfig_";
-    if (config_command_name.startsWith("saveconfig_")) return "saveconfig_";
-    if (config_command_name.startsWith("setsaveconfig_")) return "setsaveconfig_";
-    return "";
-}
-
 QString MainWidget::get_command_documentation(QString command_name, bool is_config, QString* out_url, QString* out_file_name){
     load_sioyek_documentation();
 
@@ -10867,7 +10859,6 @@ QString MainWidget::get_command_documentation(QString command_name, bool is_conf
     const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
     const QJsonObject& config_name_to_title_map = sioyek_documentation_json_document["config_name_to_title_map"].toObject();
 
-    //int config_command_prefix_size = get_config_command_prefix(command_name).size();
     if (is_config) {
         QString config_name = command_name;
         const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
