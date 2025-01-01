@@ -8027,55 +8027,55 @@ public:
 };
 
 
-class ToggleConfigCommand : public Command {
-    std::string config_name;
-public:
-    ToggleConfigCommand(MainWidget* widget, std::string config_name_) : Command("toggleconfig_" + config_name_, widget) {
-        config_name = config_name_;
-    }
-
-    void perform() {
-        //widget->config_manager->deserialize_config(config_name, text.value());
-        auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
-        *(bool*)conf->value = !*(bool*)conf->value;
-        widget->on_config_changed(config_name);
-    }
-
-    bool requires_document() { return false; }
-};
-
-class SaveConfigCommand : public Command {
-    std::string config_name;
-public:
-    SaveConfigCommand(MainWidget* widget, std::string config_name_) : Command("saveconfig_" + config_name_, widget) {
-        config_name = config_name_;
-    }
-
-    void perform() {
-        auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
-        conf->is_auto = true;
-        widget->save_auto_config();
-    }
-
-    bool requires_document() { return false; }
-};
-
-
-class DeleteConfigCommand : public Command {
-    std::string config_name;
-public:
-    DeleteConfigCommand(MainWidget* widget, std::string config_name_) : Command("deleteconfig_" + config_name_, widget) {
-        config_name = config_name_;
-    }
-
-    void perform() {
-        auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
-        conf->is_auto = false;
-        widget->save_auto_config();
-    }
-
-    bool requires_document() { return false; }
-};
+//class ToggleConfigCommand : public Command {
+//    std::string config_name;
+//public:
+//    ToggleConfigCommand(MainWidget* widget, std::string config_name_) : Command("toggleconfig_" + config_name_, widget) {
+//        config_name = config_name_;
+//    }
+//
+//    void perform() {
+//        //widget->config_manager->deserialize_config(config_name, text.value());
+//        auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
+//        *(bool*)conf->value = !*(bool*)conf->value;
+//        widget->on_config_changed(config_name);
+//    }
+//
+//    bool requires_document() { return false; }
+//};
+//
+//class SaveConfigCommand : public Command {
+//    std::string config_name;
+//public:
+//    SaveConfigCommand(MainWidget* widget, std::string config_name_) : Command("saveconfig_" + config_name_, widget) {
+//        config_name = config_name_;
+//    }
+//
+//    void perform() {
+//        auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
+//        conf->is_auto = true;
+//        widget->save_auto_config();
+//    }
+//
+//    bool requires_document() { return false; }
+//};
+//
+//
+//class DeleteConfigCommand : public Command {
+//    std::string config_name;
+//public:
+//    DeleteConfigCommand(MainWidget* widget, std::string config_name_) : Command("deleteconfig_" + config_name_, widget) {
+//        config_name = config_name_;
+//    }
+//
+//    void perform() {
+//        auto conf = widget->config_manager->get_mut_config_with_name(utf8_decode(config_name));
+//        conf->is_auto = false;
+//        widget->save_auto_config();
+//    }
+//
+//    bool requires_document() { return false; }
+//};
 
 
 class ConfigCommand : public Command {
