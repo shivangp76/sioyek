@@ -4772,7 +4772,7 @@ void MainWidget::focusInEvent(QFocusEvent* ev) {
 }
 
 void MainWidget::toggle_statusbar() {
-    execute_macro_if_enabled(L"toggleconfig_statusbar");
+    execute_macro_if_enabled(L"toggle_config('statusbar')");
 }
 
 void MainWidget::toggle_titlebar() {
@@ -4960,7 +4960,7 @@ void MainWidget::add_portal(std::wstring source_path, Portal new_link) {
 }
 
 void MainWidget::toggle_scrollbar() {
-    execute_macro_if_enabled(L"toggleconfig_scrollbar");
+    execute_macro_if_enabled(L"toggle_config('scrollbar')");
 }
 
 void MainWidget::update_scrollbar() {
