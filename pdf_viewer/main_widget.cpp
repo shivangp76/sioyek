@@ -1127,9 +1127,28 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                     }
                 }
                 else {
-                    bool found = input_handler->get_definition_file_and_line(command_name_qstring.toStdString(), file_path, line_number);
-                    if (found) {
-                        open_text_editor_at_line(QString::fromStdWString(file_path), line_number);
+                    auto locations = input_handler->get_definition_file_and_line(command_name_qstring.toStdString());
+                    std::vector<std::wstring> option_texts;
+                    for (auto loc : locations) {
+                        option_texts.push_back(loc.file_path + L":" + std::to_wstring(loc.line_number));
+                    }
+
+                    if (locations.size() == 1) {
+                        open_text_editor_at_line(QString::fromStdWString(locations[0].file_path), locations[0].line_number);
+                    }
+                    else if (locations.size() > 1) {
+                        set_filtered_select_menu<KeybindDefinitionLocation>(this,
+                            true,
+                            false,
+                            {option_texts},
+                            locations,
+                            0,
+                            [](KeybindDefinitionLocation* loc) {
+                                open_text_editor_at_line(QString::fromStdWString(loc->file_path), loc->line_number);
+                            },
+                            [](KeybindDefinitionLocation*) {}
+                        );
+                        show_current_widget();
                     }
                 }
             }

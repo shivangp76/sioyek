@@ -9294,32 +9294,32 @@ std::vector<std::string> InputHandler::get_key_mappings(std::string command_name
     }
 }
 
-bool InputHandler::get_definition_file_and_line_helper(InputParseTreeNode* parent, std::string command_name, std::wstring& out_file, int& out_line) const {
+void InputHandler::get_definition_file_and_line_helper(InputParseTreeNode* parent, std::string command_name, std::vector<KeybindDefinitionLocation>& out_locations) const {
     for (auto child : parent->children) {
         if (child->is_final) {
             for (auto name : child->name_) {
                 if (name == command_name) {
-                    out_file = child->defining_file_path;
-                    out_line = child->defining_file_line;
-                    return true;
+                    KeybindDefinitionLocation loc;
+                    loc.file_path = child->defining_file_path;
+                    loc.line_number = child->defining_file_line;
+                    out_locations.push_back(loc);
                 }
             }
         }
     }
 
-    for (auto child : root->children) {
+    for (auto child : parent->children) {
         if (!child->is_final) {
-            bool found = get_definition_file_and_line_helper(child, command_name, out_file, out_line);
-            if (found) return true;
+            get_definition_file_and_line_helper(child, command_name, out_locations);
         }
     }
 
-    return false;
-
 }
 
-bool InputHandler::get_definition_file_and_line(std::string command_name, std::wstring& out_file, int& out_line) const {
-    return get_definition_file_and_line_helper(root, command_name, out_file, out_line);
+std::vector<KeybindDefinitionLocation> InputHandler::get_definition_file_and_line(std::string command_name) const {
+    std::vector<KeybindDefinitionLocation> res;
+    get_definition_file_and_line_helper(root, command_name, res);
+    return res;
 }
 
 

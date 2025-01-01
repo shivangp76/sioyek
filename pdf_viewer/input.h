@@ -132,6 +132,10 @@ struct InputParseTreeNode {
     bool matches(int key, bool shift, bool ctrl, bool cmd, bool alt);
 };
 
+struct KeybindDefinitionLocation {
+    std::wstring file_path;
+    int line_number;
+};
 
 
 class InputHandler {
@@ -164,8 +168,8 @@ public:
     std::vector<Path> get_all_user_keys_paths();
     std::unordered_map<std::string, std::vector<std::string>> get_command_key_mappings() const;
     std::vector<std::string> get_key_mappings(std::string command_name) const;
-    bool get_definition_file_and_line_helper(InputParseTreeNode* parent, std::string command_name, std::wstring& out_file, int& out_line) const;
-    bool get_definition_file_and_line(std::string command_name, std::wstring& out_file, int& out_line) const;
+    void get_definition_file_and_line_helper(InputParseTreeNode* parent, std::string command_name, std::vector<KeybindDefinitionLocation>& locations) const;
+    std::vector<KeybindDefinitionLocation> get_definition_file_and_line(std::string command_name) const;
 
 };
 
