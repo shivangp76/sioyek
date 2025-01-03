@@ -517,6 +517,7 @@ public:
     std::optional<AbsoluteRect> expand_selection(bool is_begin, bool word);
     std::optional<AbsoluteRect> shrink_selection(bool is_begin, bool word);
     std::deque<AbsoluteRect>* get_selected_character_rects();
+    void scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount, float height);
 
     Document* doc();
 
@@ -618,7 +619,7 @@ public:
     void clear_selected_object();
     void set_selected_highlight_uuid(std::string uuid);
     void set_selected_bookmark_uuid(std::string uuid);
-    bool handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos);
+    bool handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos, float height);
     void schedule_update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state);
     // bool overview_under_pos(WindowPos pos);
     Portal* get_portal_under_window_pos(WindowPos pos);

@@ -711,10 +711,17 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         validate_render();
         return;
     }
-    if (main_document_view->handle_visible_object_scroll_mouse_move(abs_mpos)){
-        validate_render();
-        return;
+
+    if (main_document_view->visible_object_scroll_data) {
+
+        std::string uuid = main_document_view->visible_object_scroll_data->object_uuid;
+        float height = background_bookmark_renderer->get_cached_bookmark_height(uuid);
+        if (main_document_view->handle_visible_object_scroll_mouse_move(abs_mpos, height)) {
+            validate_render();
+            return;
+        }
     }
+
 
     if (overview_resize_data) {
         // if we are resizing overview page, set the selected side of the overview window to the mosue position
@@ -12472,21 +12479,23 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 }
 
 void MainWidget::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount) {
-    if (bookmark_uuid.size() > 0) {
-        BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
-        if (bookmark) {
-            std::string uuid = bookmark->uuid;
-            float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
-            float current_scroll = dv()->get_bookmark_scroll_amount(uuid);
-            float new_scroll = current_scroll + scroll_amount;
-            float height = background_bookmark_renderer->get_cached_bookmark_height(uuid);
+    float height = background_bookmark_renderer->get_cached_bookmark_height(bookmark_uuid);
+    dv()->scroll_bookmark_with_uuid(bookmark_uuid, amount, height);
 
-            if (new_scroll > (height - bookmark->get_rectangle()->height() * dv()->get_zoom_level())) {
-                new_scroll = height - bookmark->get_rectangle()->height() * dv()->get_zoom_level();
-            }
-            dv()->set_bookmark_scroll_amount(uuid, new_scroll);
-        }
-    }
+    //if (bookmark_uuid.size() > 0) {
+    //    BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
+    //    if (bookmark) {
+    //        std::string uuid = bookmark->uuid;
+    //        float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
+    //        float current_scroll = dv()->get_bookmark_scroll_amount(uuid);
+    //        float new_scroll = current_scroll + scroll_amount;
+
+    //        if (new_scroll > (height - bookmark->get_rectangle()->height() * dv()->get_zoom_level())) {
+    //            new_scroll = height - bookmark->get_rectangle()->height() * dv()->get_zoom_level();
+    //        }
+    //        dv()->set_bookmark_scroll_amount(uuid, new_scroll);
+    //    }
+    //}
 }
 
 void MainWidget::scroll_selected_bookmark(int amount) {

@@ -4530,14 +4530,17 @@ void DocumentView::set_selected_bookmark_uuid(std::string uuid) {
     selected_object_index = VisibleObjectIndex{VisibleObjectType::Bookmark, uuid};
 }
 
-bool DocumentView::handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos){
+bool DocumentView::handle_visible_object_scroll_mouse_move(AbsoluteDocumentPos abs_mpos, float height){
     if (visible_object_scroll_data) {
         std::string uuid = visible_object_scroll_data->object_uuid;
         if (visible_object_scroll_data->type == VisibleObjectType::Bookmark) {
             BookMark* target_bookmark = current_document->get_bookmark_with_uuid(uuid);
             if (target_bookmark) {
+                //scroll_bookmark_with_uuid(target_bookmark->uuid, -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * get_zoom_level(), height);
+                float max_height = height - target_bookmark->get_rectangle()->height() * get_zoom_level();
                 set_bookmark_scroll_amount(target_bookmark->uuid,
-                    -(abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * get_zoom_level() + visible_object_scroll_data->original_scroll_amount);
+                    std::min( - (abs_mpos.y - visible_object_scroll_data->original_mouse_pos.y) * get_zoom_level() + visible_object_scroll_data->original_scroll_amount, max_height)
+                );
                 // validate_render();
                 return true;
             }
@@ -6170,4 +6173,21 @@ bool DocumentView::is_scratchpad() {
 
 bool ScratchPad::is_scratchpad() {
     return true;
+}
+
+void DocumentView::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount, float height) {
+    if (bookmark_uuid.size() > 0) {
+        BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
+        if (bookmark) {
+            std::string uuid = bookmark->uuid;
+            float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
+            float current_scroll = get_bookmark_scroll_amount(uuid);
+            float new_scroll = current_scroll + scroll_amount;
+
+            if (new_scroll > (height - bookmark->get_rectangle()->height() * get_zoom_level())) {
+                new_scroll = height - bookmark->get_rectangle()->height() * get_zoom_level();
+            }
+            set_bookmark_scroll_amount(uuid, new_scroll);
+        }
+    }
 }
