@@ -8373,6 +8373,31 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
     for (int i = 0; i < config_names->size(); i++){
         std::wstring confname = QString::fromStdString((*config_names)[i]).toStdWString();
         Config* conf = config_manager->get_mut_config_with_name(confname);
+
+        if (conf->config_type == ConfigType::Color3 || conf->config_type == ConfigType::Color4) {
+            ColorExtras* color_extras = std::get_if<ColorExtras>(&conf->extras);
+            int n_channels = conf->config_type == ConfigType::Color3 ? 3 : 4;
+            if (color_extras) {
+
+                float* corresponding_mode_config = (float*)(color_extras->light_mode);
+
+                if (COLOR_MODE == ColorMode::Dark) {
+                    if (color_extras->dark_mode[0] >= 0) {
+                        corresponding_mode_config = (float*)(color_extras->dark_mode);
+                    }
+                }
+                else if (COLOR_MODE == ColorMode::Custom){
+                    if (color_extras->custom_mode[0] >= 0) {
+                        corresponding_mode_config = (float*)(color_extras->custom_mode);
+                    }
+                }
+
+                for (int c = 0; c < n_channels; c++) {
+                    corresponding_mode_config[c] = ((float*)conf->value)[c];
+                }
+            }
+        }
+
         if (conf->alias_for.size() > 0) {
             (*config_names)[i] = utf8_encode(conf->alias_for);
         }
