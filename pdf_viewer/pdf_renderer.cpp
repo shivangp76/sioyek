@@ -223,7 +223,7 @@ std::optional<SioyekTextureType> PdfRenderer::find_rendered_page(std::wstring pa
         }
         return result;
     }
-    return 0;
+    return {};
 }
 
 std::optional<SioyekTextureType> PdfRenderer::try_closest_rendered_page(std::wstring doc_path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {

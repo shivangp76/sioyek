@@ -20,7 +20,7 @@
 #include <qmenu.h>
 #include <qdesktopservices.h>
 #include <qtemporarydir.h>
-
+#include <qtemporaryfile.h>
 
 #include <qkeyevent.h>
 #include <qlabel.h>
