@@ -2000,6 +2000,12 @@ void* Config::deserialize(std::wstringstream& stream, void* res, bool* changed){
             should_apply = true;
         }
         else {
+            ColorExtras* color_extras = std::get_if<ColorExtras>(&extras);
+            if (color_extras) {
+                if (color_extras->dark_mode[0] < 0 && color_extras->custom_mode[0] < 0) {
+                    should_apply = true;
+                }
+            }
             //  otherwise we only should apply it if the current color mode is light
             if (COLOR_MODE == ColorMode::Light) {
                 should_apply = true;
