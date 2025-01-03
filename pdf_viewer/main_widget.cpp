@@ -3001,7 +3001,6 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         return;
     }
 
-    main_document_view->visible_object_scroll_data = {};
 
     if (mevent->button() == Qt::MouseButton::LeftButton) {
 
@@ -3030,6 +3029,8 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         }
 
     }
+
+    main_document_view->visible_object_scroll_data = {};
 
     if (mevent->button() == Qt::MouseButton::RightButton) {
         if (is_shift_pressed) {
@@ -7001,7 +7002,7 @@ bool MainWidget::is_flicking(QPointF* out_velocity) {
     if (main_document_view->get_overview_page()) {
         return false;
     }
-    if (main_document_view->visible_object_scroll_data) {
+    if (main_document_view->visible_object_scroll_data.has_value()) {
         return false;
     }
 
