@@ -726,7 +726,7 @@ public:
     bool handle_double_tap(QPoint pos);
     void android_handle_visual_mode();
     void show_highlight_buttons();
-    void clear_highlight_buttons();
+    //void clear_highlight_buttons();
     void show_search_buttons();
     void clear_search_buttons();
     void clear_selection_indicators();
@@ -770,7 +770,7 @@ protected:
     TouchTextSelectionButtons* text_selection_buttons_ = nullptr;
     DrawControlsUI* draw_controls_ = nullptr;
     SearchButtons* search_buttons_ = nullptr;
-    HighlightButtons* highlight_buttons_ = nullptr;
+    //HighlightButtons* highlight_buttons_ = nullptr;
     bool middle_click_hold_command_already_executed = false;
 
     TouchTextSelectionButtons* get_text_selection_buttons();
