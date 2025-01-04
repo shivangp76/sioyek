@@ -954,7 +954,6 @@ void SioyekRendererBackend::my_render() {
         }
     }
     
-    render_selected_rectangle();
 
 
     render_debug_highlights();
@@ -1007,6 +1006,9 @@ void SioyekRendererBackend::my_render() {
             render_overview(document_view->overview_page.value());
         }
     }
+
+    prepare_highlight_pipeline();
+    render_selected_rectangle();
 
     end_native_painting();
     render_tags();
