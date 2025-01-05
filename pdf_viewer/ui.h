@@ -1464,16 +1464,18 @@ public:
     DatabaseManager* db_manager = nullptr;
     MainWidget* main_widget = nullptr;
     std::wstring maybe_file_checksum = L"";
+    std::wstring maybe_tag = L"";
     FulltextSearchWidget(
         DatabaseManager* manager,
         QAbstractItemView* view,
         QAbstractItemModel* model,
         MainWidget* parent,
-        std::wstring checksum=L""
+        std::wstring checksum=L"",
+        std::wstring tag=L""
     );
     ~FulltextSearchWidget();
 
-    static FulltextSearchWidget* create(MainWidget* parent, std::wstring checksum=L"");
+    static FulltextSearchWidget* create(MainWidget* parent, std::wstring checksum=L"", std::wstring tag=L"");
 
     virtual void on_text_changed(const QString& text) override;
     virtual void on_select(QModelIndex value) override;

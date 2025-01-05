@@ -819,6 +819,21 @@ bool DatabaseManager::create_full_text_search_table() {
         error_message);
 }
 
+bool DatabaseManager::create_full_text_search_table_with_tags() {
+    const char* create_fts_sql = "CREATE VIRTUAL TABLE IF NOT EXISTS full_text_search_with_tags USING fts5("\
+        "file_checksum,"\
+        "tag,"\
+        "page_number,"\
+        "content);";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, create_fts_sql, null_callback, 0, &error_message);
+    return handle_error(
+        "create_full_text_search_table",
+        error_code,
+        error_message);
+}
+
 bool DatabaseManager::create_document_fulltext_indexed_table() {
     const char* create_fts_list_sql = "CREATE TABLE IF NOT EXISTS indexed_documents ("\
         "file_checksum TEXT PRIMARY KEY NOT NULL);";
@@ -830,6 +845,7 @@ bool DatabaseManager::create_document_fulltext_indexed_table() {
         error_code,
         error_message);
 }
+
 
 bool DatabaseManager::create_links_table() {
     const char* create_marks_sql = "CREATE TABLE IF NOT EXISTS links ("\
@@ -1833,6 +1849,7 @@ void DatabaseManager::create_tables() {
     create_links_table();
     create_document_hash_table();
     create_full_text_search_table();
+    create_full_text_search_table_with_tags();
     create_documentation_search_table();
     create_document_fulltext_indexed_table();
     create_server_update_time_table();
@@ -3278,7 +3295,8 @@ void DatabaseManager::index_documentation(const QJsonDocument& documentation){
 
 
 }
-void DatabaseManager::index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices) {
+
+void DatabaseManager::index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices, std::wstring tag) {
     std::wstringstream ss;
 
     auto get_page_string = [&](int page) {
@@ -3297,8 +3315,11 @@ void DatabaseManager::index_document(std::string document_checksum, const std::w
     char* error_message = nullptr;
     //int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), count_callback, &count, &error_message);
     //if (error_code == SQLITE_OK) {
-    if (!is_indexed) {
+    if ((!is_indexed) || tag.size() > 0) {
         std::string insert_page_index_query = "INSERT INTO full_text_search (file_checksum, page_number, content) VALUES (?, ?, ?);";
+        if (tag.size() != 0) {
+            insert_page_index_query = "INSERT INTO full_text_search_with_tags (file_checksum, page_number, content, tag) VALUES (?, ?, ?, ?);";
+        }
         sqlite3_stmt* insert_page_index_stmt = nullptr;
         int is_ok = sqlite3_prepare_v2(local_db, insert_page_index_query.c_str(), insert_page_index_query.size(), &insert_page_index_stmt, nullptr);
         // begin the transaction
@@ -3316,6 +3337,10 @@ void DatabaseManager::index_document(std::string document_checksum, const std::w
                 sqlite3_bind_text(insert_page_index_stmt, 1, document_checksum.c_str(), document_checksum.size(), SQLITE_STATIC);
                 sqlite3_bind_int(insert_page_index_stmt, 2, page);
                 sqlite3_bind_text(insert_page_index_stmt, 3, encoded_page_string.c_str(), encoded_page_string.size(), SQLITE_TRANSIENT);
+                if (tag.size() != 0) {
+                    std::string encoded_tag = utf8_encode(tag);
+                    sqlite3_bind_text(insert_page_index_stmt, 4, encoded_tag.c_str(), tag.size(), SQLITE_TRANSIENT);
+                }
 
 
                 sqlite3_step(insert_page_index_stmt);
@@ -3337,16 +3362,33 @@ void DatabaseManager::index_document(std::string document_checksum, const std::w
 
 }
 
-std::vector<FulltextSearchResult> DatabaseManager::perform_fulltext_search(const std::wstring& query, std::wstring file_checksum) {
+std::vector<std::wstring> DatabaseManager::get_document_tags(std::string document_checksum) {
+    std::wstringstream ss;
+    std::vector<std::wstring> res;
+    ss << "SELECT tag FROM full_text_search_with_tags WHERE file_checksum='" << esc(document_checksum) << "' GROUP BY tag;";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), wstring_select_callback, &res, &error_message);
+    return res;
+}
+
+std::vector<FulltextSearchResult> DatabaseManager::perform_fulltext_search(const std::wstring& query, std::wstring file_checksum, std::wstring tag) {
     std::wstringstream ss;
     // file_checksum
-    if (file_checksum.size() == 0) {
-        ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' ORDER BY rank LIMIT 10;";
+    if (tag.size() == 0) {
+
+        if (file_checksum.size() == 0) {
+            ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' ORDER BY rank LIMIT 10;";
+        }
+        else {
+            ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' AND file_checksum='" << file_checksum << "' ORDER BY rank LIMIT 10;";
+        }
     }
     else {
-        ss << "SELECT file_checksum, page_number, snippet(full_text_search, 2, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search WHERE content MATCH '" << esc(query) << "' AND file_checksum='" << file_checksum << "' ORDER BY rank LIMIT 10;";
+        ss << "SELECT file_checksum, page_number, snippet(full_text_search_with_tags, 3, 'SIOYEK_MATCH_BEGIN', 'SIOYEK_MATCH_END', '...', 30) FROM full_text_search_with_tags WHERE content MATCH '" << esc(query) << "' AND tag='" << esc(tag) << "' ORDER BY rank LIMIT 10;";
     }
     std::vector<FulltextSearchResult> results;
+
+    std::wstring query_string = ss.str();
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), fulltext_search_callback, &results, &error_message);

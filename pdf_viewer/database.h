@@ -46,6 +46,7 @@ private:
     void create_tables();
     bool create_document_hash_table();
     bool create_full_text_search_table();
+    bool create_full_text_search_table_with_tags();
     bool create_documentation_search_table();
     bool create_document_fulltext_indexed_table();
     bool create_server_update_time_table();
@@ -214,15 +215,16 @@ public:
     bool import_shared(QString shared_database_file_path);
 
     bool generic_prepared_statement_run(sqlite3* db, sqlite3_stmt** stmt, const std::string& query, std::function<void()> on_init,std::function<void()> bind_params, std::function<void()> on_row);
-    void index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices);
+    void index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices, std::wstring tag=L"");
     void index_documentation(const QJsonDocument& documentation);
     bool is_document_indexed(std::string document_checksum);
     bool is_documentation_indexed();
-    std::vector<FulltextSearchResult> perform_fulltext_search(const std::wstring& query, std::wstring file_checksum=L"");
+    std::vector<FulltextSearchResult> perform_fulltext_search(const std::wstring& query, std::wstring file_checksum=L"", std::wstring tag=L"");
     std::vector<DocumentationSearchResult> perform_documentation_search(const std::wstring& query);
     std::vector<std::string> get_all_fulltext_indexed_checksums();
     void delete_checksum_from_fulltext_index(std::wstring file_checksum);
     void delete_documentation_search_index();
+    std::vector<std::wstring> get_document_tags(std::string document_checksum);
 };
 
 

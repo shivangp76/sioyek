@@ -7453,9 +7453,9 @@ void MainWidget::handle_documentation_search() {
     show_current_widget();
 }
 
-void MainWidget::handle_fulltext_search(std::wstring maybe_file_checksum) {
+void MainWidget::handle_fulltext_search(std::wstring maybe_file_checksum, std::wstring tag) {
 
-    auto search_widget = FulltextSearchWidget::create(this, maybe_file_checksum);
+    auto search_widget = FulltextSearchWidget::create(this, maybe_file_checksum, tag);
     search_widget->set_select_fn([&, search_widget](int index) {
             FulltextSearchResult result = search_widget->result_model->search_results[index];
             std::wstring document_path = document_manager->get_path_from_hash(result.document_checksum).value_or(L"");
@@ -7492,7 +7492,7 @@ void MainWidget::handle_fulltext_search(std::wstring maybe_file_checksum) {
     show_current_widget();
 }
 
-void MainWidget::index_current_document_for_fulltext_search(bool async) {
+void MainWidget::index_current_document_for_fulltext_search(bool async, std::wstring tag) {
     bool super_fast_search_index_is_ready = doc()->is_super_fast_index_ready();
 
     if (!super_fast_search_index_is_ready) {
@@ -7501,14 +7501,14 @@ void MainWidget::index_current_document_for_fulltext_search(bool async) {
     else {
         if (async) {
             Document* current_document = doc();
-            background_task_manager->add_task([this, current_document]() {
+            background_task_manager->add_task([this, current_document, tag]() {
                 std::string document_checksum = current_document->get_checksum();
-                db_manager->index_document(document_checksum, current_document->get_super_fast_index(), current_document->get_super_fast_page_begin_indices());
+                db_manager->index_document(document_checksum, current_document->get_super_fast_index(), current_document->get_super_fast_page_begin_indices(), tag);
                 }, this);
         }
         else {
             std::string document_checksum = doc()->get_checksum();
-            db_manager->index_document(document_checksum, doc()->get_super_fast_index(), doc()->get_super_fast_page_begin_indices());
+            db_manager->index_document(document_checksum, doc()->get_super_fast_index(), doc()->get_super_fast_page_begin_indices(), tag);
         }
     }
 }
@@ -7520,7 +7520,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    //qDebug() << current_widget_stack.size();
+    qDebug() << doc()->get_fulltext_tags();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

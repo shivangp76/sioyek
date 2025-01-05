@@ -3313,12 +3313,13 @@ DocumentSelectorWidget* DocumentSelectorWidget::from_documents(
     return document_selector_widget;
 }
 
-FulltextSearchWidget::FulltextSearchWidget(DatabaseManager* manager, QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent, std::wstring checksum) 
+FulltextSearchWidget::FulltextSearchWidget(DatabaseManager* manager, QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent, std::wstring checksum, std::wstring tag) 
     : BaseCustomSelectorWidget(view, model, parent), db_manager(manager) {
 
     result_model = dynamic_cast<FulltextResultModel*>(model);
     main_widget = parent;
     maybe_file_checksum = checksum;
+    maybe_tag = tag;
 
 
     if (lv) {
@@ -3326,14 +3327,14 @@ FulltextSearchWidget::FulltextSearchWidget(DatabaseManager* manager, QAbstractIt
     }
 }
 
-FulltextSearchWidget* FulltextSearchWidget::create(MainWidget* parent, std::wstring checksum) {
+FulltextSearchWidget* FulltextSearchWidget::create(MainWidget* parent, std::wstring checksum, std::wstring tag) {
 
     //DocumentNameModel* document_model = new DocumentNameModel(std::move(docs));
     QStringListModel* res_model = new QStringListModel();
 
     QListView* list_view = get_ui_new_listview();
 
-    FulltextSearchWidget* fulltext_search_widget = new FulltextSearchWidget(parent->db_manager, list_view, res_model, parent, checksum);
+    FulltextSearchWidget* fulltext_search_widget = new FulltextSearchWidget(parent->db_manager, list_view, res_model, parent, checksum, tag);
 
     res_model->setParent(fulltext_search_widget);
     list_view->setParent(fulltext_search_widget);
@@ -3476,7 +3477,7 @@ void FulltextSearchWidget::on_text_changed(const QString& text) {
         query = query.replace("\"", "\\\""); // escape the "s
         query = "\"" + query + "\"" + "*";
 
-        std::vector<FulltextSearchResult> results = db_manager->perform_fulltext_search(query.toStdWString(), maybe_file_checksum);
+        std::vector<FulltextSearchResult> results = db_manager->perform_fulltext_search(query.toStdWString(), maybe_file_checksum, maybe_tag);
         for (int i = 0; i < results.size(); i++) {
             results[i].document_title = main_widget->document_manager->get_path_from_hash(results[i].document_checksum).value_or(L"");
             if (results[i].document_title.size() > 0) {

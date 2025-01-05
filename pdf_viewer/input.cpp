@@ -7176,6 +7176,19 @@ public:
 
 };
 
+class FulltextSearchCommandWithTag : public TextCommand {
+public:
+    static inline const std::string cname = "search_all_indexed_documents_with_tag";
+    static inline const std::string hname = "Fulltext search all indexed documents";
+
+    FulltextSearchCommandWithTag(MainWidget* w) : TextCommand(cname, w) {};
+
+    void perform() {
+        widget->handle_fulltext_search(L"", text.value());
+    }
+
+};
+
 class DocumentationSearchCommand : public Command {
 public:
     static inline const std::string cname = "documentation_search";
@@ -7234,6 +7247,19 @@ public:
 
     void perform() {
         widget->index_current_document_for_fulltext_search();
+    }
+
+};
+
+class CreateFulltextIndexForCurrentDocumentCommandWithTag : public TextCommand {
+public:
+    static inline const std::string cname = "create_fulltext_index_for_current_document_with_tag";
+    static inline const std::string hname = "Add current document to fulltext search index";
+
+    CreateFulltextIndexForCurrentDocumentCommandWithTag(MainWidget* w) : TextCommand(cname, w) {};
+
+    void perform() {
+        widget->index_current_document_for_fulltext_search(false, text.value());
     }
 
 };
@@ -8826,10 +8852,12 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ToggleConfigWithNameCommand>(this);
     register_command<SaveConfigWithNameCommand>(this);
     register_command<FulltextSearchCommand>(this);
+    register_command<FulltextSearchCommandWithTag>(this);
     register_command<DocumentationSearchCommand>(this);
     register_command<FulltextSearchCurrentDocumentCommand>(this);
     register_command<DeleteDocumentFromFulltextSearchIndex>(this);
     register_command<CreateFulltextIndexForCurrentDocumentCommand>(this);
+    register_command<CreateFulltextIndexForCurrentDocumentCommandWithTag>(this);
     register_command<ExportPythonApiCommand>(this);
     register_command<ScrollSelectedBookmarkDown>(this);
     register_command<ScrollSelectedBookmarkUp>(this);

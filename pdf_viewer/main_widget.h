@@ -640,7 +640,7 @@ public:
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);
     void handle_debug_command();
-    void handle_fulltext_search(std::wstring maybe_file_checksum=L"");
+    void handle_fulltext_search(std::wstring maybe_file_checksum=L"", std::wstring tag=L"");
     void handle_documentation_search();
     void handle_add_marked_data();
     void handle_undo_marked_data();
@@ -652,7 +652,7 @@ public:
     void handle_toggle_drawing_mask(char symbol);
     void show_command_palette();
     void auto_login();
-    void index_current_document_for_fulltext_search(bool async=false);
+    void index_current_document_for_fulltext_search(bool async=false,  std::wstring tag=L"");
     void on_super_fast_search_index_computed();
     bool is_current_document_fulltext_indexed();
     void handle_delete_document_from_fulltext_search_index();

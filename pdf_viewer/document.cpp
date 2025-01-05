@@ -5733,3 +5733,7 @@ template <>
 std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Portal>() {
     return page_portal_indices;
 }
+
+std::vector<std::wstring> Document::get_fulltext_tags() {
+    return db_manager->get_document_tags(get_checksum());
+}
