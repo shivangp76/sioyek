@@ -35,7 +35,7 @@
 #include <qdesktopservices.h>
 #include <qtemporarydir.h>
 #include <qtemporaryfile.h>
-#include <qthread>
+#include <QThread>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
