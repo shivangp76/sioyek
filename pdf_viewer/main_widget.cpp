@@ -12891,3 +12891,18 @@ void MainWidget::set_renderer_backend(RenderBackend backend) {
         new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
     }
 }
+
+void MainWidget::show_items(std::vector<std::wstring> items, std::optional<std::function<void(std::wstring)>> on_select, std::optional<std::function<void(std::wstring)>> on_delete){
+    set_filtered_select_menu<std::wstring>(this, false, false, { items }, items, -1,
+        [this, on_select](std::wstring* val) {
+            if (on_select.has_value()) {
+                on_select.value()(*val);
+            }
+        },
+        [this, on_delete](std::wstring* val) {
+            if (on_delete.has_value()) {
+                on_delete.value()(*val);
+            }
+        });
+    show_current_widget();
+}

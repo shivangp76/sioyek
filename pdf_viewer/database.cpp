@@ -3398,6 +3398,18 @@ std::vector<FulltextSearchResult> DatabaseManager::perform_fulltext_search(const
     return results;
 }
 
+bool DatabaseManager::delete_document_tag(std::string document_checksum, std::wstring tag) {
+    std::wstringstream ss;
+    ss << "DELETE FROM full_text_search_with_tags WHERE file_checksum='" << esc(document_checksum) << "' AND tag='" << esc(tag) << "';";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), nullptr, nullptr, &error_message);
+    if (error_code != SQLITE_OK) {
+        qDebug() << "Error deleting tag: " << error_message;
+        return false;
+    }
+    return true;
+}
+
 std::vector<DocumentationSearchResult> DatabaseManager::perform_documentation_search(const std::wstring& query) {
     std::wstringstream ss;
     // file_checksum

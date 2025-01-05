@@ -7176,6 +7176,23 @@ public:
 
 };
 
+class ShowCurrentDocumentFulltextTags : public Command {
+public:
+    static inline const std::string cname = "show_current_document_fulltext_tags";
+    static inline const std::string hname = "Show the tags with which the current document has been indexed";
+
+    ShowCurrentDocumentFulltextTags(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        auto tags = widget->doc()->get_fulltext_tags();
+        widget->show_items(tags, {}, [d=widget->doc()](std::wstring tag) {
+            d->delete_fulltext_tag(tag);
+            });
+        //widget->set_curr
+    }
+
+};
+
 class FulltextSearchCommandWithTag : public TextCommand {
 public:
     static inline const std::string cname = "search_all_indexed_documents_with_tag";
@@ -8852,6 +8869,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ToggleConfigWithNameCommand>(this);
     register_command<SaveConfigWithNameCommand>(this);
     register_command<FulltextSearchCommand>(this);
+    register_command<ShowCurrentDocumentFulltextTags>(this);
     register_command<FulltextSearchCommandWithTag>(this);
     register_command<DocumentationSearchCommand>(this);
     register_command<FulltextSearchCurrentDocumentCommand>(this);

@@ -215,6 +215,7 @@ public:
     bool import_shared(QString shared_database_file_path);
 
     bool generic_prepared_statement_run(sqlite3* db, sqlite3_stmt** stmt, const std::string& query, std::function<void()> on_init,std::function<void()> bind_params, std::function<void()> on_row);
+    bool delete_document_tag(std::string document_checksum, std::wstring tag);
     void index_document(std::string document_checksum, const std::wstring& super_fast_search_index, const std::vector<int>& page_indices, std::wstring tag=L"");
     void index_documentation(const QJsonDocument& documentation);
     bool is_document_indexed(std::string document_checksum);

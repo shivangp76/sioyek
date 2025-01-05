@@ -552,6 +552,7 @@ public:
     int find_reference_page_with_reference_text(std::wstring query);
     std::optional<DocumentPos> find_abbreviation(std::wstring abbr, std::vector<DocumentRect>& overview_highlight_rects);
     std::vector<std::wstring> get_fulltext_tags();
+    void delete_fulltext_tag(std::wstring tag);
 
     std::pair<float, float> get_min_max_annot_x_for_page(int page);
 

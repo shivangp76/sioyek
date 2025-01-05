@@ -659,6 +659,9 @@ public:
     void scroll_selected_bookmark(int amount);
     void scroll_bookmark_with_uuid(const std::string& uuid, int amount);
     bool ensure_super_fast_search_index();
+    void show_items(std::vector<std::wstring> items,
+        std::optional<std::function<void(std::wstring)>> on_select = {},
+        std::optional<std::function<void(std::wstring)>> on_delete = {});
 
     std::string get_current_mode_string();
 
