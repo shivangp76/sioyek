@@ -45,6 +45,7 @@ float TTS_RATE_INCREMENT = 0.05f;
 float AUTO_BOOKMARK_VERTICAL_MARGIN = 1.0f;
 float AUTO_BOOKMARK_HORIZONTAL_MARGIN = 1.0f;
 bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER = false;
+float PERSISTANCE_PERIOD = -1.0f;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1240,6 +1241,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"epub_width", &EPUB_WIDTH, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_height", &EPUB_HEIGHT, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_font_size", &EPUB_FONT_SIZE, FloatExtras{0.0f, 100.0f});
+    add_float(L"persistance_period", &PERSISTANCE_PERIOD, FloatExtras{-1.0f, 100000.0f});
 
     add_bool(L"smooth_scroll_mode", &SMOOTH_SCROLL_MODE);
     add_bool(L"use_system_theme", &USE_SYSTEM_THEME)->set_change_fn([](MainWidget* w){

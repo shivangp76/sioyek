@@ -283,6 +283,7 @@ extern float SMOOTH_MOVE_MAX_VELOCITY;
 extern int DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern int NUM_PAGE_COLUMNS;
 extern Path python_api_base_path;
+extern float PERSISTANCE_PERIOD;
 
 extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
@@ -1274,6 +1275,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     // todo: make interval time configurable
     validation_interval_timer = new QTimer(this);
     validation_interval_timer->setInterval(INTERVAL_TIME);
+    last_persistance_datetime = QDateTime::currentDateTime();
 
     network_timer = new QTimer(this);
     network_timer->setInterval(60000);
@@ -1440,6 +1442,14 @@ MainWidget::~MainWidget() {
 }
 
 void MainWidget::handle_validation_interval_timeout(){
+
+    if (PERSISTANCE_PERIOD > 0) {
+        QDateTime now = QDateTime::currentDateTime();
+        if (last_persistance_datetime.secsTo(now) > PERSISTANCE_PERIOD) {
+            last_persistance_datetime = now;
+            persist();
+        }
+    }
 
     focus_on_high_quality_text_being_read();
 

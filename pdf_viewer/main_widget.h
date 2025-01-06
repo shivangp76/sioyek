@@ -265,6 +265,7 @@ public:
     // lower value when in smooth scroll mode or when user flicks a document in touch mode
     QTimer* validation_interval_timer = nullptr;
     QTimer* network_timer = nullptr;
+    QDateTime last_persistance_datetime;
 
     // the portal to be edited. This is usually set by `edit_portal` command which jumps to the portal
     // when we go back to the original location by jumping back in history, the portal will be edited
