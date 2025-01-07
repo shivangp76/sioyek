@@ -1790,7 +1790,7 @@ void ConfigManager::deserialize_file(std::vector<std::string>* changed_config_na
 
             Config* conf = get_mut_config_with_name(conf_name);
             if (conf == nullptr) {
-                std::wcout << L"Error: " << conf_name << L" is not a valid configuration name\n";
+                std::wcout << L"Error: " << conf_name << L" is not a valid configuration name in " << file_path.get_path() << L" at line " << line_number << L"\n";
                 continue;
             }
 
