@@ -3038,10 +3038,10 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
                 if (bookmarks[i].description[0] == '#' && !(desc_qstring.startsWith("#summarize"))) {
 
                     QString box_text = desc_qstring.split(' ')[0];
-                    if (bm_type.has_value()) {
+                    if (bm_type.has_value() && bm_type.value() <= 'z' && bm_type.value() >= 'a') {
                         painter.setPen(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * (bm_type.value() - 'a')]));
                         painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        }
+                    }
 
                     if (!bm_type.has_value()) {
                         //painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
