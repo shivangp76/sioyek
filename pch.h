@@ -1,5 +1,6 @@
 #if defined __cplusplus
 
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -59,7 +60,13 @@
 #include <qaudiooutput.h>
 #include <qregion.h>
 #include <qtextdocument.h>
+#include <qcolor.h>
+#include <QMouseEvent>
+#include <qabstracttextdocumentlayout.h>
+#include <qtextcursor.h>
 
 #include <mupdf/fitz.h>
 
 #endif
+
+
