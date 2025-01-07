@@ -7193,15 +7193,34 @@ public:
 
 };
 
-class FulltextSearchCommandWithTag : public TextCommand {
+class FulltextSearchCommandWithTag : public Command {
 public:
     static inline const std::string cname = "search_all_indexed_documents_with_tag";
     static inline const std::string hname = "Fulltext search all indexed documents";
 
-    FulltextSearchCommandWithTag(MainWidget* w) : TextCommand(cname, w) {};
+    std::optional<std::wstring> tag = {};
+
+    FulltextSearchCommandWithTag(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+        if (!tag.has_value()) {
+            return Requirement{ RequirementType::Generic, "Tag" };
+        }
+        return {};
+    }
+
+    void handle_generic_requirement() override{
+        std::vector<std::wstring> all_tags = widget->db_manager->get_all_tags();
+        widget->show_custom_option_list(all_tags);
+    }
+
+    void set_generic_requirement(QVariant value) {
+        QString tag_string = value.toString();
+        tag = tag_string.toStdWString();
+    }
 
     void perform() {
-        widget->handle_fulltext_search(L"", text.value());
+        widget->handle_fulltext_search(L"", tag.value());
     }
 
 };

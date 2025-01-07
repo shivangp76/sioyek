@@ -3355,17 +3355,21 @@ void DatabaseManager::index_document(std::string document_checksum, const std::w
 
 
     }
-    //}
-    //else {
-    //}
-
-
 }
 
 std::vector<std::wstring> DatabaseManager::get_document_tags(std::string document_checksum) {
     std::wstringstream ss;
     std::vector<std::wstring> res;
     ss << "SELECT tag FROM full_text_search_with_tags WHERE file_checksum='" << esc(document_checksum) << "' GROUP BY tag;";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), wstring_select_callback, &res, &error_message);
+    return res;
+}
+
+std::vector<std::wstring> DatabaseManager::get_all_tags() {
+    std::wstringstream ss;
+    std::vector<std::wstring> res;
+    ss << "SELECT DISTINCT tag FROM full_text_search_with_tags;";
     char* error_message = nullptr;
     int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), wstring_select_callback, &res, &error_message);
     return res;

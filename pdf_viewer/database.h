@@ -226,6 +226,7 @@ public:
     void delete_checksum_from_fulltext_index(std::wstring file_checksum);
     void delete_documentation_search_index();
     std::vector<std::wstring> get_document_tags(std::string document_checksum);
+    std::vector<std::wstring> get_all_tags();
 };
 
 
