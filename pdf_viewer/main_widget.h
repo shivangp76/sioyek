@@ -923,7 +923,6 @@ public:
     bool is_helper_visible();
     std::wstring get_current_tabs_file_names();
     void open_tabs(const std::vector<std::wstring>& tabs);
-    void handle_goto_tab(const std::wstring& path);
     void get_document_views_referencing_doc(std::wstring doc_path, std::vector<DocumentView*>& document_views, std::vector<MainWidget*>& corresponding_widgets, std::vector<bool>& is_helper);
     void restore_document_view_states(const std::vector<DocumentView*>& document_views, const std::vector<DocumentViewState>& states);
     void document_views_open_path(const std::vector<DocumentView*>& document_views, const std::vector<MainWidget*>& main_widgets, const std::vector<bool> is_helpers, std::wstring new_path);

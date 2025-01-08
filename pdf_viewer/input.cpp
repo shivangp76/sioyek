@@ -26,6 +26,8 @@
 #include <windows.h>
 #endif
 
+extern std::vector<MainWidget*> windows;
+
 extern Path local_database_file_path;
 extern Path global_database_file_path;
 
@@ -1287,7 +1289,19 @@ public:
     }
 
     void perform() {
-        widget->handle_goto_tab(selected_path.value());
+        // if there is a window with that tab, raise the window
+        for (auto window : windows) {
+            if (window->doc()) {
+                if (window->doc()->get_path() == selected_path.value()) {
+                    window->raise();
+                    window->activateWindow();
+                    return;
+                }
+            }
+        }
+
+        widget->push_state();
+        widget->open_document(selected_path.value());
     }
 
     bool requires_document() {

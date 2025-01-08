@@ -10342,23 +10342,6 @@ void MainWidget::open_tabs(const std::vector<std::wstring>& tabs) {
     }
 }
 
-void MainWidget::handle_goto_tab(const std::wstring& path) {
-
-    // if there is a window with that tab, raise the window
-    for (auto window : windows) {
-        if (window->doc()) {
-            if (window->doc()->get_path() == path) {
-                window->raise();
-                window->activateWindow();
-                return;
-            }
-        }
-    }
-
-    push_state();
-    open_document(path);
-}
-
 void MainWidget::handle_rename(std::wstring new_name) {
     Document* document_to_be_freed = doc();
     std::wstring path_to_be_freed = document_to_be_freed->get_path();

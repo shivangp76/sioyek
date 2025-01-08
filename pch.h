@@ -11,6 +11,9 @@
 #include <optional>
 #include <memory>
 #include <cctype>
+
+#include <Windows.h>
+
 #include <qpainterpath.h>
 #include <qabstractitemmodel.h>
 #include <qapplication.h>
@@ -64,6 +67,8 @@
 #include <QMouseEvent>
 #include <qabstracttextdocumentlayout.h>
 #include <qtextcursor.h>
+#include <qquickwindow.h>
+#include <qquickwidget.h>
 
 #include <mupdf/fitz.h>
 
