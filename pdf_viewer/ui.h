@@ -76,14 +76,7 @@
 
 class DatabaseManager;
 class MainWidget;
-extern std::wstring UI_FONT_FACE_NAME;
-extern int FONT_SIZE;
-const int max_select_size = 100;
 extern bool SMALL_TOC;
-extern bool MULTILINE_MENUS;
-extern bool TOUCH_MODE;
-
-
 
 class HierarchialSortFilterProxyModel : public QSortFilterProxyModel {
 protected:

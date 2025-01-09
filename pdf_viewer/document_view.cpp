@@ -42,6 +42,7 @@ extern float SCROLL_VIEW_SENSITIVITY;
 extern bool AUTOCENTER_VISUAL_SCROLL;
 extern int COLOR_MODE;
 extern int RENDERER_BACKEND;
+extern bool TOUCH_MODE;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,

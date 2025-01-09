@@ -5,6 +5,7 @@
 
 extern float FREETEXT_BOOKMARK_COLOR[3];
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
+extern bool TOUCH_MODE;
 
 class SetMark : public SymbolCommand {
 public:

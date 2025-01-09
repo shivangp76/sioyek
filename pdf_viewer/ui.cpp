@@ -35,6 +35,8 @@ extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
+extern int FONT_SIZE;
+extern bool TOUCH_MODE;
 
 extern float UI_TEXT_COLOR[3];
 extern float UI_BACKGROUND_COLOR[3];
