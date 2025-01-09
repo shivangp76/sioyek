@@ -15,97 +15,8 @@
 class QLocalSocket;
 class MainWidget;
 class ConfigManager;
-
-enum RequirementType {
-    Text,
-    Password,
-    Symbol,
-    File,
-    Folder,
-    Rect,
-    Point,
-    Generic
-};
-
-struct Requirement {
-    RequirementType type;
-    std::string name;
-};
-
-class Command {
-private:
-    virtual void perform() = 0;
-protected:
-    int num_repeats = 1;
-    MainWidget* widget = nullptr;
-    std::optional<std::wstring> result = {};
-    std::string command_cname;
-public:
-
-    static inline const bool developer_only = false;
-    QLocalSocket* result_socket = nullptr;
-    std::wstring* result_holder = nullptr;
-    bool* is_done = nullptr;
-
-    Command(std::string name, MainWidget* widget);
-    virtual std::optional<Requirement> next_requirement(MainWidget* widget);
-    virtual std::optional<std::wstring> get_result();
-
-    DocumentView* dv();
-    virtual void set_text_requirement(std::wstring value);
-    virtual void set_symbol_requirement(char value);
-    virtual void set_file_requirement(std::wstring value);
-    virtual void set_rect_requirement(AbsoluteRect value);
-    virtual void set_point_requirement(AbsoluteDocumentPos value);
-    virtual void set_generic_requirement(QVariant value);
-    virtual void handle_generic_requirement();
-    virtual void set_num_repeats(int nr);
-    virtual std::vector<char> special_symbols();
-    virtual void pre_perform();
-    virtual bool pushes_state();
-    virtual bool requires_document();
-    virtual void on_cancel();
-    virtual void on_result_computed();
-    virtual void set_result_socket(QLocalSocket* result_socket);
-    virtual void set_result_mutex(bool* res_mut, std::wstring* result_location);
-    virtual std::optional<std::wstring> get_text_suggestion(int index);
-    virtual bool is_menu_command();
-    virtual bool is_holdable();
-    virtual void perform_up();
-    virtual void on_key_hold();
-    virtual void on_text_change(const QString& new_text);
-
-    void set_next_requirement_with_string(std::wstring str);
-
-    virtual void run();
-    virtual std::string get_name();
-    virtual std::string get_symbol_hint_name();
-    virtual std::string get_human_readable_name();
-    virtual std::wstring get_text_default_value();
-    virtual ~Command();
-};
-
-
-class CommandManager {
-private:
-    //std::vector<Command> commands;
-public:
-
-    std::map < std::string, std::function<std::unique_ptr<Command>(MainWidget*)> > new_commands;
-    std::map<std::string, std::string> command_human_readable_names;
-    std::map<std::string, QDateTime> command_last_uses;
-    std::unordered_map<QString, QString> command_required_prefixes;
-    std::unordered_map<std::string, std::string> command_aliases;
-
-    CommandManager(ConfigManager* config_manager);
-    std::unique_ptr<Command> get_command_with_name(MainWidget* w, std::string name);
-    std::unique_ptr<Command> create_macro_command(MainWidget* w, std::string name, std::wstring macro_string);
-    std::unique_ptr<Command> create_macro_command_with_args(MainWidget* w, std::string name, QString command, QStringList args);
-    QStringList get_all_command_names();
-    void handle_new_javascript_command(std::wstring command_name, JsCommandInfo command_files_pair, bool is_async, std::wstring code=L"");
-    void update_command_last_use(std::string command_name);
-
-};
+class Command;
+class CommandManager;
 
 struct InputParseTreeNode {
 
@@ -173,32 +84,6 @@ public:
 
 };
 
-bool is_macro_command_enabled(Command* command);
-
-class KeyboardSelectPointCommand : public Command {
-protected:
-    std::optional<std::wstring> text = {};
-    bool already_pre_performed = false;
-    std::unique_ptr<Command> origin;
-    bool requires_rect = false;
-public:
-
-    KeyboardSelectPointCommand(MainWidget* w, std::unique_ptr<Command> original_command);
-
-    bool is_done();
-
-    virtual std::optional<Requirement> next_requirement(MainWidget* widget);
-
-    virtual void perform();
-    virtual void on_cancel() override;
-
-    void pre_perform();
-
-    virtual std::string get_name();
-
-
-    virtual void set_symbol_requirement(char value);
-};
 
 struct MenuItems;
 

@@ -2,6 +2,7 @@
 #include "document.h"
 #include "document_view.h"
 #include "main_widget.h"
+#include "commands/base_commands.h"
 
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_A_STR;
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_B_STR;

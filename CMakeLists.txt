@@ -125,6 +125,12 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/document_view.cpp pdf_viewer/document_view.h
     pdf_viewer/fts_fuzzy_match.h
     pdf_viewer/input.cpp pdf_viewer/input.h
+    pdf_viewer/commands/base_commands.cpp pdf_viewer/commands/base_commands.h
+    pdf_viewer/commands/annotation_commands.cpp pdf_viewer/commands/annotation_commands.h
+    pdf_viewer/commands/misc_commands.cpp pdf_viewer/commands/misc_commands.h
+    pdf_viewer/commands/navigation_commands.cpp pdf_viewer/commands/navigation_commands.h
+    pdf_viewer/commands/network_commands.cpp pdf_viewer/commands/network_commands.h
+    pdf_viewer/commands/command_parser.cpp pdf_viewer/commands/command_parser.h
     pdf_viewer/main.cpp
     pdf_viewer/main_widget.cpp pdf_viewer/main_widget.h
     pdf_viewer/mysortfilterproxymodel.cpp pdf_viewer/mysortfilterproxymodel.h

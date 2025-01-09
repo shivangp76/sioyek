@@ -122,6 +122,12 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/fts_fuzzy_match.h \
            pdf_viewer/rapidfuzz_amalgamated.hpp \
            pdf_viewer/input.h \
+           pdf_viewer/commands/base_commands.h \
+           pdf_viewer/commands/annotation_commands.h \
+           pdf_viewer/commands/misc_commands.h \
+           pdf_viewer/commands/navigation_commands.h \
+           pdf_viewer/commands/network_commands.h \
+           pdf_viewer/commands/command_parser.h \
            pdf_viewer/main_widget.h \
            pdf_viewer/pdf_renderer.h \
            pdf_viewer/pdf_view_opengl_widget.h \
@@ -152,6 +158,12 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/document.cpp \
            pdf_viewer/document_view.cpp \
            pdf_viewer/input.cpp \
+           pdf_viewer/commands/base_commands.cpp \
+           pdf_viewer/commands/annotation_commands.cpp \
+           pdf_viewer/commands/misc_commands.cpp \
+           pdf_viewer/commands/navigation_commands.cpp \
+           pdf_viewer/commands/network_commands.cpp \
+           pdf_viewer/commands/command_parser.cpp \
            pdf_viewer/main.cpp \
            pdf_viewer/main_widget.cpp \
            pdf_viewer/pdf_renderer.cpp \

@@ -103,6 +103,7 @@
 #include "network_manager.h"
 #include "status_string.h"
 
+#include "commands/base_commands.h"
 #include "main_widget.h"
 
 #ifdef SIOYEK_ANDROID

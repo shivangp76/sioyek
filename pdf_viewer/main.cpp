@@ -56,6 +56,8 @@
 
 
 #include "input.h"
+#include "commands/base_commands.h"
+
 #include "database.h"
 #include "book.h"
 #include "utils.h"

@@ -21,6 +21,8 @@
 #include "touchui/TouchConfigMenu.h"
 #include "touchui/TouchSettings.h"
 
+#include "commands/base_commands.h"
+
 extern std::wstring MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE;
 extern std::wstring DEFAULT_OPEN_FILE_PATH;
 extern float DARK_MODE_CONTRAST;
