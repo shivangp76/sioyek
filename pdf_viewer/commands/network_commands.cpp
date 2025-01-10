@@ -560,6 +560,18 @@ public:
 
 };
 
+class DashboardCommand : public Command {
+public:
+    static inline const std::string cname = "dashboard";
+    static inline const std::string hname = "Open the user dashboard in sioyek website";
+    DashboardCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        open_web_url(widget->sioyek_network_manager->SIOYEK_DASHBOARD_URL);
+    }
+
+};
+
 class ForceDownloadAnnotations : public Command {
 public:
     static inline const std::string cname = "force_download_annotations";
@@ -738,4 +750,5 @@ void register_network_commands(CommandManager* manager) {
     register_command<DownloadOverviewPaperCommand>(manager);
     register_command<DownloadOverviewPaperNoPrompt>(manager);
     register_command<LoadAnnotationsFileSyncDeletedCommand>(manager);
+    register_command<DashboardCommand>(manager);
 }

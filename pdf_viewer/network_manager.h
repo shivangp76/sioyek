@@ -61,7 +61,8 @@ public:
     const std::wstring SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL = SIOYEK_HOST + L"last_drawing_modification_time";
     const std::wstring SIOYEK_GET_NEW_ANNOTATIONS_URL = SIOYEK_HOST + L"get_annotations_after";
     const std::wstring SIOYEK_DOES_INDEX_EXIST_URL = SIOYEK_HOST + L"does_index_exist";
-    const std::wstring SIOYEK_API_SEARCH_URL = SIOYEK_HOST + L"/api/search";
+    const std::wstring SIOYEK_API_SEARCH_URL = SIOYEK_HOST + L"api/search";
+    const std::wstring SIOYEK_DASHBOARD_URL = SIOYEK_HOST + L"app/dashboard";
 
     bool server_hashes_loaded = false;
     std::unordered_set<std::string> SERVER_HASHES = {};

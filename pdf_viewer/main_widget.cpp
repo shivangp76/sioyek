@@ -7531,7 +7531,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << doc()->get_fulltext_tags();
+    qDebug() << doc()->get_checksum();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
