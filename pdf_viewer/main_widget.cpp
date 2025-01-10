@@ -7754,6 +7754,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
             //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
             BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
             if (bm) {
+                bm->description = replace_verbatim_links(bm->description);
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
                 on_bookmark_edited(bm->uuid);
             }
