@@ -4673,16 +4673,26 @@ std::optional<Portal> DocumentView::pin_current_overview_as_portal() {
     return {};
 }
 
-void DocumentView::perform_fuzzy_search(std::wstring query) {
+void DocumentView::perform_fuzzy_searches(std::vector<std::wstring> queries) {
     if (current_document->get_super_fast_index().size() == 0) {
         show_error_message(L"Super fast search index is not ready");
         return;
     }
+    std::vector<SearchResult> search_results;
 
-    std::vector<SearchResult> search_results = get_fuzzy_search_results(query);
+    for (auto query : queries) {
+        auto query_results = get_fuzzy_search_results(query);
+        // add query_results to the back of search_results
+        search_results.insert(search_results.end(), query_results.begin(), query_results.end());
+    }
 
     set_search_results(std::move(search_results));
     goto_search_result(0, false);
+}
+
+void DocumentView::perform_fuzzy_search(std::wstring query) {
+    perform_fuzzy_searches({ query });
+
 }
 
 void DocumentView::set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal) {

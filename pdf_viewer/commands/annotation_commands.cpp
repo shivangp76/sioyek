@@ -1016,6 +1016,41 @@ public:
     }
 };
 
+class GotoBookmarkLinks : public GenericVisibleBookmarkCommand {
+
+public:
+    static inline const std::string cname = "goto_bookmark_links";
+    static inline const std::string hname = "Go to the internal reference links in the bookmark.";
+    GotoBookmarkLinks(MainWidget* w) : GenericVisibleBookmarkCommand(cname, w) {};
+
+    bool pushes_state() override {
+        return true;
+    }
+
+    void perform_with_bookmark_selected() override {
+        std::vector<std::wstring> queries;
+
+        std::string selected_bookmark_uuid = widget->main_document_view->get_selected_bookmark_uuid();
+        BookMark* bookmark = widget->doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
+        // regex to match markdown links
+        QRegularExpression link_regex = QRegularExpression("\\[\\[([^\\]]+)\\]\\]\\(sioyek://([^\\)]+)\\)");
+        if (bookmark && bookmark->is_freetext()) {
+            QString text = QString::fromStdWString(bookmark->description);
+            QRegularExpressionMatchIterator i = link_regex.globalMatch(text);
+            while (i.hasNext()) {
+                QRegularExpressionMatch match = i.next();
+                QString link_text = match.captured(1);
+                QString link = match.captured(2);
+                link = QUrl::fromPercentEncoding(link.toUtf8());
+                queries.push_back(link.toStdWString());
+            }
+
+        }
+        widget->main_document_view->perform_fuzzy_searches(queries);
+    }
+};
+
+
 class EditVisibleBookmarkCommand : public GenericVisibleBookmarkCommand {
 
 public:
@@ -1697,6 +1732,7 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<SelectVisibleItem>(manager);
     register_command<DeteteVisibleItem>(manager);
     register_command<DeleteVisibleBookmarkCommand>(manager);
+    register_command<GotoBookmarkLinks>(manager);
     register_command<EditVisibleBookmarkCommand>(manager);
     register_command<DeleteHighlightCommand>(manager);
     register_command<ChangeHighlightTypeCommand>(manager);
