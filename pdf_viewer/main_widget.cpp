@@ -5297,7 +5297,7 @@ void MainWidget::perform_search(std::wstring text, bool is_regex, bool is_increm
 
     if (!is_incremental) {
         add_search_term(text);
-        // When searching, the start position before search is saved in a mark named '0'
+        // When searching, the start position before search is saved in a mark named '/'
         main_document_view->add_mark('/');
     }
 
