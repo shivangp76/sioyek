@@ -5323,13 +5323,18 @@ int Document::absolute_to_page_index(int absolute_index, int& p){
 
     int page = 0;
     while (page < super_fast_page_begin_indices.size() - 1) {
-        if (super_fast_page_begin_indices[page + 1] < absolute_index) {
+        if (super_fast_page_begin_indices[page + 1] <= absolute_index) {
             page++;
         }
         else {
             break;
         }
     }
+
+    if (page > num_pages()) {
+        page--;
+    }
+
     p = page;
     return absolute_index - super_fast_page_begin_indices[page];
 }
