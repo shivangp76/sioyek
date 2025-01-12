@@ -4306,7 +4306,7 @@ std::vector<SearchResult> search_text_with_index(const std::wstring& super_fast_
         //std::deque<fz_rect> match_rects;
         //std::vector<fz_rect> compressed_match_rects;
 
-        while ((match_page < page_begin_indices.size() - 1) && page_begin_indices[match_page + 1] < start_index) match_page++;
+        while ((match_page < page_begin_indices.size() - 1) && page_begin_indices[match_page + 1] <= start_index) match_page++;
 
         if (match_page >= begin_page) {
             is_before = false;
