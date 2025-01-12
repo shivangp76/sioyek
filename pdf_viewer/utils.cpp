@@ -5523,7 +5523,7 @@ std::wstring replace_verbatim_links(std::wstring input) {
         std::wstring link = input.substr(start + 11, end - start - 11);
         link = QString(QUrl::toPercentEncoding(QString::fromStdWString(link))).toStdWString();
         result += L"[[" + QString::number(index).toStdWString() + L"]](sioyek://" + link + L")";
-        start = end + 1;
+        start = end + 2;
         end = start;
         index++;
     }
