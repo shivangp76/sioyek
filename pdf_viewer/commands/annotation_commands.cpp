@@ -351,6 +351,7 @@ public:
     std::string pending_uuid = "";
     std::optional<DocumentRect> rect;
     std::vector<DocumentRect> possible_targets;
+    bool has_pre_performed = false;
 
 
     std::optional<Requirement> next_requirement(MainWidget* widget) override {
@@ -361,6 +362,10 @@ public:
     }
 
     void set_symbol_requirement(char value) override {
+        if (!has_pre_performed) {
+            populate_rects();
+        }
+
         std::string tag;
         tag.push_back(value);
         int index = get_index_from_tag(tag);
@@ -370,11 +375,16 @@ public:
 
     }
 
-    void pre_perform() override {
+    void populate_rects() {
         auto largest_rects = widget->get_largest_empty_rects();
         for (auto r : largest_rects) {
             possible_targets.push_back(r.to_absolute(dv()).to_document(widget->doc()));
         }
+    }
+
+    void pre_perform() override {
+        has_pre_performed = true;
+        populate_rects();
 
         if (possible_targets.size() > 0) {
             dv()->set_highlight_words(possible_targets);
