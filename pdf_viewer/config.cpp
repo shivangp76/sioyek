@@ -1314,7 +1314,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     // add_bool(L"show_document_name_in_statusbar", &SHOW_DOCUMENT_NAME_IN_STATUSBAR);
     add_bool(L"numeric_tags", &NUMERIC_TAGS);
     add_bool(L"highlight_links", &SHOULD_HIGHLIGHT_LINKS)->set_change_fn([](MainWidget* w){
-        w->main_document_view->set_highlight_links(SHOULD_HIGHLIGHT_LINKS, false);
+        w->main_document_view->set_highlight_links(SHOULD_HIGHLIGHT_LINKS);
     });
 
     add_bool(L"should_highlight_unselected_search", &SHOULD_HIGHLIGHT_UNSELECTED_SEARCH);

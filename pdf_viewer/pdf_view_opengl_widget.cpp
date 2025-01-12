@@ -3412,60 +3412,6 @@ void SioyekRendererBackend::render_tags() {
         }
     }
 
-    if (document_view->should_highlight_links && document_view->should_show_numbers && (!document_view->overview_page)) {
-
-        dv()->get_visible_links(all_visible_links);
-        setup_text_painter();
-        for (size_t i = 0; i < all_visible_links.size(); i++) {
-            std::stringstream ss;
-            ss << i;
-            std::string index_string = ss.str();
-
-            if (!NUMERIC_TAGS) {
-                index_string = get_aplph_tag(i, all_visible_links.size());
-            }
-
-            //auto [page, link] = all_visible_links[i];
-            auto link = all_visible_links[i];
-
-            bool should_draw = true;
-
-            // some malformed doucments have multiple overlapping links which makes reading
-            // the link labels difficult. Here we only draw the link text if there are no
-            // other close links. This has quadratic runtime but it should not matter since
-            // there are not many links in a single PDF page.
-            if (HIDE_OVERLAPPING_LINK_LABELS) {
-                for (int j = i + 1; j < all_visible_links.size(); j++) {
-                    auto other_link = all_visible_links[j];
-                    float distance = std::abs(other_link.rects[0].x0 - link.rects[0].x0) + std::abs(other_link.rects[0].y0 - link.rects[0].y0);
-                    if (distance < 10) {
-                        should_draw = false;
-                    }
-                }
-            }
-
-            NormalizedWindowRect window_rect = DocumentRect(link.rects[0], link.source_page).to_window_normalized(dv());
-
-            int view_width = static_cast<float>(dv()->get_view_width());
-            int view_height = static_cast<float>(dv()->get_view_height());
-
-            int window_x = static_cast<int>(window_rect.x0 * view_width / 2 + view_width / 2);
-            int window_y = static_cast<int>(-window_rect.y0 * view_height / 2 + view_height / 2);
-
-            if (document_view->tag_prefix.size() > 0) {
-                if (index_string.find(document_view->tag_prefix) != 0) {
-                    should_draw = false;
-                }
-                else {
-                    index_string = index_string.substr(document_view->tag_prefix.size());
-                }
-            }
-            if (should_draw) {
-                painter.drawText(window_x, window_y, index_string.c_str());
-            }
-        }
-    }
-
 }
 
 float PdfViewOpenGLWidget::get_device_pixel_ratio() {

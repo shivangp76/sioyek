@@ -606,11 +606,9 @@ public:
     void handle_open_prev_doc();
     void handle_open_all_docs();
     MainWidget* handle_new_window();
-    void handle_open_link(const std::wstring& text, bool copy = false);
-    void handle_overview_link(const std::wstring& text);
+    void handle_open_link(const PdfLink& link, bool copy = false);
     void handle_find_references_to_link(const std::wstring& text);
     void handle_find_references_to_selected_text();
-    void handle_portal_to_link(const std::wstring& text);
     void handle_keys_user_all();
     void handle_prefs_user_all();
     void handle_portal_to_overview();
@@ -936,7 +934,7 @@ public:
     void goto_search_result(int nth_next_result, bool overview=false);
     void set_should_highlight_words(bool should_highlight_words);
     void toggle_highlight_links();
-    void set_highlight_links(bool should_highlight, bool should_show_numbers);
+    void set_highlight_links(bool should_highlight);
     void rotate_clockwise();
     void rotate_counterclockwise();
     void toggle_fastread();

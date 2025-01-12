@@ -112,7 +112,7 @@ void DocumentView::handle_escape() {
     }
     should_highlight_words = false;
     should_highlight_rect_mode = false;
-    should_show_numbers = false;
+    //should_show_numbers = false;
     highlighted_tags = {};
     character_highlight_rect = {};
     wrong_character_rect = {};
@@ -3075,9 +3075,9 @@ void DocumentView::toggle_highlight_links() {
     this->should_highlight_links = !this->should_highlight_links;
 }
 
-void DocumentView::set_highlight_links(bool should_highlight, bool should_show_numbers) {
+void DocumentView::set_highlight_links(bool should_highlight) {
     this->should_highlight_links = should_highlight;
-    this->should_show_numbers = should_show_numbers;
+    //this->should_show_numbers = should_show_numbers;
 }
 
 void DocumentView::toggle_highlight_words() {

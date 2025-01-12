@@ -1162,8 +1162,20 @@ public:
     static inline const std::string hname = "Create a portal to PDF links using keyboard";
     PortalToLinkCommand(MainWidget* w) : OpenLinkCommand(w) {};
 
-    void perform() {
-        widget->handle_portal_to_link(text.value());
+    void perform_with_link(PdfLink pdf_link) {
+        ParsedUri parsed_uri = parse_uri(widget->mupdf_context, widget->doc()->doc, pdf_link.uri);
+
+        AbsoluteDocumentPos src_abspos = DocumentPos{ pdf_link.source_page, 0, pdf_link.rects[0].y0 }.to_absolute(widget->doc());
+        AbsoluteDocumentPos dst_abspos = DocumentPos{ parsed_uri.page - 1, parsed_uri.x, parsed_uri.y }.to_absolute(widget->doc());
+
+        Portal portal;
+        portal.dst.document_checksum = widget->doc()->get_checksum();
+        portal.dst.book_state.offset_x = dst_abspos.x;
+        portal.dst.book_state.offset_y = dst_abspos.y;
+        portal.dst.book_state.zoom_level = widget->main_document_view->get_zoom_level();
+        portal.src_offset_y = src_abspos.y;
+        std::string uuid = widget->doc()->add_portal(portal, true);
+        widget->on_new_portal_added(uuid);
     }
 
     std::string get_name() {

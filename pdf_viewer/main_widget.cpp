@@ -1332,7 +1332,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     }
 
     if (SHOULD_HIGHLIGHT_LINKS) {
-        main_document_view->set_highlight_links(true, false);
+        main_document_view->set_highlight_links(true);
     }
 
     grabGesture(Qt::TapAndHoldGesture, Qt::DontStartGestureOnChildren);
@@ -5026,10 +5026,10 @@ void MainWidget::goto_overview() {
 
 void MainWidget::reset_highlight_links() {
     if (SHOULD_HIGHLIGHT_LINKS) {
-        main_document_view->set_highlight_links(true, false);
+        main_document_view->set_highlight_links(true);
     }
     else {
-        main_document_view->set_highlight_links(false, false);
+        main_document_view->set_highlight_links(false);
     }
 }
 
@@ -6240,19 +6240,6 @@ std::optional<PdfLink> MainWidget::get_selected_link(const std::wstring& text) {
     return {};
 }
 
-void MainWidget::handle_overview_link(const std::wstring& text) {
-
-    auto selected_link_ = get_selected_link(text);
-    if (selected_link_) {
-        PdfLink pdf_link;
-        pdf_link.rects = selected_link_->rects;
-        pdf_link.uri = selected_link_->uri;
-        pdf_link.source_page = selected_link_->source_page;
-        dv()->set_overview_link(pdf_link);
-    }
-    reset_highlight_links();
-}
-
 void MainWidget::handle_find_references_to_link(const std::wstring& text) {
     auto selected_link = get_selected_link(text);
     std::vector<SearchResult> results;
@@ -6305,51 +6292,23 @@ void MainWidget::handle_find_references_to_selected_text() {
     dv()->set_search_results(std::move(results));
 }
 
-void MainWidget::handle_portal_to_link(const std::wstring& text) {
 
-    auto selected_link_ = get_selected_link(text);
-    if (selected_link_) {
-        PdfLink pdf_link = selected_link_.value();
-        ParsedUri parsed_uri = parse_uri(mupdf_context, doc()->doc, pdf_link.uri);
+void MainWidget::handle_open_link(const PdfLink& link, bool copy) {
 
-        AbsoluteDocumentPos src_abspos = DocumentPos {pdf_link.source_page, 0, pdf_link.rects[0].y0}.to_absolute(doc());
-        AbsoluteDocumentPos dst_abspos = DocumentPos {parsed_uri.page-1, parsed_uri.x, parsed_uri.y}.to_absolute(doc());
-
-        Portal portal;
-        portal.dst.document_checksum = doc()->get_checksum();
-        portal.dst.book_state.offset_x = dst_abspos.x;
-        portal.dst.book_state.offset_y = dst_abspos.y;
-        portal.dst.book_state.zoom_level = main_document_view->get_zoom_level();
-        portal.src_offset_y = src_abspos.y;
-        std::string uuid = doc()->add_portal(portal, true);
-        on_new_portal_added(uuid);
-
+    if (copy) {
+        copy_to_clipboard(utf8_decode(link.uri));
     }
-    reset_highlight_links();
-}
-
-void MainWidget::handle_open_link(const std::wstring& text, bool copy) {
-
-    auto selected_link_ = get_selected_link(text);
-    if (selected_link_) {
-        //auto [selected_page, selected_link] = selected_link_.value();
-        PdfLink link = selected_link_.value();
-
-        if (copy) {
-            copy_to_clipboard(utf8_decode(link.uri));
+    else {
+        if (QString::fromStdString(link.uri).startsWith("http")) {
+            open_web_url(utf8_decode(link.uri));
         }
         else {
-            if (QString::fromStdString(link.uri).startsWith("http")) {
-                open_web_url(utf8_decode(link.uri));
+            auto [page, offset_x, offset_y] = parse_uri(mupdf_context, doc()->doc, link.uri);
+            if (main_document_view->is_presentation_mode()) {
+                goto_page_with_page_number(page - 1);
             }
             else {
-                auto [page, offset_x, offset_y] = parse_uri(mupdf_context, doc()->doc, link.uri);
-                if (main_document_view->is_presentation_mode()) {
-                    goto_page_with_page_number(page - 1);
-                }
-                else {
-                    handle_goto_link_with_page_and_offset(page - 1, offset_y);
-                }
+                handle_goto_link_with_page_and_offset(page - 1, offset_y);
             }
         }
     }
@@ -7531,7 +7490,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << doc()->get_checksum();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -10561,8 +10519,8 @@ void MainWidget::toggle_highlight_links() {
     main_document_view->toggle_highlight_links();
 }
 
-void MainWidget::set_highlight_links(bool should_highlight, bool should_show_numbers) {
-    main_document_view->set_highlight_links(should_highlight, should_show_numbers);
+void MainWidget::set_highlight_links(bool should_highlight) {
+    main_document_view->set_highlight_links(should_highlight);
 }
 
 void MainWidget::rotate_clockwise() {

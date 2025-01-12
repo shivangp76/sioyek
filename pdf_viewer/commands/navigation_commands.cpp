@@ -1332,8 +1332,13 @@ public:
     static inline const std::string hname = "Overview to PDF links using keyboard";
     OverviewLinkCommand(MainWidget* w) : OpenLinkCommand(w) {};
 
-    void perform() {
-        widget->handle_overview_link(text.value());
+    void perform_with_link(PdfLink selected_link) override{
+        PdfLink pdf_link;
+        pdf_link.rects = selected_link.rects;
+        pdf_link.uri = selected_link.uri;
+        pdf_link.source_page = selected_link.source_page;
+        dv()->set_overview_link(pdf_link);
+        widget->reset_highlight_links();
     }
 
     std::string get_name() {

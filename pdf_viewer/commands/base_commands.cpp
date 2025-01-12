@@ -13,6 +13,7 @@ extern bool USE_KEYBOARD_POINT_SELECTION;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 extern bool FILL_TEXTBAR_WITH_SELECTED_TEXT;
 extern bool NUMERIC_TAGS;
+extern bool HIDE_OVERLAPPING_LINK_LABELS;
 
 void CommandManager::update_command_last_use(std::string command_name) {
     command_last_uses[command_name] = QDateTime::currentDateTime();
@@ -1271,6 +1272,7 @@ void KeyboardSelectPointCommand::set_symbol_requirement(char value) {
 }
 
 OpenLinkCommand::OpenLinkCommand(MainWidget* w) : Command(cname, w) {};
+OpenLinkCommand::OpenLinkCommand(std::string name, MainWidget* w) : Command(name, w) {};
 
 std::string OpenLinkCommand::text_requirement_name() {
     return "Label";
@@ -1301,17 +1303,65 @@ std::optional<Requirement> OpenLinkCommand::next_requirement(MainWidget* widget)
     }
 }
 
+void OpenLinkCommand::perform_with_link(PdfLink link) {
+    widget->handle_open_link(link);
+}
+
 void OpenLinkCommand::perform() {
-    widget->handle_open_link(text.value());
+    //widget->handle_open_link(text.value());
+    if (!already_pre_performed) {
+        pre_perform();
+    }
+
+    int index = get_index_from_tag(utf8_encode(text.value()));
+    if (index >= 0 && index < tagged_links.size()) {
+        PdfLink selected_link = tagged_links[index];
+        perform_with_link(selected_link);
+    }
+    widget->dv()->set_highlight_words({});
+    widget->set_highlight_links(false);
+
 }
 
 void OpenLinkCommand::pre_perform() {
     if (already_pre_performed) return;
-
-    widget->clear_tag_prefix();
-    widget->set_highlight_links(true, true);
-    widget->invalidate_render();
     already_pre_performed = true;
+
+    std::vector<PdfLink> visible_links;
+    std::vector<PdfLink> actual_tagged_links;
+    widget->clear_tag_prefix();
+    widget->dv()->get_visible_links(visible_links);
+
+    if (visible_links.size() > 0) {
+        actual_tagged_links.push_back(visible_links[0]);
+
+        for (int j = 1; j < visible_links.size(); j++) {
+            if (HIDE_OVERLAPPING_LINK_LABELS) {
+                auto other_link = actual_tagged_links.back();
+                auto link = visible_links[j];
+                float distance = std::abs(other_link.rects[0].x0 - link.rects[0].x0) + std::abs(other_link.rects[0].y0 - link.rects[0].y0);
+                if (distance > 10) {
+                    actual_tagged_links.push_back(link);
+                }
+
+            }
+            else {
+                actual_tagged_links.push_back(visible_links[j]);
+            }
+        }
+    }
+
+    std::vector<DocumentRect> visible_link_rects;
+
+    for (auto link : actual_tagged_links) {
+        visible_link_rects.push_back(DocumentRect{ link.rects[0] , link.source_page});
+    }
+
+    tagged_links = actual_tagged_links;
+    
+    widget->dv()->set_highlight_words(visible_link_rects);
+    widget->dv()->set_should_highlight_words(true);
+    widget->set_highlight_links(true);
 }
 
 void OpenLinkCommand::set_text_requirement(std::wstring value) {

@@ -1322,25 +1322,14 @@ public:
     }
 };
 
-class CopyLinkCommand : public TextCommand {
+class CopyLinkCommand : public OpenLinkCommand {
 public:
     static inline const std::string cname = "copy_link";
     static inline const std::string hname = "Copy URL of PDF links using keyboard";
-    CopyLinkCommand(MainWidget* w) : TextCommand(cname, w) {};
+    CopyLinkCommand(MainWidget* w) : OpenLinkCommand(cname, w) {};
 
-    void perform() {
-        widget->handle_open_link(text.value(), true);
-    }
-
-    void pre_perform() {
-        widget->set_highlight_links(true, true);
-        widget->invalidate_render();
-
-    }
-
-
-    std::string text_requirement_name() {
-        return "Label";
+    void perform_with_link(PdfLink link) {
+        widget->handle_open_link(link, true);
     }
 };
 

@@ -356,10 +356,12 @@ class OpenLinkCommand : public Command {
 public:
     static inline const std::string cname = "open_link";
     static inline const std::string hname = "Go to PDF links using keyboard";
+    OpenLinkCommand(std::string name, MainWidget* w);
     OpenLinkCommand(MainWidget* w);
 protected:
     std::optional<std::wstring> text = {};
     bool already_pre_performed = false;
+    std::vector<PdfLink> tagged_links;
 public:
 
     virtual std::string text_requirement_name();
@@ -369,6 +371,7 @@ public:
     void pre_perform();
     virtual void set_text_requirement(std::wstring value);
     virtual void set_symbol_requirement(char value);
+    virtual void perform_with_link(PdfLink link);
 };
 
 class TagCommand : public Command {

@@ -144,7 +144,7 @@ public:
     bool should_highlight_links = false;
     bool should_highlight_words = false;
     bool should_highlight_rect_mode = false;
-    bool should_show_numbers = false;
+    //bool should_show_numbers = false;
     bool should_show_rect_hints = false;
 
     //ColorPalette color_mode = ColorPalette::Normal;
@@ -275,7 +275,7 @@ public:
     void exit_ruler_mode();
 
     void toggle_highlight_links();
-    void set_highlight_links(bool should_highlight, bool should_show_numbers);
+    void set_highlight_links(bool should_highlight);
 
     void toggle_highlight_words();
     void set_highlight_words(std::vector<DocumentRect> rects);
