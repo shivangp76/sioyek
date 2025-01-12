@@ -5130,7 +5130,7 @@ std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const
             continue;
         }
 
-        if (n_gram[0] < 256 && n_gram[1] < 256) {
+        if ((N == 2) && n_gram[0] < 256 && n_gram[1] < 256) {
             n_gram_remaining_counts[n_gram[0]][n_gram[1]]++;
             n_gram_required_counts[n_gram[0]][n_gram[1]]++;
         }
@@ -5171,7 +5171,7 @@ std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const
             std::wstring_view current_ngram = std::wstring_view(haystack.data() + end_index - N, N);
 
 
-            if (current_ngram[0] > 255 || current_ngram[1] > 255) {
+            if ((N != 2) || current_ngram[0] > 255 || current_ngram[1] > 255) {
                 auto remaining_it = n_gram_remaining_counts_unicode.find(current_ngram);
                 if (remaining_it != n_gram_remaining_counts_unicode.end()) {
                     if (remaining_it->second > 0) {
@@ -5209,7 +5209,7 @@ std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const
 
     auto move_begin_forward_one = [&]() {
         std::wstring_view current_substring = std::wstring_view(haystack.data() + begin_index, N);
-        if (current_substring[0] > 255 || current_substring[1] > 255) {
+        if ((N != 2) || current_substring[0] > 255 || current_substring[1] > 255) {
             auto it = n_gram_remaining_counts_unicode.find(current_substring);
             if ((it != n_gram_remaining_counts_unicode.end())) {
                 if (it->second >= 0) {
