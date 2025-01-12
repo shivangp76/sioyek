@@ -7597,6 +7597,9 @@ std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
         window_rect.x1 = largest_rect.end_col * REDUCE_FACTOR - AUTO_BOOKMARK_HORIZONTAL_MARGIN;
         window_rect.y0 = largest_rect.begin_row * REDUCE_FACTOR + AUTO_BOOKMARK_VERTICAL_MARGIN;
         window_rect.y1 = largest_rect.end_row * REDUCE_FACTOR - AUTO_BOOKMARK_VERTICAL_MARGIN;
+        if (window_rect.y0 < get_status_bar_height()) {
+            window_rect.y0 = get_status_bar_height();
+        }
         window_rects.push_back(window_rect);
     }
     return window_rects;
