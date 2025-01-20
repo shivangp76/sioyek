@@ -992,3 +992,4 @@ enum RenderBackend {
 };
 
 void open_text_editor_at_line(QString file_path, int line_number);
+bool stext_page_has_lines(fz_stext_page* page);

@@ -3227,7 +3227,7 @@ const PageMergedLinesInfoAbsolute& Document::get_page_lines(int page) {
     else {
 
         fz_stext_page* stext_page = get_stext_with_page_number(page);
-        if (stext_page && stext_page->first_block && (!FORCE_CUSTOM_LINE_ALGORITHM)) {
+        if (stext_page && stext_page_has_lines(stext_page) && (!FORCE_CUSTOM_LINE_ALGORITHM)) {
 
             PagelessDocumentRect bound = get_page_absolute_rect(page);
 
