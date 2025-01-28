@@ -54,6 +54,13 @@
 #include <signal.h>
 #endif
 
+#ifdef SIOYEK_ADVANCED_AUDIO
+#define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio.h"
+#undef MINIAUDIO_IMPLEMENTATION
+#endif
+
+
 #include <mupdf/pdf.h>
 #include "synctex/synctex_parser.h"
 
@@ -69,6 +76,7 @@ extern float CUSTOM_BACKGROUND_COLOR[3];
 extern float CUSTOM_TEXT_COLOR[3];
 extern float CUSTOM_COLOR_CONTRAST;
 
+extern float TTS_RATE;
 extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
 extern bool ALWAYS_COPY_SELECTED_TEXT;
 
@@ -5876,3 +5884,203 @@ bool stext_page_has_lines(fz_stext_page* page) {
     }
     return false;
 }
+
+#ifdef SIOYEK_ADVANCED_AUDIO
+
+void data_callback_f32(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
+
+    MyPlayer* player = (MyPlayer*)pDevice->pUserData;
+
+    std::vector<float> temp_output(frameCount * player->decoder.outputChannels);
+    ma_decoder_read_pcm_frames(&player->decoder, &temp_output[0], frameCount, NULL);
+
+    player->soundTouch.putSamples((const float*)temp_output.data(), frameCount);
+    int n_recv = player->soundTouch.receiveSamples((float*)pOutput, frameCount);
+
+}
+
+void data_callback_s16(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
+
+    MyPlayer* player = (MyPlayer*)pDevice->pUserData;
+
+    std::vector<int16_t> temp_output(frameCount * player->decoder.outputChannels);
+    std::vector<float> temp_output_f32(frameCount * player->decoder.outputChannels);
+    std::vector<float> temp_input_f32(frameCount * player->decoder.outputChannels);
+
+    ma_decoder_read_pcm_frames(&player->decoder, &temp_output[0], frameCount, NULL);
+
+    for (int i = 0; i < temp_output.size(); i++) {
+        temp_output_f32[i] = temp_output[i] / 32768.0f;
+    }
+    
+
+    player->soundTouch.putSamples((const float*)temp_output_f32.data(), frameCount);
+
+    int n_recv = player->soundTouch.receiveSamples((float*)temp_input_f32.data(), frameCount);
+
+    for (int i = 0; i < temp_input_f32.size(); i++) {
+        *((int16_t*)pOutput + i) = static_cast<int16_t>(temp_input_f32[i] * 32768.0f);
+    }
+
+}
+
+void MyPlayer::set_source(std::string path) {
+    finishedEmitted = false;
+
+    if (currentRate < 0) {
+        currentRate = TTS_RATE + 1;
+    }
+
+    if (device != nullptr) {
+        ma_device_uninit(device);
+        delete device;
+        device = nullptr;
+    }
+
+    if (ma_decoder_init_file(path.c_str(), NULL, &decoder) != MA_SUCCESS) {
+        std::wcout << L"could not load file\n";
+    }
+
+    soundTouch.setChannels(decoder.outputChannels);
+    soundTouch.setSampleRate(decoder.outputSampleRate);
+    soundTouch.setPitch(1.0 / currentRate);
+    soundTouch.setTempo(1.0);
+    soundTouch.setRate(1.0);
+    soundTouch.setSetting(SETTING_OVERLAP_MS, 20);
+    soundTouch.setSetting(SETTING_NOMINAL_INPUT_SEQUENCE, 6);
+    soundTouch.setSetting(SETTING_NOMINAL_OUTPUT_SEQUENCE, 7);
+    soundTouch.setSetting(SETTING_INITIAL_LATENCY, 8);
+
+
+    deviceConfig = ma_device_config_init(ma_device_type_playback);
+    deviceConfig.playback.format = decoder.outputFormat;
+    deviceConfig.playback.channels = decoder.outputChannels;
+    deviceConfig.sampleRate = decoder.outputSampleRate * currentRate;
+    if (decoder.outputFormat == ma_format_f32) {
+        deviceConfig.dataCallback = data_callback_f32;
+    }
+    else {
+        deviceConfig.dataCallback = data_callback_s16;
+    }
+    deviceConfig.pUserData = this;
+
+    device = new ma_device();
+    if (ma_device_init(NULL, &deviceConfig, device) != MA_SUCCESS) {
+        std::wcout << L"Failed to open playback device.\n";
+        ma_decoder_uninit(&decoder);
+    }
+
+}
+
+void MyPlayer::play() {
+    if (device) {
+
+        if (ma_device_start(device) != MA_SUCCESS) {
+            std::wcout << L"Failed to start playback device.\n";
+        }
+    }
+}
+
+void MyPlayer::pause() {
+    if (device) {
+        ma_device_stop(device);
+    }
+}
+
+void MyPlayer::stop() {
+    if (device) {
+        ma_device_stop(device);
+        ma_decoder_seek_to_pcm_frame(&decoder, 0);
+    }
+}
+
+void MyPlayer::seek(unsigned long long miliseconds) {
+    finishedEmitted = false;
+    if (device) {
+        ma_decoder_seek_to_pcm_frame(&decoder, miliseconds * decoder.outputSampleRate / 1000);
+    }
+}
+
+void MyPlayer::setPosition(unsigned long long miliseconds) {
+    seek(miliseconds);
+}
+
+int MyPlayer::position() {
+    // return the time in miliseconds
+    ma_uint64 cursor;
+    ma_decoder_get_cursor_in_pcm_frames(&decoder, &cursor);
+    return cursor * 1000 / decoder.outputSampleRate;
+}
+
+bool MyPlayer::isFinished() {
+    if (device && !finishedEmitted) {
+        ma_uint64 cursor;
+        ma_decoder_get_cursor_in_pcm_frames(&decoder, &cursor);
+
+        if (cursor >= trackLength) {
+            finishedEmitted = true;
+            return true;
+        }
+
+    }
+
+    return false;
+}
+
+bool MyPlayer::isPlaying() {
+    if (device) {
+        return ma_device_is_started(device);
+    }
+    return false;
+}
+
+void MyPlayer::set_volume(float volume) {
+    if (device) {
+        ma_device_set_master_volume(device, volume);
+    }
+}
+
+float MyPlayer::get_volume() {
+    if (device) {
+        float volume;
+        ma_device_get_master_volume(device, &volume);
+        return volume;
+    }
+    return 0;
+}
+
+void MyPlayer::setPlaybackRate(float rate) {
+    currentRate = rate;
+
+    if (device) {
+        int current_position = position();
+        bool was_playing = isPlaying();
+
+        soundTouch.setPitch(1.0f / rate);
+        // recreate the audio device with the new sample rate
+        ma_device_uninit(device);
+        deviceConfig.sampleRate = decoder.outputSampleRate * rate;
+
+        if (ma_device_init(NULL, &deviceConfig, device) != MA_SUCCESS) {
+            std::wcout << L"Failed to open playback device.\n";
+        }
+
+        seek(current_position);
+        if (was_playing) {
+            play();
+        }
+    }
+}
+
+void MyPlayer::setSource(const QUrl& source) {
+    set_source(source.toLocalFile().toStdString());
+    ma_uint64 length;
+    ma_decoder_get_length_in_pcm_frames(&decoder, &length);
+    trackLength = length;
+}
+
+bool MyPlayer::isSeekable() {
+    return true;
+}
+
+#endif

@@ -7946,6 +7946,14 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
 
 void MainWidget::focus_on_high_quality_text_being_read() {
     if ((media_player != nullptr) && (media_player->isPlaying()) && high_quality_play_state.has_value()) {
+
+#ifdef SIOYEK_ADVANCED_AUDIO
+        if (media_player->isFinished()) {
+            handle_high_quality_media_end_reached();
+        }
+
+#endif
+
         float current_time = static_cast<float>(media_player->position()) / 1000.0f;
         int index = -1;
         for (int i = 0; i < high_quality_play_state->timestamps.size(); i++) {
@@ -12189,8 +12197,16 @@ void MainWidget::synchronize_if_desynchronized() {
     }
 }
 
-QMediaPlayer* MainWidget::get_media_player(){
+void MainWidget::handle_high_quality_media_end_reached() {
+    high_quality_play_state = {};
+    move_visual_mark(1);
+    handle_start_reading_high_quality(true);
+
+}
+
+SioyekMediaPlayer* MainWidget::get_media_player(){
     if (media_player == nullptr) {
+#ifndef SIOYEK_ADVANCED_AUDIO
         QAudioOutput* audio_output = new QAudioOutput(this);
         audio_output->setVolume(10);
         media_player = new QMediaPlayer(this);
@@ -12198,11 +12214,12 @@ QMediaPlayer* MainWidget::get_media_player(){
         QObject::connect(media_player, &QMediaPlayer::mediaStatusChanged, [this](QMediaPlayer::MediaStatus status) {
             if (status == QMediaPlayer::MediaStatus::EndOfMedia) {
                 //qDebug() << "end of media reached";
-                high_quality_play_state = {};
-                move_visual_mark(1);
-                handle_start_reading_high_quality(true);
+                handle_high_quality_media_end_reached();
             }
             });
+#else
+        media_player = new MyPlayer();
+#endif
     }
     return media_player;
 }
@@ -12239,7 +12256,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     //doc()->get_page_text_and_line_rects_after_rect
 
     sioyek_network_manager->tts(this, text, doc()->get_checksum(), get_current_page_number(), rate, [&, index_into_page](QString file_path, std::vector<float> timestamps) {
-        QMediaPlayer* mp = get_media_player();
+        SioyekMediaPlayer* mp = get_media_player();
         mp->setSource(QUrl::fromLocalFile(file_path));
         high_quality_play_state->timestamps = timestamps;
         //media_player->audioTracks().at(0).
@@ -12263,7 +12280,9 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
             seek_to_location(true);
         }
         else {
+#ifndef SIOYEK_ADVANCED_AUDIO
             QObject::connect(mp, &QMediaPlayer::seekableChanged, seek_to_location);
+#endif
         }
 
         });
@@ -12861,4 +12880,17 @@ void MainWidget::show_items(std::vector<std::wstring> items, std::optional<std::
             }
         });
     show_current_widget();
+}
+
+void MainWidget::set_high_quality_tts_rate(float rate) {
+    // normal speed is rate=0
+    float converted_rate = rate + 1;
+    get_media_player()->setPlaybackRate(converted_rate);
+}
+
+bool MainWidget::is_high_quality_tts_playing() {
+    if (media_player) {
+        return media_player->isPlaying();
+    }
+    return false;
 }

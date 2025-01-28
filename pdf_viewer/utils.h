@@ -14,6 +14,7 @@
 #include <memory>
 #include <qcommandlineparser.h>
 #include <qvariantmap.h>
+#include <qmediaplayer.h>
 
 #include <QKeyEvent>
 #include <qstandarditemmodel.h>
@@ -26,6 +27,13 @@
 #include "book.h"
 #include "utf8.h"
 #include "coordinates.h"
+
+#ifdef SIOYEK_ADVANCED_AUDIO
+
+#include <soundtouch/SoundTouch.h>
+#include "miniaudio.h"
+
+#endif
 
 #define LL_ITER(name, start) for(auto name=start;(name);name=name->next)
 #define LOG(expr) if (VERBOSE) {(expr);};
@@ -993,3 +1001,44 @@ enum RenderBackend {
 
 void open_text_editor_at_line(QString file_path, int line_number);
 bool stext_page_has_lines(fz_stext_page* page);
+
+#ifdef SIOYEK_ADVANCED_AUDIO
+class MyPlayer {
+public:
+    soundtouch::SoundTouch soundTouch;
+    ma_decoder decoder;
+    ma_device_config deviceConfig;
+    ma_device* device = nullptr;
+    float currentRate = -1.0f;
+    unsigned long long trackLength = 0;
+    bool finishedEmitted = false;
+
+
+
+    void set_source(std::string path);
+
+    void play();
+
+    void pause();
+    void stop();
+
+    void seek(unsigned long long miliseconds);
+    void setPosition(unsigned long long miliseconds);
+
+    int position();
+
+    bool isPlaying();
+
+    void set_volume(float volume);
+
+    float get_volume();
+
+    void setPlaybackRate(float rate);
+    bool isSeekable();
+    bool isFinished();
+
+    void setSource(const QUrl& source);
+
+
+};
+#endif

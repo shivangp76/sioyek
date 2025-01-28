@@ -1139,10 +1139,10 @@ void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const 
     QString text_checksum = QString::fromStdString(compute_md5_from_data(QString::fromStdWString(text).toUtf8()));
     QString file_path = QString::fromStdWString(cached_tts_path.slash( text_checksum.toStdWString() + L".mp3").get_path());
     QString timestamps_file_path = QString::fromStdWString(cached_tts_path.slash(text_checksum.toStdWString() + L".json").get_path());
-    if (rate != 1) {
-        file_path  =  QString::fromStdWString(cached_tts_path.slash( text_checksum.toStdWString() + L"_" + QString::number(rate).toStdWString() + L".mp3").get_path());
-        timestamps_file_path =  QString::fromStdWString(cached_tts_path.slash(text_checksum.toStdWString() + L"_" + QString::number(rate).toStdWString() + L".json").get_path());
-    }
+    //if (rate != 1) {
+    //    file_path  =  QString::fromStdWString(cached_tts_path.slash( text_checksum.toStdWString() + L"_" + QString::number(rate).toStdWString() + L".mp3").get_path());
+    //    timestamps_file_path =  QString::fromStdWString(cached_tts_path.slash(text_checksum.toStdWString() + L"_" + QString::number(rate).toStdWString() + L".json").get_path());
+    //}
     QFileInfo timestamps_file_info(timestamps_file_path);
     QFileInfo audio_file_info(file_path);
 

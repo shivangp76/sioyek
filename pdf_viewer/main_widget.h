@@ -125,6 +125,12 @@ struct ShellOutputBookmark{
     QString style_string = "";
 };
 
+#ifdef SIOYEK_ADVANCED_AUDIO
+using SioyekMediaPlayer = MyPlayer;
+#else
+using SioyekMediaPlayer = QMediaPlayer;
+#endif
+
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 #ifdef SIOYEK_MOBILE
 class MainWidget : public QQuickWidget {
@@ -169,7 +175,7 @@ public:
     SioyekRendererBackend* helper_opengl_widget_ = nullptr;
 
     QScrollBar* scroll_bar = nullptr;
-    QMediaPlayer* media_player = nullptr;
+    SioyekMediaPlayer* media_player = nullptr;
 
     QJsonDocument sioyek_documentation_json_document;
 
@@ -622,6 +628,8 @@ public:
     std::optional<Portal> handle_delete_selected_portal();
     void handle_start_reading();
     void preload_next_page_for_tts(float rate);
+    void set_high_quality_tts_rate(float rate);
+    bool is_high_quality_tts_playing();
     void handle_start_reading_high_quality(bool should_preload=false);
     void handle_toggle_reading();
     void handle_stop_reading();
@@ -1077,7 +1085,8 @@ public:
     void synchronize_if_desynchronized();
     void on_server_hashes_loaded();
     Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
-    QMediaPlayer* get_media_player();
+    SioyekMediaPlayer* get_media_player();
+    void handle_high_quality_media_end_reached();
     void show_command_menu();
 
     bool import_local_database(std::wstring path);

@@ -142,6 +142,9 @@ public:
             widget->handle_stop_reading();
             widget->handle_start_reading();
         }
+        else if (widget->is_high_quality_tts_playing()) {
+            widget->set_high_quality_tts_rate(TTS_RATE);
+        }
     }
 };
 
@@ -158,6 +161,9 @@ public:
         if (widget->is_reading) {
             widget->handle_stop_reading();
             widget->handle_start_reading();
+        }
+        else if (widget->is_high_quality_tts_playing()) {
+            widget->set_high_quality_tts_rate(TTS_RATE);
         }
     }
 };
