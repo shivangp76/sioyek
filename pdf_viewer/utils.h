@@ -29,8 +29,9 @@
 #include "coordinates.h"
 
 #ifdef SIOYEK_ADVANCED_AUDIO
-
+#ifdef SIOYEK_USE_SOUNDTOUCH
 #include <soundtouch/SoundTouch.h>
+#endif
 #include "miniaudio.h"
 
 #endif
@@ -1002,10 +1003,59 @@ enum RenderBackend {
 void open_text_editor_at_line(QString file_path, int line_number);
 bool stext_page_has_lines(fz_stext_page* page);
 
+class PhaseVocoder {
+public:
+    PhaseVocoder(float playbackRate, float pitchScale, int fftSize = 1024);
+    
+    void putSamples(const float* data, int count);
+    
+    int receiveSamples(float* out, int count);
+    
+    void setPlaybackRate(float rate);
+
+    void setPitchScale(float scale);
+    
+    float playbackRate;  // desired overall playback rate factor.
+private:
+    // Parameters.
+    float pitchScale;    // pitch shift factor.
+    float timeScale;     // internal time-scale factor = playbackRate / pitchScale.
+    int fftSize;         // FFT frame size (power of two)
+    int analysisHop;     // analysis hop size.
+    int synthesisHop;    // synthesis hop size.
+    std::vector<float> window; // analysis/synthesis window.
+    
+    // Phase tracking for frequency bins (0 .. fftSize/2).
+    std::vector<float> prevPhase;
+    std::vector<float> sumPhase;
+    bool firstFrame;
+    
+    // Input sample buffer.
+    std::vector<float> inputBuffer;
+    
+    // Intermediate output (after time-stretch).
+    std::vector<float> vocoderBuffer;
+    int nextSynthesisWritePos; // Global index for overlap-add.
+    float resamplePos;         // Fractional index for output reading.
+    
+    // Maximum allowed buffer sizes.
+    int maxBufferSize;     // Maximum size of vocoderBuffer.
+    int maxInputBufferSize; // Maximum size of inputBuffer.
+    
+    void updateParameters();
+    void processFrames();
+};
+
 #ifdef SIOYEK_ADVANCED_AUDIO
 class MyPlayer {
 public:
+
+#ifdef SIOYEK_USE_SOUNDTOUCH
     soundtouch::SoundTouch soundTouch;
+#else
+    PhaseVocoder* vocoder = nullptr;
+#endif
+
     ma_decoder decoder;
     ma_device_config deviceConfig;
     ma_device* device = nullptr;
@@ -1042,3 +1092,4 @@ public:
 
 };
 #endif
+

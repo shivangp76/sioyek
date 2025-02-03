@@ -8,6 +8,7 @@
 
 
 #include <cmath>
+#include <complex>
 #include <cassert>
 #include "utils.h"
 #include <optional>
@@ -5894,8 +5895,17 @@ void data_callback_f32(ma_device* pDevice, void* pOutput, const void* pInput, ma
     std::vector<float> temp_output(frameCount * player->decoder.outputChannels);
     ma_decoder_read_pcm_frames(&player->decoder, &temp_output[0], frameCount, NULL);
 
+#ifdef SIOYEK_USE_SOUNDTOUCH
     player->soundTouch.putSamples((const float*)temp_output.data(), frameCount);
     int n_recv = player->soundTouch.receiveSamples((float*)pOutput, frameCount);
+#else
+    player->vocoder->putSamples((const float*)temp_output.data(), frameCount);
+    player->vocoder->receiveSamples((float*)pOutput, frameCount);
+    float scale = std::sqrt(player->vocoder->playbackRate);
+    for (int i = 0; i < frameCount * player->decoder.outputChannels; i++) {
+        *((float*)pOutput + i) *= scale;
+    }
+#endif
 
 }
 
@@ -5914,9 +5924,18 @@ void data_callback_s16(ma_device* pDevice, void* pOutput, const void* pInput, ma
     }
     
 
+#ifdef SIOYEK_USE_SOUNDTOUCH
     player->soundTouch.putSamples((const float*)temp_output_f32.data(), frameCount);
-
     int n_recv = player->soundTouch.receiveSamples((float*)temp_input_f32.data(), frameCount);
+#else
+    player->vocoder->putSamples((const float*)temp_output_f32.data(), frameCount);
+    player->vocoder->receiveSamples((float*)temp_input_f32.data(), frameCount);
+
+    float scale = std::sqrt(player->vocoder->playbackRate);
+    for (int i = 0; i < frameCount * player->decoder.outputChannels; i++) {
+        *((float*)pOutput + i) *= scale;
+    }
+#endif
 
     for (int i = 0; i < temp_input_f32.size(); i++) {
         *((int16_t*)pOutput + i) = static_cast<int16_t>(temp_input_f32[i] * 32768.0f);
@@ -5941,6 +5960,7 @@ void MyPlayer::set_source(std::string path) {
         std::wcout << L"could not load file\n";
     }
 
+#ifdef SIOYEK_USE_SOUNDTOUCH
     soundTouch.setChannels(decoder.outputChannels);
     soundTouch.setSampleRate(decoder.outputSampleRate);
     soundTouch.setPitch(1.0 / currentRate);
@@ -5950,6 +5970,9 @@ void MyPlayer::set_source(std::string path) {
     soundTouch.setSetting(SETTING_NOMINAL_INPUT_SEQUENCE, 6);
     soundTouch.setSetting(SETTING_NOMINAL_OUTPUT_SEQUENCE, 7);
     soundTouch.setSetting(SETTING_INITIAL_LATENCY, 8);
+#else
+    vocoder = new PhaseVocoder(1.0f / (currentRate * currentRate), 1.0f / currentRate, 512);
+#endif
 
 
     deviceConfig = ma_device_config_init(ma_device_type_playback);
@@ -6010,8 +6033,7 @@ int MyPlayer::position() {
     ma_uint64 cursor;
     ma_decoder_get_cursor_in_pcm_frames(&decoder, &cursor);
     return cursor * 1000 / decoder.outputSampleRate;
-}
-
+} 
 bool MyPlayer::isFinished() {
     if (device && !finishedEmitted) {
         ma_uint64 cursor;
@@ -6056,7 +6078,12 @@ void MyPlayer::setPlaybackRate(float rate) {
         int current_position = position();
         bool was_playing = isPlaying();
 
+#ifdef SIOYEK_USE_SOUNDTOUCH
         soundTouch.setPitch(1.0f / rate);
+#else
+        vocoder->setPlaybackRate(1.0f / (rate * rate));
+        vocoder->setPitchScale(1.0f / rate);
+#endif
         // recreate the audio device with the new sample rate
         ma_device_uninit(device);
         deviceConfig.sampleRate = decoder.outputSampleRate * rate;
@@ -6084,3 +6111,250 @@ bool MyPlayer::isSeekable() {
 }
 
 #endif
+
+template<typename T>
+T mymin(T x1, T x2) {
+    return x1 < x2 ? x1 : x2;
+}
+
+static bool is_power_of_two(size_t n) {
+    return n && ((n & (n - 1)) == 0);
+}
+
+// Returns the smallest power of two >= n.
+static size_t next_power_of_two(size_t n) {
+    size_t p = 1;
+    while (p < n)
+        p *= 2;
+    return p;
+}
+
+// FFT for power-of-two sizes using the iterative Cooley–Tukey algorithm.
+static void fft_pow2(std::vector<std::complex<float>> &a, bool inverse) {
+    size_t n = a.size();
+    // Bit-reversal permutation.
+    for (size_t i = 1, j = 0; i < n; i++) {
+        size_t bit = n >> 1;
+        for (; j & bit; bit >>= 1)
+            j -= bit;
+        j += bit;
+        if (i < j)
+            std::swap(a[i], a[j]);
+    }
+
+    // Cooley–Tukey iterative FFT.
+    for (size_t len = 2; len <= n; len <<= 1) {
+        float angle = 2 * float(M_PI) / len * (inverse ? 1 : -1);
+        std::complex<float> wlen(cos(angle), sin(angle));
+        for (size_t i = 0; i < n; i += len) {
+            std::complex<float> w(1);
+            for (size_t j = 0; j < len / 2; j++) {
+                std::complex<float> u = a[i + j];
+                std::complex<float> v = a[i + j + len / 2] * w;
+                a[i + j] = u + v;
+                a[i + j + len / 2] = u - v;
+                w *= wlen;
+            }
+        }
+    }
+    if (inverse) {
+        for (size_t i = 0; i < n; i++)
+            a[i] /= n;
+    }
+}
+
+// Convolution helper (for Bluestein's algorithm) -- not used here.
+static std::vector<std::complex<float>>
+convolve(const std::vector<std::complex<float>> &a,
+         const std::vector<std::complex<float>> &b) {
+    size_t n = a.size(), m = b.size();
+    size_t size = next_power_of_two(n + m - 1);
+    std::vector<std::complex<float>> fa(size), fb(size);
+    for (size_t i = 0; i < n; i++)
+        fa[i] = a[i];
+    for (size_t i = n; i < size; i++)
+        fa[i] = 0;
+    for (size_t i = 0; i < m; i++)
+        fb[i] = b[i];
+    for (size_t i = m; i < size; i++)
+        fb[i] = 0;
+    
+    fft_pow2(fa, false);
+    fft_pow2(fb, false);
+    for (size_t i = 0; i < size; i++)
+        fa[i] *= fb[i];
+    fft_pow2(fa, true);
+    fa.resize(n + m - 1);
+    return fa;
+}
+
+// In-place FFT that supports any size (using Bluestein’s algorithm if needed).
+void fft(std::vector<std::complex<float>> &a, bool inverse = false) {
+    size_t n = a.size();
+    if (n == 0)
+        return;
+    if (is_power_of_two(n)) {
+        fft_pow2(a, inverse);
+        return;
+    }
+    // Bluestein's algorithm (omitted here for brevity).
+    // For this example we assume that FFT sizes used in the vocoder
+    // are powers of two.
+    assert(false && "Bluestein FFT not implemented in this example");
+}
+
+// ==================================================================
+// Utility: wrap a phase to the interval [-pi, pi)
+static float princarg(float phase) {
+    while(phase < -M_PI) phase += 2*M_PI;
+    while(phase >= M_PI) phase -= 2*M_PI;
+    return phase;
+}
+
+PhaseVocoder::PhaseVocoder(float playbackRate, float pitchScale, int fftSize)
+    : playbackRate(playbackRate), pitchScale(pitchScale), fftSize(fftSize)
+{
+    // Choose analysis hop size (e.g. 1/4 frame)
+    analysisHop = fftSize / 4;
+    // The vocoder time-scale factor is (playbackRate / pitchScale)
+    timeScale = playbackRate / pitchScale;
+    // Synthesis hop is analysisHop scaled by timeScale.
+    synthesisHop = int(analysisHop * timeScale + 0.5f);
+
+    // Prepare a Hann window.
+    window.resize(fftSize);
+    for (int n = 0; n < fftSize; n++) {
+        window[n] = 0.5f * (1 - cos(2 * M_PI * n / (fftSize - 1)));
+    }
+
+    // Phase–tracking buffers (one value per FFT bin)
+    prevPhase.assign(fftSize / 2 + 1, 0.0f);
+    sumPhase.assign(fftSize / 2 + 1, 0.0f);
+    firstFrame = true;
+
+    // Buffers:
+    inputBuffer.clear();
+    vocoderBuffer.clear();
+    nextSynthesisWritePos = 0;
+    resamplePos = 0.0f;
+
+    // Set caps on maximum sizes.
+    maxBufferSize = fftSize * 10;      // Maximum vocoderBuffer size.
+    maxInputBufferSize = fftSize * 10;   // Maximum inputBuffer size.
+}
+
+void PhaseVocoder::putSamples(const float* data, int count) {
+    // If adding these samples would exceed the maxInputBufferSize,
+    // remove the oldest samples from the front.
+    int totalAfterInsert = static_cast<int>(inputBuffer.size()) + count;
+    if (totalAfterInsert > maxInputBufferSize) {
+        int toDrop = totalAfterInsert - maxInputBufferSize;
+        // Ensure we do not drop more than available.
+        toDrop = mymin(toDrop, static_cast<int>(inputBuffer.size()));
+        inputBuffer.erase(inputBuffer.begin(), inputBuffer.begin() + toDrop);
+    }
+    // Now append the new samples.
+    inputBuffer.insert(inputBuffer.end(), data, data + count);
+    processFrames();
+}
+
+int PhaseVocoder::receiveSamples(float* out, int count) {
+    int samplesWritten = 0;
+    // While we have enough samples in vocoderBuffer for linear interpolation…
+    while (samplesWritten < count && (static_cast<int>(vocoderBuffer.size()) - static_cast<int>(resamplePos)) > 1) {
+        int idx = static_cast<int>(resamplePos);
+        float frac = resamplePos - idx;
+        float sample = vocoderBuffer[idx] * (1 - frac) + vocoderBuffer[idx + 1] * frac;
+        out[samplesWritten++] = sample;
+        // Advance the read pointer by the resampling step (pitchScale).
+        resamplePos += pitchScale;
+    }
+    // Remove consumed samples from vocoderBuffer.
+    int removeCount = static_cast<int>(resamplePos);
+    if (removeCount > 0) {
+        vocoderBuffer.erase(vocoderBuffer.begin(), vocoderBuffer.begin() + removeCount);
+        resamplePos -= removeCount;
+        nextSynthesisWritePos -= removeCount;
+        if (nextSynthesisWritePos < 0) nextSynthesisWritePos = 0;
+    }
+    return samplesWritten;
+}
+
+void PhaseVocoder::setPlaybackRate(float rate) {
+    playbackRate = rate;
+    updateParameters();
+}
+
+void PhaseVocoder::setPitchScale(float scale) {
+    pitchScale = scale;
+    updateParameters();
+}
+
+void PhaseVocoder::updateParameters() {
+    timeScale = playbackRate / pitchScale;
+    synthesisHop = int(analysisHop * timeScale + 0.5f);
+}
+
+void PhaseVocoder::processFrames() {
+    // Process frames only if we have at least fftSize samples in inputBuffer
+    // and if adding another frame will not exceed the vocoderBuffer cap.
+    while (static_cast<int>(inputBuffer.size()) >= fftSize &&
+        (nextSynthesisWritePos + fftSize <= maxBufferSize)) {
+        // Copy one frame and apply the window.
+        std::vector<float> frame(fftSize);
+        for (int n = 0; n < fftSize; n++) {
+            frame[n] = inputBuffer[n] * window[n];
+        }
+        // Remove analysisHop samples from inputBuffer.
+        inputBuffer.erase(inputBuffer.begin(), inputBuffer.begin() + analysisHop);
+
+        // Prepare FFT input.
+        std::vector<std::complex<float>> X(fftSize);
+        for (int n = 0; n < fftSize; n++) {
+            X[n] = std::complex<float>(frame[n], 0.0f);
+        }
+        // Compute forward FFT.
+        fft(X, false);
+
+        // Process nonredundant bins (0 .. fftSize/2).
+        for (int k = 0; k <= fftSize / 2; k++) {
+            float mag = std::abs(X[k]);
+            float phase = std::arg(X[k]);
+            float deltaPhase = phase - prevPhase[k];
+            prevPhase[k] = phase;
+            float expected = 2 * M_PI * k * analysisHop / fftSize;
+            float delta = princarg(deltaPhase - expected);
+            float trueFreq = (2 * M_PI * k / fftSize) + (delta / analysisHop);
+            if (firstFrame)
+                sumPhase[k] = phase;
+            else
+                sumPhase[k] += synthesisHop * trueFreq;
+            float newPhase = sumPhase[k];
+            X[k] = std::polar(mag, newPhase);
+            if (k > 0 && k < fftSize / 2)
+                X[fftSize - k] = std::conj(X[k]);
+        }
+        firstFrame = false;
+
+        // Compute inverse FFT.
+        fft(X, true);
+
+        // Reconstruct time-domain output frame.
+        std::vector<float> outputFrame(fftSize);
+        for (int n = 0; n < fftSize; n++) {
+            outputFrame[n] = X[n].real() * window[n];
+        }
+
+        // Ensure vocoderBuffer is long enough.
+        int requiredSize = nextSynthesisWritePos + fftSize;
+        if (requiredSize > static_cast<int>(vocoderBuffer.size()))
+            vocoderBuffer.resize(requiredSize, 0.0f);
+
+        // Overlap–add the output frame into vocoderBuffer.
+        for (int n = 0; n < fftSize; n++) {
+            vocoderBuffer[nextSynthesisWritePos + n] += outputFrame[n];
+        }
+        // Advance the synthesis write pointer.
+        nextSynthesisWritePos += synthesisHop;
+    }
+}
