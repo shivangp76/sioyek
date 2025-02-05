@@ -3519,7 +3519,7 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
         }
     }
     else{
-        std::wstring abbr_regex(L"[A-Z]+s?");
+        std::wstring abbr_regex(L"([A-Z]\\.?)+s?");
         std::optional<std::wstring> abbr_under_pointer = current_document->get_regex_match_at_position(abbr_regex, flat_chars, docpos, &reference_range);
         if (abbr_under_pointer){
             std::vector<DocumentRect> abbr_highlight_rects;
