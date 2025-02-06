@@ -971,6 +971,7 @@ public:
     Q_INVOKABLE void report_js_error(QString error_message, QString error_file_path, int error_line);
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
     void run_startup_js(bool first_run=false);
+    Q_INVOKABLE QString get_environment_variable(QString name);
     void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);
     void set_text_prompt_text(QString text);
     DocumentView* dv();

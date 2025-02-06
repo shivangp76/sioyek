@@ -24,6 +24,7 @@
 #include <optional>
 #include <memory>
 #include <cctype>
+#include <cstdlib>
 #include <qpainterpath.h>
 #include <qabstractitemmodel.h>
 #include <qapplication.h>
@@ -12982,4 +12983,8 @@ void MainWidget::copy_text_to_clipboard(QString str) {
             Q_ARG(QString, str)
         );
     }
+}
+
+QString MainWidget::get_environment_variable(QString name) {
+    return QString::fromStdString(std::getenv(name.toStdString().c_str()));
 }
