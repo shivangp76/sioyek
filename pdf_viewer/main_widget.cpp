@@ -10113,6 +10113,12 @@ QString MainWidget::handle_action_in_menu(std::wstring action) {
         if (action == L"up") {
             selector_widget->simulate_move_up();
         }
+        if (action == L"left") {
+            selector_widget->simulate_move_left();
+        }
+        if (action == L"right") {
+            selector_widget->simulate_move_right();
+        }
         if (action == L"page_down") {
             selector_widget->simulate_page_down();
         }

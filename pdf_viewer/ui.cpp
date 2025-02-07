@@ -1730,6 +1730,16 @@ void BaseSelectorWidget::simulate_move_up() {
     }
 }
 
+void BaseSelectorWidget::simulate_move_left() {
+    QKeyEvent* move_left_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Left, Qt::KeyboardModifier::NoModifier);
+    QCoreApplication::postEvent(get_view(), move_left_event);
+}
+
+void BaseSelectorWidget::simulate_move_right() {
+    QKeyEvent* move_right_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Right, Qt::KeyboardModifier::NoModifier);
+    QCoreApplication::postEvent(get_view(), move_right_event);
+}
+
 QString BaseSelectorWidget::get_selected_item() {
     if (get_selected_index()) {
         return get_view()->model()->data(get_selected_index().value()).toString();
