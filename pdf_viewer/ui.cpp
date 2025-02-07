@@ -1669,16 +1669,6 @@ bool is_tree_view_index_first(const QModelIndex& index, QTreeView* view){
     // }
 }
 
-void BaseSelectorWidget::simulate_move_left() {
-    QKeyEvent* move_down_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Left, Qt::KeyboardModifier::NoModifier);
-    QCoreApplication::postEvent(get_view(), move_down_event);
-}
-
-void BaseSelectorWidget::simulate_move_right() {
-    QKeyEvent* move_down_event = new QKeyEvent(QEvent::Type::KeyPress, Qt::Key_Right, Qt::KeyboardModifier::NoModifier);
-    QCoreApplication::postEvent(get_view(), move_down_event);
-}
-
 void BaseSelectorWidget::simulate_move_down() {
     bool is_last = false;
     if (dynamic_cast<QTreeView*>(get_view())){
