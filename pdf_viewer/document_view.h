@@ -557,7 +557,13 @@ public:
         res.reserve(indices.size());
 
         for (auto index : indices) {
-            res.push_back(annots[index].uuid);
+            std::optional<AbsoluteRect> annot_rect  = annots[index].get_rectangle();
+            if (annot_rect.has_value()) {
+                bool is_visible = annot_rect->to_window_normalized(this).is_visible();
+                if (is_visible) {
+                    res.push_back(annots[index].uuid);
+                }
+            }
         }
         return res;
     }
