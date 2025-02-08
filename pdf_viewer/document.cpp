@@ -2043,6 +2043,63 @@ std::wstring Document::get_raw_text_selection(AbsoluteDocumentPos selection_begi
 
 }
 
+void Document::get_line_selection(AbsoluteDocumentPos selection_begin,
+    AbsoluteDocumentPos selection_end,
+    std::deque<AbsoluteRect>& selected_characters,
+    std::wstring& selected_text) {
+
+    selected_characters.clear();
+    selected_text.clear();
+    if (selection_begin.y > selection_end.y) {
+        std::swap(selection_begin, selection_end);
+    }
+
+    DocumentPos begin_doc_pos = selection_begin.to_document(this);
+    DocumentPos end_doc_pos = selection_end.to_document(this);
+
+    bool begun = false;
+
+    fz_point begin_fz_point = { begin_doc_pos.x, begin_doc_pos.y };
+    fz_point end_fz_point = { end_doc_pos.x, end_doc_pos.y };
+
+    fz_stext_page* begin_page = get_stext_with_page_number(begin_doc_pos.page);
+    fz_stext_page* end_page = get_stext_with_page_number(end_doc_pos.page);
+
+    fz_stext_line* closest_line_to_begin = find_closest_line_to_document_point(begin_page, begin_fz_point);
+    fz_stext_line* closest_line_to_end = find_closest_line_to_document_point(end_page, end_fz_point);
+
+    for (int page_number = begin_doc_pos.page; page_number <= end_doc_pos.page; page_number++) {
+
+
+        fz_stext_page* stext_page = get_stext_with_page_number(page_number);
+
+        if (closest_line_to_begin == nullptr || closest_line_to_end == nullptr) return;
+
+        LL_ITER(block, stext_page->first_block) {
+            if (block->type == FZ_STEXT_BLOCK_TEXT) {
+                LL_ITER(line, block->u.t.first_line) {
+                    if (line == closest_line_to_begin) {
+                        begun = true;
+                    }
+
+                    if (begun) {
+                        for (fz_stext_char* chr = line->first_char; chr; chr = chr->next) {
+                            selected_characters.push_back(to_absolute(page_number, chr->quad));
+                            selected_text.push_back(chr->c);
+                        }
+                    }
+
+                    if (line == closest_line_to_end) {
+                        return;
+                    }
+                }
+            }
+        }
+
+    }
+
+}
+
 void Document::get_text_selection(fz_context* ctx, AbsoluteDocumentPos selection_begin,
     AbsoluteDocumentPos selection_end,
     bool is_word_selection,
@@ -2109,7 +2166,7 @@ void Document::get_text_selection(fz_context* ctx, AbsoluteDocumentPos selection
             char_end = find_closest_char_to_document_point(flat_chars, page_point2, &location_index2);
         }
 
-        if (char_begin == char_end && (char_begin != nullptr)) {
+        if (char_begin == char_end && (!is_word_selection) && (char_begin != nullptr)) {
             selected_text.push_back(char_begin->c);
             selected_characters.push_back(to_absolute(i, char_begin->quad));
             return;

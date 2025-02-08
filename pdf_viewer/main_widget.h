@@ -273,6 +273,8 @@ public:
     QTimer* network_timer = nullptr;
     QDateTime last_persistance_datetime;
 
+    std::optional<QDateTime> last_double_click_datetime = {};
+
     // the portal to be edited. This is usually set by `edit_portal` command which jumps to the portal
     // when we go back to the original location by jumping back in history, the portal will be edited
     // to be the new document view state
@@ -1127,6 +1129,7 @@ public:
     void delete_old_backend();
     void delete_old_helper();
     std::vector<WindowRect> get_largest_empty_rects();
+    void update_text_selection(AbsoluteDocumentPos abs_mpos);
 
 
 public slots:

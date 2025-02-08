@@ -851,27 +851,36 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
     }
 
     if (main_document_view->is_selecting) {
+        update_text_selection(abs_mpos);
+    }
+}
 
-        // When selecting, we occasionally update selected text
-        //todo: maybe have a timer event that handles this periodically
-        int msecs_since_last_text_select = last_text_select_time.msecsTo(QTime::currentTime());
-        if (msecs_since_last_text_select > 16 || msecs_since_last_text_select < 0) {
+void MainWidget::update_text_selection(AbsoluteDocumentPos abs_mpos) {
+    // When selecting, we occasionally update selected text
+    // todo: maybe have a timer event that handles this periodically
+    int msecs_since_last_text_select = last_text_select_time.msecsTo(QTime::currentTime());
+    if (msecs_since_last_text_select > 16 || msecs_since_last_text_select < 0) {
 
-            dv()->selection_begin = last_mouse_down;
-            dv()->selection_end = abs_mpos;
-            //fz_point selection_begin = { last_mouse_down.x(), last_mouse_down.y()};
-            //fz_point selection_end = { document_x, document_y };
+        dv()->selection_begin = last_mouse_down;
+        dv()->selection_end = abs_mpos;
 
-            main_document_view->get_text_selection(dv()->selection_begin,
+        if (dv()->selection_mode == SelectionMode::Line) {
+            main_document_view->get_line_selection(dv()->selection_begin,
                 dv()->selection_end,
-                main_document_view->is_word_selecting,
                 main_document_view->selected_character_rects,
                 dv()->selected_text);
-            main_document_view->selected_text_is_dirty = false;
-
-            validate_render();
-            last_text_select_time = QTime::currentTime();
         }
+        else {
+            main_document_view->get_text_selection(main_document_view->selection_begin,
+                main_document_view->selection_end,
+                main_document_view->selection_mode == SelectionMode::Word,
+                main_document_view->selected_character_rects,
+                main_document_view->selected_text);
+        }
+        main_document_view->selected_text_is_dirty = false;
+
+        validate_render();
+        last_text_select_time = QTime::currentTime();
     }
 }
 
@@ -2652,7 +2661,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         if ((!TOUCH_MODE) && (!mouse_drag_mode)) {
             main_document_view->is_selecting = true;
             if (SINGLE_CLICK_SELECTS_WORDS) {
-                main_document_view->is_word_selecting = true;
+                dv()->selection_mode = SelectionMode::Word;
             }
         }
         else {
@@ -2698,15 +2707,8 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         float dist = manhattan_distance(fvec2(last_mouse_down), fvec2(abs_doc_pos));
         if ((!was_resizing_overview) && (!TOUCH_MODE) && (!mouse_drag_mode) && (dist > 5)) {
 
-            main_document_view->get_text_selection(last_mouse_down,
-                abs_doc_pos,
-                main_document_view->is_word_selecting,
-                main_document_view->selected_character_rects,
-                dv()->selected_text);
-            main_document_view->selected_text_is_dirty = false;
-
-            //opengl_widget->set_control_character_rect(control_rect);
-            main_document_view->is_word_selecting = false;
+            update_text_selection(abs_doc_pos);
+            dv()->selection_mode = SelectionMode::Character;
         }
         else {
             // clear the potential drag candidate as we are clicking rather than dragging
@@ -2720,7 +2722,12 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
                     return;
                 }
                 handle_click(click_pos);
-                main_document_view->clear_selected_text();
+                if (main_document_view->selected_character_rects.size() <= 1) {
+                    // when trying to click on items, we might accidentally select text
+                    // so when the selected text is just one character, we assume the user
+                    // was trying to click on an item and not select text
+                    main_document_view->clear_selected_text();
+                }
             }
             else {
                 int distance = abs(click_pos.x - last_mouse_down_window_pos.x) + abs(click_pos.y - last_mouse_down_window_pos.y);
@@ -3117,19 +3124,24 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
 void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
     if (!doc()) return;
 
+    last_double_click_datetime = QDateTime::currentDateTime();
+
     if (!TOUCH_MODE) {
+        WindowPos click_pos = { mevent->pos().x(), mevent->pos().y() };
+        AbsoluteDocumentPos mouse_abspos = main_document_view->window_to_absolute_document_pos(click_pos);
+
         if (mevent->button() == Qt::MouseButton::LeftButton) {
             main_document_view->is_selecting = true;
             if (SINGLE_CLICK_SELECTS_WORDS) {
-                main_document_view->is_word_selecting = false;
+                main_document_view->selection_mode = SelectionMode::Character;
             }
             else {
-                main_document_view->is_word_selecting = true;
+                main_document_view->selection_mode = SelectionMode::Word;
+                update_text_selection(mouse_abspos);
             }
+
         }
 
-        WindowPos click_pos = { mevent->pos().x(), mevent->pos().y() };
-        AbsoluteDocumentPos mouse_abspos = main_document_view->window_to_absolute_document_pos(click_pos);
         std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(mouse_abspos);
         std::string highlight_uuid = main_document_view->get_highlight_uuid_in_pos(click_pos);
 
@@ -3158,6 +3170,17 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     if (should_draw(false) && (mevent->button() == Qt::MouseButton::LeftButton)) {
         main_document_view->start_drawing();
         return;
+    }
+
+    if (!TOUCH_MODE) {
+        QDateTime current_time = QDateTime::currentDateTime();
+        if (last_double_click_datetime.has_value() && last_double_click_datetime->msecsTo(current_time) < 250) { // triple click
+            main_document_view->is_selecting = true;
+            main_document_view->selection_mode = SelectionMode::Line;
+            QPoint local_mpos = mapFromGlobal(QCursor::pos());
+            update_text_selection(WindowPos(local_mpos).to_absolute(main_document_view));
+            return;
+        }
     }
 
     if (mevent->button() == Qt::MouseButton::LeftButton) {
@@ -8503,9 +8526,10 @@ void MainWidget::handle_add_marked_data() {
 
     main_document_view->get_text_selection(dv()->selection_begin,
         dv()->selection_end,
-        main_document_view->is_word_selecting,
+        main_document_view->selection_mode == SelectionMode::Word,
         local_selected_rects,
         local_selected_text);
+
     if (local_selected_rects.size() > 0) {
 
         DocumentRect begin_docrect = local_selected_rects[0].to_document(doc());

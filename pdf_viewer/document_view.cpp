@@ -1274,6 +1274,13 @@ void DocumentView::get_text_selection(AbsoluteDocumentPos selection_begin,
 
 }
 
+void DocumentView::get_line_selection(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, std::deque<AbsoluteRect>& selected_characters, std::wstring& text_selection) {
+
+    if (current_document){
+        current_document->get_line_selection(selection_begin, selection_end, selected_characters, text_selection);
+    }
+}
+
 int DocumentView::get_page_offset() {
     return current_document->get_page_offset();
 }
@@ -5349,7 +5356,7 @@ const std::wstring& DocumentView::get_selected_text(bool insert_newlines) {
         else {
             get_text_selection(selection_begin,
                 selection_end,
-                is_word_selecting,
+                selection_mode == SelectionMode::Word,
                 dummy_rects,
                 selected_text);
         }
@@ -5376,7 +5383,7 @@ void DocumentView::expand_selection_vertical(bool begin, bool below) {
         }
         get_text_selection(selection_begin,
             selection_end,
-            is_word_selecting,
+            selection_mode == SelectionMode::Word,
             selected_character_rects,
             selected_text);
         selected_text_is_dirty = false;

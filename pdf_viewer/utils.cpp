@@ -946,6 +946,25 @@ int get_index_from_tag(std::string tag, bool reversed) {
     return res;
 }
 
+fz_stext_line* find_closest_line_to_document_point(fz_stext_page* page, fz_point document_point){
+    float min_distance = 10000000;
+    fz_stext_line* result = nullptr;
+    int index = 0;
+    LL_ITER(block, page->first_block) {
+        if (block->type == FZ_STEXT_BLOCK_TEXT) {
+            LL_ITER(line, block->u.t.first_line) {
+                float mid_y = (line->first_char->quad.ll.y + line->first_char->quad.ul.y) / 2;
+                float distance = std::abs(mid_y - document_point.y);
+                if (distance < min_distance) {
+                    min_distance = distance;
+                    result = line;
+                }
+            }
+        }
+    }
+    return result;
+}
+
 fz_stext_char* find_closest_char_to_document_point(const std::vector<fz_stext_char*> flat_chars, fz_point document_point, int* location_index) {
     float min_distance = std::numeric_limits<float>::infinity();
     fz_stext_char* res = nullptr;

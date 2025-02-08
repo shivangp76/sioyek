@@ -34,6 +34,12 @@ struct MarkedDataRect {
     int type;
 };
 
+enum class SelectionMode {
+    Character,
+    Word,
+    Line
+};
+
 
 struct LineSelectBeginData {
     AbsoluteDocumentPos pos;
@@ -221,8 +227,10 @@ public:
 
     // is the user currently selecing text? (happens when we left click and move the cursor)
     bool is_selecting = false;
-    // is the user in word select mode? (happens when we double left click and move the cursor)
-    bool is_word_selecting = false;
+
+    // when the user double clicks, we select words, when the user triple clicks we select lines
+    SelectionMode selection_mode = SelectionMode::Character;
+
 
     // A list of candiadates to be shown in the overview window. We use simple heuristics to determine the
     // target of references, while this works most of the time, it is not perfect. So we keep a list of candidates
@@ -349,6 +357,7 @@ public:
     std::string get_highlight_uuid_in_pos(WindowPos pos);
     void get_text_selection(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, bool is_word_selection, std::deque<AbsoluteRect>& selected_characters, std::wstring& text_selection);
     std::string add_mark(char symbol);
+    void get_line_selection(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, std::deque<AbsoluteRect>& selected_characters, std::wstring& text_selection);
     std::string add_bookmark(std::wstring desc);
     std::string add_highlight_(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     void on_view_size_change(int new_width, int new_height);

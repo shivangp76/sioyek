@@ -423,6 +423,11 @@ public:
     std::vector<QString> get_page_bib_candidates(int page_number, std::vector<std::vector<PagelessDocumentRect>>* out_end_rects = nullptr);
     std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> get_page_bib_with_reference(int page_number, std::wstring reference_text);
 
+    void get_line_selection(AbsoluteDocumentPos selection_begin,
+        AbsoluteDocumentPos selection_end,
+        std::deque<AbsoluteRect>& selected_characters,
+        std::wstring& selected_text);
+
     void get_text_selection(AbsoluteDocumentPos selection_begin,
         AbsoluteDocumentPos selection_end,
         bool is_word_selection, // when in word select mode, we select entire words even if the range only partially includes the word
