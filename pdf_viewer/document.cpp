@@ -2050,9 +2050,6 @@ void Document::get_line_selection(AbsoluteDocumentPos selection_begin,
 
     selected_characters.clear();
     selected_text.clear();
-    if (selection_begin.y > selection_end.y) {
-        std::swap(selection_begin, selection_end);
-    }
 
     DocumentPos begin_doc_pos = selection_begin.to_document(this);
     DocumentPos end_doc_pos = selection_end.to_document(this);
@@ -2065,8 +2062,17 @@ void Document::get_line_selection(AbsoluteDocumentPos selection_begin,
     fz_stext_page* begin_page = get_stext_with_page_number(begin_doc_pos.page);
     fz_stext_page* end_page = get_stext_with_page_number(end_doc_pos.page);
 
-    fz_stext_line* closest_line_to_begin = find_closest_line_to_document_point(begin_page, begin_fz_point);
-    fz_stext_line* closest_line_to_end = find_closest_line_to_document_point(end_page, end_fz_point);
+    int begin_index, end_index;
+    fz_stext_line* closest_line_to_begin = find_closest_line_to_document_point(begin_page, begin_fz_point, &begin_index);
+    fz_stext_line* closest_line_to_end = find_closest_line_to_document_point(end_page, end_fz_point, &end_index);
+
+    if ((begin_page == end_page && begin_index > end_index)) {
+        std::swap(closest_line_to_begin, closest_line_to_end);
+    }
+    else if (begin_page > end_page){
+        std::swap(closest_line_to_begin, closest_line_to_end);
+        std::swap(begin_doc_pos, end_doc_pos);
+    }
 
     for (int page_number = begin_doc_pos.page; page_number <= end_doc_pos.page; page_number++) {
 
