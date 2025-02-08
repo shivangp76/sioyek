@@ -4699,6 +4699,7 @@ void MainWidget::handle_close_event(bool is_quiting) {
 
     if ((is_quiting || windows.size() == 1) && !close_event_already_handled) {
         close_event_already_handled = true;
+        *should_quit = true;
         save_auto_config();
     }
 

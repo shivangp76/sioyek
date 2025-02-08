@@ -1068,21 +1068,25 @@ int main(int argc, char* args[]) {
 #ifndef SIOYEK_MOBILE
     QObject::connect(&pref_file_watcher, &QFileSystemWatcher::fileChanged, [&]() {
 
-        std::vector<std::string> changed_config_file_names;
-        config_manager.deserialize(&changed_config_file_names, default_config_path, auto_config_path, user_config_paths);
-        input_handler.reload_config_files(default_keys_path, user_keys_paths);
+        if (!quit) {
+            std::vector<std::string> changed_config_file_names;
+            config_manager.deserialize(&changed_config_file_names, default_config_path, auto_config_path, user_config_paths);
+            input_handler.reload_config_files(default_keys_path, user_keys_paths);
 
-        ConfigFileChangeListener::notify_config_file_changed(&config_manager);
-        for (auto window : windows) {
-            window->validate_render();
-            window->on_configs_changed(&changed_config_file_names);
+            ConfigFileChangeListener::notify_config_file_changed(&config_manager);
+            for (auto window : windows) {
+                window->validate_render();
+                window->on_configs_changed(&changed_config_file_names);
+            }
+            add_paths_to_file_system_watcher(pref_file_watcher, default_config_path, user_config_paths);
         }
-        add_paths_to_file_system_watcher(pref_file_watcher, default_config_path, user_config_paths);
         });
 
     QObject::connect(&key_file_watcher, &QFileSystemWatcher::fileChanged, [&]() {
-        input_handler.reload_config_files(default_keys_path, user_keys_paths);
-        add_paths_to_file_system_watcher(key_file_watcher, default_keys_path, user_keys_paths);
+        if (!quit) {
+            input_handler.reload_config_files(default_keys_path, user_keys_paths);
+            add_paths_to_file_system_watcher(key_file_watcher, default_keys_path, user_keys_paths);
+        }
         });
 #endif
 
