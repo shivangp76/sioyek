@@ -90,6 +90,7 @@ public:
     virtual void pre_perform();
     virtual bool pushes_state();
     virtual bool requires_document();
+    virtual bool requires_pro();
     virtual void on_cancel();
     virtual void on_result_computed();
     virtual void set_result_socket(QLocalSocket* result_socket);

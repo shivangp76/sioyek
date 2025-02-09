@@ -12,15 +12,36 @@ extern std::wstring EXTRACT_TABLE_PROMPT;
 extern int TABLE_EXTRACT_BEHAVIOUR;
 extern bool TOUCH_MODE;
 
-class StartReadingHighQualityCommand : public Command {
+class ProCommand : public Command {
+public:
+    ProCommand(std::string cname, MainWidget* w) : Command(cname, w) {};
+
+    bool requires_pro() override {
+        return true;
+    }
+
+};
+
+class ProTextCommand : public TextCommand {
+public:
+    ProTextCommand(std::string cname, MainWidget* w) : TextCommand(cname, w) {};
+
+    bool requires_pro() override {
+        return true;
+    }
+
+};
+
+class StartReadingHighQualityCommand : public ProCommand {
 public:
     static inline const std::string cname = "start_reading_high_quality";
     static inline const std::string hname = "Read using sioyek servers' text to speech";
-    StartReadingHighQualityCommand(MainWidget* w) : Command(cname, w) {};
+    StartReadingHighQualityCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->handle_start_reading_high_quality(true);
     }
+
 };
 
 class DownloadClipboardUrlCommand : public Command {
@@ -61,12 +82,12 @@ public:
 
 };
 
-class SemanticSearchCommand : public TextCommand {
+class SemanticSearchCommand : public ProTextCommand {
 public:
     static inline const std::string cname = "semantic_search";
     static inline const std::string hname = "";
 
-    SemanticSearchCommand(MainWidget* w) : TextCommand(cname, w) {
+    SemanticSearchCommand(MainWidget* w) : ProTextCommand(cname, w) {
     };
 
     void perform() {
@@ -79,12 +100,12 @@ public:
 
 };
 
-class SemanticSearchExtractiveCommand : public TextCommand {
+class SemanticSearchExtractiveCommand : public ProTextCommand {
 public:
     static inline const std::string cname = "semantic_search_extractive";
     static inline const std::string hname = "";
 
-    SemanticSearchExtractiveCommand(MainWidget* w) : TextCommand(cname, w) {
+    SemanticSearchExtractiveCommand(MainWidget* w) : ProTextCommand(cname, w) {
     };
 
     void perform() {
@@ -97,7 +118,7 @@ public:
 
 };
 
-class LlmCommand : public Command {
+class LlmCommand : public ProCommand {
 private:
     std::optional<std::wstring> system_prompt = {};
     std::optional<std::wstring> user_prompt = {};
@@ -105,7 +126,7 @@ private:
 public:
     static inline const std::string cname = "llm_command";
     static inline const std::string hname = "";
-    LlmCommand(MainWidget* w) : Command(cname, w) {};
+    LlmCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void set_text_requirement(std::wstring value) {
         if (!system_prompt.has_value()) {
@@ -202,11 +223,11 @@ public:
 
 };
 
-class DownloadPaperWithNameCommand : public TextCommand {
+class DownloadPaperWithNameCommand : public ProTextCommand {
 public:
     static inline const std::string cname = "download_paper_with_name";
     static inline const std::string hname = "";
-    DownloadPaperWithNameCommand(MainWidget* w) : TextCommand(cname, w) {};
+    DownloadPaperWithNameCommand(MainWidget* w) : ProTextCommand(cname, w) {};
 
     void perform() {
         widget->download_paper_with_name(text.value(), PaperDownloadFinishedAction::OpenInNewWindow);
@@ -219,7 +240,7 @@ public:
 
 };
 
-class ExtractTableWithPromptCommand : public Command {
+class ExtractTableWithPromptCommand : public ProCommand {
 
 public:
     static inline const std::string cname = "extract_table_with_prompt";
@@ -229,7 +250,7 @@ public:
     std::optional<QString> bookmark_type_;
     std::optional<QString> prompt_;
 
-    ExtractTableWithPromptCommand(MainWidget* w) : Command(cname, w) {};
+    ExtractTableWithPromptCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
 
@@ -296,7 +317,7 @@ public:
     }
 };
 
-class ConvertToLatexCommand : public Command {
+class ConvertToLatexCommand : public ProCommand {
 
 public:
     static inline const std::string cname = "convert_to_latex";
@@ -304,7 +325,7 @@ public:
 
     std::optional<AbsoluteRect> rect_;
 
-    ConvertToLatexCommand(MainWidget* w) : Command(cname, w) {};
+    ConvertToLatexCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
 
@@ -329,7 +350,7 @@ public:
     }
 };
 
-class ExtractTableCommand : public Command {
+class ExtractTableCommand : public ProCommand {
 
 public:
     static inline const std::string cname = "extract_table";
@@ -337,7 +358,7 @@ public:
 
     std::optional<AbsoluteRect> rect_;
 
-    ExtractTableCommand(MainWidget* w) : Command(cname, w) {};
+    ExtractTableCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
 
@@ -362,11 +383,11 @@ public:
     }
 };
 
-class OpenServerOnlyFile : public Command {
+class OpenServerOnlyFile : public ProCommand {
 public:
     static inline const std::string cname = "open_server_only_file";
     static inline const std::string hname = "Search and open files located only in sioyek servers";
-    OpenServerOnlyFile(MainWidget* w) : Command(cname, w) {};
+    OpenServerOnlyFile(MainWidget* w) : ProCommand(cname, w) {};
 
     std::wstring file_name;
 
@@ -404,13 +425,17 @@ public:
     std::string get_name() {
         return cname;
     }
+
+    bool requires_pro() override {
+        return true;
+    }
 };
 
-class DownloadPaperUnderCursorCommand : public Command {
+class DownloadPaperUnderCursorCommand : public ProCommand {
 public:
     static inline const std::string cname = "download_paper_under_cursor";
     static inline const std::string hname = "Try to download the paper name under cursor";
-    DownloadPaperUnderCursorCommand(MainWidget* w) : Command(cname, w) {};
+    DownloadPaperUnderCursorCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->download_paper_under_cursor();
@@ -508,24 +533,24 @@ public:
     }
 };
 
-class CitersCommand : public Command {
+class CitersCommand : public ProCommand {
 public:
     static inline const std::string cname = "citers";
     static inline const std::string hname = "Show a list of citers of this paper";
 
-    CitersCommand(MainWidget* w) : Command(cname, w) {};
+    CitersCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->show_citers_of_current_paper();
     }
 };
 
-class ResumeToServerLocationCommand : public Command {
+class ResumeToServerLocationCommand : public ProCommand {
 public:
     static inline const std::string cname = "resume_to_server";
     static inline const std::string hname = "Jump to the location of current document in sioyek servers";
 
-    ResumeToServerLocationCommand(MainWidget* w) : Command(cname, w) {};
+    ResumeToServerLocationCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->handle_resume_to_server_location();
@@ -544,11 +569,11 @@ public:
 
 };
 
-class SynchronizeCommand : public Command {
+class SynchronizeCommand : public ProCommand {
 public:
     static inline const std::string cname = "synchronize";
     static inline const std::string hname = "Synchronize a desyncronized file with server";
-    SynchronizeCommand(MainWidget* w) : Command(cname, w) {};
+    SynchronizeCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->synchronize_if_desynchronized();
@@ -568,11 +593,11 @@ public:
 
 };
 
-class ForceDownloadAnnotations : public Command {
+class ForceDownloadAnnotations : public ProCommand {
 public:
     static inline const std::string cname = "force_download_annotations";
     static inline const std::string hname = "Download all annotations from the server into local database";
-    ForceDownloadAnnotations(MainWidget* w) : Command(cname, w) {};
+    ForceDownloadAnnotations(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->sioyek_network_manager->download_annotations_since_last_sync(true);
@@ -580,11 +605,11 @@ public:
 
 };
 
-class UploadCurrentFileCommand : public Command {
+class UploadCurrentFileCommand : public ProCommand {
 public:
     static inline const std::string cname = "upload_current_file";
     static inline const std::string hname = "Upload the current file to sioyek servers";
-    UploadCurrentFileCommand(MainWidget* w) : Command(cname, w) {};
+    UploadCurrentFileCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->upload_current_file();
@@ -592,11 +617,11 @@ public:
 
 };
 
-class OcrCurrentFileCommand : public Command {
+class OcrCurrentFileCommand : public ProCommand {
 public:
     static inline const std::string cname = "ocr";
     static inline const std::string hname = "Create a new pdf ocr of current file";
-    OcrCurrentFileCommand(MainWidget* w) : Command(cname, w) {};
+    OcrCurrentFileCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->ocr_current_file();
@@ -604,11 +629,11 @@ public:
 
 };
 
-class DeleteCurrentFileFromServer : public Command {
+class DeleteCurrentFileFromServer : public ProCommand {
 public:
     static inline const std::string cname = "delete_current_file_from_server";
     static inline const std::string hname = "Delete the current file from sioyek servers";
-    DeleteCurrentFileFromServer(MainWidget* w) : Command(cname, w) {};
+    DeleteCurrentFileFromServer(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->delete_current_file_from_server();
@@ -616,12 +641,12 @@ public:
 
 };
 
-class ResyncDocumentCommand : public Command {
+class ResyncDocumentCommand : public ProCommand {
 public:
     static inline const std::string cname = "resync_document";
 
     static inline const std::string hname = "Re-sync current document's annotations with sioyek servers";
-    ResyncDocumentCommand(MainWidget* w) : Command(cname, w) {};
+    ResyncDocumentCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->handle_sync_open_document();
@@ -629,11 +654,11 @@ public:
 
 };
 
-class DownloadUnsyncedFilesCommand : public Command {
+class DownloadUnsyncedFilesCommand : public ProCommand {
 public:
     static inline const std::string cname = "download_unsynced_files";
     static inline const std::string hname = "Download unsynced files from sioyek servers";
-    DownloadUnsyncedFilesCommand(MainWidget* w) : Command(cname, w) {};
+    DownloadUnsyncedFilesCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->sioyek_network_manager->download_unsynced_files(widget, widget->db_manager);
@@ -641,25 +666,25 @@ public:
 
 };
 
-class SyncCurrentFileLocation : public Command {
+class SyncCurrentFileLocation : public ProCommand {
 public:
     static inline const std::string cname = "sync_current_file_location";
     static inline const std::string hname = "Sync the current file location to sioyek servers";
-    SyncCurrentFileLocation(MainWidget* w) : Command(cname, w) {};
+    SyncCurrentFileLocation(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->sync_current_file_location_to_servers();
     }
 };
 
-class DownloadOverviewPaperCommand : public TextCommand {
+class DownloadOverviewPaperCommand : public ProTextCommand {
 public:
     static inline const std::string cname = "download_overview_paper";
     static inline const std::string hname = "Download the referenced paper overview window";
     std::optional<AbsoluteRect> source_rect = {};
     std::wstring src_doc_path;
 
-    DownloadOverviewPaperCommand(MainWidget* w) : TextCommand(cname, w) {};
+    DownloadOverviewPaperCommand(MainWidget* w) : ProTextCommand(cname, w) {};
 
     void perform() {
 
@@ -703,11 +728,11 @@ public:
     }
 };
 
-class DownloadOverviewPaperNoPrompt : public Command {
+class DownloadOverviewPaperNoPrompt : public ProCommand {
 public:
     static inline const std::string cname = "download_overview_paper_no_prompt";
     static inline const std::string hname = "Download and portal to the current highlighted overview paper";
-    DownloadOverviewPaperNoPrompt(MainWidget* w) : Command(cname, w) {};
+    DownloadOverviewPaperNoPrompt(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->download_and_portal_to_highlighted_overview_paper();
@@ -715,11 +740,11 @@ public:
     }
 };
 
-class LoadAnnotationsFileSyncDeletedCommand : public Command {
+class LoadAnnotationsFileSyncDeletedCommand : public ProCommand {
 public:
     static inline const std::string cname = "import_annotations_file_sync_deleted";
     static inline const std::string hname = "";
-    LoadAnnotationsFileSyncDeletedCommand(MainWidget* w) : Command(cname, w) {};
+    LoadAnnotationsFileSyncDeletedCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
         widget->doc()->load_annotations(true);
