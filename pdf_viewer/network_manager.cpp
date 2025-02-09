@@ -242,6 +242,55 @@ QNetworkReply* SioyekNetworkManager::get_user_file_hash_set_reply() {
     return reply;
 }
 
+void SioyekNetworkManager::ocr_file(QObject * parent, QString path, std::function<void(QNetworkReply* download_reply)> fn){
+    QFile* file = new QFile(path);
+    if (file->open(QIODevice::ReadOnly)) {
+        QHttpMultiPart* parts = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+        QJsonDocument json_doc;
+        QJsonObject root_object;
+        root_object["sioyek_version"] = QString::fromStdString(APPLICATION_VERSION);
+        root_object["file_name"] = path;
+        json_doc.setObject(root_object);
+
+
+        QHttpPart data_part;
+        data_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"sioyek_data\""));
+        data_part.setBody(json_doc.toJson(QJsonDocument::JsonFormat::Compact));
+        parts->append(data_part);
+
+        QHttpPart file_part;
+        file_part.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"file\"; filename=\"" + file->fileName() + "\"");
+        file_part.setBodyDevice(file);
+        parts->append(file_part);
+
+
+        QNetworkRequest req;
+        authorize_request(&req);
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_OCR_URL)));
+        //qDebug() << "boundary is:" << parts->boundary();
+        //qDebug() << "file size  is:" << file->size();
+
+        file->setParent(parts);
+        // DO NOT use the Qt's default boundary, it does not work
+        parts->setBoundary(create_random_string().toUtf8());
+        req.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "multipart/form-data; boundary=" + parts->boundary());
+
+        QNetworkReply* reply = get_network_manager()->post(req, parts);
+        reply->setProperty("sioyek_handled", true);
+        reply->setParent(parent);
+
+        QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
+
+            if (handle_network_reply_if_error(reply, true)) {
+                fn(reply);
+            }
+            });
+
+        parts->setParent(reply);
+    }
+}
+
 void SioyekNetworkManager::upload_file(QObject * parent, QString path, QString hash, std::function<void()> fn){
     QFile* file = new QFile(path);
     if (file->open(QIODevice::ReadOnly)) {

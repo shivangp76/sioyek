@@ -63,6 +63,7 @@ public:
     const std::wstring SIOYEK_DOES_INDEX_EXIST_URL = SIOYEK_HOST + L"does_index_exist";
     const std::wstring SIOYEK_API_SEARCH_URL = SIOYEK_HOST + L"api/search";
     const std::wstring SIOYEK_DASHBOARD_URL = SIOYEK_HOST + L"app/dashboard";
+    const std::wstring SIOYEK_OCR_URL = SIOYEK_HOST + L"ocr";
 
     bool server_hashes_loaded = false;
     std::unordered_set<std::string> SERVER_HASHES = {};
@@ -83,6 +84,7 @@ public:
     void authorize_request(QNetworkRequest* req);
     void download_file_with_hash(QObject* parent, QString hash, std::function<void(QString)> fn);
     void upload_file(QObject* parent, QString path, QString hash, std::function<void()> fn);
+    void ocr_file(QObject* parent, QString path, std::function<void(QNetworkReply*)> fn);
     void update_checksum(QObject* parent, QString path, QString old_checksum, QString new_checksum, std::function<void()> fn);
     QNetworkReply* get_user_file_hash_set_reply();
     void update_user_files_hash_set();
