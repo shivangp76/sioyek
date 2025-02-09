@@ -14,21 +14,15 @@ extern bool TOUCH_MODE;
 
 class ProCommand : public Command {
 public:
+    static inline const bool requires_pro = true;
     ProCommand(std::string cname, MainWidget* w) : Command(cname, w) {};
-
-    bool requires_pro() override {
-        return true;
-    }
 
 };
 
 class ProTextCommand : public TextCommand {
 public:
+    static inline const bool requires_pro = true;
     ProTextCommand(std::string cname, MainWidget* w) : TextCommand(cname, w) {};
-
-    bool requires_pro() override {
-        return true;
-    }
 
 };
 
@@ -406,6 +400,7 @@ class DownloadLinkCommand : public OpenLinkCommand {
 public:
     static inline const std::string cname = "download_link";
     static inline const std::string hname = "Download the destination reference of a PDF link";
+    static inline const bool requires_pro = true;
     DownloadLinkCommand(MainWidget* w) : OpenLinkCommand(w) {};
 
     void perform_with_link(PdfLink link) {
@@ -424,10 +419,6 @@ public:
 
     std::string get_name() {
         return cname;
-    }
-
-    bool requires_pro() override {
-        return true;
     }
 };
 

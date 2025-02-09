@@ -1055,14 +1055,16 @@ public:
     enum CommandModelColumn{
         command_name = 0,
         keybind = 1,
-        max_columns = 2
+        is_pro = 2,
+        max_columns = 3
     };
 
     std::vector<QString> commands;
     std::vector<QStringList> keybinds;
+    std::vector<bool> requires_pro;
 
 
-    CommandModel(std::vector<QString> commands, std::vector<QStringList> keybinds);
+    CommandModel(std::vector<QString> commands, std::vector<QStringList> keybinds, std::vector<bool> requires_pro);
 
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
 
@@ -1216,6 +1218,7 @@ public:
         std::vector<QString> color_configs,
         std::vector<QString> bool_configs,
         std::vector<QStringList> keybinds,
+        std::vector<bool> requires_pro,
         MainWidget* parent
     );
     bool on_text_change(const QString& text) override;

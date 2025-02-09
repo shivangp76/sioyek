@@ -7620,6 +7620,7 @@ std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
 void MainWidget::show_command_menu() {
     std::vector<QString> command_names;
     std::vector<QStringList> command_keybinds;
+    std::vector<bool> command_is_pro;
     std::unordered_map<std::string, std::vector<std::string>> command_key_mappings = input_handler->get_command_key_mappings();
 
     // also add key mapping to aliased commands
@@ -7665,6 +7666,11 @@ void MainWidget::show_command_menu() {
         }
         command_names.push_back(all_command_names[i]);
         command_keybinds.push_back(keybindings);
+
+
+        auto it = command_manager->command_requires_pro.find(all_command_names[i]);
+        bool requires_pro = it != command_manager->command_requires_pro.end() ? it->second : false;
+        command_is_pro.push_back(requires_pro);
     }
 
     CommandSelectorWidget* command_selector_widget = CommandSelectorWidget::from_commands(
@@ -7673,6 +7679,7 @@ void MainWidget::show_command_menu() {
         color_config_names,
         bool_config_names,
         command_keybinds,
+        command_is_pro,
         this
     );
     command_selector_widget->set_select_fn([&, command_selector_widget](int index){

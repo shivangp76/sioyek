@@ -27,6 +27,7 @@ public:
 
     std::map < std::string, std::function<std::unique_ptr<Command>(MainWidget*)> > new_commands;
     std::map<std::string, std::string> command_human_readable_names;
+    std::map<QString, bool> command_requires_pro;
     std::map<std::string, QDateTime> command_last_uses;
     std::unordered_map<QString, QString> command_required_prefixes;
     std::unordered_map<std::string, std::string> command_aliases;
@@ -69,6 +70,7 @@ protected:
 public:
 
     static inline const bool developer_only = false;
+    static inline const bool requires_pro = false;
     QLocalSocket* result_socket = nullptr;
     std::wstring* result_holder = nullptr;
     bool* is_done = nullptr;
@@ -90,7 +92,6 @@ public:
     virtual void pre_perform();
     virtual bool pushes_state();
     virtual bool requires_document();
-    virtual bool requires_pro();
     virtual void on_cancel();
     virtual void on_result_computed();
     virtual void set_result_socket(QLocalSocket* result_socket);
@@ -259,7 +260,9 @@ void register_command(CommandManager* manager, std::string alias_name="") {
             manager->command_aliases[T::cname] = name;
         }
         manager->command_human_readable_names[name] = is_alias ? "alias for " + T::cname : T::hname;
-        manager->command_required_prefixes[QString::fromStdString(name)] = "";
+        QString name_qstring = QString::fromStdString(name);
+        manager->command_required_prefixes[name_qstring] = "";
+        manager->command_requires_pro[name_qstring] = T::requires_pro;
     }
 }
 

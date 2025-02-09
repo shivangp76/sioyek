@@ -2399,7 +2399,11 @@ void BaseCustomSelectorWidget::set_selected_index(int index) {
     }
 }
 
-CommandModel::CommandModel(std::vector<QString> commands, std::vector<QStringList> keybinds) : commands(commands), keybinds(keybinds){
+CommandModel::CommandModel(
+    std::vector<QString> commands,
+    std::vector<QStringList> keybinds,
+    std::vector<bool> requires_pro)
+    : commands(commands), keybinds(keybinds), requires_pro(requires_pro){
 
 }
 
@@ -2423,6 +2427,12 @@ QVariant CommandModel::data(const QModelIndex& index, int role) const {
             if (index.row() < keybinds.size()) {
                 return keybinds[index.row()];
             }
+        }
+        else if (index.column() == CommandModel::is_pro) {
+            if (index.row() < requires_pro.size()) {
+                return requires_pro[index.row()];
+            }
+            return false;
         }
     }
     return QVariant();
@@ -2462,6 +2472,7 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
 
     QString command_name = index.data().toString();
     QStringList command_keybind = index.siblingAtColumn(CommandModel::keybind).data().toStringList();
+    bool command_requires_pro = index.siblingAtColumn(CommandModel::is_pro).data().toBool();
 
     QAbstractTextDocumentLayout::PaintContext ctx;
     QColor text_color = QColor::fromRgbF(UI_TEXT_COLOR[0], UI_TEXT_COLOR[1], UI_TEXT_COLOR[2]);
@@ -2491,6 +2502,11 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         if (text_similarity > similarity_threshold) {
             command_name = highlight_span + ignore_prefix + "</span>" + command_name.mid(ignore_prefix.size(), text_highlight_begin - ignore_prefix.size()) + highlight_span + command_name.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + command_name.mid(text_highlight_end);
         }
+    }
+
+    if (command_requires_pro) {
+        // golden background with black text and small
+        command_name ="<code><span style=\"background-color: gold; color: black; font-size: 0.2em;\">&nbsp;+&nbsp;</span></code> " + command_name;
     }
 
     if (option.state & QStyle::State_Selected) {
@@ -2601,22 +2617,26 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(
     std::vector<QString> color_configs,
     std::vector<QString> bool_configs,
     std::vector<QStringList> keybinds,
+    std::vector<bool> requires_pro,
     MainWidget* parent
 ) {
 
 
     std::unordered_map<QString, QStringList> command_to_keybind_map;
+    std::unordered_map<QString, bool> command_to_requires_pro_map;
     std::unordered_map<QString, std::vector<QString>> prefix_command_names;
     std::unordered_map<QString, std::vector<QStringList>> prefix_keybinds;
+    std::unordered_map<QString, std::vector<bool>> prefix_requires_pro;
     std::unordered_map<QString, QAbstractItemModel*> prefix_models;
 
-    CommandModel* configs_model = new CommandModel(configs, {});
-    CommandModel* bool_configs_model = new CommandModel(bool_configs, {});
-    CommandModel* color_configs_model = new CommandModel(color_configs, {});
+    CommandModel* configs_model = new CommandModel(configs, {}, {});
+    CommandModel* bool_configs_model = new CommandModel(bool_configs, {}, {});
+    CommandModel* color_configs_model = new CommandModel(color_configs, {}, {});
 
 
     for (int i = 0; i < commands.size(); i++) {
         command_to_keybind_map[commands[i]] = keybinds[i];
+        command_to_requires_pro_map[commands[i]] = requires_pro[i];
     }
 
     auto& required_prefixes = parent->command_manager->command_required_prefixes;
@@ -2633,18 +2653,23 @@ CommandSelectorWidget* CommandSelectorWidget::from_commands(
         if (prefix_command_names.find(required_prefix) == prefix_command_names.end()) {
             prefix_command_names[required_prefix] = {};
             prefix_keybinds[required_prefix] = {};
+            prefix_requires_pro[required_prefix] = {};
         }
 
         prefix_command_names[required_prefix].push_back(command_name);
         prefix_keybinds[required_prefix].push_back(QStringList());
+        prefix_requires_pro[required_prefix].push_back({});
+
         if (command_to_keybind_map.find(command_name) != command_to_keybind_map.end()) {
             prefix_keybinds[required_prefix].back() = command_to_keybind_map[command_name];
+            prefix_requires_pro[required_prefix].back() = command_to_requires_pro_map[command_name];
+
         }
 
     }
 
     for (auto [prefix, commands] : prefix_command_names) {
-        prefix_models[prefix] = new CommandModel(prefix_command_names[prefix], prefix_keybinds[prefix]);
+        prefix_models[prefix] = new CommandModel(prefix_command_names[prefix], prefix_keybinds[prefix], prefix_requires_pro[prefix]);
     }
 
     QListView* list_view = get_ui_new_listview();

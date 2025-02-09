@@ -232,10 +232,6 @@ bool Command::requires_document() {
     return true;
 }
 
-bool Command::requires_pro() {
-    return false;
-}
-
 void Command::set_num_repeats(int nr) {
     num_repeats = nr;
 }
