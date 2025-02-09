@@ -25,6 +25,7 @@
 
 extern std::wstring MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE;
 extern std::wstring MENU_PRO_HIGHLIGHT_STYLE;
+extern bool HIGHLIGHT_PRO_ONLY_COMMANDS;
 extern std::wstring DEFAULT_OPEN_FILE_PATH;
 extern float DARK_MODE_CONTRAST;
 extern float BACKGROUND_COLOR[3];
@@ -2505,7 +2506,7 @@ void CommandItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
         }
     }
 
-    if (command_requires_pro) {
+    if (HIGHLIGHT_PRO_ONLY_COMMANDS && command_requires_pro) {
         command_name ="<code><span style=\"" + QString::fromStdWString(MENU_PRO_HIGHLIGHT_STYLE) + "\">&nbsp;+&nbsp;</span></code> " + command_name;
     }
 
