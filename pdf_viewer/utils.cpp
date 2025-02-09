@@ -954,13 +954,17 @@ fz_stext_line* find_closest_line_to_document_point(fz_stext_page* page, fz_point
         if (block->type == FZ_STEXT_BLOCK_TEXT) {
             LL_ITER(line, block->u.t.first_line) {
                 index++;
-                *out_index = index;
-                if (fz_is_point_inside_rect(document_point, line->bbox)) return line;
+                if (fz_is_point_inside_rect(document_point, line->bbox)) {
+                    *out_index = index;
+                    return line;
+                }
                 float mid_y = (line->first_char->quad.ll.y + line->first_char->quad.ul.y) / 2;
-                float distance = std::abs(mid_y - document_point.y);
+                float mid_x = (line->first_char->quad.ll.x + line->first_char->quad.lr.x) / 2;
+                float distance = std::abs(mid_y - document_point.y) + std::abs(mid_x - document_point.x);
                 if (distance < min_distance) {
                     min_distance = distance;
                     result = line;
+                    *out_index = index;
                 }
             }
         }

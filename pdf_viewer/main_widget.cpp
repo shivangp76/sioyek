@@ -3121,17 +3121,40 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
 
 }
 
+int MainWidget::update_recent_clicks(AbsoluteDocumentPos mouse_abspos) {
+    QDateTime current_time;
+    recent_clicks.push_back({ current_time, mouse_abspos });
+
+    if (recent_clicks.size() > 5) {
+        recent_clicks.pop_front();
+    }
+
+    int msecs_per_click = 333;
+    for (int index = 0; index < recent_clicks.size(); index++) {
+
+        auto [ith_prev_time, ith_prev_pos] = recent_clicks[recent_clicks.size() - 1 - index];
+        if (!(ith_prev_time.msecsTo(current_time) < (msecs_per_click * (index + 1)) && manhattan_distance(mouse_abspos, ith_prev_pos) <= 5)) {
+            return index;
+        }
+    }
+    return recent_clicks.size();
+}
+
 void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
     if (!doc()) return;
-
-    last_double_click_datetime = QDateTime::currentDateTime();
 
     if (!TOUCH_MODE) {
         WindowPos click_pos = { mevent->pos().x(), mevent->pos().y() };
         AbsoluteDocumentPos mouse_abspos = main_document_view->window_to_absolute_document_pos(click_pos);
 
         if (mevent->button() == Qt::MouseButton::LeftButton) {
-            main_document_view->is_selecting = true;
+            int count = update_recent_clicks(mouse_abspos);
+            if (count >= 3) {
+                handle_triple_click(mouse_abspos);
+                return;
+            }
+
+            dv()->is_selecting = true;
             if (SINGLE_CLICK_SELECTS_WORDS) {
                 main_document_view->selection_mode = SelectionMode::Character;
             }
@@ -3157,6 +3180,12 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
     }
 }
 
+void MainWidget::handle_triple_click(AbsoluteDocumentPos mouse_abspos) {
+    dv()->is_selecting = true;
+    dv()->selection_mode = SelectionMode::Line;
+    update_text_selection(mouse_abspos);
+}
+
 void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     bool is_shift_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ShiftModifier);
     bool is_control_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
@@ -3172,13 +3201,13 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
         return;
     }
 
-    if (!TOUCH_MODE) {
-        QDateTime current_time = QDateTime::currentDateTime();
-        if (last_double_click_datetime.has_value() && last_double_click_datetime->msecsTo(current_time) < 250) { // triple click
-            main_document_view->is_selecting = true;
-            main_document_view->selection_mode = SelectionMode::Line;
-            QPoint local_mpos = mapFromGlobal(QCursor::pos());
-            update_text_selection(WindowPos(local_mpos).to_absolute(main_document_view));
+    if (!TOUCH_MODE && mevent->button() == Qt::MouseButton::LeftButton) {
+        QPoint local_mpos = mapFromGlobal(QCursor::pos());
+        AbsoluteDocumentPos current_pos = WindowPos(local_mpos).to_absolute(main_document_view);
+        int count = update_recent_clicks(current_pos);
+
+        if (count >= 3) { // triple clicked
+            handle_triple_click(current_pos);
             return;
         }
     }

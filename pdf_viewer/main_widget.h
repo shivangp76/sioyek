@@ -125,6 +125,11 @@ struct ShellOutputBookmark{
     QString style_string = "";
 };
 
+struct ClickSpaceTime {
+    QDateTime click_time;
+    AbsoluteDocumentPos click_pos;
+};
+
 #ifdef SIOYEK_ADVANCED_AUDIO
 using SioyekMediaPlayer = MyPlayer;
 #else
@@ -273,7 +278,7 @@ public:
     QTimer* network_timer = nullptr;
     QDateTime last_persistance_datetime;
 
-    std::optional<QDateTime> last_double_click_datetime = {};
+    std::deque<ClickSpaceTime> recent_clicks;
 
     // the portal to be edited. This is usually set by `edit_portal` command which jumps to the portal
     // when we go back to the original location by jumping back in history, the portal will be edited
@@ -1137,6 +1142,8 @@ public slots:
     void handle_ios_files(const QUrl& url);
 #endif
     void highlight_type_color_clicked(int index);
+    int update_recent_clicks(AbsoluteDocumentPos mouse_abspos);
+    void handle_triple_click(AbsoluteDocumentPos mouse_abspos);
 };
 
 MainWidget* get_window_with_window_id(int window_id);
