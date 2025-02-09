@@ -97,6 +97,7 @@ std::wstring EXTRACT_TABLE_PROMPT = L"Extract the table in this image into a mar
 // std::wstring PAPER_SEARCH_CONTRIB_PATH = L"r[].m";
 
 std::wstring MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE = L"background-color: yellow; color: black;";
+std::wstring MENU_PRO_HIGHLIGHT_STYLE = L"background-color: gold; color: black;";
 std::wstring MIDDLE_CLICK_SEARCH_ENGINE = L"s";
 std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
 std::wstring PAPERS_FOLDER_PATH = L"";
@@ -1356,6 +1357,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         w->status_label_right->setFont(status_font);
     });
     add_string(L"middle_click_search_engine", &MIDDLE_CLICK_SEARCH_ENGINE);
+    add_string(L"menu_pro_highlight_style", &MENU_PRO_HIGHLIGHT_STYLE);
     add_string(L"menu_matched_search_highlight", &MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE);
     add_string(L"shift_middle_click_search_engine", &SHIFT_MIDDLE_CLICK_SEARCH_ENGINE);
     // add_string(L"text_summary_url", &TEXT_HIGHLIGHT_URL);
