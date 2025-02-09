@@ -158,6 +158,7 @@ extern bool FUZZY_SEARCHING;
 extern bool AUTO_RENAME_DOWNLOADED_PAPERS;
 extern bool SHOW_DOCUMENTATION_IN_WIDGET;
 extern bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER;
+extern bool SHOW_PRO_COMMANDS;
 
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
@@ -7657,6 +7658,14 @@ void MainWidget::show_command_menu() {
     }
 
     for (int i = 0; i < all_command_names.size(); i++) {
+
+        auto it = command_manager->command_requires_pro.find(all_command_names[i]);
+        bool requires_pro = it != command_manager->command_requires_pro.end() ? it->second : false;
+
+        if (!SHOW_PRO_COMMANDS && requires_pro) {
+            continue;
+        }
+
         QStringList keybindings;
         auto iterator = command_key_mappings.find(all_command_names[i].toStdString());
         if (iterator != command_key_mappings.end()) {
@@ -7668,8 +7677,6 @@ void MainWidget::show_command_menu() {
         command_keybinds.push_back(keybindings);
 
 
-        auto it = command_manager->command_requires_pro.find(all_command_names[i]);
-        bool requires_pro = it != command_manager->command_requires_pro.end() ? it->second : false;
         command_is_pro.push_back(requires_pro);
     }
 
