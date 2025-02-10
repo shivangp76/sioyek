@@ -291,7 +291,13 @@ void SioyekNetworkManager::ocr_file(QObject * parent, QString path, std::functio
     }
 }
 
-void SioyekNetworkManager::upload_file(QObject * parent, QString path, QString hash, std::function<void()> fn){
+void SioyekNetworkManager::upload_file(
+    QObject* parent,
+    QString path,
+    QString hash,
+    std::function<void()> done_fn,
+    std::optional<std::function<void(int, int)>> progress_fn
+) {
     QFile* file = new QFile(path);
     if (file->open(QIODevice::ReadOnly)) {
         QHttpMultiPart* parts = new QHttpMultiPart(QHttpMultiPart::FormDataType);
@@ -330,7 +336,13 @@ void SioyekNetworkManager::upload_file(QObject * parent, QString path, QString h
         reply->setProperty("sioyek_handled", true);
         reply->setParent(parent);
 
-        QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn=std::move(fn)]() {
+        QObject::connect(reply, &QNetworkReply::uploadProgress, [this, reply, progress_fn=std::move(progress_fn)](qint64 bytesSent, qint64 bytesTotal) {
+            if (progress_fn) {
+                progress_fn.value()(bytesSent, bytesTotal);
+            }
+            });
+
+        QObject::connect(reply, &QNetworkReply::finished, [this, reply, done_fn=std::move(done_fn)]() {
 
             if (handle_network_reply_if_error(reply, true)) {
                 update_user_files_hash_set();
@@ -341,7 +353,7 @@ void SioyekNetworkManager::upload_file(QObject * parent, QString path, QString h
                     show_error_message(L"the file hash was incorrect");
                 }
                 else {
-                    fn();
+                    done_fn();
                 }
             }
             });

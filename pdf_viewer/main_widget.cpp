@@ -12061,14 +12061,22 @@ void MainWidget::upload_current_file() {
     doc()->set_is_synced(true);
     float offset_y = main_document_view->get_offset_y();
 
+    QString status_id = QString::fromStdWString(new_uuid());
+
     sioyek_network_manager->upload_file(
         this,
         QString::fromStdWString(doc()->get_path()),
         QString::fromStdString(doc()->get_checksum()),
-        [&, offset_y, document=doc()]() {
+        [&, offset_y, status_id,document=doc()]() {
             sioyek_network_manager->sync_document_annotations_to_server(this, document, [this]() {invalidate_render(); });
             //sync_annotations_with_server();
             sync_document_location_to_servers(document, offset_y, false);
+            set_status_message(L"", status_id);
+        },
+        [&, status_id](int uploaded, int total) {
+            QString uploaded_human_readable = file_size_to_human_readable_string(uploaded);
+            QString total_human_readable = file_size_to_human_readable_string(total);
+            set_status_message(("Uploading " + uploaded_human_readable + " / " + total_human_readable).toStdWString(), status_id);
         }
     );
 }

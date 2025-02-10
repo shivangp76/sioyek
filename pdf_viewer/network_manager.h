@@ -83,7 +83,8 @@ public:
     void load_access_token();
     void authorize_request(QNetworkRequest* req);
     void download_file_with_hash(QObject* parent, QString hash, std::function<void(QString)> fn);
-    void upload_file(QObject* parent, QString path, QString hash, std::function<void()> fn);
+    void upload_file(QObject* parent, QString path, QString hash, std::function<void()> on_done, std::optional<std::function<void(int, int)>> on_progress={});
+
     void ocr_file(QObject* parent, QString path, std::function<void(QNetworkReply*)> fn);
     void update_checksum(QObject* parent, QString path, QString old_checksum, QString new_checksum, std::function<void()> fn);
     QNetworkReply* get_user_file_hash_set_reply();
