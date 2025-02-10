@@ -50,7 +50,8 @@ enum RequirementType {
     Folder,
     Rect,
     Point,
-    Generic
+    Generic,
+    OptionalText
 };
 
 struct Requirement {

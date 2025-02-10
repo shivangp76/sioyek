@@ -4971,8 +4971,49 @@ std::wstring MainWidget::synctex_under_pos(WindowPos position) {
     return res;
 }
 
-void MainWidget::set_status_message(std::wstring new_status_string) {
-    custom_status_message = new_status_string;
+QString MainWidget::set_status_message(std::wstring new_status_string, QString id) {
+
+    StatusMessage message;
+    message.datetime = QDateTime::currentDateTime();
+    message.message = QString::fromStdWString(new_status_string);
+    bool should_clear = new_status_string.size() == 0;
+
+    if (id.size() == 0) {
+        if (should_clear) {
+            status_messages.clear();
+        }
+        else {
+            id = QString::fromStdWString(new_uuid());
+            message.id = id;
+            status_messages.push_back(message);
+        }
+    }
+    else {
+        int index = -1;
+        for (int i = 0; i < status_messages.size(); i++) {
+            if (status_messages[i].id == id) {
+                index = i;
+            }
+        }
+        if (index != -1) {
+            if (should_clear) {
+                status_messages.erase(status_messages.begin() + index);
+            }
+            else {
+                status_messages[index].message = QString::fromStdWString(new_status_string);
+                status_messages[index].datetime = QDateTime::currentDateTime();
+            }
+        }
+        else {
+            if (!should_clear) {
+                message.id = id;
+                status_messages.push_back(message);
+            }
+        }
+
+    }
+    return id;
+
 }
 
 void MainWidget::remove_self_from_windows() {
@@ -5256,7 +5297,9 @@ void MainWidget::goto_mark(char symbol) {
 
 void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstring* result) {
     if (new_command) {
-        if (!new_command->next_requirement(this).has_value()) {
+
+        std::optional<Requirement> next_requirement = new_command->next_requirement(this);
+        if (!next_requirement.has_value() || next_requirement->type == RequirementType::OptionalText) {
             new_command->run();
             if (result) {
                 std::optional<std::wstring> command_result = new_command->get_result();

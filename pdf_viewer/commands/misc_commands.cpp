@@ -1663,14 +1663,37 @@ public:
     bool requires_document() { return false; }
 };
 
-class SetStatusStringCommand : public TextCommand {
+class SetStatusStringCommand : public Command {
 public:
     static inline const std::string cname = "set_status_string";
     static inline const std::string hname = "Set custom message to be shown in statusbar";
-    SetStatusStringCommand(MainWidget* w) : TextCommand(cname, w) {};
+    SetStatusStringCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::optional<std::wstring> text = {};
+    std::optional<std::wstring> id = {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+        if (!text.has_value()) {
+            return Requirement{ RequirementType::Text, "Status String" };
+        }
+        if (!id.has_value()) {
+            return Requirement{ RequirementType::OptionalText, "Status ID" };
+        }
+        return {};
+    }
+
+    void set_text_requirement(std::wstring value) {
+        if (!text.has_value()) {
+            text = value;
+        }
+        else {
+            id = value;
+        }
+    }
 
     void perform() {
-        widget->set_status_message(text.value());
+        QString res_id = widget->set_status_message(text.value(), QString::fromStdWString(id.value_or(L"")));
+        result = res_id.toStdWString();
     }
 
     std::string text_requirement_name() {
@@ -1686,8 +1709,21 @@ public:
     static inline const std::string cname = "clear_status_string";
     static inline const std::string hname = "Clear custom statusbar message";
     ClearStatusStringCommand(MainWidget* w) : Command(cname, w) {};
+    std::optional<std::wstring> id = {};
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+        if (!id.has_value()) {
+            return Requirement{ RequirementType::OptionalText, "Status ID" };
+        }
+        return {};
+    }
+
+    void set_text_requirement(std::wstring value) {
+        id = value;
+    }
+
     void perform() {
-        widget->set_status_message(L"");
+        widget->set_status_message(L"", QString::fromStdWString(id.value_or(L"")));
     }
 
     bool requires_document() { return false; }

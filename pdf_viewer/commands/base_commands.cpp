@@ -178,7 +178,7 @@ void Command::set_next_requirement_with_string(std::wstring str) {
     std::optional<Requirement> maybe_req = next_requirement(widget);
     if (maybe_req) {
         Requirement req = maybe_req.value();
-        if (req.type == RequirementType::Text || req.type == RequirementType::Password) {
+        if (req.type == RequirementType::Text || req.type == RequirementType::Password || req.type == RequirementType::OptionalText) {
             set_text_requirement(str);
         }
         else if (req.type == RequirementType::Symbol) {

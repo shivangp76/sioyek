@@ -221,8 +221,15 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         };
     auto custom_message_fn = [widget=main_widget]() {
 
-        if (widget->custom_status_message.size() > 0) {
-            return " [ " + QString::fromStdWString(widget->custom_status_message) + " ]";
+        if (widget->status_messages.size() > 0) {
+            QString message_string = "";
+            for (int i = 0; i < widget->status_messages.size(); i++) {
+                message_string += widget->status_messages[i].message;
+                if (i < widget->status_messages.size() - 1) {
+                    message_string += " | ";
+                }
+            }
+            return " [ " + message_string + " ]";
         }
         return QString("");
         };

@@ -81,6 +81,12 @@ struct RecentlyUpdatedPortalState {
     QDateTime last_modification_time;
 };
 
+struct StatusMessage {
+    QString message;
+    QDateTime datetime;
+    QString id;
+};
+
 #ifdef SIOYEK_IOS
 struct AVSpeechSynthesizer;
 #endif
@@ -222,7 +228,8 @@ public:
     int current_history_index = -1;
 
     // custom message to be displayed in sioyek's statusbar
-    std::wstring custom_status_message = L"";
+    //std::wstring custom_status_message = L"";
+    std::vector<StatusMessage> status_messages;
 
     // A flag which indicates whether the application should quit. We use this to inform other threads
     // (e.g. the PDF rendering thread) that they should exit.
@@ -592,7 +599,7 @@ public:
     int get_current_monitor_width(); int get_current_monitor_height();
     std::wstring synctex_under_pos(WindowPos position);
     std::optional<PaperNameWithRects> get_paper_name_under_cursor(bool use_last_hold_point = false);
-    void set_status_message(std::wstring new_status_string);
+    QString set_status_message(std::wstring new_status_string, QString id="");
     void remove_self_from_windows();
     // void handle_keyboard_select(const std::wstring& text);
     void push_state(bool update = true);
