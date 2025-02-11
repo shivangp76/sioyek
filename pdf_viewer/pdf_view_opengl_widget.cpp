@@ -84,6 +84,7 @@ extern bool DEBUG;
 extern int BACKGROUND_HIGHLIGHT_MINIMUM_LIGHTNESS;
 
 extern float BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY;
+extern bool SAME_WIDTH;
 
 extern int NUM_PRERENDERED_NEXT_SLIDES;
 extern int NUM_PRERENDERED_PREV_SLIDES;
@@ -516,6 +517,13 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
     if ((page_width < 0) || (page_height < 0)) return;
 
     float zoom_level = overview.has_value() ? overview->get_zoom_level(dv()) : dv()->get_zoom_level();
+
+    if (SAME_WIDTH && document_view->same_width_mode_first_page_width) {
+        float factor = document_view->same_width_mode_first_page_width.value() / page_width;
+        page_width *= factor;
+        page_height *= factor;
+        zoom_level *= factor;
+    }
 
     bool is_sliced = num_slices_for_page_rect(page_rect, &nh, &nv);
 

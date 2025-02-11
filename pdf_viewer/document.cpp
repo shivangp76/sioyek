@@ -827,6 +827,16 @@ float Document::get_page_width(int page_index) {
     }
 }
 
+float Document::get_page_width_median() {
+    if (page_widths.size() == 0) {
+        return 500.0f;
+    }
+
+    std::vector<float> sorted_widths = page_widths;
+    std::nth_element(sorted_widths.begin(), sorted_widths.begin() + sorted_widths.size() / 2, sorted_widths.end());
+    return sorted_widths[sorted_widths.size() / 2];
+}
+
 float Document::get_page_size_smart(bool width, int page_index, float* left_ratio, float* right_ratio, int* normal_page_width) {
 
     fz_pixmap* pixmap = get_small_pixmap(page_index);

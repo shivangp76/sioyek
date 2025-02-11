@@ -264,6 +264,7 @@ extern bool ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW;
 extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
+extern bool SAME_WIDTH;
 
 extern int RENDERER_BACKEND;
 
@@ -1514,6 +1515,9 @@ void MainWidget::handle_validation_interval_timeout(){
         if (doc()->get_should_reload_annotations()) {
             doc()->reload_annotations_on_new_checksum();
             validate_render();
+        }
+        if (main_document_view->needs_refill && doc()->can_use_highlights()) {
+            main_document_view->fill_cached_virtual_rects(true);
         }
     }
 

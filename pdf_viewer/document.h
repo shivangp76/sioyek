@@ -364,6 +364,7 @@ public:
     float get_page_height(int page_index);
     fz_pixmap* get_small_pixmap(int page);
     float get_page_width(int page_index);
+    float get_page_width_median();
     std::wstring get_page_label(int page_index);
     int get_page_number_with_label(std::wstring page_label);
     bool is_reflowable();

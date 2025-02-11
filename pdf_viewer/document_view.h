@@ -265,6 +265,12 @@ public:
     bool mark_end = true;
     std::wstring last_opened_file_path = L"";
     bool was_set_to_null = false;
+    std::optional<float> same_width_mode_first_page_width = {};
+
+    // when filling the page rects, it is possible that the page dimensions are not yet loaded
+    // in that case, needs_refill will be set to true and we will refill the page rects once
+    // the page dimensions are loaded
+    bool needs_refill = false;
 
     DocumentView(DatabaseManager* db_manager, DocumentManager* document_manager, CachedChecksummer* checksummer);
     ~DocumentView();
