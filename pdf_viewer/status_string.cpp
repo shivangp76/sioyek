@@ -9,6 +9,7 @@ extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_B_STR;
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_C_STR;
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR;
 extern float TTS_RATE;
+extern int MAX_CUSTOM_STATUS_MESSAGE_SIZE;
 
 StatusLabelLineEdit::StatusLabelLineEdit(QWidget* parent ) : QLineEdit(parent) {
     setCursor(Qt::ArrowCursor);
@@ -229,7 +230,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                     message_string += " | ";
                 }
             }
-            if (widget->status_messages.size() > 1 && message_string.size() > 20) {
+            if (widget->status_messages.size() > 1 && message_string.size() > MAX_CUSTOM_STATUS_MESSAGE_SIZE) {
                 int index = widget->current_status_message_index < widget->status_messages.size() ? widget->current_status_message_index : widget->status_messages.size() - 1;
                 auto current_message = widget->status_messages[index].message;
                 current_message += " (" + QString::number(index + 1) + "/" + QString::number(widget->status_messages.size()) + ")";
