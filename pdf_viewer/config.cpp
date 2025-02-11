@@ -124,6 +124,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
     {L"tts_status", L"stop_reading"},
     {L"tts_rate", L"show_touch_ui_for_config(tts_rate)"},
     {L"download", L"cancel_all_downloads"},
+    {L"custom_message", L"clear_current_status_message"},
 };
 
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS = {
@@ -133,6 +134,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS = {
     {L"preview_index", L"previous_overview"},
     {L"tts_status", L"decrease_tts_rate"},
     {L"tts_rate", L"decrease_tts_rate"},
+    {L"custom_message", L"prev_status_message"},
 };
 
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_DOWN_COMMANDS = {
@@ -142,6 +144,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_DOWN_COMMANDS = 
     {L"preview_index", L"next_overview"},
     {L"tts_status", L"increase_tts_rate"},
     {L"tts_rate", L"increase_tts_rate"},
+    {L"custom_message", L"next_status_message"},
 };
 
 float BLACK_COLOR[3] = { 0.0f, 0.0f, 0.0f };

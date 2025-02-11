@@ -230,6 +230,7 @@ public:
     // custom message to be displayed in sioyek's statusbar
     //std::wstring custom_status_message = L"";
     std::vector<StatusMessage> status_messages;
+    int current_status_message_index = 0;
 
     // A flag which indicates whether the application should quit. We use this to inform other threads
     // (e.g. the PDF rendering thread) that they should exit.

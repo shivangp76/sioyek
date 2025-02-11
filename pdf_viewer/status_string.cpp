@@ -229,7 +229,15 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                     message_string += " | ";
                 }
             }
-            return " [ " + message_string + " ]";
+            if (widget->status_messages.size() > 1 && message_string.size() > 20) {
+                int index = widget->current_status_message_index < widget->status_messages.size() ? widget->current_status_message_index : widget->status_messages.size() - 1;
+                auto current_message = widget->status_messages[index].message;
+                current_message += " (" + QString::number(index + 1) + "/" + QString::number(widget->status_messages.size()) + ")";
+                return " [ " + current_message + " ]";
+            }
+            else {
+                return " [ " + message_string + " ]";
+            }
         }
         return QString("");
         };

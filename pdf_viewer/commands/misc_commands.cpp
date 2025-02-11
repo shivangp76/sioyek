@@ -1729,6 +1729,54 @@ public:
     bool requires_document() { return false; }
 };
 
+class NextStatusMessageCommand : public Command {
+public:
+    static inline const std::string cname = "next_status_message";
+    static inline const std::string hname = "Show the next status message in statusbar";
+    NextStatusMessageCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        int current_index = widget->current_status_message_index;
+        int next_index = (current_index + 1) % (widget->status_messages.size());
+        widget->current_status_message_index = next_index;
+    }
+
+    bool requires_document() { return false; }
+};
+
+class PrevStatusMessageCommand : public Command {
+public:
+    static inline const std::string cname = "prev_status_message";
+    static inline const std::string hname = "Show the previous status message in statusbar";
+    PrevStatusMessageCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        int current_index = widget->current_status_message_index;
+        int prev_index = (current_index + widget->status_messages.size() - 1) % (widget->status_messages.size());
+        widget->current_status_message_index = prev_index;
+    }
+
+    bool requires_document() { return false; }
+};
+
+class ClearCurrentStatusMessageCommand : public Command {
+public:
+    static inline const std::string cname = "clear_current_status_message";
+    static inline const std::string hname = "Clear the current status message";
+    ClearCurrentStatusMessageCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        int current_index = widget->current_status_message_index;
+        if (current_index >= 0 && current_index < widget->status_messages.size()) {
+            widget->status_messages.erase(widget->status_messages.begin() + current_index);
+            current_index = std::min(current_index, (int)widget->status_messages.size() - 1);
+            widget->current_status_message_index = current_index;
+        }
+    }
+
+    bool requires_document() { return false; }
+};
+
 class ToggleTittlebarCommand : public Command {
 public:
     static inline const std::string cname = "toggle_titlebar";
@@ -2473,6 +2521,9 @@ void register_misc_commands(CommandManager* manager) {
     register_command<ReloadConfigCommand>(manager);
     register_command<SetStatusStringCommand>(manager);
     register_command<ClearStatusStringCommand>(manager);
+    register_command<NextStatusMessageCommand>(manager);
+    register_command<PrevStatusMessageCommand>(manager);
+    register_command<ClearCurrentStatusMessageCommand>(manager);
     register_command<ToggleTittlebarCommand>(manager);
     register_command<SetWindowRectCommand>(manager);
     register_command<ScanNewFilesFromScanDirCommand>(manager);
