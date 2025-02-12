@@ -12440,7 +12440,9 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     index_into_page = text.size() - dummy_text.size();
     //doc()->get_page_text_and_line_rects_after_rect
 
-    sioyek_network_manager->tts(this, text, doc()->get_checksum(), get_current_page_number(), rate, [&, index_into_page](QString file_path, std::vector<float> timestamps) {
+    QString status_message_id = set_status_message(L"Performing Text to Speech");
+    sioyek_network_manager->tts(this, text, doc()->get_checksum(), get_current_page_number(), rate, [&, index_into_page, status_message_id](QString file_path, std::vector<float> timestamps) {
+        set_status_message(L"", status_message_id);
         SioyekMediaPlayer* mp = get_media_player();
         mp->setSource(QUrl::fromLocalFile(file_path));
         high_quality_play_state->timestamps = timestamps;
@@ -12470,7 +12472,9 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
 #endif
         }
 
-        });
+        }, [&, status_message_id](QString failed_string_checksum) {
+            set_status_message(L"Text to Speech Failed", status_message_id);
+            });
 
     if (should_preload) {
         preload_next_page_for_tts(rate);
@@ -12486,7 +12490,14 @@ void MainWidget::preload_next_page_for_tts(float rate) {
         std::vector<PagelessDocumentRect> dummy_next_chars;
         std::wstring next_page_text;
         doc()->get_page_text_and_line_rects_after_rect(next_page_number, INT_MAX, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
-        sioyek_network_manager->tts(this, next_page_text, doc()->get_checksum(), next_page_number, rate, [](QString path, std::vector<float> timestamps) {});
+        sioyek_network_manager->tts(this,
+            next_page_text,
+            doc()->get_checksum(),
+            next_page_number,
+            rate,
+            [](QString path, std::vector<float> timestamps) {},
+            [](QString checksum) {}
+        );
     }
 }
 

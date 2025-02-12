@@ -76,7 +76,13 @@ public:
     QDateTime last_document_location_upload_time;
 
     SioyekNetworkManager(DatabaseManager* db_manager, BackgroundTaskManager* task_manager, DocumentManager* document_manager, QObject* parent=nullptr);
-    void tts(QObject* parent, const std::wstring& text, const std::string& document_checksum, int page, float rate, std::function<void(QString file_path, std::vector<float>)> on_done);
+    void tts(QObject* parent,
+        const std::wstring& text,
+        const std::string& document_checksum,
+        int page,
+        float rate,
+        std::function<void(QString file_path, std::vector<float>)> on_done,
+        std::function<void(QString)> on_fail);
     void login(std::wstring email, std::wstring password);
     bool handle_network_reply_if_error(QNetworkReply* reply, bool show_message);
     void persist_access_token(std::string access_token);

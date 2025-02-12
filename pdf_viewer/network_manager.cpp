@@ -1196,7 +1196,14 @@ void SioyekNetworkManager::delete_file_with_checksum(const QString& checksum) {
     QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
 }
 
-void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const std::string& document_checksum, int page, float rate, std::function<void(QString, std::vector<float>)> on_done) {
+void SioyekNetworkManager::tts(QObject* parent,
+    const std::wstring& text,
+    const std::string& document_checksum,
+    int page,
+    float rate,
+    std::function<void(QString, std::vector<float>)> on_done,
+    std::function<void(QString)> on_fail
+) {
     QString text_checksum = QString::fromStdString(compute_md5_from_data(QString::fromStdWString(text).toUtf8()));
     QString file_path = QString::fromStdWString(cached_tts_path.slash( text_checksum.toStdWString() + L".mp3").get_path());
     QString timestamps_file_path = QString::fromStdWString(cached_tts_path.slash(text_checksum.toStdWString() + L".json").get_path());
@@ -1240,8 +1247,9 @@ void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const 
 
         QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
         reply->setParent(parent);
-        reply->setProperty("sioyek_network_status_string", "Creating audio");
-        QObject::connect(reply, &QNetworkReply::finished, [reply, file_path, timestamps_file_path, on_done = std::move(on_done)]() {
+
+        QObject::connect(reply, &QNetworkReply::finished,
+            [reply, file_path, text_checksum, timestamps_file_path, on_done = std::move(on_done), on_fail=std::move(on_fail)]() {
             reply->deleteLater();
 
             int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
@@ -1275,8 +1283,7 @@ void SioyekNetworkManager::tts(QObject* parent, const std::wstring& text, const 
                 on_done(file_path, timestamps);
             }
             else {
-                //qDebug() << "something bad happened";
-                //QFile access_token_file(QString::fromStdWString(sioyek_access_token_path.get_path()));
+                on_fail(text_checksum);
             }
             });
 
