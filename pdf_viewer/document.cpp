@@ -5408,6 +5408,20 @@ const std::vector<int>& Document::get_super_fast_page_begin_indices() {
     return super_fast_page_begin_indices;
 }
 
+int Document::get_first_page_end_index() {
+    auto begin_indices = get_super_fast_page_begin_indices();
+
+    if (begin_indices.size() > 1) {
+        return begin_indices[1] - 1;
+    }
+
+    if (begin_indices.size() == 1) {
+        return get_super_fast_index().size() - 1;
+   }
+
+    return 0;
+}
+
 int Document::absolute_to_page_index(int absolute_index, int& p){
     if (super_fast_page_begin_indices.size() == 0) {
         return -1;

@@ -1397,13 +1397,14 @@ void SioyekNetworkManager::does_index_exist(QObject* parent, const std::wstring&
         });
 }
 
-void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
+void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, const std::wstring& index, int first_page_end_index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
     QNetworkRequest req;
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_ASK_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
     obj["document_content"] = QString::fromStdWString(index);
+    obj["first_page_end_index"] = first_page_end_index;
     obj["query"] = query;
 
     QJsonDocument json_doc(obj);

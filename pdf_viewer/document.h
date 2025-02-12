@@ -283,6 +283,7 @@ public:
     int get_page_from_character_offset(int offset);
     const std::wstring& get_super_fast_index();
     const std::vector<int>& get_super_fast_page_begin_indices();
+    int get_first_page_end_index();
 
     PdfSpecificsInfo open_pdf_document_for_current_doc();
     void finalize_pdf_document_for_current_file(PdfSpecificsInfo info);

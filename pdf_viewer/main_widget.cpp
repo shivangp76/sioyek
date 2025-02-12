@@ -7799,7 +7799,8 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
         return;
     }
     const std::wstring& index = doc()->get_super_fast_index();
-    int first_page_end_index = doc()->get_super_fast_page_begin_indices()[1] - 1;
+
+    int first_page_end_index = doc()->get_first_page_end_index();
 
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
     int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
@@ -7823,7 +7824,11 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
     int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
     doc()->get_bookmarks()[ind].description += L"\n\n";
-    sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, [this, bookmark_uuid, document=doc()](QString chunk) {
+
+    int first_page_end_index = doc()->get_first_page_end_index();
+
+    sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, first_page_end_index,
+        [this, bookmark_uuid, document=doc()](QString chunk) {
         add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         },
         [this, bookmark_uuid, document=doc()]() {
