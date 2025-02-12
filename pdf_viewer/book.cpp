@@ -809,17 +809,19 @@ bool BookMark::can_have_links() const {
     return is_summary() || is_question();
 }
 
-QStringList BookMark::get_links() const {
+std::pair<QStringList, QStringList> BookMark::get_links() const {
     QRegularExpression markdown_link_regex = QRegularExpression("\\[(.*)\\]\\((.*)\\)");
 
-    QStringList res;
+    QStringList link_targets;
+    QStringList link_names;
     QString text = QString::fromStdWString(description);
     QRegularExpressionMatchIterator i = markdown_link_regex.globalMatch(text);
     while (i.hasNext()) {
         QRegularExpressionMatch match = i.next();
-        res.append(match.captured(2));
+        link_names.push_back(match.captured(1));
+        link_targets.append(match.captured(2));
     }
-    return res;
+    return std::make_pair(link_names, link_targets);
 }
 
 bool BookMark::should_be_displayed_as_markdown(QString bookmark_text) {

@@ -218,7 +218,7 @@ struct BookMark : Annotation {
     bool is_markdown() const;
     bool can_have_links() const;
     static bool should_be_displayed_as_markdown(QString bookmark_text);
-    QStringList get_links() const;
+    std::pair<QStringList, QStringList> get_links() const;
 
     std::optional<char> get_type() const;
     std::optional<char> get_background_type() const;
@@ -447,6 +447,7 @@ struct SearchResult {
     int page;
     int begin_index_in_page;
     int end_index_in_page;
+    QString message;
 
     void fill(Document* doc);
 };

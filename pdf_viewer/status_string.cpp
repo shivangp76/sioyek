@@ -1,4 +1,4 @@
-#include "status_string.h"
+﻿#include "status_string.h"
 #include "document.h"
 #include "document_view.h"
 #include "main_widget.h"
@@ -63,9 +63,13 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         if (widget->main_document_view->get_is_searching(&progress)) {
 
             int result_index = widget->main_document_view->get_num_search_results() > 0 ? widget->main_document_view->get_current_search_result_index() + 1 : 0;
-            auto res = " | showing result " + QString::number(result_index) + " / " + QString::number(num_search_results);
+            auto res = " | ⌕ " + QString::number(result_index) + " / " + QString::number(num_search_results);
             if (progress > 0) {
                 res = res + " (" + QString::number((int)(progress * 100)) + "%" + ")";
+            }
+            std::optional<SearchResult> current_search_result = widget->main_document_view->get_current_search_result();
+            if (current_search_result && current_search_result->message.size() > 0) {
+                res += " " + current_search_result->message;
             }
             return res;
         }

@@ -650,7 +650,7 @@ public:
     void move_pinned_portal(float horizontal_amount, float vertical_amount);
     void zoom_pinned_portal(bool zoom_in);
     std::optional<Portal> pin_current_overview_as_portal();
-    void perform_fuzzy_searches(std::vector<std::wstring> queries);
+    void perform_fuzzy_searches(std::vector<std::wstring> queries, std::vector<QString> messages={});
     void perform_fuzzy_search(std::wstring query);
     virtual bool is_scratchpad();
 

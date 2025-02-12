@@ -4717,18 +4717,26 @@ std::optional<Portal> DocumentView::pin_current_overview_as_portal() {
     return {};
 }
 
-void DocumentView::perform_fuzzy_searches(std::vector<std::wstring> queries) {
+void DocumentView::perform_fuzzy_searches(std::vector<std::wstring> queries, std::vector<QString> messages) {
     if (current_document->get_super_fast_index().size() == 0) {
         show_error_message(L"Super fast search index is not ready");
         return;
     }
     std::vector<SearchResult> search_results;
 
-    for (auto query : queries) {
+    for (int i = 0; i < queries.size(); i++) {
+        auto& query = queries[i];
         auto query_results = get_fuzzy_search_results(query);
+        if (messages.size() == queries.size()) {
+            QString message = messages[i];
+            for (auto& r : query_results) {
+                r.message = message;
+            }
+        }
         // add query_results to the back of search_results
         search_results.insert(search_results.end(), query_results.begin(), query_results.end());
     }
+
 
     set_search_results(std::move(search_results));
     goto_search_result(0, false);

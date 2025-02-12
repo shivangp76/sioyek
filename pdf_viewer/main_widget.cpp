@@ -5574,19 +5574,23 @@ void MainWidget::handle_goto_bookmark() {
         }
 
         if (NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION && bm.can_have_links()) {
-            auto links = bm.get_links();
+            auto [link_names, link_targets] = bm.get_links();
             std::vector<std::wstring> queries;
+            std::vector<QString> messages;
 
-            for (auto link : links) {
+            for (int i = 0; i < link_names.size(); i++) {
+                QString link = link_targets[i];
+                QString message = link_names[i];
                 if (link.startsWith("sioyek://")) {
                     QString decoded = QUrl::fromPercentEncoding(link.mid(9).toUtf8());
                     QStringList parts = decoded.split("...");
                     for (auto part : parts) {
                         queries.push_back(part.trimmed().toStdWString());
+                        messages.push_back(message);
                     }
                 }
             }
-            dv()->perform_fuzzy_searches(queries);
+            dv()->perform_fuzzy_searches(queries, messages);
         }
 
         advance_command(std::move(pending_command_instance));

@@ -106,7 +106,7 @@ std::wstring MIDDLE_CLICK_SEARCH_ENGINE = L"s";
 std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
 std::wstring PAPERS_FOLDER_PATH = L"";
 #ifndef SIOYEK_MOBILE
-std::wstring STATUS_BAR_FORMAT = L"[ %{current_page} / %{num_pages} ]%{chapter_name}%{search_results}%{search_progress}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{selected_highlight}%{highlight}%{freehand_drawing}%{rect_select}%{custom_message}%{download}%{download_button}%{network_status}%{tts_status}%{tts_rate}";
+std::wstring STATUS_BAR_FORMAT = L"[ %{current_page} / %{num_pages} ]%{search_results}%{search_progress}%{chapter_name}%{link_status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{drag}%{presentation}%{visual_scroll}%{locked_scroll}%{selected_highlight}%{highlight}%{freehand_drawing}%{rect_select}%{custom_message}%{download}%{download_button}%{network_status}%{tts_status}%{tts_rate}";
 std::wstring RIGHT_STATUS_BAR_FORMAT = L"";
 #else
 std::wstring STATUS_BAR_FORMAT = L"# %{current_page} / %{num_pages}%{search_results}%{search_progress}%{link_status}%{indexing}%{current_requirement_desc}";
