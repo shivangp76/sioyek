@@ -98,6 +98,7 @@ public:
 
     void perform() {
         std::string uuid = widget->main_document_view->add_bookmark(text.value());
+        widget->handle_special_bookmarks(text.value(), utf8_decode(uuid));
         widget->on_new_bookmark_added(uuid);
         result = utf8_decode(uuid);
     }
@@ -160,6 +161,7 @@ public:
     void perform() {
         if (text_->size() > 0) {
             std::string uuid = widget->doc()->add_pending_bookmark(pending_uuid, text_.value());
+            widget->handle_special_bookmarks(text_.value(), utf8_decode(uuid));
             widget->on_new_bookmark_added(uuid);
             widget->invalidate_render();
             result = utf8_decode(uuid);

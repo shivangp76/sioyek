@@ -8025,6 +8025,31 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
 #endif
 }
 
+void MainWidget::handle_special_bookmarks(std::wstring text, std::wstring bookmark_uuid) {
+
+    QString qtext = QString::fromStdWString(text);
+
+    if (text.size() > 2 && text.substr(0, 2) == L"? ") {
+        handle_bookmark_ask_query(text.substr(2, text.size() - 2), bookmark_uuid);
+    }
+    else if (qtext.startsWith("#summarize")) {
+        handle_bookmark_summarize_query(bookmark_uuid);
+    }
+    else if (qtext.startsWith("#shell")) {
+        handle_bookmark_shell_command(qtext, utf8_encode(bookmark_uuid));
+    }
+    else if (QString::fromStdWString(text).startsWith("@")) {
+        // the text after the @ and before the first space is the command name
+        QString command_name = qtext.mid(1).split(" ").at(0);
+        QString text_arg = qtext.mid(1 + command_name.size()).trimmed();
+        if (SHELL_BOOKMARK_COMMANDS.find(command_name.toStdWString()) != SHELL_BOOKMARK_COMMANDS.end()) {
+            QString command_string = QString::fromStdWString(SHELL_BOOKMARK_COMMANDS[command_name.toStdWString()]);
+            QString equivalent_shell_command = "#shell " + command_string;
+            handle_bookmark_shell_command(equivalent_shell_command, utf8_encode(bookmark_uuid), text_arg);
+        }
+    }
+}
+
 std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid) {
     std::wstring result = L"";
     if (text.size() > 0) {
@@ -8032,27 +8057,7 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
         on_new_bookmark_added(uuid);
         result = utf8_decode(uuid);
         main_document_view->set_selected_bookmark_uuid("");
-        QString qtext = QString::fromStdWString(text);
-
-        if (text.size() > 2 && text.substr(0, 2) == L"? ") {
-            handle_bookmark_ask_query(text.substr(2, text.size()-2), result);
-        }
-        else if (qtext.startsWith("#summarize")) {
-            handle_bookmark_summarize_query(result);
-        }
-        else if (qtext.startsWith("#shell")) {
-            handle_bookmark_shell_command(qtext, pending_uuid);
-        }
-        else if (QString::fromStdWString(text).startsWith("@")){
-            // the text after the @ and before the first space is the command name
-            QString command_name = qtext.mid(1).split(" ").at(0);
-            QString text_arg = qtext.mid(1 + command_name.size()).trimmed();
-            if (SHELL_BOOKMARK_COMMANDS.find(command_name.toStdWString()) != SHELL_BOOKMARK_COMMANDS.end()){
-                QString command_string = QString::fromStdWString(SHELL_BOOKMARK_COMMANDS[command_name.toStdWString()]);
-                QString equivalent_shell_command = "#shell " + command_string;
-                handle_bookmark_shell_command(equivalent_shell_command, pending_uuid, text_arg);
-            }
-        }
+        handle_special_bookmarks(text, utf8_decode(uuid));
     }
     else {
         doc()->undo_pending_bookmark(pending_uuid);
