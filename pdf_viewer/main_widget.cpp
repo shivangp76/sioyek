@@ -159,6 +159,7 @@ extern bool AUTO_RENAME_DOWNLOADED_PAPERS;
 extern bool SHOW_DOCUMENTATION_IN_WIDGET;
 extern bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER;
 extern bool SHOW_PRO_COMMANDS;
+extern bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION;
 
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
@@ -5572,7 +5573,7 @@ void MainWidget::handle_goto_bookmark() {
             pending_command_instance->set_generic_requirement(bm.get_y_offset());
         }
 
-        if (bm.can_have_links()) {
+        if (NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION && bm.can_have_links()) {
             auto links = bm.get_links();
             std::vector<std::wstring> queries;
 

@@ -43,6 +43,7 @@ bool DEBUG = false;
 bool ADD_NEWLINES_WHEN_COPYING_TEXT = false;
 bool ALWAYS_COPY_SELECTED_TEXT = false;
 bool SHOW_DOCUMENTATION_IN_WIDGET = false;
+bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION = true;
 float TTS_RATE_INCREMENT = 0.05f;
 float AUTO_BOOKMARK_VERTICAL_MARGIN = 1.0f;
 float AUTO_BOOKMARK_HORIZONTAL_MARGIN = 1.0f;
@@ -1352,6 +1353,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"add_newlines_when_copying_text", &ADD_NEWLINES_WHEN_COPYING_TEXT);
     add_bool(L"always_copy_selected_text", &ALWAYS_COPY_SELECTED_TEXT);
     add_bool(L"show_documentation_in_widget", &SHOW_DOCUMENTATION_IN_WIDGET);
+    add_bool(L"navigate_bookmark_links_after_selection", &NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION);
     add_bool(L"show_statusbar_only_when_hovered", &SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER);
     add_bool(L"uniform_page_widths", &SAME_WIDTH);
 
