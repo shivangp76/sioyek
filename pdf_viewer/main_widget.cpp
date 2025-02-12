@@ -11082,6 +11082,29 @@ void MainWidget::print_undocumented_commands(){
     }
 }
 
+void MainWidget::print_documented_but_removed_commands() {
+
+    load_sioyek_documentation();
+
+    auto all_commands = command_manager->get_all_command_names();
+    QStringList documented_command_names;
+
+    for (auto key : sioyek_documentation_json_document["command_name_to_title_map"].toObject().keys()) {
+        auto value = sioyek_documentation_json_document["command_name_to_title_map"].toObject()[key].toString();
+        auto commmands_names = value.split("-");
+
+        for (auto commmand_name : commmands_names) {
+            documented_command_names.push_back(commmand_name);
+        }
+    }
+
+    for (auto& documented_command : documented_command_names) {
+        if (!all_commands.contains(documented_command)) {
+            qDebug() << documented_command;
+        }
+    }
+}
+
 void MainWidget::print_non_default_configs(){
     auto configs = config_manager->get_configs();
     for (auto conf : configs){
