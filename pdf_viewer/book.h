@@ -216,7 +216,9 @@ struct BookMark : Annotation {
     bool is_summary() const;
     bool is_latex() const;
     bool is_markdown() const;
+    bool can_have_links() const;
     static bool should_be_displayed_as_markdown(QString bookmark_text);
+    QStringList get_links() const;
 
     std::optional<char> get_type() const;
     std::optional<char> get_background_type() const;

@@ -5572,6 +5572,22 @@ void MainWidget::handle_goto_bookmark() {
             pending_command_instance->set_generic_requirement(bm.get_y_offset());
         }
 
+        if (bm.can_have_links()) {
+            auto links = bm.get_links();
+            std::vector<std::wstring> queries;
+
+            for (auto link : links) {
+                if (link.startsWith("sioyek://")) {
+                    QString decoded = QUrl::fromPercentEncoding(link.mid(9).toUtf8());
+                    QStringList parts = decoded.split("...");
+                    for (auto part : parts) {
+                        queries.push_back(part.trimmed().toStdWString());
+                    }
+                }
+            }
+            dv()->perform_fuzzy_searches(queries);
+        }
+
         advance_command(std::move(pending_command_instance));
         pop_current_widget();
         };
