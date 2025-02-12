@@ -1307,6 +1307,18 @@ public:
     }
 };
 
+class ToggleLineSelectCursor : public Command {
+public:
+    static inline const std::string cname = "toggle_line_select_cursor";
+    static inline const std::string hname = "Swap between begin/end of line selection.";
+    ToggleLineSelectCursor(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->main_document_view->swap_line_select_cursor();
+    }
+
+};
+
 class StartReadingCommand : public Command {
 public:
     static inline const std::string cname = "start_reading";
@@ -2448,6 +2460,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<MoveTextMarkForwardCommand>(manager);
     register_command<MoveTextMarkBackwardCommand>(manager);
     register_command<MoveTextMarkBackwardWordCommand>(manager);
+    register_command<MoveTextMarkForwardWordCommand>(manager);
     register_command<IncreaseTtsRateCommand>(manager);
     register_command<DecreaseTtsRateCommand>(manager);
     register_command<StopReadingCommand>(manager);
@@ -2508,6 +2521,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<PrefsUserCommand>(manager);
     register_command<PrefsUserAllCommand>(manager);
     register_command<KeyboardSelectLineCommand>(manager);
+    register_command<ToggleLineSelectCursor>(manager);
     register_command<OpenContainingFolderCommand>(manager);
     register_command<SynctexUnderCursorCommand>(manager);
     register_command<SynctexUnderRulerCommand>(manager);
