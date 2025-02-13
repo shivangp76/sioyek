@@ -341,37 +341,18 @@ QString BookMark::get_display_markdown_or_text(QString res){
         return res.mid(9);
     }
     else if (res.startsWith("? ")) { // question
-        QRegularExpression begin_question_mark("(^|\\n)\\? ");
+        QStringList lines = res.split('\n');
+        QString result;
 
-        std::vector<QRegularExpressionMatch> matches;
-        for (auto match : begin_question_mark.globalMatchView(res)) {
-            matches.push_back(match);
-        }
-
-        for (int i = 0; i < matches.size(); i++) {
-            auto match = matches[matches.size() - 1 - i];
-            int begin_offset = 0;
-            if (match.captured()[0] == '\n') {
-                begin_offset = 1;
-            }
-
-            int next_newline_index = res.indexOf("\n", match.capturedStart() + begin_offset);
-
-            // make the text underlined
-            QString begin_tags = "<span style=\"text-decoration: underline;\"><i><b>";
-            QString end_tags = "</b></i></span>";
-
-            if (next_newline_index == -1) {
-                int replace_length = res.size() - match.capturedStart();
-                res = res.replace(match.capturedStart() + begin_offset, replace_length, begin_tags + res.mid(match.capturedStart() + 2, replace_length) + end_tags);
+        for (auto line : lines) {
+            if (line.startsWith("? ")) {
+                result += "<span style=\"text-decoration: underline;\"><i><b>" + line.mid(2) + "</b></i></span>\n";
             }
             else {
-                int replace_length = next_newline_index - match.capturedStart() - begin_offset;
-                res = res.replace(match.capturedStart() + begin_offset, replace_length, begin_tags + res.mid(match.capturedStart() + 2 + begin_offset, replace_length) + end_tags);
+                result += line + "\n";
             }
         }
-
-        return res;
+        return result;
     }
     else if (res.startsWith("#")) {
         int first_space_index = res.indexOf(" ");
