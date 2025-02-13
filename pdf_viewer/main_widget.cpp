@@ -3153,6 +3153,19 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
         WindowPos click_pos = { mevent->pos().x(), mevent->pos().y() };
         AbsoluteDocumentPos mouse_abspos = main_document_view->window_to_absolute_document_pos(click_pos);
 
+        std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(mouse_abspos);
+        std::string highlight_uuid = main_document_view->get_highlight_uuid_in_pos(click_pos);
+
+        if (bookmark_uuid.size() > 0) {
+            main_document_view->set_selected_bookmark_uuid(bookmark_uuid);
+            handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+            return;
+        }
+        if (highlight_uuid.size() > 0) {
+            main_document_view->set_selected_highlight_uuid(highlight_uuid);
+            handle_command_types(command_manager->get_command_with_name(this, "add_annot_to_highlight"), 0);
+        }
+
         if (mevent->button() == Qt::MouseButton::LeftButton) {
             int count = update_recent_clicks(mouse_abspos);
             if (count >= 3) {
@@ -3171,18 +3184,6 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
 
         }
 
-        std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(mouse_abspos);
-        std::string highlight_uuid = main_document_view->get_highlight_uuid_in_pos(click_pos);
-
-        if (bookmark_uuid.size() > 0) {
-            main_document_view->set_selected_bookmark_uuid(bookmark_uuid);
-            handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
-            return;
-        }
-        if (highlight_uuid.size() > 0) {
-            main_document_view->set_selected_highlight_uuid(highlight_uuid);
-            handle_command_types(command_manager->get_command_with_name(this, "add_annot_to_highlight"), 0);
-        }
     }
 }
 
