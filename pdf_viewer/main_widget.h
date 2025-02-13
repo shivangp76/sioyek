@@ -1146,6 +1146,7 @@ public:
     void delete_old_helper();
     std::vector<WindowRect> get_largest_empty_rects();
     void update_text_selection(AbsoluteDocumentPos abs_mpos);
+    void scroll_selected_bookmark_to_end();
 
 
 public slots:

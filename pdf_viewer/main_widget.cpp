@@ -13219,3 +13219,16 @@ void MainWidget::copy_text_to_clipboard(QString str) {
 QString MainWidget::get_environment_variable(QString name) {
     return QString::fromStdString(std::getenv(name.toStdString().c_str()));
 }
+
+void MainWidget::scroll_selected_bookmark_to_end() {
+
+    std::string bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
+    if (bookmark_uuid.size() > 0) {
+        BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
+        if (bookmark) {
+            float scroll_amount = background_bookmark_renderer->get_cached_bookmark_height(bookmark_uuid) - bookmark->get_rectangle()->height() * dv()->get_zoom_level();
+            dv()->set_bookmark_scroll_amount(bookmark_uuid, scroll_amount);
+        }
+    }
+
+}

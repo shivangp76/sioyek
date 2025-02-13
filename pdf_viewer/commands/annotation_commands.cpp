@@ -630,6 +630,8 @@ public:
     float initial_font_size;
     std::string uuid = "";
 
+    std::optional<QString> last_text = {};
+
     EditSelectedBookmarkCommand(MainWidget* w) : TextCommand(cname, w) {};
 
     void on_text_change(const QString& new_text) override {
@@ -639,6 +641,12 @@ public:
         if (bookmark) {
             bookmark->description = new_text.toStdWString();
         }
+        if (last_text.has_value()) {
+            if ((last_text->size() == new_text.size() - 1) && new_text.startsWith(last_text.value())) {
+                widget->scroll_selected_bookmark_to_end();
+            }
+        }
+        last_text = new_text;
     }
 
     void pre_perform() {
