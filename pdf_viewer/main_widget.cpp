@@ -7857,6 +7857,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
             BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
             if (bm) {
                 bm->description = replace_verbatim_links(bm->description);
+                bm->description += L"\n";
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
                 on_bookmark_edited(bm->uuid);
             }
@@ -8051,7 +8052,7 @@ void MainWidget::handle_special_bookmarks(std::wstring text, std::wstring bookma
     QString qtext = QString::fromStdWString(text);
 
     if (text.size() > 2 && text.substr(0, 2) == L"? ") {
-        handle_bookmark_ask_query(text.substr(2, text.size() - 2), bookmark_uuid);
+        handle_bookmark_ask_query(text, bookmark_uuid);
     }
     else if (qtext.startsWith("#summarize")) {
         handle_bookmark_summarize_query(bookmark_uuid);
@@ -9069,6 +9070,16 @@ void MainWidget::change_selected_bookmark_text(const std::wstring& new_text) {
             if (new_text.size() > 0) {
                 float new_font_size = selected_bookmark->font_size;
                 doc()->update_bookmark_text(selected_bookmark_uuid, new_text, new_font_size);
+
+                if (new_text[0] == '?') {
+                    int last_newline_index = new_text.find_last_of(L"\n");
+                    int next_index = last_newline_index + 1;
+                    if (next_index < new_text.size() - 1 && new_text[next_index] == '?' && new_text[next_index + 1] == ' ') {
+                        handle_special_bookmarks(new_text, utf8_decode(selected_bookmark->uuid));
+                    }
+
+                }
+
                 on_bookmark_edited(selected_bookmark->uuid);
             }
             else {
