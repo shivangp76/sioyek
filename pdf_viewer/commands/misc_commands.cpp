@@ -2451,6 +2451,16 @@ public:
     bool requires_document() { return false; }
 };
 
+class RepeatLastCommandCommand : public Command {
+public:
+    static inline const std::string cname = "repeat_last_command";
+    static inline const std::string hname = "Repeat the last command executed.";
+    RepeatLastCommandCommand(MainWidget* w) : Command(cname, w) {};
+    void perform() {
+        widget->repeat_last_command();
+    }
+};
+
 void register_misc_commands(CommandManager* manager) {
     register_command<SendSymbolCommand>(manager);
     register_command<ToggleTextMarkCommand>(manager);
@@ -2570,4 +2580,5 @@ void register_misc_commands(CommandManager* manager) {
     register_command<RemoveMarkedDataCommand>(manager);
     register_command<ExportMarkedDataCommand>(manager);
     register_command<ShowTouchConfigCommand>(manager);
+    register_command<RepeatLastCommandCommand>(manager);
 }

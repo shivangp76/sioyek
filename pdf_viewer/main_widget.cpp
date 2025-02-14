@@ -2285,7 +2285,9 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat
             &num_repeats);
 
         if (commands) {
-            if (last_performed_command && last_performed_command->is_holdable() && commands->get_name() == last_performed_command->get_name()) {
+            if (
+                last_performed_command && last_performed_command->is_holdable() &&
+                ((commands->get_name() == last_performed_command->get_name()) || (commands->get_name() == "repeat_last_command"))) {
                 last_performed_command->on_key_hold();
             }
             else {
@@ -5313,6 +5315,10 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstr
                     *result = command_result.value();
                 }
                 //*result = new_command->get_result()
+            }
+            if (new_command->get_name() != "repeat_last_command") {
+                last_performed_command_name = new_command->get_name();
+                last_performed_command_num_repeats = new_command->get_num_repeats();
             }
             set_last_performed_command(std::move(new_command));
         }
@@ -11456,6 +11462,10 @@ void MainWidget::ensure_zero_interval_timer(){
 
 
 void MainWidget::set_last_performed_command(std::unique_ptr<Command> command) {
+    if (command && command->get_name() == "repeat_last_command") {
+        return;
+    }
+
     if (last_performed_command) {
         last_performed_command->perform_up();
     }
@@ -13231,5 +13241,11 @@ void MainWidget::scroll_selected_bookmark_to_end() {
             dv()->set_bookmark_scroll_amount(bookmark_uuid, scroll_amount);
         }
     }
+}
 
+void MainWidget::repeat_last_command() {
+    std::unique_ptr<Command> last_cmd = command_manager->get_command_with_name(this, last_performed_command_name);
+    last_cmd->set_num_repeats(last_performed_command_num_repeats);
+    advance_command(std::move(last_cmd));
+    //handle_command_types(std::move(last_cmd), last_performed_command_num_repeats);
 }

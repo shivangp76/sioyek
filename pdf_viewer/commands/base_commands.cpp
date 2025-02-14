@@ -236,6 +236,10 @@ void Command::set_num_repeats(int nr) {
     num_repeats = nr;
 }
 
+int Command::get_num_repeats() {
+    return num_repeats;
+}
+
 void Command::pre_perform() {
 
 }

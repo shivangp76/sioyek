@@ -194,7 +194,10 @@ public:
     // input to be completed) this is where they are stored until they can be executed.
     std::unique_ptr<Command> pending_command_instance = nullptr;
     std::vector<Command*> commands_being_performed;
-    std::unique_ptr<Command> last_performed_command;
+    std::unique_ptr<Command> last_performed_command = nullptr;
+
+    std::string last_performed_command_name = "";
+    int last_performed_command_num_repeats = 0;
 
     std::vector<int> last_status_string_ids;
     std::wstring last_titlebar_string = L"";
@@ -1156,6 +1159,7 @@ public slots:
     void highlight_type_color_clicked(int index);
     int update_recent_clicks(AbsoluteDocumentPos mouse_abspos);
     void handle_triple_click(AbsoluteDocumentPos mouse_abspos);
+    void repeat_last_command();
 };
 
 MainWidget* get_window_with_window_id(int window_id);
