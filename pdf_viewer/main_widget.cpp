@@ -13278,23 +13278,23 @@ void MainWidget::repeat_last_command() {
 void MainWidget::open_selected_bookmark_in_widget() {
     auto selected_bookmark = doc()->get_bookmark_with_uuid(main_document_view->get_selected_bookmark_uuid());
     if (selected_bookmark) {
+        bool is_question_bookmark = selected_bookmark->is_question();
         QString bookmark_display_text = selected_bookmark->get_question_or_summary_markdown();
         bookmark_display_text = bookmark_display_text.replace("sioyek://", "sioyeklink#");
         SioyekBookmarkTextBrowser* text_browser = new SioyekBookmarkTextBrowser(
-            this, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text
+            this, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text, is_question_bookmark
         );
 
         set_current_widget(text_browser);
         text_browser->handle_resize();
         text_browser->show();
-        //show_markdown_text_widget("", bookmark_display_text);
     }
 }
 
 void MainWidget::accept_new_bookmark_message() {
     if (current_widget_stack.size() > 0) {
         auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
-        if (bookmark_widget) {
+        if (bookmark_widget && bookmark_widget->line_edit) {
             QString text = bookmark_widget->line_edit->text();
             auto bookmark = doc()->get_bookmark_with_uuid(bookmark_widget->bookmark_uuid.toStdString());
 

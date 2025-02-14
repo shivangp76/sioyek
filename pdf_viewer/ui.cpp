@@ -4052,7 +4052,7 @@ ItemWithDescriptionSelectorWidget* ItemWithDescriptionSelectorWidget::from_items
     return item_selector_widget;
 }
 
-SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString uuid, QString content) : QWidget(parent){
+SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString uuid, QString content, bool chat) : QWidget(parent){
     bookmark_uuid = uuid;
     main_widget = parent;
     text_browser = new SioyekDocumentationTextBrowser(main_widget);
@@ -4065,18 +4065,24 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
 
 
 
-    line_edit = new MyLineEdit(main_widget);
-    line_edit->setParent(this);
+    if (chat) {
+        line_edit = new MyLineEdit(main_widget);
+        line_edit->setParent(this);
+    }
 
     layout = new QVBoxLayout(this);
 
     layout->addWidget(text_browser);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(line_edit);
+    if (chat) {
+        layout->addWidget(line_edit);
+    }
 
     layout->setStretch(0, 1);
 
-    line_edit->setFocus();
+    if (chat) {
+        line_edit->setFocus();
+    }
 
     setLayout(layout);
 }

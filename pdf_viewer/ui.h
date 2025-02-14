@@ -1548,7 +1548,7 @@ public:
     MyLineEdit* line_edit = nullptr;
     QString bookmark_uuid;
 
-    SioyekBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content);
+    SioyekBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content, bool chat);
 
     void resizeEvent(QResizeEvent* resize_event) override;
     void handle_resize();
