@@ -268,6 +268,7 @@ public:
     std::optional<BookMark> delete_bookmark_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
     std::optional<Highlight> delete_highlight(Highlight hl);
     std::string get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos);
+    std::optional<BookMark> get_bookmark_at_pos(AbsoluteDocumentPos abspos);
     std::string get_pinned_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
     std::string get_icon_portal_uuid_at_pos(AbsoluteDocumentPos abspos);
     bool should_render_pdf_annotations();

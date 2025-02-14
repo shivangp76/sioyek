@@ -4328,29 +4328,30 @@ std::string Document::get_pinned_portal_uuid_at_pos(AbsoluteDocumentPos abspos) 
     return "";
 }
 
-std::string Document::get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos) {
+std::optional<BookMark> Document::get_bookmark_at_pos(AbsoluteDocumentPos abspos) {
     for (int i = 0; i < bookmarks.size(); i++) {
         if (bookmarks[i].begin_y != -1) {
             if (bookmarks[i].end_y == -1) {
-
-                //if (fz_is_point_inside_rect({abspos.x, abspos.y}, bookmarks[i].get_rectangle())) {
                 if (bookmarks[i].get_selection_rectangle()->contains(abspos)) {
-                    return bookmarks[i].uuid;
+                    return bookmarks[i];
                 }
             }
             else {
-                //AbsoluteRect bookmark_rect;
-                //bookmark_rect.x0 = bookmarks[i].begin_x;
-                //bookmark_rect.y0 = bookmarks[i].begin_y;
-                //bookmark_rect.x1 = bookmarks[i].end_x;
-                //bookmark_rect.y1 = bookmarks[i].end_y;
                 AbsoluteRect bookmark_rect = bookmarks[i].get_selection_rectangle().value();
 
                 if (fz_is_point_inside_rect({ abspos.x, abspos.y }, bookmark_rect)) {
-                    return bookmarks[i].uuid;
+                    return bookmarks[i];
                 }
             }
         }
+    }
+    return {};
+}
+
+std::string Document::get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos) {
+    std::optional<BookMark> bookmark_at_pos = get_bookmark_at_pos(abspos);
+    if (bookmark_at_pos) {
+        return bookmark_at_pos->uuid;
     }
     return "";
 }

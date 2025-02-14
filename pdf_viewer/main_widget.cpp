@@ -266,6 +266,7 @@ extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 extern bool SAME_WIDTH;
+extern bool DOUBLE_CLICK_ON_QUESTION_BOOKMARKS_OPENS_CHAT;
 
 extern int RENDERER_BACKEND;
 
@@ -3004,10 +3005,6 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
 
-    if (!TOUCH_MODE && current_widget_stack.size() > 0) {
-        pop_current_widget();
-        return;
-    }
 
     if (main_document_view->is_drawing) {
         main_document_view->finish_drawing(mevent->pos());
@@ -3155,12 +3152,22 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
         WindowPos click_pos = { mevent->pos().x(), mevent->pos().y() };
         AbsoluteDocumentPos mouse_abspos = main_document_view->window_to_absolute_document_pos(click_pos);
 
-        std::string bookmark_uuid = doc()->get_bookmark_uuid_at_pos(mouse_abspos);
+        std::optional<BookMark> bookmark_at_mouse_pos = doc()->get_bookmark_at_pos(mouse_abspos);
+        std::string bookmark_uuid = "";
+        if (bookmark_at_mouse_pos) {
+            bookmark_uuid = bookmark_at_mouse_pos->uuid;
+        }
         std::string highlight_uuid = main_document_view->get_highlight_uuid_in_pos(click_pos);
 
         if (bookmark_uuid.size() > 0) {
             main_document_view->set_selected_bookmark_uuid(bookmark_uuid);
-            handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+            bool is_question = bookmark_at_mouse_pos->is_question();
+            if (DOUBLE_CLICK_ON_QUESTION_BOOKMARKS_OPENS_CHAT && is_question) {
+                handle_command_types(command_manager->get_command_with_name(this, "open_selected_bookmark_in_widget"), 0);
+            }
+            else {
+                handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+            }
             return;
         }
         if (highlight_uuid.size() > 0) {
@@ -3202,6 +3209,7 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
 
     if (!TOUCH_MODE && current_widget_stack.size() > 0) {
+        pop_current_widget();
         return;
     }
 

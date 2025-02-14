@@ -50,6 +50,7 @@ float AUTO_BOOKMARK_HORIZONTAL_MARGIN = 1.0f;
 bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER = false;
 float PERSISTANCE_PERIOD = -1.0f;
 int MAX_CUSTOM_STATUS_MESSAGE_SIZE = 20;
+bool DOUBLE_CLICK_ON_QUESTION_BOOKMARKS_OPENS_CHAT = true;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1354,6 +1355,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"always_copy_selected_text", &ALWAYS_COPY_SELECTED_TEXT);
     add_bool(L"show_documentation_in_widget", &SHOW_DOCUMENTATION_IN_WIDGET);
     add_bool(L"navigate_bookmark_links_after_selection", &NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION);
+    add_bool(L"double_click_on_question_bookmarks_opens_chat", &DOUBLE_CLICK_ON_QUESTION_BOOKMARKS_OPENS_CHAT);
     add_bool(L"show_statusbar_only_when_hovered", &SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER);
     add_bool(L"uniform_page_widths", &SAME_WIDTH);
 
