@@ -7800,14 +7800,16 @@ void MainWidget::show_command_menu() {
     show_current_widget();
 }
 
-void MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk) {
+BookMark* MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk) {
     int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
     if (bookmark_index >= 0) {
         BookMark& bm = document->get_bookmarks()[bookmark_index];
         bm.description += chunk.toStdWString();
 
         invalidate_render();
+        return &bm;
     }
+    return nullptr;
 }
 
 bool MainWidget::ensure_super_fast_search_index() {
@@ -7864,7 +7866,10 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
 
     sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, first_page_end_index,
         [this, bookmark_uuid, document=doc()](QString chunk) {
-        add_chunk_to_bookmark(document, bookmark_uuid, chunk);
+        BookMark* bm = add_chunk_to_bookmark(document, bookmark_uuid, chunk);
+        if (bm) {
+            update_current_bookmark_widget_text(bm);
+        }
         },
         [this, bookmark_uuid, document=doc()]() {
             //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
@@ -7873,6 +7878,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
                 bm->description = replace_verbatim_links(bm->description);
                 bm->description += L"\n";
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
+                update_current_bookmark_widget_text(bm);
                 on_bookmark_edited(bm->uuid);
             }
         });
@@ -8879,6 +8885,7 @@ std::string MainWidget::get_current_mode_string() {
     res += (main_document_view->get_is_searching(nullptr)) ? "f" : "F";
     res += (is_menu_focused()) ? "m" : "M";
     res += main_document_view->selected_object_index.has_value() ? "h" : "H";
+    res += is_in_bookmark_widget_mode() ? "b" : "B";
 
     if (main_document_view) {
         res += (main_document_view->selected_character_rects.size() > 0) ? "t" : "T";
@@ -8888,6 +8895,15 @@ std::string MainWidget::get_current_mode_string() {
     }
     return res;
 
+}
+
+bool MainWidget::is_in_bookmark_widget_mode() {
+    if (current_widget_stack.size() > 0) {
+        if (dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void MainWidget::handle_drawing_ui_visibilty() {
@@ -13262,6 +13278,46 @@ void MainWidget::repeat_last_command() {
 void MainWidget::open_selected_bookmark_in_widget() {
     auto selected_bookmark = doc()->get_bookmark_with_uuid(main_document_view->get_selected_bookmark_uuid());
     if (selected_bookmark) {
-        show_markdown_text_widget("", selected_bookmark->get_question_or_summary_markdown());
+        QString bookmark_display_text = selected_bookmark->get_question_or_summary_markdown();
+        bookmark_display_text = bookmark_display_text.replace("sioyek://", "sioyeklink#");
+        SioyekBookmarkTextBrowser* text_browser = new SioyekBookmarkTextBrowser(
+            this, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text
+        );
+
+        set_current_widget(text_browser);
+        text_browser->handle_resize();
+        text_browser->show();
+        //show_markdown_text_widget("", bookmark_display_text);
+    }
+}
+
+void MainWidget::accept_new_bookmark_message() {
+    if (current_widget_stack.size() > 0) {
+        auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
+        if (bookmark_widget) {
+            QString text = bookmark_widget->line_edit->text();
+            auto bookmark = doc()->get_bookmark_with_uuid(bookmark_widget->bookmark_uuid.toStdString());
+
+            if (bookmark) {
+                bookmark->description += ("? " + text).toStdWString();
+                handle_bookmark_ask_query(bookmark->description, utf8_decode(bookmark->uuid));
+                bookmark_widget->line_edit->clear();
+                bookmark_widget->set_follow_output(true);
+            }
+        }
+    }
+
+}
+
+void MainWidget::update_current_bookmark_widget_text(BookMark* bm) {
+    if (current_widget_stack.size() > 0) {
+        auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
+        if (bookmark_widget) {
+            if (bookmark_widget->bookmark_uuid == bm->uuid) {
+                QString bookmark_display_text = bm->get_question_or_summary_markdown();
+                bookmark_display_text = bookmark_display_text.replace("sioyek://", "sioyeklink#");
+                bookmark_widget->update_text(bookmark_display_text);
+            }
+        }
     }
 }

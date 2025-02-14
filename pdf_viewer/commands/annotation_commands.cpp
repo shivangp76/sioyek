@@ -416,6 +416,17 @@ public:
     }
 };
 
+class AcceptNewBookmarkMessageCommand : public GenericGotoLocationCommand {
+public:
+    static inline const std::string cname = "accept_new_bookmark_message";
+    static inline const std::string hname = "When the bookmark widget is opened, accept the text input as a new question.";
+    AcceptNewBookmarkMessageCommand(MainWidget* w) : GenericGotoLocationCommand(cname, w) {};
+
+    void handle_generic_requirement() {
+        widget->accept_new_bookmark_message();
+    }
+};
+
 class GotoBookmarkGlobalCommand : public GenericPathAndLocationCommadn {
 public:
     static inline const std::string cname = "goto_bookmark_g";
@@ -1739,6 +1750,7 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<CopyDrawingsFromScratchpadCommand>(manager);
     register_command<GotoBookmarkCommand>(manager);
     register_command<GotoBookmarkGlobalCommand>(manager);
+    register_command<AcceptNewBookmarkMessageCommand>(manager);
     register_command<GotoHighlightCommand>(manager);
     register_command<GotoHighlightGlobalCommand>(manager);
     register_command<GotoPortalListCommand>(manager);

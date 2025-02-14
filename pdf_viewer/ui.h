@@ -1534,3 +1534,24 @@ public:
     void forward() override;
     void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override;
 };
+
+class SioyekBookmarkTextBrowser : public QWidget {
+private:
+    MainWidget* main_widget = nullptr;
+    SioyekDocumentationTextBrowser* text_browser = nullptr;
+
+    QVBoxLayout* layout = nullptr;
+    bool follow_output = true;
+    int last_set_scroll_amount = 0;
+
+public:
+    MyLineEdit* line_edit = nullptr;
+    QString bookmark_uuid;
+
+    SioyekBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content);
+
+    void resizeEvent(QResizeEvent* resize_event) override;
+    void handle_resize();
+    void update_text(QString new_text);
+    void set_follow_output(bool val);
+};

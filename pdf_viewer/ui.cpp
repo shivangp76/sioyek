@@ -13,6 +13,7 @@
 #include <QQmlEngine>
 #include <QQuickWidget>
 #include <QFile>
+#include <qscrollbar.h>
 
 #include "database.h"
 #include "document.h"
@@ -39,6 +40,7 @@ extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern int FONT_SIZE;
 extern bool TOUCH_MODE;
+extern int DOCUMENTATION_FONT_SIZE;
 
 extern float UI_TEXT_COLOR[3];
 extern float UI_BACKGROUND_COLOR[3];
@@ -3788,7 +3790,6 @@ void SelectionIndicator::paintEvent(QPaintEvent* event) {
 
 SioyekDocumentationTextBrowser::SioyekDocumentationTextBrowser(MainWidget* parent) : QTextBrowser(parent) {
     main_widget = parent;
-
 }
 
 void SioyekDocumentationTextBrowser::mousePressEvent(QMouseEvent* mevent) {
@@ -3824,7 +3825,16 @@ void SioyekDocumentationTextBrowser::doSetSource(const QUrl& url, QTextDocument:
     QTextBrowser::doSetSource(url, type);
 
     QString url_string = url.toString();
-    if (url_string.startsWith("commands.md")) {
+
+    if (url_string.startsWith("sioyeklink#")) {
+        url_string = url_string.mid(11).trimmed();
+        main_widget->pop_current_widget();
+        main_widget->dv()->perform_fuzzy_search(url_string.toStdWString());
+        main_widget->goto_search_result(0);
+        main_widget->invalidate_render();
+
+    }
+    else if (url_string.startsWith("commands.md")) {
         QString documentation_title = url_string.mid(12).trimmed();
         QString documentation = main_widget->get_command_documentation_with_title(documentation_title);
         setMarkdown(documentation);
@@ -4040,4 +4050,74 @@ ItemWithDescriptionSelectorWidget* ItemWithDescriptionSelectorWidget::from_items
 
     item_selector_widget->update_render();
     return item_selector_widget;
+}
+
+SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString uuid, QString content) : QWidget(parent){
+    bookmark_uuid = uuid;
+    main_widget = parent;
+    text_browser = new SioyekDocumentationTextBrowser(main_widget);
+    text_browser->setParent(this);
+    text_browser->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
+    text_browser->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    text_browser->setReadOnly(true);
+    text_browser->setSource(QUrl(), QTextDocument::ResourceType::MarkdownResource);
+    text_browser->setMarkdown(content);
+
+
+
+    line_edit = new MyLineEdit(main_widget);
+    line_edit->setParent(this);
+
+    layout = new QVBoxLayout(this);
+
+    layout->addWidget(text_browser);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(line_edit);
+
+    layout->setStretch(0, 1);
+
+    line_edit->setFocus();
+
+    setLayout(layout);
+}
+
+
+void SioyekBookmarkTextBrowser::handle_resize() {
+    int parent_width = parentWidget()->width();
+    int parent_height = parentWidget()->height();
+    setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height * MENU_SCREEN_HEIGHT_RATIO);
+    move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2);
+}
+void SioyekBookmarkTextBrowser::resizeEvent(QResizeEvent* resize_event) {
+
+    QWidget::resizeEvent(resize_event);
+
+    handle_resize();
+
+}
+
+void SioyekBookmarkTextBrowser::update_text(QString new_text) {
+
+    int current_scroll_amount = text_browser->verticalScrollBar()->value();
+    if (current_scroll_amount != last_set_scroll_amount) {
+        follow_output = false;
+    }
+
+    text_browser->setMarkdown(new_text);
+
+
+    if (follow_output) {
+        int scroll_amount = text_browser->verticalScrollBar()->maximum();
+        text_browser->verticalScrollBar()->setValue(scroll_amount);
+        last_set_scroll_amount = scroll_amount;
+
+    }
+    else {
+        text_browser->verticalScrollBar()->setValue(current_scroll_amount);
+    }
+}
+
+void SioyekBookmarkTextBrowser::set_follow_output(bool val) {
+    last_set_scroll_amount = text_browser->verticalScrollBar()->value();
+    follow_output = val;
 }

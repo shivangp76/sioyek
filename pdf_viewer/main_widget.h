@@ -659,7 +659,7 @@ public:
     std::wstring handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid);
     void handle_special_bookmarks(std::wstring bookmark_text, std::wstring bookmark_uuid);
     void handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid);
-    void add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk);
+    BookMark* add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk);
     void handle_bookmark_summarize_query(std::wstring bookmark_uuid);
     void read_current_line();
     void download_paper_under_cursor(bool use_last_touch_pos = false);
@@ -1152,6 +1152,9 @@ public:
     void update_text_selection(AbsoluteDocumentPos abs_mpos);
     void scroll_selected_bookmark_to_end();
     void open_selected_bookmark_in_widget();
+    bool is_in_bookmark_widget_mode();
+    void accept_new_bookmark_message();
+    void update_current_bookmark_widget_text(BookMark* bm);
 
 
 public slots:
