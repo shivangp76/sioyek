@@ -3209,6 +3209,9 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
 
     if (!TOUCH_MODE && current_widget_stack.size() > 0) {
+        QPoint local_mpos = mapFromGlobal(QCursor::pos());
+        AbsoluteDocumentPos current_pos = WindowPos(local_mpos).to_absolute(main_document_view);
+        last_mouse_down = current_pos;
         pop_current_widget();
         return;
     }
