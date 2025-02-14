@@ -937,6 +937,7 @@ public:
     QString get_config_documentation_with_title(QString config, QString command_name);
     void show_command_documentation(QString command_name, bool is_config);
     void show_documentation_with_title(QString doctype, QString title);
+    void show_markdown_text_widget(QString url, QString text);
     void open_documentation_file_for_name(QString doctype, QString name);
     QString get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs);
     float get_align_to_top_offset();
@@ -1150,6 +1151,7 @@ public:
     std::vector<WindowRect> get_largest_empty_rects();
     void update_text_selection(AbsoluteDocumentPos abs_mpos);
     void scroll_selected_bookmark_to_end();
+    void open_selected_bookmark_in_widget();
 
 
 public slots:

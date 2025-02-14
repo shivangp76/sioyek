@@ -622,6 +622,22 @@ public:
 
 };
 
+class OpenSelectedBookmarkInWidget : public Command {
+public:
+    static inline const std::string cname = "open_selected_bookmark_in_widget";
+    static inline const std::string hname = "Open the contents of the selected bookmark in a widget.";
+
+    bool use_keyboard = false;
+
+    OpenSelectedBookmarkInWidget(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->open_selected_bookmark_in_widget();
+
+    }
+
+};
+
 class EditSelectedBookmarkCommand : public TextCommand {
 public:
     static inline const std::string cname = "edit_selected_bookmark";
@@ -1736,6 +1752,7 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<ResizePendingBookmark>(manager);
     register_command<MoveSelectedBookmarkCommand>(manager);
     register_command<EditSelectedBookmarkCommand>(manager);
+    register_command<OpenSelectedBookmarkInWidget>(manager);
     register_command<EditSelectedHighlightCommand>(manager);
     register_command<DeletePortalCommand>(manager);
     register_command<DeleteBookmarkCommand>(manager);

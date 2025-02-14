@@ -5576,6 +5576,7 @@ void MainWidget::handle_goto_bookmark() {
     int closest_bookmark_index = main_document_view->get_document()->find_closest_bookmark_index(bookmarks, main_document_view->get_offset_y());
 
     auto handle_select_fn = [&](BookMark bm) {
+        main_document_view->set_selected_bookmark_uuid(bm.uuid);
         if (pending_command_instance) {
             pending_command_instance->set_generic_requirement(bm.get_y_offset());
         }
@@ -5600,8 +5601,8 @@ void MainWidget::handle_goto_bookmark() {
             dv()->perform_fuzzy_searches(queries, messages);
         }
 
-        advance_command(std::move(pending_command_instance));
         pop_current_widget();
+        advance_command(std::move(pending_command_instance));
         };
 
     auto handle_delete_fn = [&](BookMark bm) {
@@ -7329,6 +7330,26 @@ void MainWidget::open_documentation_file_for_name(QString doctype, QString name)
     invalidate_render();
 }
 
+void MainWidget::show_markdown_text_widget(QString url, QString text) {
+
+    SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
+    text_edit->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
+    text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+
+    int w = width() * MENU_SCREEN_WDITH_RATIO;
+    int h = height() * MENU_SCREEN_HEIGHT_RATIO;
+    text_edit->setReadOnly(true);
+    text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
+    text_edit->resize(w, h);
+
+
+    text_edit->setSource(url, QTextDocument::ResourceType::MarkdownResource);
+
+    text_edit->setMarkdown(text);
+    push_current_widget(text_edit);
+    text_edit->show();
+}
+
 void MainWidget::show_documentation_with_title(QString doctype, QString title) {
 
 
@@ -7349,18 +7370,8 @@ void MainWidget::show_documentation_with_title(QString doctype, QString title) {
         open_documentation_file_for_name(doctype, file_title);
     }
     else {
-        SioyekDocumentationTextBrowser* text_edit = new SioyekDocumentationTextBrowser(this);
-        text_edit->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
-        text_edit->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
-
-        int w = width() * MENU_SCREEN_WDITH_RATIO;
-        int h = height() * MENU_SCREEN_HEIGHT_RATIO;
-        text_edit->setReadOnly(true);
-        text_edit->move(width() / 2 - w / 2, height() / 2 - h / 2);
-        text_edit->resize(w, h);
-
         QString documentation_url = "";
-        QString doc;
+        QString document;
 
         const QJsonObject& command_title_to_documentation_map = sioyek_documentation_json_document["command_title_to_documentation_map"].toObject();
         const QJsonObject& config_title_to_documentation_map = sioyek_documentation_json_document["config_title_to_documentation_map"].toObject();
@@ -7371,20 +7382,15 @@ void MainWidget::show_documentation_with_title(QString doctype, QString title) {
 
         if (doctype == "command") {
             if (command_title_to_documentation_map.contains(title)) {
-                doc = command_title_to_documentation_map[title].toString();
+                document = command_title_to_documentation_map[title].toString();
             }
         }
         else if (doctype == "config") {
             if (config_title_to_documentation_map.contains(title)) {
-                doc = config_title_to_documentation_map[title].toString();
+                document = config_title_to_documentation_map[title].toString();
             }
         }
-
-        text_edit->setSource(documentation_url, QTextDocument::ResourceType::MarkdownResource);
-
-        text_edit->setMarkdown(doc);
-        push_current_widget(text_edit);
-        text_edit->show();
+        show_markdown_text_widget(documentation_url, document);
     }
 
 
@@ -7620,6 +7626,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -13245,7 +13252,16 @@ void MainWidget::scroll_selected_bookmark_to_end() {
 
 void MainWidget::repeat_last_command() {
     std::unique_ptr<Command> last_cmd = command_manager->get_command_with_name(this, last_performed_command_name);
-    last_cmd->set_num_repeats(last_performed_command_num_repeats);
-    advance_command(std::move(last_cmd));
+    if (last_cmd) {
+        last_cmd->set_num_repeats(last_performed_command_num_repeats);
+        advance_command(std::move(last_cmd));
+    }
     //handle_command_types(std::move(last_cmd), last_performed_command_num_repeats);
+}
+
+void MainWidget::open_selected_bookmark_in_widget() {
+    auto selected_bookmark = doc()->get_bookmark_with_uuid(main_document_view->get_selected_bookmark_uuid());
+    if (selected_bookmark) {
+        show_markdown_text_widget("", selected_bookmark->get_question_or_summary_markdown());
+    }
 }
