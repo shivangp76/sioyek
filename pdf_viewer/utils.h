@@ -1094,3 +1094,4 @@ public:
 };
 #endif
 
+void focus_on_widget(QWidget* widget, bool no_unminimize=false);

@@ -6385,3 +6385,13 @@ void PhaseVocoder::processFrames() {
         nextSynthesisWritePos += synthesisHop;
     }
 }
+
+void focus_on_widget(QWidget* widget, bool no_unminimize) {
+    widget->activateWindow();
+    if (no_unminimize) {
+        widget->setWindowState(widget->windowState() | Qt::WindowActive);
+    }
+    else {
+        widget->setWindowState(widget->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+    }
+}

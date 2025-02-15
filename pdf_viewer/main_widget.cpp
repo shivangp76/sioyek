@@ -267,6 +267,7 @@ extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 extern bool SAME_WIDTH;
 extern bool DOUBLE_CLICK_ON_QUESTION_BOOKMARKS_OPENS_CHAT;
+extern bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT;
 
 extern int RENDERER_BACKEND;
 
@@ -1269,14 +1270,46 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             external_command_edit_watcher.addPath(path_qstring);
         }
 
-        if (text_command_line_edit->isVisible()) {
+        // get the focused widget
+        auto focused_widget = previousInFocusChain();
+        QLineEdit* editor_widget = dynamic_cast<QLineEdit*>(focused_widget);
+        if (editor_widget == nullptr && text_command_line_edit != nullptr) {
+            if (text_command_line_edit->isVisible()) {
+                editor_widget = text_command_line_edit;
+            }
+        }
+        if (editor_widget) {
             is_external_file_edited = true;
             QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
 
             if (file.open(QIODeviceBase::ReadOnly)) {
                 QString content = QString::fromUtf8(file.readAll());
-                text_command_line_edit->setText(content);
-                text_command_line_edit->textEdited(content);
+                content = content.replace("\r", "");
+                if (content.endsWith("\n\n\n")) {
+                    editor_widget->setText(content.left(content.size() - 3));
+                    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
+                    QCoreApplication::postEvent(editor_widget, enter_key_event);
+                    file.close();
+
+                    //clear the file
+
+                    QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
+                    if (file.open(QIODeviceBase::WriteOnly)) {
+                        file.write("");
+                        file.close();
+                    }
+                    if (FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT) {
+                        focus_on_widget(this, true);
+                    }
+                    return;
+
+                }
+                else {
+                    if (content.size() > 0) {
+                        editor_widget->setText(content);
+                        editor_widget->textEdited(content);
+                    }
+                }
 
             }
 
@@ -5588,7 +5621,6 @@ void MainWidget::handle_goto_bookmark() {
     int closest_bookmark_index = main_document_view->get_document()->find_closest_bookmark_index(bookmarks, main_document_view->get_offset_y());
 
     auto handle_select_fn = [&](BookMark bm) {
-        main_document_view->set_selected_bookmark_uuid(bm.uuid);
         if (pending_command_instance) {
             pending_command_instance->set_generic_requirement(bm.get_y_offset());
         }
