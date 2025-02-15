@@ -1535,10 +1535,55 @@ public:
     void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override;
 };
 
+
+enum class ChatMessageType {
+    UserMessage,
+    ResponseMessage
+};
+
+struct ChatMessage {
+    ChatMessageType message_type;
+    QString messgae;
+};
+
+class SioyekChatTextBrowser : public QAbstractScrollArea {
+    Q_OBJECT
+public:
+    static const int margin = 10;
+    static const int spacing = 10;
+    static const int user_inner_margin = 5;
+    SioyekChatTextBrowser(QWidget* parent, QString content);
+
+    //void handle_resize();
+    void update_text(QString new_text);
+signals:
+    void anchorClicked(QString anchor_text);
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+
+    void mousePressEvent(QMouseEvent* mevent) override;
+    void mouseReleaseEvent(QMouseEvent* mevent) override;
+    void mouseDoubleClickEvent(QMouseEvent* mevent) override;
+    void resizeEvent(QResizeEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+
+
+private:
+    void update_scrollbar(int contentHeight);
+
+    std::vector<ChatMessage> messages;
+    int full_width = 0;
+    int response_content_width = 0;
+    int user_box_width = 0;
+    int user_content_width = 0;
+};
+
 class SioyekBookmarkTextBrowser : public QWidget {
 private:
     MainWidget* main_widget = nullptr;
-    SioyekDocumentationTextBrowser* text_browser = nullptr;
+    //SioyekDocumentationTextBrowser* text_browser = nullptr;
+    SioyekChatTextBrowser* text_browser = nullptr;
 
     QVBoxLayout* layout = nullptr;
     bool follow_output = true;
@@ -1554,4 +1599,6 @@ public:
     void handle_resize();
     void update_text(QString new_text);
     void set_follow_output(bool val);
+
+
 };

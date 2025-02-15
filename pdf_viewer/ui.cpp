@@ -4055,13 +4055,30 @@ ItemWithDescriptionSelectorWidget* ItemWithDescriptionSelectorWidget::from_items
 SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString uuid, QString content, bool chat) : QWidget(parent){
     bookmark_uuid = uuid;
     main_widget = parent;
-    text_browser = new SioyekDocumentationTextBrowser(main_widget);
-    text_browser->setParent(this);
-    text_browser->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
-    text_browser->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
-    text_browser->setReadOnly(true);
-    text_browser->setSource(QUrl(), QTextDocument::ResourceType::MarkdownResource);
-    text_browser->setMarkdown(content);
+
+    //text_browser = new SioyekDocumentationTextBrowser(main_widget);
+    //text_browser->setParent(this);
+    //text_browser->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
+    //text_browser->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    //text_browser->setReadOnly(true);
+    //text_browser->setSource(QUrl(), QTextDocument::ResourceType::MarkdownResource);
+    //text_browser->setMarkdown(content);
+
+    text_browser = new SioyekChatTextBrowser(this, content);
+    QObject::connect(text_browser, &SioyekChatTextBrowser::anchorClicked, [this](QString url_string) {
+        // percent decode the url string
+        url_string = QUrl::fromPercentEncoding(url_string.toUtf8());
+        if (url_string.startsWith("sioyeklink#")) {
+            url_string = url_string.mid(11).trimmed();
+            main_widget->pop_current_widget();
+            main_widget->dv()->perform_fuzzy_search(url_string.toStdWString());
+            main_widget->goto_search_result(0);
+            main_widget->invalidate_render();
+        }
+        else if (url_string.startsWith("http")) {
+            open_web_url(url_string.toStdWString());
+        }
+        });
 
 
 
@@ -4109,7 +4126,8 @@ void SioyekBookmarkTextBrowser::update_text(QString new_text) {
         follow_output = false;
     }
 
-    text_browser->setMarkdown(new_text);
+    //text_browser->setMarkdown(new_text);
+    text_browser->update_text(new_text);
 
 
     if (follow_output) {
@@ -4126,4 +4144,162 @@ void SioyekBookmarkTextBrowser::update_text(QString new_text) {
 void SioyekBookmarkTextBrowser::set_follow_output(bool val) {
     last_set_scroll_amount = text_browser->verticalScrollBar()->value();
     follow_output = val;
+}
+
+void SioyekChatTextBrowser::mousePressEvent(QMouseEvent* mevent) {
+    QAbstractScrollArea::mousePressEvent(mevent);
+    mevent->accept();
+}
+
+
+void SioyekChatTextBrowser::mouseReleaseEvent(QMouseEvent* mevent) {
+    // Check if a markdown link was clicked.
+    QPoint click_pos = mevent->pos();
+
+    int y = margin - verticalScrollBar()->value();
+
+    for (auto [message_type, msg] : messages) {
+        QTextDocument doc;
+        doc.setDefaultFont(font());
+        doc.setMarkdown(msg);
+        int box_height, box_width, box_x, inner_margin;
+
+        if (message_type == ChatMessageType::UserMessage) {
+            doc.setTextWidth(user_content_width);
+            box_height = static_cast<int>(doc.size().height()) + 2 * user_inner_margin;
+            box_width = user_box_width;
+            box_x = full_width - margin - user_box_width;
+            inner_margin = user_inner_margin;
+        }
+        else{
+            doc.setTextWidth(response_content_width);
+            box_height = static_cast<int>(doc.size().height());
+            box_width = response_content_width;
+            box_x = margin;
+            inner_margin = 0;
+        }
+
+        QSizeF docSize = doc.size();
+        QRect messageRect(box_x, y, box_width, box_height);
+        if (messageRect.contains(click_pos)) {
+            QPointF localPos = click_pos - QPoint(box_x + inner_margin, y + inner_margin);
+            QString anchor = doc.documentLayout()->anchorAt(localPos);
+            if (!anchor.isEmpty()) {
+                emit anchorClicked(anchor);
+                break;
+            }
+        }
+        y += box_height + spacing;
+    }
+
+    mevent->accept();
+}
+
+void SioyekChatTextBrowser::mouseDoubleClickEvent(QMouseEvent* mevent) {
+    QAbstractScrollArea::mouseDoubleClickEvent(mevent);
+    mevent->accept();
+}
+
+SioyekChatTextBrowser::SioyekChatTextBrowser(QWidget* parent, QString text): QAbstractScrollArea(parent) {
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    update_text(text);
+}
+
+void SioyekChatTextBrowser::update_text(QString new_text) {
+    messages.clear();
+    QStringList lines = new_text.split("\n", Qt::KeepEmptyParts);
+
+    QString current_message;
+
+    for (auto line : lines) {
+        if (line.startsWith("? ")) {
+            if (current_message.size() > 0) {
+                messages.push_back({ ChatMessageType::ResponseMessage, current_message });
+                current_message = "";
+            }
+            messages.push_back({ ChatMessageType::UserMessage, line.mid(2) });
+        }
+        else {
+            current_message += line + "\n";
+        }
+    }
+    if (current_message.size() > 0) {
+        messages.push_back({ ChatMessageType::ResponseMessage, current_message });
+    }
+
+
+}
+
+void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
+    QPainter painter(viewport());
+    painter.translate(0, -verticalScrollBar()->value());
+
+    int y = margin;
+
+    QColor userBgColor("#000000");
+
+    for (auto [message_type, msg] : messages) {
+        QTextDocument doc;
+        doc.setDefaultFont(font());
+        doc.setMarkdown(msg);
+
+        int box_height, box_width, box_x, inner_margin;
+        if (message_type == ChatMessageType::UserMessage) {
+            doc.setTextWidth(user_content_width);
+            box_height = static_cast<int>(doc.size().height()) + 2 * user_inner_margin;
+            box_width = user_box_width;
+            box_x = full_width - margin - user_box_width;
+            inner_margin = user_inner_margin;
+        }
+        else{
+            doc.setTextWidth(response_content_width);
+            box_height = static_cast<int>(doc.size().height());
+            box_width = response_content_width;
+            box_x = margin;
+            inner_margin = 0;
+        }
+
+            
+        QSizeF doc_size = doc.size();
+        QRect userRect(box_x, y, box_width, box_height);
+
+        if (message_type == ChatMessageType::UserMessage) {
+            painter.save();
+            painter.setBrush(userBgColor);
+            painter.setPen(Qt::NoPen);
+            painter.drawRoundedRect(userRect, 5, 5);
+            painter.restore();
+        }
+
+        painter.save();
+        painter.translate(box_x + user_inner_margin, y + user_inner_margin);
+        doc.documentLayout()->draw(&painter, QAbstractTextDocumentLayout::PaintContext());
+        painter.restore();
+
+        y += box_height + spacing;
+    }
+    update_scrollbar(y);
+}
+
+void SioyekChatTextBrowser::resizeEvent(QResizeEvent* event) {
+    QAbstractScrollArea::resizeEvent(event);
+
+    full_width = viewport()->width();
+    response_content_width = full_width - 2 * margin;
+    user_box_width = static_cast<int>(0.7 * full_width);
+    user_content_width = user_box_width - 2 * user_inner_margin;
+}
+
+void SioyekChatTextBrowser::update_scrollbar(int content_height) {
+    verticalScrollBar()->setPageStep(viewport()->height());
+    verticalScrollBar()->setRange(0, content_height - viewport()->height());
+}
+
+void SioyekChatTextBrowser::wheelEvent(QWheelEvent* event) {
+    int delta = event->angleDelta().y();
+    
+    int step = delta / 8 * verticalScrollBar()->singleStep() * 2;
+    
+    verticalScrollBar()->setValue(verticalScrollBar()->value() - step);
+    event->accept();
 }
