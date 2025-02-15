@@ -5066,7 +5066,7 @@ std::optional<Portal> DocumentView::get_target_portal(bool limit) {
     return find_closest_portal(limit);
 }
 
-std::optional<QString> DocumentView::get_overview_paper_name() {
+std::optional<QString> DocumentView::get_overview_paper_name(QString* full_bib_string) {
     if (get_overview_page()) {
         if (smart_view_candidates.size() > 0) {
             DocumentPos center_document = smart_view_candidates[index_into_candidates].source_rect.center().to_document(current_document);
@@ -5093,6 +5093,9 @@ std::optional<QString> DocumentView::get_overview_paper_name() {
             }
 
             if (bib_string) {
+                if (full_bib_string) {
+                    *full_bib_string = bib_string.value();
+                }
                 return get_paper_name_from_reference_text(bib_string.value());
             }
             return {};

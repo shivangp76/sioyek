@@ -4076,7 +4076,8 @@ QString get_paper_name_from_reference_text(QString reference_text) {
     if (ending_index == -1) {
         int last_dot_index = str.lastIndexOf(".");
         // igonre if the last dot is close to the end
-        if (str.size() - last_dot_index < 8) {
+        int distance = str.size() - last_dot_index;
+        if ((distance < 8) && (distance > 1)) {
             str = str.left(last_dot_index - 1);
         }
         ending_index = str.lastIndexOf(".") + 1;

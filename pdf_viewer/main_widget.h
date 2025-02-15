@@ -883,7 +883,7 @@ public:
         std::vector<std::wstring> buttons,
         std::vector<std::wstring> tips,
         std::function<void(int, std::wstring)> on_select, bool top=true);
-    void download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos);
+    void download_and_portal(std::wstring unclean_paper_name, QString full_bib_text, AbsoluteDocumentPos source_pos);
     void download_selected_text();
     void smart_jump_to_selected_text();
     void show_text_prompt(std::wstring initial_value, std::function<void(std::wstring)> on_select);
@@ -1118,7 +1118,7 @@ public:
     bool import_local_database(std::wstring path);
     bool import_shared_database(std::wstring path);
     void on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle);
-    QNetworkReply* download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action = {}, std::string pending_portal_handle="");
+    QNetworkReply* download_paper_with_name(std::wstring name, QString full_bib_text, std::optional<PaperDownloadFinishedAction> action = {}, std::string pending_portal_handle="");
     void handle_type_text_into_input(QString txt);
     void send_symbol_to_last_command(char symbol);
     void ensure_titlebar_colors_match_color_mode();

@@ -224,7 +224,7 @@ public:
     DownloadPaperWithNameCommand(MainWidget* w) : ProTextCommand(cname, w) {};
 
     void perform() {
-        widget->download_paper_with_name(text.value(), PaperDownloadFinishedAction::OpenInNewWindow);
+        widget->download_paper_with_name(text.value(), "", PaperDownloadFinishedAction::OpenInNewWindow);
 
     }
 
@@ -411,7 +411,7 @@ public:
         std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> reftext = widget->doc()->get_page_bib_with_reference(uri.page - 1, link_info.link_text);
         if (reftext.has_value()) {
             QString paper_name = get_paper_name_from_reference_text(reftext->first);
-            widget->download_and_portal(paper_name.toStdWString(), link_source_rect.center());
+            widget->download_and_portal(paper_name.toStdWString(), reftext->first, link_source_rect.center());
         }
         widget->reset_highlight_links();
         widget->clear_tag_prefix();
@@ -674,6 +674,7 @@ public:
     static inline const std::string hname = "Download the referenced paper overview window";
     std::optional<AbsoluteRect> source_rect = {};
     std::wstring src_doc_path;
+    QString full_bib_text;
 
     DownloadOverviewPaperCommand(MainWidget* w) : ProTextCommand(cname, w) {};
 
@@ -682,16 +683,16 @@ public:
         std::wstring text_ = text.value();
 
         if (source_rect) {
-            widget->download_and_portal(text_, source_rect->center());
+            widget->download_and_portal(text_, full_bib_text, source_rect->center());
         }
         else {
-            widget->download_paper_with_name(text_);
+            widget->download_paper_with_name(text_, full_bib_text);
         }
 
     }
 
     void pre_perform() {
-        std::optional<QString> paper_name = widget->main_document_view->get_overview_paper_name();
+        std::optional<QString> paper_name = widget->main_document_view->get_overview_paper_name(&full_bib_text);
         src_doc_path = widget->doc()->get_path();
 
         if (paper_name) {

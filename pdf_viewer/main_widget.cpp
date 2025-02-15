@@ -2387,10 +2387,11 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
 }
 
 void MainWidget::download_and_portal_to_highlighted_overview_paper() {
-    auto paper_name = main_document_view->get_overview_paper_name();
+    QString bib_string;
+    auto paper_name = main_document_view->get_overview_paper_name(&bib_string);
     auto source_rect = main_document_view->get_overview_source_rect();
     if (paper_name && source_rect) {
-        download_and_portal(paper_name->toStdWString(), source_rect->center());
+        download_and_portal(paper_name->toStdWString(), bib_string, source_rect->center());
     }
 }
 
@@ -8233,11 +8234,11 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
         }
         if (TOUCH_MODE) {
             show_text_prompt(bib_text.toStdWString(), [this, pending_portal_handle](std::wstring text) {
-                download_paper_with_name(text, {}, pending_portal_handle);
+                download_paper_with_name(text, "", {}, pending_portal_handle);
                 });
         }
         else {
-            download_paper_with_name(bib_text.toStdWString(), {}, pending_portal_handle);
+            download_paper_with_name(bib_text.toStdWString(), "", {}, pending_portal_handle);
         }
     }
 }
@@ -9657,18 +9658,18 @@ void MainWidget::download_selected_text() {
                 //source_pos.x = (source_rect.x1 + source_rect.x1) / 2;
                 //source_pos.y = (source_rect.y0 + source_rect.y1) /2 ;
                 show_text_prompt(paper_name.toStdWString(), [this, source_pos](std::wstring confirmed_paper_name) {
-                    download_and_portal(confirmed_paper_name, source_pos);
+                    download_and_portal(confirmed_paper_name, "", source_pos);
                     });
             }
         }
     }
 }
 
-void MainWidget::download_and_portal(std::wstring unclean_paper_name, AbsoluteDocumentPos source_pos) {
+void MainWidget::download_and_portal(std::wstring unclean_paper_name, QString full_bib_text, AbsoluteDocumentPos source_pos) {
 
     std::wstring cleaned_paper_name = clean_bib_item(QString::fromStdWString(unclean_paper_name)).toStdWString();
     std::string pending_portal_handle = main_document_view->create_pending_download_portal(source_pos, cleaned_paper_name);
-    download_paper_with_name(cleaned_paper_name, PaperDownloadFinishedAction::Portal, pending_portal_handle);
+    download_paper_with_name(cleaned_paper_name, full_bib_text, PaperDownloadFinishedAction::Portal, pending_portal_handle);
 }
 
 void MainWidget::show_text_prompt(std::wstring initial_value, std::function<void(std::wstring)> on_select) {
@@ -12637,7 +12638,7 @@ void MainWidget::on_paper_download_begin(QNetworkReply* reply, std::string pendi
 }
 
 
-QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, std::optional<PaperDownloadFinishedAction> action, std::string pending_portal_handle) {
+QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, QString full_bib_text, std::optional<PaperDownloadFinishedAction> action, std::string pending_portal_handle) {
     QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, name,
         action.value_or(get_default_paper_download_finish_action()),
         [this, pending_portal_handle](QNetworkReply* reply) {

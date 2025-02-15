@@ -673,7 +673,7 @@ public:
     void toggle_rect_hints();
     bool select_current_search_match();
     std::optional<Portal> get_target_portal(bool limit);
-    std::optional<QString> get_overview_paper_name();
+    std::optional<QString> get_overview_paper_name(QString* full_bib_string=nullptr);
     std::optional<AbsoluteRect> get_overview_source_rect();
     std::optional<OverviewState> get_ith_next_overview(int i);
     void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
