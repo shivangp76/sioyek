@@ -76,6 +76,8 @@ extern float DARK_MODE_CONTRAST;
 extern float CUSTOM_BACKGROUND_COLOR[3];
 extern float CUSTOM_TEXT_COLOR[3];
 extern float CUSTOM_COLOR_CONTRAST;
+extern int CHAT_FONT_SIZE;
+extern int DOCUMENTATION_FONT_SIZE;
 
 extern float TTS_RATE;
 extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
@@ -4657,6 +4659,13 @@ QString get_chat_font_face_name() {
         return QString::fromStdWString(CHAT_FONT_FACE_NAME);
     }
     return get_ui_font_face_name();
+}
+
+int get_chat_font_size() {
+    if (CHAT_FONT_SIZE > 0){
+        return CHAT_FONT_SIZE;
+    }
+    return DOCUMENTATION_FONT_SIZE;
 }
 
 QString get_status_font_face_name() {

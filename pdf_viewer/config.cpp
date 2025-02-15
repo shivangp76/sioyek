@@ -333,6 +333,7 @@ bool SHOULD_HIGHLIGHT_LINKS = false;
 bool SHOULD_HIGHLIGHT_UNSELECTED_SEARCH = false;
 int KEYBOARD_SELECT_FONT_SIZE = 20;
 int DOCUMENTATION_FONT_SIZE = 16;
+int CHAT_FONT_SIZE = -1;
 bool FUZZY_SEARCHING = false;
 bool INVERTED_HORIZONTAL_SCROLLING = false;
 bool TOC_JUMP_ALIGN_TOP = false;
@@ -1460,6 +1461,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"num_prerendered_prev_slides", &NUM_PRERENDERED_PREV_SLIDES, IntExtras{0, 5});
     add_int(L"keyboard_select_font_size", &KEYBOARD_SELECT_FONT_SIZE, IntExtras{1, 100});
     add_int(L"documentation_font_size", &DOCUMENTATION_FONT_SIZE, IntExtras{1, 100});
+    add_int(L"chat_font_size", &CHAT_FONT_SIZE, IntExtras{1, 100});
     add_int(L"status_bar_font_size", &STATUS_BAR_FONT_SIZE, IntExtras{1, 100})->set_change_fn([](MainWidget* w){
         w->status_label->setStyleSheet(get_status_stylesheet());
         w->status_label_left->setStyleSheet(get_status_stylesheet());

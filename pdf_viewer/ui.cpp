@@ -4205,7 +4205,7 @@ SioyekChatTextBrowser::SioyekChatTextBrowser(QWidget* parent, QString text): QAb
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     update_text(text);
     chat_font = QFont(get_chat_font_face_name());
-    chat_font.setPointSize(DOCUMENTATION_FONT_SIZE);
+    chat_font.setPointSize(get_chat_font_size());
 }
 
 void SioyekChatTextBrowser::update_text(QString new_text) {
