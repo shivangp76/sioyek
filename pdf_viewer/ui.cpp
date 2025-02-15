@@ -4071,6 +4071,7 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
         if (url_string.startsWith("sioyeklink#")) {
             url_string = url_string.mid(11).trimmed();
             main_widget->pop_current_widget();
+            main_widget->push_state();
             main_widget->dv()->perform_fuzzy_search(url_string.toStdWString());
             main_widget->goto_search_result(0);
             main_widget->invalidate_render();
