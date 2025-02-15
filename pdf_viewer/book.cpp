@@ -346,7 +346,9 @@ QString BookMark::get_display_markdown_or_text(QString res){
 
         for (auto line : lines) {
             if (line.startsWith("? ")) {
-                result += "<span style=\"text-decoration: underline;\"><i><b>" + line.mid(2) + "</b></i></span>\n";
+                result += "\n---\n";
+                result += "\n<b>" + line.mid(2) + "</b>\n";
+                result += "\n---\n";
             }
             else {
                 result += line + "\n";
