@@ -1552,6 +1552,7 @@ public:
     static const int margin = 10;
     static const int spacing = 10;
     static const int user_inner_margin = 5;
+    QFont chat_font;
     SioyekChatTextBrowser(QWidget* parent, QString content);
 
     //void handle_resize();

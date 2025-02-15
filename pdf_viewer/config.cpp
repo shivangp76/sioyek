@@ -202,6 +202,7 @@ std::wstring INVERSE_SEARCH_COMMAND = L"";
 std::wstring SHARED_DATABASE_PATH = L"";
 std::wstring BOOK_SCAN_PATH = L"";
 std::wstring UI_FONT_FACE_NAME = L"";
+std::wstring CHAT_FONT_FACE_NAME = L"";
 std::wstring STATUS_FONT_FACE_NAME = L"";
 std::wstring DEFAULT_OPEN_FILE_PATH = L"";
 std::wstring ANNOTATIONS_DIR_PATH = L"";
@@ -1365,6 +1366,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
     add_string(L"shared_database_path", &SHARED_DATABASE_PATH);
     add_string(L"ui_font", &UI_FONT_FACE_NAME);
+    add_string(L"chat_font", &CHAT_FONT_FACE_NAME);
     add_string(L"status_font", &STATUS_FONT_FACE_NAME)->set_change_fn([](MainWidget* w){
         QFont status_font = QFont(get_status_font_face_name());
         status_font.setStyleHint(QFont::TypeWriter);

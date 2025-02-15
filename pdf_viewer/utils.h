@@ -541,6 +541,7 @@ bool is_abbreviation(const std::wstring& txt);
 bool is_in(char c, std::vector<char> candidates);
 bool is_doc_valid(fz_context* ctx, std::string path);
 QString get_ui_font_face_name();
+QString get_chat_font_face_name();
 QString get_status_font_face_name();
 std::vector<fz_stext_char*> reorder_stext_line(fz_stext_line* line);
 std::vector<fz_stext_char*> reorder_mixed_stext_line(fz_stext_line* line);

@@ -4161,7 +4161,7 @@ void SioyekChatTextBrowser::mouseReleaseEvent(QMouseEvent* mevent) {
 
     for (auto [message_type, msg] : messages) {
         QTextDocument doc;
-        doc.setDefaultFont(font());
+        doc.setDefaultFont(chat_font);
         doc.setMarkdown(msg);
         int box_height, box_width, box_x, inner_margin;
 
@@ -4204,6 +4204,8 @@ void SioyekChatTextBrowser::mouseDoubleClickEvent(QMouseEvent* mevent) {
 SioyekChatTextBrowser::SioyekChatTextBrowser(QWidget* parent, QString text): QAbstractScrollArea(parent) {
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     update_text(text);
+    chat_font = QFont(get_chat_font_face_name());
+    chat_font.setPointSize(DOCUMENTATION_FONT_SIZE);
 }
 
 void SioyekChatTextBrowser::update_text(QString new_text) {
@@ -4241,7 +4243,7 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
 
     for (auto [message_type, msg] : messages) {
         QTextDocument doc;
-        doc.setDefaultFont(font());
+        doc.setDefaultFont(chat_font);
         doc.setMarkdown(msg);
 
         int box_height, box_width, box_x, inner_margin;

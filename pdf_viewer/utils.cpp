@@ -81,6 +81,7 @@ extern float TTS_RATE;
 extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
 extern bool ALWAYS_COPY_SELECTED_TEXT;
 
+extern std::wstring CHAT_FONT_FACE_NAME;
 extern QString EPUB_TEMPLATE;
 extern float EPUB_LINE_SPACING;
 extern float EPUB_WIDTH;
@@ -4649,6 +4650,13 @@ QString get_ui_font_face_name() {
     else {
         return QString::fromStdWString(UI_FONT_FACE_NAME);
     }
+}
+
+QString get_chat_font_face_name() {
+    if (CHAT_FONT_FACE_NAME.size() > 0) {
+        return QString::fromStdWString(CHAT_FONT_FACE_NAME);
+    }
+    return get_ui_font_face_name();
 }
 
 QString get_status_font_face_name() {
