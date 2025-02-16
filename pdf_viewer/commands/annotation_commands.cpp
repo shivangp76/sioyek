@@ -1513,6 +1513,28 @@ public:
     }
 };
 
+class ScrollSelectedBookmarkPageDown : public Command {
+public:
+    static inline const std::string cname = "scroll_selected_bookmark_page_down";
+    static inline const std::string hname = "";
+    ScrollSelectedBookmarkPageDown(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->scroll_selected_bookmark(10);
+    }
+};
+
+class ScrollSelectedBookmarkPageUp : public Command {
+public:
+    static inline const std::string cname = "scroll_selected_bookmark_page_up";
+    static inline const std::string hname = "";
+    ScrollSelectedBookmarkPageUp(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->scroll_selected_bookmark(-10);
+    }
+};
+
 class DeleteHighlightUnderCursorCommand : public Command {
 public:
     static inline const std::string cname = "delete_highlight_under_cursor";
@@ -1847,6 +1869,8 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<UndoDeleteCommand>(manager);
     register_command<ScrollSelectedBookmarkDown>(manager);
     register_command<ScrollSelectedBookmarkUp>(manager);
+    register_command<ScrollSelectedBookmarkPageUp>(manager);
+    register_command<ScrollSelectedBookmarkPageDown>(manager);
     register_command<ScrollSelectedBookmarkToStart>(manager);
     register_command<ScrollSelectedBookmarkToEnd>(manager);
     register_command<DeleteHighlightUnderCursorCommand>(manager);
