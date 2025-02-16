@@ -41,6 +41,7 @@ extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern int FONT_SIZE;
 extern bool TOUCH_MODE;
 extern int DOCUMENTATION_FONT_SIZE;
+extern float DEFAULT_TEXT_HIGHLIGHT_COLOR[3];
 
 extern float UI_TEXT_COLOR[3];
 extern float UI_BACKGROUND_COLOR[3];
@@ -4147,11 +4148,97 @@ void SioyekBookmarkTextBrowser::set_follow_output(bool val) {
     follow_output = val;
 }
 
+std::pair<int, int> SioyekChatTextBrowser::get_cursor_message_and_char_index(QPoint cursor_pos) {
+
+    int y = margin - verticalScrollBar()->value();
+    int msg_index = 0;
+
+    for (auto [message_type, msg] : messages) {
+        int box_height, box_width, box_x, inner_margin;
+        QTextDocument* doc = get_doc_and_size_values_for_index(msg_index, &box_width, &box_height, &box_x, &inner_margin);
+
+        QRect message_rect(box_x, y, box_width, box_height);
+        if (message_rect.contains(cursor_pos)) {
+            selection_message_index = msg_index;
+            QPointF localPos = cursor_pos - QPoint(box_x + inner_margin, y + inner_margin);
+            int char_index = doc->documentLayout()->hitTest(localPos, Qt::ExactHit);
+            return { msg_index, char_index };
+        }
+        y += box_height + spacing;
+        ++msg_index;
+    }
+    return { -1, -1 };
+}
+
 void SioyekChatTextBrowser::mousePressEvent(QMouseEvent* mevent) {
+    QPoint click_pos = mevent->pos();
+    auto [message_index, char_index] = get_cursor_message_and_char_index(click_pos);
+    if (message_index >= 0) {
+        selection_message_index = message_index;
+        selection_start_pos = char_index;
+        selection_end_pos = char_index;
+        is_selecting = true;
+        viewport()->update();
+    }
     QAbstractScrollArea::mousePressEvent(mevent);
     mevent->accept();
 }
 
+QTextDocument* SioyekChatTextBrowser::get_document_for_index(int index) {
+    auto it = cached_documents.find(index);
+    if (it != cached_documents.end()) {
+        return it->second.get();
+    }
+    else {
+        auto [message_type, message_text] = messages[index];
+        std::unique_ptr<QTextDocument> doc = std::make_unique<QTextDocument>();
+        doc->setDefaultFont(chat_font);
+        doc->setMarkdown(message_text);
+        if (message_type == ChatMessageType::ResponseMessage) {
+            doc->setTextWidth(response_content_width);
+        }
+        else {
+            doc->setTextWidth(user_content_width);
+        }
+        cached_documents[index] = std::move(doc);
+        return cached_documents[index].get();
+    }
+    return nullptr;
+}
+
+QTextDocument* SioyekChatTextBrowser::get_doc_and_size_values_for_index(int index, int* out_box_width, int* out_box_height, int* out_box_x, int* out_inner_margin) {
+    QTextDocument* doc = get_document_for_index(index);
+    auto message_type = messages[index].message_type;
+    if (message_type == ChatMessageType::UserMessage) {
+        *out_box_width = user_box_width;
+        *out_inner_margin = user_inner_margin;
+        *out_box_height = static_cast<int>(doc->size().height()) + 2 * user_inner_margin;
+        *out_box_x = full_width - margin - user_box_width;
+    }
+    else {
+        *out_box_width = response_content_width;
+        *out_inner_margin = 0;
+        *out_box_height = static_cast<int>(doc->size().height());
+        *out_box_x = margin;
+    }
+    return doc;
+}
+
+void SioyekChatTextBrowser::mouseMoveEvent(QMouseEvent* mevent) {
+    QPoint mouse_pos = mevent->pos();
+
+    int last_selection_end = selection_end_pos;
+    if (is_selecting && selection_message_index != -1) {
+
+        auto [message_index, char_index] = get_cursor_message_and_char_index(mouse_pos);
+        if (message_index >= 0) {
+            selection_end_pos = char_index;
+            viewport()->update();
+        }
+    }
+    QAbstractScrollArea::mouseMoveEvent(mevent);
+    mevent->accept();
+}
 
 void SioyekChatTextBrowser::mouseReleaseEvent(QMouseEvent* mevent) {
     // Check if a markdown link was clicked.
@@ -4159,38 +4246,24 @@ void SioyekChatTextBrowser::mouseReleaseEvent(QMouseEvent* mevent) {
 
     int y = margin - verticalScrollBar()->value();
 
+    int index = 0;
     for (auto [message_type, msg] : messages) {
-        QTextDocument doc;
-        doc.setDefaultFont(chat_font);
-        doc.setMarkdown(msg);
+
         int box_height, box_width, box_x, inner_margin;
+        QTextDocument* doc = get_doc_and_size_values_for_index(index, &box_width, &box_height, &box_x, &inner_margin);
 
-        if (message_type == ChatMessageType::UserMessage) {
-            doc.setTextWidth(user_content_width);
-            box_height = static_cast<int>(doc.size().height()) + 2 * user_inner_margin;
-            box_width = user_box_width;
-            box_x = full_width - margin - user_box_width;
-            inner_margin = user_inner_margin;
-        }
-        else{
-            doc.setTextWidth(response_content_width);
-            box_height = static_cast<int>(doc.size().height());
-            box_width = response_content_width;
-            box_x = margin;
-            inner_margin = 0;
-        }
-
-        QSizeF docSize = doc.size();
-        QRect messageRect(box_x, y, box_width, box_height);
-        if (messageRect.contains(click_pos)) {
+        QSizeF docSize = doc->size();
+        QRect message_rect(box_x, y, box_width, box_height);
+        if (message_rect.contains(click_pos)) {
             QPointF localPos = click_pos - QPoint(box_x + inner_margin, y + inner_margin);
-            QString anchor = doc.documentLayout()->anchorAt(localPos);
+            QString anchor = doc->documentLayout()->anchorAt(localPos);
             if (!anchor.isEmpty()) {
                 emit anchorClicked(anchor);
                 break;
             }
         }
         y += box_height + spacing;
+        index++;
     }
 
     mevent->accept();
@@ -4210,6 +4283,7 @@ SioyekChatTextBrowser::SioyekChatTextBrowser(QWidget* parent, QString text): QAb
 
 void SioyekChatTextBrowser::update_text(QString new_text) {
     messages.clear();
+    cached_documents.clear();
     QStringList lines = new_text.split("\n", Qt::KeepEmptyParts);
 
     QString current_message;
@@ -4238,53 +4312,59 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
     painter.translate(0, -verticalScrollBar()->value());
 
     int y = margin;
-
+    int msg_index = 0;
     QColor userBgColor("#000000");
+    QColor text_highlight_color = qconvert_color3(DEFAULT_TEXT_HIGHLIGHT_COLOR, ColorPalette::Normal);
 
     for (auto [message_type, msg] : messages) {
-        QTextDocument doc;
-        doc.setDefaultFont(chat_font);
-        doc.setMarkdown(msg);
 
         int box_height, box_width, box_x, inner_margin;
-        if (message_type == ChatMessageType::UserMessage) {
-            doc.setTextWidth(user_content_width);
-            box_height = static_cast<int>(doc.size().height()) + 2 * user_inner_margin;
-            box_width = user_box_width;
-            box_x = full_width - margin - user_box_width;
-            inner_margin = user_inner_margin;
-        }
-        else{
-            doc.setTextWidth(response_content_width);
-            box_height = static_cast<int>(doc.size().height());
-            box_width = response_content_width;
-            box_x = margin;
-            inner_margin = 0;
-        }
-
+        QTextDocument* doc = get_doc_and_size_values_for_index(msg_index, &box_width, &box_height, &box_x, &inner_margin);
             
-        QSizeF doc_size = doc.size();
-        QRect userRect(box_x, y, box_width, box_height);
+        QRect messageRect(box_x, y, box_width, box_height);
 
+        // Draw background for user messages.
         if (message_type == ChatMessageType::UserMessage) {
             painter.save();
             painter.setBrush(userBgColor);
             painter.setPen(Qt::NoPen);
-            painter.drawRoundedRect(userRect, 5, 5);
+            painter.drawRoundedRect(messageRect, 5, 5);
             painter.restore();
         }
 
         painter.save();
-        painter.translate(box_x + user_inner_margin, y + user_inner_margin);
-        doc.documentLayout()->draw(&painter, QAbstractTextDocumentLayout::PaintContext());
+        painter.translate(box_x + inner_margin, y + inner_margin);
+
+        QAbstractTextDocumentLayout::PaintContext ctx;
+        // If this is the message being selected and a range exists, add the selection.
+        if (msg_index == selection_message_index && selection_start_pos != selection_end_pos) {
+            QTextLayout::FormatRange selection;
+            selection.start = qMin(selection_start_pos, selection_end_pos);
+            selection.length = qAbs(selection_end_pos - selection_start_pos);
+            QTextCharFormat fmt;
+            fmt.setBackground(text_highlight_color);
+            fmt.setForeground(Qt::black);
+            selection.format = fmt;
+            QAbstractTextDocumentLayout::Selection selectionRange;
+            selectionRange.cursor = QTextCursor(doc);
+            selectionRange.cursor.setPosition(selection.start);
+            selectionRange.cursor.setPosition(selection.start + selection.length, QTextCursor::KeepAnchor);
+            selectionRange.format = fmt;
+            ctx.selections.append(selectionRange);
+            //ctx.selections.append(selection);
+        }
+
+        doc->documentLayout()->draw(&painter, ctx);
         painter.restore();
 
         y += box_height + spacing;
+        ++msg_index;
     }
     update_scrollbar(y);
 }
 
 void SioyekChatTextBrowser::resizeEvent(QResizeEvent* event) {
+    cached_documents.clear();
     QAbstractScrollArea::resizeEvent(event);
 
     full_width = viewport()->width();

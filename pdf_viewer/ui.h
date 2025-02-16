@@ -1564,6 +1564,7 @@ protected:
     void paintEvent(QPaintEvent* event) override;
 
     void mousePressEvent(QMouseEvent* mevent) override;
+    void mouseMoveEvent(QMouseEvent* mevent) override;
     void mouseReleaseEvent(QMouseEvent* mevent) override;
     void mouseDoubleClickEvent(QMouseEvent* mevent) override;
     void resizeEvent(QResizeEvent* event) override;
@@ -1578,6 +1579,19 @@ private:
     int response_content_width = 0;
     int user_box_width = 0;
     int user_content_width = 0;
+
+    std::unordered_map<int, std::unique_ptr<QTextDocument>> cached_documents;
+
+    QTextDocument* get_document_for_index(int index);
+    QTextDocument* get_doc_and_size_values_for_index(int index, int* out_box_width, int* out_box_height, int* out_box_x, int* out_inner_margin);
+    std::pair<int, int> get_cursor_message_and_char_index(QPoint cursor_pos);
+
+
+    int selection_message_index = -1;
+    int selection_start_pos = -1;
+    int selection_end_pos = -1;
+    bool is_selecting = false;
+
 };
 
 class SioyekBookmarkTextBrowser : public QWidget {
