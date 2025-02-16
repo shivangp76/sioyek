@@ -4367,7 +4367,8 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
             painter.setRenderHint(QPainter::Antialiasing);
             painter.setBrush(user_background_color);
             painter.setPen(Qt::NoPen);
-            painter.drawRoundedRect(messageRect, 10, 10);
+            int radius = painter.font().pointSize();
+            painter.drawRoundedRect(messageRect, radius, radius);
             painter.restore();
         }
 
