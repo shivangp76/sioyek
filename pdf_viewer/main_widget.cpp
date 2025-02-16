@@ -12812,9 +12812,27 @@ void MainWidget::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int
     //}
 }
 
+std::optional<SioyekBookmarkTextBrowser*> MainWidget::get_current_bookmark_browser() {
+    if (current_widget_stack.size() > 0) {
+        auto res = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
+        if (res) {
+            return res;
+        }
+        return {};
+    }
+    return {};
+}
+
 void MainWidget::scroll_selected_bookmark(int amount) {
-    std::string bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
-    scroll_bookmark_with_uuid(bookmark_uuid, amount);
+    auto bookmark_browser = get_current_bookmark_browser();
+    if (bookmark_browser) {
+        bookmark_browser.value()->scroll_amount(amount);
+    }
+    else {
+        std::string bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
+        scroll_bookmark_with_uuid(bookmark_uuid, amount);
+    }
+
 }
 
 void MainWidget::pin_current_overview_as_portal() {

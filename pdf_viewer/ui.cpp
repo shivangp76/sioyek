@@ -4098,6 +4098,7 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
         QColor text_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR);
 
         line_edit->setStyleSheet("QLineEdit{background-color: " + background_color.name() + "; color: " + text_color.name() + "; border-radius: 0px; padding: 10px;}");
+        text_browser->setFocusPolicy(Qt::NoFocus);
     }
 
     layout = new QVBoxLayout(this);
@@ -4432,4 +4433,13 @@ void SioyekChatTextBrowser::wheelEvent(QWheelEvent* event) {
     
     verticalScrollBar()->setValue(verticalScrollBar()->value() - step);
     event->accept();
+}
+
+void SioyekBookmarkTextBrowser::scroll_amount(int amount) {
+
+    int current_scroll_amount = text_browser->verticalScrollBar()->value();
+    int step = text_browser->verticalScrollBar()->singleStep() * amount * 60;
+    int new_scroll_amount = current_scroll_amount + step;
+    text_browser->verticalScrollBar()->setValue(new_scroll_amount);
+    last_set_scroll_amount = new_scroll_amount;
 }

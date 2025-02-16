@@ -66,6 +66,7 @@ class SioyekRendererBackend;
 class DatabaseManager;
 class DocumentManager;
 class TextToSpeechHandler;
+class SioyekBookmarkTextBrowser;
 
 enum class DrawingMode {
     Drawing,
@@ -1156,6 +1157,7 @@ public:
     void accept_new_bookmark_message();
     void update_current_bookmark_widget_text(BookMark* bm);
     QString get_selected_text_in_chat_window();
+    std::optional<SioyekBookmarkTextBrowser*> get_current_bookmark_browser();
 
 
 public slots:
