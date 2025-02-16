@@ -4160,24 +4160,26 @@ void SioyekBookmarkTextBrowser::set_follow_output(bool val) {
     follow_output = val;
 }
 
-std::pair<int, int> SioyekChatTextBrowser::get_cursor_message_and_char_index(QPoint cursor_pos) {
+std::pair<int, int> SioyekChatTextBrowser::get_cursor_message_and_char_index(QPoint cursor_pos, int forced_message_index) {
 
     int y = margin - verticalScrollBar()->value();
     int msg_index = 0;
 
     for (auto [message_type, msg] : messages) {
+
         int box_height, box_width, box_x, inner_margin;
         QTextDocument* doc = get_doc_and_size_values_for_index(msg_index, &box_width, &box_height, &box_x, &inner_margin);
 
-        QRect message_rect(box_x, y, box_width, box_height);
-        if (message_rect.contains(cursor_pos)) {
-            selection_message_index = msg_index;
-            QPointF localPos = cursor_pos - QPoint(box_x + inner_margin, y + inner_margin);
-            int char_index = doc->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
-            return { msg_index, char_index };
+        if ((forced_message_index == -1) || (msg_index == forced_message_index)) {
+            QRect message_rect(box_x, y, box_width, box_height);
+            if (message_rect.contains(cursor_pos) || (forced_message_index != -1)) {
+                QPointF localPos = cursor_pos - QPoint(box_x + inner_margin, y + inner_margin);
+                int char_index = doc->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
+                return { msg_index, char_index };
+            }
         }
         y += box_height + spacing;
-        ++msg_index;
+        msg_index++;
     }
     return { -1, -1 };
 }
@@ -4260,8 +4262,8 @@ void SioyekChatTextBrowser::mouseMoveEvent(QMouseEvent* mevent) {
     int last_selection_end = selection_end_pos;
     if (is_selecting && selection_message_index != -1) {
 
-        auto [message_index, char_index] = get_cursor_message_and_char_index(mouse_pos);
-        if (message_index >= 0) {
+        auto [message_index, char_index] = get_cursor_message_and_char_index(mouse_pos, selection_message_index);
+        if (message_index >= 0 && message_index == selection_message_index) {
             selection_end_pos = char_index;
             viewport()->update();
         }

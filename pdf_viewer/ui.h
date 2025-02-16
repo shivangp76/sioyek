@@ -1585,7 +1585,7 @@ private:
 
     QTextDocument* get_document_for_index(int index);
     QTextDocument* get_doc_and_size_values_for_index(int index, int* out_box_width, int* out_box_height, int* out_box_x, int* out_inner_margin);
-    std::pair<int, int> get_cursor_message_and_char_index(QPoint cursor_pos);
+    std::pair<int, int> get_cursor_message_and_char_index(QPoint cursor_pos, int forced_message_index=-1);
 
 
     int selection_message_index = -1;
