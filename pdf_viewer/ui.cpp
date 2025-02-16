@@ -43,6 +43,11 @@ extern bool TOUCH_MODE;
 extern int DOCUMENTATION_FONT_SIZE;
 extern float DEFAULT_TEXT_HIGHLIGHT_COLOR[3];
 
+extern float CHAT_WINDOW_BACKGROUND_COLOR[3];
+extern float CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR[3];
+extern float CHAT_WINDOW_TEXT_COLOR[3];
+extern float CHAT_WINDOW_USER_TEXT_COLOR[3];
+
 extern float UI_TEXT_COLOR[3];
 extern float UI_BACKGROUND_COLOR[3];
 extern float UI_SELECTED_TEXT_COLOR[3];
@@ -4088,6 +4093,11 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
         line_edit = new MyLineEdit(main_widget);
         line_edit->setPlaceholderText("Chat with the document.");
         line_edit->setParent(this);
+
+        QColor background_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR);
+        QColor text_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR);
+
+        line_edit->setStyleSheet("QLineEdit{background-color: " + background_color.name() + "; color: " + text_color.name() + "; border-radius: 0px; padding: 10px;}");
     }
 
     layout = new QVBoxLayout(this);
@@ -4310,12 +4320,18 @@ void SioyekChatTextBrowser::update_text(QString new_text) {
 }
 
 void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
+    QColor user_background_color = qconvert_color3(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR, ColorPalette::Normal);
+    QColor background_color = qconvert_color3(CHAT_WINDOW_BACKGROUND_COLOR, ColorPalette::Normal);
+    QColor text_color = qconvert_color3(CHAT_WINDOW_TEXT_COLOR, ColorPalette::Normal);
+    QColor user_text_color = qconvert_color3(CHAT_WINDOW_USER_TEXT_COLOR, ColorPalette::Normal);
+
     QPainter painter(viewport());
+    painter.fillRect(rect(), background_color);
     painter.translate(0, -verticalScrollBar()->value());
 
     int y = margin;
     int msg_index = 0;
-    QColor userBgColor("#000000");
+
     QColor text_highlight_color = qconvert_color3(DEFAULT_TEXT_HIGHLIGHT_COLOR, ColorPalette::Normal);
 
     for (auto [message_type, msg] : messages) {
@@ -4328,7 +4344,7 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
         // draw background for user messages.
         if (message_type == ChatMessageType::UserMessage) {
             painter.save();
-            painter.setBrush(userBgColor);
+            painter.setBrush(user_background_color);
             painter.setPen(Qt::NoPen);
             painter.drawRoundedRect(messageRect, 5, 5);
             painter.restore();
@@ -4338,6 +4354,14 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
         painter.translate(box_x + inner_margin, y + inner_margin);
 
         QAbstractTextDocumentLayout::PaintContext ctx;
+        if (message_type == ChatMessageType::UserMessage) {
+            ctx.palette.setColor(QPalette::Text, user_text_color);
+            ctx.palette.setColor(QPalette::Base, user_background_color);
+        }
+        else {
+            ctx.palette.setColor(QPalette::Text, text_color);
+            ctx.palette.setColor(QPalette::Base, background_color);
+        }
         // if this is the message being selected and a range exists, add the selection.
         if (msg_index == selection_message_index && selection_start_pos != selection_end_pos) {
             QTextLayout::FormatRange selection;

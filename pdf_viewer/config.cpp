@@ -371,6 +371,11 @@ float DEFAULT_SYNCTEX_HIGHLIGHT_COLOR[3] = { 1.0f, 0.0f, 0.0f };
 float OVERVIEW_REFERENCE_HIGHLIGHT_COLOR[3] = { 0.0f, 1.0f, 0.0f };
 float HIDE_SYNCTEX_HIGHLIGHT_TIMEOUT = 1.0f;
 
+float CHAT_WINDOW_BACKGROUND_COLOR[3] = { 0.0f, 0.0f, 0.0f };
+float CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR[3] = { 0.2f, 0.2f, 0.2f };
+float CHAT_WINDOW_TEXT_COLOR[3] = { 1.0f, 1.0f, 1.0f };
+float CHAT_WINDOW_USER_TEXT_COLOR[3] = { 1.0f, 1.0f, 1.0f };
+
 float FREETEXT_BOOKMARK_COLOR[3] = { 0.0f, 0.0f, 0.0f };
 float FREETEXT_BOOKMARK_FONT_SIZE = 8.0f;
 bool RENDER_FREETEXT_BORDERS = false;
@@ -1189,6 +1194,11 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_color3(L"ui_text_color", UI_TEXT_COLOR);
     add_color3(L"ui_background_color", UI_BACKGROUND_COLOR);
     add_color3(L"ui_selected_text_color", UI_SELECTED_TEXT_COLOR);
+    add_color3(L"chat_background_color", CHAT_WINDOW_BACKGROUND_COLOR);
+    add_color3(L"chat_user_message_background_color", CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR);
+    add_color3(L"chat_text_color", CHAT_WINDOW_TEXT_COLOR);
+    add_color3(L"chat_user_message_text_color", CHAT_WINDOW_USER_TEXT_COLOR);
+
     //add_color3(L"ui_background_color", STATUS_BAR_COLOR);
     //add_color3(L"question_bookmark_background_color", QUESTION_BOOKMARK_BACKGROUND_COLOR);
     add_color3(L"question_bookmark_text_color", QUESTION_BOOKMARK_TEXT_COLOR)->set_change_fn([](MainWidget* w){
