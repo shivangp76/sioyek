@@ -4236,6 +4236,19 @@ QTextDocument* SioyekChatTextBrowser::get_doc_and_size_values_for_index(int inde
     return doc;
 }
 
+QString SioyekChatTextBrowser::get_selected_text(){
+    if (selection_message_index == -1) {
+        return "";
+    }
+    else {
+        QTextDocument* doc = get_document_for_index(selection_message_index);
+        QTextCursor cursor(doc);
+        cursor.setPosition(selection_start_pos);
+        cursor.setPosition(selection_end_pos, QTextCursor::KeepAnchor);
+        return cursor.selectedText();
+    }
+}
+
 void SioyekChatTextBrowser::mouseMoveEvent(QMouseEvent* mevent) {
     QPoint mouse_pos = mevent->pos();
 

@@ -1155,6 +1155,7 @@ public:
     bool is_in_bookmark_widget_mode();
     void accept_new_bookmark_message();
     void update_current_bookmark_widget_text(BookMark* bm);
+    QString get_selected_text_in_chat_window();
 
 
 public slots:

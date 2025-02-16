@@ -13373,3 +13373,13 @@ void MainWidget::update_current_bookmark_widget_text(BookMark* bm) {
         }
     }
 }
+
+QString MainWidget::get_selected_text_in_chat_window() {
+    if (current_widget_stack.size() > 0) {
+        auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
+        if (bookmark_widget && bookmark_widget->text_browser) {
+            return bookmark_widget->text_browser->get_selected_text();
+        }
+    }
+    return "";
+}

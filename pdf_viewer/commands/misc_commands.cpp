@@ -1011,6 +1011,12 @@ public:
     static inline const std::string hname = "Copy";
     CopyCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
+        QString chat_selected_text = widget->get_selected_text_in_chat_window();
+        if (chat_selected_text.size() > 0) {
+            copy_to_clipboard(chat_selected_text.toStdWString());
+            return;
+        }
+
         auto selected_text = dv()->get_selected_text(ADD_NEWLINES_WHEN_COPYING_TEXT);
         if (selected_text.size() == 0) {
             if (widget->main_document_view->get_overview_page()) {

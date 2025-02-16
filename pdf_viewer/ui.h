@@ -1557,6 +1557,7 @@ public:
 
     //void handle_resize();
     void update_text(QString new_text);
+    QString get_selected_text();
 signals:
     void anchorClicked(QString anchor_text);
 
@@ -1598,7 +1599,6 @@ class SioyekBookmarkTextBrowser : public QWidget {
 private:
     MainWidget* main_widget = nullptr;
     //SioyekDocumentationTextBrowser* text_browser = nullptr;
-    SioyekChatTextBrowser* text_browser = nullptr;
 
     QVBoxLayout* layout = nullptr;
     bool follow_output = true;
@@ -1607,6 +1607,7 @@ private:
 public:
     MyLineEdit* line_edit = nullptr;
     QString bookmark_uuid;
+    SioyekChatTextBrowser* text_browser = nullptr;
 
     SioyekBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content, bool chat);
 
