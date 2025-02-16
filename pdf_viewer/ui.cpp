@@ -4086,6 +4086,7 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
 
     if (chat) {
         line_edit = new MyLineEdit(main_widget);
+        line_edit->setPlaceholderText("Chat with the document.");
         line_edit->setParent(this);
     }
 
@@ -4093,6 +4094,7 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
 
     layout->addWidget(text_browser);
     layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
     if (chat) {
         layout->addWidget(line_edit);
     }
@@ -4161,7 +4163,7 @@ std::pair<int, int> SioyekChatTextBrowser::get_cursor_message_and_char_index(QPo
         if (message_rect.contains(cursor_pos)) {
             selection_message_index = msg_index;
             QPointF localPos = cursor_pos - QPoint(box_x + inner_margin, y + inner_margin);
-            int char_index = doc->documentLayout()->hitTest(localPos, Qt::ExactHit);
+            int char_index = doc->documentLayout()->hitTest(localPos, Qt::FuzzyHit);
             return { msg_index, char_index };
         }
         y += box_height + spacing;
@@ -4323,7 +4325,7 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
             
         QRect messageRect(box_x, y, box_width, box_height);
 
-        // Draw background for user messages.
+        // draw background for user messages.
         if (message_type == ChatMessageType::UserMessage) {
             painter.save();
             painter.setBrush(userBgColor);
@@ -4336,7 +4338,7 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
         painter.translate(box_x + inner_margin, y + inner_margin);
 
         QAbstractTextDocumentLayout::PaintContext ctx;
-        // If this is the message being selected and a range exists, add the selection.
+        // if this is the message being selected and a range exists, add the selection.
         if (msg_index == selection_message_index && selection_start_pos != selection_end_pos) {
             QTextLayout::FormatRange selection;
             selection.start = qMin(selection_start_pos, selection_end_pos);
@@ -4351,7 +4353,6 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
             selectionRange.cursor.setPosition(selection.start + selection.length, QTextCursor::KeepAnchor);
             selectionRange.format = fmt;
             ctx.selections.append(selectionRange);
-            //ctx.selections.append(selection);
         }
 
         doc->documentLayout()->draw(&painter, ctx);

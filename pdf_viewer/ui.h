@@ -1615,5 +1615,4 @@ public:
     void update_text(QString new_text);
     void set_follow_output(bool val);
 
-
 };
