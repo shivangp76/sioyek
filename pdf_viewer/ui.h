@@ -1617,5 +1617,7 @@ public:
     void set_follow_output(bool val);
 
     void scroll_amount(int amount);
+    void scroll_to_start();
+    void scroll_to_end();
 
 };

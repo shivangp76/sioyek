@@ -1159,6 +1159,8 @@ public:
     QString get_selected_text_in_chat_window();
     std::optional<SioyekBookmarkTextBrowser*> get_current_bookmark_browser();
 
+    void handle_scroll_selected_bookmark_to_ends(bool goto_start);
+
 
 public slots:
 #ifdef SIOYEK_IOS

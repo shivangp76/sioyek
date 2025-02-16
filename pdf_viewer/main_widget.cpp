@@ -12795,21 +12795,6 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 void MainWidget::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount) {
     float height = background_bookmark_renderer->get_cached_bookmark_height(bookmark_uuid);
     dv()->scroll_bookmark_with_uuid(bookmark_uuid, amount, height);
-
-    //if (bookmark_uuid.size() > 0) {
-    //    BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
-    //    if (bookmark) {
-    //        std::string uuid = bookmark->uuid;
-    //        float scroll_amount = 72.0f * amount * VERTICAL_MOVE_AMOUNT;
-    //        float current_scroll = dv()->get_bookmark_scroll_amount(uuid);
-    //        float new_scroll = current_scroll + scroll_amount;
-
-    //        if (new_scroll > (height - bookmark->get_rectangle()->height() * dv()->get_zoom_level())) {
-    //            new_scroll = height - bookmark->get_rectangle()->height() * dv()->get_zoom_level();
-    //        }
-    //        dv()->set_bookmark_scroll_amount(uuid, new_scroll);
-    //    }
-    //}
 }
 
 std::optional<SioyekBookmarkTextBrowser*> MainWidget::get_current_bookmark_browser() {
@@ -13416,4 +13401,27 @@ QString MainWidget::get_selected_text_in_chat_window() {
         }
     }
     return "";
+}
+
+void MainWidget::handle_scroll_selected_bookmark_to_ends(bool goto_start){
+
+    auto bookmark_browser = get_current_bookmark_browser();
+    if (bookmark_browser) {
+        if (goto_start) {
+            bookmark_browser.value()->scroll_to_start();
+        }
+        else {
+            bookmark_browser.value()->scroll_to_end();
+        }
+    }
+    else {
+        std::string bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
+        if (goto_start) {
+            scroll_bookmark_with_uuid(bookmark_uuid, -INT_MAX / 2);
+        }
+        else {
+            scroll_bookmark_with_uuid(bookmark_uuid, INT_MAX / 2);
+        }
+        //scroll_bookmark_with_uuid(bookmark_uuid, amount);
+    }
 }

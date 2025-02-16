@@ -1469,6 +1469,28 @@ public:
 
 };
 
+class ScrollSelectedBookmarkToStart : public Command {
+public:
+    static inline const std::string cname = "scroll_selected_bookmark_to_start";
+    static inline const std::string hname = "";
+    ScrollSelectedBookmarkToStart(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_scroll_selected_bookmark_to_ends(true);
+    }
+};
+
+class ScrollSelectedBookmarkToEnd : public Command {
+public:
+    static inline const std::string cname = "scroll_selected_bookmark_to_end";
+    static inline const std::string hname = "";
+    ScrollSelectedBookmarkToEnd(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_scroll_selected_bookmark_to_ends(false);
+    }
+};
+
 class ScrollSelectedBookmarkDown : public Command {
 public:
     static inline const std::string cname = "scroll_selected_bookmark_down";
@@ -1825,6 +1847,8 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<UndoDeleteCommand>(manager);
     register_command<ScrollSelectedBookmarkDown>(manager);
     register_command<ScrollSelectedBookmarkUp>(manager);
+    register_command<ScrollSelectedBookmarkToStart>(manager);
+    register_command<ScrollSelectedBookmarkToEnd>(manager);
     register_command<DeleteHighlightUnderCursorCommand>(manager);
     register_command<WriteAnnotationsFileCommand>(manager);
     register_command<LoadAnnotationsFileCommand>(manager);

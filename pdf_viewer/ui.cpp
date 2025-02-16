@@ -4451,3 +4451,13 @@ void SioyekBookmarkTextBrowser::scroll_amount(int amount) {
     text_browser->verticalScrollBar()->setValue(new_scroll_amount);
     last_set_scroll_amount = new_scroll_amount;
 }
+
+void SioyekBookmarkTextBrowser::scroll_to_start(){
+    text_browser->verticalScrollBar()->setValue(0);
+    last_set_scroll_amount = 0;
+}
+
+void SioyekBookmarkTextBrowser::scroll_to_end() {
+    text_browser->verticalScrollBar()->setValue(text_browser->verticalScrollBar()->maximum());
+    last_set_scroll_amount = text_browser->verticalScrollBar()->maximum();
+}
