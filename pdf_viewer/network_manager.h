@@ -96,7 +96,7 @@ public:
     QNetworkReply* get_user_file_hash_set_reply();
     void update_user_files_hash_set();
     std::optional<QJsonDocument> get_network_json_reply(QNetworkReply* reply);
-    QNetworkReply* download_paper_with_name(QObject* parent, const std::wstring& name, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> begin_function, std::function<void(QNetworkReply*)> fn);
+    QNetworkReply* download_paper_with_name(QObject* parent, const std::wstring& name, QString full_bib_text, PaperDownloadFinishedAction action, std::function<void(QNetworkReply*)> begin_function, std::function<void(QNetworkReply*)> fn);
     QNetworkReply* get_citers_with_name(QObject* parent, const std::wstring& name, std::function<void(QNetworkReply*)> fn);
 
     void download_unsynced_files(QObject* parent, DatabaseManager* db_manager);

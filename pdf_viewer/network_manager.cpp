@@ -491,6 +491,7 @@ QNetworkReply* SioyekNetworkManager::get_citers_with_name(
 QNetworkReply* SioyekNetworkManager::download_paper_with_name(
     QObject* parent,
     const std::wstring& name,
+    QString full_bib_text,
     PaperDownloadFinishedAction action,
     std::function<void(QNetworkReply*)> begin_function,
     std::function<void(QNetworkReply*)> fn
@@ -503,6 +504,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(
     QUrl url(QString::fromStdWString(SIOYEK_PAPER_URL_URL));
     QUrlQuery params;
     params.addQueryItem("paper_title", QString::fromStdWString(download_name));
+    params.addQueryItem("full_bib_text", full_bib_text);
     url.setQuery(params);
 
     //QUrl get_url = replace(
@@ -549,13 +551,15 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(
             paper_urls.append(title_url_tuple[1].toString());
         }
 
+        bool title_was_corrected = !json_doc["correct_title"].isNull();
+
         int matching_index = -1;
 
         if (AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME) {
             // if a paper matches the query (almost) exactly, then download it without showing
             // a paper list to the user
             for (int i = 0; i < paper_titles.size(); i++) {
-                if (does_paper_name_match_query(paper_name, paper_titles[i].toStdWString())) {
+                if (title_was_corrected || does_paper_name_match_query(paper_name, paper_titles[i].toStdWString())) {
                     matching_index = i;
                     break;
                 }

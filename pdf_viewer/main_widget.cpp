@@ -12672,7 +12672,7 @@ void MainWidget::on_paper_download_begin(QNetworkReply* reply, std::string pendi
 
 
 QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, QString full_bib_text, std::optional<PaperDownloadFinishedAction> action, std::string pending_portal_handle) {
-    QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, name,
+    QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, name, full_bib_text,
         action.value_or(get_default_paper_download_finish_action()),
         [this, pending_portal_handle](QNetworkReply* reply) {
             on_paper_download_begin(reply, pending_portal_handle);
