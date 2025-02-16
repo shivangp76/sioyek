@@ -1869,6 +1869,10 @@ void MyLineEdit::keyPressEvent(QKeyEvent* event) {
             return;
         }
         if (command && (command->get_name() == "copy") && (selectionLength() == 0)) {
+            // In the bookmark chat mode, the line edit is always focused
+            // and the line edit consumes the C-c input so we can not copy the selected text
+            // here if there is no selection on the line edit itself, we don't handle the event
+            // so that it propagates to the main widget wihch can handle the chat window selection copy
             event->ignore();
             return;
         }
