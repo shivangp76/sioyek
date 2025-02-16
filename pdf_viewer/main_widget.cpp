@@ -5598,7 +5598,7 @@ void MainWidget::handle_goto_portal_list() {
     show_current_widget();
 }
 
-void MainWidget::handle_goto_bookmark(bool manual_only) {
+void MainWidget::handle_goto_bookmark(bool manual_only, bool chat) {
     //std::vector<std::wstring> option_names;
     std::vector<QString> option_location_strings;
     std::vector<BookMark> bookmarks;
@@ -5619,6 +5619,12 @@ void MainWidget::handle_goto_bookmark(bool manual_only) {
 
         bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), predicate), bookmarks.end());
     }
+    else if (chat) {
+        auto predicate = [](const BookMark& bm) {
+            return !bm.is_question();
+            };
+        bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), predicate), bookmarks.end());
+    }
 
     for (auto bookmark : bookmarks) {
         //option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
@@ -5629,12 +5635,17 @@ void MainWidget::handle_goto_bookmark(bool manual_only) {
 
     int closest_bookmark_index = main_document_view->get_document()->find_closest_bookmark_index(bookmarks, main_document_view->get_offset_y());
 
-    auto handle_select_fn = [&](BookMark bm) {
+    auto handle_select_fn = [&, chat](BookMark bm) {
         if (pending_command_instance) {
-            pending_command_instance->set_generic_requirement(bm.get_y_offset());
+            if (chat) {
+                pending_command_instance->set_generic_requirement(QString::fromStdString(bm.uuid));
+            }
+            else {
+                pending_command_instance->set_generic_requirement(bm.get_y_offset());
+            }
         }
 
-        if (NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION && bm.can_have_links()) {
+        if (!chat && NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION && bm.can_have_links()) {
             auto [link_names, link_targets] = bm.get_links();
             std::vector<std::wstring> queries;
             std::vector<QString> messages;

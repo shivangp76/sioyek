@@ -416,6 +416,34 @@ public:
     }
 };
 
+class OpenChatBookmarkCommand : public Command {
+public:
+    static inline const std::string cname = "goto_chat_bookmark";
+    static inline const std::string hname = "Open the bookmark list of question bookmarks, opens that chat window of selected bookmark.";
+    OpenChatBookmarkCommand(MainWidget* w) : Command(cname, w) {};
+    std::string bookmark_uuid = "";
+
+    void set_generic_requirement(QVariant uuid) override{
+        bookmark_uuid = uuid.toString().toStdString();
+    }
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) override{
+        if (bookmark_uuid.size() == 0) {
+            return Requirement{ RequirementType::Generic, "bookmark" };
+        }
+        return {};
+    }
+
+    void handle_generic_requirement() {
+        widget->handle_goto_bookmark(false, true);
+    }
+
+    void perform() override {
+        widget->main_document_view->set_selected_bookmark_uuid(bookmark_uuid);
+        widget->open_selected_bookmark_in_widget();
+    }
+};
+
 class GotoManualBookmarkCommand : public GenericGotoLocationCommand {
 public:
     static inline const std::string cname = "goto_manual_bookmark";
@@ -1819,6 +1847,7 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<GotoBookmarkCommand>(manager);
     register_command<GotoManualBookmarkCommand>(manager);
     register_command<GotoBookmarkGlobalCommand>(manager);
+    register_command<OpenChatBookmarkCommand>(manager);
     register_command<GotoManualBookmarkGlobalCommand>(manager);
     register_command<AcceptNewBookmarkMessageCommand>(manager);
     register_command<GotoHighlightCommand>(manager);

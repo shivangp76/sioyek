@@ -622,7 +622,7 @@ public:
     void handle_goto_loaded_document();
 
     void handle_goto_portal_list();
-    void handle_goto_bookmark(bool manual_only=false);
+    void handle_goto_bookmark(bool manual_only=false, bool chat=false);
     void handle_goto_bookmark_global(bool manual_only=false);
     std::wstring handle_add_highlight(char symbol);
     void handle_goto_highlight();
