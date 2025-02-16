@@ -1868,6 +1868,10 @@ void MyLineEdit::keyPressEvent(QKeyEvent* event) {
             event->ignore();
             return;
         }
+        if (command && (command->get_name() == "copy") && (selectionLength() == 0)) {
+            event->ignore();
+            return;
+        }
     }
 
     return QLineEdit::keyPressEvent(event);
