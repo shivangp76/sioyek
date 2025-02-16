@@ -5598,7 +5598,7 @@ void MainWidget::handle_goto_portal_list() {
     show_current_widget();
 }
 
-void MainWidget::handle_goto_bookmark() {
+void MainWidget::handle_goto_bookmark(bool manual_only) {
     //std::vector<std::wstring> option_names;
     std::vector<QString> option_location_strings;
     std::vector<BookMark> bookmarks;
@@ -5610,6 +5610,14 @@ void MainWidget::handle_goto_bookmark() {
     }
     else {
         bookmarks = main_document_view->get_document()->get_bookmarks();
+    }
+
+    if (manual_only) {
+        auto predicate = [](const BookMark& bm) {
+            return bm.is_question() || bm.is_summary();
+            };
+
+        bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), predicate), bookmarks.end());
     }
 
     for (auto bookmark : bookmarks) {
@@ -5711,9 +5719,17 @@ void MainWidget::handle_goto_bookmark() {
     }
 }
 
-void MainWidget::handle_goto_bookmark_global() {
+void MainWidget::handle_goto_bookmark_global(bool manual_only) {
     std::vector<std::pair<std::string, BookMark>> global_bookmarks;
     db_manager->global_select_bookmark(global_bookmarks);
+
+    if (manual_only) {
+        auto predicate = [](const std::pair<std::string, BookMark>& bm) {
+            return bm.second.is_question() || bm.second.is_summary();
+            };
+
+        global_bookmarks.erase(std::remove_if(global_bookmarks.begin(), global_bookmarks.end(), predicate), global_bookmarks.end());
+    }
 
     auto handle_select_fn = [&](QString checksum, float offset_y) {
         if (checksum.startsWith("SERVER://")) {

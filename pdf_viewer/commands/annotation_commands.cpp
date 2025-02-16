@@ -416,6 +416,17 @@ public:
     }
 };
 
+class GotoManualBookmarkCommand : public GenericGotoLocationCommand {
+public:
+    static inline const std::string cname = "goto_manual_bookmark";
+    static inline const std::string hname = "Open the bookmark list of current document, the automatic bookmarks will not be displayed.";
+    GotoManualBookmarkCommand(MainWidget* w) : GenericGotoLocationCommand(cname, w) {};
+
+    void handle_generic_requirement() {
+        widget->handle_goto_bookmark(true);
+    }
+};
+
 class AcceptNewBookmarkMessageCommand : public GenericGotoLocationCommand {
 public:
     static inline const std::string cname = "accept_new_bookmark_message";
@@ -436,6 +447,19 @@ public:
 
     void handle_generic_requirement() {
         widget->handle_goto_bookmark_global();
+    }
+    bool requires_document() { return false; }
+};
+
+class GotoManualBookmarkGlobalCommand : public GenericPathAndLocationCommadn {
+public:
+    static inline const std::string cname = "goto_manual_bookmark_g";
+    static inline const std::string hname = "Open the bookmark list of all documents, ignoring automatic bookmarks";
+
+    GotoManualBookmarkGlobalCommand(MainWidget* w) : GenericPathAndLocationCommadn(cname, w) {};
+
+    void handle_generic_requirement() {
+        widget->handle_goto_bookmark_global(true);
     }
     bool requires_document() { return false; }
 };
@@ -1749,7 +1773,9 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<PinOverviewAsPortalCommand>(manager);
     register_command<CopyDrawingsFromScratchpadCommand>(manager);
     register_command<GotoBookmarkCommand>(manager);
+    register_command<GotoManualBookmarkCommand>(manager);
     register_command<GotoBookmarkGlobalCommand>(manager);
+    register_command<GotoManualBookmarkGlobalCommand>(manager);
     register_command<AcceptNewBookmarkMessageCommand>(manager);
     register_command<GotoHighlightCommand>(manager);
     register_command<GotoHighlightGlobalCommand>(manager);
