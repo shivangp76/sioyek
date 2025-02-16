@@ -4210,7 +4210,9 @@ QTextDocument* SioyekChatTextBrowser::get_document_for_index(int index) {
             doc->setTextWidth(response_content_width);
         }
         else {
-            doc->setTextWidth(user_content_width);
+            float ideal_width = doc->idealWidth();
+            float text_width = (ideal_width < user_content_width) ? ideal_width : user_content_width;
+            doc->setTextWidth(text_width);
         }
         cached_documents[index] = std::move(doc);
         return cached_documents[index].get();
@@ -4222,10 +4224,13 @@ QTextDocument* SioyekChatTextBrowser::get_doc_and_size_values_for_index(int inde
     QTextDocument* doc = get_document_for_index(index);
     auto message_type = messages[index].message_type;
     if (message_type == ChatMessageType::UserMessage) {
-        *out_box_width = user_box_width;
+        int required_width = static_cast<int>(doc->idealWidth()) + 2 * user_inner_margin;
+        int box_width = std::min(user_box_width, required_width);
+
+        *out_box_width = box_width;
         *out_inner_margin = user_inner_margin;
         *out_box_height = static_cast<int>(doc->size().height()) + 2 * user_inner_margin;
-        *out_box_x = full_width - margin - user_box_width;
+        *out_box_x = full_width - margin - box_width;
     }
     else {
         *out_box_width = response_content_width;
