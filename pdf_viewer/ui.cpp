@@ -4357,9 +4357,10 @@ void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
         // draw background for user messages.
         if (message_type == ChatMessageType::UserMessage) {
             painter.save();
+            painter.setRenderHint(QPainter::Antialiasing);
             painter.setBrush(user_background_color);
             painter.setPen(Qt::NoPen);
-            painter.drawRoundedRect(messageRect, 5, 5);
+            painter.drawRoundedRect(messageRect, 10, 10);
             painter.restore();
         }
 
