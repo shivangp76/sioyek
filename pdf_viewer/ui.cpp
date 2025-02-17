@@ -14,6 +14,7 @@
 #include <QQuickWidget>
 #include <QFile>
 #include <qscrollbar.h>
+#include <qpainterpath.h>
 
 #include "database.h"
 #include "document.h"
@@ -4067,16 +4068,9 @@ ItemWithDescriptionSelectorWidget* ItemWithDescriptionSelectorWidget::from_items
 }
 
 SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString uuid, QString content, bool chat) : QWidget(parent){
+
     bookmark_uuid = uuid;
     main_widget = parent;
-
-    //text_browser = new SioyekDocumentationTextBrowser(main_widget);
-    //text_browser->setParent(this);
-    //text_browser->setStyleSheet("QTextBrowser{" + get_status_stylesheet(false, DOCUMENTATION_FONT_SIZE) + "border-radius: 4px; padding: 10px;}\n" + get_scrollbar_stylesheet());
-    //text_browser->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
-    //text_browser->setReadOnly(true);
-    //text_browser->setSource(QUrl(), QTextDocument::ResourceType::MarkdownResource);
-    //text_browser->setMarkdown(content);
 
     text_browser = new SioyekChatTextBrowser(this, content);
     QObject::connect(text_browser, &SioyekChatTextBrowser::anchorClicked, [this](QString url_string) {
@@ -4135,11 +4129,17 @@ void SioyekBookmarkTextBrowser::handle_resize() {
     setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height * MENU_SCREEN_HEIGHT_RATIO);
     move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2);
 }
+
 void SioyekBookmarkTextBrowser::resizeEvent(QResizeEvent* resize_event) {
 
     QWidget::resizeEvent(resize_event);
 
     handle_resize();
+
+    QPainterPath path;
+    path.addRoundedRect(rect(), 4, 4);
+    setMask(QRegion(path.toFillPolygon().toPolygon()));
+
 
 }
 
@@ -4428,6 +4428,7 @@ void SioyekChatTextBrowser::resizeEvent(QResizeEvent* event) {
     response_content_width = full_width - 2 * margin;
     user_box_width = static_cast<int>(0.7 * full_width);
     user_content_width = user_box_width - 2 * user_inner_margin;
+
 }
 
 void SioyekChatTextBrowser::update_scrollbar(int content_height) {

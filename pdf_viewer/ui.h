@@ -1604,6 +1604,8 @@ private:
     bool follow_output = true;
     int last_set_scroll_amount = 0;
 
+protected:
+    void resizeEvent(QResizeEvent* resize_event) override;
 public:
     MyLineEdit* line_edit = nullptr;
     QString bookmark_uuid;
@@ -1611,7 +1613,6 @@ public:
 
     SioyekBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content, bool chat);
 
-    void resizeEvent(QResizeEvent* resize_event) override;
     void handle_resize();
     void update_text(QString new_text);
     void set_follow_output(bool val);
