@@ -1767,6 +1767,13 @@ void BaseSelectorWidget::handle_delete() {
             on_delete(source_index, selected_index);
         }
     }
+    auto delegate = get_view()->itemDelegate();
+    if (delegate) {
+        BaseCustomDelegate* custom_delegate = dynamic_cast<BaseCustomDelegate*>(delegate);
+        if (custom_delegate) {
+            custom_delegate->clear_cache();
+        }
+    }
 }
 
 void BaseSelectorWidget::handle_edit() {
