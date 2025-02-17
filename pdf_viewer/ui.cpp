@@ -4101,6 +4101,7 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
         line_edit = new MyLineEdit(main_widget);
         line_edit->setPlaceholderText("Chat with the document.");
         line_edit->setParent(this);
+        line_edit->setFont(get_chat_font_face_name());
 
         QColor background_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR);
         QColor text_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR);
