@@ -4767,6 +4767,7 @@ std::optional<DocumentPos> Document::find_abbreviation(std::wstring abbr, std::v
         std::deque<PagelessDocumentRect> raw_rects;
         std::vector<PagelessDocumentRect> merged_rects;
         CachedPageIndex& abbr_page_index = get_page_index(abbr_page);
+        const int MAX_SIZE = 12 * remaining_abbr.size();
 
         while (index > 0 && remaining_abbr.size() > 0){
             if (
@@ -4777,7 +4778,8 @@ std::optional<DocumentPos> Document::find_abbreviation(std::wstring abbr, std::v
                 ) {
                 if (QChar(super_fast_search_index[index+1]).toLower() == QChar(remaining_abbr.back()).toLower()){
                     remaining_abbr.pop_back();
-                    if (remaining_abbr.size() == 0) {
+                    int current_size = raw_rects.size();
+                    if (remaining_abbr.size() == 0 || (current_size > MAX_SIZE)) {
                         break;
                     }
                 }
