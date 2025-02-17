@@ -266,7 +266,6 @@ extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 extern bool SAME_WIDTH;
-extern bool DOUBLE_CLICK_ON_QUESTION_BOOKMARKS_OPENS_CHAT;
 extern bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT;
 
 extern int RENDERER_BACKEND;
@@ -2375,6 +2374,10 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
                 invalidate_render();
                 return;
             }
+            else {
+                main_document_view->set_selected_bookmark_uuid(visible_object_under_cursor->uuid);
+                open_selected_bookmark_in_widget();
+            }
 
         }
 
@@ -3196,12 +3199,7 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
         if (bookmark_uuid.size() > 0) {
             main_document_view->set_selected_bookmark_uuid(bookmark_uuid);
             bool is_question = bookmark_at_mouse_pos->is_question();
-            if (DOUBLE_CLICK_ON_QUESTION_BOOKMARKS_OPENS_CHAT && is_question) {
-                handle_command_types(command_manager->get_command_with_name(this, "open_selected_bookmark_in_widget"), 0);
-            }
-            else {
-                handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
-            }
+            handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
             return;
         }
         if (highlight_uuid.size() > 0) {

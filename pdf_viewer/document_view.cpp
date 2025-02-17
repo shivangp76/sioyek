@@ -4176,7 +4176,7 @@ bool DocumentView::handle_right_click_bookmark(WindowPos click_pos, BookMark* bo
         QString bookmark_text = QUrl::fromPercentEncoding(bookmark_text_.toUtf8());
 
         if (!bookmark_text.startsWith("sioyek://")) {
-            return true;
+            return false;
         }
         bookmark_text = bookmark_text.mid(9); // skip sioyek://
 
@@ -4194,11 +4194,12 @@ bool DocumentView::handle_right_click_bookmark(WindowPos click_pos, BookMark* bo
                     overview_state.highlight_rects.push_back(rect);
                 }
                 set_overview_page(overview_state);
+                return true;
             }
         }
 
     }
-    return true;
+    return false;
 }
 
 QString DocumentView::get_markdown_bookmark_anchor_text_under_pos(QPoint cursor_pos){
