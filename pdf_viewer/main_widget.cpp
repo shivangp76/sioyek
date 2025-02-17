@@ -2377,6 +2377,7 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
             else {
                 main_document_view->set_selected_bookmark_uuid(visible_object_under_cursor->uuid);
                 open_selected_bookmark_in_widget();
+                return;
             }
 
         }
