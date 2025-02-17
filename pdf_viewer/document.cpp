@@ -1688,7 +1688,7 @@ std::optional<std::wstring> Document::get_equation_text_at_position(
 
 
     std::wstring regex(L"\\([0-9]+(\\.[0-9]+)*\\)");
-    std::optional<std::wstring> match = get_regex_match_at_position(regex, flat_chars, position, out_range);
+    std::optional<std::wstring> match = get_regex_match_at_position(regex, flat_chars, position, 20, out_range);
 
     if (match) {
         return match.value().substr(1, match.value().size() - 2);
@@ -1706,14 +1706,38 @@ int get_sum_of_sizes(const std::vector<std::wstring>& strs) {
     return res;
 }
 
-std::optional<std::wstring> Document::get_regex_match_at_position(const std::wstring& regex_string, const std::vector<fz_stext_char*>& flat_chars, DocumentPos pos, std::pair<int, int>* out_range) {
+std::optional<std::wstring> Document::get_regex_match_at_position(const std::wstring& regex_string, const std::vector<fz_stext_char*>& flat_chars, DocumentPos pos, int max_match_size, std::pair<int, int>* out_range) {
     std::vector<std::pair<int, int>> match_ranges;
     std::vector<std::wstring> match_texts;
 
 
     std::wregex regex(regex_string);
 
-    find_regex_matches_in_stext_page(flat_chars, regex, match_ranges, match_texts);
+
+    if (max_match_size > 0) {
+        // this part is for efficiency only, if we know the maximum size of match, we don't need to match the entire document
+        int closest_char_index = -1;
+        find_closest_char_to_document_point(flat_chars, { pos.x, pos.y }, &closest_char_index);
+
+        int possible_match_begin_index = std::max<int>(0, closest_char_index - max_match_size);
+        int possible_match_end_index = std::min<int>(flat_chars.size() - 1, closest_char_index + max_match_size);
+        std::vector<fz_stext_char*> possible_match_chars;
+        for (int i = possible_match_begin_index; i <= possible_match_end_index; i++) {
+            possible_match_chars.push_back(flat_chars[i]);
+        }
+
+        find_regex_matches_in_stext_page(possible_match_chars, regex, match_ranges, match_texts);
+
+        for (size_t i = 0; i < match_ranges.size(); i++) {
+            match_ranges[i].first += possible_match_begin_index;
+            match_ranges[i].second += possible_match_begin_index;
+        }
+    }
+    else {
+        find_regex_matches_in_stext_page(flat_chars, regex, match_ranges, match_texts);
+    }
+
+
     std::vector<RegexMatchInfo> match_infos;
 
     for (int i = 0; i < match_texts.size(); i++) {
@@ -1793,7 +1817,7 @@ std::optional<std::pair<std::wstring, std::wstring>> Document::get_generic_link_
     std::pair<int, int>* out_range) {
 
     std::wstring regex(L"[a-zA-Z]{3,}(\\.){0,1}[ \t]+[0-9]+((\\.|\\-)[0-9]+)*");
-    std::optional<std::wstring> match_string = get_regex_match_at_position(regex, flat_chars, position, out_range);
+    std::optional<std::wstring> match_string = get_regex_match_at_position(regex, flat_chars, position, 40, out_range);
     if (match_string) {
         std::vector<std::wstring> parts = split_whitespace(match_string.value());
         if (parts.size() != 2) {
@@ -2893,11 +2917,11 @@ std::optional<std::pair<std::wstring, std::wstring>>  Document::get_generic_link
     return get_generic_link_name_at_position(flat_chars,  pos, out_range);
 }
 
-std::optional<std::wstring> Document::get_regex_match_at_position(const std::wstring& regex, DocumentPos position, std::pair<int, int>* out_range) {
+std::optional<std::wstring> Document::get_regex_match_at_position(const std::wstring& regex, DocumentPos position, int max_match_size, std::pair<int, int>* out_range) {
     fz_stext_page* stext_page = get_stext_with_page_number(position.page);
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
-    return get_regex_match_at_position(regex, flat_chars, position, out_range);
+    return get_regex_match_at_position(regex, flat_chars, position, max_match_size, out_range);
 }
 
 std::vector<std::vector<PagelessDocumentRect>> Document::get_page_flat_word_chars(int page) {
