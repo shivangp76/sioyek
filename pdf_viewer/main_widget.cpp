@@ -7697,7 +7697,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -13349,25 +13348,30 @@ void MainWidget::repeat_last_command() {
     //handle_command_types(std::move(last_cmd), last_performed_command_num_repeats);
 }
 
-void MainWidget::open_selected_bookmark_in_widget() {
-    auto selected_bookmark = doc()->get_bookmark_with_uuid(main_document_view->get_selected_bookmark_uuid());
+void MainWidget::handle_ask() {
+    float current_y_offset = main_document_view->get_offset_y();
+    std::string uuid = doc()->add_bookmark(L"", current_y_offset);
+    on_new_bookmark_added(uuid);
+    open_selected_bookmark_in_widget(uuid, true);
+}
+
+void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, bool force_chat) {
+    if (bookmark_uuid.size() == 0) {
+        bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
+    }
+    auto selected_bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
     if (selected_bookmark) {
         bool is_question_bookmark = selected_bookmark->is_question();
         QString bookmark_display_text = QString::fromStdWString(selected_bookmark->description);
         bookmark_display_text = bookmark_display_text.replace("sioyek://", "sioyeklink#");
 
         SioyekBookmarkTextBrowser* text_browser = new SioyekBookmarkTextBrowser(
-            this, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text, is_question_bookmark
+            this, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text, is_question_bookmark || force_chat
         );
 
         set_current_widget(text_browser);
         text_browser->handle_resize();
         text_browser->show();
-
-        //SioyekChatTextBrowser* text_browser = new SioyekChatTextBrowser(this, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text);
-        //set_current_widget(text_browser);
-        //text_browser->handle_resize();
-        //text_browser->show();
 
     }
 }

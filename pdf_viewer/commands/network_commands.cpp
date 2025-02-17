@@ -668,6 +668,17 @@ public:
     }
 };
 
+class AskCommand : public ProCommand {
+public:
+    static inline const std::string cname = "ask";
+    static inline const std::string hname = "Ask a question from the current document.";
+    AskCommand(MainWidget* w) : ProCommand(cname, w) {};
+
+    void perform() {
+        widget->handle_ask();
+    }
+};
+
 class DownloadOverviewPaperCommand : public ProTextCommand {
 public:
     static inline const std::string cname = "download_overview_paper";
@@ -773,6 +784,7 @@ void register_network_commands(CommandManager* manager) {
     register_command<ResyncDocumentCommand>(manager);
     register_command<DownloadUnsyncedFilesCommand>(manager);
     register_command<SyncCurrentFileLocation>(manager);
+    register_command<AskCommand>(manager);
     register_command<DownloadOverviewPaperCommand>(manager);
     register_command<DownloadOverviewPaperNoPrompt>(manager);
     register_command<LoadAnnotationsFileSyncDeletedCommand>(manager);
