@@ -1601,12 +1601,13 @@ private:
     //SioyekDocumentationTextBrowser* text_browser = nullptr;
 
     QVBoxLayout* layout = nullptr;
-    bool follow_output = true;
     int last_set_scroll_amount = 0;
 
 protected:
     void resizeEvent(QResizeEvent* resize_event) override;
 public:
+    bool follow_output = true;
+    bool is_pending = false;
     MyLineEdit* line_edit = nullptr;
     QString bookmark_uuid;
     SioyekChatTextBrowser* text_browser = nullptr;
@@ -1620,5 +1621,6 @@ public:
     void scroll_amount(int amount);
     void scroll_to_start();
     void scroll_to_end();
+    void set_pending(bool pending);
 
 };

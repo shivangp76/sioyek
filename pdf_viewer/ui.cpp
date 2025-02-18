@@ -4470,3 +4470,16 @@ void SioyekBookmarkTextBrowser::scroll_to_end() {
     text_browser->verticalScrollBar()->setValue(text_browser->verticalScrollBar()->maximum());
     last_set_scroll_amount = text_browser->verticalScrollBar()->maximum();
 }
+
+void SioyekBookmarkTextBrowser::set_pending(bool pending) {
+    is_pending = pending;
+    if (line_edit) {
+
+        if (pending) {
+            line_edit->setStyleSheet("QLineEdit{background-color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR).lighter(150).name() + "; color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR).lighter(150).name() + "; border-radius: 0px; padding: 10px;}");
+        }
+        else {
+            line_edit->setStyleSheet("QLineEdit{background-color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR).name() + "; color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR).name() + "; border-radius: 0px; padding: 10px;}");
+        }
+    }
+}

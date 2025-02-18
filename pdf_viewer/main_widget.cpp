@@ -7927,6 +7927,12 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
+
+    auto bookmark_browser = get_current_bookmark_browser();
+    if (bookmark_browser) {
+        bookmark_browser.value()->set_pending(true);
+    }
+
     const std::wstring& index = doc()->get_super_fast_index();
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
     int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
@@ -7941,7 +7947,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
             update_current_bookmark_widget_text(bm);
         }
         },
-        [this, bookmark_uuid, document=doc()]() {
+        [this, bookmark_uuid, bookmark_browser, document=doc()]() {
             //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
             BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
             if (bm) {
@@ -7950,6 +7956,17 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
                 update_current_bookmark_widget_text(bm);
                 on_bookmark_edited(bm->uuid);
+
+                auto current_bookmark_browser = get_current_bookmark_browser();
+                if ((current_bookmark_browser != nullptr) && (current_bookmark_browser == bookmark_browser)) {
+                    current_bookmark_browser.value()->set_pending(false);
+                    QTimer::singleShot(100, [this]() {
+                        auto new_current_bookmark_browser = get_current_bookmark_browser();
+                        if (new_current_bookmark_browser && new_current_bookmark_browser.value()->follow_output) {
+                            new_current_bookmark_browser.value()->scroll_to_end();
+                        }
+                        });
+                }
             }
         });
 }
@@ -13379,7 +13396,7 @@ void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, boo
 void MainWidget::accept_new_bookmark_message() {
     if (current_widget_stack.size() > 0) {
         auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
-        if (bookmark_widget && bookmark_widget->line_edit) {
+        if (bookmark_widget && bookmark_widget->line_edit && (!bookmark_widget->is_pending)) {
             QString text = bookmark_widget->line_edit->text();
             auto bookmark = doc()->get_bookmark_with_uuid(bookmark_widget->bookmark_uuid.toStdString());
 
