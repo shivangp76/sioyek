@@ -13532,6 +13532,14 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
                 follow.bookmark_uuid = selected_bookmark_uuid;
                 follow.file = new QTemporaryFile();
                 follow.rect = rect.value();
+                if (!bm.is_freetext()) {
+                    NormalizedWindowRect nwr;
+                    nwr.x0 = -0.5f;
+                    nwr.x1 = 0.5f;
+                    nwr.y0 = 0.5f;
+                    nwr.y1 = -0.5f;
+                    follow.rect = nwr.to_window(dv()).to_absolute(dv());
+                }
 
                 follow.file->open();
                 follow.file->write(QString::fromStdWString(bm.description).toUtf8());
