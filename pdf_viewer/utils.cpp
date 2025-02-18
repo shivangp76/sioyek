@@ -4647,7 +4647,7 @@ bool should_trigger_delete(QKeyEvent *key_event) {
 
 QString get_ui_font_face_name() {
     if (UI_FONT_FACE_NAME.empty()) {
-        return "JetBrainsMono";
+        return global_font_family;
     }
     else {
         return QString::fromStdWString(UI_FONT_FACE_NAME);
