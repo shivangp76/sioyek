@@ -311,6 +311,7 @@ std::wstring EXTERNAL_TEXT_EDITOR_COMMAND = L"";
 std::wstring EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND = L"";
 bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS = false;
 bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED = true;
+bool DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR = false;
 
 bool RIGHT_CLICK_CONTEXT_MENU = false;
 #ifdef SIOYEK_MOBILE
@@ -1358,6 +1359,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"show_setconfig_in_statusbar", &SHOW_SETCONFIG_IN_STATUSBAR);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_bool(L"automatically_update_checksum_when_document_is_changed", &AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED);
+    add_bool(L"double_click_on_bookmarks_opens_embedded_text_editor", &DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR);
     add_bool(L"show_reference_overview_highlights", &SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS);
     add_bool(L"highlight_pro_only_commands", &HIGHLIGHT_PRO_ONLY_COMMANDS);
     add_bool(L"show_pro_commands", &SHOW_PRO_COMMANDS);

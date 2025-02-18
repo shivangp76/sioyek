@@ -294,6 +294,7 @@ extern float PERSISTANCE_PERIOD;
 extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
 
+extern bool DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR;
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
@@ -3235,8 +3236,12 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
 
         if (bookmark_uuid.size() > 0) {
             main_document_view->set_selected_bookmark_uuid(bookmark_uuid);
-            bool is_question = bookmark_at_mouse_pos->is_question();
-            handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+            if (DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR) {
+                handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark_with_external_editor"), 0);
+            }
+            else {
+                handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+            }
             return;
         }
         if (highlight_uuid.size() > 0) {
