@@ -13367,12 +13367,16 @@ void MainWidget::repeat_last_command() {
 
 void MainWidget::handle_ask() {
     float current_y_offset = main_document_view->get_offset_y();
-    std::string uuid = doc()->add_bookmark(L"", current_y_offset);
-    on_new_bookmark_added(uuid);
-    open_selected_bookmark_in_widget(uuid, true);
+    BookMark pending_bookmark;
+    pending_bookmark.description = L"";
+    pending_bookmark.y_offset_ = current_y_offset;
+    //std::string uuid = doc()->add_bookmark(L"", current_y_offset);
+    std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
+    //on_new_bookmark_added(uuid);
+    open_selected_bookmark_in_widget(uuid, true, true);
 }
 
-void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, bool force_chat) {
+void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, bool force_chat, bool is_bookmark_pending) {
     if (bookmark_uuid.size() == 0) {
         bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
     }
@@ -13385,6 +13389,9 @@ void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, boo
         SioyekBookmarkTextBrowser* text_browser = new SioyekBookmarkTextBrowser(
             this, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text, is_question_bookmark || force_chat
         );
+        if (is_bookmark_pending) {
+            text_browser->is_bookmark_pending = true;
+        }
 
         set_current_widget(text_browser);
         text_browser->handle_resize();
@@ -13397,11 +13404,21 @@ void MainWidget::accept_new_bookmark_message() {
     if (current_widget_stack.size() > 0) {
         auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
         if (bookmark_widget && bookmark_widget->line_edit && (!bookmark_widget->is_pending)) {
-            QString text = bookmark_widget->line_edit->text();
+            if (bookmark_widget->is_bookmark_pending) {
+                doc()->add_pending_bookmark(bookmark_widget->bookmark_uuid.toStdString(), L"");
+                bookmark_widget->is_bookmark_pending = false;
+            }
+            QString text_ = bookmark_widget->line_edit->text();
+            QString text;
+
+            for (auto line : text_.split("\n")) {
+                text += "? " + line + "\n";
+            }
+
             auto bookmark = doc()->get_bookmark_with_uuid(bookmark_widget->bookmark_uuid.toStdString());
 
             if (bookmark) {
-                bookmark->description += ("? " + text).toStdWString();
+                bookmark->description += text.toStdWString();
                 handle_bookmark_ask_query(bookmark->description, utf8_decode(bookmark->uuid));
                 bookmark_widget->line_edit->clear();
                 bookmark_widget->set_follow_output(true);

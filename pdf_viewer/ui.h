@@ -1608,6 +1608,7 @@ protected:
 public:
     bool follow_output = true;
     bool is_pending = false;
+    bool is_bookmark_pending = false;
     MyLineEdit* line_edit = nullptr;
     QString bookmark_uuid;
     SioyekChatTextBrowser* text_browser = nullptr;
@@ -1622,5 +1623,6 @@ public:
     void scroll_to_start();
     void scroll_to_end();
     void set_pending(bool pending);
+    ~SioyekBookmarkTextBrowser();
 
 };

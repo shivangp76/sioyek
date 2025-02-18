@@ -1153,7 +1153,7 @@ public:
     void update_text_selection(AbsoluteDocumentPos abs_mpos);
     void scroll_selected_bookmark_to_end();
     void handle_ask();
-    void open_selected_bookmark_in_widget(std::string bookmark_uuid="", bool force_chat=false);
+    void open_selected_bookmark_in_widget(std::string bookmark_uuid="", bool force_chat=false, bool is_bookmark_pending=false);
     bool is_in_bookmark_widget_mode();
     void accept_new_bookmark_message();
     void update_current_bookmark_widget_text(BookMark* bm);

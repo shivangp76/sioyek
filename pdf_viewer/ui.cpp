@@ -4335,25 +4335,37 @@ void SioyekChatTextBrowser::update_text(QString new_text) {
     cached_documents.clear();
     QStringList lines = new_text.split("\n", Qt::KeepEmptyParts);
 
-    QString current_message;
+    QString current_response;
+    QString current_question;
 
     for (auto line : lines) {
-        if (line.startsWith("? ")) {
-            if (current_message.size() > 0) {
-                messages.push_back({ ChatMessageType::ResponseMessage, current_message });
-                current_message = "";
-            }
-            messages.push_back({ ChatMessageType::UserMessage, line.mid(2) });
+        bool is_question = line.startsWith("? ");
+        QString actual_line_text = line;
+        if (is_question) {
+            actual_line_text = line.mid(2);
+        }
+        if (is_question && current_response.size() > 0) {
+            messages.push_back({ ChatMessageType::ResponseMessage, current_response });
+            current_response = "";
+        }
+        if (!is_question && current_question.size() > 0) {
+            messages.push_back({ ChatMessageType::UserMessage, current_question });
+            current_question = "";
+        }
+
+        if (is_question) {
+            current_question += actual_line_text + "\n\n";
         }
         else {
-            current_message += line + "\n";
+            current_response += actual_line_text + "\n";
         }
     }
-    if (current_message.size() > 0) {
-        messages.push_back({ ChatMessageType::ResponseMessage, current_message });
+    if (current_question.size() > 0) {
+        messages.push_back({ ChatMessageType::UserMessage, current_question });
     }
-
-
+    if (current_response.size() > 0) {
+        messages.push_back({ ChatMessageType::ResponseMessage, current_response });
+    }
 }
 
 void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
@@ -4481,5 +4493,11 @@ void SioyekBookmarkTextBrowser::set_pending(bool pending) {
         else {
             line_edit->setStyleSheet("QLineEdit{background-color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR).name() + "; color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR).name() + "; border-radius: 0px; padding: 10px;}");
         }
+    }
+}
+
+SioyekBookmarkTextBrowser::~SioyekBookmarkTextBrowser() {
+    if (is_bookmark_pending) {
+        main_widget->doc()->undo_pending_bookmark(bookmark_uuid.toStdString());
     }
 }
