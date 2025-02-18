@@ -1492,6 +1492,15 @@ MainWidget::~MainWidget() {
 
 void MainWidget::update_following_windows() {
     WId hwnd = winId();
+    WindowFollowLastState current_state;
+    current_state.offset_x = dv()->get_offset_x();
+    current_state.offset_y = dv()->get_offset_y();
+    current_state.zoom_level = dv()->get_zoom_level();
+    current_state.pos_x = pos().x();
+    current_state.pos_y = pos().y();
+    current_state.width = width();
+    current_state.height = height();
+    QDateTime current_time = QDateTime::currentDateTime();
 
     for (int i = following_windows.size() - 1; i >= 0; i--) {
         auto following_window = following_windows[i];
@@ -1512,12 +1521,16 @@ void MainWidget::update_following_windows() {
             invalidate_render();
         }
         else {
-            WindowRect window_rect = following_window.rect.to_window(dv());
-            // the coordinate relative to screen (not widget)
-            auto global_point = mapToGlobal(QPoint(window_rect.x0, window_rect.y0));
-            QRect absolute_rect(global_point.x(), global_point.y(), window_rect.width(), window_rect.height());
+            if (!(current_state == following_window.last_state) || (following_window.creation_time.msecsTo(current_time) < 1000)) {
+                WindowRect window_rect = following_window.rect.to_window(dv());
+                // the coordinate relative to screen (not widget)
+                auto global_point = mapToGlobal(QPoint(window_rect.x0, window_rect.y0));
+                QRect absolute_rect(global_point.x(), global_point.y(), window_rect.width(), window_rect.height());
 
-            move_resize_window(hwnd, pid, absolute_rect.x(), absolute_rect.y(), absolute_rect.width(), absolute_rect.height());
+                move_resize_window(hwnd, pid, absolute_rect.x(), absolute_rect.y(), absolute_rect.width(), absolute_rect.height());
+                following_windows[i].last_state = current_state;
+            }
+
         }
     }
 }
@@ -1781,6 +1794,10 @@ void MainWidget::keyReleaseEvent(QKeyEvent* kevent) {
 }
 
 void MainWidget::validate_render() {
+
+    if (following_windows.size() > 0) {
+        update_following_windows();
+    }
 
     if (SMOOTH_SCROLL_MODE) {
         if (main_document_view_has_document()) {
@@ -13559,9 +13576,21 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
 
                 follow.pid = pid;
 
+                follow.creation_time = QDateTime::currentDateTime();
                 following_windows.push_back(follow);
             }
         }
 
     }
+}
+
+bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& rhs) {
+    return
+        (lhs.offset_x == rhs.offset_x) &&
+        (lhs.offset_y == rhs.offset_y) &&
+        (lhs.zoom_level == rhs.zoom_level) &&
+        (lhs.pos_x == rhs.pos_x) &&
+        (lhs.pos_y == rhs.pos_y) &&
+        (lhs.width == rhs.width) &&
+        (lhs.height == rhs.height);
 }

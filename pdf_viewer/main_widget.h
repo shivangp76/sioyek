@@ -75,11 +75,25 @@ enum class DrawingMode {
     None
 };
 
+struct WindowFollowLastState {
+    float offset_x;
+    float offset_y;
+    float zoom_level;
+    int pos_x;
+    int pos_y;
+    int width;
+    int height;
+};
+
+bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& rhs);
+
 struct WindowFollowData{
     AbsoluteRect rect;
     qint64 pid;
     std::string bookmark_uuid;
     QTemporaryFile* file = nullptr;
+    std::optional<WindowFollowLastState> last_state={};
+    QDateTime creation_time;
 };
 
 
