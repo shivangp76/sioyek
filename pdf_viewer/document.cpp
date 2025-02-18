@@ -4383,6 +4383,9 @@ std::string Document::get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos) {
 void Document::update_bookmark_text(const std::string& uuid, const std::wstring& new_text, float new_font_size) {
     if (uuid.size() > 0) {
         BookMark* bookmark = get_bookmark_with_uuid(uuid);
+        if (new_font_size < 0) {
+            new_font_size = bookmark->font_size;
+        }
         if (bookmark) {
             if (db_manager->update_bookmark_change_text(uuid, new_text, new_font_size)) {
                 bookmark->description = new_text;

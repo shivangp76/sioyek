@@ -297,6 +297,7 @@ extern float MENU_SCREEN_HEIGHT_RATIO;
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
+extern std::wstring EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND;
 extern bool FORCE_CUSTOM_LINE_ALGORITHM;
 
 extern std::wstring RIGHT_CLICK_COMMAND;
@@ -1488,7 +1489,42 @@ MainWidget::~MainWidget() {
     }
 }
 
+void MainWidget::update_following_windows() {
+    WId hwnd = winId();
+
+    for (int i = following_windows.size() - 1; i >= 0; i--) {
+        auto following_window = following_windows[i];
+        qint64 pid = following_window.pid;
+        bool still_running = is_process_still_running(pid);
+        if (!still_running) {
+            WindowFollowData completed_item = following_windows[i];
+            following_windows.erase(following_windows.begin() + i);
+
+            completed_item.file->open();
+            QString content = QString::fromUtf8(completed_item.file->readAll());
+            completed_item.file->close();
+            delete completed_item.file;
+
+            //doc()->bookmark_text
+            doc()->update_bookmark_text(completed_item.bookmark_uuid, content.toStdWString(), -1);
+            on_bookmark_edited(completed_item.bookmark_uuid);
+            invalidate_render();
+        }
+        else {
+            WindowRect window_rect = following_window.rect.to_window(dv());
+            // the coordinate relative to screen (not widget)
+            auto global_point = mapToGlobal(QPoint(window_rect.x0, window_rect.y0));
+            QRect absolute_rect(global_point.x(), global_point.y(), window_rect.width(), window_rect.height());
+
+            move_resize_window(hwnd, pid, absolute_rect.x(), absolute_rect.y(), absolute_rect.width(), absolute_rect.height());
+        }
+    }
+}
 void MainWidget::handle_validation_interval_timeout(){
+
+    if (following_windows.size() > 0) {
+        update_following_windows();
+    }
 
     if (PERSISTANCE_PERIOD > 0) {
         QDateTime now = QDateTime::currentDateTime();
@@ -13471,5 +13507,48 @@ void MainWidget::handle_scroll_selected_bookmark_to_ends(bool goto_start){
             scroll_bookmark_with_uuid(bookmark_uuid, INT_MAX / 2);
         }
         //scroll_bookmark_with_uuid(bookmark_uuid, amount);
+    }
+}
+
+void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
+    if (EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
+        show_error_message(L"You must configure the embedded_external_text_editor_command in your prefs_user.config");
+        return;
+    }
+
+    std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
+    if (selected_bookmark_uuid.size() > 0) {
+        BookMark bm = *doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
+        std::optional<AbsoluteRect> rect = bm.get_rectangle();
+        if (rect) {
+            QStringList command_parts = QProcess::splitCommand(QString::fromStdWString(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND));
+            if (command_parts.size() > 0) {
+                WindowFollowData follow;
+                follow.bookmark_uuid = selected_bookmark_uuid;
+                follow.file = new QTemporaryFile();
+                follow.rect = rect.value();
+
+                follow.file->open();
+                follow.file->write(QString::fromStdWString(bm.description).toUtf8());
+                follow.file->close();
+
+                QString file_path = follow.file->fileName();
+                for (int i = 0; i < command_parts.size(); i++) {
+                    command_parts[i] = command_parts[i].replace("%{file}", file_path);
+                }
+
+                QProcess* process = new QProcess(this);
+                process->start(command_parts[0], command_parts.mid(1));
+                //process->start(program_name, {"--", "-c", "\"set laststatus=0\"", "-c", "\"set cmdheight=0\"", file_path});
+
+                process->waitForStarted();
+                qint64 pid = process->processId();
+
+                follow.pid = pid;
+
+                following_windows.push_back(follow);
+            }
+        }
+
     }
 }

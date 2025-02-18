@@ -46,6 +46,18 @@
 #include <qlistview.h>
 #include <QTimer>
 
+#include <cstdint>
+
+#if defined(_WIN32)
+    #include <windows.h>
+#elif defined(Q_OS_LINUX)
+    #include <X11/Xlib.h>
+    #include <X11/Xatom.h>
+    #include <unistd.h>
+#elif defined(Q_OS_MACOS)
+    #include <ApplicationServices/ApplicationServices.h>
+#endif
+
 #ifdef SIOYEK_ANDROID
 #include <QtCore/private/qandroidextras_p.h>
 #include <qjniobject.h>
@@ -6411,4 +6423,155 @@ void focus_on_widget(QWidget* widget, bool no_unminimize) {
     else {
         widget->setWindowState(widget->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
     }
+}
+
+#ifdef Q_OS_WIN
+HWND get_window_hwnd_with_pid(qint64 pid) {
+    // Windows implementation: enumerate top-level windows for matching PID.
+    struct FindWindowData {
+        DWORD pid;
+        HWND hwnd;
+    } data = { static_cast<DWORD>(pid), nullptr };
+
+    auto enumWindowsProc = [](HWND hwnd, LPARAM lParam) -> BOOL {
+        FindWindowData* pData = reinterpret_cast<FindWindowData*>(lParam);
+        DWORD winPid = 0;
+        GetWindowThreadProcessId(hwnd, &winPid);
+        // Check visible window from matching process.
+        if (winPid == pData->pid && IsWindowVisible(hwnd)) {
+            pData->hwnd = hwnd;
+            return FALSE; // found; stop enumeration
+        }
+        return TRUE;
+    };
+
+    EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(&data));
+    return data.hwnd;
+}
+
+void clip_child_to_parent(HWND hChild, HWND hParent) {
+
+    // Get the parent window's client area
+    RECT parentRect;
+    GetClientRect(hParent, &parentRect);
+    
+    // Convert to screen coordinates
+    POINT pt = { parentRect.left, parentRect.top };
+    ClientToScreen(hParent, &pt);
+    parentRect.left = pt.x;
+    parentRect.top = pt.y;
+
+    pt = { parentRect.right, parentRect.bottom };
+    ClientToScreen(hParent, &pt);
+    parentRect.right = pt.x;
+    parentRect.bottom = pt.y;
+
+    // Get the child window's screen coordinates
+    RECT childRect;
+    GetWindowRect(hChild, &childRect);
+
+    // Intersect the parent and child rectangles to create a clipping region
+    RECT intersectRect;
+    if (IntersectRect(&intersectRect, &parentRect, &childRect)) {
+        HRGN hRgn = CreateRectRgn(
+            intersectRect.left - childRect.left,
+            intersectRect.top - childRect.top,
+            intersectRect.right - childRect.left,
+            intersectRect.bottom - childRect.top
+        );
+        SetWindowRgn(hChild, hRgn, TRUE);  // Set the clipping region
+
+    } else {
+        // No intersection, hide the child window
+        SetWindowRgn(hChild, NULL, TRUE);
+    }
+}
+#endif
+
+void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, int height) {
+#if defined(_WIN32)
+    HWND hwnd = get_window_hwnd_with_pid(pid);
+    if (hwnd) {
+        // Move and resize the window. SWP_NOZORDER ensures window order is not changed.
+        SetWindowLong(hwnd, GWL_STYLE, 0);
+        SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+        clip_child_to_parent(hwnd, (HWND)parent_hwnd);
+    }
+#elif defined(Q_OS_LINUX)
+    // Linux implementation: use Xlib and _NET_WM_PID property.
+    Display* display = XOpenDisplay(nullptr);
+    if (!display) return;
+
+    Window root = DefaultRootWindow(display);
+    Window parent;
+    Window* children = nullptr;
+    unsigned int nchildren = 0;
+
+    if (XQueryTree(display, root, &root, &parent, &children, &nchildren) != 0) {
+        Atom pidAtom = XInternAtom(display, "_NET_WM_PID", True);
+        for (unsigned int i = 0; i < nchildren; i++) {
+            if (pidAtom != None) {
+                Atom type;
+                int format;
+                unsigned long nitems, bytes_after;
+                unsigned char* propPID = nullptr;
+                if (XGetWindowProperty(display, children[i], pidAtom, 0, 1, False, XA_CARDINAL,
+                        &type, &format, &nitems, &bytes_after, &propPID) == Success && propPID) {
+                    if (static_cast<qint64>(*reinterpret_cast<unsigned long*>(propPID)) == pid) {
+                        // Found window; move and resize.
+                        XMoveResizeWindow(display, children[i], x, y, width, height);
+                        XFlush(display);
+                        XFree(propPID);
+                        break;
+                    }
+                    XFree(propPID);
+                }
+            }
+        }
+        if (children) {
+            XFree(children);
+        }
+    }
+    XCloseDisplay(display);
+#elif defined(Q_OS_MACOS)
+    // macOS implementation: use Accessibility API to get the app's main window.
+    // Note: the calling process must have the accessibility permission.
+    AXUIElementRef appElem = AXUIElementCreateApplication(static_cast<pid_t>(pid));
+    if (!appElem) return;
+
+    // First try to get the main window.
+    AXUIElementRef window = nullptr;
+    AXError err = AXUIElementCopyAttributeValue(appElem, kAXMainWindowAttribute, (CFTypeRef*)&window);
+    if (err != kAXErrorSuccess || !window) {
+        // Fallback: get the first window in the kAXWindowsAttribute.
+        CFArrayRef windowList = nullptr;
+        err = AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute, (CFTypeRef*)&windowList);
+        if (err == kAXErrorSuccess && windowList) {
+            if (CFArrayGetCount(windowList) > 0) {
+                window = (AXUIElementRef)CFArrayGetValueAtIndex(windowList, 0);
+                // Retain the window since we are going to use it.
+                if(window) CFRelease(window);
+            }
+            CFRelease(windowList);
+        }
+    }
+    if (window) {
+        // Set position.
+        CGPoint pt = { static_cast<CGFloat>(x), static_cast<CGFloat>(y) };
+        AXValueRef posValue = AXValueCreate(kAXValueCGPointType, &pt);
+        if (posValue) {
+            AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
+            CFRelease(posValue);
+        }
+        // Set size.
+        CGSize size = { static_cast<CGFloat>(width), static_cast<CGFloat>(height) };
+        AXValueRef sizeValue = AXValueCreate(kAXValueCGSizeType, &size);
+        if (sizeValue) {
+            AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
+            CFRelease(sizeValue);
+        }
+        CFRelease(window);
+    }
+    CFRelease(appElem);
+#endif
 }

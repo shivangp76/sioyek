@@ -49,6 +49,7 @@ class SioyekNetworkManager;
 class QMediaPlayer;
 class QTemporaryFile;
 class QProcess;
+class QTemporaryFile;
 
 struct fz_context;
 struct fz_stext_char;
@@ -74,6 +75,12 @@ enum class DrawingMode {
     None
 };
 
+struct WindowFollowData{
+    AbsoluteRect rect;
+    qint64 pid;
+    std::string bookmark_uuid;
+    QTemporaryFile* file = nullptr;
+};
 
 
 
@@ -347,6 +354,8 @@ public:
     QPushButton* resume_to_server_position_button = nullptr;
     int text_suggestion_index = 0;
 
+    std::vector<WindowFollowData> following_windows;
+
     std::deque<std::wstring> search_terms;
 
     // determines if the widget render is invalid and needs to be updated
@@ -432,6 +441,7 @@ public:
     void manage_last_document_checksum();
     void on_checksum_computed();
 
+    void update_following_windows();
     void handle_validation_interval_timeout();
     void update_selected_bookmark_font_size();
     //bool eventFilter(QObject* obj, QEvent* event) override;
@@ -1161,6 +1171,7 @@ public:
     std::optional<SioyekBookmarkTextBrowser*> get_current_bookmark_browser();
 
     void handle_scroll_selected_bookmark_to_ends(bool goto_start);
+    void handle_edit_selected_bookmark_with_external_editor();
 
 
 public slots:

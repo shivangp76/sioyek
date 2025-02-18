@@ -308,6 +308,7 @@ std::wstring CONTEXT_MENU_ITEMS_FOR_HIGHLIGHTS = L"delete_highlight|edit_selecte
 std::wstring CONTEXT_MENU_ITEMS_FOR_BOOKMARKS = L"delete_visible_bookmark|edit_selected_bookmark|move_selected_bookmark";
 std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW = L"";
 std::wstring EXTERNAL_TEXT_EDITOR_COMMAND = L"";
+std::wstring EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND = L"";
 bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS = false;
 bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED = true;
 
@@ -1399,6 +1400,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"context_menu_items_for_bookmarks", &CONTEXT_MENU_ITEMS_FOR_BOOKMARKS);
     add_string(L"context_menu_items_for_overview", &CONTEXT_MENU_ITEMS_FOR_OVERVIEW);
     add_string(L"external_text_editor_command", &EXTERNAL_TEXT_EDITOR_COMMAND);
+    add_string(L"embedded_external_text_editor_command", &EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND);
     // add_string(L"paper_download_url_path", &PAPER_SEARCH_URL_PATH);
     // add_string(L"paper_download_title_path", &PAPER_SEARCH_TILE_PATH);
     // add_string(L"paper_download_contrib_path", &PAPER_SEARCH_CONTRIB_PATH);

@@ -1735,6 +1735,18 @@ public:
     bool requires_document() { return false; }
 };
 
+class EditSelectedBookmarkWithExternalEditorCommand : public Command {
+public:
+    static inline const std::string cname = "edit_selected_bookmark_with_external_editor";
+    static inline const std::string hname = "";
+    EditSelectedBookmarkWithExternalEditorCommand (MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->handle_edit_selected_bookmark_with_external_editor();
+    }
+
+};
+
 class ClearCurrentDocumentDrawingsCommand : public Command {
 public:
     static inline const std::string cname = "clear_current_document_drawings";
@@ -1915,4 +1927,5 @@ void register_annotation_commands(CommandManager* manager) {
     register_command<ClearCurrentDocumentDrawingsCommand>(manager);
     register_command<DeleteFreehandDrawingsCommand>(manager);
     register_command<SelectFreehandDrawingsCommand>(manager);
+    register_command<EditSelectedBookmarkWithExternalEditorCommand>(manager);
 }
