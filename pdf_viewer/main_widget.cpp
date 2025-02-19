@@ -3279,6 +3279,7 @@ void MainWidget::mouseDoubleClickEvent(QMouseEvent* mevent) {
         if (highlight_uuid.size() > 0) {
             main_document_view->set_selected_highlight_uuid(highlight_uuid);
             handle_command_types(command_manager->get_command_with_name(this, "add_annot_to_highlight"), 0);
+            return;
         }
 
         if (mevent->button() == Qt::MouseButton::LeftButton) {
