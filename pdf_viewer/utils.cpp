@@ -6466,11 +6466,6 @@ void clip_child_to_parent(HWND hChild, HWND hParent, RECT child_rect) {
     parentRect.right = pt.x;
     parentRect.bottom = pt.y;
 
-    // Get the child window's screen coordinates
-    //RECT childRect;
-    //GetWindowRect(hChild, &childRect);
-
-    // Intersect the parent and child rectangles to create a clipping region
     RECT intersectRect;
     if (IntersectRect(&intersectRect, &parentRect, &child_rect)) {
         HRGN hRgn = CreateRectRgn(
@@ -6479,7 +6474,7 @@ void clip_child_to_parent(HWND hChild, HWND hParent, RECT child_rect) {
             intersectRect.right - child_rect.left,
             intersectRect.bottom - child_rect.top
         );
-        SetWindowRgn(hChild, hRgn, TRUE);  // Set the clipping region
+        SetWindowRgn(hChild, hRgn, TRUE);
 
     } else {
         HRGN hRgn = CreateRectRgn(
@@ -6487,9 +6482,7 @@ void clip_child_to_parent(HWND hChild, HWND hParent, RECT child_rect) {
             0,
             0,
             0);
-        SetWindowRgn(hChild, hRgn, TRUE);  // Set the clipping region
-        // No intersection, hide the child window
-        //SetWindowRgn(hChild, NULL, TRUE);
+        SetWindowRgn(hChild, hRgn, TRUE);
     }
 }
 #endif
@@ -6498,7 +6491,7 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
 #if defined(_WIN32)
     HWND hwnd = get_window_hwnd_with_pid(pid);
     if (hwnd) {
-        // Move and resize the window. SWP_NOZORDER ensures window order is not changed.
+        // this makes sure that the window doesn't have a titlebar and border
         SetWindowLong(hwnd, GWL_STYLE, 0);
         SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
         RECT child_rect;
@@ -6506,6 +6499,7 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
         child_rect.right = x + width;
         child_rect.top = y;
         child_rect.bottom = y + height;
+        // only show the part of the window that is inside the parent window
         clip_child_to_parent(hwnd, (HWND)parent_hwnd, child_rect);
     }
 #elif defined(Q_OS_LINUX)
