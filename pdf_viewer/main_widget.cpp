@@ -1515,10 +1515,18 @@ void MainWidget::update_following_windows() {
             completed_item.file->close();
             delete completed_item.file;
 
-            //doc()->bookmark_text
-            doc()->update_bookmark_text(completed_item.bookmark_uuid, content.toStdWString(), -1);
-            on_bookmark_edited(completed_item.bookmark_uuid);
-            invalidate_render();
+            if (following_window.updating_text_editor) {
+                if (text_command_line_edit->isVisible()) {
+                    text_command_line_edit->setText(content);
+                    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
+                    QCoreApplication::postEvent(text_command_line_edit, enter_key_event);
+                }
+            }
+            else {
+                doc()->update_bookmark_text(completed_item.bookmark_uuid, content.toStdWString(), -1);
+                on_bookmark_edited(completed_item.bookmark_uuid);
+                invalidate_render();
+            }
         }
         else {
             if (!(current_state == following_window.last_state) || (following_window.creation_time.msecsTo(current_time) < 1000)) {
@@ -11922,6 +11930,49 @@ void MainWidget:: run_startup_js(bool first_run) {
 #endif
 }
 
+void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, QString content) {
+
+    follow_data.creation_time = QDateTime::currentDateTime();
+    follow_data.file = new QTemporaryFile();
+
+    follow_data.file->open();
+    follow_data.file->write(content.toUtf8());
+    follow_data.file->close();
+
+    QStringList command_parts = QProcess::splitCommand(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND);
+    for (int i = 0; i < command_parts.size(); i++) {
+        command_parts[i] = command_parts[i].replace("%{file}", follow_data.file->fileName());
+    }
+    QProcess* process = new QProcess(this);
+    process->start(command_parts[0], command_parts.mid(1));
+
+    process->waitForStarted();
+    qint64 pid = process->processId();
+    follow_data.pid = pid;
+}
+
+void MainWidget::open_embedded_external_text_editor() {
+    if (text_command_line_edit->isVisible()) {
+        QString content = text_command_line_edit->text();
+
+
+        WindowFollowData follow_data;
+        NormalizedWindowRect nwr;
+        nwr.x0 = -0.5f;
+        nwr.x1 = 0.5f;
+        nwr.y0 = 0.5f;
+        nwr.y1 = -0.5f;
+        follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
+
+        follow_data.updating_text_editor = true;
+
+        start_embedded_external_editor(follow_data, content);
+
+        following_windows.push_back(follow_data);
+
+    }
+}
+
 void MainWidget::open_external_text_editor() {
     if (EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
         show_error_message(L"You should configure external_text_editor_command in you configs file");
@@ -13547,7 +13598,6 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
             if (command_parts.size() > 0) {
                 WindowFollowData follow;
                 follow.bookmark_uuid = selected_bookmark_uuid;
-                follow.file = new QTemporaryFile();
                 follow.rect = rect.value();
                 if (!bm.is_freetext()) {
                     NormalizedWindowRect nwr;
@@ -13558,25 +13608,8 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
                     follow.rect = nwr.to_window(dv()).to_absolute(dv());
                 }
 
-                follow.file->open();
-                follow.file->write(QString::fromStdWString(bm.description).toUtf8());
-                follow.file->close();
+                start_embedded_external_editor(follow, QString::fromStdWString(bm.description));
 
-                QString file_path = follow.file->fileName();
-                for (int i = 0; i < command_parts.size(); i++) {
-                    command_parts[i] = command_parts[i].replace("%{file}", file_path);
-                }
-
-                QProcess* process = new QProcess(this);
-                process->start(command_parts[0], command_parts.mid(1));
-                //process->start(program_name, {"--", "-c", "\"set laststatus=0\"", "-c", "\"set cmdheight=0\"", file_path});
-
-                process->waitForStarted();
-                qint64 pid = process->processId();
-
-                follow.pid = pid;
-
-                follow.creation_time = QDateTime::currentDateTime();
                 following_windows.push_back(follow);
             }
         }

@@ -1166,6 +1166,20 @@ public:
     bool requires_document() { return false; }
 };
 
+class OpenEmbeddedExternalTextEditorCommand : public Command {
+public:
+    static inline const std::string cname = "open_embedded_external_text_editor";
+    static inline const std::string hname = "Edit the current text input in the configured embedded external text editor";
+
+    OpenEmbeddedExternalTextEditorCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->open_embedded_external_text_editor();
+    }
+
+    bool requires_document() { return false; }
+};
+
 class CloseWindowCommand : public Command {
 public:
     static inline const std::string cname = "close_window";
@@ -2522,6 +2536,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<ShowContextMenuCommand>(manager);
     register_command<ShowCustomContextMenuCommand>(manager);
     register_command<OpenExternalTextEditorCommand>(manager);
+    register_command<OpenEmbeddedExternalTextEditorCommand>(manager);
     register_command<CloseWindowCommand>(manager, "q");
     register_command<NewWindowCommand>(manager);
     register_command<QuitCommand>(manager);

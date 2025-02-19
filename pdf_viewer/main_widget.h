@@ -90,8 +90,9 @@ bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& r
 struct WindowFollowData{
     AbsoluteRect rect;
     qint64 pid;
-    std::string bookmark_uuid;
+    std::string bookmark_uuid = "";
     QTemporaryFile* file = nullptr;
+    bool updating_text_editor = false;
     std::optional<WindowFollowLastState> last_state={};
     QDateTime creation_time;
 };
@@ -1078,6 +1079,8 @@ public:
     // void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     bool is_ruler_mode();
     void open_external_text_editor();
+    void start_embedded_external_editor(WindowFollowData& follow_data, QString content);
+    void open_embedded_external_text_editor();
     void handle_text_edit_return_pressed();
     void call_async_js_function_with_args(const QString& code, QJsonArray args);
     void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
