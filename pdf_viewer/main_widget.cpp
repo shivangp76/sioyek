@@ -1504,32 +1504,36 @@ void MainWidget::update_following_windows() {
     QDateTime current_time = QDateTime::currentDateTime();
 
     for (int i = following_windows.size() - 1; i >= 0; i--) {
-        auto following_window = following_windows[i];
-        qint64 pid = following_window.pid;
+        qint64 pid = following_windows[i].pid;
         bool still_running = is_process_still_running(pid);
         if (!still_running) {
-            WindowFollowData completed_item = following_windows[i];
+            auto completed_item_file = following_windows[i].file;
+            auto completed_item_uuid = following_windows[i].bookmark_uuid;
+            auto completed_item_command = std::move(following_windows[i].pending_text_command);
             following_windows.erase(following_windows.begin() + i);
 
-            completed_item.file->open();
-            QString content = QString::fromUtf8(completed_item.file->readAll());
-            completed_item.file->close();
-            delete completed_item.file;
+            completed_item_file->open();
+            QString content = QString::fromUtf8(completed_item_file->readAll());
+            completed_item_file->close();
+            delete completed_item_file;
 
-            if (following_window.updating_text_editor) {
-                if (text_command_line_edit->isVisible()) {
-                    text_command_line_edit->setText(content);
-                    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
-                    QCoreApplication::postEvent(text_command_line_edit, enter_key_event);
-                }
+            if (completed_item_command) {
+                completed_item_command->set_text_requirement(content.toStdWString());
+                advance_command(std::move(completed_item_command));
+                //if (text_command_line_edit->isVisible()) {
+                //    text_command_line_edit->setText(content);
+                //    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
+                //    QCoreApplication::postEvent(text_command_line_edit, enter_key_event);
+                //}
             }
             else {
-                doc()->update_bookmark_text(completed_item.bookmark_uuid, content.toStdWString(), -1);
-                on_bookmark_edited(completed_item.bookmark_uuid);
+                doc()->update_bookmark_text(completed_item_uuid, content.toStdWString(), -1);
+                on_bookmark_edited(completed_item_uuid);
                 invalidate_render();
             }
         }
         else {
+            auto& following_window = following_windows[i];
             if (!(current_state == following_window.last_state) || (following_window.creation_time.msecsTo(current_time) < 1000)) {
                 WindowRect window_rect = following_window.rect.to_window(dv());
                 // the coordinate relative to screen (not widget)
@@ -3762,7 +3766,9 @@ void MainWidget::show_textbar(const std::wstring& command_name, bool is_password
                     // open_embedded_external_text_editor directly, we call it after the event loop is finished by which point the text
                     // of the command is updated.
                     QTimer::singleShot(0, [this]() {
-                        open_embedded_external_text_editor();
+                        QString content = text_command_line_edit->text();
+                        open_embedded_external_text_editor(content);
+                        text_command_line_edit_container->hide();
                         });
                     break;
                 }
@@ -9262,8 +9268,8 @@ bool MainWidget::ensure_internet_permission() {
     return true;
 }
 
-void MainWidget::change_selected_bookmark_text(const std::wstring& new_text) {
-    std::string selected_bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
+void MainWidget::change_bookmark_text(std::string uuid, const std::wstring& new_text) {
+    std::string selected_bookmark_uuid = uuid;
     if (selected_bookmark_uuid.size() > 0) {
         BookMark* selected_bookmark = doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
         if (selected_bookmark) {
@@ -9316,8 +9322,8 @@ void MainWidget::delete_global_bookmark(const std::string& uuid) {
     }
 }
 
-void MainWidget::change_selected_highlight_text_annot(const std::wstring& new_text) {
-    std::string selected_highlight_uuid = main_document_view->get_selected_highlight_uuid();
+void MainWidget::change_highlight_text_annot(std::string uuid, const std::wstring& new_text) {
+    std::string selected_highlight_uuid = uuid;
     if (selected_highlight_uuid.size() > 0) {
         update_highlight_annot_with_uuid(selected_highlight_uuid, new_text);
     }
@@ -11969,7 +11975,7 @@ void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, Q
 }
 
 void MainWidget::open_embedded_external_text_editor(QString content) {
-    if (text_command_line_edit->isVisible()) {
+    if (text_command_line_edit->isVisible() || content.size() > 0) {
         //QString content = text_command_line_edit->text();
         if (content.size() == 0) {
             content = text_command_line_edit->text();
@@ -11983,11 +11989,11 @@ void MainWidget::open_embedded_external_text_editor(QString content) {
         nwr.y1 = -0.5f;
         follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
 
-        follow_data.updating_text_editor = true;
+        follow_data.pending_text_command = std::move(pending_command_instance);
 
         start_embedded_external_editor(follow_data, content);
 
-        following_windows.push_back(follow_data);
+        following_windows.push_back(std::move(follow_data));
 
     }
 }
@@ -13629,7 +13635,7 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
 
                 start_embedded_external_editor(follow, QString::fromStdWString(bm.description));
 
-                following_windows.push_back(follow);
+                following_windows.push_back(std::move(follow));
             }
         }
 

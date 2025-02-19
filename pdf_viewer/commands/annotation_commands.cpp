@@ -768,10 +768,10 @@ public:
     }
 
     void perform() {
-        std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
-        if (selected_bookmark_uuid.size() > 0) {
+        //std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
+        if (uuid.size() > 0) {
             std::wstring text_ = text.value();
-            widget->change_selected_bookmark_text(text_);
+            widget->change_bookmark_text(uuid, text_);
             widget->invalidate_render();
         }
         else {
@@ -811,7 +811,7 @@ public:
     void perform() {
         if (uuid.size() > 0) {
             std::wstring text_ = text.value();
-            widget->change_selected_highlight_text_annot(text_);
+            widget->change_highlight_text_annot(uuid, text_);
         }
     }
 

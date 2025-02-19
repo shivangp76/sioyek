@@ -92,7 +92,7 @@ struct WindowFollowData{
     qint64 pid;
     std::string bookmark_uuid = "";
     QTemporaryFile* file = nullptr;
-    bool updating_text_editor = false;
+    std::unique_ptr<Command> pending_text_command = {};
     std::optional<WindowFollowLastState> last_state={};
     QDateTime creation_time;
 };
@@ -462,8 +462,8 @@ public:
     //bool eventFilter(QObject* obj, QEvent* event) override;
     void set_command_textbox_text(const std::wstring& txt);
     void change_selected_highlight_type(char new_type);
-    void change_selected_bookmark_text(const std::wstring& new_text);
-    void change_selected_highlight_text_annot(const std::wstring& new_text);
+    void change_bookmark_text(std::string uuid, const std::wstring& new_text);
+    void change_highlight_text_annot(std::string uuid, const std::wstring& new_text);
     char get_current_selected_highlight_type();
     void show_textbar(const std::wstring& command_name, bool is_password, const std::wstring& initial_value = L"");
     void show_mark_selector();
