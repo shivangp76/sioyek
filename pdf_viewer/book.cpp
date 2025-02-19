@@ -225,6 +225,12 @@ QString BookMark::get_render_text() const {
     if (is_box()) {
         if (description.size() > 0) {
             int space_index = description.find(L" ");
+            int newline_index = description.find(L"\n");
+
+            if ((newline_index >= 0) && (newline_index < space_index)) {
+                space_index = newline_index;
+            }
+
             if (space_index != std::wstring::npos) {
                 return QString::fromStdWString(description.substr(space_index + 1));
             }
