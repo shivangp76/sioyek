@@ -331,6 +331,10 @@ public:
     }
 
 
+    std::optional<AbsoluteRect> get_text_editor_rectangle() override {
+        return rect_;
+    }
+
     void on_cancel() {
 
         if (pending_uuid.size() > 0) {
@@ -759,6 +763,18 @@ public:
             bookmark->description = initial_text;
             bookmark->font_size = initial_font_size;
         }
+    }
+
+    std::optional<AbsoluteRect> get_text_editor_rectangle() override {
+        if (uuid.size() > 0) {
+            auto bm = widget->doc()->get_bookmark_with_uuid(uuid);
+            if (bm) {
+                if (bm->is_freetext()) {
+                    return bm->get_rectangle();
+                }
+            }
+        }
+        return {};
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {

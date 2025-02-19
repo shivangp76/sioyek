@@ -248,6 +248,10 @@ void Command::on_cancel() {
 
 }
 
+std::optional<AbsoluteRect> Command::get_text_editor_rectangle() {
+    return {};
+}
+
 void Command::run() {
     if (this->requires_document() && !(widget->main_document_view_has_document())) {
         return;

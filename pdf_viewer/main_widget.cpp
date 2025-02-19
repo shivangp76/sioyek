@@ -3767,8 +3767,9 @@ void MainWidget::show_textbar(const std::wstring& command_name, bool is_password
                     // of the command is updated.
                     QTimer::singleShot(0, [this]() {
                         QString content = text_command_line_edit->text();
-                        open_embedded_external_text_editor(content);
+                        open_embedded_external_text_editor(content, pending_command_instance->get_text_editor_rectangle());
                         text_command_line_edit_container->hide();
+                        setFocus();
                         });
                     break;
                 }
@@ -11974,7 +11975,7 @@ void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, Q
     follow_data.pid = pid;
 }
 
-void MainWidget::open_embedded_external_text_editor(QString content) {
+void MainWidget::open_embedded_external_text_editor(QString content, std::optional<AbsoluteRect> rect) {
     if (text_command_line_edit->isVisible() || content.size() > 0) {
         //QString content = text_command_line_edit->text();
         if (content.size() == 0) {
@@ -11982,12 +11983,17 @@ void MainWidget::open_embedded_external_text_editor(QString content) {
         }
 
         WindowFollowData follow_data;
-        NormalizedWindowRect nwr;
-        nwr.x0 = -0.5f;
-        nwr.x1 = 0.5f;
-        nwr.y0 = 0.5f;
-        nwr.y1 = -0.5f;
-        follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
+        if (rect) {
+            follow_data.rect = rect.value();
+        }
+        else {
+            NormalizedWindowRect nwr;
+            nwr.x0 = -0.5f;
+            nwr.x1 = 0.5f;
+            nwr.y0 = 0.5f;
+            nwr.y1 = -0.5f;
+            follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
+        }
 
         follow_data.pending_text_command = std::move(pending_command_instance);
 

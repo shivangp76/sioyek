@@ -104,6 +104,7 @@ public:
     virtual void perform_up();
     virtual void on_key_hold();
     virtual void on_text_change(const QString& new_text);
+    virtual std::optional<AbsoluteRect> get_text_editor_rectangle();
 
     void set_next_requirement_with_string(std::wstring str);
 
