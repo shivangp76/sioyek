@@ -290,6 +290,7 @@ extern int DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern int NUM_PAGE_COLUMNS;
 extern Path python_api_base_path;
 extern float PERSISTANCE_PERIOD;
+extern std::wstring COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR;
 
 extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
@@ -3750,6 +3751,22 @@ void MainWidget::show_textbar(const std::wstring& command_name, bool is_password
         }
         else {
             text_command_line_edit->setEchoMode(QLineEdit::EchoMode::Normal);
+        }
+        if (!is_password && COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR.size() > 0 && pending_command_instance) {
+            QStringList cmds = QString::fromStdWString(COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR).split("|");
+            QString current_cmd_name = QString::fromStdString(pending_command_instance->get_name());
+            for (auto cmd : cmds) {
+                if (current_cmd_name == cmd) {
+                    // when we show the textbar because the command requires text input, the text of the command is not updated yet
+                    // because we update it later in pre_peform (which requires the textbar to be shown). So here instead of calling
+                    // open_embedded_external_text_editor directly, we call it after the event loop is finished by which point the text
+                    // of the command is updated.
+                    QTimer::singleShot(0, [this]() {
+                        open_embedded_external_text_editor();
+                        });
+                    break;
+                }
+            }
         }
     }
 }
@@ -11951,10 +11968,12 @@ void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, Q
     follow_data.pid = pid;
 }
 
-void MainWidget::open_embedded_external_text_editor() {
+void MainWidget::open_embedded_external_text_editor(QString content) {
     if (text_command_line_edit->isVisible()) {
-        QString content = text_command_line_edit->text();
-
+        //QString content = text_command_line_edit->text();
+        if (content.size() == 0) {
+            content = text_command_line_edit->text();
+        }
 
         WindowFollowData follow_data;
         NormalizedWindowRect nwr;
