@@ -1492,66 +1492,70 @@ MainWidget::~MainWidget() {
 }
 
 void MainWidget::update_following_windows() {
-    WId hwnd = winId();
-    WindowFollowLastState current_state;
-    current_state.offset_x = dv()->get_offset_x();
-    current_state.offset_y = dv()->get_offset_y();
-    current_state.zoom_level = dv()->get_zoom_level();
-    current_state.pos_x = pos().x();
-    current_state.pos_y = pos().y();
-    current_state.width = width();
-    current_state.height = height();
-    QDateTime current_time = QDateTime::currentDateTime();
+    if (following_windows.size() > 0) {
 
-    for (int i = following_windows.size() - 1; i >= 0; i--) {
-        qint64 pid = following_windows[i].pid;
-        bool still_running = is_process_still_running(pid);
-        if (!still_running) {
-            auto completed_item_file = following_windows[i].file;
-            auto completed_item_uuid = following_windows[i].bookmark_uuid;
-            auto completed_item_command = std::move(following_windows[i].pending_text_command);
-            following_windows.erase(following_windows.begin() + i);
+        bool is_window_focused = window()->hasFocus();
 
-            completed_item_file->open();
-            QString content = QString::fromUtf8(completed_item_file->readAll());
-            completed_item_file->close();
-            delete completed_item_file;
+        WId hwnd = winId();
+        WindowFollowLastState current_state;
+        current_state.offset_x = dv()->get_offset_x();
+        current_state.offset_y = dv()->get_offset_y();
+        current_state.zoom_level = dv()->get_zoom_level();
+        current_state.pos_x = pos().x();
+        current_state.pos_y = pos().y();
+        current_state.width = width();
+        current_state.height = height();
+        current_state.window_is_focused = is_window_focused;
+        QDateTime current_time = QDateTime::currentDateTime();
 
-            if (completed_item_command) {
-                completed_item_command->set_text_requirement(content.toStdWString());
-                advance_command(std::move(completed_item_command));
-                //if (text_command_line_edit->isVisible()) {
-                //    text_command_line_edit->setText(content);
-                //    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
-                //    QCoreApplication::postEvent(text_command_line_edit, enter_key_event);
-                //}
+        for (int i = following_windows.size() - 1; i >= 0; i--) {
+            qint64 pid = following_windows[i].pid;
+            bool still_running = is_process_still_running(pid);
+            if (!still_running) {
+                auto completed_item_file = following_windows[i].file;
+                auto completed_item_uuid = following_windows[i].bookmark_uuid;
+                auto completed_item_command = std::move(following_windows[i].pending_text_command);
+                following_windows.erase(following_windows.begin() + i);
+
+                completed_item_file->open();
+                QString content = QString::fromUtf8(completed_item_file->readAll());
+                completed_item_file->close();
+                delete completed_item_file;
+
+                if (completed_item_command) {
+                    completed_item_command->set_text_requirement(content.toStdWString());
+                    advance_command(std::move(completed_item_command));
+                    //if (text_command_line_edit->isVisible()) {
+                    //    text_command_line_edit->setText(content);
+                    //    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
+                    //    QCoreApplication::postEvent(text_command_line_edit, enter_key_event);
+                    //}
+                }
+                else {
+                    doc()->update_bookmark_text(completed_item_uuid, content.toStdWString(), -1);
+                    on_bookmark_edited(completed_item_uuid);
+                    invalidate_render();
+                }
             }
             else {
-                doc()->update_bookmark_text(completed_item_uuid, content.toStdWString(), -1);
-                on_bookmark_edited(completed_item_uuid);
-                invalidate_render();
-            }
-        }
-        else {
-            auto& following_window = following_windows[i];
-            if (!(current_state == following_window.last_state) || (following_window.creation_time.msecsTo(current_time) < 1000)) {
-                WindowRect window_rect = following_window.rect.to_window(dv());
-                // the coordinate relative to screen (not widget)
-                auto global_point = mapToGlobal(QPoint(window_rect.x0, window_rect.y0));
-                QRect absolute_rect(global_point.x(), global_point.y(), window_rect.width(), window_rect.height());
+                auto& following_window = following_windows[i];
+                if (!(current_state == following_window.last_state) || (following_window.creation_time.msecsTo(current_time) < 1000)) {
+                    WindowRect window_rect = following_window.rect.to_window(dv());
+                    // the coordinate relative to screen (not widget)
+                    auto global_point = mapToGlobal(QPoint(window_rect.x0, window_rect.y0));
+                    QRect absolute_rect(global_point.x(), global_point.y(), window_rect.width(), window_rect.height());
 
-                move_resize_window(hwnd, pid, absolute_rect.x(), absolute_rect.y(), absolute_rect.width(), absolute_rect.height());
-                following_windows[i].last_state = current_state;
-            }
+                    move_resize_window(hwnd, pid, absolute_rect.x(), absolute_rect.y(), absolute_rect.width(), absolute_rect.height(), is_window_focused);
+                    following_windows[i].last_state = current_state;
+                }
 
+            }
         }
     }
 }
 void MainWidget::handle_validation_interval_timeout(){
 
-    if (following_windows.size() > 0) {
-        update_following_windows();
-    }
+    update_following_windows();
 
     if (PERSISTANCE_PERIOD > 0) {
         QDateTime now = QDateTime::currentDateTime();
@@ -1808,9 +1812,7 @@ void MainWidget::keyReleaseEvent(QKeyEvent* kevent) {
 
 void MainWidget::validate_render() {
 
-    if (following_windows.size() > 0) {
-        update_following_windows();
-    }
+    update_following_windows();
 
     if (SMOOTH_SCROLL_MODE) {
         if (main_document_view_has_document()) {
@@ -13656,5 +13658,6 @@ bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& r
         (lhs.pos_x == rhs.pos_x) &&
         (lhs.pos_y == rhs.pos_y) &&
         (lhs.width == rhs.width) &&
-        (lhs.height == rhs.height);
+        (lhs.height == rhs.height) &&
+        (lhs.window_is_focused == rhs.window_is_focused);
 }

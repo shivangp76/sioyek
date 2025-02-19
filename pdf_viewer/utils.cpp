@@ -6487,13 +6487,22 @@ void clip_child_to_parent(HWND hChild, HWND hParent, RECT child_rect) {
 }
 #endif
 
-void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, int height) {
+void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, int height, bool is_focused) {
 #if defined(_WIN32)
     HWND hwnd = get_window_hwnd_with_pid(pid);
     if (hwnd) {
         // this makes sure that the window doesn't have a titlebar and border
         SetWindowLong(hwnd, GWL_STYLE, 0);
-        SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+
+        bool is_editor_focused = GetForegroundWindow() == hwnd;
+
+        if (is_focused || is_editor_focused) {
+            SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+        }
+        else {
+            SetWindowPos(hwnd, (HWND)parent_hwnd, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+        }
+
         RECT child_rect;
         child_rect.left = x;
         child_rect.right = x + width;

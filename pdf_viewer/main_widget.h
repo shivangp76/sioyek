@@ -83,6 +83,7 @@ struct WindowFollowLastState {
     int pos_y;
     int width;
     int height;
+    bool window_is_focused;
 };
 
 bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& rhs);
