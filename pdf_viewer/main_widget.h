@@ -461,6 +461,9 @@ public:
     void handle_validation_interval_timeout();
     void update_selected_bookmark_font_size();
     //bool eventFilter(QObject* obj, QEvent* event) override;
+#ifndef SIOYEK_MOBILE
+    void moveEvent(QMoveEvent* move_event) override;
+#endif
     void set_command_textbox_text(const std::wstring& txt);
     void change_selected_highlight_type(char new_type);
     void change_bookmark_text(std::string uuid, const std::wstring& new_text);

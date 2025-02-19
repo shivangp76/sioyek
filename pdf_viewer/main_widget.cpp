@@ -13661,3 +13661,10 @@ bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& r
         (lhs.height == rhs.height) &&
         (lhs.window_is_focused == rhs.window_is_focused);
 }
+
+#ifndef SIOYEK_MOBILE
+void MainWidget::moveEvent(QMoveEvent* move_event) {
+    QWidget::moveEvent(move_event);
+    update_following_windows();
+}
+#endif
