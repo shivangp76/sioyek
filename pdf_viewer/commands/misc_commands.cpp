@@ -1043,6 +1043,16 @@ public:
 
 };
 
+class CopyAllTextCommand : public Command {
+public:
+    static inline const std::string cname = "copy_all_text";
+    static inline const std::string hname = "Copy all the text in the document.";
+    CopyAllTextCommand(MainWidget* w) : Command(cname, w) {};
+    void perform() {
+        copy_to_clipboard(widget->doc()->get_super_fast_index());
+    }
+};
+
 class PrintNonDefaultConfigs : public Command {
 public:
     static inline const std::string cname = "print_non_default_configs";
@@ -2528,6 +2538,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<WaitForSearchToFinishCommand>(manager);
     register_command<WaitForDownloadsToFinish>(manager);
     register_command<CopyCommand>(manager);
+    register_command<CopyAllTextCommand>(manager);
     register_command<PrintNonDefaultConfigs>(manager);
     register_command<PrintUndocumentedCommandsCommand>(manager);
     register_command<PrintUndocumentedConfigsCommand>(manager);
