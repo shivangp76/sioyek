@@ -6494,13 +6494,12 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
         // this makes sure that the window doesn't have a titlebar and border
         SetWindowLong(hwnd, GWL_STYLE, 0);
 
-        bool is_editor_focused = GetForegroundWindow() == hwnd;
-
-        if (is_focused || is_editor_focused) {
+        if (is_focused) {
             SetWindowPos(hwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
         }
         else {
             SetWindowPos(hwnd, (HWND)parent_hwnd, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+            SetWindowPos((HWND)parent_hwnd, hwnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
 
         RECT child_rect;
