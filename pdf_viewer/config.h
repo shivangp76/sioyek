@@ -79,11 +79,11 @@ enum DocumentLocationMismatchStrategy {
 };
 
 enum RulerDisplayMode {
-    Box = 0,
-    Slit = 1,
-    Underline = 2,
-    HighlightBelow = 3,
-    HighlightRuler = 4,
+    RulerBox = 0,
+    RulerSlit = 1,
+    RulerUnderline = 2,
+    RulerHighlightBelow = 3,
+    RulerHighlightRuler = 4,
     RulerHighlightTransparent = 5,
 };
 

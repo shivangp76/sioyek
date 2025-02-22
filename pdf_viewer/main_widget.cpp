@@ -1517,9 +1517,15 @@ void MainWidget::update_following_windows() {
                 auto completed_item_command = std::move(following_windows[i].pending_text_command);
                 following_windows.erase(following_windows.begin() + i);
 
-                completed_item_file->open();
-                QString content = QString::fromUtf8(completed_item_file->readAll());
-                completed_item_file->close();
+                // completed_item_file->open();
+                // QString content = QString::fromUtf8(completed_item_file->readAll());
+                // completed_item_file->close();
+
+                QFile completed_file(completed_item_file->fileName());
+                completed_file.open(QFile::ReadOnly);
+                QString content = QString::fromUtf8(completed_file.readAll());
+                completed_file.close();
+
                 delete completed_item_file;
 
                 if (completed_item_command) {
@@ -3882,7 +3888,7 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
     get_flat_chars_from_stext_page(stext_page, flat_chars);
 
     TextUnderPointerInfo text_under_pos_info = dv()->find_location_of_text_under_pointer(docpos);
-    if ((text_under_pos_info.candidates.size() > 0) && (text_under_pos_info.candidates[0].reference_type != ReferenceType::None)){
+    if ((text_under_pos_info.candidates.size() > 0) && (text_under_pos_info.candidates[0].reference_type != ReferenceType::NoReference)){
         DocumentPos candid_docpos = text_under_pos_info.candidates[0].get_docpos(main_document_view);
         long_jump_to_destination(candid_docpos.page, candid_docpos.y);
     }
@@ -3995,7 +4001,7 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
     DocumentPos docpos = main_document_view->window_to_document_pos(pos);
 
     TextUnderPointerInfo reference_info = dv()->find_location_of_text_under_pointer(docpos);
-    if ((reference_info.candidates.size() > 0) && (reference_info.candidates[0].reference_type != ReferenceType::None)) {
+    if ((reference_info.candidates.size() > 0) && (reference_info.candidates[0].reference_type != ReferenceType::NoReference)) {
         int pos_page = main_document_view->window_to_document_pos(pos).page;
 
         main_document_view->smart_view_candidates = reference_info.candidates;
@@ -8946,7 +8952,7 @@ QString MainWidget::get_network_status_string() {
 }
 
 void MainWidget::exit_freehand_drawing_mode() {
-    freehand_drawing_mode = DrawingMode::None;
+    freehand_drawing_mode = DrawingMode::NotDrawing;
     handle_drawing_ui_visibilty();
 }
 
@@ -8959,7 +8965,7 @@ void MainWidget::set_pen_drawing_mode(bool enabled) {
         freehand_drawing_mode = DrawingMode::PenDrawing;
     }
     else {
-        freehand_drawing_mode = DrawingMode::None;
+        freehand_drawing_mode = DrawingMode::NotDrawing;
     }
     handle_drawing_ui_visibilty();
 }
@@ -8969,7 +8975,7 @@ void MainWidget::set_hand_drawing_mode(bool enabled) {
         freehand_drawing_mode = DrawingMode::Drawing;
     }
     else {
-        freehand_drawing_mode = DrawingMode::None;
+        freehand_drawing_mode = DrawingMode::NotDrawing;
     }
     handle_drawing_ui_visibilty();
 }
@@ -9091,7 +9097,7 @@ void MainWidget::handle_drawing_ui_visibilty() {
         return;
     }
 
-    if (freehand_drawing_mode == DrawingMode::None) {
+    if (freehand_drawing_mode == DrawingMode::NotDrawing) {
         get_draw_controls()->hide();
     }
     else {
@@ -9805,7 +9811,7 @@ void MainWidget::smart_jump_to_selected_text() {
         float offset;
         AbsoluteRect source_rect;
         std::wstring source_text;
-        if (dv()->find_location_of_selected_text(&page, &offset, &source_rect, &source_text) != ReferenceType::None) {
+        if (dv()->find_location_of_selected_text(&page, &offset, &source_rect, &source_text) != ReferenceType::NoReference) {
             long_jump_to_destination(page, offset);
         }
     }
@@ -9817,7 +9823,7 @@ void MainWidget::download_selected_text() {
         float offset;
         AbsoluteRect source_rect;
         std::wstring source_text;
-        if (dv()->find_location_of_selected_text(&page, &offset, &source_rect, &source_text) != ReferenceType::None) {
+        if (dv()->find_location_of_selected_text(&page, &offset, &source_rect, &source_text) != ReferenceType::NoReference) {
             auto bib_item_ = doc()->get_page_bib_with_reference(page, source_text);
             if (bib_item_) {
                 auto [bib_item_text, bib_item_rect] = bib_item_.value();
@@ -11966,7 +11972,7 @@ void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, Q
     follow_data.file->write(content.toUtf8());
     follow_data.file->close();
 
-    QStringList command_parts = QProcess::splitCommand(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND);
+    QStringList command_parts = QProcess::splitCommand(QString::fromStdWString(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND));
     for (int i = 0; i < command_parts.size(); i++) {
         command_parts[i] = command_parts[i].replace("%{file}", follow_data.file->fileName());
     }
@@ -13575,7 +13581,7 @@ void MainWidget::update_current_bookmark_widget_text(BookMark* bm) {
     if (current_widget_stack.size() > 0) {
         auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
         if (bookmark_widget) {
-            if (bookmark_widget->bookmark_uuid == bm->uuid) {
+            if (bookmark_widget->bookmark_uuid.toStdString() == bm->uuid) {
                 QString bookmark_display_text = QString::fromStdWString(bm->description);
                 bookmark_display_text = bookmark_display_text.replace("sioyek://", "sioyeklink#");
                 bookmark_widget->update_text(bookmark_display_text);

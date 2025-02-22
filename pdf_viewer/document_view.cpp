@@ -3112,7 +3112,7 @@ ColorPalette DocumentView::get_current_color_mode() {
     if (COLOR_MODE == ColorMode::Light) return ColorPalette::Normal;
     if (COLOR_MODE == ColorMode::Dark) return ColorPalette::Dark;
     if (COLOR_MODE == ColorMode::Custom) return ColorPalette::Custom;
-    return ColorPalette::None;
+    return ColorPalette::NoPalette;
 }
 
 void DocumentView::toggle_highlight_links() {
@@ -3587,7 +3587,7 @@ TextUnderPointerInfo DocumentView::find_location_of_text_under_pointer(DocumentP
 
 
     for (int i = 0; i < res.candidates.size(); i++){
-        res.candidates[i].reference_type = ReferenceType::None;
+        res.candidates[i].reference_type = ReferenceType::NoReference;
     }
 
     return res;
@@ -3623,12 +3623,12 @@ ReferenceType DocumentView::find_location_of_selected_text(int* out_page, float*
                 return ReferenceType::Abbreviation;
             }
             else{
-                return ReferenceType::None;
+                return ReferenceType::NoReference;
             }
         }
         else{
             int page = current_document->find_reference_page_with_reference_text(query);
-            if (page < 0) return ReferenceType::None;
+            if (page < 0) return ReferenceType::NoReference;
             auto res = current_document->get_page_bib_with_reference(page, query);
             if (res) {
                 *out_page = page;
@@ -3648,7 +3648,7 @@ ReferenceType DocumentView::find_location_of_selected_text(int* out_page, float*
         }
 
     }
-    return ReferenceType::None;
+    return ReferenceType::NoReference;
 }
 
 bool DocumentView::is_text_source_referncish_at_position(const std::wstring& text, int position, const QString link_text) {
@@ -3722,7 +3722,7 @@ bool DocumentView::is_link_a_reference(const PdfLink& link, const PdfLinkTextInf
             ReferenceType reftype = reference_info.candidates[0].reference_type;
 
             bool is_reference = \
-                reftype == ReferenceType::None ||
+                reftype == ReferenceType::NoReference ||
                 reftype == ReferenceType::Reference ||
                 reftype == ReferenceType::RefLink;
                 //reftype == ReferenceType::Generic;
@@ -6153,7 +6153,7 @@ void DocumentView::update_overview_highlighted_paper_with_position(DocumentPos d
         if ((index_into_candidates >= 0) && (index_into_candidates < smart_view_candidates.size())){
             if ((smart_view_candidates[index_into_candidates].reference_type == ReferenceType::Reference) ||
                 (smart_view_candidates[index_into_candidates].reference_type == ReferenceType::RefLink) ||
-                (smart_view_candidates[index_into_candidates].reference_type == ReferenceType::None)){
+                (smart_view_candidates[index_into_candidates].reference_type == ReferenceType::NoReference)){
                 smart_view_candidates[index_into_candidates].target_pos = docpos;
                 smart_view_candidates[index_into_candidates].target_reference_text = paper_name_with_rects->paper_name;
 

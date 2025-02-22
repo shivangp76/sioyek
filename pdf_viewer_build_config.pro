@@ -247,9 +247,9 @@ unix:!mac:!android {
     QMAKE_CC = clang
     QMAKE_LINK = clang++
 
-    CONFIG += precompile_header
-    PRECOMPILED_HEADER = pch.h
-    HEADERS += pch.h
+    # CONFIG += precompile_header
+    # PRECOMPILED_HEADER = pch.h
+    # HEADERS += pch.h
 
     QMAKE_CXXFLAGS += -std=c++17
 

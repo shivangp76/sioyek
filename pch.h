@@ -12,8 +12,6 @@
 #include <memory>
 #include <cctype>
 
-#include <Windows.h>
-
 #include <qpainterpath.h>
 #include <qabstractitemmodel.h>
 #include <qapplication.h>

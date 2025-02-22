@@ -706,7 +706,7 @@ void PdfViewOpenGLWidget::render_original_color_images(int page_number, std::opt
 
     if ((document_view->get_current_color_mode() != ColorPalette::Normal) &&
         (PRESERVE_IMAGE_COLORS) && (!overview.has_value()) &&
-        (forced_color_palette == ColorPalette::None) &&
+        (forced_color_palette == ColorPalette::NoPalette) &&
         (stencils_allowed)) {
         // render images in forced palette mode
         fz_stext_page* stext_page = dv()->get_document()->get_stext_with_page_number(page_number);
@@ -1194,7 +1194,7 @@ void SioyekRendererBackend::draw_empty_helper_message(QString message) {
 }
 
 void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
-    ColorPalette mode = forced_palette == ColorPalette::None ? document_view->get_current_color_mode() : forced_palette;
+    ColorPalette mode = forced_palette == ColorPalette::NoPalette ? document_view->get_current_color_mode() : forced_palette;
 
     if (mode == ColorPalette::Dark) {
         glUseProgram(shared_gl_objects.rendered_dark_program);
@@ -2318,7 +2318,7 @@ void PdfViewOpenGLWidget::render_line_window_opengl_backend(float gl_vertical_po
     glBufferData(GL_ARRAY_BUFFER, sizeof(bar_data), bar_data, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    if ((get_ruler_display_mode() != RulerDisplayMode::HighlightBelow) && ruler_rect.has_value()) {
+    if ((get_ruler_display_mode() != RulerDisplayMode::RulerHighlightBelow) && ruler_rect.has_value()) {
         float gl_vertical_begin_pos = ruler_rect->y0;
         float ruler_left_pos = ruler_rect->x0;
         float ruler_right_pos = ruler_rect->x1;
@@ -2722,7 +2722,7 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
     draw_overview_background(overview);
 
     for (auto visible_page : get_overview_visible_pages(overview)) {
-        render_page(visible_page, overview, ColorPalette::None, false);
+        render_page(visible_page, overview, ColorPalette::NoPalette, false);
     }
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
@@ -2931,7 +2931,7 @@ void PdfViewOpenGLWidget::do_paint(){
 }
 
 ColorPalette SioyekRendererBackend::get_actual_color_palette(ColorPalette forced_color_palette){
-    return forced_color_palette == ColorPalette::None ? document_view->get_current_color_mode() : forced_color_palette;
+    return forced_color_palette == ColorPalette::NoPalette ? document_view->get_current_color_mode() : forced_color_palette;
 
 }
 
@@ -3160,22 +3160,22 @@ void SioyekRendererBackend::render_ruler() {
         }
 
         auto ruler_display_mode = get_ruler_display_mode();
-        if ((!ruler_rect.has_value()) || (ruler_display_mode == RulerDisplayMode::Slit) || (ruler_display_mode == RulerDisplayMode::HighlightBelow)) {
+        if ((!ruler_rect.has_value()) || (ruler_display_mode == RulerDisplayMode::RulerSlit) || (ruler_display_mode == RulerDisplayMode::RulerHighlightBelow)) {
             render_line_window(vertical_line_end, dv()->get_ruler_window_rect());
         }
         else {
             int flags = 0;
             float alpha = 1.0f;
 
-            if (ruler_display_mode == RulerDisplayMode::Underline) {
+            if (ruler_display_mode == RulerDisplayMode::RulerUnderline) {
                 flags |= HRF_UNDERLINE;
             }
 
-            else if (ruler_display_mode == RulerDisplayMode::HighlightRuler) {
+            else if (ruler_display_mode == RulerDisplayMode::RulerHighlightRuler) {
                 flags |= HRF_PAINTOVER;
                 flags |= HRF_FILL;
             }
-            else if (ruler_display_mode == RulerDisplayMode::Box) {
+            else if (ruler_display_mode == RulerDisplayMode::RulerBox) {
                 flags |= HRF_BORDER;
             }
             else if (ruler_display_mode == RulerDisplayMode::RulerHighlightTransparent) {
@@ -3521,7 +3521,7 @@ void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRec
     draw_overview_background(overview);
 
     for (auto page : get_overview_visible_pages(overview)) {
-        render_page(page, overview, ColorPalette::None, false);
+        render_page(page, overview, ColorPalette::NoPalette, false);
     }
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();

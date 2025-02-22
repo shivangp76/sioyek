@@ -400,7 +400,7 @@ bool MACOS_HIDE_TITLEBAR = false;
 #endif
 
 std::wstring TTS_VOICE = L"";
-int RULER_DISPLAY_MODE = RulerDisplayMode::Underline;
+int RULER_DISPLAY_MODE = RulerDisplayMode::RulerUnderline;
 
 #ifdef Q_OS_IOS
 int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;

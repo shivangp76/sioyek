@@ -45,7 +45,7 @@ enum class ColorPalette {
     Normal,
     Dark,
     Custom,
-    None
+    NoPalette
 };
 
 enum class SelectedObjectType {
@@ -54,7 +54,7 @@ enum class SelectedObjectType {
 };
 
 enum class PaperDownloadFinishedAction {
-    None,
+    DoNothing,
     OpenInSameWindow,
     OpenInNewWindow,
     Portal
@@ -478,7 +478,7 @@ enum class ReferenceType {
     Abbreviation,
     Link,
     RefLink,
-    None
+    NoReference
 };
 
 struct PaperNameWithRects{
@@ -493,7 +493,7 @@ struct SmartViewCandidate {
     AbsoluteRect source_rect;
     std::wstring source_text;
     std::variant<DocumentPos, AbsoluteDocumentPos> target_pos;
-    ReferenceType reference_type = ReferenceType::None;
+    ReferenceType reference_type = ReferenceType::NoReference;
 
     // this function lazily computes highlight_rects_ when they are needed
     std::optional<std::function<std::vector<DocumentRect>()>> highlight_rects_func = {};

@@ -72,7 +72,7 @@ class SioyekBookmarkTextBrowser;
 enum class DrawingMode {
     Drawing,
     PenDrawing,
-    None
+    NotDrawing
 };
 
 struct WindowFollowLastState {
@@ -324,7 +324,7 @@ public:
     // Drawing means we use the mouse to draw a freehand diagram
     // and PenDrawing means we assume the user is using a pen so we treat mouse inputs
     // normally and only use pen inputs for freehand drawing
-    DrawingMode freehand_drawing_mode = DrawingMode::None;
+    DrawingMode freehand_drawing_mode = DrawingMode::NotDrawing;
 
     // In mouse drag mode, we use the mouse to drag the document around
     bool mouse_drag_mode = false;

@@ -4,7 +4,6 @@
 #include "network_manager.h"
 #include <qclipboard.h>
 #include <qdesktopservices.h>
-
 #include "config.h"
 #include "ui.h"
 
