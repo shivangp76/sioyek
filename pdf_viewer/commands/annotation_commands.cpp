@@ -1784,12 +1784,12 @@ public:
     DeleteFreehandDrawingsCommand(MainWidget* w) : Command(cname, w) {};
 
     std::optional<AbsoluteRect> rect_;
-    DrawingMode original_drawing_mode = DrawingMode::None;
+    DrawingMode original_drawing_mode = DrawingMode::NotDrawing;
 
 
     void pre_perform() {
         original_drawing_mode = widget->freehand_drawing_mode;
-        widget->freehand_drawing_mode = DrawingMode::None;
+        widget->freehand_drawing_mode = DrawingMode::NotDrawing;
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
@@ -1825,12 +1825,12 @@ public:
     SelectFreehandDrawingsCommand(MainWidget* w) : Command(cname, w) {};
 
     std::optional<AbsoluteRect> rect_;
-    DrawingMode original_drawing_mode = DrawingMode::None;
+    DrawingMode original_drawing_mode = DrawingMode::NotDrawing;
 
 
     void pre_perform() {
         original_drawing_mode = widget->freehand_drawing_mode;
-        widget->freehand_drawing_mode = DrawingMode::None;
+        widget->freehand_drawing_mode = DrawingMode::NotDrawing;
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {

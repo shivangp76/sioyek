@@ -749,7 +749,7 @@ void SearchResult::fill(Document* doc) {
 }
 
 std::string reference_type_string(ReferenceType rt) {
-    if (rt == ReferenceType::None) return "none";
+    if (rt == ReferenceType::NoReference) return "none";
     if (rt == ReferenceType::Equation) return "equation";
     if (rt == ReferenceType::Reference) return "reference";
     if (rt == ReferenceType::Abbreviation) return "abbreviation";

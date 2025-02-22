@@ -132,7 +132,7 @@ protected:
     void clear_background_color();
     bool needs_stencil_buffer();
     virtual float get_device_pixel_ratio() = 0;
-    void render_page(int page_number, std::optional<OverviewState> overview = {}, ColorPalette forced_palette = ColorPalette::None, bool stencils_allowed = true);
+    void render_page(int page_number, std::optional<OverviewState> overview = {}, ColorPalette forced_palette = ColorPalette::NoPalette, bool stencils_allowed = true);
     virtual void prepare_link_highlight_state() = 0;
     virtual void prepare_for_line_drawing() = 0;
 
@@ -276,7 +276,7 @@ protected:
     int get_width() override;
     int get_height() override;
 
-    void bind_program(ColorPalette forced_palette=ColorPalette::None);
+    void bind_program(ColorPalette forced_palette=ColorPalette::NoPalette);
     void bind_points(const std::vector<float>& points);
     void bind_default() override;
     void bind_vertex_array() override;
@@ -347,7 +347,7 @@ protected:
     int get_width() override;
     int get_height() override;
 
-    void bind_program(ColorPalette forced_palette=ColorPalette::None);
+    void bind_program(ColorPalette forced_palette=ColorPalette::NoPalette);
     void bind_points(const std::vector<float>& points);
     void bind_default() override;
     void bind_vertex_array() override;
