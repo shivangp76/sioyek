@@ -1517,9 +1517,15 @@ void MainWidget::update_following_windows() {
                 auto completed_item_command = std::move(following_windows[i].pending_text_command);
                 following_windows.erase(following_windows.begin() + i);
 
-                completed_item_file->open();
-                QString content = QString::fromUtf8(completed_item_file->readAll());
-                completed_item_file->close();
+                // completed_item_file->open();
+                // QString content = QString::fromUtf8(completed_item_file->readAll());
+                // completed_item_file->close();
+
+                QFile completed_file(completed_item_file->fileName());
+                completed_file.open(QFile::ReadOnly);
+                QString content = QString::fromUtf8(completed_file.readAll());
+                completed_file.close();
+
                 delete completed_item_file;
 
                 if (completed_item_command) {

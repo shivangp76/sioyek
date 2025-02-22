@@ -50,10 +50,6 @@
 
 #if defined(_WIN32)
     #include <windows.h>
-#elif defined(Q_OS_LINUX)
-    #include <X11/Xlib.h>
-    #include <X11/Xatom.h>
-    #include <unistd.h>
 #elif defined(Q_OS_MACOS)
     #include <ApplicationServices/ApplicationServices.h>
 #endif
@@ -6512,80 +6508,46 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
         clip_child_to_parent(hwnd, (HWND)parent_hwnd, child_rect);
     }
 #elif defined(Q_OS_LINUX)
-    // Linux implementation: use Xlib and _NET_WM_PID property.
-    // Display* display = XOpenDisplay(nullptr);
-    // if (!display) return;
+    // Moving windows on linux? I don't think so.
+#elif defined(Q_OS_MACOS)
+    // // macOS implementation: use Accessibility API to get the app's main window.
+    // // Note: the calling process must have the accessibility permission.
+    // AXUIElementRef appElem = AXUIElementCreateApplication(static_cast<pid_t>(pid));
+    // if (!appElem) return;
 
-    // Window root = DefaultRootWindow(display);
-    // Window parent;
-    // Window* children = nullptr;
-    // unsigned int nchildren = 0;
-
-    // if (XQueryTree(display, root, &root, &parent, &children, &nchildren) != 0) {
-    //     Atom pidAtom = XInternAtom(display, "_NET_WM_PID", True);
-    //     for (unsigned int i = 0; i < nchildren; i++) {
-    //         if (pidAtom != None) {
-    //             Atom type;
-    //             int format;
-    //             unsigned long nitems, bytes_after;
-    //             unsigned char* propPID = nullptr;
-    //             if (XGetWindowProperty(display, children[i], pidAtom, 0, 1, False, XA_CARDINAL,
-    //                     &type, &format, &nitems, &bytes_after, &propPID) == Success && propPID) {
-    //                 if (static_cast<qint64>(*reinterpret_cast<unsigned long*>(propPID)) == pid) {
-    //                     // Found window; move and resize.
-    //                     XMoveResizeWindow(display, children[i], x, y, width, height);
-    //                     XFlush(display);
-    //                     XFree(propPID);
-    //                     break;
-    //                 }
-    //                 XFree(propPID);
-    //             }
+    // // First try to get the main window.
+    // AXUIElementRef window = nullptr;
+    // AXError err = AXUIElementCopyAttributeValue(appElem, kAXMainWindowAttribute, (CFTypeRef*)&window);
+    // if (err != kAXErrorSuccess || !window) {
+    //     // Fallback: get the first window in the kAXWindowsAttribute.
+    //     CFArrayRef windowList = nullptr;
+    //     err = AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute, (CFTypeRef*)&windowList);
+    //     if (err == kAXErrorSuccess && windowList) {
+    //         if (CFArrayGetCount(windowList) > 0) {
+    //             window = (AXUIElementRef)CFArrayGetValueAtIndex(windowList, 0);
+    //             // Retain the window since we are going to use it.
+    //             if(window) CFRelease(window);
     //         }
-    //     }
-    //     if (children) {
-    //         XFree(children);
+    //         CFRelease(windowList);
     //     }
     // }
-    // XCloseDisplay(display);
-#elif defined(Q_OS_MACOS)
-    // macOS implementation: use Accessibility API to get the app's main window.
-    // Note: the calling process must have the accessibility permission.
-    AXUIElementRef appElem = AXUIElementCreateApplication(static_cast<pid_t>(pid));
-    if (!appElem) return;
-
-    // First try to get the main window.
-    AXUIElementRef window = nullptr;
-    AXError err = AXUIElementCopyAttributeValue(appElem, kAXMainWindowAttribute, (CFTypeRef*)&window);
-    if (err != kAXErrorSuccess || !window) {
-        // Fallback: get the first window in the kAXWindowsAttribute.
-        CFArrayRef windowList = nullptr;
-        err = AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute, (CFTypeRef*)&windowList);
-        if (err == kAXErrorSuccess && windowList) {
-            if (CFArrayGetCount(windowList) > 0) {
-                window = (AXUIElementRef)CFArrayGetValueAtIndex(windowList, 0);
-                // Retain the window since we are going to use it.
-                if(window) CFRelease(window);
-            }
-            CFRelease(windowList);
-        }
-    }
-    if (window) {
-        // Set position.
-        CGPoint pt = { static_cast<CGFloat>(x), static_cast<CGFloat>(y) };
-        AXValueRef posValue = AXValueCreate(kAXValueCGPointType, &pt);
-        if (posValue) {
-            AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
-            CFRelease(posValue);
-        }
-        // Set size.
-        CGSize size = { static_cast<CGFloat>(width), static_cast<CGFloat>(height) };
-        AXValueRef sizeValue = AXValueCreate(kAXValueCGSizeType, &size);
-        if (sizeValue) {
-            AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
-            CFRelease(sizeValue);
-        }
-        CFRelease(window);
-    }
-    CFRelease(appElem);
+    // if (window) {
+    //     // Set position.
+    //     CGPoint pt = { static_cast<CGFloat>(x), static_cast<CGFloat>(y) };
+    //     AXValueRef posValue = AXValueCreate(kAXValueCGPointType, &pt);
+    //     if (posValue) {
+    //         AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
+    //         CFRelease(posValue);
+    //     }
+    //     // Set size.
+    //     CGSize size = { static_cast<CGFloat>(width), static_cast<CGFloat>(height) };
+    //     AXValueRef sizeValue = AXValueCreate(kAXValueCGSizeType, &size);
+    //     if (sizeValue) {
+    //         AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
+    //         CFRelease(sizeValue);
+    //     }
+    //     CFRelease(window);
+    // }
+    // CFRelease(appElem);
 #endif
 }
