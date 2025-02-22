@@ -1053,6 +1053,32 @@ public:
     }
 };
 
+
+class CopyCurrentChapterTextCommand : public Command {
+public:
+    static inline const std::string cname = "copy_current_chapter_text";
+    static inline const std::string hname = "Copy current chapter's text";
+    CopyCurrentChapterTextCommand(MainWidget* w) : Command(cname, w) {};
+    void perform() {
+        auto chapter_page_range = widget->main_document_view->get_current_page_range();
+        if (chapter_page_range) {
+            auto [begin_page, end_page] = chapter_page_range.value();
+            auto page_indices = widget->doc()->get_super_fast_page_begin_indices();
+            const std::wstring& doc_text = widget->doc()->get_super_fast_index();
+            if (begin_page >= 0 && begin_page < page_indices.size() && end_page >= 0 && end_page < page_indices.size()) {
+                int begin_index = page_indices[begin_page];
+                int end_index = end_page < page_indices.size() - 1 ? page_indices[end_page + 1] : doc_text.size();
+
+                copy_to_clipboard(doc_text.substr(begin_index, end_index - begin_index));
+
+            }
+
+        }
+
+    }
+
+};
+
 class PrintNonDefaultConfigs : public Command {
 public:
     static inline const std::string cname = "print_non_default_configs";
@@ -2539,6 +2565,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<WaitForDownloadsToFinish>(manager);
     register_command<CopyCommand>(manager);
     register_command<CopyAllTextCommand>(manager);
+    register_command<CopyCurrentChapterTextCommand>(manager);
     register_command<PrintNonDefaultConfigs>(manager);
     register_command<PrintUndocumentedCommandsCommand>(manager);
     register_command<PrintUndocumentedConfigsCommand>(manager);

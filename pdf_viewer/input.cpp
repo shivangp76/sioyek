@@ -58,7 +58,6 @@ std::vector<std::string> parse_command_name(const QString& command_names) {
 
 
 
-
 std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, QString name, QString menu_string) {
     ParseState parser;
     parser.index = 0;
