@@ -7974,6 +7974,13 @@ BookMark* MainWidget::add_chunk_to_bookmark(Document* document, std::string book
     if (bookmark_index >= 0) {
         BookMark& bm = document->get_bookmarks()[bookmark_index];
         bm.description += chunk.toStdWString();
+        for (auto& following_window : following_windows) {
+            if (following_window.bookmark_uuid == bm.uuid) {
+                following_window.file->open();
+                following_window.file->write(QString::fromStdWString(bm.description).toUtf8());
+                following_window.file->close();
+            }
+        }
 
         invalidate_render();
         return &bm;
@@ -8057,7 +8064,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
                 on_bookmark_edited(bm->uuid);
 
                 auto current_bookmark_browser = get_current_bookmark_browser();
-                if ((current_bookmark_browser != nullptr) && (current_bookmark_browser == bookmark_browser)) {
+                if (current_bookmark_browser.has_value() && (current_bookmark_browser == bookmark_browser)) {
                     current_bookmark_browser.value()->set_pending(false);
                     QTimer::singleShot(100, [this]() {
                         auto new_current_bookmark_browser = get_current_bookmark_browser();
@@ -13639,6 +13646,7 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
                 WindowFollowData follow;
                 follow.bookmark_uuid = selected_bookmark_uuid;
                 follow.rect = rect.value();
+                follow.bookmark_uuid = bm.uuid;
                 if (!bm.is_freetext()) {
                     NormalizedWindowRect nwr;
                     nwr.x0 = -0.5f;
