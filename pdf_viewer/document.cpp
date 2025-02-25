@@ -4380,7 +4380,7 @@ std::string Document::get_bookmark_uuid_at_pos(AbsoluteDocumentPos abspos) {
     return "";
 }
 
-void Document::update_bookmark_text(const std::string& uuid, const std::wstring& new_text, float new_font_size) {
+BookMark* Document::update_bookmark_text(const std::string& uuid, const std::wstring& new_text, float new_font_size) {
     if (uuid.size() > 0) {
         BookMark* bookmark = get_bookmark_with_uuid(uuid);
         if (new_font_size < 0) {
@@ -4393,7 +4393,9 @@ void Document::update_bookmark_text(const std::string& uuid, const std::wstring&
                 is_annotations_dirty = true;
             }
         }
+        return bookmark;
     }
+    return nullptr;
 }
 
 void Document::update_bookmark_position(const std::string& uuid, AbsoluteDocumentPos new_begin_position, AbsoluteDocumentPos new_end_position) {

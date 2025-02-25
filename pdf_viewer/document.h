@@ -471,7 +471,7 @@ public:
     void update_highlight_add_text_annotation(const std::string& uuid, const std::wstring& text_annot);
     void update_highlight_type(const std::string& uuid, char new_type);
     //void update_highlight_type(const std::string& uuid, char new_type);
-    void update_bookmark_text(const std::string& uuid, const std::wstring& new_text, float new_font_size);
+    BookMark* update_bookmark_text(const std::string& uuid, const std::wstring& new_text, float new_font_size);
     void update_bookmark_position(const std::string& uuid, AbsoluteDocumentPos new_begin_position, AbsoluteDocumentPos new_end_position);
     void update_portal_src_position(const std::string& uuid, AbsoluteDocumentPos new_position, std::optional<AbsoluteDocumentPos> new_end_position);
 

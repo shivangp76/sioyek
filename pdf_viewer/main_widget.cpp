@@ -1538,8 +1538,10 @@ void MainWidget::update_following_windows() {
                     //}
                 }
                 else {
-                    doc()->update_bookmark_text(completed_item_uuid, content.toStdWString(), -1);
-                    on_bookmark_edited(completed_item_uuid);
+                    BookMark* updated_bookmark_ptr = doc()->update_bookmark_text(completed_item_uuid, content.toStdWString(), -1);
+                    if (updated_bookmark_ptr) {
+                        on_bookmark_edited(*updated_bookmark_ptr, true, false);
+                    }
                     invalidate_render();
                 }
             }
@@ -8027,7 +8029,7 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
             if (bm) {
                 bm->description = replace_verbatim_links(bm->description);
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
-                on_bookmark_edited(bm->uuid);
+                on_bookmark_edited(*bm, false, false);
             }
         });
 }
@@ -8061,7 +8063,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
                 bm->description += L"\n";
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
                 update_current_bookmark_widget_text(bm);
-                on_bookmark_edited(bm->uuid);
+                on_bookmark_edited(*bm, false, false);
 
                 auto current_bookmark_browser = get_current_bookmark_browser();
                 if (current_bookmark_browser.has_value() && (current_bookmark_browser == bookmark_browser)) {
@@ -8137,7 +8139,7 @@ void MainWidget::on_bookmark_shell_output_updated(std::string bookmark_uuid, QSt
             if (shell_output_data) {
                 bm->description = (shell_output_data->style_string + " " + content).toStdWString();
                 doc()->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
-                on_bookmark_edited(bm->uuid);
+                on_bookmark_edited(*bm, false, false);
                 invalidate_render();
             }
         }
@@ -9303,7 +9305,7 @@ void MainWidget::change_bookmark_text(std::string uuid, const std::wstring& new_
 
                 }
 
-                on_bookmark_edited(selected_bookmark->uuid);
+                on_bookmark_edited(*selected_bookmark, true, false);
             }
             else {
                 delete_current_document_bookmark(selected_bookmark_uuid);
@@ -9560,7 +9562,7 @@ void MainWidget::update_bookmark_with_uuid(const std::string& uuid) {
         BookMark* bm = doc()->get_bookmark_with_uuid(uuid);
         if (bm) {
             doc()->update_bookmark_position(uuid, { bm->begin_x, bm->begin_y }, { bm->end_x, bm->end_y });
-            on_bookmark_edited(bm->uuid);
+            on_bookmark_edited(*bm, true, true);
         }
     }
 }
@@ -12122,11 +12124,21 @@ void MainWidget::delete_current_document_bookmark_with_bookmark(BookMark* bm) {
     delete_current_document_bookmark(bm->uuid);
 }
 
-void MainWidget::on_bookmark_edited(const std::string& uuid) {
+void MainWidget::on_bookmark_edited(BookMark bm, bool was_manual_edit, bool was_move_or_resize) {
     if (edit_bookmark_hook_function_name) {
-        call_js_function_with_bookmark_arg_with_uuid(edit_bookmark_hook_function_name.value(), uuid);
+        call_js_function_with_bookmark_arg_with_uuid(edit_bookmark_hook_function_name.value(), bm.uuid);
     }
-    sync_edited_annot("bookmark", uuid);
+    if (was_manual_edit && !was_move_or_resize) {
+        QStringList lines = QString::fromStdWString(bm.description).split("\n", Qt::SkipEmptyParts);
+        if (lines.size() > 0) {
+            if (lines.last().trimmed().startsWith("? ")) {
+                //qDebug() << "we should continue";
+                handle_bookmark_ask_query(bm.description, utf8_decode(bm.uuid));
+            }
+        }
+
+    }
+    sync_edited_annot("bookmark", bm.uuid);
 }
 
 //void MainWidget::call_js_function_with_args(const QString& function_name) {

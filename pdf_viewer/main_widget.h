@@ -1092,7 +1092,7 @@ public:
     void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void on_new_bookmark_added(const std::string& uuid);
     void on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum);
-    void on_bookmark_edited(const std::string& uuid);
+    void on_bookmark_edited(BookMark bm, bool was_manual_edit, bool was_move_or_resize);
     void on_new_highlight_added(const std::string& uuid);
     void on_highlight_deleted(const Highlight& highlight, const std::string& document_checksum);
     void on_mark_added(const std::string& uuid, char type);
