@@ -296,6 +296,9 @@ extern bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS;
 extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
 
+extern float EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
+extern float EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
+
 extern bool DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR;
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
@@ -12012,10 +12015,10 @@ void MainWidget::open_embedded_external_text_editor(QString content, std::option
         }
         else {
             NormalizedWindowRect nwr;
-            nwr.x0 = -0.5f;
-            nwr.x1 = 0.5f;
-            nwr.y0 = 0.5f;
-            nwr.y1 = -0.5f;
+            nwr.x0 = -EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
+            nwr.x1 = EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
+            nwr.y0 = EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
+            nwr.y1 = -EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
             follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
         }
 
@@ -12031,10 +12034,10 @@ void MainWidget::open_embedded_external_text_editor(QString content, std::option
 void MainWidget::open_embedded_external_text_editor_to_edit_file(QString file_path, int line_number) {
     WindowFollowData follow_data;
     NormalizedWindowRect nwr;
-    nwr.x0 = -0.5f;
-    nwr.x1 = 0.5f;
-    nwr.y0 = 0.5f;
-    nwr.y1 = -0.5f;
+    nwr.x0 = -EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
+    nwr.x1 = EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
+    nwr.y0 = EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
+    nwr.y1 = -EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
     follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
     //follow_data.file = new QFile(file_path);
 
@@ -13685,10 +13688,10 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
                 follow.bookmark_uuid = bm.uuid;
                 if (!bm.is_freetext()) {
                     NormalizedWindowRect nwr;
-                    nwr.x0 = -0.5f;
-                    nwr.x1 = 0.5f;
-                    nwr.y0 = 0.5f;
-                    nwr.y1 = -0.5f;
+                    nwr.x0 = -EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
+                    nwr.x1 = EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
+                    nwr.y0 = EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
+                    nwr.y1 = -EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
                     follow.rect = nwr.to_window(dv()).to_absolute(dv());
                 }
 

@@ -226,6 +226,10 @@ float VISUAL_MARK_NEXT_PAGE_FRACTION = 0.75;
 float VISUAL_MARK_NEXT_PAGE_THRESHOLD = 0.25f;
 float MENU_SCREEN_WDITH_RATIO = 0.9f;
 float MENU_SCREEN_HEIGHT_RATIO = 0.9f;
+
+float EMBEDDED_EDITOR_SCREEN_WDITH_RATIO = 0.9f;
+float EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO = 0.9f;
+
 float RULER_PADDING = 1.0f;
 float RULER_X_PADDING = 5.0f;
 std::wstring ITEM_LIST_PREFIX = L">";
@@ -1248,6 +1252,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"page_space_y", &PAGE_SPACE_Y, FloatExtras{0.0f, 100.0f});
     add_float(L"menu_screen_width_ratio", &MENU_SCREEN_WDITH_RATIO, FloatExtras{0.0f, 1.0f});
     add_float(L"menu_screen_height_ratio", &MENU_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
+    add_float(L"embedded_editor_screen_width_ratio", &EMBEDDED_EDITOR_SCREEN_WDITH_RATIO, FloatExtras{0.0f, 1.0f});
+    add_float(L"embedded_editor_screen_height_ratio", &EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
     add_float(L"smooth_scroll_speed", &SMOOTH_SCROLL_SPEED, FloatExtras{0.0f, 20.0f});
     add_float(L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, FloatExtras{10.0f, 10000.0f});
     add_float(L"box_highlight_bookmark_transparency", &BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY, FloatExtras{0.0f, 1.0f});
