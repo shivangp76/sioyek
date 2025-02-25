@@ -1163,7 +1163,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                             {option_texts},
                             locations,
                             0,
-                            [](KeybindDefinitionLocation* loc) {
+                            [&](KeybindDefinitionLocation* loc) {
                                 open_text_editor_at_line(QString::fromStdWString(loc->file_path), loc->line_number);
                             },
                             [](KeybindDefinitionLocation*) {}
@@ -11975,7 +11975,7 @@ void MainWidget:: run_startup_js(bool first_run) {
 #endif
 }
 
-void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path) {
+void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path, int line_number) {
 
     follow_data.creation_time = QDateTime::currentDateTime();
     if (!file_path.has_value()) {
@@ -11989,6 +11989,7 @@ void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, Q
     QStringList command_parts = QProcess::splitCommand(QString::fromStdWString(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND));
     for (int i = 0; i < command_parts.size(); i++) {
         command_parts[i] = command_parts[i].replace("%{file}", file_path.has_value() ? file_path.value() : follow_data.file->fileName());
+        command_parts[i] = command_parts[i].replace("%{line}", QString::number(line_number));
     }
     QProcess* process = new QProcess(this);
     process->start(command_parts[0], command_parts.mid(1));
@@ -12027,7 +12028,7 @@ void MainWidget::open_embedded_external_text_editor(QString content, std::option
     }
 }
 
-void MainWidget::open_embedded_external_text_editor_to_edit_file(QString file_path) {
+void MainWidget::open_embedded_external_text_editor_to_edit_file(QString file_path, int line_number) {
     WindowFollowData follow_data;
     NormalizedWindowRect nwr;
     nwr.x0 = -0.5f;
@@ -12039,7 +12040,7 @@ void MainWidget::open_embedded_external_text_editor_to_edit_file(QString file_pa
 
     //follow_data.pending_text_command = std::move(pending_command_instance);
 
-    start_embedded_external_editor(follow_data, "", file_path);
+    start_embedded_external_editor(follow_data, "", file_path, line_number);
     following_windows.push_back(std::move(follow_data));
 
     //following_windows.push_back(std::move(follow_data));
@@ -13725,5 +13726,14 @@ void MainWidget::open_file(std::wstring file_path, bool show_error_message) {
     }
     else{
         ::open_file(file_path, show_error_message);
+    }
+}
+
+void MainWidget::open_text_editor_at_line(QString file_path, int line_number) {
+    if (EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND.size() > 0 && USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS) {
+        open_embedded_external_text_editor_to_edit_file(file_path, line_number);
+    }
+    else {
+        ::open_text_editor_at_line(file_path, line_number);
     }
 }

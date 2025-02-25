@@ -1083,9 +1083,9 @@ public:
     // void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     bool is_ruler_mode();
     void open_external_text_editor();
-    void start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path = {});
+    void start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path = {}, int line_number=0);
     void open_embedded_external_text_editor(QString force_content = "", std::optional<AbsoluteRect> rect = {});
-    void open_embedded_external_text_editor_to_edit_file(QString file_path);
+    void open_embedded_external_text_editor_to_edit_file(QString file_path, int line_number=0);
     void handle_text_edit_return_pressed();
     void call_async_js_function_with_args(const QString& code, QJsonArray args);
     void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
@@ -1195,6 +1195,7 @@ public:
     void handle_scroll_selected_bookmark_to_ends(bool goto_start);
     void handle_edit_selected_bookmark_with_external_editor();
     void open_file(std::wstring file_path, bool show_error_message);
+    void open_text_editor_at_line(QString file_path, int line_number);
 
 
 public slots:
