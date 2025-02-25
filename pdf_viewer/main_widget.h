@@ -92,7 +92,7 @@ struct WindowFollowData{
     AbsoluteRect rect;
     qint64 pid;
     std::string bookmark_uuid = "";
-    QTemporaryFile* file = nullptr;
+    QFile* file = nullptr;
     std::unique_ptr<Command> pending_text_command = {};
     std::optional<WindowFollowLastState> last_state={};
     QDateTime creation_time;
@@ -1083,8 +1083,9 @@ public:
     // void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     bool is_ruler_mode();
     void open_external_text_editor();
-    void start_embedded_external_editor(WindowFollowData& follow_data, QString content);
+    void start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path = {});
     void open_embedded_external_text_editor(QString force_content = "", std::optional<AbsoluteRect> rect = {});
+    void open_embedded_external_text_editor_to_edit_file(QString file_path);
     void handle_text_edit_return_pressed();
     void call_async_js_function_with_args(const QString& code, QJsonArray args);
     void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
@@ -1193,6 +1194,7 @@ public:
 
     void handle_scroll_selected_bookmark_to_ends(bool goto_start);
     void handle_edit_selected_bookmark_with_external_editor();
+    void open_file(std::wstring file_path, bool show_error_message);
 
 
 public slots:

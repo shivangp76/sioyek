@@ -292,6 +292,7 @@ extern Path python_api_base_path;
 extern float PERSISTANCE_PERIOD;
 extern std::wstring COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR;
 
+extern bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS;
 extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
 
@@ -1520,13 +1521,15 @@ void MainWidget::update_following_windows() {
                 // completed_item_file->open();
                 // QString content = QString::fromUtf8(completed_item_file->readAll());
                 // completed_item_file->close();
+                QString content;
+                if (completed_item_file != nullptr) {
+                    QFile completed_file(completed_item_file->fileName());
+                    completed_file.open(QFile::ReadOnly);
+                    content = QString::fromUtf8(completed_file.readAll());
+                    completed_file.close();
+                    delete completed_item_file;
+                }
 
-                QFile completed_file(completed_item_file->fileName());
-                completed_file.open(QFile::ReadOnly);
-                QString content = QString::fromUtf8(completed_file.readAll());
-                completed_file.close();
-
-                delete completed_item_file;
 
                 if (completed_item_command) {
                     completed_item_command->set_text_requirement(content.toStdWString());
@@ -1537,7 +1540,7 @@ void MainWidget::update_following_windows() {
                     //    QCoreApplication::postEvent(text_command_line_edit, enter_key_event);
                     //}
                 }
-                else {
+                else if (completed_item_uuid.size() > 0){
                     BookMark* updated_bookmark_ptr = doc()->update_bookmark_text(completed_item_uuid, content.toStdWString(), -1);
                     if (updated_bookmark_ptr) {
                         on_bookmark_edited(*updated_bookmark_ptr, true, false);
@@ -7978,7 +7981,7 @@ BookMark* MainWidget::add_chunk_to_bookmark(Document* document, std::string book
         bm.description += chunk.toStdWString();
         for (auto& following_window : following_windows) {
             if (following_window.bookmark_uuid == bm.uuid) {
-                following_window.file->open();
+                following_window.file->open(QFile::WriteOnly);
                 following_window.file->write(QString::fromStdWString(bm.description).toUtf8());
                 following_window.file->close();
             }
@@ -11972,18 +11975,20 @@ void MainWidget:: run_startup_js(bool first_run) {
 #endif
 }
 
-void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, QString content) {
+void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path) {
 
     follow_data.creation_time = QDateTime::currentDateTime();
-    follow_data.file = new QTemporaryFile();
+    if (!file_path.has_value()) {
+        follow_data.file = new QTemporaryFile();
 
-    follow_data.file->open();
-    follow_data.file->write(content.toUtf8());
-    follow_data.file->close();
+        follow_data.file->open(QFile::WriteOnly);
+        follow_data.file->write(content.toUtf8());
+        follow_data.file->close();
+    }
 
     QStringList command_parts = QProcess::splitCommand(QString::fromStdWString(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND));
     for (int i = 0; i < command_parts.size(); i++) {
-        command_parts[i] = command_parts[i].replace("%{file}", follow_data.file->fileName());
+        command_parts[i] = command_parts[i].replace("%{file}", file_path.has_value() ? file_path.value() : follow_data.file->fileName());
     }
     QProcess* process = new QProcess(this);
     process->start(command_parts[0], command_parts.mid(1));
@@ -12020,6 +12025,24 @@ void MainWidget::open_embedded_external_text_editor(QString content, std::option
         following_windows.push_back(std::move(follow_data));
 
     }
+}
+
+void MainWidget::open_embedded_external_text_editor_to_edit_file(QString file_path) {
+    WindowFollowData follow_data;
+    NormalizedWindowRect nwr;
+    nwr.x0 = -0.5f;
+    nwr.x1 = 0.5f;
+    nwr.y0 = 0.5f;
+    nwr.y1 = -0.5f;
+    follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
+    //follow_data.file = new QFile(file_path);
+
+    //follow_data.pending_text_command = std::move(pending_command_instance);
+
+    start_embedded_external_editor(follow_data, "", file_path);
+    following_windows.push_back(std::move(follow_data));
+
+    //following_windows.push_back(std::move(follow_data));
 }
 
 void MainWidget::open_external_text_editor() {
@@ -13695,3 +13718,12 @@ void MainWidget::moveEvent(QMoveEvent* move_event) {
     update_following_windows();
 }
 #endif
+
+void MainWidget::open_file(std::wstring file_path, bool show_error_message) {
+    if (USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS) {
+        open_embedded_external_text_editor_to_edit_file(QString::fromStdWString(file_path));
+    }
+    else{
+        ::open_file(file_path, show_error_message);
+    }
+}

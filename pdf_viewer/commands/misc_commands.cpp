@@ -1483,7 +1483,7 @@ public:
     KeysCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        open_file(default_keys_path.get_path(), true);
+        widget->open_file(default_keys_path.get_path(), true);
     }
 
     bool requires_document() { return false; }
@@ -1498,7 +1498,7 @@ public:
     void perform() {
         std::optional<Path> key_file_path = widget->input_handler->get_or_create_user_keys_path();
         if (key_file_path) {
-            open_file(key_file_path.value().get_path(), true);
+            widget->open_file(key_file_path.value().get_path(), true);
         }
     }
 
@@ -1525,7 +1525,7 @@ public:
     PrefsCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        open_file(default_config_path.get_path(), true);
+        widget->open_file(default_config_path.get_path(), true);
     }
 
     bool requires_document() { return false; }
@@ -1540,7 +1540,7 @@ public:
     void perform() {
         std::optional<Path> pref_file_path = widget->config_manager->get_or_create_user_config_file();
         if (pref_file_path) {
-            open_file(pref_file_path.value().get_path(), true);
+            widget->open_file(pref_file_path.value().get_path(), true);
         }
     }
 
