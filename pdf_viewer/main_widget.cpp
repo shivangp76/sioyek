@@ -11083,6 +11083,22 @@ QString MainWidget::read_file(QString path, bool encode_base_64) {
     return res;
 }
 
+void MainWidget::write_file(QString path, QString content){
+    bool is_done = false;
+
+    QMetaObject::invokeMethod(this, [&, path]() {
+        QFile file(path);
+        if (file.open(QIODeviceBase::WriteOnly)) {
+            file.write(content.toUtf8());
+        }
+        is_done = true;
+        });
+
+    while (!is_done) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    };
+}
+
 QByteArray MainWidget::perform_network_request(QString url, QString method, QString json_data){
     bool is_done = false;
     QByteArray res;
@@ -11961,6 +11977,10 @@ void MainWidget:: run_startup_js(bool first_run) {
         auto js_engine = take_js_engine(false);
         QString prelude = "let __first_run = %{FIRST_RUN};\n\
             if (!__first_run){addKeybind = ()=>{}; addKeybindAsync = ()=>{}}\n\
+            function include(path){\
+                let content = sioyek_api.read_file(path);\
+                eval(content);\
+            }\
             function __get_stacktrace(){\n\
                 let lines = new Error().stack.split('\\n');\n\
                 let line = lines[lines.length-1];\n\
@@ -13536,7 +13556,11 @@ void MainWidget::copy_text_to_clipboard(QString str) {
 }
 
 QString MainWidget::get_environment_variable(QString name) {
-    return QString::fromStdString(std::getenv(name.toStdString().c_str()));
+    char* env_variable = std::getenv(name.toStdString().c_str());
+    if (env_variable) {
+        return QString::fromStdString(env_variable);
+    }
+    return "";
 }
 
 void MainWidget::scroll_selected_bookmark_to_end() {
