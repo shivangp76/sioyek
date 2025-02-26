@@ -11087,6 +11087,12 @@ void MainWidget::write_file(QString path, QString content){
     bool is_done = false;
 
     QMetaObject::invokeMethod(this, [&, path]() {
+        QFileInfo file_info(path);
+        QDir parent_dir = file_info.dir();
+        if (!parent_dir.exists()) {
+            parent_dir.mkpath(".");
+        }
+        //file_info.dir().mkdir();
         QFile file(path);
         if (file.open(QIODeviceBase::WriteOnly)) {
             file.write(content.toUtf8());
