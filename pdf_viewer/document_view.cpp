@@ -695,12 +695,23 @@ bool DocumentView::move_absolute(float dx, float dy, bool force) {
 bool DocumentView::move_virtual(float dx, float dy, bool force) {
     offset.x += dx;
     offset.y += dy;
+    if (cached_virtual_rects.size() > 0 && !needs_refill) {
+        float halfwidth = view_width / 2 / zoom_level;
+        float halfheight = !SCROLL_PAST_DOCUMENT_ENDS ? view_height / 2 / zoom_level : 0;
 
-    if (offset.y < 0) offset.y = 0;
-    if (max_cached_y_offset > 0) {
-        if (offset.y > max_cached_y_offset) offset.y = max_cached_y_offset;
+        if (page_space_x >= 0) {
+            if (min_virtual_x + halfwidth > 0 && max_virtual_x - halfwidth < 0) {
+                offset.x = 0;
+            }
+            else {
+                offset.x = std::max(min_virtual_x + halfwidth, offset.x);
+                offset.x = std::min(max_virtual_x - halfwidth, offset.x);
+            }
+        }
+
+        offset.y = std::min(max_virtual_y - halfheight, offset.y);
+        offset.y = std::max(halfheight, offset.y);
     }
-
     return false;
 }
 
@@ -2360,11 +2371,11 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
         needs_refill = false;
     }
 
+
     float cum_offset = 0;
 
     if ((cached_virtual_rects.size() == 0) || force) {
         cached_virtual_rects.clear();
-        max_cached_y_offset = 0;
         int num_pages = current_document->num_pages();
         if (num_pages == 0) return;
 
@@ -2392,9 +2403,6 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
                     page_rect.x0 = leftmost_x + (i % NUM_PAGE_COLUMNS) * (page_width + 2 * page_space_x);
                     page_rect.x1 = page_rect.x0 + page_width +  page_space_x;
 
-                }
-                if (page_rect.y1 > max_cached_y_offset) {
-                    max_cached_y_offset = page_rect.y1;
                 }
 
                 cached_virtual_rects.push_back(page_rect);
@@ -2425,9 +2433,6 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
                     page_rect.x1 = page_width / 2;
                     page_rect.y0 = cum_offset;
                     page_rect.y1 = cum_offset + page_height;
-                    if (page_rect.y1 > max_cached_y_offset) {
-                        max_cached_y_offset = page_rect.y1;
-                    }
 
                     cached_virtual_rects.push_back(page_rect);
 
@@ -2435,6 +2440,18 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
                 }
             }
         }
+    }
+    if (!needs_refill) {
+        min_virtual_x = FLT_MAX;
+        max_virtual_x = FLT_MIN;
+        max_virtual_y = FLT_MIN;
+
+        for (auto r : cached_virtual_rects) {
+            min_virtual_x = std::min(min_virtual_x, r.x0);
+            max_virtual_x = std::max(max_virtual_x, r.x1);
+            max_virtual_y = std::max(max_virtual_y, r.y1);
+        }
+
     }
 }
 

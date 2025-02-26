@@ -95,7 +95,6 @@ protected:
     float zoom_level = 0.0f;
     VirtualPos offset = {0, 0};
     std::vector<VirtualRect> cached_virtual_rects;
-    float max_cached_y_offset = 0;
     bool two_page_mode = false;
 
 
@@ -123,6 +122,10 @@ protected:
 
     float page_space_x = 0;
     float page_space_y = 0;
+
+    float max_virtual_y;
+    float min_virtual_x;
+    float max_virtual_x;
 
 public:
     std::vector<std::vector<AbsoluteRect>>  debug_highlight_rects;
