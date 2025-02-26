@@ -14,6 +14,7 @@
 #endif
 
 extern Path default_keys_path;
+extern Path sioyek_js_path;
 extern Path local_database_file_path;
 extern Path global_database_file_path;
 
@@ -1476,6 +1477,19 @@ public:
     }
 };
 
+class JsConfigCommand : public Command {
+public:
+    static inline const std::string cname = "javascript_config";
+    static inline const std::string hname = "Opens the javascript config file.";
+    JsConfigCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->open_file(sioyek_js_path.get_path(), true);
+    }
+
+    bool requires_document() { return false; }
+};
+
 class KeysCommand : public Command {
 public:
     static inline const std::string cname = "keys";
@@ -2584,6 +2598,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<KeyboardSelectCommand>(manager);
     register_command<KeyboardOverviewCommand>(manager);
     register_command<KeysCommand>(manager);
+    register_command<JsConfigCommand>(manager);
     register_command<KeysUserCommand>(manager);
     register_command<KeysUserAllCommand>(manager);
     register_command<PrefsCommand>(manager);
