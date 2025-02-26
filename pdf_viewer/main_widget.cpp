@@ -10111,6 +10111,24 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
     return res;
 }
 
+void list_dir_helper(QString path, QStringList& paths) {
+    for (const auto& entry : QDir(path).entryInfoList(QDir::Files)) {
+        paths.push_back(entry.filePath());
+    }
+
+    for (const auto& entry : QDir(path).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        list_dir_helper(entry.filePath(), paths);
+    }
+}
+
+QStringList MainWidget::list_dir(QString path) {
+    QStringList child_paths;
+
+    list_dir_helper(path, child_paths);
+
+    return child_paths;
+}
+
 bool remove_file(QString path) {
     QFile file(path);
     file.setPermissions(QFile::WriteOwner | QFile::ReadOwner | QFile::ExeOwner | QFile::WriteUser | QFile::ReadUser | QFile::ExeUser | QFile::WriteGroup | QFile::ReadGroup | QFile::ExeGroup | QFile::WriteOther | QFile::ReadOther | QFile::ExeOther);
@@ -13825,4 +13843,36 @@ void MainWidget::open_text_editor_at_line(QString file_path, int line_number) {
     else {
         ::open_text_editor_at_line(file_path, line_number);
     }
+}
+
+void MainWidget::update_annotation_js(QJsonObject annot) {
+
+    //QString uuid = annot["uuid"].toString();
+    //QString content = annot["desc"].toString();
+    QString type = annot["type"].toString();
+
+    if (type == "bookmark") {
+        BookMark bm = BookMark::from_json(annot);
+        doc()->update_annotation_with_server_annotation(&bm);
+    }
+
+    //qDebug() << "what in the hell";
+    //qDebug() << annot;
+}
+
+QJsonObject MainWidget::get_annotation_js(QString uuid) {
+    auto bm = doc()->get_bookmark_with_uuid(uuid.toStdString());
+    if (bm) {
+        return bm->to_json(doc()->get_checksum());
+    }
+    auto hl = doc()->get_highlight_with_uuid(uuid.toStdString());
+    if (hl) {
+        return hl->to_json(doc()->get_checksum());
+    }
+    auto portal = doc()->get_portal_with_uuid(uuid.toStdString());
+    if (portal) {
+        return portal->to_json(doc()->get_checksum());
+    }
+
+    return {};
 }

@@ -1026,6 +1026,10 @@ public:
     Q_INVOKABLE void register_function_keybind_async(QString keybind, QString code, QString command_name, QString file_name, int line_number);
     Q_INVOKABLE void report_js_error(QString error_message, QString error_file_path, int error_line);
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
+    Q_INVOKABLE QStringList list_dir(QString path);
+    Q_INVOKABLE void update_annotation_js(QJsonObject annot);
+    Q_INVOKABLE QJsonObject get_annotation_js(QString uuid);
+
     void run_startup_js(bool first_run=false);
     Q_INVOKABLE QString get_environment_variable(QString name);
     void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);

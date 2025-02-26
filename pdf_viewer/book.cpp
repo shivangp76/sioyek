@@ -42,14 +42,15 @@ QJsonObject Mark::to_json(std::string doc_checksum) const
     }
     res[Mark::SYMBOL_COLUMN_NAME] = symbol;
 
-    add_metadata_to_json(res);
+    add_metadata_to_json(res, "mark");
     return res;
 }
 
-void Annotation::add_metadata_to_json(QJsonObject& obj) const {
+void Annotation::add_metadata_to_json(QJsonObject& obj, QString type) const {
     obj[Annotation::CREATION_TIME_COLUMN_NAME] = QString::fromStdString(creation_time);
     obj[Annotation::MODIFICATION_TIME_COLUMN_NAME] = QString::fromStdString(modification_time);
     obj[Annotation::UUID_COLUMN_NAME] = QString::fromStdString(uuid);
+    obj["type"] = type;
 }
 
 std::string normalize_date_string(QString date_string) {
@@ -158,7 +159,7 @@ QJsonObject BookMark::to_json(std::string doc_checksum) const
     res[BookMark::FONT_SIZE_COLUMN_NAME] = font_size;
     res[BookMark::FONT_FACE_COLUMN_NAME] = QString::fromStdWString(font_face);
 
-    add_metadata_to_json(res);
+    add_metadata_to_json(res, "bookmark");
 
     return res;
 
@@ -395,7 +396,7 @@ QJsonObject Highlight::to_json(std::string doc_checksum) const
     res[Highlight::TEXT_ANNOT_COLUMN_NAME] = QString::fromStdWString(text_annot);
     res[Highlight::TYPE_COLUMN_NAME] = type;
 
-    add_metadata_to_json(res);
+    add_metadata_to_json(res, "highlight");
     return res;
 }
 
@@ -475,7 +476,7 @@ QJsonObject Portal::to_json(std::string doc_checksum) const
     }
 
     res["same"] = (doc_checksum == dst.document_checksum);
-    add_metadata_to_json(res);
+    add_metadata_to_json(res, "portal");
     return res;
 }
 

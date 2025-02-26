@@ -121,7 +121,7 @@ struct Annotation {
     virtual void  add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) = 0;
     virtual std::vector<std::pair<QString, QVariant>> to_tuples();
 
-    void add_metadata_to_json(QJsonObject& obj) const;
+    void add_metadata_to_json(QJsonObject& obj, QString type) const;
     void load_metadata_from_json(const QJsonObject& obj);
 
     QDateTime get_creation_datetime() const;
