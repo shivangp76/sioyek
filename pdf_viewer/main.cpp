@@ -554,13 +554,16 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
                 windows[0]->download_checksum_when_ready = document_hash.toStdString();
             }
         }
-        if (sioyek_url.startsWith("sioyek://text_highlight/")) {
+        else if (sioyek_url.startsWith("sioyek://text_highlight/")) {
             int skip_length = QString("sioyek://text_highlight/").size();
             QString document_hash_prefix = sioyek_url.mid(skip_length);
             int slash_index = document_hash_prefix.indexOf("/");
             QString document_hash = document_hash_prefix.left(slash_index);
             QString highlight_text = document_hash_prefix.mid(slash_index + 1);
             some_widget->handle_highlight_text_in_document(document_hash.toStdString(), highlight_text);
+        }
+        else if (sioyek_url.startsWith("sioyek:///")){
+            pdf_file_name = pdf_file_name.substr(10, pdf_file_name.size() - 10);
         }
     }
 
