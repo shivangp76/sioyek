@@ -349,16 +349,24 @@ QString BookMark::get_display_markdown_or_text(QString res){
     else if (res.startsWith("? ")) { // question
         QStringList lines = res.split('\n');
         QString result;
+        QString last_question;
 
         for (auto line : lines) {
             if (line.startsWith("? ")) {
-                result += "\n---\n";
-                result += "\n<b>" + line.mid(2) + "</b>\n";
-                result += "\n---\n";
+                last_question += "<span style=\"color: #555;\"><b>" + line.mid(2) + "</b></span>\n\n";
             }
             else {
+                if (last_question.size() > 0) {
+                    result += "\n---\n";
+                    result += "\n" + last_question + "<br/>\n";
+                    last_question = "";
+                }
                 result += line + "\n";
             }
+        }
+        if (last_question.size() > 0) {
+            result += "\n---\n";
+            result += "\n" + last_question + "\n";
         }
         return result;
     }
