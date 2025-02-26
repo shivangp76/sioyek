@@ -10036,7 +10036,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
 
 
     if (is_async) {
-        engine.evaluate("\
+        engine.evaluate(async_utility_code + "\n" + "\
             for (let i = 0; i < __all_command_names.length; i++){\
                 let cname = __all_command_names[i];\
                 sioyek[cname] = (...args)=>{\
@@ -10052,6 +10052,9 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
     }
     else {
         engine.evaluate("__sioyek_keybind_function_index=0;\
+                        function addAsyncUtilityCode(codeString){\
+                            sioyek_api.add_async_utility_code(codeString);\
+                        }\
                         function addHook(eventType, codeString){\
                             sioyek_api.register_hook_function(eventType, codeString);\
                         }\
@@ -13565,6 +13568,10 @@ QString MainWidget::perform_network_request_with_headers(QString method, QString
     }
 
 
+}
+
+void MainWidget::add_async_utility_code(QString str) {
+    async_utility_code += str;
 }
 
 void MainWidget::copy_text_to_clipboard(QString str) {

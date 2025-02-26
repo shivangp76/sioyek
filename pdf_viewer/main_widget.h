@@ -741,6 +741,7 @@ public:
     QPoint last_quick_tap_position;
     std::optional<QPoint> context_menu_right_click_pos = {};
 
+    QString async_utility_code = "";
     std::optional<QString> add_bookmark_hook_function_name = {};
     std::optional<QString> delete_bookmark_hook_function_name = {};
     std::optional<QString> edit_bookmark_hook_function_name = {};
@@ -938,6 +939,7 @@ public:
 
     Q_INVOKABLE QString perform_network_request_with_headers(QString method, QString url, QJsonObject headers, QJsonObject request, bool* is_done=nullptr, QByteArray* response=nullptr);
     Q_INVOKABLE void copy_text_to_clipboard(QString str);
+    Q_INVOKABLE void add_async_utility_code(QString str);
 
     void screenshot(std::wstring file_path);
     void framebuffer_screenshot(std::wstring file_path);
