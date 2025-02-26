@@ -52,6 +52,7 @@ float PERSISTANCE_PERIOD = -1.0f;
 int MAX_CUSTOM_STATUS_MESSAGE_SIZE = 20;
 bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT = true;
 bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS = false;
+bool SCROLL_PAST_DOCUMENT_ENDS = true;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1381,6 +1382,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"focus_on_sioyek_on_external_editor_accept", &FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT);
     add_bool(L"use_embedded_editor_for_config_files", &USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS);
     add_bool(L"show_statusbar_only_when_hovered", &SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER);
+    add_bool(L"scroll_past_document_ends", &SCROLL_PAST_DOCUMENT_ENDS);
     add_bool(L"uniform_page_widths", &SAME_WIDTH);
 
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
