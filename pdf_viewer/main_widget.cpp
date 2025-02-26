@@ -11105,6 +11105,25 @@ void MainWidget::write_file(QString path, QString content){
     };
 }
 
+void MainWidget::delete_file(QString path) {
+    bool is_done = false;
+
+    QMetaObject::invokeMethod(this, [&, path]() {
+        // delete the file in path
+
+        QFile file(path);
+        if (file.exists()) {
+            file.remove();
+        }
+
+        is_done = true;
+        });
+
+    while (!is_done) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    };
+}
+
 QByteArray MainWidget::perform_network_request(QString url, QString method, QString json_data){
     bool is_done = false;
     QByteArray res;
@@ -12106,7 +12125,8 @@ void MainWidget::on_bookmark_deleted(const BookMark& bookmark, const std::string
     deleted_objects.push_back(deleted_bookmark_object);
 
     if (delete_bookmark_hook_function_name) {
-        call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(bookmark.uuid));
+        //call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(bookmark.uuid));
+        call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << bookmark.to_json(document_checksum));
     }
 
     // if we have deleted a bookmark which shows the output of a command
