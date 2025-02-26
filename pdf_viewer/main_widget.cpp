@@ -12244,7 +12244,12 @@ void MainWidget::call_async_js_function_with_args(const QString& code, QJsonArra
                 js_args.push_back(engine->toScriptValue(arg.toString()));
             }
         }
-        func.call(js_args);
+        QJSValue result = func.call(js_args);
+
+        if (result.isError()) {
+            qDebug() << "error in js function: " << result.toString();
+        }
+
         release_async_js_engine(engine);
         });
     ext_thread.detach();
