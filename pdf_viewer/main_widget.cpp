@@ -10080,6 +10080,12 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                             if (typeof(callable) !== 'string'){sioyek_api.report_js_error('Error in ' + backtrace[0] + ':' + backtrace[1] + ': async function should be a string, if you are passing a raw function, you can convert it to a string by surrounding it with `.', backtrace[0], backtrace[1]); return;}\
                             sioyek_api.register_function_keybind_async(keybind, callable, command_name, backtrace[0], backtrace[1]);\
                         }\
+                        function addCommandAsync(command_name, callable){\
+                            addKeybindAsync('', callable, command_name);\
+                        }\
+                        function addCommand(command_name, callable){\
+                            addKeybind('', callable, command_name);\
+                        }\
                         ");
         QJSValue res2 = engine.evaluate("\
             for (let i = 0; i < __all_command_names.length; i++){\
