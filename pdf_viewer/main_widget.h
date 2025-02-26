@@ -933,6 +933,7 @@ public:
     Q_INVOKABLE QJsonObject get_json_annotations();
     Q_INVOKABLE void goto_offset(float x_offset, float y_offset);
     Q_INVOKABLE QJsonObject absolute_to_window_rect_json(QJsonObject absolute_rect_json);
+    Q_INVOKABLE int absolute_pos_to_page(double pos);
 
     Q_INVOKABLE void screenshot_js(QString file_path, QJsonObject window_rect);
     Q_INVOKABLE void framebuffer_screenshot_js(QString file_path, QJsonObject window_rect);

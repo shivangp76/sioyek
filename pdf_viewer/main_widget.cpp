@@ -10036,7 +10036,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
 
 
     if (is_async) {
-        engine.evaluate(async_utility_code + "\n" + "\
+        QJSValue res = engine.evaluate(async_utility_code + "\n" + "\
             for (let i = 0; i < __all_command_names.length; i++){\
                 let cname = __all_command_names[i];\
                 sioyek[cname] = (...args)=>{\
@@ -10049,9 +10049,12 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                 };\
             }\
         ");
+        if (res.isError()) {
+            qDebug() << "Javascript error: " << res.toString();
+        }
     }
     else {
-        engine.evaluate("__sioyek_keybind_function_index=0;\
+        QJSValue res1 = engine.evaluate("__sioyek_keybind_function_index=0;\
                         function addAsyncUtilityCode(codeString){\
                             sioyek_api.add_async_utility_code(codeString);\
                         }\
@@ -10078,7 +10081,7 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                             sioyek_api.register_function_keybind_async(keybind, callable, command_name, backtrace[0], backtrace[1]);\
                         }\
                         ");
-        engine.evaluate("\
+        QJSValue res2 = engine.evaluate("\
             for (let i = 0; i < __all_command_names.length; i++){\
                 let cname = __all_command_names[i];\
                 sioyek[cname] = (...args)=>{\
@@ -10090,6 +10093,12 @@ QJSValue MainWidget::export_javascript_api(QJSEngine& engine, bool is_async) {
                 }\
             }\
         ");
+        if (res1.isError()) {
+            qDebug() << "Javascript error: " << res1.toString();
+        }
+        if (res2.isError()) {
+            qDebug() << "Javascript error: " << res2.toString();
+        }
     }
 
 
@@ -12226,6 +12235,10 @@ void MainWidget::call_async_js_function_with_args(const QString& code, QJsonArra
         QJSEngine* engine = take_js_engine(true);
         //auto jsargs = engine->toScriptValue(args);
         auto func = engine->evaluate(code);
+        if (func.isError()) {
+            qDebug() << "error in js function: " << func.toString();
+            return;
+        }
         QJSValueList js_args;
         for (auto arg : args) {
             if (arg.isArray()) {
@@ -13329,6 +13342,10 @@ void MainWidget::toggle_menu_collapse() {
 
 void MainWidget::goto_offset(float x_offset, float y_offset) {
     main_document_view->set_offsets(x_offset, y_offset, true);
+}
+
+int MainWidget::absolute_pos_to_page(double pos) {
+    return AbsoluteDocumentPos{ 0, (float)pos }.to_document(doc()).page;
 }
 
 Q_INVOKABLE QJsonObject MainWidget::absolute_to_window_rect_json(QJsonObject absolute_rect_json) {
