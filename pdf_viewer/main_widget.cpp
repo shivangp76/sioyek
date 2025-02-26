@@ -10290,6 +10290,7 @@ QJsonObject MainWidget::get_json_state() {
     if (doc()) {
         result["document_path"] = QString::fromStdWString(doc()->get_path());
         result["document_checksum"] = QString::fromStdString(doc()->get_checksum());
+        result["document_filename"] = QString::fromStdWString(Path(doc()->get_path()).filename().value_or(L""));
 
         int current_page = get_current_page_number();
         result["page_number"] = get_current_page_number();
