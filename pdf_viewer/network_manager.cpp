@@ -25,6 +25,7 @@ extern std::wstring PAPERS_FOLDER_PATH;
 extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
 extern std::wstring EXTRACT_TABLE_PROMPT;
 extern Path sioyek_json_data_path;
+extern std::wstring SIOYEK_HOST;
 
 QNetworkAccessManager* SioyekNetworkManager::get_network_manager() {
     if (network_manager_) {
@@ -51,7 +52,7 @@ SioyekNetworkManager::SioyekNetworkManager(DatabaseManager* db_manager_, Backgro
 
 void SioyekNetworkManager::login(std::wstring email, std::wstring password) {
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_TOKEN_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_TOKEN_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     QUrlQuery params;
     params.addQueryItem("username", QString::fromStdWString(email));
@@ -136,7 +137,7 @@ void SioyekNetworkManager::load_access_token() {
 
         if (ACCESS_TOKEN.size() > 0) {
             // make sure the access token is still valid
-            QUrl url(QString::fromStdWString(SIOYEK_ECHO_URL));
+            QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_ECHO_URL_));
 
             QNetworkRequest req;
             authorize_request(&req);
@@ -170,7 +171,7 @@ void SioyekNetworkManager::authorize_request(QNetworkRequest* req) {
 }
 
 void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash, std::function<void(QString)> fn) {
-    QUrl url(QString::fromStdWString(SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH));
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DOWNLOAD_FILE_WITH_HASH_PATH_));
     QUrlQuery query;
     query.addQueryItem("hash", hash);
     url.setQuery(query);
@@ -236,7 +237,7 @@ void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash
 QNetworkReply* SioyekNetworkManager::get_user_file_hash_set_reply() {
     QNetworkRequest req;
     authorize_request(&req);
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_USER_FILE_HASH_SET_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_USER_FILE_HASH_SET_URL_)));
     QNetworkReply* reply = get_network_manager()->get(req);
     reply->setProperty("sioyek_handled", true);
     return reply;
@@ -267,7 +268,7 @@ void SioyekNetworkManager::ocr_file(QObject * parent, QString path, std::functio
 
         QNetworkRequest req;
         authorize_request(&req);
-        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_OCR_URL)));
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_OCR_URL_)));
         //qDebug() << "boundary is:" << parts->boundary();
         //qDebug() << "file size  is:" << file->size();
 
@@ -323,7 +324,7 @@ void SioyekNetworkManager::upload_file(
 
         QNetworkRequest req;
         authorize_request(&req);
-        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_UPLOAD_URL)));
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_UPLOAD_URL_)));
         //qDebug() << "boundary is:" << parts->boundary();
         //qDebug() << "file size  is:" << file->size();
 
@@ -394,7 +395,7 @@ void SioyekNetworkManager::update_checksum(QObject* parent, QString path, QStrin
 
         QNetworkRequest req;
         authorize_request(&req);
-        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_UPDATE_CHECKSUM_URL)));
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_UPDATE_CHECKSUM_URL_)));
         //qDebug() << "boundary is:" << parts->boundary();
         //qDebug() << "file size  is:" << file->size();
 
@@ -465,7 +466,7 @@ std::optional<QJsonDocument> SioyekNetworkManager::get_network_json_reply(QNetwo
 QNetworkReply* SioyekNetworkManager::get_citers_with_name(
     QObject* parent, const std::wstring& name, std::function<void(QNetworkReply*)> fn) {
 
-    QUrl url(QString::fromStdWString(SIOYEK_PAPER_CITERS_URL));
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_PAPER_CITERS_URL_));
     QUrlQuery params;
     params.addQueryItem("paper_title", QString::fromStdWString(name));
     url.setQuery(params);
@@ -501,7 +502,7 @@ QNetworkReply* SioyekNetworkManager::download_paper_with_name(
         download_name = name.substr(1, name.size() - 1);
     }
 
-    QUrl url(QString::fromStdWString(SIOYEK_PAPER_URL_URL));
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_PAPER_URL_URL_));
     QUrlQuery params;
     params.addQueryItem("paper_title", QString::fromStdWString(download_name));
     params.addQueryItem("full_bib_text", full_bib_text);
@@ -705,7 +706,7 @@ QNetworkReply* SioyekNetworkManager::sync_file_location(QString hash, QString do
     last_document_location_upload_time = QDateTime::currentDateTime();
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SYNC_OPENED_BOOK_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SYNC_OPENED_BOOK_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -732,7 +733,7 @@ QNetworkReply* SioyekNetworkManager::sync_file_location(QString hash, QString do
 }
 
 QNetworkReply* SioyekNetworkManager::get_opened_book_data_from_checksum(QObject* parent, QString checksum, std::function<void(QJsonObject)> fn) {
-    QUrl url(QString::fromStdWString(SIOYEK_GET_OPENED_BOOK_DATA_URL));
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_GET_OPENED_BOOK_DATA_URL_));
     QUrlQuery params;
     params.addQueryItem("file_checksum", checksum);
     url.setQuery(params);
@@ -776,7 +777,7 @@ void SioyekNetworkManager::download_opened_files_info(QObject* parent, std::func
     //}
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_GET_OPENED_BOOKS_DATA_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_GET_OPENED_BOOKS_DATA_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     //QJsonObject obj;
@@ -893,7 +894,7 @@ void SioyekNetworkManager::upload_annot(
 void SioyekNetworkManager::perform_generic_llm_request(QObject* parent, const QString& system_prompt, const QString& user_prompt, const QPixmap* pixmap, std::function<void(QString)> on_done) {
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_GENERIC_LLM_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_GENERIC_LLM_URL_)));
     authorize_request(&req);
 
     QHttpMultiPart* multipart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
@@ -948,7 +949,7 @@ void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pi
     pixmap.save(&image_buffer, "PNG");
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_EXTRACT_TABLE_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_EXTRACT_TABLE_URL_)));
     authorize_request(&req);
 
     QHttpMultiPart* multipart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
@@ -990,7 +991,7 @@ void SioyekNetworkManager::extract_table_data(QObject* parent, const QPixmap& pi
 void SioyekNetworkManager::delete_annot(QObject* parent, const QString& file_checksum, const QString& annot_type, const QString& uuid, std::function<void()> on_success, std::function<void()> on_fail) {
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DELETE_ANNOT_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DELETE_ANNOT_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1016,7 +1017,7 @@ void SioyekNetworkManager::delete_annot(QObject* parent, const QString& file_che
 }
 
 void SioyekNetworkManager::get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime>)> fn){
-    QUrl url(QString::fromStdWString(SIOYEK_GET_DOCUMENT_ANNOTATIONS_URL));
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_GET_DOCUMENT_ANNOTATIONS_URL_));
     QUrlQuery params;
     params.addQueryItem("file_checksum", document_checksum);
     url.setQuery(params);
@@ -1097,7 +1098,7 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent,
     else {
         // 
         QNetworkRequest req;
-        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SYNC_DELETES_URL)));
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SYNC_DELETES_URL_)));
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
         QJsonArray deletes_array;
@@ -1168,13 +1169,13 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent,
 
 const std::wstring& SioyekNetworkManager::get_url_for_annot_upload(const Annotation* annot) {
     if (dynamic_cast<const Highlight*>(annot)) {
-        return SIOYEK_ADD_HIGHLIGHT_URL;
+        return SIOYEK_HOST + SIOYEK_ADD_HIGHLIGHT_URL_;
     }
     if (dynamic_cast<const BookMark*>(annot)) {
-        return SIOYEK_ADD_BOOKMARK_URL;
+        return SIOYEK_HOST + SIOYEK_ADD_BOOKMARK_URL_;
     }
     if (dynamic_cast<const Portal*>(annot)) {
-        return SIOYEK_ADD_PORTAL_URL;
+        return SIOYEK_HOST + SIOYEK_ADD_PORTAL_URL_;
     }
 
     return L"";
@@ -1187,7 +1188,7 @@ void SioyekNetworkManager::delete_file_with_checksum(const QString& checksum) {
     }
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DELETE_FILE_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DELETE_FILE_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1235,7 +1236,7 @@ void SioyekNetworkManager::tts(QObject* parent,
     }
     else {
         QNetworkRequest req;
-        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_TTS_URL)));
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_TTS_URL_)));
         //req.setUrl(QUrl(QString::fromStdWString(SIOYEK_GOOGLE_TTS_URL)));
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -1298,7 +1299,7 @@ void SioyekNetworkManager::tts(QObject* parent,
 void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done) {
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DEBUG_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DEBUG_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1318,7 +1319,7 @@ void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done)
 
 void SioyekNetworkManager::semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_ASK_GEMINI_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_ASK_GEMINI_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1345,7 +1346,7 @@ void SioyekNetworkManager::semantic_search_extractive(QObject* parent, const QSt
 
 void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_SEARCH_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_SEARCH_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1375,7 +1376,7 @@ void SioyekNetworkManager::does_index_exist(QObject* parent, const std::wstring&
     std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DOES_INDEX_EXIST_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DOES_INDEX_EXIST_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1403,7 +1404,7 @@ void SioyekNetworkManager::does_index_exist(QObject* parent, const std::wstring&
 
 void SioyekNetworkManager::semantic_ask(QObject* parent, const QString& query, const std::wstring& index, int first_page_end_index, std::function<void(QString)> on_chunk, std::function<void()> on_done) {
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SEMANTIC_ASK_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_ASK_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1437,7 +1438,7 @@ void SioyekNetworkManager::summarize(QObject* parent, const std::wstring& index,
     //std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_SUMMARIZE_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SUMMARIZE_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1485,7 +1486,7 @@ void SioyekNetworkManager::upload_document_index(QObject* parent, const std::wst
     std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_UPLOAD_INDEX_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_UPLOAD_INDEX_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1512,7 +1513,7 @@ void SioyekNetworkManager::upload_document_index(QObject* parent, const std::wst
 void SioyekNetworkManager::delete_file_from_server(QObject* parent, std::string checksum, std::function<void()> on_done) {
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DELETE_FILE_CHECKSUM_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DELETE_FILE_CHECKSUM_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1563,7 +1564,7 @@ QNetworkReply* SioyekNetworkManager::upload_drawings(QObject* parent, std::strin
 
         QNetworkRequest req;
         authorize_request(&req);
-        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_UPLOAD_DRAWINGS_URL)));
+        req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_UPLOAD_DRAWINGS_URL_)));
 
         file->setParent(parts);
         // DO NOT use the Qt's default boundary, it does not work
@@ -1599,7 +1600,7 @@ QNetworkReply* SioyekNetworkManager::upload_drawings(QObject* parent, std::strin
 void SioyekNetworkManager::get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done) {
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_GET_LAST_DRAWING_MODIFICATION_TIME_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1632,7 +1633,7 @@ void SioyekNetworkManager::get_last_drawing_modification_time(QObject* parent, s
 void SioyekNetworkManager::download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done) {
 
     QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_DOWNLOAD_DRAWINGS_URL)));
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DOWNLOAD_DRAWINGS_URL_)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     QJsonObject obj;
@@ -1682,7 +1683,7 @@ void SioyekNetworkManager::download_new_annotations(QObject* parent, QDateTime l
 
 void SioyekNetworkManager::get_annotations_after(QObject* parent, QDateTime last_update_date, std::function<void(std::vector<std::pair<std::string, Highlight>>&&, std::vector<std::pair<std::string, BookMark>>&&, std::vector<std::pair<std::string, Portal>>&&)> fn) {
 
-    QUrl url(QString::fromStdWString(SIOYEK_GET_NEW_ANNOTATIONS_URL));
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_GET_NEW_ANNOTATIONS_URL_));
 
     QJsonObject obj;
     obj["after_date"] = last_update_date.toString(Qt::ISODate);
@@ -1961,7 +1962,7 @@ bool SioyekNetworkManager::is_document_available_on_server(Document* doc) {
 }
 
 void SioyekNetworkManager::search_all_documents(QObject* parent, QString q, std::function<void(std::vector<QString>)> on_done){
-    QUrl url(QString::fromStdWString(SIOYEK_API_SEARCH_URL));
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_API_SEARCH_URL_));
     QUrlQuery query;
     query.addQueryItem("query", "a " + q);
     url.setQuery(query);

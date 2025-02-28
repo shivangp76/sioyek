@@ -10,6 +10,7 @@
 extern std::wstring EXTRACT_TABLE_PROMPT;
 extern int TABLE_EXTRACT_BEHAVIOUR;
 extern bool TOUCH_MODE;
+extern std::wstring SIOYEK_HOST;
 
 class ProCommand : public Command {
 public:
@@ -578,7 +579,7 @@ public:
     DashboardCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        open_web_url(widget->sioyek_network_manager->SIOYEK_DASHBOARD_URL);
+        open_web_url(SIOYEK_HOST + widget->sioyek_network_manager->SIOYEK_DASHBOARD_URL_);
     }
 
 };

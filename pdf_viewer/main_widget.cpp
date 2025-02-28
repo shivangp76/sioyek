@@ -8054,7 +8054,25 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
 
     int first_page_end_index = doc()->get_first_page_end_index();
 
-    sioyek_network_manager->semantic_ask(this, QString::fromStdWString(query), index, first_page_end_index,
+    QString query_qstring = QString::fromStdWString(query);
+
+    std::wstring context = L"";
+    bool use_context = false;
+
+    if (query_qstring.contains("@selection")) {
+        context = dv()->get_selected_text();
+        use_context = true;
+        first_page_end_index = -1;
+        query_qstring = query_qstring.replace("@selection", "");
+    }
+    else if (query_qstring.contains("@chapter")) {
+        context = get_current_chapter_text();
+        use_context = true;
+        first_page_end_index = -1;
+        query_qstring = query_qstring.replace("@chapter", "");
+    }
+
+    sioyek_network_manager->semantic_ask(this, query_qstring, use_context ? context : index, first_page_end_index,
         [this, bookmark_uuid, document=doc()](QString chunk) {
         BookMark* bm = add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         if (bm) {
@@ -13875,4 +13893,21 @@ QJsonObject MainWidget::get_annotation_js(QString uuid) {
     }
 
     return {};
+}
+
+std::wstring MainWidget::get_current_chapter_text() {
+    auto chapter_page_range = main_document_view->get_current_page_range();
+    if (chapter_page_range) {
+        auto [begin_page, end_page] = chapter_page_range.value();
+        auto page_indices = doc()->get_super_fast_page_begin_indices();
+        const std::wstring& doc_text = doc()->get_super_fast_index();
+        if (begin_page >= 0 && begin_page < page_indices.size() && end_page >= 0 && end_page < page_indices.size()) {
+            int begin_index = page_indices[begin_page];
+            int end_index = end_page < page_indices.size() - 1 ? page_indices[end_page + 1] : doc_text.size();
+            return doc_text.substr(begin_index, end_index - begin_index);
+
+        }
+
+    }
+    return L"";
 }

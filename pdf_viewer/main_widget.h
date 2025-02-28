@@ -1205,6 +1205,7 @@ public:
     void handle_edit_selected_bookmark_with_external_editor();
     void open_file(std::wstring file_path, bool show_error_message);
     void open_text_editor_at_line(QString file_path, int line_number);
+    std::wstring get_current_chapter_text();
 
 
 public slots:

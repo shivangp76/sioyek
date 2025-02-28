@@ -53,6 +53,7 @@ int MAX_CUSTOM_STATUS_MESSAGE_SIZE = 20;
 bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT = true;
 bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS = false;
 bool SCROLL_PAST_DOCUMENT_ENDS = true;
+std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1403,6 +1404,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"shift_middle_click_search_engine", &SHIFT_MIDDLE_CLICK_SEARCH_ENGINE);
     // add_string(L"text_summary_url", &TEXT_HIGHLIGHT_URL);
     add_string(L"extract_table_prompt", &EXTRACT_TABLE_PROMPT);
+    add_string(L"sioyek_host", &SIOYEK_HOST);
     // add_string(L"paper_search_url", &PAPER_SEARCH_URL);
     add_string(L"papers_folder_path", &PAPERS_FOLDER_PATH);
     add_string(L"scan_path", &BOOK_SCAN_PATH);
