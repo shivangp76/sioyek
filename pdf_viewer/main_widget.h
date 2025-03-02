@@ -929,6 +929,7 @@ public:
     void show_custom_option_list(std::vector<std::wstring> option_list);
     void on_socket_deleted(QLocalSocket* deleted_socket);
     Q_INVOKABLE QJsonObject get_json_state();
+    Q_INVOKABLE QString get_current_document_text();
     Q_INVOKABLE void set_state(QJsonObject state);
     Q_INVOKABLE QJsonObject get_json_annotations();
     Q_INVOKABLE void goto_offset(float x_offset, float y_offset);

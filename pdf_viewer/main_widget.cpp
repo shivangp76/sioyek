@@ -10336,6 +10336,13 @@ void MainWidget::set_state(QJsonObject state) {
 
 }
 
+QString MainWidget::get_current_document_text() {
+    if (doc() && doc()->is_super_fast_index_ready()) {
+        return QString::fromStdWString(doc()->get_super_fast_index());
+    }
+    return "";
+}
+
 QJsonObject MainWidget::get_json_state() {
     QJsonObject result;
     if (doc()) {
