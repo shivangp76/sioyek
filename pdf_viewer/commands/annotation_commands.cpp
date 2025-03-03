@@ -303,8 +303,11 @@ public:
     std::optional<std::wstring> text_;
     std::optional<AbsoluteRect> rect_;
     std::string pending_uuid = "";
+    QString status_message_uuid;
 
-    AddBookmarkFreetextCommand(MainWidget* w) : Command(cname, w) {};
+    AddBookmarkFreetextCommand(MainWidget* w) : Command(cname, w) {
+        status_message_uuid = QString::fromStdWString(new_uuid());
+    };
 
     void on_text_change(const QString& new_text) override {
         std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
@@ -312,6 +315,13 @@ public:
 
         if (bookmark) {
             bookmark->description = new_text.toStdWString();
+        }
+        //if (new_text.startsWith())
+        if (bookmark->is_question() || bookmark->is_summary()) {
+            widget->update_query_tokens_status_message_for_bookmark(status_message_uuid);
+        }
+        else {
+            widget->set_status_message(L"", status_message_uuid);
         }
     }
 
@@ -371,6 +381,7 @@ public:
         if (pending_uuid.size() > 0) {
             widget->doc()->undo_pending_bookmark(pending_uuid);
         }
+        widget->set_status_message(L"", status_message_uuid);
     }
 
     void perform() {

@@ -13941,3 +13941,53 @@ void MainWidget::set_textbar_autocomlete_strings(QStringList strings) {
         line_edit->set_autocomplete_strings(strings);
     }
 }
+
+void MainWidget::update_query_tokens_status_message_for_bookmark(QString message_uuid) {
+    if (pending_command_instance) {
+        std::optional<StatusMessage> current_status_message = get_status_message_with_id(message_uuid);
+
+        MyLineEdit* line_edit = dynamic_cast<MyLineEdit*>(focusWidget());
+        //if (current_status_message.has_value()) {
+        //    int n_chars = doc()->get_super_fast_index().size();
+        //    if (!line_edit->text().contains("@chapter") && !line_edit->text().contains("@selection")) {
+        //        QString message = QString::number(n_chars) + " characters";
+        //        set_status_message(message.toStdWString(), message_uuid);
+        //    }
+        //    return;
+        //}
+        const int chars_per_token = 4;
+
+        if (line_edit) {
+            QString text = line_edit->text();
+            if (text.contains("@chapter")) {
+                if (!current_status_message.has_value() || !current_status_message->message.startsWith("chapter: ")) {
+                    int size = get_current_chapter_text().size() / chars_per_token;
+                    QString message = "chapter: ~" + QString::number(size) + " tokens";
+                    set_status_message(message.toStdWString(), message_uuid);
+                }
+            }
+            else if (text.contains("@selection")) {
+                if (!current_status_message.has_value() || !current_status_message->message.startsWith("selection: ")) {
+                    int size = main_document_view->get_selected_text().size() / chars_per_token;
+                    QString message = "selection: ~" + QString::number(size) + " tokens";
+                    set_status_message(message.toStdWString(), message_uuid);
+                }
+            }
+            else {
+                //set_status_message(L"", message_uuid);
+                int n_tokens = doc()->get_super_fast_index().size() / chars_per_token;
+                QString message = "~" + QString::number(n_tokens) + " tokens";
+                set_status_message(message.toStdWString(), message_uuid);
+            }
+        }
+    }
+}
+
+std::optional<StatusMessage> MainWidget::get_status_message_with_id(QString id) {
+    for (auto& message : status_messages) {
+        if (message.id == id) {
+            return message;
+        }
+    }
+    return {};
+}

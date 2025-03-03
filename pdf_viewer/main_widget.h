@@ -1208,6 +1208,8 @@ public:
     void open_text_editor_at_line(QString file_path, int line_number);
     std::wstring get_current_chapter_text();
     void set_textbar_autocomlete_strings(QStringList strings);
+    void update_query_tokens_status_message_for_bookmark(QString message_uuid);
+    std::optional<StatusMessage> get_status_message_with_id(QString id);
 
 
 public slots:
