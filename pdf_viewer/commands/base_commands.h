@@ -106,6 +106,8 @@ public:
     virtual void on_text_change(const QString& new_text);
     virtual std::optional<AbsoluteRect> get_text_editor_rectangle();
 
+    virtual QStringList get_autocomplete_options();
+
     void set_next_requirement_with_string(std::wstring str);
 
     virtual void run();

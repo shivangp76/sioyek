@@ -130,6 +130,10 @@ Command::~Command() {
 
 }
 
+QStringList Command::get_autocomplete_options() {
+    return {};
+}
+
 std::optional<std::wstring> Command::get_text_suggestion(int index) {
     return {};
 }

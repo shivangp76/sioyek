@@ -503,8 +503,8 @@ public:
     void show_password_prompt_if_required();
     void handle_link_click(const PdfLink& link);
 
-    void on_next_text_suggestion();
-    void on_prev_text_suggestion();
+    void on_next_text_suggestion(int diff);
+    //void on_prev_text_suggestion();
     void set_current_text_suggestion();
     void set_drag_value_on_small_documents(fvec2& val);
     void toggle_menu_collapse();
@@ -1207,6 +1207,7 @@ public:
     void open_file(std::wstring file_path, bool show_error_message);
     void open_text_editor_at_line(QString file_path, int line_number);
     std::wstring get_current_chapter_text();
+    void set_textbar_autocomlete_strings(QStringList strings);
 
 
 public slots:

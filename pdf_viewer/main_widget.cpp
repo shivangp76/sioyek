@@ -5482,6 +5482,9 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstr
             Requirement next_requirement = pending_command_instance->next_requirement(this).value();
             if (next_requirement.type == RequirementType::Text) {
                 show_textbar(utf8_decode(next_requirement.name), false, pending_command_instance->get_text_default_value());
+                QStringList autocomplete_suggestions = pending_command_instance->get_autocomplete_options();
+                set_textbar_autocomlete_strings(autocomplete_suggestions);
+
             }
             else if (next_requirement.type == RequirementType::Password) {
                 show_textbar(utf8_decode(next_requirement.name), true, pending_command_instance->get_text_default_value());
@@ -10664,10 +10667,10 @@ QString MainWidget::handle_action_in_menu(std::wstring action) {
             my_line_edit->del();
         }
         else if (action == L"next_suggestion" || action == L"down") {
-            on_next_text_suggestion();
+            on_next_text_suggestion(1);
         }
         else if (action == L"prev_suggestion" || action == L"up") {
-            on_prev_text_suggestion();
+            on_next_text_suggestion(-1);
         }
 
 
@@ -11663,27 +11666,39 @@ QVariant MainWidget::get_variable(QString name) {
     return js_variables[name];
 }
 
-void MainWidget::on_next_text_suggestion() {
+void MainWidget::on_next_text_suggestion(int diff) {
+    auto focused_line_edit = dynamic_cast<MyLineEdit*>(focusWidget());
+    if (focused_line_edit && focused_line_edit->is_autocomplete_active) {
+        QKeyEvent* ev;
+        if (diff > 0) {
+            ev = new QKeyEvent(QEvent::KeyPress, Qt::Key_Down, Qt::NoModifier);
+        }
+        else {
+            ev = new QKeyEvent(QEvent::KeyPress, Qt::Key_Up, Qt::NoModifier);
+        }
+        QCoreApplication::sendEvent(focused_line_edit, ev);
+        return;
+    }
     if (pending_command_instance) {
         bool this_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index).has_value();
-        bool next_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index + 1).has_value();
+        bool next_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index + diff).has_value();
         if (!this_has_value && !next_has_value) return;
 
-        text_suggestion_index++;
+        text_suggestion_index += diff;
         set_current_text_suggestion();
     }
 }
 
-void MainWidget::on_prev_text_suggestion() {
-    if (pending_command_instance) {
-        bool this_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index).has_value();
-        bool next_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index - 1).has_value();
-        if (!this_has_value && !next_has_value) return;
-
-        text_suggestion_index--;
-        set_current_text_suggestion();
-    }
-}
+//void MainWidget::on_prev_text_suggestion() {
+//    if (pending_command_instance) {
+//        bool this_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index).has_value();
+//        bool next_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index - 1).has_value();
+//        if (!this_has_value && !next_has_value) return;
+//
+//        text_suggestion_index--;
+//        set_current_text_suggestion();
+//    }
+//}
 
 void MainWidget::set_current_text_suggestion() {
     if (pending_command_instance) {
@@ -13918,4 +13933,11 @@ std::wstring MainWidget::get_current_chapter_text() {
 
     }
     return L"";
+}
+
+void MainWidget::set_textbar_autocomlete_strings(QStringList strings) {
+    auto line_edit = dynamic_cast<MyLineEdit*>(focusWidget());
+    if (line_edit) {
+        line_edit->set_autocomplete_strings(strings);
+    }
 }

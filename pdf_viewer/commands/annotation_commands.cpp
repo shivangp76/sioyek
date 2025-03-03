@@ -107,6 +107,17 @@ public:
     std::string text_requirement_name() {
         return "Bookmark Text";
     }
+
+    QStringList get_autocomplete_options() override {
+        return {
+            "#markdown",
+            "#latex",
+            "#shell",
+            "@chapter",
+            "@selection"
+        };
+    }
+
 };
 
 class AddBookmarkMarkedCommand : public Command {
@@ -156,6 +167,16 @@ public:
         if (pending_uuid.size() > 0) {
             widget->doc()->undo_pending_bookmark(pending_uuid);
         }
+    }
+
+    QStringList get_autocomplete_options() override {
+        return {
+            "#markdown",
+            "#latex",
+            "#shell",
+            "@chapter",
+            "@selection"
+        };
     }
 
     void perform() {
@@ -292,6 +313,16 @@ public:
         if (bookmark) {
             bookmark->description = new_text.toStdWString();
         }
+    }
+
+    QStringList get_autocomplete_options() override {
+        return {
+            "#markdown",
+            "#latex",
+            "#shell",
+            "@chapter",
+            "@selection"
+        };
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {

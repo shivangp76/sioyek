@@ -107,6 +107,20 @@ public:
     void keyPressEvent(QKeyEvent* event) override;
     int get_next_word_position();
     int get_prev_word_position();
+    bool is_autocomplete_active = false;
+    void set_autocomplete_strings(QStringList strings);
+
+private:
+    QListWidget* autocomplete_popup = nullptr;
+    QString current_autocomplete_prefix;
+    QStringList autocomplete_strings;
+    int autocomplete_start_pos = -1;
+    
+    void show_autocomplete_popup();
+    void hide_autocomplete_popup();
+    void update_autocomplete_popup();
+    void insert_autocomplete_suggestion(const QString& suggestion);
+    QStringList get_autocomplete_suggestions(const QString& prefix);
 };
 
 QString get_view_stylesheet_type_name(QAbstractItemView* view);
