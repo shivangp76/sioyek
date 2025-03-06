@@ -11944,7 +11944,7 @@ QMenuBar* MainWidget::create_main_menu_bar(){
 
     QMenu* help_menu = menu_bar->addMenu("Help");
     QAction* donate_action = help_menu->addAction("Donate");
-    donate_action->setShortcut(QKeySequence(Qt::Key_Meta | Qt::Key_PageDown));
+    //donate_action->setShortcut(QKeySequence(Qt::Key_Meta | Qt::Key_PageDown));
 
 
     connect(donate_action, &QAction::triggered, [&](){
