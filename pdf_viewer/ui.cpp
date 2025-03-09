@@ -2511,7 +2511,7 @@ QVariant CommandModel::data(const QModelIndex& index, int role) const {
         }
         else if (index.column() == CommandModel::is_pro) {
             if (index.row() < requires_pro.size()) {
-                return requires_pro[index.row()];
+                return QVariant::fromValue(requires_pro[index.row()]);
             }
             return false;
         }

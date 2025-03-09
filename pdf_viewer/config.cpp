@@ -1567,7 +1567,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         changeTitlebarColor(w->winId(), MACOS_TITLEBAR_COLOR[0], MACOS_TITLEBAR_COLOR[1], MACOS_TITLEBAR_COLOR[2], 1.0f);
     });
     add_color3(L"macos_dark_titlebar_color", MACOS_DARK_TITLEBAR_COLOR)->set_change_fn([](MainWidget* w){
-        if (w->main_document_view->color_mode != ColorPalette::Normal){
+        if (w->main_document_view->get_current_color_mode() != ColorPalette::Normal){
             changeTitlebarColor(w->winId(), MACOS_DARK_TITLEBAR_COLOR[0], MACOS_DARK_TITLEBAR_COLOR[1], MACOS_DARK_TITLEBAR_COLOR[2], 1.0f);
         }
     });

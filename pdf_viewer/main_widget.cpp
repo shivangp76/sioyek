@@ -11041,12 +11041,12 @@ void MainWidget::initialize_helper(){
     helper_opengl_widget_->get_widget()->hide();
 #endif
 #ifdef Q_OS_MACOS
-    QWidget* helper_window = get_top_level_widget(helper_opengl_widget_);
+    QWidget* helper_window = get_top_level_widget(helper_opengl_widget_->get_widget());
     if (MACOS_HIDE_TITLEBAR) {
         hideWindowTitleBar(helper_window->winId());
     }
-    helper_opengl_widget_->show();
-    helper_opengl_widget_->hide();
+    helper_opengl_widget_->get_widget()->show();
+    helper_opengl_widget_->get_widget()->hide();
 #endif
 
     set_color_mode_to_system_theme();
