@@ -411,9 +411,9 @@ if(APPLE AND NOT IOS)
         -lz
     )
 
-    target_compile_options(sioyek
-        -std=c++17
-    )
+    # target_compile_options(sioyek
+    #     -std=c++17
+    # )
 endif()
 
 # install(TARGETS sioyek

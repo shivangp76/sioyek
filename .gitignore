@@ -407,3 +407,4 @@ flake*
 
 # ctags
 tags
+cmake-build-debug/*
