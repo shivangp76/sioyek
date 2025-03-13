@@ -12884,6 +12884,10 @@ void MainWidget::handle_high_quality_media_end_reached() {
 
 SioyekMediaPlayer* MainWidget::get_media_player(){
     if (media_player == nullptr) {
+
+#ifdef Q_OS_MACOS
+        media_player = new MacosMediaPlayer();
+#else
 #ifndef SIOYEK_ADVANCED_AUDIO
         QAudioOutput* audio_output = new QAudioOutput(this);
         audio_output->setVolume(10);
@@ -12897,6 +12901,7 @@ SioyekMediaPlayer* MainWidget::get_media_player(){
             });
 #else
         media_player = new MyPlayer();
+#endif
 #endif
     }
     return media_player;

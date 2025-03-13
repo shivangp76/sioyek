@@ -28,12 +28,14 @@
 #include "utf8.h"
 #include "coordinates.h"
 
+#ifndef Q_OS_MACOS
 #ifdef SIOYEK_ADVANCED_AUDIO
 #ifdef SIOYEK_USE_SOUNDTOUCH
 #include <soundtouch/SoundTouch.h>
 #endif
 #include "miniaudio.h"
 
+#endif
 #endif
 
 #define LL_ITER(name, start) for(auto name=start;(name);name=name->next)
@@ -1049,6 +1051,28 @@ private:
     void processFrames();
 };
 
+#ifdef Q_OS_MACOS
+class MacosMediaPlayer{
+
+public:
+    void set_source(std::string path);
+    void play();
+    void pause();
+    void stop();
+    void seek(unsigned long long miliseconds);
+    void setPosition(unsigned long long miliseconds);
+    int position();
+    bool isPlaying();
+    void set_volume(float volume);
+    float get_volume();
+    void setPlaybackRate(float rate);
+    bool isSeekable();
+    bool isFinished();
+    void setSource(const QUrl& source);
+};
+
+#else
+
 #ifdef SIOYEK_ADVANCED_AUDIO
 class MyPlayer {
 public:
@@ -1094,7 +1118,8 @@ public:
 
 
 };
-#endif
+#endif // SIOYEK_ADVACNED_AUDIO
+#endif // Q_OS_MACOS
 
 void focus_on_widget(QWidget* widget, bool no_unminimize=false);
 void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, int height, bool is_focused);

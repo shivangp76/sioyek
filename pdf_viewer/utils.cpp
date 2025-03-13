@@ -66,10 +66,12 @@
 #include <signal.h>
 #endif
 
+#ifndef Q_OS_MACOS
 #ifdef SIOYEK_ADVANCED_AUDIO
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 #undef MINIAUDIO_IMPLEMENTATION
+#endif
 #endif
 
 
@@ -5957,7 +5959,7 @@ bool stext_page_has_lines(fz_stext_page* page) {
     return false;
 }
 
-#ifdef SIOYEK_ADVANCED_AUDIO
+#if defined(SIOYEK_ADVANCED_AUDIO) && !defined(Q_OS_MACOS)
 
 void data_callback_f32(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
 
@@ -6534,3 +6536,78 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
 #elif defined(Q_OS_MACOS)
 #endif
 }
+
+#ifdef Q_OS_MACOS
+extern "C" void macos_setMp3FileSource(const char* path);
+extern "C" void macos_playMp3File(const char*);
+extern "C" void macos_stopMp3File();
+extern "C" bool macos_isMp3Playing();
+extern "C" void macos_seekMp3File(float seconds);
+extern "C" float macos_getMp3CurrentTime();
+extern "C" void macos_setPlaybackRate(float rate);
+extern "C" void macos_resumeMp3File();
+extern "C" float macos_pauseMp3File();
+extern "C" bool macos_isMp3Finished();
+
+void MacosMediaPlayer::set_source(std::string path){
+    macos_setMp3FileSource(path.c_str());
+}
+
+void MacosMediaPlayer::setSource(const QUrl& source){
+    if (source.toString().startsWith("file:///")){
+        std::string source_string = source.toString().mid(7).toStdString();
+
+        set_source(source_string);
+    }
+}
+
+void MacosMediaPlayer::play(){
+    macos_resumeMp3File();
+}
+
+void MacosMediaPlayer::pause(){
+    macos_pauseMp3File();
+}
+
+void MacosMediaPlayer::stop(){
+    macos_stopMp3File();
+}
+
+void MacosMediaPlayer::seek(unsigned long long miliseconds){
+    float seconds = static_cast<float>(miliseconds) / 1000.0f;
+    macos_seekMp3File(seconds);
+}
+
+void MacosMediaPlayer::setPosition(unsigned long long miliseconds){
+    this->seek(miliseconds);
+}
+
+int MacosMediaPlayer::position(){
+    return static_cast<int>(macos_getMp3CurrentTime() * 1000.0f);
+}
+
+bool MacosMediaPlayer::isPlaying(){
+    return macos_isMp3Playing();
+}
+
+void MacosMediaPlayer::set_volume(float volume){
+
+}
+
+float MacosMediaPlayer::get_volume(){
+    return 0;
+}
+
+void MacosMediaPlayer::setPlaybackRate(float rate){
+    macos_setPlaybackRate(rate);
+}
+
+bool MacosMediaPlayer::isSeekable(){
+    return true;
+}
+
+bool MacosMediaPlayer::isFinished(){
+    return macos_isMp3Finished();
+}
+
+#endif

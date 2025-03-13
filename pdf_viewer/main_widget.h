@@ -160,10 +160,14 @@ struct ClickSpaceTime {
     AbsoluteDocumentPos click_pos;
 };
 
+#ifdef Q_OS_MACOS
+using SioyekMediaPlayer = MacosMediaPlayer;
+#else
 #ifdef SIOYEK_ADVANCED_AUDIO
 using SioyekMediaPlayer = MyPlayer;
 #else
 using SioyekMediaPlayer = QMediaPlayer;
+#endif
 #endif
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
