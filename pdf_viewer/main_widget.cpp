@@ -3946,8 +3946,10 @@ void MainWidget::visual_mark_under_pos(WindowPos pos) {
 }
 
 void MainWidget::open_overview_to_portal(Document* dst_doc, Portal portal){
-    dst_doc->open(true);
-    dst_doc->load_page_dimensions(true);
+    if (!dst_doc->get_is_opened()){
+        dst_doc->open(true);
+        dst_doc->load_page_dimensions(true);
+    }
     OverviewState overview;
     overview.doc = dst_doc;
     overview.absolute_offset_y = portal.dst.book_state.offset_y;
