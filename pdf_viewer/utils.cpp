@@ -6431,7 +6431,11 @@ void PhaseVocoder::processFrames() {
 }
 
 void focus_on_widget(QWidget* widget, bool no_unminimize) {
+#ifdef Q_OS_WIN
     widget->activateWindow();
+#else
+    widget->raise();
+#endif
     if (no_unminimize) {
         widget->setWindowState(widget->windowState() | Qt::WindowActive);
     }

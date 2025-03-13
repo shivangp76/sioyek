@@ -851,7 +851,7 @@ int main(int argc, char* args[]) {
     verify_paths();
 
     // should we launche a new instance each time the user opens a PDF or should we reuse the previous instance
-    bool use_single_instance = (!SHOULD_LAUNCH_NEW_INSTANCE) && (!SHOULD_LAUNCH_NEW_WINDOW);
+    bool use_single_instance = (!SHOULD_LAUNCH_NEW_INSTANCE);
 
     if (should_reuse_instance(argc, args)) {
         use_single_instance = true;
