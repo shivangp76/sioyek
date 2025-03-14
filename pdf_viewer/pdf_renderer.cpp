@@ -484,8 +484,12 @@ fz_document* PdfRenderer::get_document_with_path(int thread_index, fz_context* m
 
     std::pair<int, std::wstring> document_id = std::make_pair(thread_index, path);
 
-    if (opened_documents.find(document_id) != opened_documents.end()) {
-        return opened_documents.at(document_id);
+    {
+        std::lock_guard<std::mutex> lock(opened_documents_mutex);
+        if (opened_documents.find(document_id) != opened_documents.end())
+        {
+            return opened_documents.at(document_id);
+        }
     }
 
     fz_document* ret_val = nullptr;
@@ -498,8 +502,11 @@ fz_document* PdfRenderer::get_document_with_path(int thread_index, fz_context* m
                 fz_authenticate_password(mupdf_context, ret_val, document_passwords[path].c_str());
             }
         }
+        {
 
-        opened_documents[make_pair(thread_index, path)] = ret_val;
+            std::lock_guard<std::mutex> lock(opened_documents_mutex);
+            opened_documents[make_pair(thread_index, path)] = ret_val;
+        }
     }
     fz_catch(mupdf_context) {
         std::wcout << "Error: could not open document" << std::endl;
@@ -558,6 +565,7 @@ void PdfRenderer::run(int thread_index) {
         cached_response_mutex.lock();
 
         if (are_documents_invalidated) {
+            std::lock_guard<std::mutex> lock(opened_documents_mutex);
             for (auto [_, document] : opened_documents) {
                 fz_drop_document(mupdf_context, document);
             }

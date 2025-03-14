@@ -87,6 +87,7 @@ class PdfRenderer : public QObject {
     std::vector<bool> thread_busy_status;
     bool search_is_busy = false;
 
+    std::mutex opened_documents_mutex;
     std::mutex pending_requests_mutex;
     std::mutex search_request_mutex;
     std::mutex cached_response_mutex;
