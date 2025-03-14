@@ -275,6 +275,7 @@ extern float AUTO_BOOKMARK_HORIZONTAL_MARGIN;
 
 extern int COLOR_MODE;
 
+extern std::wstring PYTHON_INTERPRETER_PATH;
 extern std::wstring TTS_VOICE;
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
@@ -10230,9 +10231,14 @@ void MainWidget::export_python_api() {
         QFile::copy(":/python_api/src/sioyek/__init__.py", init_path);
 
 
-        char* python_interpreter_path = std::getenv("SIOYEK_PYTHON_INTERPRETER_PATH");
+        std::string python_interpreter_path_utf8 = utf8_encode(PYTHON_INTERPRETER_PATH);
+        const char* python_interpreter_path = python_interpreter_path_utf8.c_str();
+        if (PYTHON_INTERPRETER_PATH.size() == 0){
+            python_interpreter_path = std::getenv("SIOYEK_PYTHON_INTERPRETER_PATH");
+        }
+
         if (python_interpreter_path == nullptr) {
-            show_error_message(L"You should set SIOYEK_PYTHON_INTERPRETER_PATH environment variables for export to work");
+            show_error_message(L"You should set SIOYEK_PYTHON_INTERPRETER_PATH environment variables or python_interpreter_path config for export to work");
             return;
         }
         QString base_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"base.py").get_path());
@@ -10246,7 +10252,7 @@ void MainWidget::export_python_api() {
 
 
         //QDesktopServices::openUrl(QString::fromStdWString(python_api_base_path.get_path()));
-        std::string command = std::string(python_interpreter_path) + " -m pip install " + python_api_base_path.get_path_utf8();
+        std::string command = std::string(python_interpreter_path) + " -m pip install \"" + python_api_base_path.get_path_utf8() + "\"";
         std::system(command.c_str());
     }
 

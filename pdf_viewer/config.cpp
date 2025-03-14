@@ -118,6 +118,7 @@ std::wstring RIGHT_STATUS_BAR_FORMAT = L"%{auto_name}";
 #endif
 
 std::wstring TITLEBAR_FORMAT = L"";
+std::wstring PYTHON_INTERPRETER_PATH = L"";
 
 // these commands are peformed when the user clicks on the corresponding item's text on statusbar
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
@@ -1438,6 +1439,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"status_custom_message_c", &STATUS_STRING_CUSTOM_MESSAGE_C_STR);
     add_string(L"status_custom_message_d", &STATUS_STRING_CUSTOM_MESSAGE_D_STR);
     add_string(L"tts_voice", &TTS_VOICE);
+    add_string(L"python_interpreter_path", &PYTHON_INTERPRETER_PATH);
 
 
     add_macro(L"startup_commands", &STARTUP_COMMANDS);
