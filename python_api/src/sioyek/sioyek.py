@@ -86,6 +86,10 @@ class Sioyek(SioyekBase):
 
             if len(self.path) == 0:
                 self.path = os.getenv('SIOYEK_EXE_PATH')
+                if self.path is None:
+                    raise Exception('You need to set the following environment variables: SIOYEK_EXE_PATH, SIOYEK_LOCAL_DATABASE_PATH, SIOYEK_SHARED_DATABASE_PATH, SIOYEK_LAST_FILE_PATH')
+
+
 
             if local_database_path == None and os.getenv('SIOYEK_LOCAL_DATABASE_PATH') != None:
                 local_database_path = os.getenv('SIOYEK_LOCAL_DATABASE_PATH')
@@ -299,7 +303,11 @@ class Sioyek(SioyekBase):
                 if wait:
                     self.socket.waitForReadyRead(-1)
                     response = self.socket.readAll()
-                    return str(response, 'utf-8')
+                    result_string = str(response, 'utf-8')
+                    if result_string == '<RESULT>\n':
+                        return None
+                    else:
+                        return result_string[9:]
             else:
                 subprocess.run(params)
                 return ""

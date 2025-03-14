@@ -291,15 +291,19 @@ void Command::on_result_computed() {
     }
     if (result_socket && result_socket->isOpen()) {
         if (!result.has_value()) {
-            result_socket->write("<NULL>");
+            // result_socket->write("<NULL>");
+            result_socket->write("<RESULT>\n");
             return;
         }
         std::string result_str = utf8_encode(result.value());
         if (result_str.size() > 0) {
+            result_str = "<RESULT>\n" + result_str;
             result_socket->write(result_str.c_str());
         }
         else {
-            result_socket->write("<NULL>");
+            // result_socket->write("<NULL>");
+            result_socket->write("<RESULT>\n");
+            result_socket->flush();
         }
     }
     if (is_done) {
