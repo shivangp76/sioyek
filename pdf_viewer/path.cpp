@@ -69,7 +69,10 @@ std::wstring Path::get_path() const
 #ifdef Q_OS_WIN
     return canon_path;
 #else
-    if (canon_path[0] != '/') {
+    if (canon_path.substr(0, 2) == L":/"){
+        return canon_path;
+    }
+    else if (canon_path[0] != '/') {
         return L"/" + canon_path;
     }
     else {
