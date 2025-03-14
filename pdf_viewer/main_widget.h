@@ -153,6 +153,7 @@ struct ShellOutputBookmark{
     QFileSystemWatcher* watcher;
     QProcess* process;
     QString style_string = "";
+    QDateTime last_update_time;
 };
 
 struct ClickSpaceTime {

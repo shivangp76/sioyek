@@ -1580,6 +1580,14 @@ void MainWidget::handle_validation_interval_timeout(){
         }
     }
 
+    for (auto shell_bookmark : shell_output_bookmarks){
+        QString file_name = shell_bookmark.output_file->fileName();
+        QFileInfo file_info(file_name);
+        if (file_info.lastModified().msecsTo(shell_bookmark.last_update_time) < 0){
+            on_bookmark_shell_output_updated(shell_bookmark.uuid, file_name);
+        }
+    }
+
     focus_on_high_quality_text_being_read();
 
     int frame_msecs = 1000 / screen()->refreshRate();
@@ -8287,6 +8295,7 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
         shell_output_bookmark.document_content_file = file_content_temp_file;
         shell_output_bookmark.image_file = image_temp_file;
         shell_output_bookmark.style_string = style_string;
+        shell_output_bookmark.last_update_time = QDateTime::currentDateTime();
 
         shell_output_bookmarks.push_back(shell_output_bookmark);
 
