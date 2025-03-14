@@ -157,12 +157,12 @@ build_windows.bat
 ```
 pip install aqtinstall
 cd /path/to/qt
-aqt install-qt mac desktop 6.6.1 clang_64 -m all
-export Qt6_DIR=/path/to/qt/6.6.1/macos/
-export QT_PLUGIN_PATH=/path/to/qt/6.6.1/macos/plugins
-export PKG_CONFIG_PATH=/path/to/qt/6.6.1/macos/lib/pkgconfig
-export QML2_IMPORT_PATH=/path/to/qt/6.6.1/macos/qml
-export PATH="/path/to/qt/6.6.1/macos/bin:$PATH"
+aqt install-qt mac desktop 6.8.2 clang_64 -m all
+export Qt6_DIR=/path/to/qt/6.8.2/macos/
+export QT_PLUGIN_PATH=/path/to/qt/6.8.2/macos/plugins
+export PKG_CONFIG_PATH=/path/to/qt/6.8.2/macos/lib/pkgconfig
+export QML2_IMPORT_PATH=/path/to/qt/6.8.2/macos/qml
+export PATH="/path/to/qt/6.8.2/macos/bin:$PATH"
 ```
 4. Clone the repository, build and install:
 ```

@@ -503,7 +503,6 @@ fz_document* PdfRenderer::get_document_with_path(int thread_index, fz_context* m
             }
         }
         {
-
             std::lock_guard<std::mutex> lock(opened_documents_mutex);
             opened_documents[make_pair(thread_index, path)] = ret_val;
         }
