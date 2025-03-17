@@ -1255,8 +1255,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"page_space_y", &PAGE_SPACE_Y, FloatExtras{0.0f, 100.0f});
     add_float(L"menu_screen_width_ratio", &MENU_SCREEN_WDITH_RATIO, FloatExtras{0.0f, 1.0f});
     add_float(L"menu_screen_height_ratio", &MENU_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
-    add_float(L"embedded_editor_screen_width_ratio", &EMBEDDED_EDITOR_SCREEN_WDITH_RATIO, FloatExtras{0.0f, 1.0f});
-    add_float(L"embedded_editor_screen_height_ratio", &EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
     add_float(L"smooth_scroll_speed", &SMOOTH_SCROLL_SPEED, FloatExtras{0.0f, 20.0f});
     add_float(L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, FloatExtras{10.0f, 10000.0f});
     add_float(L"box_highlight_bookmark_transparency", &BOX_HIGHLIGHT_BOOKMARK_TRANSPARENCY, FloatExtras{0.0f, 1.0f});
@@ -1370,7 +1368,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"show_setconfig_in_statusbar", &SHOW_SETCONFIG_IN_STATUSBAR);
     add_bool(L"allow_main_view_scroll_while_in_overview", &ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW);
     add_bool(L"automatically_update_checksum_when_document_is_changed", &AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED);
-    add_bool(L"double_click_on_bookmarks_opens_embedded_text_editor", &DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR);
     add_bool(L"show_reference_overview_highlights", &SHOW_REFERENCE_OVERVIEW_HIGHLIGHTS);
     add_bool(L"highlight_pro_only_commands", &HIGHLIGHT_PRO_ONLY_COMMANDS);
     add_bool(L"show_pro_commands", &SHOW_PRO_COMMANDS);
@@ -1382,7 +1379,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"show_documentation_in_widget", &SHOW_DOCUMENTATION_IN_WIDGET);
     add_bool(L"navigate_bookmark_links_after_selection", &NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION);
     add_bool(L"focus_on_sioyek_on_external_editor_accept", &FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT);
-    add_bool(L"use_embedded_editor_for_config_files", &USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS);
     add_bool(L"show_statusbar_only_when_hovered", &SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER);
     add_bool(L"scroll_past_document_ends", &SCROLL_PAST_DOCUMENT_ENDS);
     add_bool(L"uniform_page_widths", &SAME_WIDTH);
@@ -1416,8 +1412,6 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"context_menu_items_for_bookmarks", &CONTEXT_MENU_ITEMS_FOR_BOOKMARKS);
     add_string(L"context_menu_items_for_overview", &CONTEXT_MENU_ITEMS_FOR_OVERVIEW);
     add_string(L"external_text_editor_command", &EXTERNAL_TEXT_EDITOR_COMMAND);
-    add_string(L"embedded_external_text_editor_command", &EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND);
-    add_string(L"commands_which_use_embedded_text_editor", &COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR);
 
     // add_string(L"paper_download_url_path", &PAPER_SEARCH_URL_PATH);
     // add_string(L"paper_download_title_path", &PAPER_SEARCH_TILE_PATH);
@@ -1574,6 +1568,14 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         }
     });
     add_bool(L"macos_hide_titlebar", &MACOS_HIDE_TITLEBAR);
+#endif
+#ifdef Q_OS_WIN
+    add_float(L"embedded_editor_screen_width_ratio", &EMBEDDED_EDITOR_SCREEN_WDITH_RATIO, FloatExtras{0.0f, 1.0f});
+    add_float(L"embedded_editor_screen_height_ratio", &EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO, FloatExtras{0.0f, 1.0f});
+    add_bool(L"double_click_on_bookmarks_opens_embedded_text_editor", &DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR);
+    add_bool(L"use_embedded_editor_for_config_files", &USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS);
+    add_string(L"embedded_external_text_editor_command", &EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND);
+    add_string(L"commands_which_use_embedded_text_editor", &COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR);
 #endif
 
     std::wstring highlight_config_string = L"highlight_color_a";

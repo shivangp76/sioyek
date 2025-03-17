@@ -2576,7 +2576,6 @@ void register_misc_commands(CommandManager* manager) {
     register_command<ShowContextMenuCommand>(manager);
     register_command<ShowCustomContextMenuCommand>(manager);
     register_command<OpenExternalTextEditorCommand>(manager);
-    register_command<OpenEmbeddedExternalTextEditorCommand>(manager);
     register_command<CloseWindowCommand>(manager, "q");
     register_command<NewWindowCommand>(manager);
     register_command<QuitCommand>(manager);
@@ -2643,4 +2642,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<ExportMarkedDataCommand>(manager);
     register_command<ShowTouchConfigCommand>(manager);
     register_command<RepeatLastCommandCommand>(manager);
+#ifdef Q_OS_WIN
+    register_command<OpenEmbeddedExternalTextEditorCommand>(manager);
+#endif
 }
