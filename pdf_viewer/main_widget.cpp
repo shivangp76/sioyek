@@ -1151,7 +1151,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                     }
                 }
                 else {
-                    auto locations = input_handler->get_definition_file_and_line(command_name_qstring.toStdString());
+                    auto locations = this->input_handler->get_definition_file_and_line(command_name_qstring.toStdString());
                     std::vector<std::wstring> option_texts;
                     for (auto loc : locations) {
                         option_texts.push_back(loc.file_path + L":" + std::to_wstring(loc.line_number));
