@@ -7820,7 +7820,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << get_current_page_text();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

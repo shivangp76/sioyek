@@ -937,7 +937,10 @@ public:
 
     std::optional<Requirement> next_requirement(MainWidget* widget) {
         // since pre_perform must be executed in order to determine the requirements, we manually run it here
-        pre_perform();
+        if (get_selected_item_uuid().size() == 0) {
+            visible_item_uuids = get_visible_item_uuids();
+            n_required_tags = get_num_tag_digits(visible_item_uuids.size());
+        }
 
         if (tag.size() < n_required_tags) {
             return Requirement{ RequirementType::Symbol, "tag" };
