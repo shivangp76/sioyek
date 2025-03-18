@@ -160,6 +160,11 @@ class Sioyek(SioyekBase):
         if self.socket.waitForConnected(1000):
             self.connected = True
 
+    def disconnect(self):
+        if self.socket is not None:
+            self.socket.disconnectFromServer()
+            # self.socket.waitForDisconnected(1000)
+
     def should_use_local_socket(self):
         return (not self.force_binary) and (self.connected)
 

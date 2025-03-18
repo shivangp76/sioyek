@@ -394,6 +394,42 @@ public:
     }
 };
 
+class GetCurrentDocumentTextCommand : public Command {
+
+public:
+    static inline const std::string cname = "get_current_document_text";
+    static inline const std::string hname = "";
+    GetCurrentDocumentTextCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        result = widget->get_current_document_text().toStdWString();
+    }
+};
+
+class GetCurrentChapterTextCommand : public Command {
+
+public:
+    static inline const std::string cname = "get_current_chapter_text";
+    static inline const std::string hname = "";
+    GetCurrentChapterTextCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        result = widget->get_current_chapter_text();
+    }
+};
+
+class GetCurrentPageTextCommand : public Command {
+
+public:
+    static inline const std::string cname = "get_current_page_text";
+    static inline const std::string hname = "";
+    GetCurrentPageTextCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        result = widget->get_current_page_text();
+    }
+};
+
 class GetPaperNameCommand : public Command {
 
 public:
@@ -2642,6 +2678,10 @@ void register_misc_commands(CommandManager* manager) {
     register_command<ExportMarkedDataCommand>(manager);
     register_command<ShowTouchConfigCommand>(manager);
     register_command<RepeatLastCommandCommand>(manager);
+    register_command<GetCurrentDocumentTextCommand>(manager);
+    register_command<GetCurrentChapterTextCommand>(manager);
+    register_command<GetCurrentPageTextCommand>(manager);
+
 #ifdef Q_OS_WIN
     register_command<OpenEmbeddedExternalTextEditorCommand>(manager);
 #endif
