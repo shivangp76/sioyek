@@ -3829,8 +3829,6 @@ void MainWidget::toggle_window_configuration() {
         else {
             main_window->activateWindow();
         }
-
-
     }
 }
 
@@ -4634,7 +4632,20 @@ void MainWidget::apply_window_params_for_two_window_mode() {
     }
     else {
         main_window->move(main_window_move[0], main_window_move[1]);
-        main_window->resize(main_window_size[0], main_window_size[1]);
+
+        QSize target_size =  QSize(main_window_size[0], main_window_size[1]);
+        QSize current_size =  main_window->size();
+        if (current_size != target_size){
+#ifdef Q_OS_MAC
+            // crazy hack. For some reason, on macos when we resize the window to the target size directly
+            // it stops updating (see https://github.com/ahrm/sioyek/issues/1341) but resizing to another
+            // size first seems to fix the issue. I think this should be a Qt bug, so it is possible that
+            // we could remove this in future Qt versions.
+            main_window->resize(main_window_size[0], main_window_size[1] / 2);
+#endif
+            main_window->resize(main_window_size[0], main_window_size[1]);
+        }
+        // main_window->show();
     }
 }
 
@@ -10698,13 +10709,16 @@ QString MainWidget::handle_action_in_menu(std::wstring action) {
 
 std::wstring MainWidget::handle_synctex_to_ruler() {
     std::optional<NormalizedWindowRect> ruler_rect = main_document_view->get_ruler_window_rect();
-    fz_irect ruler_irect = main_document_view->normalized_to_window_rect(ruler_rect.value());
+    if (ruler_rect.has_value()){
+        fz_irect ruler_irect = main_document_view->normalized_to_window_rect(ruler_rect.value());
 
-    WindowPos mid_window_pos;
-    mid_window_pos.x = (ruler_irect.x0 + ruler_irect.x1) / 2;
-    mid_window_pos.y = (ruler_irect.y0 + ruler_irect.y1) / 2;
+        WindowPos mid_window_pos;
+        mid_window_pos.x = (ruler_irect.x0 + ruler_irect.x1) / 2;
+        mid_window_pos.y = (ruler_irect.y0 + ruler_irect.y1) / 2;
 
-    return synctex_under_pos(mid_window_pos);
+        return synctex_under_pos(mid_window_pos);
+    }
+    return L"";
 }
 
 void MainWidget::show_touch_main_menu() {
@@ -12982,7 +12996,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
         }
         else {
 #ifndef SIOYEK_ADVANCED_AUDIO
-            QObject::connect(mp, &QMediaPlayer::seekableChanged, seek_to_location);
+            // QObject::connect(mp, &QMediaPlayer::seekableChanged, seek_to_location);
 #endif
         }
 

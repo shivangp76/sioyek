@@ -403,6 +403,7 @@ if(APPLE AND NOT IOS)
 
     target_link_libraries(sioyek PRIVATE
         "-framework AppKit"
+        "-framework AVFoundation"
         -ldl
         -L${CMAKE_CURRENT_SOURCE_DIR}/mupdf/build/release
         -lmupdf
