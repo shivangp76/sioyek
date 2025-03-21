@@ -6261,7 +6261,7 @@ bool ScratchPad::is_scratchpad() {
     return true;
 }
 
-void DocumentView::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount, float height) {
+void DocumentView::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, float amount, float height) {
     if (bookmark_uuid.size() > 0) {
         BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
         if (bookmark) {

@@ -535,7 +535,7 @@ public:
     std::optional<AbsoluteRect> expand_selection(bool is_begin, bool word);
     std::optional<AbsoluteRect> shrink_selection(bool is_begin, bool word);
     std::deque<AbsoluteRect>* get_selected_character_rects();
-    void scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount, float height);
+    void scroll_bookmark_with_uuid(const std::string& bookmark_uuid, float amount, float height);
 
     Document* doc();
 

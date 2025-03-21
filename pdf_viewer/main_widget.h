@@ -718,7 +718,7 @@ public:
     bool is_current_document_fulltext_indexed();
     void handle_delete_document_from_fulltext_search_index();
     void scroll_selected_bookmark(int amount);
-    void scroll_bookmark_with_uuid(const std::string& uuid, int amount);
+    void scroll_bookmark_with_uuid(const std::string& uuid, float amount);
     bool ensure_super_fast_search_index();
     void show_items(std::vector<std::wstring> items,
         std::optional<std::function<void(std::wstring)>> on_select = {},

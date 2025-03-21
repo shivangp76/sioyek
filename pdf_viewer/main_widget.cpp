@@ -13183,7 +13183,7 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 
 }
 
-void MainWidget::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, int amount) {
+void MainWidget::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, float amount) {
     float height = background_bookmark_renderer->get_cached_bookmark_height(bookmark_uuid);
     dv()->scroll_bookmark_with_uuid(bookmark_uuid, amount, height);
 }
