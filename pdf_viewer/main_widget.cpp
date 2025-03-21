@@ -168,6 +168,7 @@ extern float SMALL_PIXMAP_SCALE;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
 
+extern bool TRACKPAD_PINCH_GESTURE;
 extern float VERTICAL_MOVE_AMOUNT;
 extern float HORIZONTAL_MOVE_AMOUNT;
 
@@ -6876,7 +6877,7 @@ bool MainWidget::event(QEvent* event) {
         return true;
     }
 
-    if(event->type() == QEvent::Gesture) {
+    if(event->type() == QEvent::Gesture && (TOUCH_MODE || TRACKPAD_PINCH_GESTURE)) {
         auto gesture = (static_cast<QGestureEvent*>(event));
         if (gesture->gesture(Qt::PinchGesture)) {
             pdf_renderer->no_rerender = true;

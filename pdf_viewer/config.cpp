@@ -398,6 +398,7 @@ float EPUB_FONT_SIZE = 14;
 float EPUB_LINE_SPACING = 2.0f;
 int RELOAD_INTERVAL_MILISECONDS = 200;
 bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE = true;
+bool TRACKPAD_PINCH_GESTURE = true;
 
 #ifdef Q_OS_MACOS
 extern "C" void changeTitlebarColor(WId, double, double, double, double);
@@ -1284,6 +1285,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"render_freetext_borders", &RENDER_FREETEXT_BORDERS);
     add_bool(L"flat_toc", &FLAT_TABLE_OF_CONTENTS);
     add_bool(L"adjust_annotation_colors_for_dark_mode", &ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE);
+    add_bool(L"trackpad_pinch_gesture", &TRACKPAD_PINCH_GESTURE);
     add_bool(L"right_click_context_menu", &SHOW_RIGHT_CLICK_CONTEXT_MENU);
     add_bool(L"preserve_image_colors_in_dark_mode", &PRESERVE_IMAGE_COLORS);
     add_bool(L"inverted_preserved_image_colors", &INVERTED_PRESERVED_IMAGE_COLORS);
