@@ -374,6 +374,7 @@ public:
     QPushButton* server_actions_button = nullptr;
     QPushButton* resume_to_server_position_button = nullptr;
     int text_suggestion_index = 0;
+    bool is_mouse_ruler_mode = false;
 
     std::vector<WindowFollowData> following_windows;
 
@@ -1216,6 +1217,8 @@ public:
     void set_textbar_autocomlete_strings(QStringList strings);
     void update_query_tokens_status_message_for_bookmark(QString message_uuid);
     std::optional<StatusMessage> get_status_message_with_id(QString id);
+    void handle_ruler_touch_move(float distance);
+    void toggle_mouse_ruler_mode();
 
 
 public slots:

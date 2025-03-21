@@ -168,6 +168,7 @@ extern float SMALL_PIXMAP_SCALE;
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
 
+extern float RULER_MOUSE_SENSITIVITY;
 extern bool TRACKPAD_PINCH_GESTURE;
 extern float VERTICAL_MOVE_AMOUNT;
 extern float HORIZONTAL_MOVE_AMOUNT;
@@ -589,7 +590,41 @@ bool MainWidget::handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpo
     return false;
 }
 
+void MainWidget::handle_ruler_touch_move(float distance){
+    ruler_moving_distance_traveled += distance;
+    float auto_move_thresh = 1.0f / (1 - RULER_AUTO_MOVE_SENSITIVITY) * 100;
+    int num_next = ruler_moving_distance_traveled /
+            static_cast<int>(std::max(auto_move_thresh, 1.0f));
+    if (num_next > 0) {
+        ruler_moving_distance_traveled = 0;
+    }
+
+    for (int i = 0; i < num_next; i++) {
+
+        if (was_last_mouse_down_in_ruler_next_rect) {
+            main_document_view->move_visual_mark_next();
+        }
+        else {
+            main_document_view->move_visual_mark_prev();
+        }
+
+        invalidate_render();
+    }
+}
+
 void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
+
+    if (is_mouse_ruler_mode){
+        if (main_document_view->is_ruler_mode()){
+            QPoint mouse_point = mapFromGlobal(QCursor::pos());
+            WindowPos mouse_window_pos = WindowPos{mouse_point.x(), mouse_point.y()};
+            float distance = mouse_window_pos.manhattan(ruler_moving_last_window_pos);
+            handle_ruler_touch_move(distance * RULER_MOUSE_SENSITIVITY);
+            ruler_moving_last_window_pos = mouse_window_pos;
+        }
+        return;
+    }
+
     if (is_pinching){
         // no need to handle move events when a pinch to zoom is in progress
         return;
@@ -673,25 +708,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             WindowPos current_window_pos(mouse_event->pos());
             int distance = current_window_pos.manhattan(ruler_moving_last_window_pos);
             ruler_moving_last_window_pos = current_window_pos;
-            ruler_moving_distance_traveled += distance;
-            float auto_move_thresh = 1.0f / (1 - RULER_AUTO_MOVE_SENSITIVITY) * 100;
-            int num_next = ruler_moving_distance_traveled /
-                static_cast<int>(std::max(auto_move_thresh, 1.0f));
-            if (num_next > 0) {
-                ruler_moving_distance_traveled = 0;
-            }
-
-            for (int i = 0; i < num_next; i++) {
-
-                if (was_last_mouse_down_in_ruler_next_rect) {
-                    main_document_view->move_visual_mark_next();
-                }
-                else {
-                    main_document_view->move_visual_mark_prev();
-                }
-
-                invalidate_render();
-            }
+            handle_ruler_touch_move(distance);
             return;
 
         }
@@ -3339,6 +3356,10 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     bool is_control_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
     bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
+
+    if (is_mouse_ruler_mode){
+        toggle_mouse_ruler_mode();
+    }
 
     if (!TOUCH_MODE && current_widget_stack.size() > 0) {
         QPoint local_mpos = mapFromGlobal(QCursor::pos());
@@ -14045,4 +14066,24 @@ std::optional<StatusMessage> MainWidget::get_status_message_with_id(QString id) 
         }
     }
     return {};
+}
+
+void MainWidget::toggle_mouse_ruler_mode(){
+    if (is_mouse_ruler_mode){
+        // restore the mouse cursor
+        setCursor(Qt::ArrowCursor);
+        is_mouse_ruler_mode = false;
+    }
+    else{
+        is_mouse_ruler_mode = true;
+
+        // hide the mouse cursor
+        setCursor(Qt::BlankCursor);
+        QPoint cursor_position = mapFromGlobal(QCursor::pos());
+        WindowPos cursor_window_pos = WindowPos{ cursor_position.x(), cursor_position.y() };
+
+        ruler_moving_last_window_pos = cursor_window_pos;
+        was_last_mouse_down_in_ruler_next_rect = true;
+
+    }
 }

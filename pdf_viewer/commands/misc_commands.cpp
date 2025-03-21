@@ -1650,6 +1650,18 @@ public:
 
 };
 
+class ToggleMouseRulerCommand : public Command {
+public:
+    static inline const std::string cname = "toggle_mouse_ruler";
+    static inline const std::string hname = "Toggle mouse ruler mode";
+
+    ToggleMouseRulerCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->toggle_mouse_ruler_mode();
+    }
+};
+
 class RulerUnderSelectedPointCommand : public Command {
 public:
     static inline const std::string cname = "ruler_under_selected_point";
@@ -2634,6 +2646,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<SynctexUnderRulerCommand>(manager);
     register_command<VisualMarkUnderCursorCommand>(manager, "ruler_under_cursor");
     register_command<RulerUnderSelectedPointCommand>(manager);
+    register_command<ToggleMouseRulerCommand>(manager);
     register_command<StartMobileTextSelectionAtPointCommand>(manager);
     register_command<EnterPasswordCommand>(manager);
     register_command<ToggleFastreadCommand>(manager);
