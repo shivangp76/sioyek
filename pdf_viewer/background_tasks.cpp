@@ -363,7 +363,7 @@ std::pair<QPixmap*, bool> BackgroundBookmarkRenderer::request_rendered_bookmark(
             req.request_id = next_request_id++;
             rendered_bookmarks.push_back(req);
 
-            task_manager->add_task([this, id=req.request_id]() {
+            task_manager->add_task([this, id=req.request_id, pixel_ratio]() {
                 std::optional<RenderedBookmark> req_ = get_request_with_id(id);
                 //req.bookmark.get_rectangle().to_window()
                 if (req_ && req_->canceled) {
@@ -380,8 +380,14 @@ std::pair<QPixmap*, bool> BackgroundBookmarkRenderer::request_rendered_bookmark(
                     rendered_pixmap->fill(QColor(255, 255, 255, 0));
                     { // we want the QPainter to be destroyed before we manually delete the pixmap later
                         QPainter painter(rendered_pixmap);
+                        QRect window_rect = rendered_pixmap->rect();
+                        if (pixel_ratio > 1){
+                            painter.scale(pixel_ratio, pixel_ratio);
+                            window_rect = QRect(0, 0, width / pixel_ratio, height / pixel_ratio);
+
+                        }
                         //painter.translate(0, -req.scroll_amount);
-                        render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.scroll_amount, req.pixel_ratio, rendered_pixmap->rect(), req.color_palette);
+                        render_freetext_bookmark(req.bookmark, &painter, req.zoom_level, req.scroll_amount, req.pixel_ratio, window_rect, req.color_palette);
                     }
 
                     bool is_latex = req.bookmark.is_latex();
