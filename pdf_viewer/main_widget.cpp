@@ -6876,7 +6876,45 @@ bool MainWidget::event(QEvent* event) {
         return true;
     }
 
-    //if (event->type() == QEvent::TabletEVe)
+    if(event->type() == QEvent::Gesture) {
+        auto gesture = (static_cast<QGestureEvent*>(event));
+        if (gesture->gesture(Qt::PinchGesture)) {
+            pdf_renderer->no_rerender = true;
+            QPinchGesture* pinch = static_cast<QPinchGesture*>(gesture->gesture(Qt::PinchGesture));
+            if (pinch->state() == Qt::GestureStarted) {
+                is_pinching = true;
+            }
+            if ((pinch->state() == Qt::GestureFinished) || (pinch->state() == Qt::GestureCanceled)) {
+                is_pinching = false;
+                stop_dragging();
+            }
+            float scale = pinch->scaleFactor();
+
+            if ((pinch->scaleFactor() >= 1 && pinch->lastScaleFactor() >= 1)
+                    || (pinch->scaleFactor() <= 1 && pinch->lastScaleFactor() <= 1)
+                    ){
+
+                if (main_document_view->get_overview_page()){
+                    main_document_view->zoom_overview(scale);
+                }
+                else if (main_document_view->selected_object_index.has_value() && main_document_view->selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
+                    // todo: this is not testes, I should test this on a touch screen
+                    Portal* portal = doc()->get_portal_with_uuid(main_document_view->selected_object_index->uuid);
+                    if (portal) {
+                        portal->dst.book_state.zoom_level *= scale;
+                        main_document_view->schedule_update_link_with_opened_book_state(*portal, portal->dst.book_state);
+                    }
+                }
+                else{
+                    dv()->set_zoom_level(dv()->get_zoom_level() * scale, true);
+                }
+            }
+
+            validate_render();
+
+            return true;
+        }
+    }
     if (TOUCH_MODE) {
 
         if (event->type() == QEvent::TouchUpdate) {
@@ -7012,42 +7050,6 @@ bool MainWidget::event(QEvent* event) {
 
                     return true;
                 }
-            }
-            if (gesture->gesture(Qt::PinchGesture)) {
-                pdf_renderer->no_rerender = true;
-                QPinchGesture* pinch = static_cast<QPinchGesture*>(gesture->gesture(Qt::PinchGesture));
-                if (pinch->state() == Qt::GestureStarted) {
-                    is_pinching = true;
-                }
-                if ((pinch->state() == Qt::GestureFinished) || (pinch->state() == Qt::GestureCanceled)) {
-                    is_pinching = false;
-                    stop_dragging();
-                }
-                float scale = pinch->scaleFactor();
-
-                if ((pinch->scaleFactor() >= 1 && pinch->lastScaleFactor() >= 1)
-                    || (pinch->scaleFactor() <= 1 && pinch->lastScaleFactor() <= 1)
-                    ){
-
-                    if (main_document_view->get_overview_page()){
-                        main_document_view->zoom_overview(scale);
-                    }
-                    else if (main_document_view->selected_object_index.has_value() && main_document_view->selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
-                        // todo: this is not testes, I should test this on a touch screen
-                        Portal* portal = doc()->get_portal_with_uuid(main_document_view->selected_object_index->uuid);
-                        if (portal) {
-                            portal->dst.book_state.zoom_level *= scale;
-                            main_document_view->schedule_update_link_with_opened_book_state(*portal, portal->dst.book_state);
-                        }
-                    }
-                    else{
-                        dv()->set_zoom_level(dv()->get_zoom_level() * scale, true);
-                    }
-                }
-#ifdef SIOYEK_IOS
-                validate_render();
-#endif
-                return true;
             }
 
             return QWidget::event(event);
