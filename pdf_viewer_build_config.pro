@@ -15,6 +15,7 @@ ios {
     QMAKE_INFO_PLIST = $$PWD/ios/Info.plist
     OBJECTIVE_SOURCES += ios/ios_specific.mm
     LIBS += -framework MediaPlayer -framework AVFoundation
+    DEFINES += SIOYEK_IOS SIOYEK_MOBILE
 
 
     # LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lmupdf -lmupdf-third

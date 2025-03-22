@@ -171,12 +171,14 @@ using SioyekMediaPlayer = QMediaPlayer;
 #endif
 #endif
 
-// if we inherit from QWidget there are problems on high refresh rate smartphone displays
 #ifdef SIOYEK_MOBILE
-class MainWidget : public QQuickWidget {
+using SioyekBaseWidget = QQuickWidget;
 #else
-class MainWidget : public QMainWindow {
+using SioyekBaseWidget = QMainWindow;
 #endif
+
+// if we inherit from QWidget there are problems on high refresh rate smartphone displays
+class MainWidget : public SioyekBaseWidget {
     Q_OBJECT
 public:
     fz_context* mupdf_context = nullptr;

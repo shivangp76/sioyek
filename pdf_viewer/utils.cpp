@@ -5927,6 +5927,7 @@ std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bo
 }
 
 void open_text_editor_at_line(QString file_path, int line_number) {
+#ifndef SIOYEK_MOBILE
     if (EXTERNAL_TEXT_EDITOR_COMMAND.size() > 0) {
         std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND)
             .replace("%{file}", file_path)
@@ -5946,6 +5947,7 @@ void open_text_editor_at_line(QString file_path, int line_number) {
             show_error_message(("Could not open address: " + file_path).toStdWString());
         }
     }
+#endif
 }
 
 bool stext_page_has_lines(fz_stext_page* page) {

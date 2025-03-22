@@ -1007,11 +1007,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     BackgroundBookmarkRenderer* bookmark_renderer,
     bool* should_quit_ptr,
     QWidget* parent) :
-#ifdef SIOYEK_MOBILE
-    QQuickWidget(parent),
-#else
-    QMainWindow(parent),
-#endif
+    SioyekBaseWidget(parent),
     mupdf_context(mupdf_context),
     pdf_renderer(pdf_renderer),
     db_manager(db_manager),
