@@ -503,7 +503,7 @@ bool MainWidget::is_current_document_available_on_server() {
 void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     QWidget::resizeEvent(resize_event);
 #ifdef SIOYEK_IOS
-    opengl_widget->resize(resize_event->size());
+    opengl_widget->get_widget()->resize(resize_event->size());
 #endif
 
     main_window_width = size().width();
@@ -4297,7 +4297,7 @@ void MainWidget::toggle_custom_color_mode() {
 
 
 void MainWidget::execute_command(std::wstring command, std::wstring text, bool wait) {
-    qDebug() << "executing command: " << QString::fromStdWString(command);
+#ifndef SIOYEK_MOBILE
 
     std::wstring file_path = main_document_view->get_document()->get_path();
     QString qfile_path = QString::fromStdWString(file_path);
@@ -4417,7 +4417,7 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
 
         run_command(command_name.toStdWString(), command_args, wait);
     }
-
+#endif
 }
 
 void MainWidget::handle_search_paper_name(QString paper_name, bool is_shift_pressed) {
@@ -8160,6 +8160,7 @@ std::optional<ShellOutputBookmark> MainWidget::get_shell_output_bookmark_with_uu
 }
 
 void MainWidget::remove_finished_shell_bookmark_with_index(int index){
+#ifndef SIOYEK_MOBILE
     if (index >= 0 && index < shell_output_bookmarks.size()){
         ShellOutputBookmark& shell_output_bookmark = shell_output_bookmarks[index];
         shell_output_bookmark.watcher->removePath(shell_output_bookmark.output_file->fileName());
@@ -8180,6 +8181,7 @@ void MainWidget::remove_finished_shell_bookmark_with_index(int index){
         shell_output_bookmark.process->deleteLater();
         shell_output_bookmarks.erase(shell_output_bookmarks.begin() + index);
     }
+#endif
 }
 
 void MainWidget::remove_finished_shell_bookmarks(){
@@ -12155,6 +12157,7 @@ void MainWidget:: run_startup_js(bool first_run) {
 
 void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path, int line_number) {
 
+#ifndef SIOYEK_MOBILE
     follow_data.creation_time = QDateTime::currentDateTime();
     if (!file_path.has_value()) {
         follow_data.file = new QTemporaryFile();
@@ -12175,6 +12178,7 @@ void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, Q
     process->waitForStarted();
     qint64 pid = process->processId();
     follow_data.pid = pid;
+#endif
 }
 
 void MainWidget::open_embedded_external_text_editor(QString content, std::optional<AbsoluteRect> rect) {
@@ -12737,6 +12741,7 @@ void MainWidget::on_ios_suspend_while_reading(){
 
     int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
         page_number,
+        INT_MAX,
         ruler_rect,
         current_page_text,
         tts_corresponding_line_rects,
@@ -13872,6 +13877,7 @@ void MainWidget::handle_scroll_selected_bookmark_to_ends(bool goto_start){
 }
 
 void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
+#ifndef SIOYEK_MOBILE
     if (EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
         show_error_message(L"You must configure the embedded_external_text_editor_command in your prefs_user.config");
         return;
@@ -13904,6 +13910,7 @@ void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
         }
 
     }
+#endif
 }
 
 bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& rhs) {
