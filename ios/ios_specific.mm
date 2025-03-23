@@ -145,11 +145,10 @@ static PinchGestureCallback gPinchCallback = nullptr;
             sender.scale = 1.0;
         }
     }
-    if (sender.state == UIGestureRecognizerStateBegan){
-        qDebug() << "began";
-    }
-    if (sender.state == UIGestureRecognizerStateEnded || sender.state == UIGestureRecognizerStateCancelled){
-        qDebug() << "ended";
+    else{
+        if (gPinchCallback) {
+            gPinchCallback(sender.scale, sender.velocity, (int)sender.state);
+        }
     }
 }
 

@@ -135,12 +135,28 @@ extern "C" int iosStopReading();
 typedef void (*PinchGestureCallback)(float scale, float velocity, int state);
 extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallback callback);
 
+float ios_pinch_original_zoom_level = 1.0f;
 extern "C" void ios_pinch_callback(float scale, float velocity, int state){
-    MainWidget* widget = windows[0];
-    QPinchGesture* gesture = new QPinchGesture();
-    gesture->setTotalScaleFactor(scale);
-    gesture->setChangeFlags(QPinchGesture::ScaleFactorChanged);
-    gesture->setLastScaleFactor(scale);
+    
+    // 1 = begin
+    // 2 = update
+    // 3 = end
+    
+    MainWidget* w = windows[0];
+    
+    if (state == 1){
+        ios_pinch_original_zoom_level = w->main_document_view->get_zoom_level();
+        w->pdf_renderer->no_rerender = true;
+        qDebug() << "no rerender";
+    }
+    else if (state == 2){
+        w->main_document_view->set_zoom_level(ios_pinch_original_zoom_level * scale, true);
+        w->validate_render();
+    }
+    else if (state == 3){
+        w->pdf_renderer->no_rerender = false;
+        qDebug() << "yes rerender";
+    }
 
 }
 
@@ -1415,7 +1431,12 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     }
 
     grabGesture(Qt::TapAndHoldGesture, Qt::DontStartGestureOnChildren);
+    
+#ifndef SIOYEK_IOS
+    // we handle ios manually
     grabGesture(Qt::PinchGesture, Qt::DontStartGestureOnChildren | Qt::ReceivePartialGestures);
+#endif
+
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QGuiApplication::applicationStateChanged, [&](Qt::ApplicationState state) {
         if ((state == Qt::ApplicationState::ApplicationSuspended) || (state == Qt::ApplicationState::ApplicationInactive)) {
 #ifdef SIOYEK_MOBILE
@@ -1459,7 +1480,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QApplication::applicationStateChanged, [&](Qt::ApplicationState state){
         on_ios_application_state_changed(state);
     });
-//    registerPinchGestureForWidget(this, ios_pinch_callback);
+    registerPinchGestureForWidget(this, ios_pinch_callback);
 #endif
 }
 
@@ -3181,7 +3202,9 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     if (TOUCH_MODE) {
         was_last_mouse_down_in_ruler_next_rect = false;
         was_last_mouse_down_in_ruler_prev_rect = false;
+#ifndef SIOYEK_IOS
         pdf_renderer->no_rerender = false;
+#endif
     }
 
     if (is_rotated()) {
