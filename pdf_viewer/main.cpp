@@ -243,14 +243,16 @@ void configure_paths_android() {
 #ifdef SIOYEK_IOS
 void configure_paths_ios() {
 
-    char* APPDIR = std::getenv("XDG_CONFIG_HOME");
-    Path linux_home_path(QDir::homePath().toStdWString());
+//    char* APPDIR = std::getenv("XDG_CONFIG_HOME");
+//    Path linux_home_path(QDir::homePath().toStdWString());
+//
+//    if (!APPDIR) {
+//        APPDIR = std::getenv("HOME");
+//    }
 
-    if (!APPDIR) {
-        APPDIR = std::getenv("HOME");
-    }
+//    QStringList all_config_paths = QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
 
-    standard_data_path = Path(utf8_decode(APPDIR));
+    standard_data_path = QStandardPaths::standardLocations(QStandardPaths::AppLocalDataLocation).at(0).toStdWString();
     standard_data_path = standard_data_path.slash(L".local").slash(L"share").slash(L"Sioyek");
     standard_data_path.create_directories();
 
