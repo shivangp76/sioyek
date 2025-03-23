@@ -414,6 +414,8 @@ int RULER_DISPLAY_MODE = RulerDisplayMode::RulerUnderline;
 
 #ifdef Q_OS_IOS
 int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
+#elif defined(Q_OS_ANDROID)
+int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
 #else
 int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
 //int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
