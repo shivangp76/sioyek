@@ -112,6 +112,7 @@
 #endif
 
 
+extern std::vector<MainWidget*> windows;
 
 extern "C" {
     #include <fzf/fzf.h>
@@ -131,6 +132,17 @@ extern "C" AVSpeechSynthesizer* createSpeechSynthesizer();
 extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceName, double rate);
 extern "C" int getLastSpokenWordLocation();
 extern "C" int iosStopReading();
+typedef void (*PinchGestureCallback)(float scale, float velocity, int state);
+extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallback callback);
+
+extern "C" void ios_pinch_callback(float scale, float velocity, int state){
+    MainWidget* widget = windows[0];
+    QPinchGesture* gesture = new QPinchGesture();
+    gesture->setTotalScaleFactor(scale);
+    gesture->setChangeFlags(QPinchGesture::ScaleFactorChanged);
+    gesture->setLastScaleFactor(scale);
+
+}
 
 #endif
 
@@ -209,7 +221,6 @@ extern int SINGLE_MAIN_WINDOW_MOVE[2];
 extern float OVERVIEW_SIZE[2];
 extern float OVERVIEW_OFFSET[2];
 extern bool IGNORE_WHITESPACE_IN_PRESENTATION_MODE;
-extern std::vector<MainWidget*> windows;
 extern bool SHOW_DOC_PATH;
 extern bool SINGLE_CLICK_SELECTS_WORDS;
 extern std::wstring SHIFT_CLICK_COMMAND;
@@ -1448,6 +1459,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QApplication::applicationStateChanged, [&](Qt::ApplicationState state){
         on_ios_application_state_changed(state);
     });
+//    registerPinchGestureForWidget(this, ios_pinch_callback);
 #endif
 }
 

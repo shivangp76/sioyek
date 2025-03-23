@@ -120,3 +120,71 @@ extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceN
     setupRemoteCommandCenter();
     [utterance release];
 }
+
+typedef void (*PinchGestureCallback)(float scale, float velocity, int state);
+static PinchGestureCallback gPinchCallback = nullptr;
+
+@interface PinchGestureDelegate : NSObject <UIGestureRecognizerDelegate>
+@end
+
+@implementation PinchGestureDelegate
+
+- (void)handlePinch:(UIPinchGestureRecognizer*)sender {
+    int numTouches = (int)[sender numberOfTouches];
+    if (numTouches == 2){
+        
+        CGPoint position1 = [sender locationOfTouch:0 inView:sender.view];
+        CGPoint position2 = [sender locationOfTouch:1 inView:sender.view];
+        
+        if (gPinchCallback) {
+            gPinchCallback(sender.scale, sender.velocity, (int)sender.state);
+        }
+        
+        // Reset scale if ended to prepare for next gesture
+        if (sender.state == UIGestureRecognizerStateEnded) {
+            sender.scale = 1.0;
+        }
+    }
+    if (sender.state == UIGestureRecognizerStateBegan){
+        qDebug() << "began";
+    }
+    if (sender.state == UIGestureRecognizerStateEnded || sender.state == UIGestureRecognizerStateCancelled){
+        qDebug() << "ended";
+    }
+}
+
+@end
+
+static PinchGestureDelegate* gPinchDelegate = nil;
+
+extern "C" void setupPinchGestureRecognizer(UIView* view, PinchGestureCallback callback) {
+    // Store the callback function
+    gPinchCallback = callback;
+    
+    // Create delegate if it doesn't exist
+    if (gPinchDelegate == nil) {
+        gPinchDelegate = [[PinchGestureDelegate alloc] init];
+    }
+    
+    // Create the pinch gesture recognizer
+    UIPinchGestureRecognizer* pinchRecognizer = [[UIPinchGestureRecognizer alloc] 
+                                                initWithTarget:gPinchDelegate 
+                                                action:@selector(handlePinch:)];
+    
+    pinchRecognizer.delegate = gPinchDelegate;
+    [view addGestureRecognizer:pinchRecognizer];
+}
+
+extern "C" UIView* getUIViewFromQWidget(QWidget* widget) {
+    if (!widget) return nil;
+    
+    // Get the native view for the widget
+    return (__bridge UIView*)widget->winId();
+}
+
+extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallback callback) {
+    UIView* view = getUIViewFromQWidget(widget);
+    if (view) {
+        setupPinchGestureRecognizer(view, callback);
+    }
+}

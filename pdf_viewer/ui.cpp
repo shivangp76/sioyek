@@ -74,11 +74,11 @@ std::wstring select_command_folder_name() {
 std::wstring select_document_file_name() {
     if (DEFAULT_OPEN_FILE_PATH.size() == 0) {
 
-#ifdef SIOYEK_IOS
-        QString file_name = QFileDialog::getOpenFileName(nullptr, "Select Document", "", "");
-#else
+//#ifdef SIOYEK_IOS
+//        QString file_name = QFileDialog::getOpenFileName(nullptr, "Select Document", "", "");
+//#else
         QString file_name = QFileDialog::getOpenFileName(nullptr, "Select Document", "", "Documents (*.pdf *.epub *.cbz)");
-#endif
+//#endif
         return file_name.toStdWString();
     }
     else {
