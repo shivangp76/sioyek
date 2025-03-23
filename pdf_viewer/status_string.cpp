@@ -1,4 +1,4 @@
-﻿#include "status_string.h"
+#include "status_string.h"
 #include "document.h"
 #include "document_view.h"
 #include "main_widget.h"
@@ -149,7 +149,10 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         return QString("");
         };
     auto auto_name_fn = [widget=main_widget]() {
-        return QString::fromStdWString(widget->doc()->get_detected_paper_name_if_exists());
+        if (widget->doc()){
+            return QString::fromStdWString(widget->doc()->get_detected_paper_name_if_exists());
+        }
+        return QString("");
         };
     auto visual_scroll_fn = [widget=main_widget]() {
 
