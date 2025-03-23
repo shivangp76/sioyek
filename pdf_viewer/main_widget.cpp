@@ -2723,6 +2723,11 @@ bool MainWidget::handle_visible_object_resize_finish() {
 }
 
 void MainWidget::start_dragging(){
+    
+    if (!doc()){
+        return;
+    }
+    
     int page = get_current_page_number();
     auto [min_x, max_x] = doc()->get_min_max_annot_x_for_page(page);
     current_drag_min_annotation_x = min_x;
