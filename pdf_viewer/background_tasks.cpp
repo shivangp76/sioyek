@@ -12,9 +12,11 @@
 #include "utils.h"
 #include "path.h"
 
+#ifdef SIOYEK_MICROTEX
 #include "latex.h"
 #include "platform/qt/graphic_qt.h"
 #include "core/formula.h"
+#endif
 
 
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
@@ -29,13 +31,14 @@ extern int BACKGROUND_BOOKMARKS_PIXEL_BUDGET;
 
 
 void BackgroundBookmarkRenderer::initialize_latex() {
+#ifdef SIOYEK_MICROTEX
     if (!is_latex_initialized) {
         is_latex_initialized = true;
         copy_microtex_files();
         std::string root_dir = standard_data_path.slash(L"microtex_resources").get_path_utf8();
         tex::LaTeX::init(root_dir);
     }
-
+#endif
 }
 
 void prepare_text_document_for_bookmark_markdown(QTextDocument& td, QString text, QRect window_qrect, const QFont& font) {
@@ -100,19 +103,20 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
     std::optional<char> text_color_type = bookmark.get_text_type();
 
-    tex::color foreground_color = tex::black;
-
-    if (text_color_type && text_color_type.value() >= 'a' && text_color_type.value() <= 'z') {
-        QColor pen_color = qconvert_color3(&HIGHLIGHT_COLORS[3 * (text_color_type.value() - 'a')], palette);
-        painter->setPen(pen_color);
-        foreground_color = tex::argb(pen_color.alpha(), pen_color.red(), pen_color.green(), pen_color.blue());
-    }
 
     if (desc_qstring.startsWith("#markdown")) {
         float height = draw_markdown_text(*painter, bookmark.get_render_text(), window_qrect, scroll_amount, is_from_main_thread, font);
         cached_bookmark_heights[bookmark.uuid] = height;
     }
+#ifdef SIOYEK_MICROTEX
     else if (desc_qstring.startsWith("#latex")) {
+        tex::color foreground_color = tex::black;
+
+        if (text_color_type && text_color_type.value() >= 'a' && text_color_type.value() <= 'z') {
+            QColor pen_color = qconvert_color3(&HIGHLIGHT_COLORS[3 * (text_color_type.value() - 'a')], palette);
+            painter->setPen(pen_color);
+            foreground_color = tex::argb(pen_color.alpha(), pen_color.red(), pen_color.green(), pen_color.blue());
+        }
 
         // rendering latex can take a while, so we never do it from the main thread
         if (is_from_main_thread){
@@ -160,8 +164,8 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
             }
         }
         latex_lock.unlock();
-
     }
+#endif
     else {
         if (bookmark.is_question() || bookmark.is_summary()) {
             //QColor question_text_color = convert_float3_to_qcolor(QUESTION_BOOKMARK_TEXT_COLOR);

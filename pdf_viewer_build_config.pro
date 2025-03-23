@@ -8,7 +8,8 @@ INCLUDEPATH += ./pdf_viewer \
 ios {
 
     QMAKE_IOS_DEVICE_ARCHS=arm64
-    LIBS += -L$$PWD/mupdf/build/-ios-arm64 -lcombined
+    # LIBS += -L$$PWD/mupdf/build/-ios-arm64 -lcombined
+    LIBS += -L$$PWD/mupdf/build/-ios-arm64 -lmupdf -lmupdf-third
     # QMAKE_IOS_DEVICE_ARCHS=x86_64
     # LIBS += -L$$PWD/mupdf/build/-ios-x86_64 -lcombined
 
@@ -101,7 +102,10 @@ HEADERS += \
     pdf_viewer/touchui/TouchGenericButtons.h \
     pdf_viewer/touchui/TouchMainMenu.h
 
-include($$PWD/microtex/microtex_build.pri)
+CONFIG(sioyek_microtex){
+    DEFINES += SIOYEK_MICROTEX
+    include($$PWD/microtex/microtex_build.pri)
+}
 
 
 android{

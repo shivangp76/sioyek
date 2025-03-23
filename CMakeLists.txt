@@ -217,6 +217,7 @@ if(IOS)
         -L${CMAKE_CURRENT_SOURCE_DIR}/mupdf/build/-ios-arm64
         -lcombined
     )
+    qt_add_ios_ffmpeg_libraries(sioyek)
 endif()
 
 if(NOT ANDROID AND NOT IOS)
@@ -255,7 +256,7 @@ if(ANDROID)
         -lmupdf_java
         -lssl_3
     )
-    set_target_properties(sioyek PROPERTIES ANDROID_EXTRA_LIBS 
+    set_target_properties(sioyek PROPERTIES ANDROID_EXTRA_LIBS
         ${CMAKE_CURRENT_SOURCE_DIR}/libs/libcrypto_3.so
         ${CMAKE_CURRENT_SOURCE_DIR}/libs/libmupdf_java.so
         ${CMAKE_CURRENT_SOURCE_DIR}/libs/libssl_3.so

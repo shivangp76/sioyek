@@ -860,7 +860,7 @@ int main(int argc, char* args[]) {
         use_single_instance = false;
     }
 
-#ifndef SIOYEK_ANDROID
+#ifndef SIOYEK_MOBILE
     std::string instance_name_string = "sioyek";
     char* instance_name = get_argv_value(argc, args, "--instance-name");
 
