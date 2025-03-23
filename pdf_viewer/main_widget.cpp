@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -8910,6 +8910,9 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
 }
 
 void MainWidget::on_config_changed(std::string config_name, bool should_save) {
+    if (config_name.size() == 0){
+        return;
+    }
     std::vector<std::string> config_names;
     config_names.push_back(config_name);
 
