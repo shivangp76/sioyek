@@ -1,4 +1,4 @@
-// deduplicate database code
+﻿// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -159,6 +159,14 @@ extern "C" void ios_pinch_callback(float scale, float velocity, int state){
     }
 
 }
+
+extern "C" void on_ios_file_picked(QString file_path){
+    qDebug() << "got file path:" << file_path;
+    windows[0]->open_document(file_path.toStdWString());
+
+}
+
+extern "C" QString promptUserToSelectPdfFile();
 
 #endif
 

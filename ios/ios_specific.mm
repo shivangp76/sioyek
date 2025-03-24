@@ -6,6 +6,8 @@
 static AVSpeechSynthesizer* synthesizer = nil;
 static int currentSpokenWordLocation = -1;
 
+extern "C" void on_ios_file_picked(QString file_path);
+
 extern "C" void iosResumeFunc(){
 }
 
@@ -186,4 +188,61 @@ extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallb
     if (view) {
         setupPinchGestureRecognizer(view, callback);
     }
+}
+
+// define document picker delegate:
+@interface UIDocumentPickerViewControllerDelegate : NSObject <UIDocumentPickerDelegate>
+@end
+
+@implementation UIDocumentPickerViewControllerDelegate
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls{
+    qDebug() << "Document picked";
+    if (urls.count > 0){
+        NSURL *selectedFileURL = urls[0];
+        
+        // Start accessing the security-scoped resource
+        BOOL startedAccessing = [selectedFileURL startAccessingSecurityScopedResource];
+        
+        if (startedAccessing) {
+            NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+            NSString *fileName = [selectedFileURL lastPathComponent];
+            NSString *destinationFilePath = [documentsDirectory stringByAppendingPathComponent:fileName];
+            
+            NSError *error = nil;
+            
+            // Remove existing file if present
+            if ([[NSFileManager defaultManager] fileExistsAtPath:destinationFilePath]) {
+                [[NSFileManager defaultManager] removeItemAtPath:destinationFilePath error:nil];
+            }
+            
+            // Copy using URLs instead of paths
+            if ([[NSFileManager defaultManager] copyItemAtURL:selectedFileURL 
+                                                       toURL:[NSURL fileURLWithPath:destinationFilePath] 
+                                                       error:&error]) {
+                qDebug() << "File copied to:" << destinationFilePath;
+                on_ios_file_picked(QString::fromNSString(destinationFilePath));
+            } else {
+                qDebug() << "Error copying file:" << error.localizedDescription;
+            }
+            
+            // Always stop accessing when done
+            [selectedFileURL stopAccessingSecurityScopedResource];
+        } else {
+            qDebug() << "Failed to start accessing security-scoped resource";
+        }
+    }
+}
+
+@end
+
+extern "C" QString promptUserToSelectPdfFile(){
+    QString selectedFilePath = "";
+    UIDocumentPickerViewController* documentPicker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"com.adobe.pdf"] inMode:UIDocumentPickerModeOpen];
+    documentPicker.delegate = [[UIDocumentPickerViewControllerDelegate alloc] init];
+    documentPicker.allowsMultipleSelection = NO;
+    documentPicker.modalPresentationStyle = UIModalPresentationFormSheet;
+    UIViewController* rootViewController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    [rootViewController presentViewController:documentPicker animated:YES completion:nil];
+    return selectedFilePath;
 }
