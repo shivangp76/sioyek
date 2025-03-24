@@ -2004,8 +2004,14 @@ std::optional<PaperNameWithRects> Document::get_paper_name_at_position(const std
         if ((ch->c == '-') && (ch->next == nullptr)) continue;
 
         if (ch->c != '.') {
-            selected_string.push_back(QChar(ch->c));
-            selected_rects.push_back(rect_from_quad(ch->quad));
+            if (ch->c < 0xffff){
+                selected_string.push_back(QChar(ch->c));
+                selected_rects.push_back(rect_from_quad(ch->quad));
+            }
+            else{
+                selected_string.push_back(' ');
+                selected_rects.push_back(rect_from_quad(ch->quad));
+            }
         }
         if (ch->next == nullptr) {
             selected_string.push_back(' ');
