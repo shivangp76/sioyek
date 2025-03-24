@@ -2132,6 +2132,8 @@ public:
     void perform() {
         widget->show_touch_main_menu();
     }
+    
+    bool requires_document() { return false; }
 
 };
 
