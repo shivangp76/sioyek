@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -7898,6 +7898,15 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    db_manager->clear_local_db_files();
+    document_manager->tabs.clear();
+    
+    //    std::vector<std::pair<std::wstring, std::wstring>> pairs;
+//
+//    db_manager->get_prev_path_hash_pairs(pairs);
+//    for (auto [path, hash] : pairs){
+//        qDebug() << path;
+//    }
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -11874,8 +11883,10 @@ QString MainWidget::get_rest_of_document_pages_text() {
 }
 
 void MainWidget::focus_on_character_offset_into_document(int character_offset_into_document) {
-    main_document_view->focus_on_character_offset_into_document(character_offset_into_document);
-    invalidate_render();
+    if (character_offset_into_document >= 0){
+        main_document_view->focus_on_character_offset_into_document(character_offset_into_document);
+        invalidate_render();
+    }
 }
 
 void MainWidget::handle_move_smooth_hold(bool down) {
@@ -12755,6 +12766,19 @@ void MainWidget::on_server_hashes_loaded() {
 void MainWidget::handle_ios_files(const QUrl& url){
     qDebug() << "handle_ios_files called with: " << url;
     std::wstring path = url.toLocalFile().toStdWString();
+    // this is a path to a file in the app's Inbox
+    // but we want to be able to access it in the future
+    // so we copy it to the standard_data_path directory
+
+    
+    QString file_name = url.fileName();
+    
+    Path base_path = standard_data_path;
+    Path new_path = base_path.slash(file_name.toStdWString());
+    QFile::copy(url.toLocalFile(), QString::fromStdWString(new_path.get_path()));
+
+    path = ios_remove_appdir(new_path.get_path());
+
     push_state();
     open_document(path, &is_render_invalidated);
 }
