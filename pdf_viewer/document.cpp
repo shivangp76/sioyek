@@ -476,6 +476,14 @@ std::wstring Document::get_path() {
     return file_name;
 }
 
+std::wstring Document::get_path_platform(){
+    #ifdef SIOYEK_IOS
+    return ios_remove_appdir(get_path());
+    #else
+    return get_path();
+    #endif
+}
+
 std::string Document::get_checksum() {
 
     return checksummer->get_checksum(get_path());
@@ -1344,7 +1352,15 @@ DocumentManager::DocumentManager(fz_context* mupdf_context, DatabaseManager* db,
 }
 
 
-Document* DocumentManager::get_document(const std::wstring& path, std::string downloaded_checksum) {
+Document* DocumentManager::get_document(std::wstring path, std::string downloaded_checksum) {
+
+    #ifdef SIOYEK_IOS
+    QString qpath = QString::fromStdWString(path);
+    if (qpath.startsWith("./")){
+        path = ios_add_appdir(path);
+    }
+    #endif
+
     cached_hash_mutex.lock_shared();
     if (cached_documents.find(path) != cached_documents.end()) {
         Document* res = cached_documents.at(path);

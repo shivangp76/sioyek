@@ -78,6 +78,8 @@
 #include <mupdf/pdf.h>
 #include "synctex/synctex_parser.h"
 
+extern Path standard_data_path;
+
 extern std::ofstream LOG_FILE;
 extern int STATUS_BAR_FONT_SIZE;
 extern float STATUS_BAR_COLOR[3];
@@ -2083,8 +2085,12 @@ std::wstring get_canonical_path(const std::wstring& path) {
             return path;
         }
         else {
+#ifdef SIOYEK_ANDROID
             QDir dir(QString::fromStdWString(path));
             return std::move(dir.absolutePath().toStdWString());
+#else
+            return path;
+#endif
         }
     }
     else {
@@ -5688,7 +5694,11 @@ std::vector<std::wstring> get_last_opened_file_name() {
     std::ifstream last_state_file(last_opened_file_address_path.get_path_utf8());
     std::vector<std::wstring> res;
     while (std::getline(last_state_file, file_path_)) {
-        res.push_back(utf8_decode(file_path_));
+        std::wstring path = utf8_decode(file_path_);
+        #ifdef SIOYEK_IOS
+        path = ios_add_appdir(path);
+        #endif
+        res.push_back(path);
     }
     last_state_file.close();
     cached_result = res;
@@ -6610,6 +6620,29 @@ bool MacosMediaPlayer::isSeekable(){
 
 bool MacosMediaPlayer::isFinished(){
     return macos_isMp3Finished();
+}
+
+#endif
+
+#ifdef SIOYEK_IOS
+
+std::wstring ios_add_appdir(std::wstring path){
+    QString qpath = QString::fromStdWString(path);
+    if (qpath.startsWith("./")){
+        // this file is located in standard_data_path, we should prefix the path with it
+        qpath = QString::fromStdWString(standard_data_path.get_path()) + qpath.mid(1);
+        path = qpath.toStdWString();
+    }
+    return path;
+}
+
+std::wstring ios_remove_appdir(std::wstring path){
+    QString qpath = QString::fromStdWString(path);
+    if (qpath.startsWith(QString::fromStdWString(standard_data_path.get_path()))){
+        qpath = qpath.mid(standard_data_path.get_path().size());
+        path = L"." + qpath.toStdWString();
+    }
+    return path;
 }
 
 #endif

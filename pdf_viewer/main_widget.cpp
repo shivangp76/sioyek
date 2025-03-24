@@ -1,4 +1,4 @@
-// deduplicate database code
+﻿// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -160,8 +160,10 @@ extern "C" void ios_pinch_callback(float scale, float velocity, int state){
 
 }
 
+extern Path standard_data_path;
+
 extern "C" void on_ios_file_picked(QString file_path){
-    qDebug() << "got file path:" << file_path;
+
     windows[0]->open_document(file_path.toStdWString());
 
 }
@@ -211,7 +213,6 @@ extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_JAVASCRIPT_COMMANDS;
 extern std::map<std::wstring, JsCommandInfo> ADDITIONAL_ASYNC_JAVASCRIPT_COMMANDS;
 
 extern std::wstring TITLEBAR_FORMAT;
-extern Path standard_data_path;
 //extern Path documentation_path;
 Path documentation_path(L":/data/sioyek_documentation.pdf");
 extern Path default_config_path;
@@ -10857,7 +10858,7 @@ std::wstring MainWidget::get_current_tabs_file_names() {
     std::vector<std::wstring> file_names = document_manager->get_tabs();
     std::wstring current_doc_path;
     if (doc()) {
-        current_doc_path = doc()->get_path();
+        current_doc_path = doc()->get_path_platform();
     }
 
     res += current_doc_path;

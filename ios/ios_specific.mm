@@ -192,12 +192,14 @@ extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallb
 
 // define document picker delegate:
 @interface UIDocumentPickerViewControllerDelegate : NSObject <UIDocumentPickerDelegate>
+
+@property (nonatomic) QString rootPath;
+
 @end
 
 @implementation UIDocumentPickerViewControllerDelegate
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls{
-    qDebug() << "Document picked";
     if (urls.count > 0){
         NSURL *selectedFileURL = urls[0];
         
@@ -205,11 +207,25 @@ extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallb
         BOOL startedAccessing = [selectedFileURL startAccessingSecurityScopedResource];
         
         if (startedAccessing) {
-            NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+            // Convert rootPath from QString to NSString and use it as the destination directory
+            NSString *destinationDirectory = [NSString stringWithUTF8String:self.rootPath.toUtf8().constData()];
             NSString *fileName = [selectedFileURL lastPathComponent];
-            NSString *destinationFilePath = [documentsDirectory stringByAppendingPathComponent:fileName];
+            NSString *destinationFilePath = [destinationDirectory stringByAppendingPathComponent:fileName];
             
             NSError *error = nil;
+            
+            // Ensure destination directory exists
+            BOOL isDirectory;
+            if (![[NSFileManager defaultManager] fileExistsAtPath:destinationDirectory isDirectory:&isDirectory] || !isDirectory) {
+                [[NSFileManager defaultManager] createDirectoryAtPath:destinationDirectory 
+                                          withIntermediateDirectories:YES 
+                                                           attributes:nil 
+                                                                error:&error];
+                if (error) {
+                    [selectedFileURL stopAccessingSecurityScopedResource];
+                    return;
+                }
+            }
             
             // Remove existing file if present
             if ([[NSFileManager defaultManager] fileExistsAtPath:destinationFilePath]) {
@@ -220,7 +236,6 @@ extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallb
             if ([[NSFileManager defaultManager] copyItemAtURL:selectedFileURL 
                                                        toURL:[NSURL fileURLWithPath:destinationFilePath] 
                                                        error:&error]) {
-                qDebug() << "File copied to:" << destinationFilePath;
                 on_ios_file_picked(QString::fromNSString(destinationFilePath));
             } else {
                 qDebug() << "Error copying file:" << error.localizedDescription;
@@ -233,16 +248,18 @@ extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallb
         }
     }
 }
-
 @end
 
-extern "C" QString promptUserToSelectPdfFile(){
+extern "C" QString promptUserToSelectPdfFile(QString rootPath){
     QString selectedFilePath = "";
     UIDocumentPickerViewController* documentPicker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"com.adobe.pdf"] inMode:UIDocumentPickerModeOpen];
-    documentPicker.delegate = [[UIDocumentPickerViewControllerDelegate alloc] init];
+    auto delegate = [[UIDocumentPickerViewControllerDelegate alloc] init];
+    delegate.rootPath = rootPath;
+    documentPicker.delegate = delegate;
     documentPicker.allowsMultipleSelection = NO;
     documentPicker.modalPresentationStyle = UIModalPresentationFormSheet;
     UIViewController* rootViewController = [UIApplication sharedApplication].keyWindow.rootViewController;
     [rootViewController presentViewController:documentPicker animated:YES completion:nil];
     return selectedFilePath;
 }
+

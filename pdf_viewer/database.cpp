@@ -886,7 +886,10 @@ bool DatabaseManager::create_links_table() {
 //		error_message);
 //}
 
-bool DatabaseManager::insert_document_hash(const std::wstring& path, const std::string& checksum) {
+bool DatabaseManager::insert_document_hash(std::wstring path, const std::string& checksum) {
+    #ifdef SIOYEK_IOS
+    path = ios_remove_appdir(path);
+    #endif
 
     const char* delete_doc_sql = ""\
         "DELETE FROM document_hash WHERE path=";
@@ -1724,10 +1727,19 @@ bool DatabaseManager::get_prev_path_hash_pairs(std::vector<std::pair<std::wstrin
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), wstring_pair_select_callback, &out_pairs, &error_message);
-    return handle_error(
+    auto res = handle_error(
         "get_prev_path_hash_pairs",
         error_code,
         error_message);
+#ifndef SIOYEK_IOS
+    return res;
+#else
+    for (int i = 0; i < out_pairs.size(); i++){
+        out_pairs[i].first = ios_add_appdir(out_pairs[i].first);
+    }
+    return res;
+#endif
+    
 }
 
 bool DatabaseManager::get_all_local_checksums(std::vector<std::string>& out_checksum) {
@@ -3426,4 +3438,24 @@ std::vector<DocumentationSearchResult> DatabaseManager::perform_documentation_se
         qDebug() << "Error executing documentation fulltext search: " << error_message;{
     }
     return results;
+}
+
+void DatabaseManager::clear_local_db_files(){
+    // clear all files in document_hash table.
+
+    std::wstringstream ss;
+    ss << "DELETE FROM document_hash;";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(local_db, utf8_encode(ss.str()).c_str(), nullptr, nullptr, &error_message);
+    if (error_code != SQLITE_OK) {
+        qDebug() << "Error deleting all files: " << error_message;
+    }
+    // also clear opened_books table
+
+    std::wstringstream ss2;
+    ss2 << "DELETE FROM opened_books;";
+    error_code = sqlite3_exec(global_db, utf8_encode(ss2.str()).c_str(), nullptr, nullptr, &error_message);
+    if (error_code != SQLITE_OK) {
+        qDebug() << "Error deleting all files: " << error_message;
+    }
 }

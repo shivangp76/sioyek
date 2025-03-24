@@ -310,6 +310,7 @@ public:
     fz_stext_page* get_stext_with_page_number(int page_number);
     std::string add_portal(Portal link, bool insert_into_database = true);
     std::wstring get_path();
+    std::wstring get_path_platform();
     std::string get_checksum();
     std::optional<std::string> get_checksum_fast();
     //int find_closest_bookmark_index(float to_offset_y);
@@ -682,8 +683,8 @@ private:
     std::shared_mutex cached_hash_mutex;
     std::unordered_map<std::wstring, Document*> cached_documents;
     std::unordered_map<std::string, std::wstring> hash_to_path;
-    std::vector<std::wstring> tabs;
 public:
+    std::vector<std::wstring> tabs;
 
     DocumentManager(fz_context* mupdf_context, DatabaseManager* db_manager, CachedChecksummer* checksummer);
 
@@ -692,7 +693,7 @@ public:
     void remove_tab(const std::wstring& path);
     std::vector<std::wstring> get_tabs();
 
-    Document* get_document(const std::wstring& path, std::string downloaded_checksum="");
+    Document* get_document(std::wstring path, std::string downloaded_checksum="");
     std::optional<std::wstring> get_path_from_hash(const std::string& checksum);
 
     Document* get_document_with_checksum(const std::string& checksum);

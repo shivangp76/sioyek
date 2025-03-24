@@ -55,8 +55,9 @@ extern float UI_SELECTED_TEXT_COLOR[3];
 extern float UI_SELECTED_BACKGROUND_COLOR[3];
 
 #ifdef SIOYEK_IOS
-extern "C" QString promptUserToSelectPdfFile();
+extern "C" QString promptUserToSelectPdfFile(QString);
 #endif
+extern Path standard_data_path;
 
 std::wstring select_command_file_name(std::string command_name) {
     if (command_name == "open_document") {
@@ -79,7 +80,8 @@ std::wstring select_document_file_name() {
     if (DEFAULT_OPEN_FILE_PATH.size() == 0) {
 
 #ifdef SIOYEK_IOS
-        QString file_url = promptUserToSelectPdfFile();
+        
+        QString file_url = promptUserToSelectPdfFile(QString::fromStdWString(standard_data_path.get_path()));
         return file_url.toStdWString();
         // QUrl file_url = QFileDialog::getOpenFileUrl(nullptr, "Select Document", QUrl(), "");
         
