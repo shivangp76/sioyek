@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -165,8 +165,6 @@ extern "C" void on_ios_file_picked(QString file_path){
     windows[0]->open_document(file_path.toStdWString());
 
 }
-
-extern "C" QString promptUserToSelectPdfFile();
 
 #endif
 
@@ -8742,7 +8740,10 @@ bool MainWidget::should_show_status_label(bool check_network) {
     }
 
     if (TOUCH_MODE) {
-        if (pending_command_instance && pending_command_instance->next_requirement(this)->type == RequirementType::Point){
+        if (pending_command_instance &&
+            pending_command_instance->next_requirement(this).has_value() &&
+            pending_command_instance->next_requirement(this)->type == RequirementType::Point
+            ){
             return true;
         }
         if (current_widget_stack.size() > 0 || main_document_view->get_is_searching(&prog) || main_document_view->is_pending_link_source_filled()) {

@@ -252,8 +252,10 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
     auto current_requirement_fn = [widget=main_widget]() {
 
         if (widget->pending_command_instance){
-            if (widget->pending_command_instance->next_requirement(widget)->type == RequirementType::Point) {
-                return " [ " + QString::fromStdString(widget->pending_command_instance->next_requirement(widget)->name) + " ] ";
+            if (widget->pending_command_instance->next_requirement(widget).has_value()){
+                if (widget->pending_command_instance->next_requirement(widget)->type == RequirementType::Point) {
+                    return " [ " + QString::fromStdString(widget->pending_command_instance->next_requirement(widget)->name) + " ] ";
+                }
             }
         }
         return QString("");
