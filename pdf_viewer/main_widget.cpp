@@ -1,4 +1,4 @@
-// deduplicate database code
+﻿// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -138,6 +138,7 @@ typedef void (*PinchGestureCallback)(float scale, float velocity, int state);
 extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallback callback);
 
 float ios_pinch_original_zoom_level = 1.0f;
+float ios_pinch_last_scale = 1.0f;
 extern "C" void ios_pinch_callback(float scale, float velocity, int state){
     
     // 1 = begin
@@ -149,11 +150,16 @@ extern "C" void ios_pinch_callback(float scale, float velocity, int state){
     if (state == 1){
         ios_pinch_original_zoom_level = w->main_document_view->get_zoom_level();
         w->pdf_renderer->no_rerender = true;
+        ios_pinch_last_scale = scale;
         qDebug() << "no rerender";
     }
     else if (state == 2){
-        w->main_document_view->set_zoom_level(ios_pinch_original_zoom_level * scale, true);
+        float incremental_scale = scale / ios_pinch_last_scale;
+        w->handle_pinch(incremental_scale);
         w->validate_render();
+        ios_pinch_last_scale = scale;
+        //        w->main_document_view->set_zoom_level(ios_pinch_original_zoom_level * scale, true);
+//        w->validate_render();
     }
     else if (state == 3){
         w->pdf_renderer->no_rerender = false;
@@ -6908,6 +6914,27 @@ int MainWidget::num_visible_links() {
     return visible_page_links.size();
 }
 
+void MainWidget::handle_pinch(float scale) {
+    if (main_document_view->get_overview_page())
+    {
+        main_document_view->zoom_overview(scale);
+    }
+    else if (main_document_view->selected_object_index.has_value() && main_document_view->selected_object_index->object_type == VisibleObjectType::PinnedPortal)
+    {
+        // todo: this is not testes, I should test this on a touch screen
+        Portal *portal = doc()->get_portal_with_uuid(main_document_view->selected_object_index->uuid);
+        if (portal)
+        {
+            portal->dst.book_state.zoom_level *= scale;
+            main_document_view->schedule_update_link_with_opened_book_state(*portal, portal->dst.book_state);
+        }
+    }
+    else
+    {
+        dv()->set_zoom_level(dv()->get_zoom_level() * scale, true);
+    }
+}
+
 bool MainWidget::event(QEvent* event) {
     QTabletEvent* te = dynamic_cast<QTabletEvent*>(event);
     QKeyEvent* ke = dynamic_cast<QKeyEvent*>(event);
@@ -6960,21 +6987,8 @@ bool MainWidget::event(QEvent* event) {
             if ((pinch->scaleFactor() >= 1 && pinch->lastScaleFactor() >= 1)
                     || (pinch->scaleFactor() <= 1 && pinch->lastScaleFactor() <= 1)
                     ){
+                        handle_pinch(pinch->scaleFactor());
 
-                if (main_document_view->get_overview_page()){
-                    main_document_view->zoom_overview(scale);
-                }
-                else if (main_document_view->selected_object_index.has_value() && main_document_view->selected_object_index->object_type == VisibleObjectType::PinnedPortal) {
-                    // todo: this is not testes, I should test this on a touch screen
-                    Portal* portal = doc()->get_portal_with_uuid(main_document_view->selected_object_index->uuid);
-                    if (portal) {
-                        portal->dst.book_state.zoom_level *= scale;
-                        main_document_view->schedule_update_link_with_opened_book_state(*portal, portal->dst.book_state);
-                    }
-                }
-                else{
-                    dv()->set_zoom_level(dv()->get_zoom_level() * scale, true);
-                }
             }
 
             validate_render();

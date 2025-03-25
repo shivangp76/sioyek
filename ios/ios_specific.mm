@@ -138,7 +138,7 @@ static PinchGestureCallback gPinchCallback = nullptr;
         
         CGPoint position1 = [sender locationOfTouch:0 inView:sender.view];
         CGPoint position2 = [sender locationOfTouch:1 inView:sender.view];
-        
+
         if (gPinchCallback) {
             gPinchCallback(sender.scale, sender.velocity, (int)sender.state);
         }

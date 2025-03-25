@@ -1222,6 +1222,7 @@ public:
     void handle_ruler_touch_move(float distance);
     void toggle_mouse_ruler_mode();
     void show_tts_voice_selector();
+    void handle_pinch(float scale);
 
 
 public slots:
