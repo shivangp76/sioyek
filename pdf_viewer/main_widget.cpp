@@ -7448,8 +7448,8 @@ bool MainWidget::handle_double_tap(QPoint pos) {
 void MainWidget::show_highlight_buttons() {
     //highlight_buttons = new HighlightButtons(this);
     get_highlight_buttons()->highlight_buttons->setHighlightType(get_current_selected_highlight_type());
-    update_highlight_buttons_position();
     get_highlight_buttons()->show();
+    update_highlight_buttons_position();
 }
 
 //void MainWidget::clear_highlight_buttons() {
