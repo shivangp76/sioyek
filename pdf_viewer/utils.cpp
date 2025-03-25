@@ -4709,6 +4709,10 @@ std::vector<std::wstring> TextToSpeechHandler::get_available_voices() {
     return {};
 }
 
+std::wstring TextToSpeechHandler::current_voice() {
+    return L"";
+}
+
 void TextToSpeechHandler::set_voice(std::wstring voice) {
 }
 
@@ -5721,6 +5725,10 @@ std::vector<std::wstring> QtTextToSpeechHandler::get_available_voices() {
         res.push_back(voice.name().toStdWString());
     }
     return res;
+}
+
+std::wstring QtTextToSpeechHandler::current_voice() {
+    return tts->voice().name().toStdWString();
 }
 
 void QtTextToSpeechHandler::set_voice(std::wstring voice_name) {

@@ -565,6 +565,7 @@ public:
     virtual void set_on_app_resume_callback(std::function<void(bool, bool, int)>) = 0;
     virtual int get_maximum_tts_text_size();
     virtual std::vector<std::wstring> get_available_voices();
+    virtual std::wstring current_voice();
     virtual void set_voice(std::wstring voice);
 };
 
@@ -598,6 +599,7 @@ public:
     virtual void set_on_app_resume_callback(std::function<void(bool, bool, int)>);
 
     std::vector<std::wstring> get_available_voices() override;
+    std::wstring current_voice() override;
     void set_voice(std::wstring voice) override;
 };
 

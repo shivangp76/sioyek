@@ -9536,7 +9536,7 @@ TextToSpeechHandler* MainWidget::get_tts() {
 #else
     tts = new QtTextToSpeechHandler();
 #endif
-
+    
 
     if (TTS_VOICE.size() > 0) {
         tts->set_voice(TTS_VOICE);
@@ -14163,4 +14163,24 @@ void MainWidget::toggle_mouse_ruler_mode(){
         was_last_mouse_down_in_ruler_next_rect = true;
 
     }
+}
+
+void MainWidget::show_tts_voice_selector(){
+
+    auto voices = get_tts()->get_available_voices();
+    std::wstring current_voice = get_tts()->current_voice();
+    int current_voice_index = -1;
+    for (int i = 0; i < voices.size(); i++){
+        if (voices[i] == current_voice){
+            current_voice_index = i;
+        }
+    }
+    set_filtered_select_menu<std::wstring>(this, true, false, {voices}, {voices}, current_voice_index, [this](std::wstring* sel){
+        TTS_VOICE = *sel;
+        get_tts()->set_voice(TTS_VOICE);
+    }, [](std::wstring* sel){
+
+    });
+    show_current_widget();
+
 }

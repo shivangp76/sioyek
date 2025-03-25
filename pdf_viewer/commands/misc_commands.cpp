@@ -129,6 +129,17 @@ public:
     }
 };
 
+class SetTtsVoiceCommand : public Command {
+public:
+    static inline const std::string cname = "set_tts_voice";
+    static inline const std::string hname = "Set the text to speech voice";
+    SetTtsVoiceCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->show_tts_voice_selector();
+    }
+};
+
 class IncreaseTtsRateCommand : public Command {
 public:
     static inline const std::string cname = "increase_tts_rate";
@@ -2579,6 +2590,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<MoveTextMarkBackwardCommand>(manager);
     register_command<MoveTextMarkBackwardWordCommand>(manager);
     register_command<MoveTextMarkForwardWordCommand>(manager);
+    register_command<SetTtsVoiceCommand>(manager);
     register_command<IncreaseTtsRateCommand>(manager);
     register_command<DecreaseTtsRateCommand>(manager);
     register_command<StopReadingCommand>(manager);
