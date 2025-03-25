@@ -98,8 +98,8 @@ extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceN
         createSpeechSynthesizer();
     }
 
-    // NSString* ttsVoiceName = voiceName ? voiceName : @"en-GB";
-    NSString* ttsVoiceName = @"en-GB";
+    NSString* ttsVoiceName = voiceName ? voiceName : @"en-GB";
+//    NSString* ttsVoiceName = @"en-GB";
     AVSpeechSynthesisVoice* voice = [AVSpeechSynthesisVoice voiceWithLanguage:ttsVoiceName];
     NSArray<AVSpeechSynthesisVoice*>* availableVoices = [AVSpeechSynthesisVoice speechVoices];
 
