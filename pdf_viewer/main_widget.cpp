@@ -7900,6 +7900,9 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+//    db_manager->clear_local_db_files();
+//    document_manager->tabs.clear();
+    qDebug() << doc()->get_path();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -12771,7 +12774,7 @@ void MainWidget::handle_ios_files(const QUrl& url){
     QString file_name = url.fileName();
     
     Path base_path = standard_data_path;
-    Path new_path = base_path.slash(file_name.toStdWString());
+    Path new_path = base_path.slash(L"pdf_docs").slash(file_name.toStdWString());
     QFile::copy(url.toLocalFile(), QString::fromStdWString(new_path.get_path()));
 
     path = ios_remove_appdir(new_path.get_path());

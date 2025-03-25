@@ -6638,8 +6638,7 @@ std::wstring ios_add_appdir(std::wstring path){
     QString qpath = QString::fromStdWString(path);
     if (qpath.startsWith("./")){
         // this file is located in standard_data_path, we should prefix the path with it
-        Path docs_dir = standard_data_path.slash(L"pdf_docs");
-        qpath = QString::fromStdWString(docs_dir.get_path()) + qpath.mid(1);
+        qpath = QString::fromStdWString(standard_data_path.get_path()) + qpath.mid(1);
         path = qpath.toStdWString();
     }
     return path;
@@ -6648,8 +6647,8 @@ std::wstring ios_add_appdir(std::wstring path){
 std::wstring ios_remove_appdir(std::wstring path){
     QString qpath = QString::fromStdWString(path);
     Path docs_dir = standard_data_path.slash(L"pdf_docs");
-    if (qpath.startsWith(QString::fromStdWString(docs_dir.get_path()))){
-        qpath = qpath.mid(docs_dir.get_path().size());
+    if (qpath.startsWith(QString::fromStdWString(standard_data_path.get_path()))){
+        qpath = qpath.mid(standard_data_path.get_path().size());
         path = L"." + qpath.toStdWString();
     }
     return path;

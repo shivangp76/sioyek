@@ -210,6 +210,8 @@ extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallb
         if (startedAccessing) {
             // Convert rootPath from QString to NSString and use it as the destination directory
             NSString *destinationDirectory = [NSString stringWithUTF8String:self.rootPath.toUtf8().constData()];
+            destinationDirectory = [destinationDirectory stringByAppendingPathComponent:@"pdf_docs"];
+
             NSString *fileName = [selectedFileURL lastPathComponent];
             NSString *destinationFilePath = [destinationDirectory stringByAppendingPathComponent:fileName];
             
