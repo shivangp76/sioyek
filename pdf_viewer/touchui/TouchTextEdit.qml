@@ -43,7 +43,7 @@ Rectangle {
                 id: textView
                 wrapMode: TextInput.WrapAnywhere
                 onAccepted:{
-                    root.confirmed(edit.text);
+                    root.confirmed(edit.loaderItem.text);
                 }
             }
         }
@@ -59,7 +59,7 @@ Rectangle {
                 echoMode: TextInput.Password
                 wrapMode: TextInput.WrapAnywhere
                 onAccepted:{
-                    root.confirmed(edit.text);
+                    root.confirmed(edit.loaderItem.text);
                 }
             }
         }
