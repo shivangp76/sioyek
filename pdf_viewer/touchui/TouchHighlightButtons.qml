@@ -14,6 +14,7 @@ Rectangle{
     color: "#00ffffff"
     radius: 5
     property bool are_color_buttons_visible: false
+    property bool animationsEnabled: _animationsEnabled ? _animationsEnabled : false
 
     function on_restart(){
         root.are_color_buttons_visible = false;
@@ -53,6 +54,7 @@ Rectangle{
         colors: _colors
         anchors.fill: parent
         visible: root.are_color_buttons_visible
+        animationsEnabled: root.animationsEnabled
 
         onColorClicked: function(index){
             root.changeColorClicked(index);

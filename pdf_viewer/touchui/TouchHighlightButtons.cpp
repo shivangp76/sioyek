@@ -20,6 +20,12 @@ TouchHighlightButtons::TouchHighlightButtons(char selected_symbol, QWidget* pare
     }
 
     quick_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(colors));
+
+    #ifdef SIOYEK_MOBILE
+    quick_widget->rootContext()->setContextProperty("_animationsEnabled", QVariant::fromValue(true));
+    #endif
+
+    quick_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(colors));
     //quick_widget->rootContext()->setContextProperty("_index", selected_symbol - 'a');
     //quick_widget->rootContext()->setContextProperty("_current_color", convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * (selected_symbol - 'a')]));
     setHighlightType(selected_symbol);
