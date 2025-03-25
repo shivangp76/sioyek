@@ -59,6 +59,7 @@ extern "C" AVSpeechSynthesizer* createSpeechSynthesizer(){
     return synthesizer;
 }
 
+
 void setupNowPlaying(){
     [MPNowPlayingInfoCenter defaultCenter].playbackState = MPNowPlayingPlaybackStatePlaying;
 
@@ -263,3 +264,21 @@ extern "C" QString promptUserToSelectPdfFile(QString rootPath){
     return selectedFilePath;
 }
 
+
+extern "C" void ios_debug(){
+}
+
+extern "C" void makeSureTTSCanUseSpeakers(){
+
+    AVAudioSession* audioSession = [AVAudioSession sharedInstance];
+    NSError* error = nil;
+    [audioSession setCategory:AVAudioSessionCategoryPlayback error:&error];
+    if (error){
+        NSLog(@"Error setting audio session category: %@", error.localizedDescription);
+    }
+    [audioSession setActive:YES error:&error];
+    if (error){
+        NSLog(@"Error activating audio session: %@", error.localizedDescription);
+    }
+
+}

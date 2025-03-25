@@ -126,6 +126,8 @@ extern "C" void hideWindowTitleBar(WId);
 #ifdef SIOYEK_IOS
 // extern "C" void iosTestFunc(NSString* text);
 
+extern "C" void makeSureTTSCanUseSpeakers();
+extern "C" void ios_debug();
 extern "C" void iosResumeFunc();
 extern "C" void iosPauseFunc();
 extern "C" AVSpeechSynthesizer* createSpeechSynthesizer();
@@ -7898,15 +7900,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    db_manager->clear_local_db_files();
-    document_manager->tabs.clear();
-    
-    //    std::vector<std::pair<std::wstring, std::wstring>> pairs;
-//
-//    db_manager->get_prev_path_hash_pairs(pairs);
-//    for (auto [path, hash] : pairs){
-//        qDebug() << path;
-//    }
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -9533,6 +9526,10 @@ void MainWidget::update_selected_bookmark_font_size() {
 
 TextToSpeechHandler* MainWidget::get_tts() {
     if (tts) return tts;
+
+#ifdef SIOYEK_IOS
+    makeSureTTSCanUseSpeakers();
+#endif
 
 #ifdef SIOYEK_ANDROID
     tts = new AndroidTextToSpeechHandler();
