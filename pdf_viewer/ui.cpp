@@ -1205,6 +1205,11 @@ TouchCommandSelector::TouchCommandSelector(bool is_fuzzy, const QStringList& com
         main_widget->on_command_done(val.toStdString(), val.toStdString(), false);
         //deleteLater();
         });
+
+    QObject::connect(list_view, &TouchListView::itemPressAndHold, [&](QString val, int index) {
+        main_widget->pop_current_widget();
+        main_widget->open_documentation_file_for_name("command", val);
+        });
 }
 
 void TouchCommandSelector::resizeEvent(QResizeEvent* resize_event) {
