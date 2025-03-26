@@ -264,6 +264,7 @@ int HELPER_WINDOW_SIZE[2] = { -1, -1 };
 int MAIN_WINDOW_MOVE[2] = { -1, -1 };
 int HELPER_WINDOW_MOVE[2] = { -1, -1 };
 float TOUCHPAD_SENSITIVITY = 1.0f;
+float TOUCHPAD_RULER_SENSITIVITY = 1.0f;
 float RULER_MOUSE_SENSITIVITY = 1.0f;
 int SINGLE_MAIN_WINDOW_SIZE[2] = { -1, -1 };
 int SINGLE_MAIN_WINDOW_MOVE[2] = { -1, -1 };
@@ -1248,6 +1249,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"ruler_next_page_end_pos", &VISUAL_MARK_NEXT_PAGE_THRESHOLD, FloatExtras{-2.0f, 2.0f});
 
     add_float(L"touchpad_sensitivity", &TOUCHPAD_SENSITIVITY, FloatExtras{0.0f, 10.0f});
+    add_float(L"touchpad_ruler_sensitivity", &TOUCHPAD_RULER_SENSITIVITY, FloatExtras{0.0f, 10.0f});
     add_float(L"mouse_ruler_sensitivity", &RULER_MOUSE_SENSITIVITY, FloatExtras{0.0f, 10.0f});
     add_float(L"scrollview_sensitivity", &SCROLL_VIEW_SENSITIVITY, FloatExtras{0.0f, 10.0f});
     add_float(L"page_separator_width", &PAGE_SEPARATOR_WIDTH, FloatExtras{0.0f, 10.0f});

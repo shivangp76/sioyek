@@ -247,6 +247,7 @@ extern int HELPER_WINDOW_SIZE[2];
 extern int MAIN_WINDOW_MOVE[2];
 extern int HELPER_WINDOW_MOVE[2];
 extern float TOUCHPAD_SENSITIVITY;
+extern float TOUCHPAD_RULER_SENSITIVITY;
 extern int SINGLE_MAIN_WINDOW_SIZE[2];
 extern int SINGLE_MAIN_WINDOW_MOVE[2];
 extern float OVERVIEW_SIZE[2];
@@ -635,23 +636,15 @@ bool MainWidget::handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpo
 void MainWidget::handle_ruler_touch_move(float distance){
     ruler_moving_distance_traveled += distance;
     float auto_move_thresh = 1.0f / (1 - RULER_AUTO_MOVE_SENSITIVITY) * 100;
-    int num_next = ruler_moving_distance_traveled /
+    int num_next = num_next = ruler_moving_distance_traveled /
             static_cast<int>(std::max(auto_move_thresh, 1.0f));
-    if (num_next > 0) {
+
+    if (num_next != 0) {
         ruler_moving_distance_traveled = 0;
     }
 
-    for (int i = 0; i < num_next; i++) {
+    main_document_view->move_visual_mark(num_next);
 
-        if (was_last_mouse_down_in_ruler_next_rect) {
-            main_document_view->move_visual_mark_next();
-        }
-        else {
-            main_document_view->move_visual_mark_prev();
-        }
-
-        invalidate_render();
-    }
 }
 
 void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
@@ -3526,6 +3519,7 @@ std::wstring MainWidget::get_status_part_name_under_cursor() {
 
 void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
+    qDebug() << wevent->angleDelta().y();
     if (IGNORE_SCROLL_EVENTS) return;
 
     float vertical_move_amount = VERTICAL_MOVE_AMOUNT * TOUCHPAD_SENSITIVITY;
@@ -3576,6 +3570,13 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
     bool is_in_overview = is_mouse_cursor_in_overview();
+
+    if (is_ruler_mode() && is_visual_mark_mode && is_touchpad){
+        float distance = static_cast<float>(wevent->angleDelta().y()) * 5;
+        handle_ruler_touch_move(distance * TOUCHPAD_RULER_SENSITIVITY);
+        validate_render();
+        return;
+    }
 
     if (STATUSBAR_HANDLES_WHEEL_EVENTS && is_mouse_cursor_in_statusbar()) {
         std::wstring status_part = get_status_part_name_under_cursor();
