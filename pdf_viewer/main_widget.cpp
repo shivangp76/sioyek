@@ -3434,6 +3434,9 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
             handle_triple_click(current_pos);
             return;
         }
+        else if (count <= 1){
+            main_document_view->selection_mode = SINGLE_CLICK_SELECTS_WORDS ? SelectionMode::Word : SelectionMode::Character;
+        }
     }
 
     if (mevent->button() == Qt::MouseButton::LeftButton) {
