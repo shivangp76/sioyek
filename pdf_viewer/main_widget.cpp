@@ -936,6 +936,20 @@ void MainWidget::update_text_selection(AbsoluteDocumentPos abs_mpos) {
         dv()->selection_begin = last_mouse_down;
         dv()->selection_end = abs_mpos;
 
+        if (
+            dv()->selection_mode == SelectionMode::Character ||
+            (SINGLE_CLICK_SELECTS_WORDS && dv()->selection_mode == SelectionMode::Word)
+        ){
+            // if the user just clicks an a location we don't want to initiate selection
+            auto begin_window = dv()->selection_begin.to_window(dv());
+            auto end_window = dv()->selection_end.to_window(dv());
+
+            if (begin_window.manhattan(end_window) < 3)
+            {
+                return;
+            }
+        }
+
         if (dv()->selection_mode == SelectionMode::Line) {
             main_document_view->get_line_selection(dv()->selection_begin,
                 dv()->selection_end,
