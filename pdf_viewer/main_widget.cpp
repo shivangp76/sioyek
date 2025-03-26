@@ -1,4 +1,4 @@
-// deduplicate database code
+﻿// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -3524,7 +3524,6 @@ std::wstring MainWidget::get_status_part_name_under_cursor() {
 
 void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
-    qDebug() << wevent->angleDelta().y();
     if (IGNORE_SCROLL_EVENTS) return;
 
     float vertical_move_amount = VERTICAL_MOVE_AMOUNT * TOUCHPAD_SENSITIVITY;
