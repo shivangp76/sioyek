@@ -409,3 +409,4 @@ flake*
 tags
 cmake-build-debug/*
 ios_temp_files/*
+xcodeproject/*
