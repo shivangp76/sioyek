@@ -199,12 +199,7 @@ std::optional<SioyekTextureType> PdfRenderer::find_rendered_page(std::wstring pa
         }
         cached_response_mutex.unlock();
         if (!result.has_value()) {
-            if (TOUCH_MODE) {
-                if (!no_rerender) {
-                    add_request(path, page, should_render_annotations, zoom_level, display_scale, index, num_h_slices, num_v_slices, palette);
-                }
-            }
-            else {
+            if (!no_rerender) {
                 add_request(path, page, should_render_annotations, zoom_level, display_scale, index, num_h_slices, num_v_slices, palette);
             }
             return try_closest_rendered_page(

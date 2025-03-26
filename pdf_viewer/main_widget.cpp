@@ -3229,10 +3229,9 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     if (TOUCH_MODE) {
         was_last_mouse_down_in_ruler_next_rect = false;
         was_last_mouse_down_in_ruler_prev_rect = false;
-#ifndef SIOYEK_IOS
-        pdf_renderer->no_rerender = false;
-#endif
     }
+
+    pdf_renderer->no_rerender = false;
 
     if (is_rotated()) {
         return;
@@ -7016,6 +7015,7 @@ bool MainWidget::event(QEvent* event) {
             if ((pinch->state() == Qt::GestureFinished) || (pinch->state() == Qt::GestureCanceled)) {
                 is_pinching = false;
                 stop_dragging();
+                pdf_renderer->no_rerender = false;
             }
             float scale = pinch->scaleFactor();
 
