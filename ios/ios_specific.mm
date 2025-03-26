@@ -124,7 +124,7 @@ extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceN
     [utterance release];
 }
 
-typedef void (*PinchGestureCallback)(float scale, float velocity, int state);
+typedef void (*PinchGestureCallback)(float x, float y, float scale, float velocity, int state);
 static PinchGestureCallback gPinchCallback = nullptr;
 
 @interface PinchGestureDelegate : NSObject <UIGestureRecognizerDelegate>
@@ -134,13 +134,13 @@ static PinchGestureCallback gPinchCallback = nullptr;
 
 - (void)handlePinch:(UIPinchGestureRecognizer*)sender {
     int numTouches = (int)[sender numberOfTouches];
+    CGPoint centerPoint = [sender locationInView:sender.view];
     if (numTouches == 2){
         
-        CGPoint position1 = [sender locationOfTouch:0 inView:sender.view];
-        CGPoint position2 = [sender locationOfTouch:1 inView:sender.view];
+        // get the centerpoint position
 
         if (gPinchCallback) {
-            gPinchCallback(sender.scale, sender.velocity, (int)sender.state);
+            gPinchCallback(centerPoint.x, centerPoint.y, sender.scale, sender.velocity, (int)sender.state);
         }
         
         // Reset scale if ended to prepare for next gesture
@@ -150,7 +150,7 @@ static PinchGestureCallback gPinchCallback = nullptr;
     }
     else{
         if (gPinchCallback) {
-            gPinchCallback(sender.scale, sender.velocity, (int)sender.state);
+            gPinchCallback(centerPoint.x, centerPoint.y, sender.scale, sender.velocity, (int)sender.state);
         }
     }
 }
