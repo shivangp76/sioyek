@@ -557,6 +557,11 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     main_window_width = size().width();
     main_window_height = size().height();
 
+    main_document_view->on_view_size_change(
+        resize_event->size().width(),
+        resize_event->size().height()
+    );
+
     if (scratchpad) {
         scratchpad->on_view_size_change(
             resize_event->size().width(),
@@ -1106,6 +1111,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     main_document_view = new DocumentView(db_manager, document_manager, checksummer);
     if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
         opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
+    }
+    else if (RENDERER_BACKEND == RenderBackend::SioyekRhiBackend){
+        opengl_widget = new PdfViewRhiWidget(main_document_view, pdf_renderer, document_manager, false, this);
     }
     else {
         opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
@@ -7955,9 +7963,8 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-//    db_manager->clear_local_db_files();
-//    document_manager->tabs.clear();
-    qDebug() << doc()->get_path();
+    // PdfViewRhiWidget* w = new PdfViewRhiWidget();
+    // w->show();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

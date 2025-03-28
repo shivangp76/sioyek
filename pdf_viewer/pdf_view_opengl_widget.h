@@ -131,7 +131,7 @@ protected:
     void draw_empty_helper_message(QString message);
     void clear_background_color();
     bool needs_stencil_buffer();
-    virtual float get_device_pixel_ratio() = 0;
+    float get_device_pixel_ratio();
     void render_page(int page_number, std::optional<OverviewState> overview = {}, ColorPalette forced_palette = ColorPalette::NoPalette, bool stencils_allowed = true);
     virtual void prepare_link_highlight_state() = 0;
     virtual void prepare_for_line_drawing() = 0;
@@ -200,9 +200,9 @@ protected:
     virtual void disable_multisampling() = 0;
     virtual void bind_default() = 0;
     virtual void bind_vertex_array() = 0;
-    virtual Qt::ScreenOrientation get_orientation() = 0;
-    virtual int get_width() = 0;
-    virtual int get_height() = 0;
+    Qt::ScreenOrientation get_orientation();
+    int get_width();
+    int get_height();
     virtual void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) = 0;
 
     bool handle_mouse_move_event(QMouseEvent* mouse_event);
@@ -268,13 +268,8 @@ protected:
     void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) override;
     void use_stencil_to_write(bool eq) override;
     void disable_stencil() override;
-    float get_device_pixel_ratio() override;
 
     void render_transparent_background() override;
-
-    Qt::ScreenOrientation get_orientation() override;
-    int get_width() override;
-    int get_height() override;
 
     void bind_program(ColorPalette forced_palette=ColorPalette::NoPalette);
     void bind_points(const std::vector<float>& points);
@@ -339,13 +334,8 @@ protected:
     void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) override;
     void use_stencil_to_write(bool eq) override;
     void disable_stencil() override;
-    float get_device_pixel_ratio() override;
 
     void render_transparent_background() override;
-
-    Qt::ScreenOrientation get_orientation() override;
-    int get_width() override;
-    int get_height() override;
 
     void bind_program(ColorPalette forced_palette=ColorPalette::NoPalette);
     void bind_points(const std::vector<float>& points);
@@ -384,5 +374,78 @@ public:
     void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
 
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+    QWidget* get_widget() override;
+};
+
+#include <QRhiWidget>
+#include <rhi/qrhi.h>
+
+
+QShader get_rhi_shader(const QString &file_path);
+
+
+struct SioyekTextureRenderCall{
+    SioyekTextureType texture;
+    NormalizedWindowRect rect;
+};
+
+class PdfViewRhiWidget : public QRhiWidget, public SioyekRendererBackend{
+private:
+    QRhi* rhi_ptr = nullptr;
+
+    std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
+    std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
+    std::unique_ptr<QRhiBuffer> colored_rect_uniform_buffer_ptr;
+    // std::unique_ptr<QRhiShaderResourceBindings> shader_resource_bindings;
+    std::unique_ptr<QRhiShaderResourceBindings> colored_rect_shader_resource_bindings;
+    // std::unique_ptr<QRhiGraphicsPipeline> pipeline;
+
+    std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
+
+    std::unique_ptr<QRhiTexture> my_texture;
+    std::unique_ptr<QRhiSampler> my_sampler;
+
+    float m_rotation = 0.0f;
+    QRhiCommandBuffer* current_frame_command_buffer = nullptr;
+    QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
+
+    std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
+
+public:
+    PdfViewRhiWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
+    void initialize(QRhiCommandBuffer* command_buffer) override;
+    void render(QRhiCommandBuffer* command_buffer) override;
+
+    void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
+    void begin_native_painting() override;
+    void end_native_painting() override;
+    void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) override;
+    void perform_current_frame_texture_render_calls();
+    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
+    void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
+    void prepare_initial_render_pipeline() override;
+    void prepare_link_highlight_state() override;
+    void prepare_for_line_drawing() override;
+    void enable_stencil() override;
+    void write_to_stencil() override;
+    void draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects) override;
+    void use_stencil_to_write(bool eq) override;
+    void disable_stencil() override;
+    void render_transparent_background() override;
+    void render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true) override;
+    void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) override;
+    void set_highlight_color(const float* color, float alpha) override;
+    void prepare_highlight_pipeline() override;
+    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+    void prepare_non_compiled_line_drawing_pipeline() override;
+    void render_compiled_drawings() override;
+    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+    void prepare_line_drawing_pipeline() override;
+    void enable_multisampling() override;
+    void disable_multisampling() override;
+    void bind_default() override;
+    void bind_vertex_array() override;
+    void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
+    bool is_opengl() override;
     QWidget* get_widget() override;
 };

@@ -1004,7 +1004,8 @@ std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bo
 enum RenderBackend {
     SioyekNoRendererBackend = 0,
     SioyekOpenGLRendererBackend = 1,
-    SioyekQPainterRendererBackend = 2
+    SioyekQPainterRendererBackend = 2,
+    SioyekRhiBackend = 3
 };
 
 void open_text_editor_at_line(QString file_path, int line_number);

@@ -419,7 +419,8 @@ int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
 // int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
 int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
 #else
-int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
+// int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
+int RENDERER_BACKEND = RenderBackend::SioyekRhiBackend;
 //int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
 #endif
 
@@ -1535,7 +1536,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_enum(L"ruler_display_mode", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight", L"transparent"}}));
     add_enum(L"ruler_style", &RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight"}}));
     add_enum(L"line_select_ruler_display_style", &LINE_SELECT_RULER_DISPLAY_MODE, EnumExtras({ {L"box", L"slit", L"underline", L"highlight_below", L"highlight", L"transparent"}}));
-    add_enum(L"renderer_backend", &RENDERER_BACKEND, EnumExtras({ {L"none", L"opengl", L"qpainter"} }))->set_change_fn([&](MainWidget* widget) {
+    add_enum(L"renderer_backend", &RENDERER_BACKEND, EnumExtras({ {L"none", L"opengl", L"qpainter", L"rhi"} }))->set_change_fn([&](MainWidget* widget) {
         RenderBackend backend = RenderBackend::SioyekOpenGLRendererBackend;
         if (RENDERER_BACKEND == 2) {
             backend = RenderBackend::SioyekQPainterRendererBackend;

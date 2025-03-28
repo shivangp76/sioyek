@@ -1,6 +1,4 @@
-﻿
-#include <cmath>
-
+﻿#include <cmath>
 #include <qcolor.h>
 #include <QMouseEvent>
 #include <qapplication.h>
@@ -682,6 +680,11 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
         // if ((full_page_irect.y1 - full_page_irect.y0) % nv == 0) {
         //     is_not_exact = false;
         // }
+
+        if (rendered_width > 0){
+            int a = 2;
+        }
+
         NormalizedWindowRect window_rect = overview.has_value() ?
             document_view->document_to_overview_rect(DocumentRect(page_rect, page_number), overview) :
             dv()->document_to_window_rect_pixel_perfect(DocumentRect(page_rect, page_number),
@@ -1783,16 +1786,16 @@ struct UIRectDescriptor {
     std::string name;
 };
 
-Qt::ScreenOrientation PdfViewOpenGLWidget::get_orientation() {
-    return screen()->orientation();
+Qt::ScreenOrientation SioyekRendererBackend::get_orientation() {
+    return get_widget()->screen()->orientation();
 }
 
-int PdfViewOpenGLWidget::get_width() {
-    return width();
+int SioyekRendererBackend::get_width() {
+    return get_widget()->width();
 }
 
-int PdfViewOpenGLWidget::get_height() {
-    return height();
+int SioyekRendererBackend::get_height() {
+    return get_widget()->height();
 }
 
 std::vector<std::pair<QRect, QString>> SioyekRendererBackend::get_hint_rect_and_texts() {
@@ -3422,8 +3425,8 @@ void SioyekRendererBackend::render_tags() {
 
 }
 
-float PdfViewOpenGLWidget::get_device_pixel_ratio() {
-    return devicePixelRatioF();
+float SioyekRendererBackend::get_device_pixel_ratio() {
+    return get_widget()->devicePixelRatioF();
 }
 
 void PdfViewQPainterWidget::paintEvent(QPaintEvent* event){
@@ -3658,24 +3661,9 @@ void PdfViewQPainterWidget::disable_stencil() {
     painter.setClipRect(rect());
 }
 
-float PdfViewQPainterWidget::get_device_pixel_ratio() {
-    return devicePixelRatioF();
-}
-
 void PdfViewQPainterWidget::render_transparent_background() {
 }
 
-Qt::ScreenOrientation PdfViewQPainterWidget::get_orientation() {
-    return screen()->orientation();
-}
-
-int PdfViewQPainterWidget::get_width() {
-    return width();
-}
-
-int PdfViewQPainterWidget::get_height() {
-    return height();
-}
 
 void PdfViewQPainterWidget::bind_program(ColorPalette forced_palette) {
 }
@@ -3817,10 +3805,324 @@ void PdfViewQPainterWidget::render_overview_backend(NormalizedWindowRect window_
     render_overview_qpainter_backend(window_rect, overview, draw_border);
 }
 
-QWidget* PdfViewQPainterWidget::get_widget() {
+
+// float my_vertexData[] = {
+//     0.0f,   0.5f,     1.0f, 0.0f, 0.0f,
+//     -0.5f,  -0.5f,     0.0f, 1.0f, 0.0f,
+//     0.5f,  -0.5f,     0.0f, 0.0f, 1.0f,
+// };
+
+float my_vertexData[] = {
+    -0.5f, -0.5f,
+    -0.5f, 0.5f,
+    0.5f, -0.5f,
+    0.5f, 0.5f,
+};
+
+float my_uvData[] = {
+    0, 0,
+    0, 1,
+    1, 0,
+    1, 1,
+};
+
+
+QShader get_rhi_shader(const QString &file_path){
+    QFile file(file_path);
+
+    if (file.open(QIODevice::ReadOnly)){
+        return QShader::fromSerialized(file.readAll());
+    }
+    qDebug() << "could not load shader " << file_path;
+
+    return QShader();
+}
+
+void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
+{
+    if (rhi_ptr != rhi()) {
+        colored_rect_pipeline.reset();
+        rhi_ptr = rhi();
+    }
+
+    qDebug() << (rhi_ptr != rhi());
+
+    rhi_ptr = rhi();
+
+    if (!my_sampler){
+        my_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Linear, QRhiSampler::Linear, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
+        my_sampler->create();
+    }
+
+    if (!vertex_buffer_ptr){
+        const int max_pages = 100;
+        const int vertices_per_page = 6;
+        const int vertex_size = 2 * sizeof(float);
+        const int vertex_buffer_size = max_pages * vertices_per_page * vertex_size;
+
+        vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, vertex_buffer_size));
+        vertex_buffer_ptr->create();
+
+        uv_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, sizeof(vertex_buffer_size)));
+        uv_buffer_ptr->create();
+    }
+
+
+    if (!colored_rect_pipeline) {
+        // QSize pixelSize = QSize(devicePixelRatioF(), devicePixelRatioF());
+
+        // my_texture.reset(rhi_ptr->newTexture(QRhiTexture::RGBA8, QSize(256, 256)));
+        // my_texture->create();
+
+
+        colored_rect_uniform_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 3 * sizeof(float)));
+        colored_rect_uniform_buffer_ptr->create();
+
+        colored_rect_shader_resource_bindings.reset(rhi_ptr->newShaderResourceBindings());
+
+        // shader_resource_bindings->setBindings({
+        //     QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, uniform_buffer_ptr.get()),
+        // });
+
+        // colored_rect_shader_resource_bindings->setBindings({
+        //     QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage, uniform_buffer_ptr.get()),
+        //     QRhiShaderResourceBinding::sampledTexture(1, QRhiShaderResourceBinding::FragmentStage, my_texture.get(), my_sampler.get())
+        // });
+
+        colored_rect_shader_resource_bindings->setBindings({
+            QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage, colored_rect_uniform_buffer_ptr.get()),
+        });
+
+        colored_rect_shader_resource_bindings->create();
+
+        colored_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+
+        colored_rect_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/colored_rect.frag.qsb")) }
+        });
+
+        QRhiVertexInputLayout colored_rect_input_layout;
+        colored_rect_input_layout.setBindings({
+            { 2 * sizeof(float) },
+        });
+        // QRhiVertexInputAttribute(int binding, int location, Format format, quint32 offset, int matrixSlice = -1);
+        // colored_rect_input_layout.setAttributes({
+        //     { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+        //     { 1, 1, QRhiVertexInputAttribute::Float2, 0 }
+        // });
+        colored_rect_input_layout.setAttributes({
+            { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+        });
+
+        colored_rect_pipeline->setVertexInputLayout(colored_rect_input_layout);
+        colored_rect_pipeline->setShaderResourceBindings(colored_rect_shader_resource_bindings.get());
+        colored_rect_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+        // colored_rect_pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
+        colored_rect_pipeline->create();
+
+        QRhiResourceUpdateBatch *resourceUpdates = rhi_ptr->nextResourceUpdateBatch();
+        resourceUpdates->uploadStaticBuffer(vertex_buffer_ptr.get(), 0, sizeof(my_vertexData), my_vertexData);
+        resourceUpdates->uploadStaticBuffer(uv_buffer_ptr.get(), 0, sizeof(my_uvData), my_uvData);
+        command_buffer->resourceUpdate(resourceUpdates);
+    }
+}
+
+
+void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
+{
+    // QRhiResourceUpdateBatch* update_batch = rhi()->nextResourceUpdateBatch();
+
+    // command_buffer->beginPass(renderTarget(), Qt::green, {1.0f, 0}, update_batch);
+
+    current_frame_texture_render_calls.clear();
+
+    current_frame_resource_update_batch = rhi()->nextResourceUpdateBatch();
+
+    current_frame_command_buffer = command_buffer;
+
+    // QRhiResourceUpdateBatch*
+    command_buffer->beginPass(renderTarget(), Qt::black, { 1.0f, 0 }, current_frame_resource_update_batch);
+    const QSize outputSize = colorTexture()->pixelSize();
+    command_buffer->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
+
+    my_render();
+
+    perform_current_frame_texture_render_calls();
+
+    command_buffer->endPass();
+    // command_buffer->endPass();
+    // QRhiResourceUpdateBatch *resourceUpdates = rhi_ptr->nextResourceUpdateBatch();
+    // m_rotation += 1.0f;
+    // QMatrix4x4 modelViewProjection = view_projection_matrix;
+    // modelViewProjection.rotate(m_rotation, 0, 1, 0);
+
+    // float color[3] = {1.0f, 0.0f, 0.0f};
+
+    // color[0] = std::sinf(m_rotation * 0.01f);
+
+    // resourceUpdates->updateDynamicBuffer(uniform_buffer_ptr.get(), 0, 3 * sizeof(float), color);
+
+
+    // const QColor clearColor = QColor::fromRgbF(0.4f, 0.7f, 0.0f, 1.0f);
+    // command_buffer->beginPass(renderTarget(), clearColor, { 1.0f, 0 }, resourceUpdates);
+
+    // command_buffer->setGraphicsPipeline(pipeline.get());
+    // const QSize outputSize = colorTexture()->pixelSize();
+    // command_buffer->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
+    // command_buffer->setShaderResources();
+
+    // const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), 0);
+    // const QRhiCommandBuffer::VertexInput uvbufBinding(uv_buffer_ptr.get(), 0);
+
+    // command_buffer->setVertexInput(0, 1, &vbufBinding);
+    // command_buffer->setVertexInput(1, 1, &uvbufBinding);
+    // command_buffer->draw(4);
+
+    // command_buffer->endPass();
+
+    update();
+}
+
+void PdfViewRhiWidget::clear_background_buffers(float r, float g, float b, GLuint buffer_flags){
+
+}
+void PdfViewRhiWidget::begin_native_painting(){
+
+}
+void PdfViewRhiWidget::end_native_painting(){
+}
+
+void PdfViewRhiWidget::perform_current_frame_texture_render_calls(){
+    if (current_frame_texture_render_calls.size() > 100){
+        // keep the last 100 calls
+        current_frame_texture_render_calls.erase(current_frame_texture_render_calls.begin(), current_frame_texture_render_calls.end() - 100);
+    }
+
+    QRhiCommandBuffer* command_buffer = current_frame_command_buffer;
+
+    command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
+    command_buffer->setShaderResources();
+
+    float color[3] = {0.0f, 0.0f, 1.0f};
+    color[2] = (std::sinf(static_cast<float>((QDateTime::currentMSecsSinceEpoch() % 1000000 ) / 1000.0f)) + 2.5) / 2;
+    // qDebug() << color[3];
+    // qDebug() << QDateTime::currentMSecsSinceEpoch();
+
+    current_frame_resource_update_batch->updateDynamicBuffer(colored_rect_uniform_buffer_ptr.get(), 0, 3 * sizeof(float), color);
+
+    std::vector<float> vertices;
+
+    for (int i = 0; i < current_frame_texture_render_calls.size(); i++){
+        NormalizedWindowRect rect = current_frame_texture_render_calls[i].rect;
+
+        std::vector<float> triangle_vertices = {
+            rect.x0, rect.y0,
+            rect.x0, rect.y1,
+            rect.x1, rect.y0,
+
+            rect.x1, rect.y0,
+            rect.x0, rect.y1,
+            rect.x1, rect.y1,
+        };
+
+        vertices.insert(vertices.end(), triangle_vertices.begin(), triangle_vertices.end());
+
+    }
+
+    current_frame_resource_update_batch->updateDynamicBuffer(vertex_buffer_ptr.get(), 0, vertices.size() * sizeof(float), vertices.data());
+
+    const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), 0);
+    command_buffer->setVertexInput(0, 1, &vbufBinding);
+
+    command_buffer->draw(current_frame_texture_render_calls.size() * 6);
+}
+
+void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette){
+    if (texture){
+        SioyekTextureRenderCall render_call;
+        render_call.texture = texture.value();
+        render_call.rect = rect;
+        current_frame_texture_render_calls.push_back(render_call);
+    }
+
+    // QRhiCommandBuffer* command_buffer = current_frame_command_buffer;
+
+    // command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
+    // command_buffer->setShaderResources();
+
+    // float color[3] = {0.0f, 0.0f, 1.0f};
+    // color[2] = (std::sinf(static_cast<float>((QDateTime::currentMSecsSinceEpoch() % 1000000 ) / 1000.0f)) + 2.5) / 2;
+    // // qDebug() << color[3];
+    // // qDebug() << QDateTime::currentMSecsSinceEpoch();
+
+    // current_frame_resource_update_batch->updateDynamicBuffer(colored_rect_uniform_buffer_ptr.get(), 0, 3 * sizeof(float), color);
+
+    // float vertices[8] = {
+    //     rect.x0, rect.y0,
+    //     rect.x0, rect.y1,
+    //     rect.x1, rect.y0,
+    //     rect.x1, rect.y1,
+    // };
+
+    // current_frame_resource_update_batch->updateDynamicBuffer(vertex_buffer_ptr.get(), 0, 8 * sizeof(float), vertices);
+
+    // const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), 0);
+    // command_buffer->setVertexInput(0, 1, &vbufBinding);
+    // // command_buffer->setVertexInput(1, 1, &uvbufBinding);
+    // command_buffer->draw(4);
+}
+
+void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
+}
+void PdfViewRhiWidget::render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect){}
+void PdfViewRhiWidget::prepare_initial_render_pipeline(){}
+
+void PdfViewRhiWidget::prepare_link_highlight_state(){}
+void PdfViewRhiWidget::prepare_for_line_drawing(){}
+void PdfViewRhiWidget::enable_stencil(){}
+void PdfViewRhiWidget::write_to_stencil(){}
+void PdfViewRhiWidget::draw_stencil_rects(const std::vector<NormalizedWindowRect>& window_rects){}
+void PdfViewRhiWidget::use_stencil_to_write(bool eq){}
+void PdfViewRhiWidget::disable_stencil(){}
+void PdfViewRhiWidget::render_transparent_background(){}
+void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){}
+void PdfViewRhiWidget::set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level){}
+void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){}
+void PdfViewRhiWidget::prepare_highlight_pipeline(){}
+void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){}
+void PdfViewRhiWidget::prepare_non_compiled_line_drawing_pipeline(){}
+void PdfViewRhiWidget::render_compiled_drawings(){}
+void PdfViewRhiWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings){}
+void PdfViewRhiWidget::prepare_line_drawing_pipeline(){}
+void PdfViewRhiWidget::enable_multisampling(){}
+void PdfViewRhiWidget::disable_multisampling(){}
+void PdfViewRhiWidget::bind_default(){}
+void PdfViewRhiWidget::bind_vertex_array(){}
+
+void PdfViewRhiWidget::render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed){}
+
+bool PdfViewRhiWidget::is_opengl() {
+    return false;
+}
+
+QWidget* PdfViewRhiWidget::get_widget(){
     return this;
 }
 
-QWidget* PdfViewOpenGLWidget::get_widget() {
+QWidget* PdfViewOpenGLWidget::get_widget(){
     return this;
+}
+
+QWidget* PdfViewQPainterWidget::get_widget(){
+    return this;
+}
+
+PdfViewRhiWidget::PdfViewRhiWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer_, DocumentManager* docman, bool is_helper_, QWidget* parent)
+    : QRhiWidget(parent)
+{
+    document_view = document_view_;
+    pdf_renderer = pdf_renderer_;
+    document_manager = docman;
+    is_helper = is_helper_;
 }

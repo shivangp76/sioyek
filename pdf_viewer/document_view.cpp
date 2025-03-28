@@ -2465,6 +2465,7 @@ VirtualPos DocumentView::window_to_virtual_pos(const WindowPos& window_pos) {
 WindowPos DocumentView::virtual_to_window_pos(const VirtualPos& vpos) {
 
 
+    // qDebug() << view_width << " " << view_height;
     WindowPos res;
     res.x = (vpos.x + offset.x)* zoom_level + view_width / 2;
     res.y = (vpos.y - offset.y)* zoom_level + view_height / 2;

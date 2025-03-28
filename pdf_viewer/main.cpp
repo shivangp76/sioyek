@@ -968,7 +968,11 @@ int main(int argc, char* args[]) {
 #ifdef SIOYEK_IOS
     QQuickWindow::setGraphicsApi(QSGRendererInterface::MetalRhi);
 #else
+#ifdef Q_OS_MACOS
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::MetalRhi);
+#else
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+#endif
 #endif
 
 
