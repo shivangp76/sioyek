@@ -4175,7 +4175,30 @@ std::optional<GraphicsBackendExtras> SioyekRendererBackend::get_backend_extras()
     return {};
 }
 
+void PdfViewRhiWidget::delete_old_texture_shader_resource_bindings(){
+    const int RESOURCE_BINDINGS_THRESHOLD = 100;
+
+    if (texture_shader_resource_bindings.size() > RESOURCE_BINDINGS_THRESHOLD){
+        // sort the resource bindings descending by last access time and delete the RESOURCE_BINDINGS_THRESHOLD / 2 oldest ones
+        std::sort(texture_shader_resource_bindings.begin(), texture_shader_resource_bindings.end(), [](const SioyekTextureShaderResourceBinding& a, const SioyekTextureShaderResourceBinding& b) {
+            return a.last_acess_time > b.last_acess_time;
+        });
+
+        int num_to_delete = texture_shader_resource_bindings.size() / 2;
+
+        for (int i = 0; i < num_to_delete; i++){
+            int index = texture_shader_resource_bindings.size() - 1 - i;
+            QRhiShaderResourceBindings* resource_binding = texture_shader_resource_bindings[index].shader_resource_binding;
+            delete resource_binding;
+            texture_shader_resource_bindings.erase(texture_shader_resource_bindings.begin() + index);
+        }
+    }
+}
+
 QRhiShaderResourceBindings* PdfViewRhiWidget::get_shader_resource_binding_for_texture(QRhiTexture* texture){
+
+    delete_old_texture_shader_resource_bindings();
+
     for (int i = 0; i < texture_shader_resource_bindings.size(); i++){
         if (texture_shader_resource_bindings[i].texture == texture){
             return texture_shader_resource_bindings[i].shader_resource_binding;
@@ -4192,6 +4215,7 @@ QRhiShaderResourceBindings* PdfViewRhiWidget::get_shader_resource_binding_for_te
     SioyekTextureShaderResourceBinding result;
     result.texture = texture;
     result.shader_resource_binding = new_texture_shader_resource_bindings;
+    result.last_acess_time = QDateTime::currentDateTime();
     texture_shader_resource_bindings.push_back(result);
 
     return new_texture_shader_resource_bindings;

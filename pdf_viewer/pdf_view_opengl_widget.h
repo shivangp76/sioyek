@@ -393,6 +393,7 @@ struct SioyekTextureRenderCall{
 struct SioyekTextureShaderResourceBinding{
     QRhiTexture* texture;
     QRhiShaderResourceBindings* shader_resource_binding;
+    QDateTime last_acess_time;
 };
 
 class PdfViewRhiWidget : public QRhiWidget, public SioyekRendererBackend{
@@ -420,6 +421,8 @@ private:
     void update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch);
     void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
 
+    QRhiShaderResourceBindings* get_shader_resource_binding_for_texture(QRhiTexture* texture);
+    void delete_old_texture_shader_resource_bindings();
 public:
 
     PdfViewRhiWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
@@ -427,7 +430,6 @@ public:
     void render(QRhiCommandBuffer* command_buffer) override;
     void test_render(QRhiCommandBuffer* command_buffer);
 
-    QRhiShaderResourceBindings* get_shader_resource_binding_for_texture(QRhiTexture* texture);
 
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
     void begin_native_painting() override;
