@@ -1994,6 +1994,7 @@ void MainWidget::validate_render() {
     }
     validate_ui();
     update();
+
     if (opengl_widget != nullptr) {
         opengl_widget->get_widget()->update();
     }
@@ -7963,8 +7964,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    // PdfViewRhiWidget* w = new PdfViewRhiWidget();
-    // w->show();
+    qDebug() << validation_interval_timer->interval();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -11207,6 +11207,9 @@ void MainWidget::initialize_helper(){
 
     if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
         helper_opengl_widget_ = new PdfViewOpenGLWidget(helper_document_view_, pdf_renderer, document_manager, true);
+    }
+    else if (RENDERER_BACKEND == RenderBackend::SioyekRhiBackend) {
+        helper_opengl_widget_ = new PdfViewRhiWidget(helper_document_view_, pdf_renderer, document_manager, true);
     }
     else {
         helper_opengl_widget_ = new PdfViewQPainterWidget(helper_document_view_, pdf_renderer, document_manager, true);

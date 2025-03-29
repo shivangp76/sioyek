@@ -970,6 +970,8 @@ int main(int argc, char* args[]) {
 #else
 #ifdef Q_OS_MACOS
     QQuickWindow::setGraphicsApi(QSGRendererInterface::MetalRhi);
+    // QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
+    // QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
 #else
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
 #endif

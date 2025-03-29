@@ -20,10 +20,17 @@
 #include <variant>
 
 #include "book.h"
+#include <QRhiWidget>
+#include <rhi/qrhi.h>
 
 class BackgroundBookmarkRenderer;
 
-using SioyekTextureType = std::variant<GLuint, QPixmap*>;
+using SioyekTextureType = std::variant<GLuint, QPixmap*, QRhiTexture*>;
+
+struct GraphicsBackendExtras{
+    QRhi* rhi;
+    QRhiResourceUpdateBatch* update_batch;
+};
 
 
 struct RenderRequest {
@@ -116,7 +123,7 @@ class PdfRenderer : public QObject {
     void run(int thread_index);
     void run_search(int thread_index);
     int get_pending_response_index_with_thread_index(const RenderRequest& req, int thread_index);
-    SioyekTextureType generate_texture_from_pixmap(fz_pixmap* pixmap);
+    SioyekTextureType generate_texture_from_pixmap(fz_pixmap* pixmap, std::optional<GraphicsBackendExtras> = {});
     void release_texture(SioyekTextureType texture);
 
 public:
@@ -154,7 +161,18 @@ public:
         std::optional<std::pair<int,
         int>> range = {});
 
-    std::optional<SioyekTextureType> find_rendered_page(std::wstring path, int page, ColorPalette color_palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height);
+    std::optional<SioyekTextureType> find_rendered_page(std::wstring path,
+                                                        int page, ColorPalette color_palette,
+                                                        bool should_render_annotations,
+                                                        int index,
+                                                        int num_h_slices,
+                                                        int num_v_slices,
+                                                        float zoom_level,
+                                                        float display_scale,
+                                                        int* page_width,
+                                                        int* page_height,
+                                                        std::optional<GraphicsBackendExtras> = {});
+
     void delete_old_pages(bool force_all = false, bool invalidate_all = false);
     void add_password(std::wstring path, std::string password);
     void debug();

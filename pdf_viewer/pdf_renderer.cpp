@@ -3,6 +3,7 @@
 //#include "background_tasks.h"
 
 #include <qdatetime.h>
+#include <rhi/qrhi.h>
 
 extern bool LINEAR_TEXTURE_FILTERING;
 extern int NUM_V_SLICES;
@@ -154,7 +155,18 @@ void PdfRenderer::add_request(std::wstring document_path,
 
 //should only be called from the main thread
 
-std::optional<SioyekTextureType> PdfRenderer::find_rendered_page(std::wstring path, int page, ColorPalette palette, bool should_render_annotations, int index, int num_h_slices, int num_v_slices, float zoom_level, float display_scale, int* page_width, int* page_height) {
+std::optional<SioyekTextureType> PdfRenderer::find_rendered_page(std::wstring path,
+                                                                 int page,
+                                                                 ColorPalette palette,
+                                                                 bool should_render_annotations,
+                                                                 int index,
+                                                                 int num_h_slices,
+                                                                 int num_v_slices,
+                                                                 float zoom_level,
+                                                                 float display_scale,
+                                                                 int* page_width,
+                                                                 int* page_height,
+                                                                 std::optional<GraphicsBackendExtras> backend_extras) {
     //fz_document* doc = get_document_with_path(path);
     if (path.size() > 0) {
         RenderRequest req;
@@ -185,7 +197,7 @@ std::optional<SioyekTextureType> PdfRenderer::find_rendered_page(std::wstring pa
                     result = cached_resp.texture;
                 }
                 else {
-                    result = generate_texture_from_pixmap(cached_resp.pixmap);
+                    result = generate_texture_from_pixmap(cached_resp.pixmap, backend_extras);
 
                     // don't need the pixmap anymore
                     pixmap_drop_mutex[cached_resp.thread].lock();
@@ -799,7 +811,7 @@ void PdfRenderer::set_num_cached_pages(int n_cached_pages) {
     num_cached_pages = n_cached_pages;
 }
 
-SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap){
+SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap, std::optional<GraphicsBackendExtras> backend_extras){
     if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
 
         GLuint result = 0;
@@ -834,10 +846,22 @@ SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap){
     }
     else {
 
-        QImage image(pixmap->samples, pixmap->w, pixmap->h, pixmap->stride, QImage::Format::Format_RGB888);
-        QPixmap* result = new QPixmap(QPixmap::fromImage(image));
 
-        return result;
+        QImage image(pixmap->samples, pixmap->w, pixmap->h, pixmap->stride, QImage::Format::Format_RGB888);
+        if (RENDERER_BACKEND == RenderBackend::SioyekRhiBackend){
+            QImage converted_image = image.convertedTo(QImage::Format::Format_RGBA8888);
+            // handle rhi backend
+            QRhiTexture* rhi_texture = backend_extras->rhi->newTexture(QRhiTexture::RGBA8, QSize(pixmap->w, pixmap->h));
+            rhi_texture->create();
+            backend_extras->update_batch->uploadTexture(rhi_texture, converted_image);
+            return rhi_texture;
+
+        }
+        else{
+            QPixmap* result = new QPixmap(QPixmap::fromImage(image));
+
+            return result;
+        }
     }
 
 }
@@ -853,5 +877,8 @@ void PdfRenderer::release_texture(SioyekTextureType texture){
     }
     else if (std::holds_alternative<QPixmap*>(texture)) {
         delete std::get<QPixmap*>(texture);
+    }
+    else if (std::holds_alternative<QRhiTexture*>(texture)){
+        delete std::get<QRhiTexture*>(texture);
     }
 }

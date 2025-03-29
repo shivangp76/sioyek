@@ -148,6 +148,7 @@ protected:
 
     virtual void set_highlight_color(const float* color, float alpha) = 0;
     virtual void prepare_highlight_pipeline() = 0;
+    virtual std::optional<GraphicsBackendExtras> get_backend_extras();
 
     void render_search_result_highlights(const std::vector<int>& visible_pages);
     void initialize_stuff();
@@ -389,16 +390,18 @@ struct SioyekTextureRenderCall{
     NormalizedWindowRect rect;
 };
 
+struct SioyekTextureShaderResourceBinding{
+    QRhiTexture* texture;
+    QRhiShaderResourceBindings* shader_resource_binding;
+};
+
 class PdfViewRhiWidget : public QRhiWidget, public SioyekRendererBackend{
 private:
     QRhi* rhi_ptr = nullptr;
 
+    QDateTime last_frame_time;
     std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
-    std::unique_ptr<QRhiBuffer> colored_rect_uniform_buffer_ptr;
-    // std::unique_ptr<QRhiShaderResourceBindings> shader_resource_bindings;
-    std::unique_ptr<QRhiShaderResourceBindings> colored_rect_shader_resource_bindings;
-    // std::unique_ptr<QRhiGraphicsPipeline> pipeline;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
 
@@ -410,17 +413,20 @@ private:
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
+    int current_texture_index = 0;
+    std::vector<SioyekTextureShaderResourceBinding> texture_shader_resource_bindings;
 
 public:
     PdfViewRhiWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
     void initialize(QRhiCommandBuffer* command_buffer) override;
     void render(QRhiCommandBuffer* command_buffer) override;
 
+    QRhiShaderResourceBindings* get_shader_resource_binding_for_texture(QRhiTexture* texture);
+
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;
     void begin_native_painting() override;
     void end_native_painting() override;
     void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) override;
-    void perform_current_frame_texture_render_calls();
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
     void prepare_initial_render_pipeline() override;
@@ -448,4 +454,5 @@ public:
     void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
     bool is_opengl() override;
     QWidget* get_widget() override;
+    std::optional<GraphicsBackendExtras> get_backend_extras() override;
 };

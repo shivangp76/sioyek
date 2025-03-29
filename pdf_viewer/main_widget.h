@@ -171,6 +171,7 @@ using SioyekMediaPlayer = QMediaPlayer;
 #endif
 #endif
 
+
 #ifdef SIOYEK_MOBILE
 using SioyekBaseWidget = QQuickWidget;
 #else
