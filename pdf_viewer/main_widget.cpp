@@ -1081,7 +1081,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     command_manager(command_manager)
 {
     //main_widget->quickWindow()->setGraphicsApi(QSGRendererInterface::OpenGL);
-    //quickWindow()->setGraphicsApi(QSGRendererInterface::OpenGL);
+    // quickWindow()->setGraphicsApi(QSGRendererInterface::OpenGL);
     window_id = next_window_id;
     next_window_id++;
 
@@ -1436,7 +1436,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     opengl_widget->get_widget()->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addLayout(hlayout);
 
-#ifdef SIOYEK_ANDROID
+#if defined(SIOYEK_ANDROID) || defined(SIOYEK_QUICKWINDOW)
      setLayout(layout);
 #elif !defined(SIOYEK_IOS)
     central_widget->setLayout(layout);
@@ -1489,7 +1489,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 
         });
 
-#ifdef Q_OS_MACOS
+#if defined(Q_OS_MACOS) && !defined(SIOYEK_QUICKWINDOW)
     // only apply titlebar menu if the user has specifically changed it in settings
     ensure_titlebar_colors_match_color_mode();
 
@@ -3531,7 +3531,6 @@ std::wstring MainWidget::get_status_part_name_under_cursor() {
 }
 
 void MainWidget::wheelEvent(QWheelEvent* wevent) {
-
     if (IGNORE_SCROLL_EVENTS) return;
 
     float vertical_move_amount = VERTICAL_MOVE_AMOUNT * TOUCHPAD_SENSITIVITY;

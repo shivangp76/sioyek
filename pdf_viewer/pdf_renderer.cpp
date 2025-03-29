@@ -850,6 +850,7 @@ SioyekTextureType PdfRenderer::generate_texture_from_pixmap(fz_pixmap* pixmap, s
         QImage image(pixmap->samples, pixmap->w, pixmap->h, pixmap->stride, QImage::Format::Format_RGB888);
         if (RENDERER_BACKEND == RenderBackend::SioyekRhiBackend){
             QImage converted_image = image.convertedTo(QImage::Format::Format_RGBA8888);
+
             // handle rhi backend
             QRhiTexture* rhi_texture = backend_extras->rhi->newTexture(QRhiTexture::RGBA8, QSize(pixmap->w, pixmap->h));
             rhi_texture->create();

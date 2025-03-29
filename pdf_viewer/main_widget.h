@@ -171,11 +171,16 @@ using SioyekMediaPlayer = QMediaPlayer;
 #endif
 #endif
 
+// #define SIOYEK_QUICKWINDOW
 
 #ifdef SIOYEK_MOBILE
 using SioyekBaseWidget = QQuickWidget;
 #else
+#ifdef SIOYEK_QUICKWINDOW
+using SioyekBaseWidget = QQuickWidget;
+#else
 using SioyekBaseWidget = QMainWindow;
+#endif
 #endif
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays

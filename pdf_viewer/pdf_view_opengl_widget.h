@@ -404,22 +404,28 @@ private:
     std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;
+    std::unique_ptr<QRhiShaderResourceBindings> test_resource_bindings;
 
-    std::unique_ptr<QRhiTexture> my_texture;
+    // std::unique_ptr<QRhiTexture> my_texture;
     std::unique_ptr<QRhiSampler> my_sampler;
 
-    float m_rotation = 0.0f;
+    // float m_rotation = 0.0f;
     QRhiCommandBuffer* current_frame_command_buffer = nullptr;
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
-    int current_texture_index = 0;
+    // int current_texture_index = 0;
     std::vector<SioyekTextureShaderResourceBinding> texture_shader_resource_bindings;
+    void update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch);
+    void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
 
 public:
+
     PdfViewRhiWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
     void initialize(QRhiCommandBuffer* command_buffer) override;
     void render(QRhiCommandBuffer* command_buffer) override;
+    void test_render(QRhiCommandBuffer* command_buffer);
 
     QRhiShaderResourceBindings* get_shader_resource_binding_for_texture(QRhiTexture* texture);
 
