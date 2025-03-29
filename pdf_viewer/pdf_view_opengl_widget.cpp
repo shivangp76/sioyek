@@ -29,6 +29,8 @@
 #define GL_PRIMITIVE_RESTART_FIXED_INDEX  0x8D69
 #endif
 
+const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 4 * sizeof(float);
+const int NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS = 100;
 const int MAX_VISIBLE_PAGES = 100;
 extern int NUM_PAGE_COLUMNS;
 extern bool DEBUG_DISPLAY_FREEHAND_POINTS;
@@ -3862,9 +3864,13 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         const int vertices_per_page = 6;
         const int vertex_size = 2 * sizeof(float);
         const int vertex_buffer_size = MAX_VISIBLE_PAGES * vertices_per_page * vertex_size;
+        const int highlights_vertex_buffer_size = NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS * 6 * vertex_size;
 
         vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, vertex_buffer_size));
         vertex_buffer_ptr->create();
+
+        highlights_vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, highlights_vertex_buffer_size));
+        highlights_vertex_buffer_ptr->create();
 
         uv_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, 12 * sizeof(float)));
         uv_buffer_ptr->create();
@@ -3874,23 +3880,44 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
     if (!colored_rect_pipeline) {
 
         QRhiShaderResourceBindings* texture_dummy_resource_bindings = rhi()->newShaderResourceBindings();
-        test_resource_bindings.reset(rhi()->newShaderResourceBindings());
-
         texture_dummy_resource_bindings->setBindings({
             QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, nullptr, nullptr)
         });
         texture_dummy_resource_bindings->create();
 
+
+        for (int i = 0; i < NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS; i++){
+            QRhiBuffer* preallocated_highlight_uniform_buffer = rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, HIGHLIGHT_UNIFORM_BUFFER_SIZE);
+            preallocated_highlight_uniform_buffer->create();
+
+            QRhiShaderResourceBindings* preallocated_highlight_resource_binding = rhi()->newShaderResourceBindings();
+            preallocated_highlight_resource_binding->setBindings({
+                QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage, preallocated_highlight_uniform_buffer)
+            });
+            preallocated_highlight_resource_binding->create();
+
+            preallocated_highlight_uniform_buffers.push_back(preallocated_highlight_uniform_buffer);
+            preallocated_highlight_resource_bindings.push_back(preallocated_highlight_resource_binding);
+
+        }
+
+        test_resource_bindings.reset(rhi()->newShaderResourceBindings());
         test_resource_bindings->setBindings({
         });
         test_resource_bindings->create();
 
         colored_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
 
         colored_rect_pipeline->setShaderStages({
             { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/colored_rect.frag.qsb")) }
+        });
+
+        highlight_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight.frag.qsb")) }
         });
 
         test_rect_pipeline->setShaderStages({
@@ -3900,6 +3927,12 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         QRhiVertexInputLayout colored_rect_input_layout;
         colored_rect_input_layout.setBindings({
+            { 2 * sizeof(float) },
+            { 2 * sizeof(float) },
+        });
+
+        QRhiVertexInputLayout highlight_input_layout;
+        highlight_input_layout.setBindings({
             { 2 * sizeof(float) },
             { 2 * sizeof(float) },
         });
@@ -3919,6 +3952,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             { 1, 1, QRhiVertexInputAttribute::Float2, 0 },
         });
 
+        highlight_input_layout.setAttributes({
+            { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+            { 1, 1, QRhiVertexInputAttribute::Float2, 0 },
+        });
+
         test_rect_input_layout.setAttributes({
             { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
         });
@@ -3927,6 +3965,23 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline->setShaderResourceBindings(texture_dummy_resource_bindings);
         colored_rect_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
         colored_rect_pipeline->create();
+
+        highlight_pipeline->setVertexInputLayout(highlight_input_layout);
+        highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
+        highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+        QRhiGraphicsPipeline::TargetBlend highlight_target_blends;
+
+        highlight_target_blends.opAlpha = QRhiGraphicsPipeline::BlendOp::Add;
+        highlight_target_blends.opColor = QRhiGraphicsPipeline::BlendOp::Add;
+        highlight_target_blends.srcAlpha = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
+        highlight_target_blends.dstAlpha = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
+        highlight_target_blends.srcColor = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
+        highlight_target_blends.dstColor = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
+
+
+        highlight_target_blends.enable = true;
+        highlight_pipeline->setTargetBlends({highlight_target_blends});
+        highlight_pipeline->create();
 
         test_rect_pipeline->setVertexInputLayout(test_rect_input_layout);
         test_rect_pipeline->setShaderResourceBindings(test_resource_bindings.get());
@@ -3988,19 +4043,27 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
+    current_frame_highlight_rect_render_calls.clear();
     // current_texture_index = 0;
 
     current_frame_resource_update_batch = resource_updates;
     my_render();
     current_frame_resource_update_batch = nullptr;
+    qDebug() << "#highlight calls: " << current_frame_highlight_rect_render_calls.size();
 
     update_resources_for_current_frame_texture_render_calls(resource_updates);
+    update_resources_for_current_frame_highlight_render_calls(resource_updates);
 
     command_buffer->beginPass(renderTarget(), Qt::black, { 1.0f, 0 }, resource_updates);
-    command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
+
     const QSize outputSize = colorTexture()->pixelSize();
     command_buffer->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
+
+    command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
     render_current_frame_textures(command_buffer);
+
+    command_buffer->setGraphicsPipeline(highlight_pipeline.get());
+    render_current_frame_highlights(command_buffer);
 
     command_buffer->endPass();
 
@@ -4031,8 +4094,53 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
     }
 }
 
+void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* command_buffer){
+    int max_iter = std::min((int)current_frame_highlight_rect_render_calls.size(), NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS);
+
+    for (int i = 0; i < max_iter; i++){
+        int offset = 12 * sizeof(float) * i;
+
+        QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
+        command_buffer->setShaderResources(resource_bindings);
+
+        const QRhiCommandBuffer::VertexInput vbufBinding(highlights_vertex_buffer_ptr.get(), offset);
+        const QRhiCommandBuffer::VertexInput uv_buffer_binding(uv_buffer_ptr.get(), 0);
+
+        command_buffer->setVertexInput(0, 1, &vbufBinding);
+        command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
+        // command_buffer->setVertexInput(1, 1, &uvbufBinding);
+        command_buffer->draw(6);
+
+    }
+}
+
+void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch){
+
+    int max_iter = std::min((int)current_frame_highlight_rect_render_calls.size(), NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS);
+
+    for (int i = 0; i < max_iter; i++){
+        NormalizedWindowRect rect = current_frame_highlight_rect_render_calls[i].rect;
+        float vertices[12] = {
+            rect.x0, rect.y0,
+            rect.x0, rect.y1,
+            rect.x1, rect.y0,
+
+            rect.x1, rect.y1,
+            rect.x0, rect.y1,
+            rect.x1, rect.y0,
+        };
+
+        int offset = 12 * sizeof(float) * i;
+        update_batch->updateDynamicBuffer(highlights_vertex_buffer_ptr.get(), offset, 12 * sizeof(float), vertices);
+        QRhiBuffer* current_highlight_uniform_buffer = preallocated_highlight_uniform_buffers[i];
+        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, HIGHLIGHT_UNIFORM_BUFFER_SIZE, current_frame_highlight_rect_render_calls[i].color);
+    }
+}
 void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch){
-    for (int i = 0; i < current_frame_texture_render_calls.size(); i++){
+
+    int max_iter = std::min((int)current_frame_texture_render_calls.size(), MAX_VISIBLE_PAGES);
+
+    for (int i = 0; i < max_iter; i++){
 
         NormalizedWindowRect rect = current_frame_texture_render_calls[i].rect;
 
@@ -4050,6 +4158,7 @@ void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(Q
         update_batch->updateDynamicBuffer(vertex_buffer_ptr.get(), offset, 12 * sizeof(float), vertices);
     }
 }
+
 
 void PdfViewRhiWidget::clear_background_buffers(float r, float g, float b, GLuint buffer_flags){
 
@@ -4109,6 +4218,14 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
 }
 
 void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
+    SioyekHighlightRectRenderCall highlight_call;
+    highlight_call.rect = window_rect;
+    highlight_call.color[0] = current_highlight_color[0];
+    highlight_call.color[1] = current_highlight_color[1];
+    highlight_call.color[2] = current_highlight_color[2];
+    highlight_call.color[3] = current_highlight_color[3];
+    current_frame_highlight_rect_render_calls.push_back(highlight_call);
+
 }
 void PdfViewRhiWidget::render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect){}
 void PdfViewRhiWidget::prepare_initial_render_pipeline(){}
@@ -4123,7 +4240,13 @@ void PdfViewRhiWidget::disable_stencil(){}
 void PdfViewRhiWidget::render_transparent_background(){}
 void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){}
 void PdfViewRhiWidget::set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level){}
-void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){}
+
+void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){
+    current_highlight_color[0] = *(color + 0);
+    current_highlight_color[1] = *(color + 1);
+    current_highlight_color[2] = *(color + 2);
+    current_highlight_color[3] = alpha;
+}
 void PdfViewRhiWidget::prepare_highlight_pipeline(){}
 void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){}
 void PdfViewRhiWidget::prepare_non_compiled_line_drawing_pipeline(){}

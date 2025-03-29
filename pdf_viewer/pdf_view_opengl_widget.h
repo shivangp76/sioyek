@@ -390,6 +390,11 @@ struct SioyekTextureRenderCall{
     NormalizedWindowRect rect;
 };
 
+struct SioyekHighlightRectRenderCall{
+    NormalizedWindowRect rect;
+    float color[4];
+};
+
 struct SioyekTextureShaderResourceBinding{
     QRhiTexture* texture;
     QRhiShaderResourceBindings* shader_resource_binding;
@@ -402,24 +407,34 @@ private:
 
     QDateTime last_frame_time;
     std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
+    std::unique_ptr<QRhiBuffer> highlights_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> highlight_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;
     std::unique_ptr<QRhiShaderResourceBindings> test_resource_bindings;
+
+    std::vector<QRhiBuffer*> preallocated_highlight_uniform_buffers;
+    std::vector<QRhiShaderResourceBindings*> preallocated_highlight_resource_bindings;
 
     // std::unique_ptr<QRhiTexture> my_texture;
     std::unique_ptr<QRhiSampler> my_sampler;
 
     // float m_rotation = 0.0f;
+    float current_highlight_color[4];
     QRhiCommandBuffer* current_frame_command_buffer = nullptr;
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
+    std::vector<SioyekHighlightRectRenderCall> current_frame_highlight_rect_render_calls;
+
     // int current_texture_index = 0;
     std::vector<SioyekTextureShaderResourceBinding> texture_shader_resource_bindings;
     void update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch);
+    void update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch);
     void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
+    void render_current_frame_highlights(QRhiCommandBuffer* command_buffer);
 
     QRhiShaderResourceBindings* get_shader_resource_binding_for_texture(QRhiTexture* texture);
     void delete_old_texture_shader_resource_bindings();
