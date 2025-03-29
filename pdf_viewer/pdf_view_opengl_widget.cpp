@@ -4230,7 +4230,10 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
 void PdfViewRhiWidget::render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect){}
 void PdfViewRhiWidget::prepare_initial_render_pipeline(){}
 
-void PdfViewRhiWidget::prepare_link_highlight_state(){}
+void PdfViewRhiWidget::prepare_link_highlight_state(){
+    std::array<float, 3> link_highlight_color = cc3(DEFAULT_LINK_HIGHLIGHT_COLOR);
+    set_highlight_color(&link_highlight_color[0], 0.3f);
+}
 void PdfViewRhiWidget::prepare_for_line_drawing(){}
 void PdfViewRhiWidget::enable_stencil(){}
 void PdfViewRhiWidget::write_to_stencil(){}
