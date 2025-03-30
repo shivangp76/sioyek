@@ -388,6 +388,7 @@ QShader get_rhi_shader(const QString &file_path);
 struct SioyekTextureRenderCall{
     SioyekTextureType texture;
     NormalizedWindowRect rect;
+    bool in_overview = false;
 };
 
 struct SioyekHighlightRectRenderCall{
@@ -428,6 +429,7 @@ private:
     float current_highlight_color[4];
     QRhiCommandBuffer* current_frame_command_buffer = nullptr;
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
+    bool is_rendering_overview = false;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
     std::vector<SioyekHighlightRectRenderCall> current_frame_highlight_rect_render_calls;
