@@ -4058,7 +4058,8 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     update_resources_for_current_frame_texture_render_calls(resource_updates);
     update_resources_for_current_frame_highlight_render_calls(resource_updates);
 
-    command_buffer->beginPass(renderTarget(), Qt::black, { 1.0f, 0 }, resource_updates);
+    QColor background_color = QColor::fromRgbF(background_clear_color[0], background_clear_color[1], background_clear_color[2]);
+    command_buffer->beginPass(renderTarget(), background_color, { 1.0f, 0 }, resource_updates);
 
     const QSize outputSize = colorTexture()->pixelSize();
     command_buffer->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
@@ -4251,7 +4252,9 @@ void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(Q
 
 
 void PdfViewRhiWidget::clear_background_buffers(float r, float g, float b, GLuint buffer_flags){
-
+    background_clear_color[0] = r;
+    background_clear_color[1] = g;
+    background_clear_color[2] = b;
 }
 void PdfViewRhiWidget::begin_native_painting(){
     // painter.beginNativePainting();

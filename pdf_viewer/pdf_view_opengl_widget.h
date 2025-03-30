@@ -115,6 +115,7 @@ protected:
     float last_cache_offset_y = -1;
     float last_cache_zoom_level = -1;
     QDateTime last_scratchpad_update_datetime;
+    float background_clear_color[3] = {0};
 
     virtual void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) = 0;
     virtual void begin_native_painting() = 0;
