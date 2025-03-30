@@ -4251,6 +4251,25 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
     highlight_call.color[2] = current_highlight_color[2];
     highlight_call.color[3] = current_highlight_color[3];
     highlight_call.flags = flags;
+
+    if (flags == HighlightRenderFlags::HRF_UNDERLINE){
+        float scale_factor = dv()->get_zoom_level() / dv()->get_view_height();
+        float line_width_window = STRIKE_LINE_WIDTH * scale_factor;
+        if (line_width_in_pixels > 0){
+            line_width_window = static_cast<float>(line_width_in_pixels) / dv()->get_view_height();
+        }
+
+        NormalizedWindowRect underline_rect;
+        underline_rect.x0 = window_rect.x0;
+        underline_rect.y0 = window_rect.y1 + line_width_window;
+        underline_rect.x1 = window_rect.x1;
+        underline_rect.y1 = window_rect.y1 - line_width_window;
+
+        highlight_call.rect = underline_rect;
+        highlight_call.flags = HighlightRenderFlags::HRF_FILL;
+        highlight_call.color[3] = 1.f;
+    }
+
     current_frame_highlight_rect_render_calls.push_back(highlight_call);
 
 }
