@@ -144,6 +144,7 @@ protected:
     virtual void disable_stencil() = 0;
     virtual void render_transparent_background() = 0;
     virtual void render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true) = 0;
+    virtual void render_overview_highlights(OverviewState overview);
     virtual void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) = 0;
 
     virtual void set_highlight_color(const float* color, float alpha) = 0;

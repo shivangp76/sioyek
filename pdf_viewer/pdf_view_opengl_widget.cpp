@@ -3520,17 +3520,7 @@ void PdfViewQPainterWidget::render_highlight_window_qpainter_backend(NormalizedW
     }
 }
 
-void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
-
-    QRect overview_rect = document_view->normalized_to_window_qrect(window_rect);
-    QRegion overview_region = QRegion(overview_rect);
-    painter.setClipRegion(overview_region);
-
-    draw_overview_background(overview);
-
-    for (auto page : get_overview_visible_pages(overview)) {
-        render_page(page, overview, ColorPalette::NoPalette, false);
-    }
+void SioyekRendererBackend::render_overview_highlights(OverviewState overview){
 
     std::optional<SearchResult> highlighted_result = document_view->get_current_search_result();
     if (highlighted_result) {
@@ -3548,6 +3538,20 @@ void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRec
             render_highlight_window(target, HRF_FILL);
         }
     }
+}
+void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
+
+    QRect overview_rect = document_view->normalized_to_window_qrect(window_rect);
+    QRegion overview_region = QRegion(overview_rect);
+    painter.setClipRegion(overview_region);
+
+    draw_overview_background(overview);
+
+    for (auto page : get_overview_visible_pages(overview)) {
+        render_page(page, overview, ColorPalette::NoPalette, false);
+    }
+
+    render_overview_highlights(overview);
     painter.setClipRect(rect());
 
     if (draw_border) {
@@ -4326,17 +4330,13 @@ void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect,
         render_page(page, overview, ColorPalette::NoPalette, false);
     }
 
-    // float color[4] = {1.0f, 0.0f, 0.0f, 0.3f};
-    // set_highlight_color(color, 1.0f);
-    // render_highlight_window(window_rect, HighlightRenderFlags::HRF_BORDER);
+    render_overview_highlights(overview);
 
     float border_color[3] = {0.5f, 0.5f, 0.5f};
     set_highlight_color(border_color, 0.3f);
     render_highlight_window(document_view->get_overview_rect(overview), HRF_BORDER);
 
     is_rendering_overview = false;
-
-    // render_highlight_window(window_rect, HighlightRenderFlags::HRF_FILL);
 
 }
 void PdfViewRhiWidget::set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level){}
