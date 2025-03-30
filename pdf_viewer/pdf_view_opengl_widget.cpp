@@ -3996,7 +3996,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
         highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
         highlight_pipeline->setDepthTest(true);
-        colored_rect_pipeline->setDepthWrite(true);
+        highlight_pipeline->setDepthWrite(true);
         QRhiGraphicsPipeline::TargetBlend highlight_target_blends;
 
         highlight_target_blends.opAlpha = QRhiGraphicsPipeline::BlendOp::Add;
@@ -4014,6 +4014,8 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_borders_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
         highlight_borders_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
         highlight_borders_pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
+        highlight_borders_pipeline->setDepthTest(true);
+        highlight_borders_pipeline->setDepthWrite(true);
         highlight_borders_pipeline->create();
 
         // test_rect_pipeline->setVertexInputLayout(test_rect_input_layout);
@@ -4045,6 +4047,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
 
 
+    // painter.begin(this);
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
     current_frame_highlight_rect_render_calls.clear();
@@ -4053,7 +4056,6 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     current_frame_resource_update_batch = resource_updates;
     my_render();
     current_frame_resource_update_batch = nullptr;
-    qDebug() << "#highlight calls: " << current_frame_highlight_rect_render_calls.size();
 
     update_resources_for_current_frame_texture_render_calls(resource_updates);
     update_resources_for_current_frame_highlight_render_calls(resource_updates);
@@ -4072,6 +4074,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
     command_buffer->endPass();
 
+    // painter.end();
     last_frame_time = QDateTime::currentDateTime();
 }
 
