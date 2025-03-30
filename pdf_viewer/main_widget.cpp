@@ -13728,40 +13728,65 @@ void MainWidget::delete_old_helper() {
 
 }
 void MainWidget::set_renderer_backend(RenderBackend backend) {
-    bool current_backend_is_opengl = opengl_widget->is_opengl();
-
-    if (backend == RenderBackend::SioyekOpenGLRendererBackend && current_backend_is_opengl) {
-        return;
+    RenderBackend current_backend = RenderBackend::SioyekNoRendererBackend;
+    if (dynamic_cast<PdfViewOpenGLWidget*>(opengl_widget)){
+        current_backend = RenderBackend::SioyekOpenGLRendererBackend;
+    }
+    if (dynamic_cast<PdfViewQPainterWidget*>(opengl_widget)){
+        current_backend = RenderBackend::SioyekQPainterRendererBackend;
+    }
+    if (dynamic_cast<PdfViewRhiWidget*>(opengl_widget)){
+        current_backend = RenderBackend::SioyekRhiBackend;
     }
 
-    if (backend != RenderBackend::SioyekOpenGLRendererBackend && !current_backend_is_opengl) {
-        return;
-    }
+    if (current_backend == backend) return;
+
 
     pdf_renderer->delete_old_pages(true, true);
 
+    SioyekRendererBackend* new_backend = nullptr;
+
     if (backend == RenderBackend::SioyekOpenGLRendererBackend) {
-        auto new_opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
-         layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
-
-        delete_old_backend();
-        delete_old_helper();
-
-        opengl_widget = new_opengl_widget;
-        new_opengl_widget->stackUnder(status_label);
-        new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+        new_backend = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
     }
-    else {
-        auto new_opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
-        layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
-
-        delete_old_backend();
-        delete_old_helper();
-
-        opengl_widget = new_opengl_widget;
-        new_opengl_widget->stackUnder(status_label);
-        new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+    else if (backend == RenderBackend::SioyekRhiBackend){
+        new_backend = new PdfViewRhiWidget(main_document_view, pdf_renderer, document_manager, false, this);
     }
+    else{
+        new_backend = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
+    }
+
+    layout->replaceWidget(opengl_widget->get_widget(), new_backend->get_widget());
+
+    delete_old_backend();
+    delete_old_helper();
+
+    opengl_widget = new_backend;
+    new_backend->get_widget()->stackUnder(status_label);
+    new_backend->get_widget()->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+    // if (backend == RenderBackend::SioyekOpenGLRendererBackend) {
+    //     auto new_opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
+    //      layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
+
+    //     delete_old_backend();
+    //     delete_old_helper();
+
+    //     opengl_widget = new_opengl_widget;
+    //     new_opengl_widget->stackUnder(status_label);
+    //     new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+    // }
+    // else {
+    //     auto new_opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
+    //     layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
+
+    //     delete_old_backend();
+    //     delete_old_helper();
+
+    //     opengl_widget = new_opengl_widget;
+    //     new_opengl_widget->stackUnder(status_label);
+    //     new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
+    // }
 }
 
 void MainWidget::show_items(std::vector<std::wstring> items, std::optional<std::function<void(std::wstring)>> on_select, std::optional<std::function<void(std::wstring)>> on_delete){

@@ -1541,6 +1541,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         if (RENDERER_BACKEND == 2) {
             backend = RenderBackend::SioyekQPainterRendererBackend;
         }
+        if (RENDERER_BACKEND == 3) {
+            backend = RenderBackend::SioyekRhiBackend;
+        }
         widget->set_renderer_backend(backend);
         });
     add_enum(L"color_mode", &COLOR_MODE, EnumExtras({ {L"light", L"dark", L"custom"} }))->set_change_fn([&](MainWidget* widget) {
