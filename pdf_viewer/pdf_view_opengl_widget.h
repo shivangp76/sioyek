@@ -393,6 +393,7 @@ struct SioyekTextureRenderCall{
 struct SioyekHighlightRectRenderCall{
     NormalizedWindowRect rect;
     float color[4];
+    bool border = false;
 };
 
 struct SioyekTextureShaderResourceBinding{
@@ -408,10 +409,12 @@ private:
     QDateTime last_frame_time;
     std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_vertex_buffer_ptr;
+    std::unique_ptr<QRhiBuffer> highlights_borders_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> highlight_borders_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;
     std::unique_ptr<QRhiShaderResourceBindings> test_resource_bindings;
 

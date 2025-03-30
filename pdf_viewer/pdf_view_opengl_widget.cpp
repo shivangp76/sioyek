@@ -3872,6 +3872,9 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlights_vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, highlights_vertex_buffer_size));
         highlights_vertex_buffer_ptr->create();
 
+        highlights_borders_vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, highlights_vertex_buffer_size));
+        highlights_borders_vertex_buffer_ptr->create();
+
         uv_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, 12 * sizeof(float)));
         uv_buffer_ptr->create();
     }
@@ -3908,6 +3911,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         colored_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        highlight_borders_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
 
         colored_rect_pipeline->setShaderStages({
@@ -3918,6 +3922,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_pipeline->setShaderStages({
             { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight.frag.qsb")) }
+        });
+
+        highlight_borders_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight_border.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight_border.frag.qsb")) }
         });
 
         test_rect_pipeline->setShaderStages({
@@ -3934,6 +3943,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         QRhiVertexInputLayout highlight_input_layout;
         highlight_input_layout.setBindings({
             { 2 * sizeof(float) },
+            { 2 * sizeof(float) },
+        });
+
+        QRhiVertexInputLayout highlight_borders_input_layout;
+        highlight_borders_input_layout.setBindings({
             { 2 * sizeof(float) },
         });
 
@@ -3957,6 +3971,10 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             { 1, 1, QRhiVertexInputAttribute::Float2, 0 },
         });
 
+        highlight_borders_input_layout.setAttributes({
+            { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+        });
+
         test_rect_input_layout.setAttributes({
             { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
         });
@@ -3978,10 +3996,15 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_target_blends.srcColor = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
         highlight_target_blends.dstColor = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
 
-
         highlight_target_blends.enable = true;
         highlight_pipeline->setTargetBlends({highlight_target_blends});
         highlight_pipeline->create();
+
+        highlight_borders_pipeline->setVertexInputLayout(highlight_borders_input_layout);
+        highlight_borders_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
+        highlight_borders_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+        highlight_borders_pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
+        highlight_borders_pipeline->create();
 
         test_rect_pipeline->setVertexInputLayout(test_rect_input_layout);
         test_rect_pipeline->setShaderResourceBindings(test_resource_bindings.get());
@@ -4112,6 +4135,22 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
         command_buffer->draw(6);
 
     }
+
+    command_buffer->setGraphicsPipeline(highlight_borders_pipeline.get());
+
+    for (int i = 0; i < max_iter; i++){
+        if (current_frame_highlight_rect_render_calls[i].border){
+            int border_offset = 10 * sizeof(float) * i;
+
+            QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
+            command_buffer->setShaderResources(resource_bindings);
+
+            const QRhiCommandBuffer::VertexInput vbufBinding(highlights_borders_vertex_buffer_ptr.get(), border_offset);
+
+            command_buffer->setVertexInput(0, 1, &vbufBinding);
+            command_buffer->draw(5);
+        }
+    }
 }
 
 void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch){
@@ -4134,6 +4173,20 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
         update_batch->updateDynamicBuffer(highlights_vertex_buffer_ptr.get(), offset, 12 * sizeof(float), vertices);
         QRhiBuffer* current_highlight_uniform_buffer = preallocated_highlight_uniform_buffers[i];
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, HIGHLIGHT_UNIFORM_BUFFER_SIZE, current_frame_highlight_rect_render_calls[i].color);
+
+        if (current_frame_highlight_rect_render_calls[i].border){
+
+            float border_vertices[] = {
+                rect.x0, rect.y0,
+                rect.x0, rect.y1,
+                rect.x1, rect.y1,
+                rect.x1, rect.y0,
+                rect.x0, rect.y0
+            };
+
+            int border_offset = 10 * sizeof(float) * i;
+            update_batch->updateDynamicBuffer(highlights_borders_vertex_buffer_ptr.get(), border_offset, 10 * sizeof(float), border_vertices);
+        }
     }
 }
 void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch){
@@ -4224,6 +4277,7 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
     highlight_call.color[1] = current_highlight_color[1];
     highlight_call.color[2] = current_highlight_color[2];
     highlight_call.color[3] = current_highlight_color[3];
+    highlight_call.border = flags & HighlightRenderFlags::HRF_BORDER;
     current_frame_highlight_rect_render_calls.push_back(highlight_call);
 
 }
