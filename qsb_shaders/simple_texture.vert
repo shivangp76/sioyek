@@ -4,7 +4,7 @@ layout(location = 1) in vec2 uv;
 
 layout(location = 0) out vec2 uv_out;
 
-layout(std140, binding = 0) uniform buf {
+layout(std140, binding = 1) uniform buf {
     float depth;
 };
 

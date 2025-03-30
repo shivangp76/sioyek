@@ -211,5 +211,18 @@
         <file>python_api/src/sioyek/sioyek.py</file>
         <file>python_api/src/sioyek/__init__.py</file>
 
+        <file>qsb_shaders/prebuilt/color.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/color.vert.qsb</file>
+        <file>qsb_shaders/prebuilt/colored_rect.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/highlight.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/highlight_border.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/highlight_border.vert.qsb</file>
+        <file>qsb_shaders/prebuilt/simple.vert.qsb</file>
+        <file>qsb_shaders/prebuilt/simple_highlight.vert.qsb</file>
+        <file>qsb_shaders/prebuilt/simple_texture.vert.qsb</file>
+        <file>qsb_shaders/prebuilt/stencil.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/test.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/test.vert.qsb</file>
+
     </qresource>
 </RCC>

@@ -1,4 +1,4 @@
-﻿#include <cmath>
+#include <cmath>
 #include <qcolor.h>
 #include <QMouseEvent>
 #include <qapplication.h>
@@ -1187,9 +1187,8 @@ void SioyekRendererBackend::register_on_link_edit_listener(std::function<void(co
 }
 
 void SioyekRendererBackend::draw_empty_helper_message(QString message) {
+    
     // should be called with native painting disabled
-    // @nocheckin
-    return;
 
     QFontMetrics fm(QApplication::font());
 #ifdef SIOYEK_QT6
@@ -3896,7 +3895,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         qpainter_resource_binding->setBindings({
             QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, qpainter_texture.get(), my_sampler.get()),
-            QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, qpainter_uniform_buffer.get())
+            QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, qpainter_uniform_buffer.get())
         });
         qpainter_resource_binding->create();
     }
@@ -3930,7 +3929,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         QRhiShaderResourceBindings* texture_dummy_resource_bindings = rhi()->newShaderResourceBindings();
         texture_dummy_resource_bindings->setBindings({
             QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, nullptr, nullptr),
-            QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, nullptr)
+            QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, nullptr)
         });
         texture_dummy_resource_bindings->create();
 
@@ -3961,18 +3960,18 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         // test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
 
         colored_rect_pipeline->setShaderStages({
-            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple_texture.vert.qsb")) },
-            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/colored_rect.frag.qsb")) }
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_texture.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/colored_rect.frag.qsb")) }
         });
 
         highlight_pipeline->setShaderStages({
-            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple_highlight.vert.qsb")) },
-            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight.frag.qsb")) }
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_highlight.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight.frag.qsb")) }
         });
 
         highlight_borders_pipeline->setShaderStages({
-            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight_border.vert.qsb")) },
-            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight_border.frag.qsb")) }
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight_border.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight_border.frag.qsb")) }
         });
 
         // test_rect_pipeline->setShaderStages({
@@ -4163,8 +4162,10 @@ void PdfViewRhiWidget::render_qpainter_texture(QRhiCommandBuffer* command_buffer
     command_buffer->setShaderResources(qpainter_resource_binding.get());
 
     const QRhiCommandBuffer::VertexInput vbufBinding(qpainter_vertex_buffer.get(), 0);
+    const QRhiCommandBuffer::VertexInput uv_buffer_binding(uv_buffer_ptr.get(), 1);
 
     command_buffer->setVertexInput(0, 1, &vbufBinding);
+    command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
     command_buffer->draw(6);
 }
 
@@ -4534,7 +4535,7 @@ SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_bindin
 
     new_texture_shader_resource_bindings->setBindings({
         QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, my_sampler.get()),
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
+        QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
     });
 
     new_texture_shader_resource_bindings->create();
