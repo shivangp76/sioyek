@@ -4121,6 +4121,9 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
     int max_iter = std::min((int)current_frame_highlight_rect_render_calls.size(), NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS);
 
     for (int i = 0; i < max_iter; i++){
+        int flags = current_frame_highlight_rect_render_calls[i].flags;
+        bool fill = flags & HighlightRenderFlags::HRF_FILL;
+        if (!fill) continue;
         int offset = 12 * sizeof(float) * i;
 
         QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
@@ -4139,7 +4142,10 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
     command_buffer->setGraphicsPipeline(highlight_borders_pipeline.get());
 
     for (int i = 0; i < max_iter; i++){
-        if (current_frame_highlight_rect_render_calls[i].border){
+        int flags = current_frame_highlight_rect_render_calls[i].flags;
+        bool has_border = flags & HighlightRenderFlags::HRF_BORDER;
+        bool has_underline = flags & HighlightRenderFlags::HRF_UNDERLINE;
+        if (has_border || has_underline){
             int border_offset = 10 * sizeof(float) * i;
 
             QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
@@ -4148,7 +4154,12 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
             const QRhiCommandBuffer::VertexInput vbufBinding(highlights_borders_vertex_buffer_ptr.get(), border_offset);
 
             command_buffer->setVertexInput(0, 1, &vbufBinding);
-            command_buffer->draw(5);
+            if (has_border){
+                command_buffer->draw(5);
+            }
+            else if (has_underline){
+                command_buffer->draw(2);
+            }
         }
     }
 }
@@ -4174,14 +4185,14 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
         QRhiBuffer* current_highlight_uniform_buffer = preallocated_highlight_uniform_buffers[i];
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, HIGHLIGHT_UNIFORM_BUFFER_SIZE, current_frame_highlight_rect_render_calls[i].color);
 
-        if (current_frame_highlight_rect_render_calls[i].border){
+        if (current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_BORDER || current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_UNDERLINE){
 
             float border_vertices[] = {
-                rect.x0, rect.y0,
                 rect.x0, rect.y1,
                 rect.x1, rect.y1,
                 rect.x1, rect.y0,
-                rect.x0, rect.y0
+                rect.x0, rect.y0,
+                rect.x0, rect.y1
             };
 
             int border_offset = 10 * sizeof(float) * i;
@@ -4230,44 +4241,6 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
         render_call.texture = texture.value();
         current_frame_texture_render_calls.push_back(render_call);
     }
-
-    // if (!texture.has_value()) return;
-    // if (current_texture_index >= MAX_VISIBLE_PAGES) return;
-
-    // qDebug() << rect.x0 << " " << rect.x1 << " " << rect.y0 << " " << rect.y1;
-
-    // QRhiTexture* actual_texture = std::get<QRhiTexture*>(texture.value());
-
-    // QRhiCommandBuffer* command_buffer = current_frame_command_buffer;
-
-    // // command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
-
-    // QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(actual_texture);
-
-    // command_buffer->setShaderResources(resource_binding);
-
-    // float vertices[12] = {
-    //     rect.x0, rect.y0,
-    //     rect.x0, rect.y1,
-    //     rect.x1, rect.y0,
-
-    //     rect.x1, rect.y1,
-    //     rect.x0, rect.y1,
-    //     rect.x1, rect.y0,
-    // };
-
-    // int offset = 12 * sizeof(float) * current_texture_index;
-    // current_frame_resource_update_batch->updateDynamicBuffer(vertex_buffer_ptr.get(), offset, 12 * sizeof(float), vertices);
-
-    // const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
-    // const QRhiCommandBuffer::VertexInput uv_buffer_binding(uv_buffer_ptr.get(), 0);
-
-    // command_buffer->setVertexInput(0, 1, &vbufBinding);
-    // command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
-    // // command_buffer->setVertexInput(1, 1, &uvbufBinding);
-    // command_buffer->draw(6);
-
-    // current_texture_index++;
 }
 
 void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
@@ -4277,7 +4250,7 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
     highlight_call.color[1] = current_highlight_color[1];
     highlight_call.color[2] = current_highlight_color[2];
     highlight_call.color[3] = current_highlight_color[3];
-    highlight_call.border = flags & HighlightRenderFlags::HRF_BORDER;
+    highlight_call.flags = flags;
     current_frame_highlight_rect_render_calls.push_back(highlight_call);
 
 }

@@ -393,7 +393,7 @@ struct SioyekTextureRenderCall{
 struct SioyekHighlightRectRenderCall{
     NormalizedWindowRect rect;
     float color[4];
-    bool border = false;
+    int flags;
 };
 
 struct SioyekTextureShaderResourceBinding{
