@@ -655,7 +655,7 @@ void PdfRenderer::run(int thread_index) {
 
 
 
-                if (RENDERER_BACKEND == RenderBackend::SioyekQPainterRendererBackend) {
+                if (RENDERER_BACKEND != RenderBackend::SioyekOpenGLRendererBackend) {
 
                     if (req.color_palette == ColorPalette::Dark) {
                         convert_pixels_with_converter(rendered_pixmap->samples,
@@ -742,7 +742,7 @@ bool operator==(const RenderRequest& lhs, const RenderRequest& rhs) {
     if (rhs.should_render_annotations != lhs.should_render_annotations) {
         return false;
     }
-    if (RENDERER_BACKEND == RenderBackend::SioyekQPainterRendererBackend) {
+    if (RENDERER_BACKEND != RenderBackend::SioyekOpenGLRendererBackend) {
         if (rhs.color_palette != lhs.color_palette) {
             return false;
         }
