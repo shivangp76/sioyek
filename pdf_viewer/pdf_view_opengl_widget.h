@@ -417,6 +417,10 @@ private:
     std::unique_ptr<QRhiBuffer> highlights_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_borders_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
+    std::unique_ptr<QRhiTexture> qpainter_texture;
+    std::unique_ptr<QRhiBuffer> qpainter_uniform_buffer;
+    std::unique_ptr<QRhiBuffer> qpainter_vertex_buffer;
+    std::unique_ptr<QRhiShaderResourceBindings> qpainter_resource_binding;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_pipeline;
@@ -444,6 +448,7 @@ private:
     std::vector<SioyekTextureShaderResourceBinding> texture_shader_resource_bindings;
     void update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch);
     void update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch);
+    void render_qpainter_texture(QRhiCommandBuffer* command_buffer);
     void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
     void render_current_frame_highlights(QRhiCommandBuffer* command_buffer);
 

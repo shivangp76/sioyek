@@ -3855,15 +3855,32 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline.reset();
         rhi_ptr = rhi();
     }
-
-    qDebug() << (rhi_ptr != rhi());
-
-    rhi_ptr = rhi();
-
     if (!my_sampler){
         my_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Linear, QRhiSampler::Linear, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
         my_sampler->create();
     }
+    qDebug() << (rhi_ptr != rhi());
+
+    rhi_ptr = rhi();
+
+    { // always reset the qpainter texture because the window might have been resized
+        int w = width() * get_device_pixel_ratio();
+        int h = height() * get_device_pixel_ratio();
+        qpainter_texture.reset(rhi_ptr->newTexture(QRhiTexture::RGBA8, QSize(w, h)));
+        qpainter_texture->create();
+
+        qpainter_uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(float)));
+        qpainter_uniform_buffer->create();
+
+        qpainter_resource_binding.reset(rhi()->newShaderResourceBindings());
+
+        qpainter_resource_binding->setBindings({
+            QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, qpainter_texture.get(), my_sampler.get()),
+            QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, qpainter_uniform_buffer.get())
+        });
+        qpainter_resource_binding->create();
+    }
+
 
     if (!vertex_buffer_ptr){
         const int vertices_per_page = 6;
@@ -3886,6 +3903,9 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
 
     if (!colored_rect_pipeline) {
+
+        qpainter_vertex_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Static, QRhiBuffer::VertexBuffer, 12 * sizeof(float)));
+        qpainter_vertex_buffer->create();
 
         QRhiShaderResourceBindings* texture_dummy_resource_bindings = rhi()->newShaderResourceBindings();
         texture_dummy_resource_bindings->setBindings({
@@ -3991,6 +4011,9 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
         colored_rect_pipeline->setDepthTest(true);
         colored_rect_pipeline->setDepthWrite(true);
+        QRhiGraphicsPipeline::TargetBlend texture_target_blends;
+        texture_target_blends.enable = true;
+        colored_rect_pipeline->setTargetBlends({texture_target_blends});
         colored_rect_pipeline->create();
 
         highlight_pipeline->setVertexInputLayout(highlight_input_layout);
@@ -4036,8 +4059,18 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             0, 1,
             1, 0
         };
+        std::vector<float> static_qpainter_vertices = {
+            -1, -1,
+            -1, 1,
+            1, -1,
+
+            1, 1,
+            -1, 1,
+            1, -1
+        };
 
         resourceUpdates->uploadStaticBuffer(uv_buffer_ptr.get(), 0, static_uvs_single.size() * sizeof(float), static_uvs_single.data());
+        resourceUpdates->uploadStaticBuffer(qpainter_vertex_buffer.get(), 0, static_qpainter_vertices.size() * sizeof(float), static_qpainter_vertices.data());
 
         command_buffer->resourceUpdate(resourceUpdates);
     }
@@ -4045,6 +4078,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
 void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 {
+    QImage image(width() * get_device_pixel_ratio(), height() * get_device_pixel_ratio(), QImage::Format_RGBA8888);
+    image.setDevicePixelRatio(get_device_pixel_ratio());
+    image.fill(Qt::transparent);
+    painter.begin(&image);
+
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
     current_frame_highlight_rect_render_calls.clear();
@@ -4053,9 +4091,15 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     current_frame_resource_update_batch = resource_updates;
     my_render();
     current_frame_resource_update_batch = nullptr;
+    painter.end();
+    // image.save("sioyek_sample_frame.png");
 
     update_resources_for_current_frame_texture_render_calls(resource_updates);
     update_resources_for_current_frame_highlight_render_calls(resource_updates);
+    image = image.mirrored(false, true);
+    resource_updates->uploadTexture(qpainter_texture.get(), image);
+    float depth = 0.0f;
+    resource_updates->updateDynamicBuffer(qpainter_uniform_buffer.get(), 0, sizeof(float), &depth);
 
     QColor background_color = QColor::fromRgbF(background_clear_color[0], background_clear_color[1], background_clear_color[2]);
     command_buffer->beginPass(renderTarget(), background_color, { 1.0f, 0 }, resource_updates);
@@ -4066,12 +4110,26 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
     render_current_frame_textures(command_buffer);
 
+
     command_buffer->setGraphicsPipeline(highlight_pipeline.get());
     render_current_frame_highlights(command_buffer);
+
+    command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
+    render_qpainter_texture(command_buffer);
 
     command_buffer->endPass();
 
     last_frame_time = QDateTime::currentDateTime();
+    painter.end();
+}
+
+void PdfViewRhiWidget::render_qpainter_texture(QRhiCommandBuffer* command_buffer){
+    command_buffer->setShaderResources(qpainter_resource_binding.get());
+
+    const QRhiCommandBuffer::VertexInput vbufBinding(qpainter_vertex_buffer.get(), 0);
+
+    command_buffer->setVertexInput(0, 1, &vbufBinding);
+    command_buffer->draw(6);
 }
 
 void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_buffer){
