@@ -359,6 +359,7 @@ void SioyekRendererBackend::render_scratchpad() {
 
     render_compiled_drawings();
     prepare_non_compiled_line_drawing_pipeline();
+    QPainter& painter = *get_painter();
     render_drawings(&painter, scratchpad, scratchpad->get_non_compiled_drawings());
     render_drawings(&painter, scratchpad, document_view->moving_drawings, true);
     render_drawings(&painter, scratchpad, document_view->moving_drawings, false);
@@ -759,7 +760,7 @@ void PdfViewOpenGLWidget::set_stencil_for_two_page(int page_number, PagelessDocu
 void PdfViewQPainterWidget::set_stencil_for_two_page(int page_number, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) {
     if (dv()->is_two_page_mode()) {
         QRect window_rect = DocumentRect{ page_content, page_number }.to_window(document_view).to_qrect();
-        painter.setClipRect(window_rect);
+        get_painter()->setClipRect(window_rect);
     }
 }
 
@@ -986,13 +987,13 @@ void SioyekRendererBackend::my_render() {
         int flags = Qt::TextWordWrap | Qt::AlignCenter;
 
         for (auto [hint_rect, hint_text] : hints) {
-            painter.fillRect(hint_rect, QColor(0, 0, 0, 200));
+            get_painter()->fillRect(hint_rect, QColor(0, 0, 0, 200));
         }
 
-        painter.setPen(QColor(255, 255, 255, 255));
+        get_painter()->setPen(QColor(255, 255, 255, 255));
 
         for (auto [hint_rect, hint_text] : hints) {
-            painter.drawText(hint_rect, flags, hint_text);
+            get_painter()->drawText(hint_rect, flags, hint_text);
         }
     }
 
@@ -1187,6 +1188,8 @@ void SioyekRendererBackend::register_on_link_edit_listener(std::function<void(co
 
 void SioyekRendererBackend::draw_empty_helper_message(QString message) {
     // should be called with native painting disabled
+    // @nocheckin
+    return;
 
     QFontMetrics fm(QApplication::font());
 #ifdef SIOYEK_QT6
@@ -1199,7 +1202,7 @@ void SioyekRendererBackend::draw_empty_helper_message(QString message) {
     int view_width = dv()->get_view_width();
     int view_height = dv()->get_view_height();
 
-    painter.drawText(view_width / 2 - message_width / 2, view_height / 2 - message_height / 2, message);
+    get_painter()->drawText(view_width / 2 - message_width / 2, view_height / 2 - message_height / 2, message);
 }
 
 void PdfViewOpenGLWidget::bind_program(ColorPalette forced_palette) {
@@ -1341,6 +1344,7 @@ void SioyekRendererBackend::setup_text_painter() {
     QFont font(QString::fromStdWString(TAG_FONT_FACE));
     font.setStyleHint(QFont::Monospace);
     font.setPixelSize(KEYBOARD_SELECT_FONT_SIZE);
+    QPainter& painter = *get_painter();
     painter.setBackgroundMode(Qt::BGMode::OpaqueMode);
     painter.setBackground(background_brush);
     painter.setPen(QColor(textcolor[0], textcolor[1], textcolor[2], textcolor[3]));
@@ -1766,15 +1770,15 @@ void SioyekRendererBackend::render_portal_rect(AbsoluteRect portal_rect, bool is
             if (completion_ratio) {
 
                 if (completion_ratio.value() < 0) {
-                    painter.fillRect(adjust_rect, not_started_color);
+                    get_painter()->fillRect(adjust_rect, not_started_color);
                 }
                 else {
-                    painter.fillRect(adjust_rect, fill_color);
+                    get_painter()->fillRect(adjust_rect, fill_color);
                 }
 
                 if (completion_ratio.value() >= 0) {
                     float completed_height = adjust_rect.height() * completion_ratio.value();
-                    painter.fillRect(adjust_rect.x(), adjust_rect.y() + adjust_rect.height() - completed_height, adjust_rect.width(), completed_height, complete_color);
+                    get_painter()->fillRect(adjust_rect.x(), adjust_rect.y() + adjust_rect.height() - completed_height, adjust_rect.width(), completed_height, complete_color);
                 }
             }
             draw_icon(portal_icon, window_qrect);
@@ -2789,11 +2793,11 @@ void PdfViewOpenGLWidget::render_overview_opengl_backend(NormalizedWindowRect wi
 
 
 void PdfViewOpenGLWidget::begin_native_painting(){
-    painter.beginNativePainting();
+    get_painter()->beginNativePainting();
 }
 
 void PdfViewOpenGLWidget::end_native_painting(){
-    painter.endNativePainting();
+    get_painter()->endNativePainting();
 
 }
 
@@ -2803,11 +2807,11 @@ void PdfViewOpenGLWidget::clear_background_buffers(float r, float g, float b, GL
 }
 
 void SioyekRendererBackend::draw_pixmap(QRect rect, QPixmap* pixmap){
-    painter.drawPixmap(rect, *pixmap);
+    get_painter()->drawPixmap(rect, *pixmap);
 }
 
 void SioyekRendererBackend::fill_rect(QRect rect, const QColor& color){
-    painter.fillRect(rect, color);
+    get_painter()->fillRect(rect, color);
 }
 
 void PdfViewOpenGLWidget::prepare_line_drawing_pipeline(){
@@ -2904,12 +2908,18 @@ void SioyekRendererBackend::draw_pending_freehand_drawings(const std::vector<int
     }
     enable_multisampling();
     for (auto page : visible_pages) {
-
-        render_drawings(&painter, dv(), doc()->get_page_drawings(page));
+        const std::vector<FreehandDrawing>& page_drawings = doc()->get_page_drawings(page);
+        if (page_drawings.size() > 0){
+            render_drawings(get_painter(), dv(), page_drawings);
+        }
     }
-    render_drawings(&painter, dv(), document_view->moving_drawings, true);
-    render_drawings(&painter, dv(), document_view->moving_drawings, false);
-    render_drawings(&painter, dv(), pending_drawing);
+    if (document_view->moving_drawings.size() > 0){
+        render_drawings(get_painter(), dv(), document_view->moving_drawings, true);
+        render_drawings(get_painter(), dv(), document_view->moving_drawings, false);
+    }
+    if (pending_drawing.size() > 0){
+        render_drawings(get_painter(), dv(), pending_drawing);
+    }
 
     disable_multisampling();
     bind_default();
@@ -2917,7 +2927,7 @@ void SioyekRendererBackend::draw_pending_freehand_drawings(const std::vector<int
 }
 
 void SioyekRendererBackend::draw_icon(const QIcon& icon, QRect rect){
-    icon.paint(&painter, rect);
+    icon.paint(get_painter(), rect);
 }
 
 
@@ -2925,10 +2935,10 @@ void SioyekRendererBackend::draw_icon(const QIcon& icon, QRect rect){
 
 void PdfViewOpenGLWidget::do_paint(){
 
-    painter.begin(this);
+    get_painter()->begin(this);
 
     QColor red_color = QColor::fromRgb(255, 0, 0);
-    painter.setPen(red_color);
+    get_painter()->setPen(red_color);
 
     if (scratch() == nullptr) {
         my_render();
@@ -2936,7 +2946,7 @@ void PdfViewOpenGLWidget::do_paint(){
     else {
         render_scratchpad();
     }
-    painter.end();
+    get_painter()->end();
 }
 
 ColorPalette SioyekRendererBackend::get_actual_color_palette(ColorPalette forced_color_palette){
@@ -2944,9 +2954,9 @@ ColorPalette SioyekRendererBackend::get_actual_color_palette(ColorPalette forced
 
 }
 
-const QPainter& SioyekRendererBackend::get_painter() {
-    return painter;
-}
+// const QPainter& SioyekRendererBackend::get_painter() {
+//     return painter;
+// }
 
 //void PdfViewOpenGLWidget::initialize_latex() {
 //    if (!is_latex_initialized) {
@@ -3015,13 +3025,14 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
                 float scroll_amount = document_view->get_bookmark_scroll_amount(bookmarks[i].uuid);
 
                 if (RENDER_FREETEXT_BORDERS) {
-                    painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                    get_painter()->drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                 }
 
 
                 QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
 
                 if (bookmarks[i].uuid == document_view->get_selected_bookmark_uuid()) {
+                    QPainter& painter = *get_painter();
                     painter.save();
                     QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
                     painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
@@ -3039,7 +3050,7 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
                 if (bookmarks[i].is_question() || bookmarks[i].is_summary()) {
                     QColor question_background_color = qcc4(QUESTION_BOOKMARK_BACKGROUND_COLOR);
                     QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                    painter.fillRect(fill_rect, question_background_color);
+                    get_painter()->fillRect(fill_rect, question_background_color);
 
                 }
                 else {
@@ -3047,7 +3058,7 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
                     if (background_type && background_type.value() >= 'a' && background_type.value() <= 'z') {
                         QColor highlight_background_color = qcc3(&HIGHLIGHT_COLORS[3 * (background_type.value() - 'a')]);
                         QRect fill_rect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
-                        painter.fillRect(fill_rect, highlight_background_color);
+                        get_painter()->fillRect(fill_rect, highlight_background_color);
                     }
                 }
 
@@ -3056,8 +3067,8 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
 
                     QString box_text = desc_qstring.split(' ')[0];
                     if (bm_type.has_value() && bm_type.value() <= 'z' && bm_type.value() >= 'a') {
-                        painter.setPen(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * (bm_type.value() - 'a')]));
-                        painter.drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
+                        get_painter()->setPen(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * (bm_type.value() - 'a')]));
+                        get_painter()->drawRect(window_rect.x0, window_rect.y0, fz_irect_width(window_rect), fz_irect_height(window_rect));
                     }
 
                     if (!bm_type.has_value()) {
@@ -3068,7 +3079,7 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
                         // draw an empty box with the color type of lowercase and draw a transparent filled box if uppercase
                         if (mode >= 'a' && mode <= 'z') {
                             std::array<float, 3> box_color = cc3(&HIGHLIGHT_COLORS[3 * (mode - 'a')]);
-                            painter.setPen(convert_float3_to_qcolor(&box_color[0]));
+                            get_painter()->setPen(convert_float3_to_qcolor(&box_color[0]));
                         }
                         else if (mode >= 'A' && mode <= 'Z') {
                             mode = mode - 'A' + 'a';
@@ -3082,14 +3093,14 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
                             QColor qcolor = convert_float4_to_qcolor(box_color_with_alpha);
                             QBrush brush(qcolor);
 
-                            painter.fillRect(window_rect.to_qrect(), brush);
+                            get_painter()->fillRect(window_rect.to_qrect(), brush);
                         }
                     }
                     }
 
                 auto [pixmap, was_exact] = pdf_renderer->get_bookmark_renderer()->request_rendered_bookmark(bookmarks[i], document_view->get_zoom_level(), scroll_amount, get_device_pixel_ratio(), dv()->get_current_color_mode());
                 if (pixmap && (was_exact || bookmarks[i].is_latex() || (!ALWAYS_RENDER_BOOKMARKS))) {
-                    painter.drawPixmap(window_qrect, *pixmap);
+                    get_painter()->drawPixmap(window_qrect, *pixmap);
                 }
                 else {
                     if (ALWAYS_RENDER_BOOKMARKS) {
@@ -3097,7 +3108,7 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
                         // cause the UI to slow down a little e.g. when zooming
                         pdf_renderer->get_bookmark_renderer()->render_freetext_bookmark(
                             bookmarks[i],
-                            &painter,
+                            get_painter(),
                             dv()->get_zoom_level(),
                             scroll_amount,
                             get_device_pixel_ratio(),
@@ -3307,8 +3318,8 @@ void SioyekRendererBackend::render_portals(const std::vector<int>& visible_pages
         // draw the border of the selected portal
         WindowRect window_rect = selected_portal_overview_state.source_rect->to_window(dv());
         QColor pen_color = convert_float3_to_qcolor(&SELECTED_BORDER_COLOR[0]);
-        painter.setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
-        painter.drawRect(
+        get_painter()->setPen(QPen(pen_color, SELECTED_BORDER_PEN_SIZE, Qt::DotLine));
+        get_painter()->drawRect(
             window_rect.x0 - SELECTED_BORDER_PEN_SIZE / 2 - 1,
             window_rect.y0 - SELECTED_BORDER_PEN_SIZE / 2 + 1,
             fz_irect_width(window_rect) + SELECTED_BORDER_PEN_SIZE + 1,
@@ -3367,7 +3378,7 @@ void SioyekRendererBackend::render_tags() {
 
             if (dv()->should_highlight_rect_mode) {
                 auto center = window_rect.to_window(dv()).center();
-                window_x0 = center.x - painter.font().pixelSize() / 2;
+                window_x0 = center.x - get_painter()->font().pixelSize() / 2;
             }
 
             if (i > 0 && (!dv()->should_highlight_rect_mode)) {
@@ -3404,10 +3415,11 @@ void SioyekRendererBackend::render_tags() {
                 rect_highlight_color_opaque = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
                 rect_inverted_color = QColor::fromRgbF(1.0f - HIGHLIGHT_COLORS[3 * (index % 26)], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 1], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
                 WindowRect wr = window_rect.to_window(dv());
-                painter.fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
+                get_painter()->fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
             }
 
             if (remaining_tag.size() > 0) {
+                QPainter& painter = *get_painter();
                 if (highlighted) {
                     auto original_pen = painter.pen();
                     auto original_background = painter.background();
@@ -3459,6 +3471,7 @@ void PdfViewQPainterWidget::render_highlight_window_qpainter_backend(NormalizedW
     auto center = pixel_window_rect.center();
 
 
+    QPainter& painter = *get_painter();
     if (flags & HRF_UNDERLINE) {
         auto current_color = painter.pen().color();
         current_color.setAlpha(255);
@@ -3542,6 +3555,7 @@ void SioyekRendererBackend::render_overview_highlights(OverviewState overview){
 }
 void PdfViewQPainterWidget::render_overview_qpainter_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
 
+    QPainter& painter = *get_painter();
     QRect overview_rect = document_view->normalized_to_window_qrect(window_rect);
     QRegion overview_region = QRegion(overview_rect);
     painter.setClipRegion(overview_region);
@@ -3574,7 +3588,7 @@ void PdfViewQPainterWidget::clear_background_buffers(float r, float g, float b, 
         int g_ = static_cast<int>(g * 255.0f);
         int b_ = static_cast<int>(b * 255.0f);
         QBrush background_brush(QColor(r_, g_, b_));
-        painter.fillRect(rect(), background_brush);
+        get_painter()->fillRect(rect(), background_brush);
     }
 }
 
@@ -3587,7 +3601,7 @@ void PdfViewQPainterWidget::end_native_painting(){
 void PdfViewQPainterWidget::render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect window_rect, ColorPalette forced_color_palette){
     if (!texture.has_value() || !std::holds_alternative<QPixmap*>(texture.value())) return;
     QRect window_qrect = document_view->normalized_to_window_qrect(window_rect);
-    painter.drawPixmap(window_qrect, *std::get<QPixmap*>(texture.value()));
+    get_painter()->drawPixmap(window_qrect, *std::get<QPixmap*>(texture.value()));
 }
 
 void PdfViewQPainterWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
@@ -3603,8 +3617,8 @@ void PdfViewQPainterWidget::render_line_window(float gl_vertical_pos, std::optio
         QRegion full_region(rect());
         QRegion clip_region = full_region.subtracted(ruler_qrect);
         QBrush ruler_brush(ruler_color);
-        painter.setClipRegion(clip_region);
-        painter.fillRect(rect(), ruler_brush);
+        get_painter()->setClipRegion(clip_region);
+        get_painter()->fillRect(rect(), ruler_brush);
     }
 }
 
@@ -3650,7 +3664,7 @@ void PdfViewQPainterWidget::render_drawings(QPainter* p, DocumentView* dv, const
 void PdfViewQPainterWidget::render_compiled_drawings() {
 
     if (dv()->scratchpad->cached_pixmap) {
-        painter.drawPixmap(rect(), dv()->scratchpad->cached_pixmap->pixmap);
+        get_painter()->drawPixmap(rect(), dv()->scratchpad->cached_pixmap->pixmap);
     }
 }
 
@@ -3668,7 +3682,7 @@ void PdfViewQPainterWidget::use_stencil_to_write(bool eq) {
 }
 
 void PdfViewQPainterWidget::disable_stencil() {
-    painter.setClipRect(rect());
+    get_painter()->setClipRect(rect());
 }
 
 void PdfViewQPainterWidget::render_transparent_background() {
@@ -3697,22 +3711,24 @@ void PdfViewQPainterWidget::prepare_non_compiled_line_drawing_pipeline(){
 }
 
 void PdfViewQPainterWidget::enable_multisampling(){
-    painter.setRenderHints(QPainter::RenderHint::Antialiasing, true);
+    get_painter()->setRenderHints(QPainter::RenderHint::Antialiasing, true);
 }
 
 void PdfViewQPainterWidget::disable_multisampling(){
-    painter.setRenderHints(QPainter::RenderHint::Antialiasing, false);
+    get_painter()->setRenderHints(QPainter::RenderHint::Antialiasing, false);
 }
 
 void PdfViewQPainterWidget::set_highlight_color(const float* color, float alpha){
     float rgba[4] = {color[0], color[1], color[2], alpha};
-    painter.setPen(convert_float4_to_qcolor(rgba));
+    get_painter()->setPen(convert_float4_to_qcolor(rgba));
 }
 
 void PdfViewQPainterWidget::prepare_for_line_drawing() {
 }
 
 void PdfViewQPainterWidget::do_paint(){
+
+    QPainter& painter = *get_painter();
 
     painter.begin(this);
 
@@ -3762,7 +3778,7 @@ void PdfViewQPainterWidget::draw_overview_background(std::optional<OverviewState
     get_background_color(bg_color);
 
     QRect overview_qrect = document_view->normalized_to_window_qrect(document_view->get_overview_rect(maybe_overview));
-    painter.fillRect(overview_qrect, QBrush(convert_float3_to_qcolor(bg_color)));
+    get_painter()->fillRect(overview_qrect, QBrush(convert_float3_to_qcolor(bg_color)));
 }
 
 void PdfViewQPainterWidget::draw_overview_border(std::optional<OverviewState> maybe_overview, float* color){
@@ -3864,6 +3880,10 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
     rhi_ptr = rhi();
 
     { // always reset the qpainter texture because the window might have been resized
+
+        qpainter_image = QImage(width() * get_device_pixel_ratio(), height() * get_device_pixel_ratio(), QImage::Format_RGBA8888);
+        qpainter_image.setDevicePixelRatio(get_device_pixel_ratio());
+
         int w = width() * get_device_pixel_ratio();
         int h = height() * get_device_pixel_ratio();
         qpainter_texture.reset(rhi_ptr->newTexture(QRhiTexture::RGBA8, QSize(w, h)));
@@ -4078,10 +4098,17 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
 void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 {
-    QImage image(width() * get_device_pixel_ratio(), height() * get_device_pixel_ratio(), QImage::Format_RGBA8888);
-    image.setDevicePixelRatio(get_device_pixel_ratio());
-    image.fill(Qt::transparent);
-    painter.begin(&image);
+    // QImage image(width() * get_device_pixel_ratio(), height() * get_device_pixel_ratio(), QImage::Format_RGBA8888);
+    // image.setDevicePixelRatio(get_device_pixel_ratio());
+    delete_old_texture_shader_resource_bindings();
+
+    bool last_frame_required_qpainter = frame_required_qpainter;
+    if (last_frame_required_qpainter){
+        // we want to avoid using qpainter if possible
+        // so we only do this if it was required last frame
+        qpainter_image.fill(Qt::transparent);
+        get_painter()->begin(&qpainter_image);
+    }
 
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
@@ -4089,17 +4116,25 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     current_object_render_order = 0;
 
     current_frame_resource_update_batch = resource_updates;
+    frame_required_qpainter = false;
     my_render();
     current_frame_resource_update_batch = nullptr;
-    painter.end();
-    // image.save("sioyek_sample_frame.png");
+
+    if (last_frame_required_qpainter){
+        painter_.end();
+        // get_painter()->end();
+    }
+
 
     update_resources_for_current_frame_texture_render_calls(resource_updates);
     update_resources_for_current_frame_highlight_render_calls(resource_updates);
-    image = image.mirrored(false, true);
-    resource_updates->uploadTexture(qpainter_texture.get(), image);
-    float depth = 0.0f;
-    resource_updates->updateDynamicBuffer(qpainter_uniform_buffer.get(), 0, sizeof(float), &depth);
+
+    if (last_frame_required_qpainter){
+        qpainter_image = qpainter_image.mirrored(false, true);
+        resource_updates->uploadTexture(qpainter_texture.get(), qpainter_image);
+        float depth = 0.0f;
+        resource_updates->updateDynamicBuffer(qpainter_uniform_buffer.get(), 0, sizeof(float), &depth);
+    }
 
     QColor background_color = QColor::fromRgbF(background_clear_color[0], background_clear_color[1], background_clear_color[2]);
     command_buffer->beginPass(renderTarget(), background_color, { 1.0f, 0 }, resource_updates);
@@ -4114,13 +4149,14 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     command_buffer->setGraphicsPipeline(highlight_pipeline.get());
     render_current_frame_highlights(command_buffer);
 
-    command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
-    render_qpainter_texture(command_buffer);
+    if (last_frame_required_qpainter){
+        command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
+        render_qpainter_texture(command_buffer);
+    }
 
     command_buffer->endPass();
 
     last_frame_time = QDateTime::currentDateTime();
-    painter.end();
 }
 
 void PdfViewRhiWidget::render_qpainter_texture(QRhiCommandBuffer* command_buffer){
@@ -4461,7 +4497,7 @@ std::optional<GraphicsBackendExtras> SioyekRendererBackend::get_backend_extras()
 }
 
 void PdfViewRhiWidget::delete_old_texture_shader_resource_bindings(){
-    const int RESOURCE_BINDINGS_THRESHOLD = 100;
+    const int RESOURCE_BINDINGS_THRESHOLD = 10;
 
     if (texture_shader_resource_bindings.size() > RESOURCE_BINDINGS_THRESHOLD){
         // sort the resource bindings descending by last access time and delete the RESOURCE_BINDINGS_THRESHOLD / 2 oldest ones
@@ -4483,7 +4519,7 @@ void PdfViewRhiWidget::delete_old_texture_shader_resource_bindings(){
 
 SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_binding_for_texture(QRhiTexture* texture){
 
-    delete_old_texture_shader_resource_bindings();
+    // delete_old_texture_shader_resource_bindings();
 
     for (int i = 0; i < texture_shader_resource_bindings.size(); i++){
         if (texture_shader_resource_bindings[i].texture == texture){
@@ -4511,4 +4547,17 @@ SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_bindin
     texture_shader_resource_bindings.push_back(result);
 
     return &texture_shader_resource_bindings.back();
+}
+
+QPainter* PdfViewOpenGLWidget::get_painter(){
+    return &painter_;
+}
+
+QPainter* PdfViewQPainterWidget::get_painter(){
+    return &painter_;
+}
+
+QPainter* PdfViewRhiWidget::get_painter(){
+    frame_required_qpainter = true;
+    return &painter_;
 }

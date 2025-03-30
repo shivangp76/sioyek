@@ -92,7 +92,7 @@ struct OpenGLSharedResources {
 
 class SioyekRendererBackend {
 protected:
-    QPainter painter;
+    // QPainter painter;
     QIcon bookmark_icon;
     QIcon portal_icon;
     QIcon bookmark_icon_white;
@@ -116,6 +116,7 @@ protected:
     float last_cache_zoom_level = -1;
     QDateTime last_scratchpad_update_datetime;
     float background_clear_color[3] = {0};
+    bool frame_required_qpainter = false;
 
     virtual void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) = 0;
     virtual void begin_native_painting() = 0;
@@ -151,6 +152,7 @@ protected:
     virtual void set_highlight_color(const float* color, float alpha) = 0;
     virtual void prepare_highlight_pipeline() = 0;
     virtual std::optional<GraphicsBackendExtras> get_backend_extras();
+    virtual QPainter* get_painter() = 0;
 
     void render_search_result_highlights(const std::vector<int>& visible_pages);
     void initialize_stuff();
@@ -218,7 +220,7 @@ public:
 
     DocumentView* dv();
     Document* doc(std::optional<OverviewState> overview = {});
-    const QPainter& get_painter();
+    // const QPainter& get_painter();
     bool is_background_dark();
     void register_on_link_edit_listener(std::function<void(const OpenedBookState&)> listener);
     void handle_escape();
@@ -237,6 +239,7 @@ private:
 
     OpenGLSharedResources shared_gl_objects;
     GLuint vertex_array_object;
+    QPainter painter_;
 
 protected:
     void initializeGL() override;
@@ -293,6 +296,7 @@ protected:
     void prepare_initial_render_pipeline() override;
     void prepare_link_highlight_state() override;
     void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
+    QPainter* get_painter() override;
 public:
     //std::vector<OverviewState> persisted_overviews;
 
@@ -316,6 +320,8 @@ public:
 class PdfViewQPainterWidget : public QWidget, public SioyekRendererBackend{
 
 protected:
+    QPainter painter_;
+
     void paintEvent(QPaintEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void render_highlight_window_qpainter_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
@@ -360,6 +366,7 @@ protected:
     void render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border = true) override;
     void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) override;
     void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
+    QPainter* get_painter() override;
 public:
     bool is_opengl() override;
     //std::vector<OverviewState> persisted_overviews;
@@ -411,12 +418,14 @@ struct SioyekTextureShaderResourceBinding{
 class PdfViewRhiWidget : public QRhiWidget, public SioyekRendererBackend{
 private:
     QRhi* rhi_ptr = nullptr;
+    QPainter painter_;
 
     QDateTime last_frame_time;
     std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_borders_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
+    QImage qpainter_image;
     std::unique_ptr<QRhiTexture> qpainter_texture;
     std::unique_ptr<QRhiBuffer> qpainter_uniform_buffer;
     std::unique_ptr<QRhiBuffer> qpainter_vertex_buffer;
@@ -454,6 +463,8 @@ private:
 
     SioyekTextureShaderResourceBinding* get_shader_resource_binding_for_texture(QRhiTexture* texture);
     void delete_old_texture_shader_resource_bindings();
+
+    QPainter* get_painter() override;
 public:
 
     PdfViewRhiWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
