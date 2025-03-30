@@ -461,7 +461,8 @@ void SioyekRendererBackend::render_overview(OverviewState overview, bool draw_bo
             QRect download_rect = dv()->get_overview_download_rect().to_qrect();
             render_ui_icon_for_current_color_mode(download_icon, download_icon_dark, download_rect);
 
-            painter.beginNativePainting();
+            begin_native_painting();
+            // painter.beginNativePainting();
         }
     }
 }
@@ -4044,10 +4045,6 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
 void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 {
-
-
-
-    // painter.begin(this);
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
     current_frame_highlight_rect_render_calls.clear();
@@ -4074,7 +4071,6 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
     command_buffer->endPass();
 
-    // painter.end();
     last_frame_time = QDateTime::currentDateTime();
 }
 
