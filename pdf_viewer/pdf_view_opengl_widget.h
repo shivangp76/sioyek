@@ -389,18 +389,21 @@ struct SioyekTextureRenderCall{
     SioyekTextureType texture;
     NormalizedWindowRect rect;
     bool in_overview = false;
+    int render_order;
 };
 
 struct SioyekHighlightRectRenderCall{
     NormalizedWindowRect rect;
     float color[4];
     int flags;
+    int render_order;
 };
 
 struct SioyekTextureShaderResourceBinding{
     QRhiTexture* texture;
     QRhiShaderResourceBindings* shader_resource_binding;
     QDateTime last_acess_time;
+    QRhiBuffer* uniform_buffer;
 };
 
 class PdfViewRhiWidget : public QRhiWidget, public SioyekRendererBackend{
@@ -416,8 +419,8 @@ private:
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_borders_pipeline;
-    std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;
-    std::unique_ptr<QRhiShaderResourceBindings> test_resource_bindings;
+    // std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;
+    // std::unique_ptr<QRhiShaderResourceBindings> test_resource_bindings;
 
     std::vector<QRhiBuffer*> preallocated_highlight_uniform_buffers;
     std::vector<QRhiShaderResourceBindings*> preallocated_highlight_resource_bindings;
@@ -430,6 +433,7 @@ private:
     QRhiCommandBuffer* current_frame_command_buffer = nullptr;
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
     bool is_rendering_overview = false;
+    int current_object_render_order = 0;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
     std::vector<SioyekHighlightRectRenderCall> current_frame_highlight_rect_render_calls;
@@ -441,14 +445,14 @@ private:
     void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
     void render_current_frame_highlights(QRhiCommandBuffer* command_buffer);
 
-    QRhiShaderResourceBindings* get_shader_resource_binding_for_texture(QRhiTexture* texture);
+    SioyekTextureShaderResourceBinding* get_shader_resource_binding_for_texture(QRhiTexture* texture);
     void delete_old_texture_shader_resource_bindings();
 public:
 
     PdfViewRhiWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);
     void initialize(QRhiCommandBuffer* command_buffer) override;
     void render(QRhiCommandBuffer* command_buffer) override;
-    void test_render(QRhiCommandBuffer* command_buffer);
+    // void test_render(QRhiCommandBuffer* command_buffer);
 
 
     void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) override;

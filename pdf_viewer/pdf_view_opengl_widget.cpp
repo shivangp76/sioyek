@@ -29,7 +29,7 @@
 #define GL_PRIMITIVE_RESTART_FIXED_INDEX  0x8D69
 #endif
 
-const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 4 * sizeof(float);
+const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 5 * sizeof(float);
 const int NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS = 100;
 const int MAX_VISIBLE_PAGES = 100;
 extern int NUM_PAGE_COLUMNS;
@@ -3884,7 +3884,8 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         QRhiShaderResourceBindings* texture_dummy_resource_bindings = rhi()->newShaderResourceBindings();
         texture_dummy_resource_bindings->setBindings({
-            QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, nullptr, nullptr)
+            QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, nullptr, nullptr),
+            QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, nullptr)
         });
         texture_dummy_resource_bindings->create();
 
@@ -3895,7 +3896,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
             QRhiShaderResourceBindings* preallocated_highlight_resource_binding = rhi()->newShaderResourceBindings();
             preallocated_highlight_resource_binding->setBindings({
-                QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage, preallocated_highlight_uniform_buffer)
+                QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage | QRhiShaderResourceBinding::VertexStage, preallocated_highlight_uniform_buffer),
             });
             preallocated_highlight_resource_binding->create();
 
@@ -3904,23 +3905,23 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         }
 
-        test_resource_bindings.reset(rhi()->newShaderResourceBindings());
-        test_resource_bindings->setBindings({
-        });
-        test_resource_bindings->create();
+        // test_resource_bindings.reset(rhi()->newShaderResourceBindings());
+        // test_resource_bindings->setBindings({
+        // });
+        // test_resource_bindings->create();
 
         colored_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_borders_pipeline.reset(rhi_ptr->newGraphicsPipeline());
-        test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        // test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
 
         colored_rect_pipeline->setShaderStages({
-            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple.vert.qsb")) },
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple_texture.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/colored_rect.frag.qsb")) }
         });
 
         highlight_pipeline->setShaderStages({
-            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple.vert.qsb")) },
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/simple_highlight.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight.frag.qsb")) }
         });
 
@@ -3929,10 +3930,10 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/highlight_border.frag.qsb")) }
         });
 
-        test_rect_pipeline->setShaderStages({
-            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/test.vert.qsb")) },
-            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/test.frag.qsb")) }
-        });
+        // test_rect_pipeline->setShaderStages({
+        //     { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/test.vert.qsb")) },
+        //     { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/test.frag.qsb")) }
+        // });
 
         QRhiVertexInputLayout colored_rect_input_layout;
         colored_rect_input_layout.setBindings({
@@ -3951,10 +3952,10 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             { 2 * sizeof(float) },
         });
 
-        QRhiVertexInputLayout test_rect_input_layout;
-        test_rect_input_layout.setBindings({
-            { 2 * sizeof(float) },
-        });
+        // QRhiVertexInputLayout test_rect_input_layout;
+        // test_rect_input_layout.setBindings({
+        //     { 2 * sizeof(float) },
+        // });
 
         // QRhiVertexInputAttribute(int binding, int location, Format format, quint32 offset, int matrixSlice = -1);
         // colored_rect_input_layout.setAttributes({
@@ -3975,19 +3976,23 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
         });
 
-        test_rect_input_layout.setAttributes({
-            { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
-        });
+        // test_rect_input_layout.setAttributes({
+        //     { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+        // });
 
         colored_rect_pipeline->setVertexInputLayout(colored_rect_input_layout);
         colored_rect_pipeline->setShaderResourceBindings(texture_dummy_resource_bindings);
         colored_rect_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
         colored_rect_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+        colored_rect_pipeline->setDepthTest(true);
+        colored_rect_pipeline->setDepthWrite(true);
         colored_rect_pipeline->create();
 
         highlight_pipeline->setVertexInputLayout(highlight_input_layout);
         highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
         highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+        highlight_pipeline->setDepthTest(true);
+        colored_rect_pipeline->setDepthWrite(true);
         QRhiGraphicsPipeline::TargetBlend highlight_target_blends;
 
         highlight_target_blends.opAlpha = QRhiGraphicsPipeline::BlendOp::Add;
@@ -4007,10 +4012,10 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_borders_pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
         highlight_borders_pipeline->create();
 
-        test_rect_pipeline->setVertexInputLayout(test_rect_input_layout);
-        test_rect_pipeline->setShaderResourceBindings(test_resource_bindings.get());
-        test_rect_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
-        test_rect_pipeline->create();
+        // test_rect_pipeline->setVertexInputLayout(test_rect_input_layout);
+        // test_rect_pipeline->setShaderResourceBindings(test_resource_bindings.get());
+        // test_rect_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+        // test_rect_pipeline->create();
 
         QRhiResourceUpdateBatch *resourceUpdates = rhi_ptr->nextResourceUpdateBatch();
         // resourceUpdates->uploadStaticBuffer(vertex_buffer_ptr.get(), 0, sizeof(my_vertexData), my_vertexData);
@@ -4031,35 +4036,6 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
     }
 }
 
-
-void PdfViewRhiWidget::test_render(QRhiCommandBuffer* command_buffer){
-
-    QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
-
-    float vertices[12] = {
-        -0.5, -0.5,
-        -0.5, 0.5,
-        0.5, -0.5,
-
-        0.5, 0.5,
-        -0.5, 0.5,
-        0.5, -0.5,
-    };
-    resource_updates->updateDynamicBuffer(vertex_buffer_ptr.get(), 0, 12 * sizeof(float), vertices);
-    command_buffer->beginPass(renderTarget(), Qt::black, { 1.0f, 0 }, resource_updates);
-    command_buffer->setGraphicsPipeline(test_rect_pipeline.get());
-    const QSize outputSize = colorTexture()->pixelSize();
-    command_buffer->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
-    command_buffer->setShaderResources(test_resource_bindings.get());
-
-    const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), 0);
-    command_buffer->setVertexInput(0, 1, &vbufBinding);
-    command_buffer->draw(6);
-
-
-    command_buffer->endPass();
-}
-
 void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 {
 
@@ -4068,7 +4044,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
     current_frame_highlight_rect_render_calls.clear();
-    // current_texture_index = 0;
+    current_object_render_order = 0;
 
     current_frame_resource_update_batch = resource_updates;
     my_render();
@@ -4105,7 +4081,7 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
         int offset = 12 * sizeof(float) * i;
 
         if (texture){
-            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture);
+            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture)->shader_resource_binding;
             command_buffer->setShaderResources(resource_binding);
 
             const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
@@ -4134,7 +4110,7 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
         int offset = 12 * sizeof(float) * i;
 
         if (texture){
-            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture);
+            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture)->shader_resource_binding;
             command_buffer->setShaderResources(resource_binding);
 
             const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
@@ -4219,7 +4195,10 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
         int offset = 12 * sizeof(float) * i;
         update_batch->updateDynamicBuffer(highlights_vertex_buffer_ptr.get(), offset, 12 * sizeof(float), vertices);
         QRhiBuffer* current_highlight_uniform_buffer = preallocated_highlight_uniform_buffers[i];
-        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, HIGHLIGHT_UNIFORM_BUFFER_SIZE, current_frame_highlight_rect_render_calls[i].color);
+
+        float depth = 1.0f / static_cast<float>(current_frame_highlight_rect_render_calls[i].render_order + 2.0f);
+        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, 4 * sizeof(float), current_frame_highlight_rect_render_calls[i].color);
+        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 4 * sizeof(float), sizeof(float), &depth);
 
         if (current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_BORDER || current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_UNDERLINE){
 
@@ -4241,6 +4220,13 @@ void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(Q
     int max_iter = std::min((int)current_frame_texture_render_calls.size(), MAX_VISIBLE_PAGES);
 
     for (int i = 0; i < max_iter; i++){
+
+        QRhiTexture* texture = std::get<QRhiTexture*>(current_frame_texture_render_calls[i].texture);
+        if (!texture) continue;
+
+        float depth = 1.0f / static_cast<float>(current_frame_texture_render_calls[i].render_order + 2.0f);
+        SioyekTextureShaderResourceBinding* shader_resources = get_shader_resource_binding_for_texture(texture);
+        update_batch->updateDynamicBuffer(shader_resources->uniform_buffer, 0, sizeof(float), &depth);
 
         NormalizedWindowRect rect = current_frame_texture_render_calls[i].rect;
 
@@ -4276,6 +4262,7 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
         render_call.rect = rect;
         render_call.texture = texture.value();
         render_call.in_overview = is_rendering_overview;
+        render_call.render_order = current_object_render_order++;
         current_frame_texture_render_calls.push_back(render_call);
     }
 }
@@ -4288,6 +4275,7 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
     highlight_call.color[2] = current_highlight_color[2];
     highlight_call.color[3] = current_highlight_color[3];
     highlight_call.flags = flags;
+    highlight_call.render_order = current_object_render_order++;
 
     if (flags == HighlightRenderFlags::HRF_UNDERLINE){
         float scale_factor = dv()->get_zoom_level() / dv()->get_view_height();
@@ -4326,6 +4314,12 @@ void PdfViewRhiWidget::disable_stencil(){}
 void PdfViewRhiWidget::render_transparent_background(){}
 
 void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
+
+    float bg_color[] = { 1.0f, 1.0f, 1.0f };
+    get_background_color(bg_color);
+
+    set_highlight_color(bg_color, 1.0f);
+    render_highlight_window(window_rect, HRF_FILL);
 
     is_rendering_overview = true;
     for (auto page : get_overview_visible_pages(overview)) {
@@ -4418,26 +4412,31 @@ void PdfViewRhiWidget::delete_old_texture_shader_resource_bindings(){
         for (int i = 0; i < num_to_delete; i++){
             int index = texture_shader_resource_bindings.size() - 1 - i;
             QRhiShaderResourceBindings* resource_binding = texture_shader_resource_bindings[index].shader_resource_binding;
+            delete texture_shader_resource_bindings[index].uniform_buffer;
             delete resource_binding;
             texture_shader_resource_bindings.erase(texture_shader_resource_bindings.begin() + index);
         }
     }
 }
 
-QRhiShaderResourceBindings* PdfViewRhiWidget::get_shader_resource_binding_for_texture(QRhiTexture* texture){
+SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_binding_for_texture(QRhiTexture* texture){
 
     delete_old_texture_shader_resource_bindings();
 
     for (int i = 0; i < texture_shader_resource_bindings.size(); i++){
         if (texture_shader_resource_bindings[i].texture == texture){
             texture_shader_resource_bindings[i].last_acess_time = QDateTime::currentDateTime();
-            return texture_shader_resource_bindings[i].shader_resource_binding;
+            return &texture_shader_resource_bindings[i];
         }
     }
+    QRhiBuffer* uniform_buffer = rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(float));
+    uniform_buffer->create();
+
     QRhiShaderResourceBindings* new_texture_shader_resource_bindings = rhi()->newShaderResourceBindings();
 
     new_texture_shader_resource_bindings->setBindings({
-        QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, my_sampler.get())
+        QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, my_sampler.get()),
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
     });
 
     new_texture_shader_resource_bindings->create();
@@ -4446,7 +4445,8 @@ QRhiShaderResourceBindings* PdfViewRhiWidget::get_shader_resource_binding_for_te
     result.texture = texture;
     result.shader_resource_binding = new_texture_shader_resource_bindings;
     result.last_acess_time = QDateTime::currentDateTime();
+    result.uniform_buffer = uniform_buffer;
     texture_shader_resource_bindings.push_back(result);
 
-    return new_texture_shader_resource_bindings;
+    return &texture_shader_resource_bindings.back();
 }
