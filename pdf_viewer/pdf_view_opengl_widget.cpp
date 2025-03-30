@@ -4445,6 +4445,8 @@ PdfViewRhiWidget::PdfViewRhiWidget(DocumentView* document_view_, PdfRenderer* pd
     pdf_renderer = pdf_renderer_;
     document_manager = docman;
     is_helper = is_helper_;
+
+    initialize_stuff();
 }
 
 std::optional<GraphicsBackendExtras> PdfViewRhiWidget::get_backend_extras() {
