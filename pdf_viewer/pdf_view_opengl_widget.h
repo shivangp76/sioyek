@@ -192,7 +192,7 @@ protected:
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
 
-    virtual void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) = 0;
+    virtual void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false);
     void draw_icon(const QIcon& icon, QRect rect);
     void render_overview(OverviewState overview, bool draw_border=true);
     void render_page_separator(int page_number);
@@ -335,7 +335,7 @@ protected:
 
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
-    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+    // void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
     void render_compiled_drawings() override;
 
     void enable_stencil() override;
@@ -492,7 +492,7 @@ public:
     void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) override;
     void set_highlight_color(const float* color, float alpha) override;
     void prepare_highlight_pipeline() override;
-    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+    // void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
     void prepare_non_compiled_line_drawing_pipeline() override;
     void render_compiled_drawings() override;
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;

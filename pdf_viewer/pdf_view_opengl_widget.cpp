@@ -3621,7 +3621,7 @@ void PdfViewQPainterWidget::render_line_window(float gl_vertical_pos, std::optio
     }
 }
 
-void PdfViewQPainterWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
+void SioyekRendererBackend::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
 
     float last_thickness = -1;
     char last_drawing_type = 0;
@@ -4445,7 +4445,7 @@ void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){
     current_highlight_color[3] = alpha;
 }
 void PdfViewRhiWidget::prepare_highlight_pipeline(){}
-void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){}
+// void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){}
 void PdfViewRhiWidget::prepare_non_compiled_line_drawing_pipeline(){}
 void PdfViewRhiWidget::render_compiled_drawings(){}
 void PdfViewRhiWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings){}
