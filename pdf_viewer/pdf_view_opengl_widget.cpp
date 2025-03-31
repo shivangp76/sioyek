@@ -1,4 +1,4 @@
-#include <cmath>
+﻿#include <cmath>
 #include <qcolor.h>
 #include <QMouseEvent>
 #include <qapplication.h>
@@ -32,6 +32,7 @@
 const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 5 * sizeof(float);
 const int NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS = 100;
 const int MAX_VISIBLE_PAGES = 100;
+const int MAX_DRAWING_SIZE = 1000000;
 extern int NUM_PAGE_COLUMNS;
 extern bool DEBUG_DISPLAY_FREEHAND_POINTS;
 extern bool DEBUG_SMOOTH_FREEHAND_DRAWINGS;
@@ -1433,6 +1434,27 @@ void SioyekRendererBackend::add_coordinates_for_window_point(DocumentView* dv, f
     }
 }
 
+void SioyekRendererBackend::add_coordinates_for_window_point_no_fan(DocumentView* dv, float window_x, float window_y, float depth, float r, int point_polygon_vertices, std::vector<float>& out_coordinates){
+
+    float thickness_x = dv->get_zoom_level() / get_width();
+    float thickness_y = dv->get_zoom_level() / get_height();
+
+
+    for (int i = 0; i <= point_polygon_vertices; i++) {
+        out_coordinates.push_back(window_x);
+        out_coordinates.push_back(window_y);
+        out_coordinates.push_back(depth);
+
+        out_coordinates.push_back(window_x + r * thickness_x * std::cos(2 * M_PI * i / point_polygon_vertices) / 2);
+        out_coordinates.push_back(window_y + r * thickness_y * std::sin(2 * M_PI * i / point_polygon_vertices) / 2);
+        out_coordinates.push_back(depth);
+
+        out_coordinates.push_back(window_x + r * thickness_x * std::cos(2 * M_PI * (i + 1) / point_polygon_vertices) / 2);
+        out_coordinates.push_back(window_y + r * thickness_y * std::sin(2 * M_PI * (i + 1) / point_polygon_vertices) / 2);
+        out_coordinates.push_back(depth);
+    }
+}
+
 template<typename T>
 T lerp(T p1, T p2, float alpha) {
     float x = p1.x + alpha * (p2.x - p1.x);
@@ -1565,6 +1587,42 @@ void PdfViewOpenGLWidget::render_compiled_drawings() {
 
     }
 }
+inline void add_coordinates_for_line_segment(
+    const NormalizedWindowPos& p0,
+    const NormalizedWindowPos& p1,
+    const FreehandDrawingPoint& point0,
+    const FreehandDrawingPoint& point1,
+    const float width,
+    const float height,
+    const float thickness_x,
+    const float thickness_y,
+    const float highlight_factor,
+    const float prev_line_x,
+    const float prev_line_y,
+    std::vector<float>& coordinates){
+
+    float line_direction_x = (p1.x - p0.x) * width;
+    float line_direction_y = (p1.y - p0.y) * height;
+    float line_size = sqrt(line_direction_x * line_direction_x + line_direction_y * line_direction_y);
+    line_direction_x = line_direction_x / line_size;
+    line_direction_y = line_direction_y / line_size;
+
+    float ortho_x1 = -line_direction_y * thickness_x * point0.thickness * highlight_factor;
+    float ortho_y1 = line_direction_x * thickness_y * point0.thickness * highlight_factor;
+
+    float ortho_x2 = -line_direction_y * thickness_x * point1.thickness * highlight_factor;
+    float ortho_y2 = line_direction_x * thickness_y * point1.thickness * highlight_factor;
+
+    coordinates.push_back(p0.x - ortho_x1);
+    coordinates.push_back(p0.y - ortho_y1);
+    coordinates.push_back(p0.x + ortho_x1);
+    coordinates.push_back(p0.y + ortho_y1);
+
+    coordinates.push_back(p1.x - ortho_x1);
+    coordinates.push_back(p1.y - ortho_y1);
+    coordinates.push_back(p1.x + ortho_x2);
+    coordinates.push_back(p1.y + ortho_y2);
+}
 
 void PdfViewOpenGLWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
     if (drawings.size() == 0) return;
@@ -1681,34 +1739,14 @@ void PdfViewOpenGLWidget::render_drawings(QPainter* p, DocumentView* dv, const s
         float prev_line_y = first_line_y;
 
         for (int line_index = 0; line_index < drawing.points.size() - 1; line_index++) {
-            float line_direction_x = (window_positions[line_index + 1].x - window_positions[line_index].x) * width();
-            float line_direction_y = (window_positions[line_index + 1].y - window_positions[line_index].y) * height();
-            float line_size = sqrt(line_direction_x * line_direction_x + line_direction_y * line_direction_y);
-            line_direction_x = line_direction_x / line_size;
-            line_direction_y = line_direction_y / line_size;
-
-            float ortho_x1 = -line_direction_y * thickness_x * drawing.points[line_index].thickness * highlight_factor;
-            float ortho_y1 = line_direction_x * thickness_y * drawing.points[line_index].thickness * highlight_factor;
-
-            float ortho_x2 = -line_direction_y * thickness_x * drawing.points[line_index + 1].thickness * highlight_factor;
-            float ortho_y2 = line_direction_x * thickness_y * drawing.points[line_index + 1].thickness * highlight_factor;
-
-            float dot_prod_with_prev_direction = (prev_line_x * line_direction_x + prev_line_y * line_direction_y);
-
-            coordinates.push_back(window_positions[line_index].x - ortho_x1);
-            coordinates.push_back(window_positions[line_index].y - ortho_y1);
-            coordinates.push_back(window_positions[line_index].x + ortho_x1);
-            coordinates.push_back(window_positions[line_index].y + ortho_y1);
-
-            coordinates.push_back(window_positions[line_index + 1].x - ortho_x1);
-            coordinates.push_back(window_positions[line_index + 1].y - ortho_y1);
-            coordinates.push_back(window_positions[line_index + 1].x + ortho_x2);
-            coordinates.push_back(window_positions[line_index + 1].y + ortho_y2);
-
-            /* std::vector<float> point_coordinates; */
-            /* add_coordinates_for_window_point(dv, window_positions[line_index+1].x, window_positions[line_index+1].y, drawing.points[line_index+1].thickness * 2, N_POINT_VERTICES, point_coordinates); */
-            /* all_point_coordinates.push_back(point_coordinates); */
-
+            add_coordinates_for_line_segment(
+                window_positions[line_index], window_positions[line_index+1],
+                drawing.points[line_index], drawing.points[line_index + 1],
+                width(), height(),
+                thickness_x, thickness_y,
+                highlight_factor,
+                prev_line_x, prev_line_y,
+                coordinates);
         }
 
         add_coordinates_for_window_point(dv,
@@ -3906,9 +3944,20 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         const int vertex_size = 2 * sizeof(float);
         const int vertex_buffer_size = MAX_VISIBLE_PAGES * vertices_per_page * vertex_size;
         const int highlights_vertex_buffer_size = NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS * 6 * vertex_size;
+        const int drawings_vertex_buffer_size = MAX_DRAWING_SIZE * 6 * vertex_size;
+        const int drawings_index_buffer_size = MAX_DRAWING_SIZE * 6 * 4;
 
         vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, vertex_buffer_size));
         vertex_buffer_ptr->create();
+
+        drawings_vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, drawings_vertex_buffer_size));
+        drawings_vertex_buffer_ptr->create();
+
+        drawing_vertex_colors_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, drawings_vertex_buffer_size));
+        drawing_vertex_colors_ptr->create();
+
+        drawings_index_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::IndexBuffer, drawings_index_buffer_size));
+        drawings_index_buffer_ptr->create();
 
         highlights_vertex_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, highlights_vertex_buffer_size));
         highlights_vertex_buffer_ptr->create();
@@ -3921,6 +3970,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         qpainter_vertex_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Static, QRhiBuffer::VertexBuffer, 12 * sizeof(float)));
         qpainter_vertex_buffer->create();
+
+        drawings_resource_binding.reset(rhi()->newShaderResourceBindings());
+        drawings_resource_binding->setBindings({
+        });
+        drawings_resource_binding->create();
 
         QRhiShaderResourceBindings* texture_dummy_resource_bindings = rhi()->newShaderResourceBindings();
         texture_dummy_resource_bindings->setBindings({
@@ -3954,6 +4008,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         inverted_highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_borders_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        drawing_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         // test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
 
         colored_rect_pipeline->setShaderStages({
@@ -3976,6 +4031,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight_border.frag.qsb")) }
         });
 
+        drawing_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/drawing.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/drawing.frag.qsb")) }
+        });
+
         // test_rect_pipeline->setShaderStages({
         //     { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/test.vert.qsb")) },
         //     { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String("/Volumes/my_external_ssd/sioyek/sioyek-private/qsb_shaders/prebuilt/test.frag.qsb")) }
@@ -3996,6 +4056,12 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         QRhiVertexInputLayout highlight_borders_input_layout;
         highlight_borders_input_layout.setBindings({
             { 2 * sizeof(float) },
+        });
+
+        QRhiVertexInputLayout drawing_input_layout;
+        drawing_input_layout.setBindings({
+            { 3 * sizeof(float) },
+            { 4 * sizeof(float) },
         });
 
         // QRhiVertexInputLayout test_rect_input_layout;
@@ -4021,6 +4087,10 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_borders_input_layout.setAttributes({
             { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
         });
+        drawing_input_layout.setAttributes({
+            { 0, 0, QRhiVertexInputAttribute::Float3, 0 },
+            { 1, 1, QRhiVertexInputAttribute::Float4, 0 },
+        });
 
         // test_rect_input_layout.setAttributes({
         //     { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
@@ -4036,6 +4106,16 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         texture_target_blends.enable = true;
         colored_rect_pipeline->setTargetBlends({texture_target_blends});
         colored_rect_pipeline->create();
+
+        {
+            drawing_pipeline->setVertexInputLayout(drawing_input_layout);
+            drawing_pipeline->setShaderResourceBindings(drawings_resource_binding.get());
+            drawing_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            drawing_pipeline->setDepthTest(true);
+            drawing_pipeline->setDepthWrite(true);
+            drawing_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            drawing_pipeline->create();
+        }
 
         {
             highlight_pipeline->setVertexInputLayout(highlight_input_layout);
@@ -4132,7 +4212,10 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
     current_frame_highlight_rect_render_calls.clear();
+    current_frame_drawing_render_calls.clear();
+
     current_object_render_order = 0;
+    num_frame_drawing_triangles = 0;
 
     current_frame_resource_update_batch = resource_updates;
     qpainter_initialized_for_current_frame = false;
@@ -4154,6 +4237,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
     update_resources_for_current_frame_texture_render_calls(resource_updates);
     update_resources_for_current_frame_highlight_render_calls(resource_updates);
+    update_resources_for_current_frame_drawing_calls(resource_updates);
 
     if (qpainter_initialized_for_current_frame){
         qpainter_image = qpainter_image.mirrored(false, true);
@@ -4179,10 +4263,13 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     render_current_frame_highlights(command_buffer, false);
     render_current_frame_highlights(command_buffer, true);
 
+    render_current_frame_drawings(command_buffer);
+
     if (qpainter_initialized_for_current_frame){
         command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
         render_qpainter_texture(command_buffer);
     }
+
 
     command_buffer->endPass();
 
@@ -4389,6 +4476,138 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
         }
     }
 }
+void PdfViewRhiWidget::update_resources_for_current_frame_drawing_calls(QRhiResourceUpdateBatch* update_batch){
+
+
+
+    int render_order = 1;
+    if (current_frame_drawing_render_calls.size() > 0){
+        render_order = current_frame_drawing_render_calls[0].render_order;
+    }
+
+    float depth = 1.0f / static_cast<float>(render_order + 2.0f);
+
+    int vertex_offset = 0;
+    int color_offset = 0;
+
+    for (int i = 0; i < current_frame_drawing_render_calls.size(); i++){
+
+        SioyekDrawingRenderCall& drawing_call = current_frame_drawing_render_calls[i];
+
+        float thickness_x = drawing_call.dv->get_zoom_level() / get_width();
+        float thickness_y = drawing_call.dv->get_zoom_level() / get_height();
+
+        for (FreehandDrawing& drawing : drawing_call.drawings){
+
+            float current_drawing_color[4] = { HIGHLIGHT_COLORS[(drawing.type - 'a') * 3],
+                                               HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 1],
+                                               HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 2],
+                                               drawing.alpha
+            };
+
+            for (int j = 0; j < drawing.points.size() - 1; j++){
+                NormalizedWindowPos segment_begin_window_pos = drawing.points[j].pos.to_window_normalized(drawing_call.dv);
+                NormalizedWindowPos segment_end_window_pos = drawing.points[j + 1].pos.to_window_normalized(drawing_call.dv);
+                fvec2 segment_direction = segment_end_window_pos - segment_begin_window_pos;
+
+                // get the orthogonal normal vector
+                segment_direction.normalize();
+                std::swap(segment_direction.values[0], segment_direction.values[1]);
+                segment_direction.values[1] = -segment_direction.values[1];
+
+                segment_direction.values[0] *= thickness_x * drawing.points[j + 1].thickness;
+                segment_direction.values[1] *= thickness_y * drawing.points[j + 1].thickness;
+
+                NormalizedWindowPos top_left = segment_begin_window_pos + segment_direction;
+                NormalizedWindowPos bottom_left = segment_begin_window_pos - segment_direction;
+                NormalizedWindowPos top_right = segment_end_window_pos + segment_direction;
+                NormalizedWindowPos bottom_right = segment_end_window_pos - segment_direction;
+
+                float vertices[18] = {
+                    top_left.x, top_left.y, depth,
+                    bottom_left.x, bottom_left.y, depth,
+                    top_right.x, top_right.y, depth,
+
+                    bottom_left.x, bottom_left.y, depth,
+                    bottom_right.x, bottom_right.y, depth,
+                    top_right.x, top_right.y, depth,
+                };
+
+                float vertex_colors[24] = {
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                };
+
+                update_batch->updateDynamicBuffer(drawings_vertex_buffer_ptr.get(), vertex_offset, sizeof(vertices), vertices);
+                update_batch->updateDynamicBuffer(drawing_vertex_colors_ptr.get(), color_offset, sizeof(vertex_colors), vertex_colors);
+
+                vertex_offset += sizeof(vertices);
+                color_offset += sizeof(vertex_colors);
+                num_frame_drawing_triangles += 2;
+
+                std::vector<float> point_triangles;
+                std::vector<float> point_colors;
+                add_coordinates_for_window_point_no_fan(drawing_call.dv, segment_begin_window_pos.x, segment_begin_window_pos.y, depth, drawing.points[j].thickness * 2, 10, point_triangles);
+                int num_point_vertices = point_triangles.size() / 3;
+                for (int i = 0; i < num_point_vertices; i++){
+                    point_colors.push_back(current_drawing_color[0]);
+                    point_colors.push_back(current_drawing_color[1]);
+                    point_colors.push_back(current_drawing_color[2]);
+                    point_colors.push_back(current_drawing_color[3]);
+                }
+
+                update_batch->updateDynamicBuffer(drawings_vertex_buffer_ptr.get(), vertex_offset, sizeof(float) * point_triangles.size(), point_triangles.data());
+                update_batch->updateDynamicBuffer(drawing_vertex_colors_ptr.get(), color_offset, sizeof(float) * point_colors.size(), point_colors.data());
+
+                vertex_offset += sizeof(float) * point_triangles.size();
+                color_offset += sizeof(float) * point_colors.size();
+                num_frame_drawing_triangles += num_point_vertices / 3;
+
+
+
+            }
+            FreehandDrawingPoint last_point = drawing.points[drawing.points.size()-1];
+            NormalizedWindowPos last_point_window = last_point.pos.to_window_normalized(drawing_call.dv);
+            std::vector<float> point_triangles;
+            std::vector<float> point_colors;
+            add_coordinates_for_window_point_no_fan(drawing_call.dv, last_point_window.x, last_point_window.y, depth, last_point.thickness * 2, 10, point_triangles);
+            int num_point_vertices = point_triangles.size() / 3;
+            for (int i = 0; i < num_point_vertices; i++){
+                point_colors.push_back(current_drawing_color[0]);
+                point_colors.push_back(current_drawing_color[1]);
+                point_colors.push_back(current_drawing_color[2]);
+                point_colors.push_back(current_drawing_color[3]);
+            }
+
+            update_batch->updateDynamicBuffer(drawings_vertex_buffer_ptr.get(), vertex_offset, sizeof(float) * point_triangles.size(), point_triangles.data());
+            update_batch->updateDynamicBuffer(drawing_vertex_colors_ptr.get(), color_offset, sizeof(float) * point_colors.size(), point_colors.data());
+
+            vertex_offset += sizeof(float) * point_triangles.size();
+            color_offset += sizeof(float) * point_colors.size();
+            num_frame_drawing_triangles += num_point_vertices / 3;
+
+        }
+    }
+}
+
+void PdfViewRhiWidget::render_current_frame_drawings(QRhiCommandBuffer* command_buffer){
+    command_buffer->setGraphicsPipeline(drawing_pipeline.get());
+
+    // QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS-1];
+    command_buffer->setShaderResources(drawings_resource_binding.get());
+
+    const QRhiCommandBuffer::VertexInput vertex_buffer_binding(drawings_vertex_buffer_ptr.get(), 0);
+    const QRhiCommandBuffer::VertexInput color_buffer_binding(drawing_vertex_colors_ptr.get(), 0);
+
+    command_buffer->setVertexInput(0, 1, &vertex_buffer_binding);
+    command_buffer->setVertexInput(1, 1, &color_buffer_binding);
+    command_buffer->draw(num_frame_drawing_triangles * 3);
+}
+
 void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch){
 
     int max_iter = std::min((int)current_frame_texture_render_calls.size(), MAX_VISIBLE_PAGES);
@@ -4532,7 +4751,25 @@ void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){
     current_highlight_color[3] = alpha;
 }
 void PdfViewRhiWidget::prepare_highlight_pipeline(){}
-// void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){}
+
+void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){
+    SioyekDrawingRenderCall drawing_call;
+    drawing_call.drawings = drawings;
+    drawing_call.dv = dv;
+    drawing_call.render_order = current_object_render_order++;
+    drawing_call.highlighted = highlighted;
+
+    // AbsoluteRect current_rect = dv->get_view_rect();
+    // for (const FreehandDrawing& drawing: drawings){
+    //     if (drawing.bbox().intersects(current_rect)){
+    //         drawing_call.drawings.push_back(drawing);
+    //     }
+    // }
+
+    current_frame_drawing_render_calls.push_back(drawing_call);
+
+}
+
 void PdfViewRhiWidget::prepare_non_compiled_line_drawing_pipeline(){}
 void PdfViewRhiWidget::render_compiled_drawings(){}
 void PdfViewRhiWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings){}

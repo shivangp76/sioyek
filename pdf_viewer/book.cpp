@@ -734,7 +734,7 @@ AbsoluteRect BookMark::rect() const {
     return AbsoluteRect(begin_pos(), end_pos());
 }
 
-AbsoluteRect FreehandDrawing::bbox(){
+AbsoluteRect FreehandDrawing::bbox() const {
     AbsoluteRect res;
     if (points.size() > 0) {
         res.x0 = points[0].pos.x;

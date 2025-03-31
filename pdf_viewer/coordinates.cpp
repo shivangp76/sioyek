@@ -214,6 +214,10 @@ NormalizedWindowPos operator+(const NormalizedWindowPos& lhs, const fvec2& rhs) 
     return NormalizedWindowPos{ lhs.x + rhs[0], lhs.y + rhs[1]};
 }
 
+NormalizedWindowPos operator-(const NormalizedWindowPos& lhs, const fvec2& rhs) {
+    return NormalizedWindowPos{ lhs.x - rhs[0], lhs.y - rhs[1]};
+}
+
 WindowPos operator+(const WindowPos& lhs, const ivec2& rhs) {
     return WindowPos{ lhs.x + rhs[0], lhs.y + rhs[1]};
 }

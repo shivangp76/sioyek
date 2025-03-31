@@ -738,6 +738,7 @@ public:
     fz_stext_char* get_closest_character_to_cusrsor(AbsoluteDocumentPos pos);
     void update_overview_highlighted_paper_with_position(DocumentPos docpos);
     void zoom_selected_freehand_drawings(float zoom_factor);
+    AbsoluteRect get_view_rect();
 };
 
 struct CachedScratchpadPixmapData {

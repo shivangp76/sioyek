@@ -306,7 +306,7 @@ struct FreehandDrawing {
     char type;
     float alpha = 1;
     QDateTime creattion_time;
-    AbsoluteRect bbox();
+    AbsoluteRect bbox() const;
 };
 
 struct PixmapDrawing {

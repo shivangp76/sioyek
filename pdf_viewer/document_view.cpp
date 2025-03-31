@@ -6278,3 +6278,12 @@ void DocumentView::scroll_bookmark_with_uuid(const std::string& bookmark_uuid, f
         }
     }
 }
+
+AbsoluteRect DocumentView::get_view_rect(){
+    NormalizedWindowRect nwr;
+    nwr.x0 = -1;
+    nwr.x1 = 1;
+    nwr.y0 = -1;
+    nwr.y1 = 1;
+    return nwr.to_window(this).to_absolute(this);
+}
