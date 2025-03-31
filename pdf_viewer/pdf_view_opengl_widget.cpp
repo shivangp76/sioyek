@@ -4567,7 +4567,6 @@ QPainter* PdfViewRhiWidget::get_painter(){
         qpainter_image.fill(Qt::transparent);
         painter_.begin(&qpainter_image);
         qpainter_initialized_for_current_frame = true;
-        qDebug() << "initialized qpainter " << QDateTime::currentDateTime();
     }
     return &painter_;
 }
