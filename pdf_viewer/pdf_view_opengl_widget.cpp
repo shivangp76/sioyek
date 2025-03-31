@@ -4754,17 +4754,18 @@ void PdfViewRhiWidget::prepare_highlight_pipeline(){}
 
 void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){
     SioyekDrawingRenderCall drawing_call;
-    drawing_call.drawings = drawings;
+    // drawing_call.drawings = drawings;
     drawing_call.dv = dv;
     drawing_call.render_order = current_object_render_order++;
     drawing_call.highlighted = highlighted;
 
-    // AbsoluteRect current_rect = dv->get_view_rect();
-    // for (const FreehandDrawing& drawing: drawings){
-    //     if (drawing.bbox().intersects(current_rect)){
-    //         drawing_call.drawings.push_back(drawing);
-    //     }
-    // }
+
+    AbsoluteRect current_rect = dv->get_view_rect();
+    for (const FreehandDrawing& drawing: drawings){
+        if (drawing.bbox().intersects(current_rect)){
+            drawing_call.drawings.push_back(drawing);
+        }
+    }
 
     current_frame_drawing_render_calls.push_back(drawing_call);
 
