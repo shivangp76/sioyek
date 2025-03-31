@@ -3871,12 +3871,9 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
     if (rhi_ptr != rhi()) {
         colored_rect_pipeline.reset();
         rhi_ptr = rhi();
-    }
-    if (!my_sampler){
         my_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Linear, QRhiSampler::Linear, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
         my_sampler->create();
     }
-    qDebug() << (rhi_ptr != rhi());
 
     rhi_ptr = rhi();
 
@@ -3903,7 +3900,8 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
     }
 
 
-    if (!vertex_buffer_ptr){
+
+    if (!colored_rect_pipeline) {
         const int vertices_per_page = 6;
         const int vertex_size = 2 * sizeof(float);
         const int vertex_buffer_size = MAX_VISIBLE_PAGES * vertices_per_page * vertex_size;
@@ -3920,10 +3918,6 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         uv_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, 12 * sizeof(float)));
         uv_buffer_ptr->create();
-    }
-
-
-    if (!colored_rect_pipeline) {
 
         qpainter_vertex_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Static, QRhiBuffer::VertexBuffer, 12 * sizeof(float)));
         qpainter_vertex_buffer->create();
