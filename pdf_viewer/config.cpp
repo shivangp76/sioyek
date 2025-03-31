@@ -422,7 +422,7 @@ int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
 #else
 // int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
 int RENDERER_BACKEND = RenderBackend::SioyekRhiBackend;
-//int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
+// int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
 #endif
 
 float LINE_SELECT_RULER_COLOR[3] = { 1.0f, 0.0f, 1.0f };

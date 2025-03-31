@@ -3789,6 +3789,8 @@ void PdfViewQPainterWidget::draw_overview_border(std::optional<OverviewState> ma
 
 void PdfViewQPainterWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) {
 
+    if (!dv->scratchpad) return;
+
     if (drawings.size() == 0) {
         dv->scratchpad->on_compile();
     }
@@ -4116,7 +4118,14 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
     current_frame_resource_update_batch = resource_updates;
     frame_required_qpainter = false;
-    my_render();
+
+    if (scratch()){
+        render_scratchpad();
+    }
+    else{
+        my_render();
+    }
+
     current_frame_resource_update_batch = nullptr;
 
     if (last_frame_required_qpainter){
