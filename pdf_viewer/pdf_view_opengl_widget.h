@@ -451,6 +451,7 @@ private:
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
     bool is_rendering_overview = false;
     int current_object_render_order = 0;
+    int current_frame_overview_object_index = -1;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
     std::vector<SioyekHighlightRectRenderCall> current_frame_highlight_rect_render_calls;

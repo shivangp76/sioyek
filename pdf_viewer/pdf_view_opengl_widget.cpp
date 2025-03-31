@@ -4159,6 +4159,10 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
         qpainter_image = qpainter_image.mirrored(false, true);
         resource_updates->uploadTexture(qpainter_texture.get(), qpainter_image);
         float depth = 0.0f;
+        // if we are rendering the overview, make sure it is rendered on top of the qpainter objects
+        if (current_frame_overview_object_index != -1){
+            depth = 1.0f / static_cast<float>(current_frame_overview_object_index + 2.0f);
+        }
         resource_updates->updateDynamicBuffer(qpainter_uniform_buffer.get(), 0, sizeof(float), &depth);
     }
 
@@ -4505,6 +4509,7 @@ void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect,
     render_highlight_window(window_rect, HRF_FILL);
 
     is_rendering_overview = true;
+    current_frame_overview_object_index = current_object_render_order;
     for (auto page : get_overview_visible_pages(overview)) {
         render_page(page, overview, ColorPalette::NoPalette, false);
     }
