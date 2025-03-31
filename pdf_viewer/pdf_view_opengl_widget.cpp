@@ -4103,13 +4103,6 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     // image.setDevicePixelRatio(get_device_pixel_ratio());
     delete_old_texture_shader_resource_bindings();
 
-    bool last_frame_required_qpainter = frame_required_qpainter;
-    if (last_frame_required_qpainter){
-        // we want to avoid using qpainter if possible
-        // so we only do this if it was required last frame
-        qpainter_image.fill(Qt::transparent);
-        get_painter()->begin(&qpainter_image);
-    }
 
     QRhiResourceUpdateBatch* resource_updates = rhi()->nextResourceUpdateBatch();
     current_frame_texture_render_calls.clear();
@@ -4117,7 +4110,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     current_object_render_order = 0;
 
     current_frame_resource_update_batch = resource_updates;
-    frame_required_qpainter = false;
+    qpainter_initialized_for_current_frame = false;
 
     if (scratch()){
         render_scratchpad();
@@ -4128,7 +4121,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
     current_frame_resource_update_batch = nullptr;
 
-    if (last_frame_required_qpainter){
+    if (qpainter_initialized_for_current_frame){
         painter_.end();
         // get_painter()->end();
     }
@@ -4137,7 +4130,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     update_resources_for_current_frame_texture_render_calls(resource_updates);
     update_resources_for_current_frame_highlight_render_calls(resource_updates);
 
-    if (last_frame_required_qpainter){
+    if (qpainter_initialized_for_current_frame){
         qpainter_image = qpainter_image.mirrored(false, true);
         resource_updates->uploadTexture(qpainter_texture.get(), qpainter_image);
         float depth = 0.0f;
@@ -4157,7 +4150,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     command_buffer->setGraphicsPipeline(highlight_pipeline.get());
     render_current_frame_highlights(command_buffer);
 
-    if (last_frame_required_qpainter){
+    if (qpainter_initialized_for_current_frame){
         command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
         render_qpainter_texture(command_buffer);
     }
@@ -4568,6 +4561,13 @@ QPainter* PdfViewQPainterWidget::get_painter(){
 }
 
 QPainter* PdfViewRhiWidget::get_painter(){
-    frame_required_qpainter = true;
+    if (!qpainter_initialized_for_current_frame){
+        // we want to avoid using qpainter if possible
+        // so we only do this if it was required last frame
+        qpainter_image.fill(Qt::transparent);
+        painter_.begin(&qpainter_image);
+        qpainter_initialized_for_current_frame = true;
+        qDebug() << "initialized qpainter " << QDateTime::currentDateTime();
+    }
     return &painter_;
 }
