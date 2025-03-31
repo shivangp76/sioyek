@@ -404,6 +404,7 @@ struct SioyekTextureRenderCall{
 struct SioyekHighlightRectRenderCall{
     NormalizedWindowRect rect;
     float color[4] = {0};
+    bool in_overview = false;
     int flags;
     int render_order;
 };
@@ -460,12 +461,14 @@ private:
     void update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch);
     void render_qpainter_texture(QRhiCommandBuffer* command_buffer);
     void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
-    void render_current_frame_highlights(QRhiCommandBuffer* command_buffer);
+    void render_current_frame_highlights(QRhiCommandBuffer* command_buffer, bool overview);
 
     SioyekTextureShaderResourceBinding* get_shader_resource_binding_for_texture(QRhiTexture* texture);
     void delete_old_texture_shader_resource_bindings();
 
     QPainter* get_painter() override;
+    void set_overview_scissor(QRhiCommandBuffer* command_buffer);
+    void reset_overview_scissor(QRhiCommandBuffer* command_buffer);
 public:
 
     PdfViewRhiWidget(DocumentView* document_view, PdfRenderer* pdf_renderer, DocumentManager* docman, bool is_helper, QWidget* parent = nullptr);

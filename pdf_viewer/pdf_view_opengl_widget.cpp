@@ -4054,6 +4054,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
             highlight_target_blends.enable = true;
             highlight_pipeline->setTargetBlends({highlight_target_blends});
+            highlight_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
             highlight_pipeline->create();
         }
 
@@ -4074,6 +4075,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
             highlight_target_blends.enable = true;
             inverted_highlight_pipeline->setTargetBlends({highlight_target_blends});
+            inverted_highlight_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
             inverted_highlight_pipeline->create();
         }
 
@@ -4083,6 +4085,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_borders_pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
         highlight_borders_pipeline->setDepthTest(true);
         highlight_borders_pipeline->setDepthWrite(true);
+        highlight_borders_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
         highlight_borders_pipeline->create();
 
         // test_rect_pipeline->setVertexInputLayout(test_rect_input_layout);
@@ -4169,8 +4172,8 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     render_current_frame_textures(command_buffer);
 
 
-    command_buffer->setGraphicsPipeline(highlight_pipeline.get());
-    render_current_frame_highlights(command_buffer);
+    render_current_frame_highlights(command_buffer, false);
+    render_current_frame_highlights(command_buffer, true);
 
     if (qpainter_initialized_for_current_frame){
         command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
@@ -4218,14 +4221,7 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
     }
 
 
-    NormalizedWindowRect overview_rect = dv()->get_overview_rect();
-    int x0 = (overview_rect.x0 + 1) / 2 * width() * get_device_pixel_ratio();
-    int x1 = (overview_rect.x1 + 1) / 2 * width() * get_device_pixel_ratio();
-    int y0 = (overview_rect.y0 + 1) / 2 * height() * get_device_pixel_ratio();
-    int y1 = (overview_rect.y1 + 1) / 2 * height() * get_device_pixel_ratio();
-
-    QRhiScissor overview_scissor(x0, y0, x1 - x0, y1 - y0);
-    command_buffer->setScissor(overview_scissor);
+    set_overview_scissor(command_buffer);
     for (int i = 0; i < max_iter; i++){
         if (!current_frame_texture_render_calls[i].in_overview) continue;
         QRhiTexture* texture = std::get<QRhiTexture*>(current_frame_texture_render_calls[i].texture);
@@ -4245,17 +4241,38 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
             command_buffer->draw(6);
         }
     }
+    reset_overview_scissor(command_buffer);
 
+}
+void PdfViewRhiWidget::set_overview_scissor(QRhiCommandBuffer* command_buffer){
+    NormalizedWindowRect overview_rect = dv()->get_overview_rect();
+    int x0 = (overview_rect.x0 + 1) / 2 * width() * get_device_pixel_ratio();
+    int x1 = (overview_rect.x1 + 1) / 2 * width() * get_device_pixel_ratio();
+    int y0 = (overview_rect.y0 + 1) / 2 * height() * get_device_pixel_ratio();
+    int y1 = (overview_rect.y1 + 1) / 2 * height() * get_device_pixel_ratio();
+
+    QRhiScissor overview_scissor(x0, y0, x1 - x0, y1 - y0);
+    command_buffer->setScissor(overview_scissor);
+}
+
+void PdfViewRhiWidget::reset_overview_scissor(QRhiCommandBuffer* command_buffer){
     int w = width() * get_device_pixel_ratio();
     int h = height() * get_device_pixel_ratio();
     command_buffer->setScissor(QRhiScissor(0, 0, w, h));
 
 }
 
-void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* command_buffer){
+void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* command_buffer, bool overview){
     int max_iter = std::min((int)current_frame_highlight_rect_render_calls.size(), NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS);
+    if (overview){
+        set_overview_scissor(command_buffer);
+    }
 
+    command_buffer->setGraphicsPipeline(highlight_pipeline.get());
     for (int i = 0; i < max_iter; i++){
+
+        if (current_frame_highlight_rect_render_calls[i].in_overview != overview) continue;
+
         int flags = current_frame_highlight_rect_render_calls[i].flags;
         bool fill = flags & HighlightRenderFlags::HRF_FILL;
         bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
@@ -4278,6 +4295,9 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
     command_buffer->setGraphicsPipeline(inverted_highlight_pipeline.get());
 
     for (int i = 0; i < max_iter; i++){
+
+        if (current_frame_highlight_rect_render_calls[i].in_overview != overview) continue;
+
         int flags = current_frame_highlight_rect_render_calls[i].flags;
         bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
         if (!inverted) continue;
@@ -4298,6 +4318,9 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
     command_buffer->setGraphicsPipeline(highlight_borders_pipeline.get());
 
     for (int i = 0; i < max_iter; i++){
+
+        if (current_frame_highlight_rect_render_calls[i].in_overview != overview) continue;
+
         int flags = current_frame_highlight_rect_render_calls[i].flags;
         bool has_border = flags & HighlightRenderFlags::HRF_BORDER;
         bool has_underline = flags & HighlightRenderFlags::HRF_UNDERLINE;
@@ -4317,6 +4340,9 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
                 command_buffer->draw(2);
             }
         }
+    }
+    if (overview){
+        reset_overview_scissor(command_buffer);
     }
 }
 
@@ -4431,6 +4457,7 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
 
     }
     highlight_call.flags = flags;
+    highlight_call.in_overview = is_rendering_overview;
     highlight_call.render_order = current_object_render_order++;
 
     if (flags == HighlightRenderFlags::HRF_UNDERLINE){
@@ -4484,11 +4511,11 @@ void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect,
 
     render_overview_highlights(overview);
 
+    // we don't want the overview border to be clipped by the overview scissor
+    is_rendering_overview = false;
     float border_color[3] = {0.5f, 0.5f, 0.5f};
     set_highlight_color(border_color, 0.3f);
     render_highlight_window(document_view->get_overview_rect(overview), HRF_BORDER);
-
-    is_rendering_overview = false;
 
 }
 void PdfViewRhiWidget::set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level){}
