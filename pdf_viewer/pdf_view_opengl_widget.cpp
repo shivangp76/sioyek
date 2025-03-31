@@ -3952,6 +3952,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         colored_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        inverted_highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_borders_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         // test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
 
@@ -3961,6 +3962,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         });
 
         highlight_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_highlight.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight.frag.qsb")) }
+        });
+
+        inverted_highlight_pipeline->setShaderStages({
             { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_highlight.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight.frag.qsb")) }
         });
@@ -4031,23 +4037,45 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline->setTargetBlends({texture_target_blends});
         colored_rect_pipeline->create();
 
-        highlight_pipeline->setVertexInputLayout(highlight_input_layout);
-        highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
-        highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
-        highlight_pipeline->setDepthTest(true);
-        highlight_pipeline->setDepthWrite(true);
-        QRhiGraphicsPipeline::TargetBlend highlight_target_blends;
+        {
+            highlight_pipeline->setVertexInputLayout(highlight_input_layout);
+            highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
+            highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            highlight_pipeline->setDepthTest(true);
+            highlight_pipeline->setDepthWrite(true);
+            QRhiGraphicsPipeline::TargetBlend highlight_target_blends;
 
-        highlight_target_blends.opAlpha = QRhiGraphicsPipeline::BlendOp::Add;
-        highlight_target_blends.opColor = QRhiGraphicsPipeline::BlendOp::Add;
-        highlight_target_blends.srcAlpha = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
-        highlight_target_blends.dstAlpha = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
-        highlight_target_blends.srcColor = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
-        highlight_target_blends.dstColor = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
+            highlight_target_blends.opAlpha = QRhiGraphicsPipeline::BlendOp::Add;
+            highlight_target_blends.opColor = QRhiGraphicsPipeline::BlendOp::Add;
+            highlight_target_blends.srcAlpha = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
+            highlight_target_blends.dstAlpha = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
+            highlight_target_blends.srcColor = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
+            highlight_target_blends.dstColor = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
 
-        highlight_target_blends.enable = true;
-        highlight_pipeline->setTargetBlends({highlight_target_blends});
-        highlight_pipeline->create();
+            highlight_target_blends.enable = true;
+            highlight_pipeline->setTargetBlends({highlight_target_blends});
+            highlight_pipeline->create();
+        }
+
+        {
+            inverted_highlight_pipeline->setVertexInputLayout(highlight_input_layout);
+            inverted_highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
+            inverted_highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            inverted_highlight_pipeline->setDepthTest(true);
+            inverted_highlight_pipeline->setDepthWrite(true);
+            QRhiGraphicsPipeline::TargetBlend highlight_target_blends;
+
+            highlight_target_blends.opAlpha = QRhiGraphicsPipeline::BlendOp::Add;
+            highlight_target_blends.opColor = QRhiGraphicsPipeline::BlendOp::Subtract;
+            highlight_target_blends.srcAlpha = QRhiGraphicsPipeline::BlendFactor::SrcAlpha;
+            highlight_target_blends.dstAlpha = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
+            highlight_target_blends.srcColor = QRhiGraphicsPipeline::BlendFactor::One;
+            highlight_target_blends.dstColor = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcAlpha;
+
+            highlight_target_blends.enable = true;
+            inverted_highlight_pipeline->setTargetBlends({highlight_target_blends});
+            inverted_highlight_pipeline->create();
+        }
 
         highlight_borders_pipeline->setVertexInputLayout(highlight_borders_input_layout);
         highlight_borders_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
@@ -4230,7 +4258,9 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
     for (int i = 0; i < max_iter; i++){
         int flags = current_frame_highlight_rect_render_calls[i].flags;
         bool fill = flags & HighlightRenderFlags::HRF_FILL;
+        bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
         if (!fill) continue;
+        if (inverted) continue;
         int offset = 12 * sizeof(float) * i;
 
         QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
@@ -4243,7 +4273,26 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
         command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
         // command_buffer->setVertexInput(1, 1, &uvbufBinding);
         command_buffer->draw(6);
+    }
 
+    command_buffer->setGraphicsPipeline(inverted_highlight_pipeline.get());
+
+    for (int i = 0; i < max_iter; i++){
+        int flags = current_frame_highlight_rect_render_calls[i].flags;
+        bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
+        if (!inverted) continue;
+        int offset = 12 * sizeof(float) * i;
+
+        QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
+        command_buffer->setShaderResources(resource_bindings);
+
+        const QRhiCommandBuffer::VertexInput vbufBinding(highlights_vertex_buffer_ptr.get(), offset);
+        const QRhiCommandBuffer::VertexInput uv_buffer_binding(uv_buffer_ptr.get(), 0);
+
+        command_buffer->setVertexInput(0, 1, &vbufBinding);
+        command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
+        // command_buffer->setVertexInput(1, 1, &uvbufBinding);
+        command_buffer->draw(6);
     }
 
     command_buffer->setGraphicsPipeline(highlight_borders_pipeline.get());
@@ -4366,11 +4415,21 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
 
 void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
     SioyekHighlightRectRenderCall highlight_call;
+    bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
     highlight_call.rect = window_rect;
-    highlight_call.color[0] = current_highlight_color[0];
-    highlight_call.color[1] = current_highlight_color[1];
-    highlight_call.color[2] = current_highlight_color[2];
-    highlight_call.color[3] = current_highlight_color[3];
+    if (!inverted){
+        highlight_call.color[0] = current_highlight_color[0];
+        highlight_call.color[1] = current_highlight_color[1];
+        highlight_call.color[2] = current_highlight_color[2];
+        highlight_call.color[3] = current_highlight_color[3];
+    }
+    else{
+        highlight_call.color[0] = 1.0f;
+        highlight_call.color[1] = 1.0f;
+        highlight_call.color[2] = 1.0f;
+        highlight_call.color[3] = 0.1f;
+
+    }
     highlight_call.flags = flags;
     highlight_call.render_order = current_object_render_order++;
 
