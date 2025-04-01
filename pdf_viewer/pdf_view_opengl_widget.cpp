@@ -4299,7 +4299,7 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
     int max_iter = std::min((int)current_frame_texture_render_calls.size(), MAX_VISIBLE_PAGES);
 
     for (int i = 0; i < max_iter; i++){
-        if (current_frame_texture_render_calls[i].in_overview) continue;
+        if (current_frame_texture_render_calls[i].overview.has_value()) continue;
         QRhiTexture* texture = std::get<QRhiTexture*>(current_frame_texture_render_calls[i].texture);
 
         int offset = 12 * sizeof(float) * i;
@@ -4319,9 +4319,9 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
     }
 
 
-    set_overview_scissor(command_buffer);
     for (int i = 0; i < max_iter; i++){
-        if (!current_frame_texture_render_calls[i].in_overview) continue;
+        if (!current_frame_texture_render_calls[i].overview.has_value()) continue;
+        set_overview_scissor(command_buffer, current_frame_texture_render_calls[i].overview);
         QRhiTexture* texture = std::get<QRhiTexture*>(current_frame_texture_render_calls[i].texture);
 
         int offset = 12 * sizeof(float) * i;
@@ -4342,12 +4342,17 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
     reset_overview_scissor(command_buffer);
 
 }
-void PdfViewRhiWidget::set_overview_scissor(QRhiCommandBuffer* command_buffer){
-    NormalizedWindowRect overview_rect = dv()->get_overview_rect();
+void PdfViewRhiWidget::set_overview_scissor(QRhiCommandBuffer* command_buffer, std::optional<OverviewState> overview){
+    NormalizedWindowRect overview_rect = dv()->get_overview_rect(overview);
+    // NormalizedWindowRect overview_rect = dv()->get_overview_rect();
     int x0 = (overview_rect.x0 + 1) / 2 * width() * get_device_pixel_ratio();
     int x1 = (overview_rect.x1 + 1) / 2 * width() * get_device_pixel_ratio();
     int y0 = (overview_rect.y0 + 1) / 2 * height() * get_device_pixel_ratio();
     int y1 = (overview_rect.y1 + 1) / 2 * height() * get_device_pixel_ratio();
+    qDebug() << x0 << " " << x1 << " " << y0 << " " << y1;
+    if (y1 < y0){
+        std::swap(y1, y0);
+    }
 
     QRhiScissor overview_scissor(x0, y0, x1 - x0, y1 - y0);
     command_buffer->setScissor(overview_scissor);
@@ -4363,7 +4368,7 @@ void PdfViewRhiWidget::reset_overview_scissor(QRhiCommandBuffer* command_buffer)
 void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* command_buffer, bool overview){
     int max_iter = std::min((int)current_frame_highlight_rect_render_calls.size(), NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS);
     if (overview){
-        set_overview_scissor(command_buffer);
+        set_overview_scissor(command_buffer, {});
     }
 
     command_buffer->setGraphicsPipeline(highlight_pipeline.get());
@@ -4661,7 +4666,7 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
         SioyekTextureRenderCall render_call;
         render_call.rect = rect;
         render_call.texture = texture.value();
-        render_call.in_overview = is_rendering_overview;
+        render_call.overview = current_overview;
         render_call.render_order = current_object_render_order++;
         current_frame_texture_render_calls.push_back(render_call);
     }
@@ -4685,7 +4690,7 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
 
     }
     highlight_call.flags = flags;
-    highlight_call.in_overview = is_rendering_overview;
+    highlight_call.in_overview = current_overview.has_value();
     highlight_call.render_order = current_object_render_order++;
 
     if (flags == HighlightRenderFlags::HRF_UNDERLINE){
@@ -4732,7 +4737,7 @@ void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect,
     set_highlight_color(bg_color, 1.0f);
     render_highlight_window(window_rect, HRF_FILL);
 
-    is_rendering_overview = true;
+    current_overview = overview;
     current_frame_overview_object_index = current_object_render_order;
     for (auto page : get_overview_visible_pages(overview)) {
         render_page(page, overview, ColorPalette::NoPalette, false);
@@ -4741,7 +4746,7 @@ void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect,
     render_overview_highlights(overview);
 
     // we don't want the overview border to be clipped by the overview scissor
-    is_rendering_overview = false;
+    current_overview = {};
     float border_color[3] = {0.5f, 0.5f, 0.5f};
     set_highlight_color(border_color, 0.3f);
     render_highlight_window(document_view->get_overview_rect(overview), HRF_BORDER);

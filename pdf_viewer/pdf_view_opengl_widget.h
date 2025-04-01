@@ -398,7 +398,7 @@ QShader get_rhi_shader(const QString &file_path);
 struct SioyekTextureRenderCall{
     SioyekTextureType texture;
     NormalizedWindowRect rect;
-    bool in_overview = false;
+    std::optional<OverviewState> overview;
     int render_order;
 };
 
@@ -463,7 +463,7 @@ private:
     float current_highlight_color[4];
     QRhiCommandBuffer* current_frame_command_buffer = nullptr;
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
-    bool is_rendering_overview = false;
+    std::optional<OverviewState> current_overview  = {};
     int current_object_render_order = 0;
     int current_frame_overview_object_index = -1;
     int num_frame_drawing_triangles = 0;
@@ -487,7 +487,7 @@ private:
     void delete_old_texture_shader_resource_bindings();
 
     QPainter* get_painter() override;
-    void set_overview_scissor(QRhiCommandBuffer* command_buffer);
+    void set_overview_scissor(QRhiCommandBuffer* command_buffer, std::optional<OverviewState> overview);
     void reset_overview_scissor(QRhiCommandBuffer* command_buffer);
 public:
 
