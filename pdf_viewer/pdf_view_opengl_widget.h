@@ -429,6 +429,7 @@ private:
     QRhi* rhi_ptr = nullptr;
     QPainter painter_;
 
+    const int sample_count = 4;
     QDateTime last_frame_time;
     std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> drawings_vertex_buffer_ptr;

@@ -1,4 +1,4 @@
-﻿#include <cmath>
+#include <cmath>
 #include <qcolor.h>
 #include <QMouseEvent>
 #include <qapplication.h>
@@ -4105,6 +4105,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         QRhiGraphicsPipeline::TargetBlend texture_target_blends;
         texture_target_blends.enable = true;
         colored_rect_pipeline->setTargetBlends({texture_target_blends});
+        colored_rect_pipeline->setSampleCount(sample_count);
         colored_rect_pipeline->create();
 
         {
@@ -4114,6 +4115,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             drawing_pipeline->setDepthTest(true);
             drawing_pipeline->setDepthWrite(true);
             drawing_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            drawing_pipeline->setSampleCount(sample_count);
             drawing_pipeline->create();
         }
 
@@ -4135,6 +4137,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             highlight_target_blends.enable = true;
             highlight_pipeline->setTargetBlends({highlight_target_blends});
             highlight_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            highlight_pipeline->setSampleCount(sample_count);
             highlight_pipeline->create();
         }
 
@@ -4156,6 +4159,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             highlight_target_blends.enable = true;
             inverted_highlight_pipeline->setTargetBlends({highlight_target_blends});
             inverted_highlight_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            inverted_highlight_pipeline->setSampleCount(sample_count);
             inverted_highlight_pipeline->create();
         }
 
@@ -4166,6 +4170,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         highlight_borders_pipeline->setDepthTest(true);
         highlight_borders_pipeline->setDepthWrite(true);
         highlight_borders_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+        highlight_borders_pipeline->setSampleCount(sample_count);
         highlight_borders_pipeline->create();
 
         // test_rect_pipeline->setVertexInputLayout(test_rect_input_layout);
@@ -4253,7 +4258,8 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     QColor background_color = QColor::fromRgbF(background_clear_color[0], background_clear_color[1], background_clear_color[2]);
     command_buffer->beginPass(renderTarget(), background_color, { 1.0f, 0 }, resource_updates);
 
-    const QSize outputSize = colorTexture()->pixelSize();
+//    const QSize outputSize = colorTexture()->pixelSize();
+    const QSize outputSize = renderTarget()->pixelSize();
     command_buffer->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
 
     command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
@@ -4477,8 +4483,6 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
     }
 }
 void PdfViewRhiWidget::update_resources_for_current_frame_drawing_calls(QRhiResourceUpdateBatch* update_batch){
-
-
 
     int render_order = 1;
     if (current_frame_drawing_render_calls.size() > 0){
@@ -4807,6 +4811,7 @@ PdfViewRhiWidget::PdfViewRhiWidget(DocumentView* document_view_, PdfRenderer* pd
     pdf_renderer = pdf_renderer_;
     document_manager = docman;
     is_helper = is_helper_;
+    setSampleCount(sample_count);
 
     initialize_stuff();
 }
