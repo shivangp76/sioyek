@@ -4266,10 +4266,11 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     render_current_frame_textures(command_buffer);
 
 
+    render_current_frame_drawings(command_buffer);
+
     render_current_frame_highlights(command_buffer, false);
     render_current_frame_highlights(command_buffer, true);
 
-    render_current_frame_drawings(command_buffer);
 
     if (qpainter_initialized_for_current_frame){
         command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
