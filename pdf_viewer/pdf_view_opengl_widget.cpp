@@ -4767,7 +4767,13 @@ void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std:
     AbsoluteRect current_rect = dv->get_view_rect();
     for (const FreehandDrawing& drawing: drawings){
         if (drawing.bbox().intersects(current_rect)){
-            drawing_call.drawings.push_back(drawing);
+            if (DEBUG_SMOOTH_FREEHAND_DRAWINGS) {
+                auto smooth_drawing = smoothen_drawing(drawing);
+                drawing_call.drawings.push_back(smooth_drawing);
+            }
+            else{
+                drawing_call.drawings.push_back(drawing);
+            }
         }
     }
 

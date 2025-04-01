@@ -38,7 +38,7 @@ bool HIGHLIGHT_PRO_ONLY_COMMANDS = true;
 bool SHOW_PRO_COMMANDS = true;
 bool ALWAYS_RENDER_BOOKMARKS = true;
 bool VISUALIZE_RULER_THRESHOLDS = false;
-bool DEBUG_SMOOTH_FREEHAND_DRAWINGS = true;
+bool DEBUG_SMOOTH_FREEHAND_DRAWINGS = false;
 bool DEBUG = false;
 bool ADD_NEWLINES_WHEN_COPYING_TEXT = false;
 bool ALWAYS_COPY_SELECTED_TEXT = false;
@@ -1384,6 +1384,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"show_pro_commands", &SHOW_PRO_COMMANDS);
     add_bool(L"always_render_bookmarks", &ALWAYS_RENDER_BOOKMARKS);
     add_bool(L"visualize_ruler_thresholds", &VISUALIZE_RULER_THRESHOLDS);
+    add_bool(L"debug_smoothen_freehand_drawings", &DEBUG_SMOOTH_FREEHAND_DRAWINGS);
     add_bool(L"background_pixel_fix", &BACKGROUND_PIXEL_FIX);
     add_bool(L"add_newlines_when_copying_text", &ADD_NEWLINES_WHEN_COPYING_TEXT);
     add_bool(L"always_copy_selected_text", &ALWAYS_COPY_SELECTED_TEXT);
