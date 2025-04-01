@@ -9224,8 +9224,15 @@ void MainWidget::delete_freehand_drawings(AbsoluteRect rect) {
         invalidate_render();
     }
     else {
-        DocumentRect page_rect = rect.to_document(doc());
-        doc()->delete_page_intersecting_drawings(page_rect.page, rect, main_document_view->visible_drawing_mask);
+        for (int i = 0; i < doc()->num_pages(); i++){
+            AbsoluteRect page_rect = doc()->get_page_absolute_rect(i);
+            if (page_rect.intersects(rect)){
+                AbsoluteRect intersection = rect.intersect_rect(page_rect);
+                // DocumentRect intersection_doc_rect = intersection.to_document(doc());
+                // DocumentRect page_rect = rect.to_document(doc());
+                doc()->delete_page_intersecting_drawings(i, intersection, main_document_view->visible_drawing_mask);
+            }
+        }
         set_rect_select_mode(false);
         clear_selected_rect();
         invalidate_render();
