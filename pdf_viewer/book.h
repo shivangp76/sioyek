@@ -307,9 +307,6 @@ struct FreehandDrawing {
     float alpha = 1;
     QDateTime creattion_time;
 
-    QDateTime last_addition_time;
-    QDateTime last_deletion_time;
-
     AbsoluteRect bbox() const;
 };
 

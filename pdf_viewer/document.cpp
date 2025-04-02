@@ -2853,8 +2853,8 @@ void Document::embed_annotations(std::wstring new_file_path) {
 
     }
 
-    for (auto [page_number, drawings] : page_freehand_drawings) {
-        for (auto drawing : drawings) {
+    for (auto [page_number, page_drawings] : page_freehand_drawings) {
+        for (auto drawing : page_drawings.drawings) {
             fz_page* page = load_cached_page(page_number);
             pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
             pdf_annot* drawing_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_INK);
@@ -3846,7 +3846,8 @@ void Document::add_freehand_drawing(FreehandDrawing new_drawing) {
     if (new_drawing.points.size() > 0) {
         DocumentPos docpos = absolute_to_page_pos_uncentered(new_drawing.points[0].pos);
         drawings_mutex.lock();
-        page_freehand_drawings[docpos.page].push_back(new_drawing);
+        page_freehand_drawings[docpos.page].drawings.push_back(new_drawing);
+        page_freehand_drawings[docpos.page].last_modification_time = QDateTime::currentDateTime();
         drawings_mutex.unlock();
         is_drawings_dirty = true;
     }
@@ -3857,7 +3858,8 @@ void Document::undo_freehand_drawing() {
     QDateTime most_recent_page_time;
 
     drawings_mutex.lock();
-    for (auto& [page, drawings] : page_freehand_drawings) {
+    for (auto& [page, page_drawings] : page_freehand_drawings) {
+        auto& drawings = page_drawings.drawings;
         if (drawings.size() > 0) {
             if (most_recent_page_index == -1) {
                 most_recent_page_index = page;
@@ -3873,18 +3875,19 @@ void Document::undo_freehand_drawing() {
     }
     if (most_recent_page_index >= 0) {
         is_drawings_dirty = true;
-        page_freehand_drawings[most_recent_page_index].pop_back();
+        page_freehand_drawings[most_recent_page_index].drawings.pop_back();
+        page_freehand_drawings[most_recent_page_index].last_modification_time = QDateTime::currentDateTime();
     }
     drawings_mutex.unlock();
 }
 
 const std::vector<FreehandDrawing>& Document::get_page_drawings(int page) {
-    return page_freehand_drawings[page];
+    return page_freehand_drawings[page].drawings;
 }
 
 std::vector<SelectedObjectIndex> Document::get_page_intersecting_drawing_indices(int page, AbsoluteRect absolute_rect, bool mask[26]) {
     std::vector<SelectedObjectIndex> indices;
-    std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page];
+    std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page].drawings;
 
     for (int i = 0; i < page_drawings.size(); i++) {
         if (!mask[page_drawings[i].type - 'a']) {
@@ -3903,7 +3906,8 @@ std::vector<SelectedObjectIndex> Document::get_page_intersecting_drawing_indices
 }
 
 void Document::delete_all_page_drawings(int page) {
-    page_freehand_drawings[page].clear();
+    page_freehand_drawings[page].drawings.clear();
+    page_freehand_drawings[page].last_modification_time = QDateTime::currentDateTime();
     is_drawings_dirty = true;
 }
 
@@ -3913,13 +3917,14 @@ void Document::delete_all_drawings() {
 }
 
 void Document::delete_page_intersecting_drawings(int page, AbsoluteRect absolute_rect, bool mask[26]) {
-    std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page];
+    std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page].drawings;
     std::vector<SelectedObjectIndex> indices_to_delete = get_page_intersecting_drawing_indices(page, absolute_rect, mask);
 
     for (int j = indices_to_delete.size() - 1; j >= 0; j--) {
         //page_freehand_drawings.erase(page_freehand_drawings.begin() + indices_to_delete[j]);
-        page_freehand_drawings[page].erase(page_freehand_drawings[page].begin() + indices_to_delete[j].index);
+        page_freehand_drawings[page].drawings.erase(page_freehand_drawings[page].drawings.begin() + indices_to_delete[j].index);
     }
+    page_freehand_drawings[page].last_modification_time = QDateTime::currentDateTime();
     is_drawings_dirty = true;
 }
 
@@ -3935,8 +3940,9 @@ void Document::delete_drawings_with_indices(int page, std::vector<SelectedObject
 
     for (int j = raw_indices.size() - 1; j >= 0; j--) {
         int index = raw_indices[j];
-        page_freehand_drawings[page].erase(page_freehand_drawings[page].begin() + index);
+        page_freehand_drawings[page].drawings.erase(page_freehand_drawings[page].drawings.begin() + index);
     }
+    page_freehand_drawings[page].last_modification_time = QDateTime::currentDateTime();
 }
 
 std::wstring Document::get_addtional_sioyek_file_path(QString type) {
@@ -4208,7 +4214,8 @@ void Document::load_drawings() {
                     point.thickness = t_array.at(i).toDouble();
                     drawing.points.push_back(point);
                 }
-                page_freehand_drawings[page_number].push_back(drawing);
+                page_freehand_drawings[page_number].drawings.push_back(drawing);
+                page_freehand_drawings[page_number].last_modification_time = QDateTime::currentDateTime();
             }
         }
 
@@ -4262,7 +4269,7 @@ void Document::persist_drawings(bool force) {
     for (auto& [page, drawings] : page_freehand_drawings) {
         QJsonArray page_drawings_array;
 
-        for (auto& drawing : drawings) {
+        for (auto& drawing : drawings.drawings) {
             QJsonObject drawing_object;
             drawing_object["creation_time"] = drawing.creattion_time.toString(Qt::ISODate);
             drawing_object["type"] = drawing.type;
@@ -4480,7 +4487,7 @@ bool Document::is_drawing_new(const FreehandDrawing& drawing) {
     if (drawing.points.size() == 0) return false;
 
     int drawing_page = absolute_to_page_pos(drawing.points[0].pos).page;
-    for (auto page_drawing : page_freehand_drawings[drawing_page]) {
+    for (auto page_drawing : page_freehand_drawings[drawing_page].drawings) {
         if (are_same(page_drawing, drawing)) {
             return false;
         }
@@ -4542,14 +4549,14 @@ int Document::num_freehand_drawings() {
     int res = 0;
 
     for (auto [page, drawings] : page_freehand_drawings) {
-        res += drawings.size();
+        res += drawings.drawings.size();
     }
     return res;
 }
 
 void Document::get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, std::vector<FreehandDrawing>&freehand_drawings, std::vector<PixmapDrawing>&pixmap_drawings){
     //std::vector<FreehandDrawing> results;
-    const std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page];
+    const std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page].drawings;
     for (auto index : indices) {
         freehand_drawings.push_back(page_drawings[index.index]);
         //results.push_back(page_drawings[index]);
@@ -5910,7 +5917,7 @@ void Document::delete_fulltext_tag(std::wstring tag) {
 std::vector<FreehandDrawing> Document::zoom_selected_freehand_drawings(float zoom_factor, std::optional<SelectedDrawings> selected_freehand_drawings) {
     if (selected_freehand_drawings.has_value()) {
         if (selected_freehand_drawings->selected_indices.size() > 0) {
-            std::vector<FreehandDrawing>& current_page_drawings = page_freehand_drawings[selected_freehand_drawings->page];
+            std::vector<FreehandDrawing>& current_page_drawings = page_freehand_drawings[selected_freehand_drawings->page].drawings;
             std::optional<AbsoluteRect> bbox = {};
             for (auto ind : selected_freehand_drawings->selected_indices) {
                 if (ind.type == SelectedObjectType::Drawing) {
@@ -5927,6 +5934,8 @@ std::vector<FreehandDrawing> Document::zoom_selected_freehand_drawings(float zoo
                 std::vector<FreehandDrawing> new_moving_drawings;
 
                 AbsoluteDocumentPos zoom_center = bbox->center();
+                QDateTime now = QDateTime::currentDateTime();
+
                 for (auto ind : selected_freehand_drawings->selected_indices) {
                     if (ind.type == SelectedObjectType::Drawing) {
                         for (int point_index = 0; point_index < current_page_drawings[ind.index].points.size(); point_index++) {

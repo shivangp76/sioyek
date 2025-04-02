@@ -86,6 +86,11 @@ struct CachedPageIndex {
 };
 
 
+struct PageFreehandDrawing{
+    std::vector<FreehandDrawing> drawings;
+    QDateTime last_modification_time;
+};
+
 class Document {
 
 private:
@@ -237,7 +242,7 @@ private:
         }
     }
 
-    std::map<int, std::vector<FreehandDrawing>> page_freehand_drawings;
+    std::map<int, PageFreehandDrawing> page_freehand_drawings;
 public:
 
     fz_document* doc = nullptr;
