@@ -194,7 +194,7 @@ protected:
     bool is_normalized_y_range_in_window(float y0, float y1);
 
     virtual void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false);
-    virtual void render_page_drawings(QPainter* p, DocumentView* dv, const PageFreehandDrawing& page_drawings, bool highlighted = false);
+    virtual void render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& page_drawings, bool highlighted = false);
 
     void draw_icon(const QIcon& icon, QRect rect);
     void render_overview(OverviewState overview, bool draw_border=true);
@@ -414,6 +414,7 @@ struct SioyekHighlightRectRenderCall{
 
 struct SioyekDrawingRenderCall{
     DocumentView* dv;
+    int page = -1;
     std::vector<FreehandDrawing> drawings;
     bool highlighted = false;
     int render_order;
@@ -433,9 +434,10 @@ struct SioyekPageDrawingsShaderResources{
     QDateTime last_update_time;
     QDateTime last_use_time;
 
+    std::unique_ptr<QRhiBuffer> uniform_buffer;
     std::unique_ptr<QRhiBuffer> positions;
     std::unique_ptr<QRhiBuffer> colors;
-    std::unique_ptr<QRhiBuffer> depths;
+    int num_vertices = 0;
 
     std::unique_ptr<QRhiShaderResourceBindings> shader_resource_binding;
 };
@@ -448,9 +450,9 @@ private:
     const int sample_count = 4;
     QDateTime last_frame_time;
     std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
-    std::unique_ptr<QRhiBuffer> drawings_vertex_buffer_ptr;
-    std::unique_ptr<QRhiBuffer> drawing_vertex_colors_ptr;
-    std::unique_ptr<QRhiBuffer> drawings_index_buffer_ptr;
+    std::unique_ptr<QRhiBuffer> pending_drawings_vertex_buffer_ptr;
+    std::unique_ptr<QRhiBuffer> pending_drawing_vertex_colors_ptr;
+    // std::unique_ptr<QRhiBuffer> drawings_index_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_borders_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> uv_buffer_ptr;
@@ -484,7 +486,7 @@ private:
     std::optional<OverviewState> current_overview  = {};
     int current_object_render_order = 0;
     int current_frame_overview_object_index = -1;
-    int num_frame_drawing_triangles = 0;
+    // int num_frame_drawing_triangles = 0;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
     std::vector<SioyekHighlightRectRenderCall> current_frame_highlight_rect_render_calls;
@@ -495,7 +497,10 @@ private:
     void update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch);
     void update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch);
     void update_resources_for_current_frame_drawing_calls(QRhiResourceUpdateBatch* update_batch);
-    SioyekPageDrawingsShaderResources* get_shader_resources_for_page_drawings(int page);
+
+    int update_resources_for_single_freehand_drawing(QRhiResourceUpdateBatch* update_batch, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, QRhiBuffer* vertex_buffer, QRhiBuffer* color_buffer);
+
+    SioyekPageDrawingsShaderResources* get_shader_resources_for_page_drawings(int page, const PageFreehandDrawing& page_drawings);
 
     void render_qpainter_texture(QRhiCommandBuffer* command_buffer);
     void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
@@ -536,7 +541,7 @@ public:
     void set_highlight_color(const float* color, float alpha) override;
     void prepare_highlight_pipeline() override;
     void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
-    void render_page_drawings(QPainter* p, DocumentView* dv, const PageFreehandDrawing& drawings, bool highlighted = false) override;
+    void render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& drawings, bool highlighted = false) override;
     void prepare_non_compiled_line_drawing_pipeline() override;
     void render_compiled_drawings() override;
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
