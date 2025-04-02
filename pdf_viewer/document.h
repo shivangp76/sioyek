@@ -43,6 +43,12 @@ struct PdfSpecificsInfo {
     pdf_document* pdf_doc;
 };
 
+struct SelectedDrawings {
+    int page;
+    AbsoluteRect selection_absrect_;
+    std::vector<SelectedObjectIndex> selected_indices;
+};
+
 class CharacterIterator {
     fz_stext_block* block = nullptr;
     fz_stext_line* line = nullptr;
@@ -231,6 +237,7 @@ private:
         }
     }
 
+    std::map<int, std::vector<FreehandDrawing>> page_freehand_drawings;
 public:
 
     fz_document* doc = nullptr;
@@ -239,7 +246,6 @@ public:
     bool checksum_is_new = false;
     std::optional<bool> cached_is_synced;
 
-    std::map<int, std::vector<FreehandDrawing>> page_freehand_drawings;
 
     PageIterator page_iterator(int page_number, bool line_only=false);
     int get_page_text_and_line_rects_after_rect(int page_number, int maximum_size,
@@ -413,6 +419,7 @@ public:
     std::optional<std::wstring> get_regex_match_at_position(const std::wstring& regex, DocumentPos position, int max_match_size, std::pair<int, int>* out_range);
     std::vector<DocumentPos> find_generic_locations(const std::wstring& type, const std::wstring& name);
     bool can_use_highlights();
+    std::vector<FreehandDrawing> zoom_selected_freehand_drawings(float zoom_factor, std::optional<SelectedDrawings> selected_drawings);
 
     bool load_extras();
     bool persist_extras();

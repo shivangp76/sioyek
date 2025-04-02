@@ -52,11 +52,6 @@ struct ScheduledPortalUpdate {
     OpenedBookState state;
 };
 
-struct SelectedDrawings {
-    int page;
-    AbsoluteRect selection_absrect_;
-    std::vector<SelectedObjectIndex> selected_indices;
-};
 
 struct FreehandDrawingMoveData {
     std::vector<FreehandDrawing> initial_drawings;

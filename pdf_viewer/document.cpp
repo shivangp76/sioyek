@@ -5906,3 +5906,42 @@ std::vector<std::wstring> Document::get_fulltext_tags() {
 void Document::delete_fulltext_tag(std::wstring tag) {
     db_manager->delete_document_tag(get_checksum(), tag);
 }
+
+std::vector<FreehandDrawing> Document::zoom_selected_freehand_drawings(float zoom_factor, std::optional<SelectedDrawings> selected_freehand_drawings) {
+    if (selected_freehand_drawings.has_value()) {
+        if (selected_freehand_drawings->selected_indices.size() > 0) {
+            std::vector<FreehandDrawing>& current_page_drawings = page_freehand_drawings[selected_freehand_drawings->page];
+            std::optional<AbsoluteRect> bbox = {};
+            for (auto ind : selected_freehand_drawings->selected_indices) {
+                if (ind.type == SelectedObjectType::Drawing) {
+                    if (bbox.has_value()) {
+                        bbox = bbox->union_rect(current_page_drawings[ind.index].bbox());
+                    }
+                    else {
+                        bbox = current_page_drawings[ind.index].bbox();
+                    }
+                }
+            }
+
+            if (bbox) {
+                std::vector<FreehandDrawing> new_moving_drawings;
+
+                AbsoluteDocumentPos zoom_center = bbox->center();
+                for (auto ind : selected_freehand_drawings->selected_indices) {
+                    if (ind.type == SelectedObjectType::Drawing) {
+                        for (int point_index = 0; point_index < current_page_drawings[ind.index].points.size(); point_index++) {
+                            auto diff = current_page_drawings[ind.index].points[point_index].pos - zoom_center;
+                            current_page_drawings[ind.index].points[point_index].pos = zoom_center + diff * zoom_factor;
+                            current_page_drawings[ind.index].points[point_index].thickness *= zoom_factor;
+                            new_moving_drawings.push_back(current_page_drawings[ind.index]);
+                        }
+                    }
+                }
+                return new_moving_drawings;
+                // moving_drawings = new_moving_drawings;
+            }
+        }
+    }
+    return {};
+
+}

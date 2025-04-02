@@ -6190,62 +6190,7 @@ void DocumentView::update_overview_highlighted_paper_with_position(DocumentPos d
 }
 
 void DocumentView::zoom_selected_freehand_drawings(float zoom_factor) {
-    if (selected_freehand_drawings.has_value()) {
-        //int index = selected_index.index;
-//std::vector<FreehandDrawing> selected_drawings;
-//std::vector<PixmapDrawing> selected_pixmaps;
-
-//current_document->get_page_freehand_drawings_with_indices(
-//    selected_freehand_drawings->page,
-//    selected_freehand_drawings->selected_indices,
-//    selected_drawings,
-//    selected_pixmaps);
-//selected_freehand_drawings->page
-
-        if (selected_freehand_drawings->selected_indices.size() > 0) {
-            std::vector<FreehandDrawing>& page_freehand_drawings = current_document->page_freehand_drawings[selected_freehand_drawings->page];
-            std::optional<AbsoluteRect> bbox = {};
-            for (auto ind : selected_freehand_drawings->selected_indices) {
-                if (ind.type == SelectedObjectType::Drawing) {
-                    if (bbox.has_value()) {
-                        bbox = bbox->union_rect(page_freehand_drawings[ind.index].bbox());
-                    }
-                    else {
-                        bbox = page_freehand_drawings[ind.index].bbox();
-                    }
-                }
-            }
-
-            if (bbox) {
-                std::vector<FreehandDrawing> new_moving_drawings;
-
-                AbsoluteDocumentPos zoom_center = bbox->center();
-                for (auto ind : selected_freehand_drawings->selected_indices) {
-                    if (ind.type == SelectedObjectType::Drawing) {
-                        for (int point_index = 0; point_index < page_freehand_drawings[ind.index].points.size(); point_index++) {
-                            auto diff = page_freehand_drawings[ind.index].points[point_index].pos - zoom_center;
-                            page_freehand_drawings[ind.index].points[point_index].pos = zoom_center + diff * zoom_factor;
-                            page_freehand_drawings[ind.index].points[point_index].thickness *= zoom_factor;
-                            moving_drawings.push_back(page_freehand_drawings[ind.index]);
-                        }
-                    }
-                }
-                moving_drawings = new_moving_drawings;
-            }
-        }
-
-        //if (selected_drawings.size() > 0) {
-
-        //    AbsoluteRect bbox = selected_drawings[0].bbox();
-
-        //    for (auto drawing : selected_drawings) {
-        //        bbox = bbox.union_rect(drawing.bbox());
-        //    }
-
-        //    AbsoluteDocumentPos zoom_origin = bbox.center();
-        //}
-    }
-
+    moving_drawings = doc()->zoom_selected_freehand_drawings(zoom_factor, selected_freehand_drawings);
 
 }
 

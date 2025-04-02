@@ -4349,7 +4349,6 @@ void PdfViewRhiWidget::set_overview_scissor(QRhiCommandBuffer* command_buffer, s
     int x1 = (overview_rect.x1 + 1) / 2 * width() * get_device_pixel_ratio();
     int y0 = (overview_rect.y0 + 1) / 2 * height() * get_device_pixel_ratio();
     int y1 = (overview_rect.y1 + 1) / 2 * height() * get_device_pixel_ratio();
-    qDebug() << x0 << " " << x1 << " " << y0 << " " << y1;
     if (y1 < y0){
         std::swap(y1, y0);
     }

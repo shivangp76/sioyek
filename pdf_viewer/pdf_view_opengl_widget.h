@@ -424,6 +424,19 @@ struct SioyekTextureShaderResourceBinding{
     QRhiBuffer* uniform_buffer;
 };
 
+struct SioyekPageDrawingShaderResources{
+
+    Document* doc = nullptr;
+    int page = -1;
+    QDateTime last_update_time;
+
+    std::unique_ptr<QRhiBuffer> positions;
+    std::unique_ptr<QRhiBuffer> colors;
+    std::unique_ptr<QRhiBuffer> depths;
+
+    std::unique_ptr<QRhiShaderResourceBindings> shader_resource_binding;
+};
+
 class PdfViewRhiWidget : public QRhiWidget, public SioyekRendererBackend{
 private:
     QRhi* rhi_ptr = nullptr;
