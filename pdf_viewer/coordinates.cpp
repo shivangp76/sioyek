@@ -210,6 +210,10 @@ DocumentPos operator+(const DocumentPos& lhs, const fvec2& rhs) {
     return DocumentPos{ lhs.page, lhs.x + rhs[0], lhs.y + rhs[1]};
 }
 
+DocumentPos operator-(const DocumentPos& lhs, const fvec2& rhs) {
+    return DocumentPos{ lhs.page, lhs.x - rhs[0], lhs.y - rhs[1]};
+}
+
 NormalizedWindowPos operator+(const NormalizedWindowPos& lhs, const fvec2& rhs) {
     return NormalizedWindowPos{ lhs.x + rhs[0], lhs.y + rhs[1]};
 }
@@ -292,4 +296,19 @@ AbsoluteRect WindowRect::to_absolute(DocumentView* dv) {
 
 bool DocumentRect::is_visible(DocumentView *document_view) {
     return document_view->is_rect_visible(*this);
+}
+
+DocumentPos DocumentPos::to_page(int target_page, Document* doc){
+    DocumentPos res = *this;
+
+    while (target_page > res.page){
+        res.y -= doc->get_page_height(res.page);
+        res.page++;
+    }
+    while (target_page < res.page){
+        res.y += doc->get_page_height(res.page);
+        res.page--;
+    }
+    return res;
+
 }

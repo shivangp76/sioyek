@@ -4495,10 +4495,13 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
     }
 }
 
-int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceUpdateBatch* update_batch, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, QRhiBuffer* vertex_buffer, QRhiBuffer* color_buffer){
+int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceUpdateBatch* update_batch, DocumentView* dv, int page, const std::vector<FreehandDrawing>& drawings, QRhiBuffer* vertex_buffer, QRhiBuffer* color_buffer){
 
-    float thickness_x = dv->get_zoom_level() / get_width();
-    float thickness_y = dv->get_zoom_level() / get_height();
+    // float thickness_x = dv->get_zoom_level() / get_width();
+    // float thickness_y = dv->get_zoom_level() / get_height();
+
+    float thickness_x = 1.0f;
+    float thickness_y = 1.0f;
     // float depth = 0;
 
     int vertex_offset = 0;
@@ -4514,10 +4517,13 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
         };
 
         for (int j = 0; j < drawing.points.size() - 1; j++){
-            NormalizedWindowPos segment_begin_window_pos = drawing.points[j].pos.to_window_normalized(dv);
-            NormalizedWindowPos segment_end_window_pos = drawing.points[j + 1].pos.to_window_normalized(dv);
+            // NormalizedWindowPos segment_begin_window_pos = drawing.points[j].pos.to_window_normalized(dv);
+            // NormalizedWindowPos segment_end_window_pos = drawing.points[j + 1].pos.to_window_normalized(dv);
 
-            fvec2 segment_direction = segment_end_window_pos - segment_begin_window_pos;
+            DocumentPos segment_begin_document_pos = drawing.points[j].pos.to_document(dv->doc()).to_page(page, dv->doc());
+            DocumentPos segment_end_document_pos = drawing.points[j + 1].pos.to_document(dv->doc()).to_page(page, dv->doc());
+
+            fvec2 segment_direction = segment_begin_document_pos - segment_end_document_pos;
 
             // get the orthogonal normal vector
             segment_direction.normalize();
@@ -4527,20 +4533,31 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
             segment_direction.values[0] *= thickness_x * drawing.points[j + 1].thickness;
             segment_direction.values[1] *= thickness_y * drawing.points[j + 1].thickness;
 
-            NormalizedWindowPos top_left = segment_begin_window_pos + segment_direction;
-            NormalizedWindowPos bottom_left = segment_begin_window_pos - segment_direction;
-            NormalizedWindowPos top_right = segment_end_window_pos + segment_direction;
-            NormalizedWindowPos bottom_right = segment_end_window_pos - segment_direction;
+            DocumentPos top_left = segment_begin_document_pos + segment_direction;
+            DocumentPos bottom_left = segment_begin_document_pos - segment_direction;
+            DocumentPos top_right = segment_end_document_pos + segment_direction;
+            DocumentPos bottom_right = segment_end_document_pos - segment_direction;
+
+            // NormalizedWindowPos top_left = segment_begin_window_pos + segment_direction;
+            // NormalizedWindowPos bottom_left = segment_begin_window_pos - segment_direction;
+            // NormalizedWindowPos top_right = segment_end_window_pos + segment_direction;
+            // NormalizedWindowPos bottom_right = segment_end_window_pos - segment_direction;
+
+            float page_height = dv->doc()->get_page_height(page);
+            float page_width = dv->doc()->get_page_width(page);
+            // page_width = 1.0f;
+            // page_height = 1.0f;
 
             float vertices[12] = {
-                top_left.x, top_left.y,
-                bottom_left.x, bottom_left.y,
-                top_right.x, top_right.y,
+                top_left.x / page_width, top_left.y / page_height,
+                bottom_left.x / page_width, bottom_left.y / page_height,
+                top_right.x / page_width, top_right.y / page_height,
 
-                bottom_left.x, bottom_left.y,
-                bottom_right.x, bottom_right.y,
-                top_right.x, top_right.y,
+                bottom_left.x / page_width, bottom_left.y / page_height,
+                bottom_right.x / page_width, bottom_right.y / page_height,
+                top_right.x / page_width, top_right.y / page_height,
             };
+            qDebug() << vertices[0] << " " << vertices[1];
 
             float vertex_colors[24] = {
                 current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
@@ -4560,7 +4577,7 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
 
             std::vector<float> point_triangles;
             std::vector<float> point_colors;
-            add_coordinates_for_window_point_no_fan(dv, segment_begin_window_pos.x, segment_begin_window_pos.y, 0, drawing.points[j].thickness * 2, 10, point_triangles);
+            add_coordinates_for_window_point_no_fan(dv, segment_begin_document_pos.x, segment_begin_document_pos.y, 0, drawing.points[j].thickness * 2, 10, point_triangles);
             int num_point_vertices = point_triangles.size() / 2;
             for (int i = 0; i < num_point_vertices; i++){
                 point_colors.push_back(current_drawing_color[0]);
@@ -4579,25 +4596,29 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
 
 
         }
-        FreehandDrawingPoint last_point = drawing.points[drawing.points.size()-1];
-        NormalizedWindowPos last_point_window = last_point.pos.to_window_normalized(dv);
-        std::vector<float> point_triangles;
-        std::vector<float> point_colors;
-        add_coordinates_for_window_point_no_fan(dv, last_point_window.x, last_point_window.y, 0, last_point.thickness * 2, 10, point_triangles);
-        int num_point_vertices = point_triangles.size() / 2;
-        for (int i = 0; i < num_point_vertices; i++){
-            point_colors.push_back(current_drawing_color[0]);
-            point_colors.push_back(current_drawing_color[1]);
-            point_colors.push_back(current_drawing_color[2]);
-            point_colors.push_back(current_drawing_color[3]);
+
+        if (false){ // @nocheckin
+            FreehandDrawingPoint last_point = drawing.points[drawing.points.size()-1];
+            NormalizedWindowPos last_point_window = last_point.pos.to_window_normalized(dv);
+            std::vector<float> point_triangles;
+            std::vector<float> point_colors;
+            add_coordinates_for_window_point_no_fan(dv, last_point_window.x, last_point_window.y, 0, last_point.thickness * 2, 10, point_triangles);
+            int num_point_vertices = point_triangles.size() / 2;
+            for (int i = 0; i < num_point_vertices; i++){
+                point_colors.push_back(current_drawing_color[0]);
+                point_colors.push_back(current_drawing_color[1]);
+                point_colors.push_back(current_drawing_color[2]);
+                point_colors.push_back(current_drawing_color[3]);
+            }
+
+            update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(float) * point_triangles.size(), point_triangles.data());
+            update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(float) * point_colors.size(), point_colors.data());
+
+            vertex_offset += sizeof(float) * point_triangles.size();
+            color_offset += sizeof(float) * point_colors.size();
+            num_vertices += num_point_vertices;
+
         }
-
-        update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(float) * point_triangles.size(), point_triangles.data());
-        update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(float) * point_colors.size(), point_colors.data());
-
-        vertex_offset += sizeof(float) * point_triangles.size();
-        color_offset += sizeof(float) * point_colors.size();
-        num_vertices += num_point_vertices;
 
     }
     return num_vertices;
@@ -4913,17 +4934,23 @@ void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, int p
     drawing_call.render_order = current_object_render_order++;
     drawing_call.highlighted = highlighted;
 
-    float uniforms[3];
+    float uniforms[4];
 
     // uniforms[0] = -dv->get_offset_x();
     // uniforms[1] = -dv->get_offset_y();
     // uniforms[2] = dv->get_zoom_level();
 
-    uniforms[0] = 0;
-    uniforms[1] = 0;
-    uniforms[2] = 1;
+    NormalizedWindowRect page_rect = dv->doc()->get_page_absolute_rect(page).to_window_normalized(dv);
 
-    current_frame_resource_update_batch->updateDynamicBuffer(drawing_resources->uniform_buffer.get(), 0, 3 * sizeof(float), uniforms);
+    uniforms[0] = page_rect.x0;
+    uniforms[1] = page_rect.y0;
+
+    // uniforms[0] = 0;
+    // uniforms[1] = 0;
+    uniforms[2] = page_rect.width();
+    uniforms[3] = page_rect.height();
+
+    current_frame_resource_update_batch->updateDynamicBuffer(drawing_resources->uniform_buffer.get(), 0, 4 * sizeof(float), uniforms);
 
     current_frame_drawing_render_calls.push_back(drawing_call);
     // if (drawings.last_modification_time )
@@ -5109,7 +5136,7 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
     new_page_drawing_resources->colors.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
     new_page_drawing_resources->colors->create();
 
-    new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 3 * sizeof(float)));
+    new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 4 * sizeof(float)));
     new_page_drawing_resources->uniform_buffer->create();
 
     // qpainter_resource_binding->setBindings({
@@ -5132,6 +5159,7 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
     int num_vertices = update_resources_for_single_freehand_drawing(
         current_frame_resource_update_batch,
         document_view,
+        page,
         page_drawings.drawings,
         new_page_drawing_resources->positions.get(),
         new_page_drawing_resources->colors.get()

@@ -6,7 +6,7 @@ layout(location = 0) out vec4 out_color;
 
 layout(std140, binding = 0) uniform buf {
     vec2 offset;
-    float scale;
+    vec2 scale;
 };
 
 void main()
