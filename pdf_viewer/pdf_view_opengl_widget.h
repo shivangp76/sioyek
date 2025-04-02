@@ -452,6 +452,7 @@ private:
     std::unique_ptr<QRhiBuffer> vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> pending_drawings_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> pending_drawing_vertex_colors_ptr;
+    std::unique_ptr<QRhiBuffer> pending_drawing_uniform_buffer;
     // std::unique_ptr<QRhiBuffer> drawings_index_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_vertex_buffer_ptr;
     std::unique_ptr<QRhiBuffer> highlights_borders_vertex_buffer_ptr;
@@ -461,7 +462,8 @@ private:
     std::unique_ptr<QRhiBuffer> qpainter_uniform_buffer;
     std::unique_ptr<QRhiBuffer> qpainter_vertex_buffer;
     std::unique_ptr<QRhiShaderResourceBindings> qpainter_resource_binding;
-    std::unique_ptr<QRhiShaderResourceBindings> drawings_resource_binding;
+
+    std::unique_ptr<QRhiShaderResourceBindings> pending_drawings_resource_binding;
 
     std::vector<SioyekPageDrawingsShaderResources> cached_page_drawing_shader_resources;
 
@@ -485,6 +487,7 @@ private:
     QRhiResourceUpdateBatch* current_frame_resource_update_batch = nullptr;
     std::optional<OverviewState> current_overview  = {};
     int current_object_render_order = 0;
+    int current_frame_pending_drawing_vertices = 0;
     int current_frame_overview_object_index = -1;
     // int num_frame_drawing_triangles = 0;
 
@@ -542,6 +545,7 @@ public:
     void prepare_highlight_pipeline() override;
     void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
     void render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& drawings, bool highlighted = false) override;
+    void render_page_drawings_impl(QRhiBuffer* uniform_buffer, DocumentView* dv, int page, const std::vector<FreehandDrawing>& drawings, bool highlighted=false);
     void prepare_non_compiled_line_drawing_pipeline() override;
     void render_compiled_drawings() override;
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;

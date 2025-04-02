@@ -3962,6 +3962,9 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         pending_drawing_vertex_colors_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
         pending_drawing_vertex_colors_ptr->create();
 
+        pending_drawing_uniform_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 4 * sizeof(float)));
+        pending_drawing_uniform_buffer->create();
+
         // drawings_index_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::IndexBuffer, drawings_index_buffer_size));
         // drawings_index_buffer_ptr->create();
 
@@ -3977,11 +3980,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         qpainter_vertex_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Static, QRhiBuffer::VertexBuffer, 12 * sizeof(float)));
         qpainter_vertex_buffer->create();
 
-        drawings_resource_binding.reset(rhi()->newShaderResourceBindings());
-        drawings_resource_binding->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, nullptr)
+        pending_drawings_resource_binding.reset(rhi()->newShaderResourceBindings());
+        pending_drawings_resource_binding->setBindings({
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, pending_drawing_uniform_buffer.get())
         });
-        drawings_resource_binding->create();
+        pending_drawings_resource_binding->create();
 
         QRhiShaderResourceBindings* texture_dummy_resource_bindings = rhi()->newShaderResourceBindings();
         texture_dummy_resource_bindings->setBindings({
@@ -4117,7 +4120,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         {
             drawing_pipeline->setVertexInputLayout(drawing_input_layout);
-            drawing_pipeline->setShaderResourceBindings(drawings_resource_binding.get());
+            drawing_pipeline->setShaderResourceBindings(pending_drawings_resource_binding.get());
             drawing_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
             drawing_pipeline->setDepthTest(true);
             drawing_pipeline->setDepthWrite(true);
@@ -4227,6 +4230,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     current_frame_drawing_render_calls.clear();
 
     current_object_render_order = 0;
+    current_frame_pending_drawing_vertices = 0;
     // num_frame_drawing_triangles = 0;
 
     current_frame_resource_update_batch = resource_updates;
@@ -4765,6 +4769,18 @@ void PdfViewRhiWidget::render_current_frame_drawings(QRhiCommandBuffer* command_
                 command_buffer->draw(shader_resources->num_vertices);
             }
         }
+        else{
+            command_buffer->setShaderResources(pending_drawings_resource_binding.get());
+
+            const QRhiCommandBuffer::VertexInput vertex_buffer_binding(pending_drawings_vertex_buffer_ptr.get(), 0);
+            const QRhiCommandBuffer::VertexInput color_buffer_binding(pending_drawing_vertex_colors_ptr.get(), 0);
+
+            command_buffer->setVertexInput(0, 1, &vertex_buffer_binding);
+            command_buffer->setVertexInput(1, 1, &color_buffer_binding);
+
+            command_buffer->draw(current_frame_pending_drawing_vertices);
+
+        }
 
     }
 
@@ -4925,11 +4941,29 @@ void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){
 }
 void PdfViewRhiWidget::prepare_highlight_pipeline(){}
 
-void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& drawings, bool highlighted) {
-    SioyekPageDrawingsShaderResources* drawing_resources = get_shader_resources_for_page_drawings(page, drawings);
+void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, DocumentView* dv, int page, const std::vector<FreehandDrawing>& drawings, bool highlighted){
 
     SioyekDrawingRenderCall drawing_call;
     drawing_call.page = page;
+
+    if (page == -1){
+        if (drawings.size() == 0) return;
+        if (drawings[0].points.size() == 0) return;
+
+        page = drawings[0].points[0].pos.to_document(dv->doc()).page;
+
+        current_frame_pending_drawing_vertices = update_resources_for_single_freehand_drawing(
+            current_frame_resource_update_batch,
+            dv,
+            page,
+            drawings,
+            pending_drawings_vertex_buffer_ptr.get(),
+            pending_drawing_vertex_colors_ptr.get()
+        );
+
+        // drawing_call.drawings = drawings;
+    }
+
     drawing_call.dv = dv;
     drawing_call.render_order = current_object_render_order++;
     drawing_call.highlighted = highlighted;
@@ -4950,19 +4984,28 @@ void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, int p
     uniforms[2] = page_rect.width();
     uniforms[3] = page_rect.height();
 
-    current_frame_resource_update_batch->updateDynamicBuffer(drawing_resources->uniform_buffer.get(), 0, 4 * sizeof(float), uniforms);
+    current_frame_resource_update_batch->updateDynamicBuffer(uniform_buffer, 0, 4 * sizeof(float), uniforms);
 
     current_frame_drawing_render_calls.push_back(drawing_call);
     // if (drawings.last_modification_time )
     // render_drawings(p, dv, drawings.drawings, highlighted);
 }
 
+void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& drawings, bool highlighted) {
+    SioyekPageDrawingsShaderResources* drawing_resources = get_shader_resources_for_page_drawings(page, drawings);
+    render_page_drawings_impl(drawing_resources->uniform_buffer.get(), dv, page, drawings.drawings, highlighted);
+
+}
+
 void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){
-    SioyekDrawingRenderCall drawing_call;
-    drawing_call.drawings = drawings;
-    drawing_call.dv = dv;
-    drawing_call.render_order = current_object_render_order++;
-    drawing_call.highlighted = highlighted;
+
+    render_page_drawings_impl(pending_drawing_uniform_buffer.get(), dv, -1, drawings, highlighted);
+
+    // SioyekDrawingRenderCall drawing_call;
+    // drawing_call.drawings = drawings;
+    // drawing_call.dv = dv;
+    // drawing_call.render_order = current_object_render_order++;
+    // drawing_call.highlighted = highlighted;
 
 
     // AbsoluteRect current_rect = dv->get_view_rect();
@@ -4978,7 +5021,7 @@ void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std:
     //     }
     // }
 
-    current_frame_drawing_render_calls.push_back(drawing_call);
+    // current_frame_drawing_render_calls.push_back(drawing_call);
 
 }
 
