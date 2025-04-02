@@ -1435,10 +1435,13 @@ void SioyekRendererBackend::add_coordinates_for_window_point(DocumentView* dv, f
     }
 }
 
-void SioyekRendererBackend::add_coordinates_for_window_point_no_fan(DocumentView* dv, float window_x, float window_y, float depth, float r, int point_polygon_vertices, std::vector<float>& out_coordinates){
+void SioyekRendererBackend::add_coordinates_for_window_point_no_fan(DocumentView* dv, float page_width, float page_height, float window_x, float window_y, float depth, float r, int point_polygon_vertices, std::vector<float>& out_coordinates){
 
-    float thickness_x = dv->get_zoom_level() / get_width();
-    float thickness_y = dv->get_zoom_level() / get_height();
+    float thickness_x = 1.0f / page_width;
+    float thickness_y = 1.0f / page_height;
+
+    // float thickness_x = 1.0f;
+    // float thickness_y = 1.0f;
 
 
     for (int i = 0; i <= point_polygon_vertices; i++) {
@@ -4524,6 +4527,8 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
         std::optional<DocumentPos> last_bottom_right = {};
         float last_slope = 0.0f;
 
+        float page_height = dv->doc()->get_page_height(page);
+        float page_width = dv->doc()->get_page_width(page);
         for (int j = 0; j < drawing.points.size() - 1; j++){
             // NormalizedWindowPos segment_begin_window_pos = drawing.points[j].pos.to_window_normalized(dv);
             // NormalizedWindowPos segment_end_window_pos = drawing.points[j + 1].pos.to_window_normalized(dv);
@@ -4548,8 +4553,6 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
             DocumentPos top_right = segment_end_document_pos + segment_direction;
             DocumentPos bottom_right = segment_end_document_pos - segment_direction;
 
-            float page_height = dv->doc()->get_page_height(page);
-            float page_width = dv->doc()->get_page_width(page);
             if (last_top_right.has_value()){
                 // add a triangle from the current point the the corner of the last point
 
@@ -4624,12 +4627,12 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
 
         }
 
-        if (false){ // @nocheckin
-            FreehandDrawingPoint last_point = drawing.points[drawing.points.size()-1];
-            NormalizedWindowPos last_point_window = last_point.pos.to_window_normalized(dv);
+        auto add_point = [&](FreehandDrawingPoint last_point){
+
+            DocumentPos last_point_document_pos = last_point.pos.to_document(dv->doc());
             std::vector<float> point_triangles;
             std::vector<float> point_colors;
-            add_coordinates_for_window_point_no_fan(dv, last_point_window.x, last_point_window.y, 0, last_point.thickness * 2, 10, point_triangles);
+            add_coordinates_for_window_point_no_fan(dv, page_width, page_height, last_point_document_pos.x / page_width, last_point_document_pos.y / page_height, 0, last_point.thickness * 2, 10, point_triangles);
             int num_point_vertices = point_triangles.size() / 2;
             for (int i = 0; i < num_point_vertices; i++){
                 point_colors.push_back(current_drawing_color[0]);
@@ -4644,8 +4647,15 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
             vertex_offset += sizeof(float) * point_triangles.size();
             color_offset += sizeof(float) * point_colors.size();
             num_vertices += num_point_vertices;
+        };
 
+        FreehandDrawingPoint last_point = drawing.points[drawing.points.size()-1];
+        if (drawing.points.size() > 1){
+            FreehandDrawingPoint first_point = drawing.points[0];
+            add_point(first_point);
         }
+        add_point(last_point);
+
 
     }
     return num_vertices;

@@ -185,7 +185,7 @@ protected:
     std::vector<int> get_overview_visible_pages(const OverviewState& overview);
     void render_scratchpad();
     void add_coordinates_for_window_point(DocumentView* dv, float window_x, float window_y, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
-    void add_coordinates_for_window_point_no_fan(DocumentView* dv, float window_x, float window_y, float depth, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
+    void add_coordinates_for_window_point_no_fan(DocumentView* dv, float page_width, float page_height, float window_x, float window_y, float depth, float r, int point_polygon_vertices, std::vector<float>& out_coordinates);
 
     bool can_use_cached_scratchpad_framebuffer();
     void draw_pixmap(QRect rect, QPixmap* pixmap);
