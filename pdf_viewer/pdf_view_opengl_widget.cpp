@@ -4502,7 +4502,15 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
     }
 }
 
-int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceUpdateBatch* update_batch, DocumentView* dv, int page, const std::vector<FreehandDrawing>& drawings, QRhiBuffer* vertex_buffer, QRhiBuffer* color_buffer){
+int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
+        QRhiResourceUpdateBatch* update_batch,
+        DocumentView* dv,
+        int page,
+        const std::vector<FreehandDrawing>& drawings,
+        QRhiBuffer* vertex_buffer,
+        QRhiBuffer* color_buffer,
+        int append_index,
+        int prev_num_vertices){
 
     // float thickness_x = dv->get_zoom_level() / get_width();
     // float thickness_y = dv->get_zoom_level() / get_height();
@@ -4511,11 +4519,14 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
     float thickness_y = 1.0f;
     // float depth = 0;
 
-    int vertex_offset = 0;
-    int color_offset = 0;
+    int vertex_offset = prev_num_vertices * sizeof(float) * 2;
+    int color_offset = prev_num_vertices * sizeof(float) * 4;
     int num_vertices = 0;
 
-    for (const FreehandDrawing& drawing : drawings){
+    int begin_index = append_index != -1 ? append_index : 0;
+
+    for (int k = begin_index; k < drawings.size(); k++){
+        const FreehandDrawing& drawing = drawings[k];
 
         float current_drawing_color[4] = { HIGHLIGHT_COLORS[(drawing.type - 'a') * 3],
                                           HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 1],
@@ -4658,7 +4669,7 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
 
 
     }
-    return num_vertices;
+    return num_vertices + prev_num_vertices;
 }
 
 void PdfViewRhiWidget::update_resources_for_current_frame_drawing_calls(QRhiResourceUpdateBatch* update_batch){
@@ -4787,7 +4798,8 @@ void PdfViewRhiWidget::render_current_frame_drawings(QRhiCommandBuffer* command_
             PageFreehandDrawing dummy;
 
             // beware! sioyek will crash if you leave it running for more than 31 years
-            dummy.last_modification_time = QDateTime::currentDateTime().addYears(-31);
+            dummy.last_addition_time = QDateTime::currentDateTime().addYears(-31);
+            dummy.last_deletion_time = QDateTime::currentDateTime().addYears(-31);
 
             SioyekPageDrawingsShaderResources* shader_resources = get_shader_resources_for_page_drawings(current_frame_drawing_render_calls[i].page, dummy);
             if (shader_resources){
@@ -4991,7 +5003,9 @@ void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, Doc
             page,
             drawings,
             pending_drawings_vertex_buffer_ptr.get(),
-            pending_drawing_vertex_colors_ptr.get()
+            pending_drawing_vertex_colors_ptr.get(),
+            -1,
+            0
         );
 
         // drawing_call.drawings = drawings;
@@ -5188,13 +5202,15 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
     for (int i = 0; i < cached_page_drawing_shader_resources.size(); i++){
         if (cached_page_drawing_shader_resources[i].doc == doc && cached_page_drawing_shader_resources[i].page == page){
             index = i;
-            if (page_drawings.last_modification_time < cached_page_drawing_shader_resources[i].last_update_time){
+            if (page_drawings.last_deletion_time < cached_page_drawing_shader_resources[i].last_update_time && page_drawings.last_addition_time < cached_page_drawing_shader_resources[i].last_update_time){
                 cached_page_drawing_shader_resources[i].last_use_time = QDateTime::currentDateTime();
                 return &cached_page_drawing_shader_resources[i];
             }
         }
     }
 
+
+    bool should_append = false;
     SioyekPageDrawingsShaderResources* new_page_drawing_resources = nullptr;
     if (index == -1){
         SioyekPageDrawingsShaderResources new_element;
@@ -5202,35 +5218,47 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
         new_page_drawing_resources = &cached_page_drawing_shader_resources.back();
     }
     else{
+        should_append = page_drawings.last_deletion_time < cached_page_drawing_shader_resources[index].last_update_time;
         new_page_drawing_resources = &cached_page_drawing_shader_resources[index];
     }
-    // SioyekPageDrawingsShaderResources new_page_drawing_resources;
 
-    new_page_drawing_resources->positions.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
-    new_page_drawing_resources->positions->create();
+    if (index == -1){
+        new_page_drawing_resources->positions.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
+        new_page_drawing_resources->positions->create();
 
-    new_page_drawing_resources->colors.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
-    new_page_drawing_resources->colors->create();
+        new_page_drawing_resources->colors.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
+        new_page_drawing_resources->colors->create();
 
-    new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 4 * sizeof(float)));
-    new_page_drawing_resources->uniform_buffer->create();
+        new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 4 * sizeof(float)));
+        new_page_drawing_resources->uniform_buffer->create();
 
-    // qpainter_resource_binding->setBindings({
-    //     QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, qpainter_texture.get(), my_sampler.get()),
-    //     QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, qpainter_uniform_buffer.get())
-    // });
 
-    new_page_drawing_resources->shader_resource_binding.reset(rhi()->newShaderResourceBindings());
-    new_page_drawing_resources->shader_resource_binding->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, new_page_drawing_resources->uniform_buffer.get())
-    });
+        new_page_drawing_resources->shader_resource_binding.reset(rhi()->newShaderResourceBindings());
+        new_page_drawing_resources->shader_resource_binding->setBindings({
+             QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, new_page_drawing_resources->uniform_buffer.get())
+         });
 
-    new_page_drawing_resources->shader_resource_binding->create();
+        new_page_drawing_resources->shader_resource_binding->create();
 
-    new_page_drawing_resources->page = page;
-    new_page_drawing_resources->doc = document_view->doc();
+        new_page_drawing_resources->page = page;
+        new_page_drawing_resources->doc = document_view->doc();
+    }
+
+
+
+    int append_index = -1;
+    if (should_append){
+        for (int i = 0; i < page_drawings.drawings.size(); i++){
+            if (page_drawings.drawings[i].creattion_time > new_page_drawing_resources->last_update_time){
+                append_index = i;
+                break;
+            }
+        }
+    }
+
     new_page_drawing_resources->last_update_time = QDateTime::currentDateTime();
     new_page_drawing_resources->last_use_time = QDateTime::currentDateTime();
+    int prev_num_vertices = !should_append ? 0 : new_page_drawing_resources->num_vertices;
 
     int num_vertices = update_resources_for_single_freehand_drawing(
         current_frame_resource_update_batch,
@@ -5238,7 +5266,9 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
         page,
         page_drawings.drawings,
         new_page_drawing_resources->positions.get(),
-        new_page_drawing_resources->colors.get()
+        new_page_drawing_resources->colors.get(),
+        append_index,
+        prev_num_vertices
     );
     new_page_drawing_resources->num_vertices = num_vertices;
 

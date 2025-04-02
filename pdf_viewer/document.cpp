@@ -3847,7 +3847,7 @@ void Document::add_freehand_drawing(FreehandDrawing new_drawing) {
         DocumentPos docpos = absolute_to_page_pos_uncentered(new_drawing.points[0].pos);
         drawings_mutex.lock();
         page_freehand_drawings[docpos.page].drawings.push_back(new_drawing);
-        page_freehand_drawings[docpos.page].last_modification_time = QDateTime::currentDateTime();
+        page_freehand_drawings[docpos.page].last_addition_time = QDateTime::currentDateTime();
         drawings_mutex.unlock();
         is_drawings_dirty = true;
     }
@@ -3876,7 +3876,7 @@ void Document::undo_freehand_drawing() {
     if (most_recent_page_index >= 0) {
         is_drawings_dirty = true;
         page_freehand_drawings[most_recent_page_index].drawings.pop_back();
-        page_freehand_drawings[most_recent_page_index].last_modification_time = QDateTime::currentDateTime();
+        page_freehand_drawings[most_recent_page_index].last_deletion_time = QDateTime::currentDateTime();
     }
     drawings_mutex.unlock();
 }
@@ -3907,7 +3907,7 @@ std::vector<SelectedObjectIndex> Document::get_page_intersecting_drawing_indices
 
 void Document::delete_all_page_drawings(int page) {
     page_freehand_drawings[page].drawings.clear();
-    page_freehand_drawings[page].last_modification_time = QDateTime::currentDateTime();
+    page_freehand_drawings[page].last_deletion_time = QDateTime::currentDateTime();
     is_drawings_dirty = true;
 }
 
@@ -3924,7 +3924,7 @@ void Document::delete_page_intersecting_drawings(int page, AbsoluteRect absolute
         //page_freehand_drawings.erase(page_freehand_drawings.begin() + indices_to_delete[j]);
         page_freehand_drawings[page].drawings.erase(page_freehand_drawings[page].drawings.begin() + indices_to_delete[j].index);
     }
-    page_freehand_drawings[page].last_modification_time = QDateTime::currentDateTime();
+    page_freehand_drawings[page].last_deletion_time = QDateTime::currentDateTime();
     is_drawings_dirty = true;
 }
 
@@ -3942,7 +3942,7 @@ void Document::delete_drawings_with_indices(int page, std::vector<SelectedObject
         int index = raw_indices[j];
         page_freehand_drawings[page].drawings.erase(page_freehand_drawings[page].drawings.begin() + index);
     }
-    page_freehand_drawings[page].last_modification_time = QDateTime::currentDateTime();
+    page_freehand_drawings[page].last_deletion_time = QDateTime::currentDateTime();
 }
 
 std::wstring Document::get_addtional_sioyek_file_path(QString type) {
@@ -4215,7 +4215,7 @@ void Document::load_drawings() {
                     drawing.points.push_back(point);
                 }
                 page_freehand_drawings[page_number].drawings.push_back(drawing);
-                page_freehand_drawings[page_number].last_modification_time = QDateTime::currentDateTime();
+                page_freehand_drawings[page_number].last_addition_time = QDateTime::currentDateTime();
             }
         }
 

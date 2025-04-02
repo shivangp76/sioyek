@@ -88,7 +88,8 @@ struct CachedPageIndex {
 
 struct PageFreehandDrawing{
     std::vector<FreehandDrawing> drawings;
-    QDateTime last_modification_time;
+    QDateTime last_addition_time;
+    QDateTime last_deletion_time;
 };
 
 class Document {

@@ -501,7 +501,16 @@ private:
     void update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch);
     void update_resources_for_current_frame_drawing_calls(QRhiResourceUpdateBatch* update_batch);
 
-    int update_resources_for_single_freehand_drawing(QRhiResourceUpdateBatch* update_batch, DocumentView* dv, int page, const std::vector<FreehandDrawing>& drawings, QRhiBuffer* vertex_buffer, QRhiBuffer* color_buffer);
+    int update_resources_for_single_freehand_drawing(
+        QRhiResourceUpdateBatch* update_batch,
+        DocumentView* dv,
+        int page,
+        const std::vector<FreehandDrawing>& drawings,
+        QRhiBuffer* vertex_buffer,
+        QRhiBuffer* color_buffer,
+        int append_index,
+        int prev_num_vertices
+    );
 
     SioyekPageDrawingsShaderResources* get_shader_resources_for_page_drawings(int page, const PageFreehandDrawing& page_drawings);
 
