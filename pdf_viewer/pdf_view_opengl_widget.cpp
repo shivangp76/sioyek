@@ -204,10 +204,10 @@ GLfloat rotation_uvs[4][8] = {
 
 
 void generate_bezier_with_endpoints_and_velocity(
-    Vec<float, 2> p0, 
-    Vec<float, 2> p1, 
-    Vec<float, 2> v0, 
-    Vec<float, 2> v1, 
+    Vec<float, 2> p0,
+    Vec<float, 2> p1,
+    Vec<float, 2> v0,
+    Vec<float, 2> v1,
     int n_points,
     float thickness,
     std::vector<FreehandDrawingPoint>& output
@@ -590,7 +590,7 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
         }
 
 
-        // when rotating, we swap nv and nh 
+        // when rotating, we swap nv and nh
         int nh_ = nh;
         int nv_ = nv;
 
@@ -702,7 +702,7 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
 
         render_texture(texture, window_rect, forced_color_palette);
 
-        
+
         if (dv()->is_two_page_mode() && (stencils_allowed)) {
             disable_stencil();
         }
@@ -973,7 +973,7 @@ void SioyekRendererBackend::my_render() {
             render_highlight_absolute(document_view->wrong_character_rect.value(), HRF_FILL | HRF_BORDER);
         }
     }
-    
+
 
 
     render_debug_highlights();
@@ -1189,7 +1189,7 @@ void SioyekRendererBackend::register_on_link_edit_listener(std::function<void(co
 }
 
 void SioyekRendererBackend::draw_empty_helper_message(QString message) {
-    
+
     // should be called with native painting disabled
 
     QFontMetrics fm(QApplication::font());
@@ -1894,7 +1894,7 @@ std::vector<std::pair<QRect, QString>> SioyekRendererBackend::get_hint_rect_and_
         }
     }
     return res;
-} 
+}
 
 
 void SioyekRendererBackend::get_color_for_current_mode(const float* input_color, float* output_color) {
@@ -2141,7 +2141,7 @@ bool SioyekRendererBackend::can_use_cached_scratchpad_framebuffer() {
 void SioyekRendererBackend::clear_background_color() {
     float* color = BACKGROUND_COLOR;
 
-    // for some reason clearing the stencil buffer tanks the performance on android 
+    // for some reason clearing the stencil buffer tanks the performance on android
     // so we only clear it if we absolutely need it
     GLuint flags = 0;
 
@@ -4520,6 +4520,10 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
                                           drawing.alpha
         };
 
+        std::optional<DocumentPos> last_top_right = {};
+        std::optional<DocumentPos> last_bottom_right = {};
+        float last_slope = 0.0f;
+
         for (int j = 0; j < drawing.points.size() - 1; j++){
             // NormalizedWindowPos segment_begin_window_pos = drawing.points[j].pos.to_window_normalized(dv);
             // NormalizedWindowPos segment_end_window_pos = drawing.points[j + 1].pos.to_window_normalized(dv);
@@ -4527,7 +4531,9 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
             DocumentPos segment_begin_document_pos = drawing.points[j].pos.to_document(dv->doc()).to_page(page, dv->doc());
             DocumentPos segment_end_document_pos = drawing.points[j + 1].pos.to_document(dv->doc()).to_page(page, dv->doc());
 
-            fvec2 segment_direction = segment_begin_document_pos - segment_end_document_pos;
+            // fvec2 segment_direction = segment_begin_document_pos - segment_end_document_pos;
+            fvec2 segment_direction = segment_end_document_pos - segment_begin_document_pos;
+            // qDebug() << new_slope;
 
             // get the orthogonal normal vector
             segment_direction.normalize();
@@ -4542,15 +4548,49 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
             DocumentPos top_right = segment_end_document_pos + segment_direction;
             DocumentPos bottom_right = segment_end_document_pos - segment_direction;
 
-            // NormalizedWindowPos top_left = segment_begin_window_pos + segment_direction;
-            // NormalizedWindowPos bottom_left = segment_begin_window_pos - segment_direction;
-            // NormalizedWindowPos top_right = segment_end_window_pos + segment_direction;
-            // NormalizedWindowPos bottom_right = segment_end_window_pos - segment_direction;
-
             float page_height = dv->doc()->get_page_height(page);
             float page_width = dv->doc()->get_page_width(page);
-            // page_width = 1.0f;
-            // page_height = 1.0f;
+            if (last_top_right.has_value()){
+                // add a triangle from the current point the the corner of the last point
+
+                float upward_vertices[6] = {
+                    segment_begin_document_pos.x / page_width, segment_begin_document_pos.y / page_height,
+                    last_top_right->x / page_width, last_top_right->y / page_height,
+                    top_left.x / page_width, top_left.y / page_height
+                };
+
+                float downward_vertices[6] = {
+                    segment_begin_document_pos.x / page_width, segment_begin_document_pos.y / page_height,
+                    last_bottom_right->x / page_width, last_bottom_right->y / page_height,
+                    bottom_left.x / page_width, bottom_left.y / page_height
+                };
+
+                    // last_top_left->x / page_width, last_top_left->y / page_height,
+                    // last_bottom_right->x / page_width, last_bottom_right->y / page_height
+                // float vertices[6] = {
+                //     0, 0,
+                //     0.1, 0.1,
+                //     0.1, -0.1
+                // };
+
+                float vertex_colors[12] = {
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                    current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
+                };
+
+                update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(upward_vertices), upward_vertices);
+                update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(vertex_colors), vertex_colors);
+                vertex_offset += sizeof(upward_vertices);
+                color_offset += sizeof(vertex_colors);
+                num_vertices += 3;
+
+                update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(downward_vertices), downward_vertices);
+                update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(vertex_colors), vertex_colors);
+                vertex_offset += sizeof(downward_vertices);
+                color_offset += sizeof(vertex_colors);
+                num_vertices += 3;
+            }
 
             float vertices[12] = {
                 top_left.x / page_width, top_left.y / page_height,
@@ -4561,7 +4601,6 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
                 bottom_right.x / page_width, bottom_right.y / page_height,
                 top_right.x / page_width, top_right.y / page_height,
             };
-            qDebug() << vertices[0] << " " << vertices[1];
 
             float vertex_colors[24] = {
                 current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
@@ -4579,25 +4618,9 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(QRhiResourceU
             color_offset += sizeof(vertex_colors);
             num_vertices += 6;
 
-            std::vector<float> point_triangles;
-            std::vector<float> point_colors;
-            add_coordinates_for_window_point_no_fan(dv, segment_begin_document_pos.x, segment_begin_document_pos.y, 0, drawing.points[j].thickness * 2, 10, point_triangles);
-            int num_point_vertices = point_triangles.size() / 2;
-            for (int i = 0; i < num_point_vertices; i++){
-                point_colors.push_back(current_drawing_color[0]);
-                point_colors.push_back(current_drawing_color[1]);
-                point_colors.push_back(current_drawing_color[2]);
-                point_colors.push_back(current_drawing_color[3]);
-            }
 
-            update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(float) * point_triangles.size(), point_triangles.data());
-            update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(float) * point_colors.size(), point_colors.data());
-
-            vertex_offset += sizeof(float) * point_triangles.size();
-            color_offset += sizeof(float) * point_colors.size();
-            num_vertices += num_point_vertices;
-
-
+            last_top_right = top_right;
+            last_bottom_right = bottom_right;
 
         }
 
