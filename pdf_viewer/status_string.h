@@ -39,6 +39,8 @@ const std::vector<QString> STATUS_STRING_PARTS = {
     "custom_message_b",
     "custom_message_c",
     "custom_message_d",
+    "drawing_type",
+    "drawing_size",
 };
 
 class StatusLabelLineEdit : public QLineEdit {

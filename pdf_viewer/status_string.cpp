@@ -11,6 +11,8 @@ extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR;
 extern float TTS_RATE;
 extern int MAX_CUSTOM_STATUS_MESSAGE_SIZE;
 
+std::unordered_map<QString, int> name_to_id;
+
 StatusLabelLineEdit::StatusLabelLineEdit(QWidget* parent ) : QLineEdit(parent) {
     setCursor(Qt::ArrowCursor);
     QObject::connect(this, &QLineEdit::selectionChanged, [this]() {
@@ -27,35 +29,48 @@ void StatusLabelLineEdit::contextMenuEvent(QContextMenuEvent* event) {
     return;
 }
 
+std::pair<QString, std::vector<int>> P(QString s){
+    std::vector<int> types;
+    return std::make_pair(s, types);
+}
+
+void fill_with_value(std::vector<int>& v, int value, int N){
+    std::fill_n(std::back_inserter(v), N, value);
+}
+
 std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QString status_string, MainWidget* main_widget) {
 
-    auto custom_message_a_fn = [widget=main_widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_A_STR); };
-    auto custom_message_b_fn = [widget=main_widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_B_STR); };
-    auto custom_message_c_fn = [widget=main_widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_C_STR); };
-    auto custom_message_d_fn = [widget=main_widget]() {return QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_D_STR); };
+    auto custom_message_a_fn = [widget=main_widget]() {return P(QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_A_STR)); };
+    auto custom_message_b_fn = [widget=main_widget]() {return P(QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_B_STR)); };
+    auto custom_message_c_fn = [widget=main_widget]() {return P(QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_C_STR)); };
+    auto custom_message_d_fn = [widget=main_widget]() {return P(QString::fromStdWString(STATUS_STRING_CUSTOM_MESSAGE_D_STR)); };
 
-    auto get_current_page_fn = [widget=main_widget]() {return QString::number(widget->get_current_page_number() + 1);};
-    auto get_current_page_label_fn = [widget=main_widget] {return QString::fromStdWString(widget->get_current_page_label()); };
+    auto dummy_fn = []() {return P(QString(""));};
+    auto get_current_page_fn = [widget=main_widget]() {return P(QString::number(widget->get_current_page_number() + 1));};
+    auto get_current_page_label_fn = [widget=main_widget] {return P(QString::fromStdWString(widget->get_current_page_label())); };
+
     auto get_num_pages_fn = [widget=main_widget] {
         if (widget->doc()) {
-            return QString::number(widget->doc()->num_pages());
+            return P(QString::number(widget->doc()->num_pages()));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto get_chapter_name_fn = [widget=main_widget] {
         if (widget->doc()) {
-            return " [ " + QString::fromStdWString(widget->main_document_view->get_current_chapter_name()) + " ] ";
+            return P(" [ " + QString::fromStdWString(widget->main_document_view->get_current_chapter_name()) + " ] ");
         }
-        return QString("");
+        return P(QString(""));
         };
 
     auto get_document_name_fn = [widget=main_widget] {
         auto file_name = Path(widget->doc()->get_path()).filename();
         if (file_name) {
-            return QString::fromStdWString(file_name.value());
+            return P(QString::fromStdWString(file_name.value()));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto get_search_fn = [widget=main_widget]() {
 
         int num_search_results = widget->main_document_view->get_num_search_results();
@@ -71,21 +86,23 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
             if (current_search_result && current_search_result->message.size() > 0) {
                 res += " " + current_search_result->message;
             }
-            return res;
+            return P(res);
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto get_link_status_fn = [widget=main_widget]() {
         if (widget->main_document_view->is_pending_link_source_filled()) {
-            return QString(" | linking ...");
+            return P(QString(" | linking ..."));
         }
         else if (widget->portal_to_edit) {
-            return QString(" | editing link ...");
+            return P(QString(" | editing link ..."));
         }
         else {
-            return QString("");
+            return P(QString(""));
         }
         };
+
     auto get_waiting_for_symbol_fn = [widget=main_widget]() {
 
         if (widget->is_waiting_for_symbol()) {
@@ -96,21 +113,23 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                 hint_name += "(" + QString::fromStdWString(wcommand_name) + ")";
             }
 
-            return " " + hint_name + " waiting for symbol";
+            return P(" " + hint_name + " waiting for symbol");
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto indexing_fn = [widget=main_widget]() {
-        
+
         if (widget->main_document_view != nullptr && widget->main_document_view->get_document() != nullptr &&
             widget->main_document_view->get_document()->get_is_indexing()) {
             float progress = widget->doc()->get_indexing_progress();
             int progress_percent = static_cast<int>(progress * 100);
             QString progress_string = QString::number(progress_percent);
-            return QString(" | indexing ... " + progress_string + "%");
+            return P(QString(" | indexing ... " + progress_string + "%"));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto overview_fn = [widget=main_widget]() {
 
         if (widget->main_document_view && widget->main_document_view->get_overview_page()) {
@@ -119,54 +138,61 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                 if (widget->dv()->smart_view_candidates[widget->dv()->index_into_candidates].source_text.size() > 0) {
                     preview_source_string = " (" + QString::fromStdWString(widget->dv()->smart_view_candidates[widget->dv()->index_into_candidates].source_text) + ")";
                 }
-                return " [ preview " + QString::number(widget->dv()->index_into_candidates + 1) + " / " + QString::number(widget->dv()->smart_view_candidates.size()) + preview_source_string + " ]";
+                return P(" [ preview " + QString::number(widget->dv()->index_into_candidates + 1) + " / " + QString::number(widget->dv()->smart_view_candidates.size()) + preview_source_string + " ]");
             }
         }
 
-        return QString("");
+        return P(QString(""));
         };
+
     auto synctex_fn = [widget=main_widget]() {
 
         if (widget->synctex_mode) {
-            return QString(" [ synctex ]");
+            return P(QString(" [ synctex ]"));
         }
-        return QString("");
+        return P(QString(""));
         };
+
 
     auto drag_fn = [widget=main_widget]() {
         if (widget->mouse_drag_mode) {
-            return QString(" [ drag ]");
+            return P(QString(" [ drag ]"));
         }
         else{
-            return QString("");
+            return P(QString(""));
         }
         };
+
     auto presentation_fn = [widget=main_widget]() {
 
         if (widget->main_document_view->is_presentation_mode()) {
-            return QString(" [ presentation ]");
+            return P(QString(" [ presentation ]"));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto auto_name_fn = [widget=main_widget]() {
         if (widget->doc()){
-            return QString::fromStdWString(widget->doc()->get_detected_paper_name_if_exists());
+            return P(QString::fromStdWString(widget->doc()->get_detected_paper_name_if_exists()));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto visual_scroll_fn = [widget=main_widget]() {
 
         if (widget->visual_scroll_mode) {
-            return QString(" [ visual scroll ]");
+            return P(QString(" [ visual scroll ]"));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto horizontal_scroll_fn = [widget=main_widget]() {
         if (widget->horizontal_scroll_locked) {
-            return QString(" [ locked horizontal scroll ]");
+            return P(QString(" [ locked horizontal scroll ]"));
         }
-        return QString("");
+        return P(QString(""));
         };
+
 
     auto highlight_fn = [widget=main_widget]() {
 
@@ -176,57 +202,82 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
             highlight_select_char = L"s";
         }
 
-        return " [ h" + QString::fromStdWString(highlight_select_char) + ":" + widget->select_highlight_type + " ]";
+        return P(" [ h" + QString::fromStdWString(highlight_select_char) + ":" + widget->select_highlight_type + " ]");
         };
 
-    auto drawing_fn = [widget=main_widget]() {
+
+    auto drawing_fn = [&, widget=main_widget]() {
+
 
         QString drawing_mode_string = "";
         if (widget->main_document_view){
             if (widget->freehand_drawing_mode == DrawingMode::Drawing)
             {
-                drawing_mode_string = QString(" [ freehand:") + widget->main_document_view->current_freehand_type + " ]";
+                float thickness = widget->main_document_view->freehand_thickness;
+                std::vector<int> type_ids;
+                QString result = "[ ";
+                fill_with_value(type_ids, -1, result.size());
+
+                QString type_part = QString("freehand:") + widget->main_document_view->current_freehand_type;
+                result += type_part;
+                fill_with_value(type_ids, name_to_id["drawing_type"], type_part.size());
+
+                QString size_part = QString(" size:") + QString::number(thickness);
+                result += size_part;
+                fill_with_value(type_ids, name_to_id["drawing_size"], size_part.size());
+
+                QString close_part = " ]";
+                result += close_part;
+                fill_with_value(type_ids, -1, close_part.size());
+
+                return std::make_pair(result, type_ids);
             }
             if (widget->freehand_drawing_mode == DrawingMode::PenDrawing)
             {
-                drawing_mode_string = QString(" [ pen:") + widget->main_document_view->current_freehand_type + " ]";
+                return  P(QString(" [ pen:") + widget->main_document_view->current_freehand_type + " ]");
             }
         }
 
-        return drawing_mode_string;
+        return P(drawing_mode_string);
         };
+
     auto mode_fn = [widget=main_widget]() {
-        return QString::fromStdString(widget->get_current_mode_string());
+        return P(QString::fromStdString(widget->get_current_mode_string()));
         };
+
     auto closest_bookmark_fn = [widget=main_widget]() {
 
         std::optional<BookMark> closest_bookmark = widget->main_document_view->find_closest_bookmark();
         if (closest_bookmark) {
-            return " [ " + QString::fromStdWString(closest_bookmark.value().description) + " ]";
+            return P(" [ " + QString::fromStdWString(closest_bookmark.value().description) + " ]");
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto closest_portal_fn = [widget=main_widget]() {
 
         std::optional<Portal> close_portal = widget->main_document_view->get_target_portal(true);
         if (close_portal) {
-            return QString(" [ PORTAL ]");
+            return P(QString(" [ PORTAL ]"));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto rect_select_fn = [widget=main_widget]() {
 
         if (widget->rect_select_mode) {
-            return QString(" [ select box ]");
+            return P(QString(" [ select box ]"));
         }
-        return QString("");
+        return P(QString(""));
         };
+
     
     auto point_select_fn = [widget=main_widget]() {
         if (widget->point_select_mode) {
-            return QString(" [ select point ]");
+            return P(QString(" [ select point ]"));
         }
         };
+
     auto custom_message_fn = [widget=main_widget]() {
 
         if (widget->status_messages.size() > 0) {
@@ -241,25 +292,27 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                 int index = widget->current_status_message_index < widget->status_messages.size() ? widget->current_status_message_index : widget->status_messages.size() - 1;
                 auto current_message = widget->status_messages[index].message;
                 current_message += " (" + QString::number(index + 1) + "/" + QString::number(widget->status_messages.size()) + ")";
-                return " [ " + current_message + " ]";
+                return P(" [ " + current_message + " ]");
             }
             else {
-                return " [ " + message_string + " ]";
+                return P(" [ " + message_string + " ]");
             }
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto current_requirement_fn = [widget=main_widget]() {
 
         if (widget->pending_command_instance){
             if (widget->pending_command_instance->next_requirement(widget).has_value()){
                 if (widget->pending_command_instance->next_requirement(widget)->type == RequirementType::Point) {
-                    return " [ " + QString::fromStdString(widget->pending_command_instance->next_requirement(widget)->name) + " ] ";
+                    return P(" [ " + QString::fromStdString(widget->pending_command_instance->next_requirement(widget)->name) + " ] ");
                 }
             }
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto download_fn = [widget=main_widget]() {
 
         bool is_downloading = false;
@@ -267,30 +320,32 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         if (widget->is_network_manager_running(&is_downloading, &message)) {
             if (is_downloading) {
                 if (message.size() > 0) {
-                    return QString(" [ " + QString::fromStdWString(message) + " ]");
+                    return P(QString(" [ " + QString::fromStdWString(message) + " ]"));
                 }
                 else {
-                    return QString(" [ downloading ]");
+                    return P(QString(" [ downloading ]"));
                 }
 
             }
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto selected_highlight_fn = [widget=main_widget]() {
         std::string selected_highlight_uuid = widget->main_document_view->get_selected_highlight_uuid();
         if (selected_highlight_uuid.size() > 0) {
             Highlight* hl = widget->doc()->get_highlight_with_uuid(selected_highlight_uuid);
             if (hl->text_annot.size() > 0) {
-                return " [ " + QString::fromStdWString(hl->text_annot) + " ]";
+                return P(" [ " + QString::fromStdWString(hl->text_annot) + " ]");
             }
             else {
 
-                return QString(" [ <no annotation> ]");
+                return P(QString(" [ <no annotation> ]"));
             }
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto download_button_fn = [widget=main_widget]() {
         if (widget->dv() && widget->dv()->overview_page) {
             if (((widget->dv()->overview_page->overview_type == "reference") || (widget->dv()->overview_page->overview_type == "reflink"))
@@ -298,51 +353,54 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                 auto mappings = widget->input_handler->get_key_mappings("download_overview_paper");
                 //widget->input_handler->get_com
                 if (mappings.size() == 0) {
-                    return QString(" [ download ]");
+                    return P(QString(" [ download ]"));
                 }
                 else {
-                    return QString(" [ download keybind : ") + QString::fromStdString(mappings[0]) + " ]";
+                    return P(QString(" [ download keybind : ") + QString::fromStdString(mappings[0]) + " ]");
                 }
             }
         }
-        return QString("");
+        return P(QString(""));
         };
+
     auto network_status_fn = [widget=main_widget]() {
+
 
         auto network_string = widget->get_network_status_string();
         if (network_string.size() > 0) {
-            return " [ " + network_string +" ]";
+            return P(" [ " + network_string +" ]");
         }
         else {
-            return QString("");
+            return P(QString(""));
         }
         };
 
     auto tts_status_fn = [widget=main_widget]() {
         if (widget->is_reading) {
-            return " [ stop reading ]";
+            return P(" [ stop reading ]");
         }
         else if (widget->high_quality_play_state) {
-            return " [ stop reading ]";
+            return P(" [ stop reading ]");
         }
         else{
-            return "";
+            return P("");
         }
         };
+
     auto tts_rate_fn = [widget=main_widget]() {
         if (widget->is_reading) {
-            return " [ rate " + QString::number(TTS_RATE) + " ]";
+            return P(" [ rate " + QString::number(TTS_RATE) + " ]");
         }
         else if (widget->high_quality_play_state) {
-            return " [ rate " + QString::number(TTS_RATE) + " ]";
+            return P(" [ rate " + QString::number(TTS_RATE) + " ]");
         }
         else {
-            return QString("");
+            return P(QString(""));
         }
         };
 
 
-    std::unordered_map<QString, std::function<QString()>> name_to_generator = {
+    std::unordered_map<QString, std::function<std::pair<QString, std::vector<int>>()>> name_to_generator = {
         {"current_page", std::move(get_current_page_fn)},
         {"current_page_label", std::move(get_current_page_label_fn)},
         {"num_pages", std::move(get_num_pages_fn)},
@@ -378,9 +436,12 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         {"custom_message_b", std::move(custom_message_b_fn)},
         {"custom_message_c", std::move(custom_message_c_fn)},
         {"custom_message_d", std::move(custom_message_d_fn)},
+
+        {"drawing_type", dummy_fn},
+        {"drawing_size", dummy_fn},
+
     };
 
-    std::unordered_map<QString, int> name_to_id;
     for (int i = 0; i < STATUS_STRING_PARTS.size(); i++) {
         name_to_id[STATUS_STRING_PARTS[i]] = i;
     }
@@ -418,7 +479,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
     QRegularExpressionMatchIterator matches = expr.globalMatch(status_string);
     int prev_match_end_index = -1;
 
-    std::vector<std::variant<QString, std::pair<int, std::function<QString()>>>> parts;
+    std::vector<std::variant<QString, std::pair<int, std::function<std::pair<QString, std::vector<int>>()>>>> parts;
 
     while (matches.hasNext()) {
         QRegularExpressionMatch match = matches.next();
@@ -449,10 +510,17 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                 std::fill_n(std::back_inserter(part_types), p.size(), -1);
             }
             else {
-                auto& [part_type, part_fn] = std::get <std::pair<int, std::function<QString()>>>(part);
-                QString p = part_fn();
+                auto& [part_type, part_fn] = std::get <std::pair<int, std::function<std::pair<QString, std::vector<int>>()>>>(part);
+                auto [p, part_ids] = part_fn();
                 res += p;
-                std::fill_n(std::back_inserter(part_types), p.size(), static_cast<int>(part_type));
+                if (p.size() > 0){
+                    if (part_ids.size() != p.size()){
+                        std::fill_n(std::back_inserter(part_types), p.size(), static_cast<int>(part_type));
+                    }
+                    else{
+                        std::copy(part_ids.begin(), part_ids.end(), std::back_inserter(part_types));
+                    }
+                }
             }
         }
         return std::make_pair(res, part_types);
