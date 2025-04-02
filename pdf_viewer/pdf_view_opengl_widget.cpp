@@ -2945,9 +2945,10 @@ void SioyekRendererBackend::draw_pending_freehand_drawings(const std::vector<int
     }
     enable_multisampling();
     for (auto page : visible_pages) {
-        const std::vector<FreehandDrawing>& page_drawings = doc()->get_page_drawings(page);
-        if (page_drawings.size() > 0){
-            render_drawings(get_painter(), dv(), page_drawings);
+        const PageFreehandDrawing& page_drawings = doc()->get_page_drawings(page);
+        if (page_drawings.drawings.size() > 0){
+            // render_drawings(get_painter(), dv(), page_drawings);
+            render_page_drawings(get_painter(), dv(), page_drawings);
         }
     }
     if (document_view->moving_drawings.size() > 0){
@@ -3696,6 +3697,10 @@ void SioyekRendererBackend::render_drawings(QPainter* p, DocumentView* dv, const
         }
     }
 
+}
+
+void SioyekRendererBackend::render_page_drawings(QPainter* p, DocumentView* dv, const PageFreehandDrawing& page_drawings, bool highlighted){
+    render_drawings(p, dv, page_drawings.drawings, highlighted);
 }
 
 void PdfViewQPainterWidget::render_compiled_drawings() {
@@ -4761,6 +4766,10 @@ void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){
 }
 void PdfViewRhiWidget::prepare_highlight_pipeline(){}
 
+void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, const PageFreehandDrawing& drawings, bool highlighted) {
+    render_drawings(p, dv, drawings.drawings, highlighted);
+}
+
 void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){
     SioyekDrawingRenderCall drawing_call;
     // drawing_call.drawings = drawings;
@@ -4908,4 +4917,9 @@ QPainter* PdfViewRhiWidget::get_painter(){
         qpainter_initialized_for_current_frame = true;
     }
     return &painter_;
+}
+
+SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_page_drawings(int page){
+    // Document* doc = document_view->doc();
+    // for (int i = 0; i < cached_page_drawing_shader_resources.size())
 }

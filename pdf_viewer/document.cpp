@@ -3881,8 +3881,8 @@ void Document::undo_freehand_drawing() {
     drawings_mutex.unlock();
 }
 
-const std::vector<FreehandDrawing>& Document::get_page_drawings(int page) {
-    return page_freehand_drawings[page].drawings;
+const PageFreehandDrawing& Document::get_page_drawings(int page) {
+    return page_freehand_drawings[page];
 }
 
 std::vector<SelectedObjectIndex> Document::get_page_intersecting_drawing_indices(int page, AbsoluteRect absolute_rect, bool mask[26]) {

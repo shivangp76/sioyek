@@ -194,6 +194,8 @@ protected:
     bool is_normalized_y_range_in_window(float y0, float y1);
 
     virtual void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false);
+    virtual void render_page_drawings(QPainter* p, DocumentView* dv, const PageFreehandDrawing& page_drawings, bool highlighted = false);
+
     void draw_icon(const QIcon& icon, QRect rect);
     void render_overview(OverviewState overview, bool draw_border=true);
     void render_page_separator(int page_number);
@@ -424,11 +426,12 @@ struct SioyekTextureShaderResourceBinding{
     QRhiBuffer* uniform_buffer;
 };
 
-struct SioyekPageDrawingShaderResources{
+struct SioyekPageDrawingsShaderResources{
 
     Document* doc = nullptr;
     int page = -1;
     QDateTime last_update_time;
+    QDateTime last_use_time;
 
     std::unique_ptr<QRhiBuffer> positions;
     std::unique_ptr<QRhiBuffer> colors;
@@ -457,6 +460,8 @@ private:
     std::unique_ptr<QRhiBuffer> qpainter_vertex_buffer;
     std::unique_ptr<QRhiShaderResourceBindings> qpainter_resource_binding;
     std::unique_ptr<QRhiShaderResourceBindings> drawings_resource_binding;
+
+    std::vector<SioyekPageDrawingsShaderResources> cached_page_drawing_shader_resources;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_pipeline;
@@ -490,6 +495,7 @@ private:
     void update_resources_for_current_frame_texture_render_calls(QRhiResourceUpdateBatch* update_batch);
     void update_resources_for_current_frame_highlight_render_calls(QRhiResourceUpdateBatch* update_batch);
     void update_resources_for_current_frame_drawing_calls(QRhiResourceUpdateBatch* update_batch);
+    SioyekPageDrawingsShaderResources* get_shader_resources_for_page_drawings(int page);
 
     void render_qpainter_texture(QRhiCommandBuffer* command_buffer);
     void render_current_frame_textures(QRhiCommandBuffer* command_buffer);
@@ -530,6 +536,7 @@ public:
     void set_highlight_color(const float* color, float alpha) override;
     void prepare_highlight_pipeline() override;
     void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+    void render_page_drawings(QPainter* p, DocumentView* dv, const PageFreehandDrawing& drawings, bool highlighted = false) override;
     void prepare_non_compiled_line_drawing_pipeline() override;
     void render_compiled_drawings() override;
     void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;

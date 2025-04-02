@@ -557,7 +557,7 @@ public:
     void add_freehand_drawing(FreehandDrawing new_drawing);
     void get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, std::vector<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);
     void undo_freehand_drawing();
-    const std::vector<FreehandDrawing>& get_page_drawings(int page);
+    const PageFreehandDrawing& get_page_drawings(int page);
     AbsoluteRect to_absolute(int page, fz_quad quad);
     AbsoluteRect to_absolute(int page, PagelessDocumentRect rect);
 
