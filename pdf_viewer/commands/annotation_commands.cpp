@@ -71,15 +71,16 @@ public:
     }
 };
 
-class SetFreehandThickness : public TextCommand {
+class SetFreehandThickness : public Command {
 public:
     static inline const std::string cname = "set_freehand_thickness";
     static inline const std::string hname = "Set thickness of freehand drawings";
-    SetFreehandThickness(MainWidget* w) : TextCommand(cname, w) {};
+    SetFreehandThickness(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        float thickness = QString::fromStdWString(this->text.value()).toFloat();
-        FREEHAND_SIZE = thickness;
+        widget->execute_macro_if_enabled(L"set_config(freehand_drawing_size)");
+        // float thickness = QString::fromStdWString(this->text.value()).toFloat();
+        // FREEHAND_SIZE = thickness;
         //widget->perform_search(this->text.value(), false);
         //if (TOUCH_MODE) {
         //	widget->show_search_buttons();
