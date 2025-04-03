@@ -10646,7 +10646,12 @@ QJsonArray MainWidget::get_all_json_states() {
 }
 
 void MainWidget::screenshot(std::wstring file_path) {
-    QPixmap pixmap(size());
+
+    int pixmap_width = size().width() * devicePixelRatio();
+    int pixmap_height = size().height() * devicePixelRatio();
+
+    QPixmap pixmap(QSize(pixmap_width, pixmap_height));
+    pixmap.setDevicePixelRatio(devicePixelRatio());
     render(&pixmap, QPoint(), QRegion(rect()));
     pixmap.save(QString::fromStdWString(file_path));
 }
