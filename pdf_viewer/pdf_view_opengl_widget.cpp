@@ -848,7 +848,8 @@ void SioyekRendererBackend::my_render() {
                         dv()->get_zoom_level(),
                         get_device_pixel_ratio(),
                         nullptr,
-                        nullptr);
+                        nullptr,
+                        get_backend_extras());
                 }
             }
             for (int i = 0; i < NUM_PRERENDERED_PREV_SLIDES; i++) {
@@ -864,7 +865,8 @@ void SioyekRendererBackend::my_render() {
                         dv()->get_zoom_level(),
                         get_device_pixel_ratio(),
                         nullptr,
-                        nullptr);
+                        nullptr,
+                        get_backend_extras());
                 }
             }
         }
