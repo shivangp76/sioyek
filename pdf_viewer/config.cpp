@@ -2043,6 +2043,7 @@ std::wstring Config::get_type_string() const{
     if (config_type == ConfigType::EnableRectangle) return L"enablerectangle";
     if (config_type == ConfigType::Range) return L"range";
     if (config_type == ConfigType::Enum) return L"enum";
+    if (config_type == ConfigType::Symbol) return L"symbol";
 }
 
 QRect UIRect::to_window(int window_width, int window_height) {
