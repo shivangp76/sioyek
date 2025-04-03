@@ -2459,6 +2459,7 @@ public:
 class ShowTouchConfigCommand : public Command {
     std::wstring config_name;
     std::optional<std::wstring> text = {};
+    std::optional<wchar_t> symbol = {};
     //bool save_after_set = false;
     //bool force_touch = false;
 
@@ -2475,6 +2476,10 @@ public:
         else {
             text = value;
         }
+    }
+
+    virtual void set_symbol_requirement(char value) {
+        symbol = (wchar_t)value;
     }
 
     void set_file_requirement(std::wstring value) {
@@ -2523,6 +2528,10 @@ public:
             if (widget->config_manager->deserialize_config(confname, text.value())) {
                 widget->on_config_changed(confname);
             }
+        }
+        if (config->config_type == ConfigType::Symbol) {
+            widget->push_current_widget(new SymbolConfigUI(confname, widget, (wchar_t*)config->value));
+            widget->show_current_widget();
         }
         if (config->config_type == ConfigType::Macro) {
             widget->push_current_widget(new MacroConfigUI(confname, widget, (std::wstring*)config->value, *(std::wstring*)config->value));

@@ -928,6 +928,17 @@ private:
     TouchSlider* slider = nullptr;
 };
 
+class SelectHighlightTypeUI;
+
+class SymbolConfigUI : public ConfigUI {
+public:
+    SymbolConfigUI(std::string name, MainWidget* parent, wchar_t* config_location);
+    void resizeEvent(QResizeEvent* resize_event) override;
+private:
+    wchar_t* symbol_location;
+    SelectHighlightTypeUI* selector = nullptr;
+};
+
 class EnumConfigUI : public ConfigUI {
     Q_OBJECT
 public:
@@ -998,13 +1009,17 @@ private:
 };
 
 class SelectHighlightTypeUI : public QWidget {
+    Q_OBJECT
 public:
-    SelectHighlightTypeUI(MainWidget* parent);
+    SelectHighlightTypeUI(QWidget* parent);
 
     void resizeEvent(QResizeEvent* resize_event) override;
 
+signals:
+    void symbolClicked(int);
+
 private:
-    MainWidget* main_widget;
+    QWidget* parent_widget;
     QQuickWidget* new_widget;
 
 };

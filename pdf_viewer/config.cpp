@@ -13,6 +13,7 @@
 //#include <ui.h>
 extern Path android_config_path;
 
+wchar_t FREEHAND_TYPE = 'r';
 int FONT_SIZE = 12;
 int STATUS_BAR_FONT_SIZE = -1;
 float BACKGROUND_COLOR[3] = { 0.97f, 0.97f, 0.97f };
@@ -561,6 +562,10 @@ void int_serializer(void* int_pointer, std::wstringstream& stream) {
     stream << *(int*)int_pointer;
 }
 
+void symbol_serializer(void* symbol_pointer, std::wstringstream& stream) {
+    stream << *(wchar_t*)symbol_pointer;
+}
+
 void bool_serializer(void* bool_pointer, std::wstringstream& stream) {
     stream << *(bool*)bool_pointer;
 }
@@ -840,6 +845,7 @@ auto vec3_deserializer = vec_n_deserializer<3, float>;
 auto vec4_deserializer = vec_n_deserializer<4, float>;
 auto float_deserializer = generic_deserializer<float>;
 auto int_deserializer = generic_deserializer<int>;
+auto symbol_deserializer = generic_deserializer<wchar_t>;
 auto bool_deserializer = generic_deserializer<bool>;
 auto color3_deserializer = colorn_deserializer<3>;
 auto color4_deserializer = colorn_deserializer<4>;
@@ -874,6 +880,7 @@ private:
         case ConfigType::EnableRectangle: return rect_serializer;
         case ConfigType::Range: return fvec2_serializer;
         case ConfigType::Macro: return string_serializer;
+        case ConfigType::Symbol: return symbol_serializer;
         case ConfigType::Enum: return [this, extras=extras](void* value, std::wstringstream& stream) {
             int enum_index = *static_cast<int*>(value);
             EnumExtras enum_extras = std::get<EnumExtras>(extras);
@@ -903,6 +910,7 @@ private:
         case ConfigType::EnableRectangle: return rect_deserializer;
         case ConfigType::Range: return fvec2_deserializer;
         case ConfigType::Macro: return string_deserializer;
+        case ConfigType::Symbol: return symbol_deserializer;
         case ConfigType::Enum: return [this, extras=extras](std::wstringstream& stream, void* res_, bool* changed) {
 
             int prev_index = *static_cast<int*>(res_);
@@ -945,6 +953,7 @@ private:
         case ConfigType::EnableRectangle: return nullptr;
         case ConfigType::Range: return nullptr;
         case ConfigType::Macro: return nullptr;
+        case ConfigType::Symbol: return nullptr;
         case ConfigType::Enum: return [extras = extras](const std::wstring& value) {return enum_validator(value, std::get<EnumExtras>(extras)); };
         default: assert(false);
         }
@@ -976,6 +985,10 @@ public:
 
     static ConfigBuilder intc(std::wstring config_name, int* val, IntExtras ex){
         return ConfigBuilder(config_name, ConfigType::Int, val).extra(ex);
+    }
+
+    static ConfigBuilder symbolc(std::wstring config_name, wchar_t* val){
+        return ConfigBuilder(config_name, ConfigType::Symbol, val);
     }
 
     static ConfigBuilder string(std::wstring config_name, std::wstring* val){
@@ -1181,6 +1194,13 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     auto add_int = [&](std::wstring name, int* location, IntExtras extras){
         configs.push_back(
             ConfigBuilder::intc(name, location, extras).build()
+            );
+        return configs.back();
+    };
+
+    auto add_symbol = [&](std::wstring name, wchar_t* location){
+        configs.push_back(
+            ConfigBuilder::symbolc(name, location).build()
             );
         return configs.back();
     };
@@ -1558,6 +1578,8 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_enum(L"selected_text_highlight_style", &SELECTED_TEXT_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"inverted", L"background"}}));
     add_enum(L"highlight_style", &HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"background", L"border"}}));
     add_enum(L"overview_highlight_style", &OVERVIEW_HIGHLIGHT_STYLE, EnumExtras({ {L"transparent", L"background", L"border"}}));
+
+    add_symbol(L"freehand_drawing_type", &FREEHAND_TYPE);
 
     Config* dark_mode_background_config = add_color3(L"dark_mode_background_color", std::get<ColorExtras>(background_color_config->extras).dark_mode, false);
     Config* custom_mode_background_config = add_color3(L"custom_color_mode_empty_background_color", std::get<ColorExtras>(background_color_config->extras).custom_mode, false);

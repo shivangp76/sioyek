@@ -35,6 +35,7 @@ enum class ConfigType {
     EnableRectangle,
     Range,
     Macro,
+    Symbol,
     Enum
 };
 

@@ -70,7 +70,7 @@ Item{
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: {
+                onClicked: function(event) {
                     root.colorClicked(index);
                 }
                 onPressAndHold: {

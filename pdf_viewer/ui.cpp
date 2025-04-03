@@ -1001,6 +1001,28 @@ FloatConfigUI::FloatConfigUI(std::string name, MainWidget* parent, float* config
 
 }
 
+SymbolConfigUI::SymbolConfigUI(std::string name, MainWidget* parent, wchar_t* config_location) : ConfigUI(name, parent) {
+
+    symbol_location = config_location;
+
+    //int current_value = static_cast<int>((*config_location - min_value) / (max_value - min_value) * 100);
+    wchar_t current_value = *config_location;
+
+    selector = new SelectHighlightTypeUI(this);
+    // set the mouse focus on selector
+    setFocusPolicy(Qt::StrongFocus);
+    setFocus();
+
+    QObject::connect(selector, &SelectHighlightTypeUI::symbolClicked, [&](int val) {
+        //float value = min_value + (static_cast<float>(val) / 100.0f) * (max_value - min_value);
+        *symbol_location = (wchar_t)(val + 'a');
+        on_change();
+        main_widget->invalidate_render();
+        main_widget->pop_current_widget();
+        });
+
+}
+
 
 IntConfigUI::IntConfigUI(std::string name, MainWidget* parent, int* config_location, int min_value_, int max_value_) : ConfigUI(name, parent) {
 
@@ -1173,6 +1195,15 @@ void FloatConfigUI::resizeEvent(QResizeEvent* resize_event) {
 
     setFixedSize(w, h);
     move(parent_width / 6, parent_height / 4);
+}
+
+void SymbolConfigUI::resizeEvent(QResizeEvent* resize_event) {
+    QWidget::resizeEvent(resize_event);
+    int w = parentWidget()->width();
+    int h = parentWidget()->height();
+
+    move(0, 0);
+    setFixedSize(w, h);
 }
 
 void IntConfigUI::resizeEvent(QResizeEvent* resize_event) {
@@ -1965,7 +1996,7 @@ void MyLineEdit::keyPressEvent(QKeyEvent* event) {
 }
 
 
-SelectHighlightTypeUI::SelectHighlightTypeUI(MainWidget* parent) :QWidget(parent), main_widget(parent) {
+SelectHighlightTypeUI::SelectHighlightTypeUI(QWidget* parent) :QWidget(parent), parent_widget(parent) {
 
     QList<QColor> colors;
     const int N_COLORS = 26;
@@ -1985,7 +2016,13 @@ SelectHighlightTypeUI::SelectHighlightTypeUI(MainWidget* parent) :QWidget(parent
 
     new_widget->resize(width(), height() / 5);
     new_widget->move(0, height() / 2 - height() / 10);
-    QObject::connect(new_widget->rootObject(), SIGNAL(colorClicked(int)), main_widget, SLOT(highlight_type_color_clicked(int)));
+    MainWidget* main_widget = dynamic_cast<MainWidget*>(parent_widget);
+
+    if (main_widget){
+        QObject::connect(new_widget->rootObject(), SIGNAL(colorClicked(int)), main_widget, SLOT(highlight_type_color_clicked(int)));
+    }
+
+    QObject::connect(new_widget->rootObject(), SIGNAL(colorClicked(int)), this, SIGNAL(symbolClicked(int)));
 }
 
 void SelectHighlightTypeUI::resizeEvent(QResizeEvent* resize_event) {
