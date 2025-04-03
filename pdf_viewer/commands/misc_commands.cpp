@@ -1992,12 +1992,16 @@ public:
     SetConfigCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        //widget->handle_debug_command();
-        if (SHOW_SETCONFIG_IN_STATUSBAR) {
-            widget->set_status_message(config_name.value() + L" = '" + config_value.value() + L"'");
+        if (!TOUCH_MODE){
+            if (SHOW_SETCONFIG_IN_STATUSBAR) {
+                widget->set_status_message(config_name.value() + L" = '" + config_value.value() + L"'");
+            }
+            if (widget->config_manager->deserialize_config(utf8_encode(config_name.value()), config_value.value())) {
+                widget->on_config_changed(utf8_encode(config_name.value()), false);
+            }
         }
-        if (widget->config_manager->deserialize_config(utf8_encode(config_name.value()), config_value.value())) {
-            widget->on_config_changed(utf8_encode(config_name.value()), false);
+        else{
+            widget->execute_macro_if_enabled(L"show_touch_ui_for_config(" + config_name.value() + L")");
         }
     }
 
@@ -2015,6 +2019,11 @@ public:
     std::optional<Requirement> next_requirement(MainWidget* widget) override {
         if (!config_name.has_value()){
             return Requirement{ RequirementType::Text, "Config Name" };
+        }
+
+        // in touch mode, we just show the touch config for the config name
+        if (TOUCH_MODE){
+            return {};
         }
 
         if (!config_value.has_value()){
