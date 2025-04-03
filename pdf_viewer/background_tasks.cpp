@@ -106,7 +106,9 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
     if (desc_qstring.startsWith("#markdown")) {
         float height = draw_markdown_text(*painter, bookmark.get_render_text(), window_qrect, scroll_amount, is_from_main_thread, font);
-        cached_bookmark_heights[bookmark.uuid] = height;
+        cached_bookmark_heights_mutex.lock();
+        cached_bookmark_heights_[bookmark.uuid] = height;
+        cached_bookmark_heights_mutex.unlock();
     }
 #ifdef SIOYEK_MICROTEX
     else if (desc_qstring.startsWith("#latex")) {
@@ -154,7 +156,9 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
             r->draw(g2, window_qrect.x(), window_qrect.y());
             painter->restore();
-            cached_bookmark_heights[bookmark.uuid] = r->getHeight();
+            cached_bookmark_heights_mutex.lock();
+            cached_bookmark_heights_[bookmark.uuid] = r->getHeight();
+            cached_bookmark_heights_mutex.unlock();
 
             delete r;
         }
@@ -173,7 +177,9 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
             painter->setPen(question_text_color);
             //painter.drawText(window_qrect, flags, QString::fromStdWString(bookmarks[i].description).right(bookmarks[i].description.size() - 2));
             float height = draw_markdown_text(*painter, bookmark.get_question_or_summary_markdown(), window_qrect, scroll_amount, is_from_main_thread, font);
-            cached_bookmark_heights[bookmark.uuid] = height;
+            cached_bookmark_heights_mutex.lock();
+            cached_bookmark_heights_[bookmark.uuid] = height;
+            cached_bookmark_heights_mutex.unlock();
         }
         else {
             int flags = Qt::TextWordWrap;
@@ -191,7 +197,9 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
             QRect bounding_rect;
             painter->drawText(r, flags, bookmark.get_render_text(), &bounding_rect);
-            cached_bookmark_heights[bookmark.uuid] = bounding_rect.height();
+            cached_bookmark_heights_mutex.lock();
+            cached_bookmark_heights_[bookmark.uuid] = bounding_rect.height();
+            cached_bookmark_heights_mutex.unlock();
 
             painter->restore();
         }
@@ -640,9 +648,11 @@ void BackgroundBookmarkRenderer::erase_request_with_id(int id) {
     rendered_bookmarks_mutex.unlock();
 }
 
+
 float BackgroundBookmarkRenderer::get_cached_bookmark_height(const std::string& uuid) {
-    auto it = cached_bookmark_heights.find(uuid);
-    if (it != cached_bookmark_heights.end()) {
+    std::lock_guard<std::mutex> lock(cached_bookmark_heights_mutex);
+    auto it = cached_bookmark_heights_.find(uuid);
+    if (it != cached_bookmark_heights_.end()) {
         return it->second;
     }
     return 0;

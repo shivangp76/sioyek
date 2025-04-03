@@ -82,7 +82,8 @@ private:
     std::mutex latex_lock;
     std::atomic<int> next_request_id = 0;
 
-    std::unordered_map<std::string, float> cached_bookmark_heights;
+    std::mutex cached_bookmark_heights_mutex;
+    std::unordered_map<std::string, float> cached_bookmark_heights_;
 
     bool are_bookmarks_the_same_for_render(const BookMark& bm1, const BookMark& bm2);
     std::vector<int> get_request_indices(const std::vector<RenderedBookmark>& list, const BookMark& bm, float zoom_level, float scroll_amount, ColorPalette palette, bool compare_zoom_level=true);
