@@ -29,6 +29,7 @@
 #define GL_PRIMITIVE_RESTART_FIXED_INDEX  0x8D69
 #endif
 
+const int MAX_PAGE_DRAWING_CACHE_SIZE = 6;
 const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 5 * sizeof(float);
 const int NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS = 100;
 const int MAX_VISIBLE_PAGES = 100;
@@ -2950,19 +2951,21 @@ void SioyekRendererBackend::draw_pending_freehand_drawings(const std::vector<int
         pending_drawing.push_back(document_view->current_drawing);
     }
     enable_multisampling();
-    for (auto page : visible_pages) {
-        const PageFreehandDrawing& page_drawings = doc()->get_page_drawings(page);
-        if (page_drawings.drawings.size() > 0){
-            // render_drawings(get_painter(), dv(), page_drawings);
-            render_page_drawings(get_painter(), dv(), page, page_drawings);
+    if (visible_pages.size() <= MAX_PAGE_DRAWING_CACHE_SIZE){
+        for (auto page : visible_pages) {
+            const PageFreehandDrawing& page_drawings = doc()->get_page_drawings(page);
+            if (page_drawings.drawings.size() > 0){
+                // render_drawings(get_painter(), dv(), page_drawings);
+                render_page_drawings(get_painter(), dv(), page, page_drawings);
+            }
         }
-    }
-    if (document_view->moving_drawings.size() > 0){
-        render_drawings(get_painter(), dv(), document_view->moving_drawings, true);
-        render_drawings(get_painter(), dv(), document_view->moving_drawings, false);
-    }
-    if (pending_drawing.size() > 0){
-        render_drawings(get_painter(), dv(), pending_drawing);
+        if (document_view->moving_drawings.size() > 0){
+            render_drawings(get_painter(), dv(), document_view->moving_drawings, true);
+            render_drawings(get_painter(), dv(), document_view->moving_drawings, false);
+        }
+        if (pending_drawing.size() > 0){
+            render_drawings(get_painter(), dv(), pending_drawing);
+        }
     }
 
     disable_multisampling();
@@ -5224,15 +5227,33 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
 
     bool should_append = false;
     SioyekPageDrawingsShaderResources* new_page_drawing_resources = nullptr;
+
+    bool should_rewrite = false;
+    if (index == -1 && cached_page_drawing_shader_resources.size() == MAX_PAGE_DRAWING_CACHE_SIZE){
+        should_rewrite = true;
+        // select the oldest one to delete
+        QDateTime oldest_time = QDateTime::currentDateTime();
+        for (int i = 0; i < cached_page_drawing_shader_resources.size(); i++){
+            if (cached_page_drawing_shader_resources[i].last_use_time < oldest_time){
+                index = i;
+                oldest_time = cached_page_drawing_shader_resources[i].last_use_time;
+                // new_page_drawing_resources = &cached_page_drawing_shader_resources[index];
+            }
+        }
+    }
+
     if (index == -1){
         SioyekPageDrawingsShaderResources new_element;
         cached_page_drawing_shader_resources.push_back(std::move(new_element));
         new_page_drawing_resources = &cached_page_drawing_shader_resources.back();
     }
     else{
-        should_append = page_drawings.last_deletion_time < cached_page_drawing_shader_resources[index].last_update_time;
+        if (!should_rewrite){
+            should_append = page_drawings.last_deletion_time < cached_page_drawing_shader_resources[index].last_update_time;
+        }
         new_page_drawing_resources = &cached_page_drawing_shader_resources[index];
     }
+
 
     if (index == -1){
         new_page_drawing_resources->positions.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
@@ -5252,9 +5273,9 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
 
         new_page_drawing_resources->shader_resource_binding->create();
 
-        new_page_drawing_resources->page = page;
-        new_page_drawing_resources->doc = document_view->doc();
     }
+    new_page_drawing_resources->page = page;
+    new_page_drawing_resources->doc = document_view->doc();
 
 
 
