@@ -13715,6 +13715,9 @@ void MainWidget::delete_old_backend() {
     else if (dynamic_cast<PdfViewQPainterWidget*>(opengl_widget)) {
         dynamic_cast<PdfViewQPainterWidget*>(opengl_widget)->deleteLater();
     }
+    else if (dynamic_cast<PdfViewRhiWidget*>(opengl_widget)) {
+        dynamic_cast<PdfViewRhiWidget*>(opengl_widget)->deleteLater();
+    }
 
 }
 
