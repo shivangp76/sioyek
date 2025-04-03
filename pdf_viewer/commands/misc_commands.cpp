@@ -1991,18 +1991,41 @@ public:
 
     SetConfigCommand(MainWidget* w) : Command(cname, w) {};
 
-    void perform() {
-        if (!TOUCH_MODE){
-            if (SHOW_SETCONFIG_IN_STATUSBAR) {
-                widget->set_status_message(config_name.value() + L" = '" + config_value.value() + L"'");
-            }
-            if (widget->config_manager->deserialize_config(utf8_encode(config_name.value()), config_value.value())) {
-                widget->on_config_changed(utf8_encode(config_name.value()), false);
+    void perform() override {
+        if (config_value.has_value()){
+            QString value_qstring = QString::fromStdWString(config_value.value());
+            if (value_qstring.startsWith("+=") || value_qstring.startsWith("-=")){
+                Config* conf = widget->config_manager->get_mut_config_with_name(config_name.value());
+                QString rest_string = value_qstring.mid(2);
+                int factor = value_qstring[0] == '+' ? 1 : -1;
+
+                if (conf->config_type == ConfigType::Int){
+                    int val = rest_string.toInt() * factor;
+                    *(int*)conf->value += val;
+                }
+                if (conf->config_type == ConfigType::Float){
+                    float val = rest_string.toFloat() * factor;
+                    *(float*)conf->value += val;
+                }
+
+                if (conf->on_change.has_value()){
+                    conf->on_change.value()(widget);
+                }
+                return;
             }
         }
-        else{
-            widget->execute_macro_if_enabled(L"show_touch_ui_for_config(" + config_name.value() + L")");
+
+//        if (!TOUCH_MODE){
+        if (SHOW_SETCONFIG_IN_STATUSBAR) {
+            widget->set_status_message(config_name.value() + L" = '" + config_value.value() + L"'");
         }
+        if (widget->config_manager->deserialize_config(utf8_encode(config_name.value()), config_value.value())) {
+            widget->on_config_changed(utf8_encode(config_name.value()), false);
+        }
+//        }
+//        else{
+//            widget->execute_macro_if_enabled(L"show_touch_ui_for_config(" + config_name.value() + L")");
+//        }
     }
 
     bool requires_document() override {
@@ -2022,9 +2045,9 @@ public:
         }
 
         // in touch mode, we just show the touch config for the config name
-        if (TOUCH_MODE){
-            return {};
-        }
+//        if (TOUCH_MODE){
+//            return {};
+//        }
 
         if (!config_value.has_value()){
             // if ()
@@ -2046,7 +2069,7 @@ public:
         }
     }
 
-    void set_symbol_requirement(char value) {
+    void set_symbol_requirement(char value) override {
         std::wstring confval;
         confval.push_back(value);
         config_value = confval;
