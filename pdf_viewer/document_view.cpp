@@ -45,6 +45,7 @@ extern int RENDERER_BACKEND;
 extern bool TOUCH_MODE;
 extern bool SAME_WIDTH;
 extern bool SCROLL_PAST_DOCUMENT_ENDS;
+extern wchar_t FREEHAND_TYPE;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -5608,10 +5609,6 @@ void DocumentView::handle_drawing_move(QPoint pos, float pressure) {
     current_drawing.points.push_back(fdp);
 }
 
-char DocumentView::get_current_freehand_type() {
-    return current_freehand_type;
-}
-
 float DocumentView::get_current_freehand_alpha() {
     return freehand_alpha;
 }
@@ -5634,7 +5631,7 @@ bool DocumentView::handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_
 void DocumentView::start_drawing() {
     is_drawing = true;
     current_drawing.points.clear();
-    current_drawing.type = current_freehand_type;
+    current_drawing.type = FREEHAND_TYPE;
     current_drawing.alpha = freehand_alpha;
 }
 

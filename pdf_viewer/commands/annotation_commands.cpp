@@ -6,6 +6,7 @@
 extern float FREETEXT_BOOKMARK_COLOR[3];
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern bool TOUCH_MODE;
+extern wchar_t FREEHAND_TYPE;
 
 class SetMark : public SymbolCommand {
 public:
@@ -1439,13 +1440,16 @@ public:
 
 };
 
-class SetFreehandType : public SymbolCommand {
+class SetFreehandType : public Command {
 public:
     static inline const std::string cname = "set_freehand_type";
     static inline const std::string hname = "Set the freehand drawing color type";
-    SetFreehandType(MainWidget* w) : SymbolCommand(cname, w) {};
+    SetFreehandType(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        dv()->current_freehand_type = symbol;
+
+        widget->execute_macro_if_enabled(L"set_config(freehand_drawing_type)");
+        // widget->setcon
+        // dv()->current_freehand_type = symbol;
     }
 
     bool requires_document() { return false; }

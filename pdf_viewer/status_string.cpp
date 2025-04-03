@@ -10,6 +10,7 @@ extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_C_STR;
 extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR;
 extern float TTS_RATE;
 extern int MAX_CUSTOM_STATUS_MESSAGE_SIZE;
+extern wchar_t FREEHAND_TYPE;
 
 std::unordered_map<QString, int> name_to_id;
 
@@ -218,7 +219,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
                 QString result = "[ ";
                 fill_with_value(type_ids, -1, result.size());
 
-                QString type_part = QString("freehand:") + widget->main_document_view->current_freehand_type;
+                QString type_part = QString("freehand:") + (char)FREEHAND_TYPE;
                 result += type_part;
                 fill_with_value(type_ids, name_to_id["drawing_type"], type_part.size());
 
@@ -234,7 +235,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
             }
             if (widget->freehand_drawing_mode == DrawingMode::PenDrawing)
             {
-                return  P(QString(" [ pen:") + widget->main_document_view->current_freehand_type + " ]");
+                return  P(QString(" [ pen:") + (char)FREEHAND_TYPE + " ]");
             }
         }
 

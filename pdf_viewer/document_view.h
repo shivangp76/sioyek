@@ -210,7 +210,7 @@ public:
     bool is_drawing = false;
 
     // color type to use when freehand drawing
-    char current_freehand_type = 'r';
+    // char current_freehand_type = 'r';
 
     // alpha of freehand drawings
     float freehand_alpha = 1.0f;
@@ -695,7 +695,6 @@ public:
     void finish_drawing(QPoint pos);
     void handle_drawing_move(QPoint pos, float pressure);
     AbsoluteDocumentPos get_window_abspos(WindowPos window_pos);
-    char get_current_freehand_type();
     float get_current_freehand_alpha();
     void set_current_freehand_alpha(float alpha);
     bool handle_freehand_drawing_click_event(AbsoluteDocumentPos mpos_absolute);

@@ -132,7 +132,8 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
     {L"tts_status", L"stop_reading"},
     {L"tts_rate", L"show_touch_ui_for_config(tts_rate)"},
     {L"download", L"cancel_all_downloads"},
-    {L"custom_message", L"clear_current_status_message"},
+    {L"drawing_type", L"show_touch_ui_for_config(freehand_drawing_type)"},
+    {L"drawing_size", L"show_touch_ui_for_config(freehand_drawing_size)"},
 };
 
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS = {
