@@ -2001,11 +2001,29 @@ public:
 
                 if (conf->config_type == ConfigType::Int){
                     int val = rest_string.toInt() * factor;
-                    *(int*)conf->value += val;
+                    int newval = (*(int*)conf->value) + val;
+                    auto int_extras = std::get<IntExtras>(conf->extras);
+                    if (newval > int_extras.max_val){
+                        newval = int_extras.max_val;
+                    }
+                    if (newval < int_extras.min_val){
+                        newval = int_extras.min_val;
+                    }
+                    
+                    *(int*)conf->value = newval;
                 }
                 if (conf->config_type == ConfigType::Float){
                     float val = rest_string.toFloat() * factor;
-                    *(float*)conf->value += val;
+                    
+                    float newval = (*(float*)conf->value) + val;
+                    auto float_extras = std::get<FloatExtras>(conf->extras);
+                    if (newval > float_extras.max_val){
+                        newval = float_extras.max_val;
+                    }
+                    if (newval < float_extras.min_val){
+                        newval = float_extras.min_val;
+                    }
+                    *(float*)conf->value = newval;
                 }
 
                 if (conf->on_change.has_value()){

@@ -145,6 +145,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS = {
     {L"tts_status", L"decrease_tts_rate"},
     {L"tts_rate", L"decrease_tts_rate"},
     {L"custom_message", L"prev_status_message"},
+    {L"drawing_size", L"set_config(freehand_drawing_size,'+=0.5')"},
 };
 
 std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_DOWN_COMMANDS = {
@@ -155,6 +156,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_DOWN_COMMANDS = 
     {L"tts_status", L"increase_tts_rate"},
     {L"tts_rate", L"increase_tts_rate"},
     {L"custom_message", L"next_status_message"},
+    {L"drawing_size", L"set_config(freehand_drawing_size,'-=0.5')"},
 };
 
 float BLACK_COLOR[3] = { 0.0f, 0.0f, 0.0f };
