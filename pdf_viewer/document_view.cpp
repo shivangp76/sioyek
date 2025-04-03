@@ -46,6 +46,7 @@ extern bool TOUCH_MODE;
 extern bool SAME_WIDTH;
 extern bool SCROLL_PAST_DOCUMENT_ENDS;
 extern wchar_t FREEHAND_TYPE;
+extern float FREEHAND_SIZE;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -5601,10 +5602,10 @@ void DocumentView::handle_drawing_move(QPoint pos, float pressure) {
     }
 
     if (pressure > 0) {
-        fdp.thickness = freehand_thickness * (0.5f + pressure * 3) * thickness_zoom_factor;
+        fdp.thickness = FREEHAND_SIZE * (0.5f + pressure * 3) * thickness_zoom_factor;
     }
     else {
-        fdp.thickness = freehand_thickness * thickness_zoom_factor;
+        fdp.thickness = FREEHAND_SIZE * thickness_zoom_factor;
     }
     current_drawing.points.push_back(fdp);
 }

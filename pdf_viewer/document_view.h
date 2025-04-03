@@ -216,7 +216,7 @@ public:
     float freehand_alpha = 1.0f;
 
     // line thickness of freehand drawings
-    float freehand_thickness = 1.0f;
+    // float freehand_thickness = 1.0f;
 
     // when moving the text selection using keyboard, `selection_begin` and `selection_end`
     // might be out of sync with `selected_text_`. `selected_text_is_dirty` is true when this

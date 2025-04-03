@@ -7,6 +7,7 @@ extern float FREETEXT_BOOKMARK_COLOR[3];
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern bool TOUCH_MODE;
 extern wchar_t FREEHAND_TYPE;
+extern float FREEHAND_SIZE;
 
 class SetMark : public SymbolCommand {
 public:
@@ -78,7 +79,7 @@ public:
 
     void perform() {
         float thickness = QString::fromStdWString(this->text.value()).toFloat();
-        widget->set_freehand_thickness(thickness);
+        FREEHAND_SIZE = thickness;
         //widget->perform_search(this->text.value(), false);
         //if (TOUCH_MODE) {
         //	widget->show_search_buttons();

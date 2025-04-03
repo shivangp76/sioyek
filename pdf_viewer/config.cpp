@@ -14,6 +14,7 @@
 extern Path android_config_path;
 
 wchar_t FREEHAND_TYPE = 'r';
+float FREEHAND_SIZE = 1.0f;
 int FONT_SIZE = 12;
 int STATUS_BAR_FONT_SIZE = -1;
 float BACKGROUND_COLOR[3] = { 0.97f, 0.97f, 0.97f };
@@ -1267,6 +1268,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"strike_line_width", &STRIKE_LINE_WIDTH, FloatExtras{0.0f, 10.0f});
     add_float(L"visual_mark_next_page_fraction", &VISUAL_MARK_NEXT_PAGE_FRACTION, FloatExtras{-2.0f, 2.0f});
     add_float(L"visual_mark_next_page_threshold", &VISUAL_MARK_NEXT_PAGE_THRESHOLD, FloatExtras{-2.0f, 2.0f});
+    add_float(L"freehand_drawing_size", &FREEHAND_SIZE, FloatExtras{0.01f, 10.0f});
 
     add_float(L"ruler_next_page_begin_pos", &VISUAL_MARK_NEXT_PAGE_FRACTION, FloatExtras{-2.0f, 2.0f});
     add_float(L"ruler_next_page_end_pos", &VISUAL_MARK_NEXT_PAGE_THRESHOLD, FloatExtras{-2.0f, 2.0f});

@@ -342,6 +342,7 @@ extern int NUM_PAGE_COLUMNS;
 extern Path python_api_base_path;
 extern float PERSISTANCE_PERIOD;
 extern std::wstring COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR;
+extern float FREEHAND_SIZE;
 
 extern bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS;
 extern float MENU_SCREEN_WDITH_RATIO;
@@ -9190,9 +9191,6 @@ void MainWidget::handle_undo_drawing() {
     invalidate_render();
 }
 
-void MainWidget::set_freehand_thickness(float val) {
-    main_document_view->freehand_thickness = val;
-}
 
 void MainWidget::handle_pen_drawing_event(QTabletEvent* te) {
 
@@ -9310,7 +9308,7 @@ void MainWidget::handle_drawing_ui_visibilty() {
     }
     else {
         get_draw_controls()->show();
-        get_draw_controls()->controls_ui->set_pen_size(main_document_view->freehand_thickness);
+        get_draw_controls()->controls_ui->set_pen_size(FREEHAND_SIZE);
     }
 }
 

@@ -11,6 +11,7 @@ extern std::wstring STATUS_STRING_CUSTOM_MESSAGE_D_STR;
 extern float TTS_RATE;
 extern int MAX_CUSTOM_STATUS_MESSAGE_SIZE;
 extern wchar_t FREEHAND_TYPE;
+extern float FREEHAND_SIZE;
 
 std::unordered_map<QString, int> name_to_id;
 
@@ -214,7 +215,7 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         if (widget->main_document_view){
             if (widget->freehand_drawing_mode == DrawingMode::Drawing)
             {
-                float thickness = widget->main_document_view->freehand_thickness;
+                float thickness = FREEHAND_SIZE;
                 std::vector<int> type_ids;
                 QString result = "[ ";
                 fill_with_value(type_ids, -1, result.size());

@@ -54,6 +54,7 @@ extern float UI_BACKGROUND_COLOR[3];
 extern float UI_SELECTED_TEXT_COLOR[3];
 extern float UI_SELECTED_BACKGROUND_COLOR[3];
 extern wchar_t FREEHAND_TYPE;
+extern float FREEHAND_SIZE;
 
 #ifdef SIOYEK_IOS
 extern "C" QString promptUserToSelectPdfFile(QString);
@@ -650,7 +651,7 @@ TouchTextSelectionButtons::TouchTextSelectionButtons(MainWidget* parent) : QWidg
 
 DrawControlsUI::DrawControlsUI(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
-    controls_ui = new TouchDrawControls(parent->main_document_view->freehand_thickness, FREEHAND_TYPE, this);
+    controls_ui = new TouchDrawControls(FREEHAND_SIZE, FREEHAND_TYPE, this);
     this->setAttribute(Qt::WA_NoMousePropagation);
 
     QObject::connect(controls_ui, &TouchDrawControls::exitDrawModePressed, [&]() {
@@ -703,7 +704,7 @@ DrawControlsUI::DrawControlsUI(MainWidget* parent) : QWidget(parent) {
         });
 
     QObject::connect(controls_ui, &TouchDrawControls::penSizeChanged, [&](qreal val) {
-        main_widget->set_freehand_thickness(val);
+        FREEHAND_SIZE = val;
         });
 
 
