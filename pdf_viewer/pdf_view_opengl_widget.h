@@ -565,6 +565,7 @@ public:
     void bind_vertex_array() override;
     void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
     bool is_opengl() override;
+    bool update_dynamic_buffer_safe(QRhiResourceUpdateBatch* update_batch, QRhiBuffer* buffer, int offset, int size, float* data, int buffer_size);
     QWidget* get_widget() override;
     std::optional<GraphicsBackendExtras> get_backend_extras() override;
 };

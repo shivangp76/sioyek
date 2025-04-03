@@ -4595,14 +4595,14 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
                     current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
                 };
 
-                update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(upward_vertices), upward_vertices);
-                update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(vertex_colors), vertex_colors);
+                if (!update_dynamic_buffer_safe(update_batch, vertex_buffer, vertex_offset, sizeof(upward_vertices), upward_vertices, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
+                if (!update_dynamic_buffer_safe(update_batch, color_buffer, color_offset, sizeof(vertex_colors), vertex_colors, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;;
                 vertex_offset += sizeof(upward_vertices);
                 color_offset += sizeof(vertex_colors);
                 num_vertices += 3;
 
-                update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(downward_vertices), downward_vertices);
-                update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(vertex_colors), vertex_colors);
+                if (!update_dynamic_buffer_safe(update_batch, vertex_buffer, vertex_offset, sizeof(downward_vertices), downward_vertices, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
+                if (!update_dynamic_buffer_safe(update_batch, color_buffer, color_offset, sizeof(vertex_colors), vertex_colors, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
                 vertex_offset += sizeof(downward_vertices);
                 color_offset += sizeof(vertex_colors);
                 num_vertices += 3;
@@ -4627,9 +4627,8 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
                 current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
             };
 
-            update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(vertices), vertices);
-            update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(vertex_colors), vertex_colors);
-
+            if (!update_dynamic_buffer_safe(update_batch, vertex_buffer, vertex_offset, sizeof(vertices), vertices, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
+            if (!update_dynamic_buffer_safe(update_batch, color_buffer, color_offset, sizeof(vertex_colors), vertex_colors, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
             vertex_offset += sizeof(vertices);
             color_offset += sizeof(vertex_colors);
             num_vertices += 6;
@@ -4654,8 +4653,8 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
                 point_colors.push_back(current_drawing_color[3]);
             }
 
-            update_batch->updateDynamicBuffer(vertex_buffer, vertex_offset, sizeof(float) * point_triangles.size(), point_triangles.data());
-            update_batch->updateDynamicBuffer(color_buffer, color_offset, sizeof(float) * point_colors.size(), point_colors.data());
+            if (!update_dynamic_buffer_safe(update_batch, vertex_buffer, vertex_offset, sizeof(float) * point_triangles.size(), point_triangles.data(), DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
+            if (!update_dynamic_buffer_safe(update_batch, color_buffer, color_offset, sizeof(float) * point_colors.size(), point_colors.data(), DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
 
             vertex_offset += sizeof(float) * point_triangles.size();
             color_offset += sizeof(float) * point_colors.size();
@@ -4672,6 +4671,17 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
 
     }
     return num_vertices + prev_num_vertices;
+}
+
+bool PdfViewRhiWidget::update_dynamic_buffer_safe(QRhiResourceUpdateBatch* update_batch, QRhiBuffer* buffer, int offset, int size, float* data, int buffer_size){
+    int final_size = offset + size;
+    if (final_size < buffer_size){
+        update_batch->updateDynamicBuffer(buffer, offset, size, data);
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
 void PdfViewRhiWidget::update_resources_for_current_frame_drawing_calls(QRhiResourceUpdateBatch* update_batch){
