@@ -3469,10 +3469,6 @@ void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     }
 
     if (mevent->button() == Qt::MouseButton::MiddleButton) {
-        //if (MIDDLE_CLICK_COMMAND.size() > 0) {
-        //    execute_macro_if_enabled(MIDDLE_CLICK_COMMAND);
-        //    return;
-        //}
         last_middle_down_time = QTime::currentTime();
         middle_click_hold_command_already_executed = false;
         last_mouse_down_window_pos = WindowPos{ mevent->pos().x(), mevent->pos().y() };

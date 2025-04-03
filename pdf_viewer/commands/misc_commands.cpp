@@ -1989,6 +1989,9 @@ public:
     std::optional<std::wstring> config_name = {};
     std::optional<std::wstring> config_value = {};
 
+    bool should_update_suggestion_prefix = true;
+    QString last_prefix = "";
+
     SetConfigCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() override {
@@ -2055,6 +2058,38 @@ public:
             return widget->config_manager->get_config_value_string(config_name.value());
         }
         return L"";
+    }
+
+    void on_text_change(const QString& new_text) override{
+        should_update_suggestion_prefix = true;
+    }
+
+    std::optional<std::wstring> get_text_suggestion(int index) override {
+
+        if (should_update_suggestion_prefix){
+            last_prefix = widget->text_command_line_edit->text();
+            should_update_suggestion_prefix = false;
+        }
+
+        if (!config_name.has_value()){
+            // suggest configs matching the entered prefix
+            std::vector<Config*>* configs = widget->config_manager->get_configs_ptr();
+
+
+            std::vector<std::wstring> matching_config_names;
+            for (auto conf : *configs){
+                if (QString::fromStdWString(conf->name).startsWith(last_prefix)){
+                    matching_config_names.push_back(conf->name);
+                }
+            }
+            if (matching_config_names.size() > 0){
+                while (index < 0){
+                    index += matching_config_names.size();
+                }
+                return matching_config_names[index % matching_config_names.size()];
+            }
+        }
+        return {};
     }
 
     std::optional<Requirement> next_requirement(MainWidget* widget) override {
