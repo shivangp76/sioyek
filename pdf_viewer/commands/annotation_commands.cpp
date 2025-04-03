@@ -71,25 +71,21 @@ public:
     }
 };
 
-class SetFreehandThickness : public Command {
+class SetFreehandThickness : public MacroCommand{
 public:
     static inline const std::string cname = "set_freehand_thickness";
     static inline const std::string hname = "Set thickness of freehand drawings";
-    SetFreehandThickness(MainWidget* w) : Command(cname, w) {};
+    SetFreehandThickness(MainWidget* w) : MacroCommand(w, w->command_manager, cname, L"set_config(freehand_drawing_size)"){
 
-    void perform() {
-        widget->execute_macro_if_enabled(L"set_config(freehand_drawing_size)");
-        // float thickness = QString::fromStdWString(this->text.value()).toFloat();
-        // FREEHAND_SIZE = thickness;
-        //widget->perform_search(this->text.value(), false);
-        //if (TOUCH_MODE) {
-        //	widget->show_search_buttons();
-        //}
     }
+};
 
+class SetFreehandType : public MacroCommand{
+public:
+    static inline const std::string cname = "set_freehand_type";
+    static inline const std::string hname = "Set the freehand drawing color type";
+    SetFreehandType(MainWidget* w) : MacroCommand(w, w->command_manager, cname, L"set_config(freehand_drawing_type)"){
 
-    std::string text_requirement_name() {
-        return "Thickness";
     }
 };
 
@@ -1442,20 +1438,6 @@ public:
 
 };
 
-class SetFreehandType : public Command {
-public:
-    static inline const std::string cname = "set_freehand_type";
-    static inline const std::string hname = "Set the freehand drawing color type";
-    SetFreehandType(MainWidget* w) : Command(cname, w) {};
-    void perform() {
-
-        widget->execute_macro_if_enabled(L"set_config(freehand_drawing_type)");
-        // widget->setcon
-        // dv()->current_freehand_type = symbol;
-    }
-
-    bool requires_document() { return false; }
-};
 
 class SetFreehandAlphaCommand : public TextCommand {
 public:

@@ -62,13 +62,13 @@ struct Requirement {
 
 class Command {
 private:
-    virtual void perform() = 0;
 protected:
     int num_repeats = 1;
     MainWidget* widget = nullptr;
     std::optional<std::wstring> result = {};
     std::string command_cname;
 public:
+    virtual void perform() = 0;
 
     static inline const bool developer_only = false;
     static inline const bool requires_pro = false;
@@ -145,6 +145,10 @@ public:
     virtual void set_symbol_requirement(char value);
 };
 
+
+// class WrapperCommand: public Command{
+//     WrapperCommand(std::wstring macro);
+// };
 
 class LazyCommand : public Command {
 private:

@@ -2018,6 +2018,11 @@ public:
         }
 
         if (!config_value.has_value()){
+            // if ()
+            Config* conf = widget->config_manager->get_mut_config_with_name(config_name.value());
+            if (conf && conf->config_type == ConfigType::Symbol){
+                return Requirement{ RequirementType::Symbol, "Config Value" };
+            }
             return Requirement{ RequirementType::Text, "Config Value" };
         }
         return {};
@@ -2030,6 +2035,12 @@ public:
         else {
             config_value = value;
         }
+    }
+
+    void set_symbol_requirement(char value) {
+        std::wstring confval;
+        confval.push_back(value);
+        config_value = confval;
     }
 
 
