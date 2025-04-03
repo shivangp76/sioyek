@@ -5060,6 +5060,15 @@ void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, int p
 }
 
 void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){
+    if (highlighted){
+        AbsoluteRect bbox = drawings[0].bbox();
+        for (int i = 1; i < drawings.size(); i++){
+            bbox = bbox.union_rect(drawings[i].bbox());
+        }
+        float color[3] = {1, 1, 0};
+        set_highlight_color(color, 0.3f);
+        render_highlight_absolute(bbox, HRF_FILL);
+    }
 
     render_page_drawings_impl(pending_drawing_uniform_buffer.get(), dv, -1, drawings, highlighted);
 
