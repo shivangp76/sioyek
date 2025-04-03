@@ -7,6 +7,7 @@ layout(location = 0) out vec4 out_color;
 layout(std140, binding = 0) uniform buf {
     vec2 offset;
     vec2 scale;
+    float depth;
 };
 
 void main()
@@ -14,6 +15,6 @@ void main()
     out_color = color;
     vec2 transformed_position = position * scale + offset;
 
-    gl_Position = vec4(transformed_position, 0, 1);
+    gl_Position = vec4(transformed_position, depth, 1);
     // gl_Position = vec4(position, 0, 1);
 }

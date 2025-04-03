@@ -3970,7 +3970,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         pending_drawing_vertex_colors_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
         pending_drawing_vertex_colors_ptr->create();
 
-        pending_drawing_uniform_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 4 * sizeof(float)));
+        pending_drawing_uniform_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 5 * sizeof(float)));
         pending_drawing_uniform_buffer->create();
 
         // drawings_index_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::IndexBuffer, drawings_index_buffer_size));
@@ -4131,7 +4131,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             drawing_pipeline->setShaderResourceBindings(pending_drawings_resource_binding.get());
             drawing_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
             drawing_pipeline->setDepthTest(true);
-            drawing_pipeline->setDepthWrite(true);
+            // drawing_pipeline->setDepthWrite(true);
             drawing_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
             drawing_pipeline->setSampleCount(sample_count);
             drawing_pipeline->create();
@@ -4239,6 +4239,7 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
 
     current_object_render_order = 0;
     current_frame_pending_drawing_vertices = 0;
+    current_frame_overview_object_index = -1;
     // num_frame_drawing_triangles = 0;
 
     current_frame_resource_update_batch = resource_updates;
@@ -5030,7 +5031,7 @@ void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, Doc
     drawing_call.render_order = current_object_render_order++;
     drawing_call.highlighted = highlighted;
 
-    float uniforms[4];
+    float uniforms[5];
 
     // uniforms[0] = -dv->get_offset_x();
     // uniforms[1] = -dv->get_offset_y();
@@ -5046,7 +5047,9 @@ void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, Doc
     uniforms[2] = page_rect.width();
     uniforms[3] = page_rect.height();
 
-    current_frame_resource_update_batch->updateDynamicBuffer(uniform_buffer, 0, 4 * sizeof(float), uniforms);
+    uniforms[4] = (1.0f / static_cast<float>(current_object_render_order++ + 2.0f));
+
+    current_frame_resource_update_batch->updateDynamicBuffer(uniform_buffer, 0, 5 * sizeof(float), uniforms);
 
     current_frame_drawing_render_calls.push_back(drawing_call);
     // if (drawings.last_modification_time )
@@ -5271,7 +5274,7 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
         new_page_drawing_resources->colors.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
         new_page_drawing_resources->colors->create();
 
-        new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 4 * sizeof(float)));
+        new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 5 * sizeof(float)));
         new_page_drawing_resources->uniform_buffer->create();
 
 
