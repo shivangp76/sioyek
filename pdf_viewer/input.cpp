@@ -39,7 +39,6 @@ extern std::map<std::wstring, CustomCommandInfo> ADDITIONAL_COMMANDS;
 extern std::map<std::wstring, CustomCommandInfo> ADDITIONAL_MACROS;
 extern std::vector<AdditionalKeymapData> ADDITIONAL_KEYMAPS;
 
-
 extern bool VERBOSE;
 
 
@@ -55,7 +54,6 @@ std::vector<std::string> parse_command_name(const QString& command_names) {
     }
     return res;
 }
-
 
 
 std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, QString name, QString menu_string) {
