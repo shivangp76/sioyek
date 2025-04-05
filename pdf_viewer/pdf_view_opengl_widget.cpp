@@ -4003,17 +4003,17 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
 
         for (int i = 0; i < NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS; i++){
-            QRhiBuffer* preallocated_highlight_uniform_buffer = rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, HIGHLIGHT_UNIFORM_BUFFER_SIZE);
+            std::unique_ptr<QRhiBuffer> preallocated_highlight_uniform_buffer = std::unique_ptr<QRhiBuffer>(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, HIGHLIGHT_UNIFORM_BUFFER_SIZE));
             preallocated_highlight_uniform_buffer->create();
 
-            QRhiShaderResourceBindings* preallocated_highlight_resource_binding = rhi()->newShaderResourceBindings();
+            std::unique_ptr<QRhiShaderResourceBindings> preallocated_highlight_resource_binding = std::unique_ptr<QRhiShaderResourceBindings>(rhi()->newShaderResourceBindings());
             preallocated_highlight_resource_binding->setBindings({
-                QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage | QRhiShaderResourceBinding::VertexStage, preallocated_highlight_uniform_buffer),
+                QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage | QRhiShaderResourceBinding::VertexStage, preallocated_highlight_uniform_buffer.get()),
             });
             preallocated_highlight_resource_binding->create();
 
-            preallocated_highlight_uniform_buffers.push_back(preallocated_highlight_uniform_buffer);
-            preallocated_highlight_resource_bindings.push_back(preallocated_highlight_resource_binding);
+            preallocated_highlight_uniform_buffers.push_back(std::move(preallocated_highlight_uniform_buffer));
+            preallocated_highlight_resource_bindings.push_back(std::move(preallocated_highlight_resource_binding));
 
         }
 
@@ -4139,7 +4139,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         {
             highlight_pipeline->setVertexInputLayout(highlight_input_layout);
-            highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
+            highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0].get());
             highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
             highlight_pipeline->setDepthTest(true);
             highlight_pipeline->setDepthWrite(true);
@@ -4161,7 +4161,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         {
             inverted_highlight_pipeline->setVertexInputLayout(highlight_input_layout);
-            inverted_highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
+            inverted_highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0].get());
             inverted_highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
             inverted_highlight_pipeline->setDepthTest(true);
             inverted_highlight_pipeline->setDepthWrite(true);
@@ -4182,7 +4182,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         }
 
         highlight_borders_pipeline->setVertexInputLayout(highlight_borders_input_layout);
-        highlight_borders_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0]);
+        highlight_borders_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0].get());
         highlight_borders_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
         highlight_borders_pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
         highlight_borders_pipeline->setDepthTest(true);
@@ -4402,7 +4402,7 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
         if (inverted) continue;
         int offset = 12 * sizeof(float) * i;
 
-        QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
+        QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i].get();
         command_buffer->setShaderResources(resource_bindings);
 
         const QRhiCommandBuffer::VertexInput vbufBinding(highlights_vertex_buffer_ptr.get(), offset);
@@ -4425,7 +4425,7 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
         if (!inverted) continue;
         int offset = 12 * sizeof(float) * i;
 
-        QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
+        QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i].get();
         command_buffer->setShaderResources(resource_bindings);
 
         const QRhiCommandBuffer::VertexInput vbufBinding(highlights_vertex_buffer_ptr.get(), offset);
@@ -4449,7 +4449,7 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
         if (has_border || has_underline){
             int border_offset = 10 * sizeof(float) * i;
 
-            QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i];
+            QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i].get();
             command_buffer->setShaderResources(resource_bindings);
 
             const QRhiCommandBuffer::VertexInput vbufBinding(highlights_borders_vertex_buffer_ptr.get(), border_offset);
@@ -4486,7 +4486,7 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
 
         int offset = 12 * sizeof(float) * i;
         update_batch->updateDynamicBuffer(highlights_vertex_buffer_ptr.get(), offset, 12 * sizeof(float), vertices);
-        QRhiBuffer* current_highlight_uniform_buffer = preallocated_highlight_uniform_buffers[i];
+        QRhiBuffer* current_highlight_uniform_buffer = preallocated_highlight_uniform_buffers[i].get();
 
         float depth = 1.0f / static_cast<float>(current_frame_highlight_rect_render_calls[i].render_order + 2.0f);
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, 4 * sizeof(float), current_frame_highlight_rect_render_calls[i].color);

@@ -475,8 +475,8 @@ private:
     // std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;
     // std::unique_ptr<QRhiShaderResourceBindings> test_resource_bindings;
 
-    std::vector<QRhiBuffer*> preallocated_highlight_uniform_buffers;
-    std::vector<QRhiShaderResourceBindings*> preallocated_highlight_resource_bindings;
+    std::vector<std::unique_ptr<QRhiBuffer>> preallocated_highlight_uniform_buffers;
+    std::vector<std::unique_ptr<QRhiShaderResourceBindings>> preallocated_highlight_resource_bindings;
 
     // std::unique_ptr<QRhiTexture> my_texture;
     std::unique_ptr<QRhiSampler> my_sampler;
