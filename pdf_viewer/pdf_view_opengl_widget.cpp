@@ -3924,7 +3924,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline.reset();
         rhi_ptr = rhi();
         cached_page_drawing_shader_resources.clear();
-        my_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Linear, QRhiSampler::Linear, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
+        my_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Nearest, QRhiSampler::Nearest, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
         my_sampler->create();
     }
 
