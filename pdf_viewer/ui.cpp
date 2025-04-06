@@ -3195,28 +3195,69 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     else {
         ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_TEXT_COLOR));
     }
-    painter->fillRect(option.rect, is_selected ? convert_float3_to_qcolor(UI_SELECTED_BACKGROUND_COLOR) : convert_float3_to_qcolor(UI_BACKGROUND_COLOR));
+    QColor bookmark_background_fill_color = is_selected ? convert_float3_to_qcolor(UI_SELECTED_BACKGROUND_COLOR) : convert_float3_to_qcolor(UI_BACKGROUND_COLOR);
+    painter->fillRect(option.rect, bookmark_background_fill_color);
     //painter->fillRect(option.rect, is_selected ? Qt::red : Qt::blue);
 
-    if (bookmark_text.size() == 0) {
-        if (bookmark.description.size() > 1 && bookmark.description[0] == '#') {
-            if (bookmark.description[1] >= 'a' && bookmark.description[1] <= 'z') {
-                int symbol_index = bookmark.description[1] - 'a';
-                float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
-                QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2]);
-                painter->save();
-                painter->setPen(qcolor);
-                painter->drawRect(option.rect);
-                painter->restore();
-            }
-            if (bookmark.description[1] >= 'A' && bookmark.description[1] <= 'Z') {
-                int symbol_index = bookmark.description[1] - 'A';
-                float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
-                QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2], 0.5f);
-                painter->fillRect(option.rect, QBrush(qcolor));
-            }
+    std::optional<QColor> bookmark_background_color = bookmark.get_background_color();
+    std::optional<QColor> bookmark_border_color = bookmark.get_border_color();
+    std::optional<QColor> bookmark_text_color = bookmark.get_text_color();
+
+    if (bookmark_background_color.has_value()){
+        bookmark_background_color = bookmark_background_color;
+        if (is_selected){
+            painter->fillRect(option.rect, QBrush(bookmark_background_color.value().lighter()));
+        }
+        else{
+            painter->fillRect(option.rect, QBrush(bookmark_background_color.value()));
         }
     }
+
+    if (bookmark_border_color.has_value()){
+        painter->save();
+        painter->setPen(bookmark_border_color.value());
+        painter->drawRect(option.rect);
+        painter->restore();
+    }
+
+    if (bookmark_text_color.has_value()) {
+        if (!bookmark_background_color.has_value() && (bookmark_text_color->lightness() < 50)){
+            if (bookmark_text_color.value() == Qt::black){
+                if (is_selected){
+                    ctx.palette.setColor(QPalette::Text, QColor(0, 0, 0));
+                }
+                else{
+                    ctx.palette.setColor(QPalette::Text, QColor(255, 255, 255));
+                }
+            }
+            else{
+                ctx.palette.setColor(QPalette::Text, bookmark_text_color.value().lighter());
+            }
+        }
+        else{
+            ctx.palette.setColor(QPalette::Text, bookmark_text_color.value());
+        }
+    }
+
+    // if (bookmark_text.size() == 0) {
+    //     if (bookmark.description.size() > 1 && bookmark.description[0] == '#') {
+    //         if (bookmark.description[1] >= 'a' && bookmark.description[1] <= 'z') {
+    //             int symbol_index = bookmark.description[1] - 'a';
+    //             float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
+    //             QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2]);
+    //             painter->save();
+    //             painter->setPen(qcolor);
+    //             painter->drawRect(option.rect);
+    //             painter->restore();
+    //         }
+    //         if (bookmark.description[1] >= 'A' && bookmark.description[1] <= 'Z') {
+    //             int symbol_index = bookmark.description[1] - 'A';
+    //             float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
+    //             QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2], 0.5f);
+    //             painter->fillRect(option.rect, QBrush(qcolor));
+    //         }
+    //     }
+    // }
     painter->translate(option.rect.topLeft());
     painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
     //qDebug() << "size in paint is :" << bookmark_document.toPlainText().size() << " " << index;
@@ -3226,11 +3267,13 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     //if (is_global) {
     painter->translate(0, bookmark_document.size().height());
 
-    if (!is_selected) {
-        ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
-    }
-    else {
-        ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
+    if (!bookmark_text_color.has_value()){
+        if (!is_selected) {
+            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
+        }
+        else {
+            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
+        }
     }
 
     file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
