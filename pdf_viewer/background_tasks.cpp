@@ -102,7 +102,18 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
     painter->setFont(font);
 
     std::optional<char> text_color_type = bookmark.get_text_type();
+    QColor pen_color = painter->pen().color();
 
+    bool bookmark_has_symbol_color = false;
+
+    if (text_color_type.has_value()){
+        pen_color = qconvert_color3(&HIGHLIGHT_COLORS[3 * (text_color_type.value() - 'a')], palette);
+    }
+
+    if (text_color_type && text_color_type.value() >= 'a' && text_color_type.value() <= 'z') {
+        painter->setPen(pen_color);
+        bookmark_has_symbol_color = true;
+    }
 
     if (desc_qstring.startsWith("#markdown")) {
         float height = draw_markdown_text(*painter, bookmark.get_render_text(), window_qrect, scroll_amount, is_from_main_thread, font);
@@ -113,12 +124,10 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 #ifdef SIOYEK_MICROTEX
     else if (desc_qstring.startsWith("#latex")) {
         tex::color foreground_color = tex::black;
-
-        if (text_color_type && text_color_type.value() >= 'a' && text_color_type.value() <= 'z') {
-            QColor pen_color = qconvert_color3(&HIGHLIGHT_COLORS[3 * (text_color_type.value() - 'a')], palette);
-            painter->setPen(pen_color);
+        if (bookmark_has_symbol_color) {
             foreground_color = tex::argb(pen_color.alpha(), pen_color.red(), pen_color.green(), pen_color.blue());
         }
+
 
         // rendering latex can take a while, so we never do it from the main thread
         if (is_from_main_thread){
@@ -196,6 +205,7 @@ void BackgroundBookmarkRenderer::render_freetext_bookmark(const BookMark& bookma
 
 
             QRect bounding_rect;
+            // painter->setPen(Qt::red);
             painter->drawText(r, flags, bookmark.get_render_text(), &bounding_rect);
             cached_bookmark_heights_mutex.lock();
             cached_bookmark_heights_[bookmark.uuid] = bounding_rect.height();
