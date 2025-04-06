@@ -27,6 +27,8 @@ extern std::wstring EXTRACT_TABLE_PROMPT;
 extern Path sioyek_json_data_path;
 extern std::wstring SIOYEK_HOST;
 
+extern Path downloaded_papers_path;
+
 QNetworkAccessManager* SioyekNetworkManager::get_network_manager() {
     if (network_manager_) {
         return network_manager_;
@@ -187,7 +189,19 @@ void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash
 
         QString filename = reply->header(QNetworkRequest::ContentDispositionHeader).toString().mid(22);
         filename = filename.left(filename.size() - 1);
-        QDir papers_dir(QString::fromStdWString(PAPERS_FOLDER_PATH));
+        QDir papers_dir;
+        if (PAPERS_FOLDER_PATH.size() > 0){
+            papers_dir = QDir(QString::fromStdWString(PAPERS_FOLDER_PATH));
+        }
+        else{
+            papers_dir = QDir(QString::fromStdWString(downloaded_papers_path.get_path()));
+        }
+        if (!papers_dir.exists()){
+            QDir parent = papers_dir;
+            parent.cdUp();
+            parent.mkdir(papers_dir.dirName());
+        }
+
         QString download_path = papers_dir.absoluteFilePath(filename);
         QFileInfo download_file_info(download_path);
         if (!download_file_info.exists()) {
@@ -224,6 +238,9 @@ void SioyekNetworkManager::download_file_with_hash(QObject* parent, QString hash
                     if (file.open(QIODeviceBase::WriteOnly)) {
                         file.write(reply->readAll());
                         file.close();
+                    }
+                    else{
+                        qDebug() << "could not open the file";
                     }
                     fn(new_path.filePath());
                 }
@@ -939,6 +956,63 @@ void SioyekNetworkManager::perform_generic_llm_request(QObject* parent, const QS
         }
         });
 
+
+}
+
+void SioyekNetworkManager::semantic_ask_with_image(
+    QObject * parent,
+    const std::wstring& document_content,
+    const QPixmap& pixmap,
+    std::function<void(QString)>&& on_chunk,
+    std::function<void()>&& on_done
+    ){
+    QByteArray image_data;
+    QBuffer image_buffer(&image_data);
+    image_buffer.open(QIODevice::WriteOnly);
+    pixmap.save(&image_buffer, "PNG");
+
+    QNetworkRequest req;
+    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_ASK_WITH_IMAGE_URL_)));
+    authorize_request(&req);
+
+    QHttpMultiPart* multipart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+
+    QHttpPart image_part;
+    image_part.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("image/png"));
+    image_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"image\"; filename=\"image.png\""));
+    image_part.setBody(image_data);
+
+    QJsonDocument json_doc;
+    QJsonObject root_object;
+    root_object["document_content"] = QString::fromStdWString(document_content);
+    json_doc.setObject(root_object);
+
+
+    QHttpPart data_part;
+    data_part.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"sioyek_data\""));
+    data_part.setBody(json_doc.toJson(QJsonDocument::JsonFormat::Compact));
+    multipart->append(data_part);
+
+    multipart->append(image_part);
+
+    QNetworkReply* reply = get_network_manager()->post(req, multipart);
+    reply->setParent(parent);
+    reply->setProperty("sioyek_network_status_string", "performing query");
+
+    QObject::connect(reply, &QNetworkReply::downloadProgress, [reply, on_chunk=std::move(on_chunk)]() {
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code == 200){
+            QString chunk = QString::fromUtf8(reply->readAll());
+            on_chunk(chunk);
+        }
+        });
+    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (status_code == 200) {
+            on_done();
+        }
+        });
 
 }
 

@@ -79,6 +79,7 @@
 #include <qaudiooutput.h>
 #include <qregion.h>
 #include <qtextdocument.h>
+#include <QtCore/qbuffer.h>
 
 //#include "main_widget.moc"
 
@@ -317,6 +318,7 @@ extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 extern bool SAME_WIDTH;
 extern bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT;
+extern bool DEFAULT_PEN_DRAWING_MODE;
 
 extern int RENDERER_BACKEND;
 
@@ -1085,30 +1087,30 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     // quickWindow()->setGraphicsApi(QSGRendererInterface::OpenGL);
     window_id = next_window_id;
     next_window_id++;
-
-
+    
+    
     setMouseTracking(true);
     setAcceptDrops(true);
     setAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_AcceptTouchEvents);
-
+    
 #ifdef SIOYEK_MOBILE
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
-
-
+    
+    
     central_widget = new QWidget(this);
     central_widget->setMouseTracking(true);
-
+    
     inverse_search_command = INVERSE_SEARCH_COMMAND;
     //pdf_renderer = new PdfRenderer(4, should_quit_ptr, mupdf_context);
     //pdf_renderer->set_num_cached_pages(NUM_CACHED_PAGES);
     //pdf_renderer->start_threads();
-
-
+    
+    
     //scratchpad = new ScratchPad();
     scratchpad = &global_scratchpad;
-
+    
     main_document_view = new DocumentView(db_manager, document_manager, checksummer);
     if (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend) {
         opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
@@ -1119,83 +1121,83 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     else {
         opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
     }
-
+    
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
-
+    
     status_label = new QWidget(this);
     status_label->setFont(label_font);
     status_label->setStyleSheet(get_status_stylesheet());
-
+    
     status_label_left = new StatusLabelLineEdit();
     status_label_left->setFocusPolicy(Qt::FocusPolicy::NoFocus);
     status_label_left->setStyleSheet(get_status_stylesheet());
     status_label_left->setFont(label_font);
-
-
+    
+    
     QHBoxLayout* right_status_container_layout = new QHBoxLayout();
-
+    
     status_label_right = new QLabel();
     status_label_right->setStyleSheet(get_status_stylesheet());
     status_label_right->setFont(label_font);
-
+    
     server_actions_button = new QPushButton(sioyek_network_manager->get_login_status_string(doc()));
     server_actions_button->setCursor(Qt::PointingHandCursor);
-
+    
     resume_to_server_position_button = new QPushButton("RESUME");
     resume_to_server_position_button->setToolTip("Resume to server location");
     resume_to_server_position_button->setCursor(Qt::PointingHandCursor);
     resume_to_server_position_button->setStyleSheet(get_status_button_stylesheet());
-
+    
     // we don't want the statusbar buttons to steal the input focus when clicked
     resume_to_server_position_button->setFocusPolicy(Qt::FocusPolicy::NoFocus);
     server_actions_button->setFocusPolicy(Qt::FocusPolicy::NoFocus);
-
-
+    
+    
     right_status_container_layout->addWidget(resume_to_server_position_button);
     right_status_container_layout->addWidget(status_label_right);
     right_status_container_layout->addWidget(server_actions_button);
-
+    
     resume_to_server_position_button->hide();
-
+    
     QHBoxLayout* status_label_layout = new QHBoxLayout();
     status_label_layout->setContentsMargins(0, 0, 0, 0);
-
+    
     status_label_layout->addWidget(status_label_left, 1);
     status_label_layout->addLayout(right_status_container_layout);
     //status_label_layout->addWidget(status_label_right);
-
+    
     status_label->setLayout(status_label_layout);
-
+    
     opengl_widget->get_widget()->stackUnder(status_label);
-
+    
     // automatically open the helper window in second monitor
     int num_screens = QGuiApplication::screens().size();
-
+    
     text_command_line_edit_container = new QWidget(this);
     text_command_line_edit_container->setStyleSheet(get_status_stylesheet());
-
+    
     QHBoxLayout* text_command_line_edit_container_layout = new QHBoxLayout();
-
+    
     text_command_line_edit_label = new QLabel(this);
     text_command_line_edit = new MyLineEdit(this);
-
+    
     text_command_line_edit_label->setFont(label_font);
     text_command_line_edit->setFont(label_font);
-
+    
     text_command_line_edit_label->setStyleSheet(get_status_stylesheet());
     text_command_line_edit->setStyleSheet(get_status_stylesheet());
-
+    
     text_command_line_edit_container_layout->addWidget(text_command_line_edit_label);
     text_command_line_edit_container_layout->addWidget(text_command_line_edit);
     text_command_line_edit_container_layout->setContentsMargins(10, 0, 10, 0);
-
+    
     text_command_line_edit_container->setLayout(text_command_line_edit_container_layout);
     text_command_line_edit_container->hide();
-
+    
     //QObject::connect(dynamic_cast<MyLineEdit*>(text_command_line_edit), &MyLineEdit::next_suggestion, this, &MainWidget::on_next_text_suggestion);
     //QObject::connect(dynamic_cast<MyLineEdit*>(text_command_line_edit), &MyLineEdit::prev_suggestion, this, &MainWidget::on_prev_text_suggestion);
-
+    
     on_command_done = [&](std::string command_name, std::string query_text, bool is_config) {
         QString qquery = QString::fromStdString(query_text);
         if (qquery.startsWith("==")) {
@@ -1203,7 +1205,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         }
         else if (qquery.startsWith("+==")) {
             execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(command_name) + L");save_config('" + utf8_decode(command_name) + L"')");
-
+            
         }
         else if (qquery.endsWith("??")) {
             QString command_name_qstring = QString::fromStdString(command_name);
@@ -1233,27 +1235,27 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                     for (auto loc : locations) {
                         option_texts.push_back(loc.file_path + L":" + std::to_wstring(loc.line_number));
                     }
-
+                    
                     if (locations.size() == 1) {
                         open_text_editor_at_line(QString::fromStdWString(locations[0].file_path), locations[0].line_number);
                     }
                     else if (locations.size() > 1) {
                         set_filtered_select_menu<KeybindDefinitionLocation>(this,
-                            true,
-                            false,
-                            {option_texts},
-                            locations,
-                            0,
-                            [&](KeybindDefinitionLocation* loc) {
-                                open_text_editor_at_line(QString::fromStdWString(loc->file_path), loc->line_number);
-                            },
-                            [](KeybindDefinitionLocation*) {}
-                        );
+                                                                            true,
+                                                                            false,
+                                                                            {option_texts},
+                                                                            locations,
+                                                                            0,
+                                                                            [&](KeybindDefinitionLocation* loc) {
+                            open_text_editor_at_line(QString::fromStdWString(loc->file_path), loc->line_number);
+                        },
+                                                                            [](KeybindDefinitionLocation*) {}
+                                                                            );
                         show_current_widget();
                     }
                 }
             }
-
+            
         }
         else if (qquery.endsWith("?")) {
             if (query_text.size() == 1) {
@@ -1292,60 +1294,60 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             }
         }
     };
-
+    
     // some commands need to be notified when the text in text input is changed
     // for example when editing bookmarks we update the bookmark in real time as
     // the bookmark text is being edited
     QObject::connect(text_command_line_edit, &QLineEdit::textEdited, [&](const QString& txt) {
         handle_command_text_change(txt);
-        });
-
+    });
+    
     // when pdf renderer's background threads finish rendering a page or find a new search result
     // we need to update the ui
     QObject::connect(pdf_renderer, &PdfRenderer::render_advance, this, &MainWidget::invalidate_render);
     QObject::connect(pdf_renderer, &PdfRenderer::search_advance, this, &MainWidget::invalidate_ui);
-
+    
     QObject::connect(pdf_renderer->get_bookmark_renderer(), &BackgroundBookmarkRenderer::bookmark_rendered, this, &MainWidget::invalidate_render);
-
+    
     QObject::connect(resume_to_server_position_button, &QPushButton::clicked, [&]() {
         handle_resume_to_server_location();
-        });
-
+    });
+    
     // when screen is rotated, we may be below the minimum zoom level for the new orientation
     // so we check for that here and adjust to screen width if that is the case
     QObject::connect(screen(), &QScreen::orientationChanged, [&](Qt::ScreenOrientation orientation){
-            if (TOUCH_MODE && doc()){
-                int current_page_number = main_document_view->get_current_page_number();
-                float min_zoom_level = main_document_view->get_view_width() / doc()->get_page_width(current_page_number);
-                if (main_document_view->get_zoom_level() < min_zoom_level){
-                    main_document_view->fit_to_page_width();
-                    invalidate_render();
-                }
+        if (TOUCH_MODE && doc()){
+            int current_page_number = main_document_view->get_current_page_number();
+            float min_zoom_level = main_document_view->get_view_width() / doc()->get_page_width(current_page_number);
+            if (main_document_view->get_zoom_level() < min_zoom_level){
+                main_document_view->fit_to_page_width();
+                invalidate_render();
             }
-            });
-
+        }
+    });
+    
     dynamic_cast<StatusLabelLineEdit*>(status_label_left)->on_click = [&]() {
-
+        
         if (TOUCH_MODE){
             // we don't want to handle clicks on the status label in touch mode
             return;
         }
-
+        
         std::wstring status_part_name = get_status_part_name_under_cursor();
         if (status_part_name.size() > 0 && STATUS_BAR_COMMANDS.find(status_part_name) != STATUS_BAR_COMMANDS.end()) {
             execute_macro_if_enabled(STATUS_BAR_COMMANDS[status_part_name]);
         }
-        };
+    };
     //QObject::connect(status_label_left, &QWidget::cursorPositionChanged, [&](int a, int b) {
     //    qDebug() << "something";
     //    });
-
+    
     QObject::connect(server_actions_button, &QPushButton::clicked, [&]() {
         handle_server_actions_button_pressed();
-        });
-
+    });
+    
     QObject::connect(&external_command_edit_watcher, &QFileSystemWatcher::fileChanged, [&]() {
-
+        
         // hack: this should not be necessary (after all, how could we be receiving fileChanged events
         // if external_command_edit_watcher.files().size() == 0?) but for some reason when editing files
         // using vim they somehow get unregistered from the file watcher
@@ -1353,7 +1355,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             QString path_qstring = QString::fromStdWString(sioyek_temp_text_path.get_path());
             external_command_edit_watcher.addPath(path_qstring);
         }
-
+        
         // get the focused widget
         auto focused_widget = previousInFocusChain();
         QLineEdit* editor_widget = dynamic_cast<QLineEdit*>(focused_widget);
@@ -1365,7 +1367,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         if (editor_widget) {
             is_external_file_edited = true;
             QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
-
+            
             if (file.open(QIODeviceBase::ReadOnly)) {
                 QString content = QString::fromUtf8(file.readAll());
                 content = content.replace("\r", "");
@@ -1374,9 +1376,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                     QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
                     QCoreApplication::postEvent(editor_widget, enter_key_event);
                     file.close();
-
+                    
                     //clear the file
-
+                    
                     QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
                     if (file.open(QIODeviceBase::WriteOnly)) {
                         file.write("");
@@ -1386,7 +1388,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                         focus_on_widget(this, true);
                     }
                     return;
-
+                    
                 }
                 else {
                     if (content.size() > 0) {
@@ -1394,13 +1396,13 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                         editor_widget->textEdited(content);
                     }
                 }
-
+                
             }
-
+            
             file.close();
         }
-        });
-        
+    });
+    
     // we check periodically to see if the ui needs updating
     // this is done so that thousands of search results only trigger
     // a few rerenders
@@ -1408,46 +1410,46 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     validation_interval_timer = new QTimer(this);
     validation_interval_timer->setInterval(INTERVAL_TIME);
     last_persistance_datetime = QDateTime::currentDateTime();
-
+    
     network_timer = new QTimer(this);
     network_timer->setInterval(60000);
-
+    
     connect(validation_interval_timer, &QTimer::timeout, [&]() {
         handle_validation_interval_timeout();
-        });
-
+    });
+    
     connect(network_timer, &QTimer::timeout, [&]() {
         handle_periodic_network_operations();
-        });
-
+    });
+    
     validation_interval_timer->start();
     network_timer->start();
-
-
+    
+    
     scroll_bar = new QScrollBar(this);
     layout = new QVBoxLayout;
     QHBoxLayout* hlayout = new QHBoxLayout;
-
-
+    
+    
     hlayout->addWidget(opengl_widget->get_widget());
     hlayout->addWidget(scroll_bar);
-
+    
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
     opengl_widget->get_widget()->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addLayout(hlayout);
-
+    
 #if defined(SIOYEK_ANDROID) || defined(SIOYEK_QUICKWINDOW)
-     setLayout(layout);
+    setLayout(layout);
 #elif !defined(SIOYEK_IOS)
     central_widget->setLayout(layout);
     opengl_widget->get_widget()->stackUnder(status_label);
     setCentralWidget(central_widget);
 #endif
-
+    
     scroll_bar->setMinimum(0);
     scroll_bar->setMaximum(MAX_SCROLLBAR);
-
+    
     scroll_bar->connect(scroll_bar, &QScrollBar::actionTriggered, [this](int action) {
         int value = scroll_bar->value();
         if (main_document_view_has_document()) {
@@ -1455,24 +1457,24 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             main_document_view->set_offset_y(offset);
             validate_render();
         }
-        });
-
-
+    });
+    
+    
     if (!SCROLLBAR) {
         scroll_bar->hide();
     }
-
+    
     if (SHOULD_HIGHLIGHT_LINKS) {
         main_document_view->set_highlight_links(true);
     }
-
+    
     grabGesture(Qt::TapAndHoldGesture, Qt::DontStartGestureOnChildren);
     
 #ifndef SIOYEK_IOS
     // we handle ios manually
     grabGesture(Qt::PinchGesture, Qt::DontStartGestureOnChildren | Qt::ReceivePartialGestures);
 #endif
-
+    
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QGuiApplication::applicationStateChanged, [&](Qt::ApplicationState state) {
         if ((state == Qt::ApplicationState::ApplicationSuspended) || (state == Qt::ApplicationState::ApplicationInactive)) {
 #ifdef SIOYEK_MOBILE
@@ -1487,13 +1489,13 @@ MainWidget::MainWidget(fz_context* mupdf_context,
             }
         }
 #endif
-
-        });
-
+        
+    });
+    
 #if defined(Q_OS_MACOS) && !defined(SIOYEK_QUICKWINDOW)
     // only apply titlebar menu if the user has specifically changed it in settings
     ensure_titlebar_colors_match_color_mode();
-
+    
     if (MACOS_HIDE_TITLEBAR) {
         hideWindowTitleBar(winId());
     }
@@ -1501,16 +1503,16 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     setMenuBar(menu_bar);
     menu_bar->stackUnder(text_command_line_edit_container);
 #endif
-
+    
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     set_color_mode_to_system_theme();
 #endif
-
+    
     setFocus();
     // auto selector = new AndroidSelector(this);
     // selector->show();
     //set_current_widget(selector);
-
+    
 #ifdef SIOYEK_IOS
     QDesktopServices::setUrlHandler("file", this, "handle_ios_files");
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QApplication::applicationStateChanged, [&](Qt::ApplicationState state){
@@ -1518,6 +1520,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     });
     registerPinchGestureForWidget(this, ios_pinch_callback);
 #endif
+    if (DEFAULT_PEN_DRAWING_MODE){
+        freehand_drawing_mode = DrawingMode::PenDrawing;
+    }
 }
 
 void MainWidget::handle_periodic_network_operations() {
@@ -7960,6 +7965,9 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    ai_magic_drawing_ask();
+//    qDebug() << doc()->get_path();
+    
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -14282,5 +14290,61 @@ void MainWidget::show_tts_voice_selector(){
 
     });
     show_current_widget();
+
+}
+
+void MainWidget::ai_magic_drawing_ask(){
+    int current_page = dv()->get_current_page_number();
+    auto drawings = doc()->get_page_drawings(current_page);
+    std::optional<AbsoluteRect> selected_rectangle = detect_rect_drawing(drawings.drawings);
+    // dv()->debug_highlight_rects.push_back({selected_rectangle.value()});
+
+    BookMark pending_bookmark;
+    pending_bookmark.description = L"";
+
+    pending_bookmark.begin_x = selected_rectangle->x0;
+    pending_bookmark.end_x = selected_rectangle->x1;
+    pending_bookmark.begin_y = selected_rectangle->y0;
+    pending_bookmark.end_y = selected_rectangle->y1;
+
+    std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
+
+//    int pixmap_width = size().width() * devicePixelRatio();
+//    int pixmap_height = size().height() * devicePixelRatio();
+//
+//    QPixmap pixmap(QSize(pixmap_width, pixmap_height));
+//    pixmap.setDevicePixelRatio(devicePixelRatio());
+//    render(&pixmap, QPoint(), QRegion(rect()));
+    
+    QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
+    QImage framebuffer = rhi_widget->grabFramebuffer();
+    QPixmap pixmap = QPixmap::fromImage(framebuffer);
+    //    opengl_widget->get_widget()->
+    
+
+//    QByteArray byte_array;
+//    QBuffer buffer(&byte_array);
+//    buffer.open(QIODevice::WriteOnly);
+//    pixmap.save(&buffer, "PNG");
+//    framebuffer.save(&buffer, "PNG");
+
+//    QString base64_string = QString::fromUtf8(byte_array.toBase64());
+    sioyek_network_manager->semantic_ask_with_image(
+        this,
+        doc()->get_super_fast_index(),
+        pixmap,
+        [&, d = doc(), uuid](QString chunk){
+        add_chunk_to_bookmark(d, uuid, chunk);
+        },
+        [&, d=doc(), uuid, current_page](){
+            BookMark* bm = d->get_bookmark_with_uuid(uuid);
+            if (bm) {
+                doc()->delete_all_page_drawings(current_page);
+                bm->description = replace_verbatim_links(bm->description);
+                d->update_bookmark_text(uuid, bm->description, bm->font_size);
+                on_bookmark_edited(*bm, false, false);
+            }
+        }
+    );
 
 }

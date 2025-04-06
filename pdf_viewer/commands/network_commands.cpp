@@ -530,9 +530,21 @@ public:
     static inline const std::string hname = "Show a list of citers of this paper";
 
     CitersCommand(MainWidget* w) : ProCommand(cname, w) {};
-
+    
     void perform() {
         widget->show_citers_of_current_paper();
+    }
+};
+
+class MagicDrawingAskCommand : public ProCommand {
+public:
+    static inline const std::string cname = "magic_drawing_ask";
+    static inline const std::string hname = "Use an LLM to answer the drawing question.";
+
+    MagicDrawingAskCommand(MainWidget* w) : ProCommand(cname, w) {};
+    
+    void perform() {
+        widget->ai_magic_drawing_ask();
     }
 };
 
@@ -774,6 +786,7 @@ void register_network_commands(CommandManager* manager) {
     register_command<LogoutCommand>(manager);
     register_command<CancelAllDownloadsCommand>(manager);
     register_command<CitersCommand>(manager);
+    register_command<MagicDrawingAskCommand>(manager);
     register_command<ResumeToServerLocationCommand>(manager);
     register_command<LoginUsingAccessTokenCommand>(manager);
     register_command<SynchronizeCommand>(manager);

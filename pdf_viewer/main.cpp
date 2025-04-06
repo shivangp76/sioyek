@@ -268,6 +268,7 @@ void configure_paths_ios() {
     downloaded_papers_path = standard_data_path.slash(L"downloads");
     python_api_base_path = standard_data_path.slash(L"python_api");
     cached_tts_path = standard_data_path.slash(L"tts");
+    sioyek_access_token_path = standard_data_path.slash(L"access_token.sioyek");
 }
 #endif
 

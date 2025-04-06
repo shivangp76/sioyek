@@ -55,7 +55,8 @@ int MAX_CUSTOM_STATUS_MESSAGE_SIZE = 20;
 bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT = true;
 bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS = false;
 bool SCROLL_PAST_DOCUMENT_ENDS = true;
-std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
+// std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
+std::wstring SIOYEK_HOST = L"http://192.168.1.62:8081/";
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -79,6 +80,11 @@ int NUM_V_SLICES = 5;
 int NUM_H_SLICES = 1;
 bool SHOULD_RENDER_PDF_ANNOTATIONS = true;
 bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME = true;
+#ifdef SIOYEK_MOBILE
+bool DEFAULT_PEN_DRAWING_MODE = true;
+#else
+bool DEFAULT_PEN_DRAWING_MODE = false;
+#endif
 bool NO_AUTO_CONFIG = false;
 bool USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE = true;
 bool HIDE_OVERLAPPING_LINK_LABELS = true;
@@ -490,7 +496,7 @@ std::wstring BACK_RECT_HOLD_COMMAND = L"goto_mark";
 std::wstring FORWARD_RECT_TAP_COMMAND = L"next_state";
 std::wstring FORWARD_RECT_HOLD_COMMAND = L"set_mark";
 std::wstring TOP_CENTER_TAP_COMMAND = L"show_touch_main_menu";
-std::wstring TOP_CENTER_HOLD_COMMAND = L"toggle_dark_mode";
+std::wstring TOP_CENTER_HOLD_COMMAND = L"magic_drawing_ask";
 std::wstring VISUAL_MARK_NEXT_TAP_COMMAND = L"";
 std::wstring VISUAL_MARK_NEXT_HOLD_COMMAND = L"";
 std::wstring VISUAL_MARK_PREV_TAP_COMMAND = L"";
@@ -1329,6 +1335,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"gg_uses_labels", &GG_USES_LABELS);
     add_bool(L"paper_download_should_create_portal", &PAPER_DOWNLOAD_CREATE_PORTAL);
     add_bool(L"automatically_download_matching_paper_name", &AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME);
+    add_bool(L"default_pen_drawing_mode", &DEFAULT_PEN_DRAWING_MODE);
     add_bool(L"should_load_tutorial_when_no_other_file", &SHOULD_LOAD_TUTORIAL_WHEN_NO_OTHER_FILE);
     add_bool(L"should_launch_new_instance", &SHOULD_LAUNCH_NEW_INSTANCE);
     add_bool(L"should_launch_new_window", &SHOULD_LAUNCH_NEW_WINDOW);

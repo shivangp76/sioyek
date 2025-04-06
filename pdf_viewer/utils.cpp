@@ -5944,6 +5944,151 @@ std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bo
 
 }
 
+struct AlmostAxisAlignedLine{
+    float c;
+    float strength;
+};
+
+struct TwoCenterResult{
+    float smaller_center;
+    float larger_center;
+};
+
+TwoCenterResult weighted_one_dimensional_two_center(const std::vector<AlmostAxisAlignedLine>& points){
+    float larger_center = points[0].c;
+    float smaller_center = points[0].c;
+
+    for (int i = 1; i < points.size(); i++){
+        if (points[i].c > larger_center) larger_center = points[i].c;
+        if (points[i].c < smaller_center) smaller_center = points[i].c;
+    }
+
+    int NUM_ITERATIONS = 10;
+    for (int iteration = 0; iteration < NUM_ITERATIONS; iteration++){
+        float sum_points_closer_to_smaller_center = 0;
+        float sum_weights_closer_to_smaller_center = 0;
+        float sum_points_closer_to_larger_center = 0;
+        float sum_weights_closer_to_larger_center = 0;
+
+        for (const AlmostAxisAlignedLine& p : points){
+            if (std::abs(p.c - smaller_center)  < std::abs(p.c - larger_center)){
+                sum_points_closer_to_smaller_center += p.c * p.strength;
+                sum_weights_closer_to_smaller_center += p.strength;
+            }
+            else{
+                sum_points_closer_to_larger_center += p.c * p.strength;
+                sum_weights_closer_to_larger_center += p.strength;
+            }
+        }
+
+        smaller_center = sum_points_closer_to_smaller_center / sum_weights_closer_to_smaller_center;
+        larger_center = sum_points_closer_to_larger_center / sum_weights_closer_to_larger_center;
+    }
+
+    TwoCenterResult result;
+    result.smaller_center = smaller_center;
+    result.larger_center = larger_center;
+    return result;
+}
+
+std::optional<AbsoluteRect> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings){
+
+    std::vector<AlmostAxisAlignedLine> almost_vertical_line_xs;
+    std::vector<AlmostAxisAlignedLine> almost_horizontal_line_ys;
+
+    for (const FreehandDrawing& drawing : drawings){
+        if (drawing.points.size() > 1){
+            for (int i = 1; i < drawing.points.size(); i++){
+                Line2D line = line_from_points(drawing.points[i-1].pos, drawing.points[i].pos);
+                float strength = (drawing.points[i].pos -  drawing.points[i-1].pos).norm();
+                if (std::abs(line.nx) < 0.2f){
+                    if (line.ny < 0){
+                        line.ny = -line.ny;
+                        line.c = -line.c;
+                    }
+                    AlmostAxisAlignedLine axis_aligned_line;
+                    axis_aligned_line.c = (drawing.points[i-1].pos.y + drawing.points[i].pos.y) / 2;
+                    axis_aligned_line.strength = strength;
+                    almost_horizontal_line_ys.push_back(axis_aligned_line);
+                    // qDebug() << "!!" << line.c << " " << drawing.points[0].pos.x;
+                }
+                if (std::abs(line.ny) < 0.2f){
+                    if (line.nx < 0){
+                        line.nx = -line.nx;
+                        line.c = -line.c;
+                    }
+                    AlmostAxisAlignedLine axis_aligned_line;
+                    // axis_aligned_line.c = line.c;
+                    axis_aligned_line.c = (drawing.points[i-1].pos.x + drawing.points[i].pos.x) / 2;
+                    axis_aligned_line.strength = strength;
+                    almost_vertical_line_xs.push_back(axis_aligned_line);
+                }
+            }
+
+        }
+    }
+
+    float threshold = 10.0f;
+
+    std::sort(almost_horizontal_line_ys.begin(), almost_horizontal_line_ys.end(), [](const AlmostAxisAlignedLine& p1, const AlmostAxisAlignedLine& p2){
+        return p1.c < p2.c;
+    });
+
+    std::sort(almost_vertical_line_xs.begin(), almost_vertical_line_xs.end(), [](const AlmostAxisAlignedLine& p1, const AlmostAxisAlignedLine& p2){
+        return p1.c < p2.c;
+    });
+
+    float max_horizontal_strength = 0;
+    float max_vertical_strength = 0;
+
+    for (int i = 0; i < almost_horizontal_line_ys.size(); i++){
+        int j = i;
+        while (j < almost_horizontal_line_ys.size() && (almost_horizontal_line_ys[j].c - almost_horizontal_line_ys[i].c) < threshold){
+            almost_horizontal_line_ys[i].strength += almost_horizontal_line_ys[j].strength;
+            float s = almost_horizontal_line_ys[i].strength;
+            if (s > max_horizontal_strength){
+                max_horizontal_strength = s;
+            }
+            j++;
+        }
+    }
+
+    for (int i = 0; i < almost_vertical_line_xs.size(); i++){
+        int j = i;
+        while (j < almost_vertical_line_xs.size() && (almost_vertical_line_xs[j].c - almost_vertical_line_xs[i].c) < threshold){
+            almost_vertical_line_xs[i].strength += almost_vertical_line_xs[j].strength;
+            float s =almost_vertical_line_xs[i].strength;
+            if (s > max_vertical_strength) {
+                max_vertical_strength = s;
+            }
+            j++;
+        }
+    }
+        // bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), predicate), bookmarks.end());
+    almost_horizontal_line_ys.erase(std::remove_if(almost_horizontal_line_ys.begin(), almost_horizontal_line_ys.end(), [&](const AlmostAxisAlignedLine& p){
+        return p.strength < max_horizontal_strength / 2;
+    }), almost_horizontal_line_ys.end());
+
+    almost_vertical_line_xs.erase(std::remove_if(almost_vertical_line_xs.begin(), almost_vertical_line_xs.end(), [&](const AlmostAxisAlignedLine& p){
+        return p.strength < max_vertical_strength / 2;
+    }), almost_vertical_line_xs.end());
+
+
+    if (almost_horizontal_line_ys.size() >= 2 && almost_vertical_line_xs.size() >= 2){
+        TwoCenterResult horizontal_points = weighted_one_dimensional_two_center(almost_horizontal_line_ys);
+        TwoCenterResult vertical_points = weighted_one_dimensional_two_center(almost_vertical_line_xs);
+
+        AbsoluteRect result;
+        result.x0 = vertical_points.smaller_center;
+        result.x1 = vertical_points.larger_center;
+        result.y0 = horizontal_points.smaller_center;
+        result.y1 = horizontal_points.larger_center;
+        return result;
+    }
+
+    return {};
+}
+
 void open_text_editor_at_line(QString file_path, int line_number) {
 #ifndef SIOYEK_MOBILE
     if (EXTERNAL_TEXT_EDITOR_COMMAND.size() > 0) {
@@ -6655,3 +6800,4 @@ std::wstring ios_remove_appdir(std::wstring path){
 }
 
 #endif
+

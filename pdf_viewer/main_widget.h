@@ -1238,6 +1238,7 @@ public slots:
     int update_recent_clicks(AbsoluteDocumentPos mouse_abspos);
     void handle_triple_click(AbsoluteDocumentPos mouse_abspos);
     void repeat_last_command();
+    void ai_magic_drawing_ask();
 };
 
 MainWidget* get_window_with_window_id(int window_id);

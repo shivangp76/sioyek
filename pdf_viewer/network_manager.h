@@ -64,6 +64,7 @@ public:
     const std::wstring SIOYEK_API_SEARCH_URL_ = L"api/search";
     const std::wstring SIOYEK_DASHBOARD_URL_ = L"app/dashboard";
     const std::wstring SIOYEK_OCR_URL_ = L"ocr";
+    const std::wstring SIOYEK_SEMANTIC_ASK_WITH_IMAGE_URL_ = L"semantic_ask_with_image";
 
     bool server_hashes_loaded = false;
     std::unordered_set<std::string> SERVER_HASHES = {};
@@ -147,6 +148,13 @@ public:
     QString get_login_status_string(Document* current_document);
     void handle_logout();
     void cancel_all_downlods();
+    void semantic_ask_with_image(
+        QObject * parent,
+        const std::wstring& document_content,
+        const QPixmap& pixmap,
+        std::function<void(QString)>&& on_chunk,
+        std::function<void()>&& on_done
+    );
 };
 
 void block_for_send(QNetworkReply* reply);
