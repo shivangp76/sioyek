@@ -14309,26 +14309,27 @@ void MainWidget::ai_magic_drawing_ask(){
 
     std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
 
-//    int pixmap_width = size().width() * devicePixelRatio();
-//    int pixmap_height = size().height() * devicePixelRatio();
-//
-//    QPixmap pixmap(QSize(pixmap_width, pixmap_height));
-//    pixmap.setDevicePixelRatio(devicePixelRatio());
-//    render(&pixmap, QPoint(), QRegion(rect()));
     
-    QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
-    QImage framebuffer = rhi_widget->grabFramebuffer();
-    QPixmap pixmap = QPixmap::fromImage(framebuffer);
-    //    opengl_widget->get_widget()->
-    
+    QPixmap pixmap;
+    if (dynamic_cast<QRhiWidget*>(opengl_widget->get_widget())){
+        QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
+        QImage framebuffer = rhi_widget->grabFramebuffer();
+        pixmap = QPixmap::fromImage(framebuffer);
+    }
+    else if (dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget())){
+        QOpenGLWidget* rhi_widget = dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget());
+        QImage framebuffer = rhi_widget->grabFramebuffer();
+        pixmap = QPixmap::fromImage(framebuffer);
+    }
+    else{
+       int pixmap_width = size().width() * devicePixelRatio();
+       int pixmap_height = size().height() * devicePixelRatio();
 
-//    QByteArray byte_array;
-//    QBuffer buffer(&byte_array);
-//    buffer.open(QIODevice::WriteOnly);
-//    pixmap.save(&buffer, "PNG");
-//    framebuffer.save(&buffer, "PNG");
+       pixmap = QPixmap(QSize(pixmap_width, pixmap_height));
+       pixmap.setDevicePixelRatio(devicePixelRatio());
+       render(&pixmap, QPoint(), QRegion(rect()));
+    }
 
-//    QString base64_string = QString::fromUtf8(byte_array.toBase64());
     sioyek_network_manager->semantic_ask_with_image(
         this,
         doc()->get_super_fast_index(),
