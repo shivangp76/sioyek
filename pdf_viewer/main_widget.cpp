@@ -14359,6 +14359,8 @@ void MainWidget::ai_magic_drawing_ask(){
 
         std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
 
+        // std::string uuid = doc()->add_pending_bookmark(pending_uuid, text);
+
 
         QPixmap pixmap;
         if (dynamic_cast<QRhiWidget*>(opengl_widget->get_widget())){
@@ -14391,9 +14393,10 @@ void MainWidget::ai_magic_drawing_ask(){
             BookMark* bm = d->get_bookmark_with_uuid(uuid);
             if (bm) {
                 bm->is_pending = false;
-                doc()->delete_all_page_drawings(current_page);
+                // doc()->delete_all_page_drawings(current_page);
                 bm->description = replace_verbatim_links(bm->description);
-                d->update_bookmark_text(uuid, bm->description, bm->font_size);
+                // d->update_bookmark_text(uuid, bm->description, bm->font_size);
+                doc()->add_pending_bookmark(uuid, bm->description);
                 on_bookmark_edited(*bm, false, false);
             }
         }

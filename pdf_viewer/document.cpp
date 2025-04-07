@@ -3936,6 +3936,7 @@ void Document::delete_drawings_with_indices(int page, std::vector<int>& raw_indi
         page_freehand_drawings[page].drawings.erase(page_freehand_drawings[page].drawings.begin() + index);
     }
     page_freehand_drawings[page].last_deletion_time = QDateTime::currentDateTime();
+    is_drawings_dirty = true;
 }
 
 void Document::delete_drawings_with_indices(int page, std::vector<SelectedObjectIndex>& drawing_indices) {
