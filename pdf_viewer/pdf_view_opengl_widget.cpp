@@ -30,7 +30,7 @@
 #endif
 
 const int MAX_PAGE_DRAWING_CACHE_SIZE = 6;
-const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 5 * sizeof(float);
+const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 6 * sizeof(float) * sizeof(bool);
 const int NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS = 100;
 const int MAX_VISIBLE_PAGES = 100;
 const int MAX_DRAWING_SIZE = 1000000;
@@ -291,7 +291,7 @@ void PdfViewOpenGLWidget::render_line_window(float gl_vertical_pos, std::optiona
     render_line_window_opengl_backend(gl_vertical_pos, ruler_rect);
 }
 
-void PdfViewOpenGLWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
+void PdfViewOpenGLWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels, bool is_pending) {
     render_highlight_window_opengl_backend(window_rect, flags,  line_width_in_pixels);
 }
 
@@ -3040,7 +3040,7 @@ void SioyekRendererBackend::render_pending_bookmark_rect(NormalizedWindowRect re
     pending_bookmark_color[2] = (std::sin(current_time_in_seconds * 1.2f) + 1) / 2.0f;
     set_highlight_color(pending_bookmark_color, 0.3f);
 
-    render_highlight_window(rect, HRF_FILL);
+    render_highlight_window(rect, HRF_FILL, -1, true);
 }
 
 void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& visible_pages) {
@@ -3667,7 +3667,7 @@ void PdfViewQPainterWidget::render_texture(std::optional<SioyekTextureType> text
     get_painter()->drawPixmap(window_qrect, *std::get<QPixmap*>(texture.value()));
 }
 
-void PdfViewQPainterWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
+void PdfViewQPainterWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels, bool is_pending) {
     render_highlight_window_qpainter_backend(window_rect, flags, line_width_in_pixels);
 }
 
@@ -4488,6 +4488,7 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
 
     int max_iter = std::min((int)current_frame_highlight_rect_render_calls.size(), NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS);
 
+    float current_time_in_seconds = static_cast<float>(QDateTime::currentMSecsSinceEpoch() % 1000000) / 1000.f;
     for (int i = 0; i < max_iter; i++){
         NormalizedWindowRect rect = current_frame_highlight_rect_render_calls[i].rect;
         float vertices[12] = {
@@ -4507,6 +4508,9 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
         float depth = 1.0f / static_cast<float>(current_frame_highlight_rect_render_calls[i].render_order + 2.0f);
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, 4 * sizeof(float), current_frame_highlight_rect_render_calls[i].color);
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 4 * sizeof(float), sizeof(float), &depth);
+
+        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 5 * sizeof(float), sizeof(float), &current_time_in_seconds);
+        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 6 * sizeof(float), sizeof(bool), &current_frame_highlight_rect_render_calls[i].is_pending_bookmark);
 
         if (current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_BORDER || current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_UNDERLINE){
 
@@ -4928,7 +4932,7 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
     }
 }
 
-void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
+void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels, bool is_pending){
     SioyekHighlightRectRenderCall highlight_call;
     bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
     highlight_call.rect = window_rect;
@@ -4948,6 +4952,7 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
     highlight_call.flags = flags;
     highlight_call.in_overview = current_overview.has_value();
     highlight_call.render_order = current_object_render_order++;
+    highlight_call.is_pending_bookmark = is_pending;
 
     if (flags == HighlightRenderFlags::HRF_UNDERLINE){
         float scale_factor = dv()->get_zoom_level() / dv()->get_view_height();

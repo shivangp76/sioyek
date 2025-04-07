@@ -1739,7 +1739,8 @@ void MainWidget::handle_validation_interval_timeout(){
 
     if (opengl_widget->is_rendering_animation){
         is_render_invalidated = true;
-        validation_interval_timer->setInterval(1000 / screen()->refreshRate());
+        // validation_interval_timer->setInterval(1000 / screen()->refreshRate());
+        validation_interval_timer->setInterval(0);
         validation_interval_was_set_because_of_animation = true;
     }
     else if (validation_interval_was_set_because_of_animation){
@@ -14344,6 +14345,8 @@ void MainWidget::ai_magic_drawing_ask(){
     std::optional<DetectedRectResult> selected_rectangle = detect_rect_drawing({recent_drawings[0]});
 
     if (selected_rectangle.has_value()){
+        doc()->delete_drawings_with_indices(current_page, recent_drawing_indices);
+
         BookMark pending_bookmark;
         pending_bookmark.description = L"";
 

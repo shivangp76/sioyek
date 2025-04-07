@@ -123,7 +123,7 @@ protected:
     virtual void begin_native_painting() = 0;
     virtual void end_native_painting() = 0;
     virtual void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) = 0;
-    virtual void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) = 0;
+    virtual void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1, bool is_pending=false) = 0;
     void render_highlight_absolute(AbsoluteRect absolute_document_rect, int flags);
     ScratchPad* scratch();
     virtual void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) = 0;
@@ -270,7 +270,7 @@ protected:
     void end_native_painting() override;
     void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) override;
 
-    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
+    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1, bool is_pending=false) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
     void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
     void render_compiled_drawings() override;
@@ -339,7 +339,7 @@ protected:
     void end_native_painting() override;
     void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) override;
 
-    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
+    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1, bool is_pending=false) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
     // void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
     void render_compiled_drawings() override;
@@ -413,6 +413,7 @@ struct SioyekHighlightRectRenderCall{
     bool in_overview = false;
     int flags;
     int render_order;
+    bool is_pending_bookmark = false;
 };
 
 struct SioyekDrawingRenderCall{
@@ -540,7 +541,7 @@ public:
     void begin_native_painting() override;
     void end_native_painting() override;
     void render_texture(std::optional<SioyekTextureType> texture, NormalizedWindowRect rect, ColorPalette palette) override;
-    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1) override;
+    void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1, bool is_pending=false) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
     void prepare_initial_render_pipeline() override;
     void prepare_link_highlight_state() override;

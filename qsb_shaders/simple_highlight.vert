@@ -7,6 +7,8 @@ layout(location = 0) out vec2 uv_out;
 layout(std140, binding = 0) uniform buf {
     vec4 current_color;
     float depth;
+    float time;
+    bool is_pending;
 };
 
 void main()
