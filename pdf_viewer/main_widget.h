@@ -444,6 +444,8 @@ public:
     void toggle_statusbar();
     void toggle_titlebar();
 
+    bool validation_interval_was_set_because_of_animation = false;
+
     // search the `paper_name` in one of the configurable when middle-click or shift+middle-clicking on paper's name
     void handle_search_paper_name(QString paper_name, bool is_shift_pressed);
     Q_INVOKABLE void handle_app_tts_resume(bool is_playing, bool is_on_rest, int offset);

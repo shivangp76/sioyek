@@ -1736,8 +1736,14 @@ void MainWidget::handle_validation_interval_timeout(){
     if (main_document_view->has_synctex_timed_out()) {
         is_render_invalidated = true;
     }
+
     if (opengl_widget->is_rendering_animation){
         is_render_invalidated = true;
+        validation_interval_timer->setInterval(1000 / screen()->refreshRate());
+        validation_interval_was_set_because_of_animation = true;
+    }
+    else if (validation_interval_was_set_because_of_animation){
+        validation_interval_timer->setInterval(INTERVAL_TIME);
     }
 
     if (is_render_invalidated) {

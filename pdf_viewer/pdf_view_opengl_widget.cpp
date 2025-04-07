@@ -782,7 +782,6 @@ void SioyekRendererBackend::render_page_separator(int page_number){
 
 
 void SioyekRendererBackend::my_render() {
-
     is_rendering_animation = false;
     begin_native_painting();
     prepare_initial_render_pipeline();
