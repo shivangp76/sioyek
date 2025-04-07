@@ -3090,8 +3090,9 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
 
                 QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
                 // highlight pending bookmarks
-                if (bookmarks[i].is_pending && desc_qstring.size() == 0){
+                if (bookmarks[i].is_pending){
                     render_pending_bookmark_rect(bookmarks[i].get_rectangle()->to_window_normalized(dv()));
+                    return;
                 }
 
                 if (bookmarks[i].uuid == document_view->get_selected_bookmark_uuid()) {

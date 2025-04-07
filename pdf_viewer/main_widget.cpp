@@ -8161,6 +8161,7 @@ BookMark* MainWidget::add_chunk_to_bookmark(Document* document, std::string book
     int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
     if (bookmark_index >= 0) {
         BookMark& bm = document->get_bookmarks()[bookmark_index];
+        bm.is_pending = false;
         bm.description += chunk.toStdWString();
         for (auto& following_window : following_windows) {
             if (following_window.bookmark_uuid == bm.uuid) {
@@ -8213,6 +8214,7 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
             //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
             BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
             if (bm) {
+                bm->is_pending = false;
                 bm->description = replace_verbatim_links(bm->description);
                 document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
                 on_bookmark_edited(*bm, false, false);
@@ -8341,6 +8343,7 @@ void MainWidget::on_bookmark_shell_output_updated(std::string bookmark_uuid, QSt
         file.close();
         BookMark* bm = doc()->get_bookmark_with_uuid(bookmark_uuid);
         if (bm) {
+            bm->is_pending = false;
             std::optional<ShellOutputBookmark> shell_output_data = get_shell_output_bookmark_with_uuid(bookmark_uuid);
             if (shell_output_data) {
                 bm->description = (shell_output_data->style_string + " " + content).toStdWString();
@@ -8472,6 +8475,12 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
 void MainWidget::handle_special_bookmarks(std::wstring text, std::wstring bookmark_uuid) {
 
     QString qtext = QString::fromStdWString(text);
+
+    BookMark* bm = doc()->get_bookmark_with_uuid(utf8_encode(bookmark_uuid));
+
+    if (bm){
+        bm->is_pending = true;
+    }
 
     if (text.size() > 2 && text.substr(0, 2) == L"? ") {
         handle_bookmark_ask_query(text, bookmark_uuid);
