@@ -14307,6 +14307,8 @@ void MainWidget::ai_magic_drawing_ask(){
     std::vector<int> recent_drawing_indices;
     int drawing_index = drawings.drawings.size()-1;
 
+    // we use the most recent drawings for this (we don't want to delete all the previous page drawings, only the ones
+    // intended for the magic command
     if (drawing_index >= 0){
 
         QDateTime prev_drawing_datetime = drawings.drawings[drawing_index].creattion_time;
@@ -14326,19 +14328,21 @@ void MainWidget::ai_magic_drawing_ask(){
         recent_drawings.push_back(drawings.drawings[ind]);
     }
 
-    std::optional<AbsoluteRect> selected_rectangle = detect_rect_drawing(recent_drawings);
-    // dv()->debug_highlight_rects.push_back({selected_rectangle.value()});
-    // qDebug() << recent_drawings.size();
-    // return;
+    if (recent_drawings.size() == 0){
+        return;
+    }
+
+    std::optional<DetectedRectResult> selected_rectangle = detect_rect_drawing({recent_drawings[0]});
 
     if (selected_rectangle.has_value()){
         BookMark pending_bookmark;
         pending_bookmark.description = L"";
 
-        pending_bookmark.begin_x = selected_rectangle->x0;
-        pending_bookmark.end_x = selected_rectangle->x1;
-        pending_bookmark.begin_y = selected_rectangle->y0;
-        pending_bookmark.end_y = selected_rectangle->y1;
+        pending_bookmark.begin_x = selected_rectangle->rect.x0;
+        pending_bookmark.end_x = selected_rectangle->rect.x1;
+        pending_bookmark.begin_y = selected_rectangle->rect.y0;
+        pending_bookmark.end_y = selected_rectangle->rect.y1;
+
 
         std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
 

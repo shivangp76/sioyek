@@ -199,6 +199,8 @@ struct BookMark : Annotation {
     static inline const QString FONT_FACE_COLUMN_NAME = "font_face";
     std::wstring font_face;
 
+    bool is_pending=false;
+
     QString get_question_or_summary_markdown() const;
     static QString get_display_markdown_or_text(QString bookmark_desc);
     AbsoluteDocumentPos begin_pos() const ;

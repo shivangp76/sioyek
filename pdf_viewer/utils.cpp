@@ -5951,12 +5951,16 @@ struct AlmostAxisAlignedLine{
 
 struct TwoCenterResult{
     float smaller_center;
+    float smaller_center_strength;
     float larger_center;
+    float larger_center_strength;
 };
 
 TwoCenterResult weighted_one_dimensional_two_center(const std::vector<AlmostAxisAlignedLine>& points){
     float larger_center = points[0].c;
     float smaller_center = points[0].c;
+    float smaller_center_strength = points[0].strength;
+    float larger_center_strength = points[0].strength;
 
     for (int i = 1; i < points.size(); i++){
         if (points[i].c > larger_center) larger_center = points[i].c;
@@ -5983,15 +5987,21 @@ TwoCenterResult weighted_one_dimensional_two_center(const std::vector<AlmostAxis
 
         smaller_center = sum_points_closer_to_smaller_center / sum_weights_closer_to_smaller_center;
         larger_center = sum_points_closer_to_larger_center / sum_weights_closer_to_larger_center;
+
+        smaller_center_strength = sum_weights_closer_to_smaller_center;
+        larger_center_strength = sum_weights_closer_to_larger_center;
     }
 
     TwoCenterResult result;
     result.smaller_center = smaller_center;
     result.larger_center = larger_center;
+    result.smaller_center_strength = smaller_center_strength;
+    result.larger_center_strength = larger_center_strength;
     return result;
 }
 
-std::optional<AbsoluteRect> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings){
+
+std::optional<DetectedRectResult> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings){
 
     std::vector<AlmostAxisAlignedLine> almost_vertical_line_xs;
     std::vector<AlmostAxisAlignedLine> almost_horizontal_line_ys;
@@ -6078,11 +6088,20 @@ std::optional<AbsoluteRect> detect_rect_drawing(const std::vector<FreehandDrawin
         TwoCenterResult horizontal_points = weighted_one_dimensional_two_center(almost_horizontal_line_ys);
         TwoCenterResult vertical_points = weighted_one_dimensional_two_center(almost_vertical_line_xs);
 
-        AbsoluteRect result;
-        result.x0 = vertical_points.smaller_center;
-        result.x1 = vertical_points.larger_center;
-        result.y0 = horizontal_points.smaller_center;
-        result.y1 = horizontal_points.larger_center;
+        DetectedRectResult result;
+
+        AbsoluteRect result_rect;
+        result_rect.x0 = vertical_points.smaller_center;
+        result_rect.x1 = vertical_points.larger_center;
+        result_rect.y0 = horizontal_points.smaller_center;
+        result_rect.y1 = horizontal_points.larger_center;
+
+        result.x0_strength = vertical_points.smaller_center_strength;
+        result.x1_strength = vertical_points.larger_center_strength;
+        result.y0_strength = horizontal_points.smaller_center_strength;
+        result.y1_strength = horizontal_points.larger_center_strength;
+
+        result.rect = result_rect;
         return result;
     }
 

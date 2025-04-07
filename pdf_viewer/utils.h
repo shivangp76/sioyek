@@ -1132,4 +1132,11 @@ std::wstring ios_add_appdir(std::wstring path);
 std::wstring ios_remove_appdir(std::wstring path);
 #endif
 
-std::optional<AbsoluteRect> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings);
+struct DetectedRectResult{
+    AbsoluteRect rect;
+    float x0_strength;
+    float x1_strength;
+    float y0_strength;
+    float y1_strength;
+};
+std::optional<DetectedRectResult> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings);
