@@ -20,6 +20,7 @@ extern float CUSTOM_COLOR_CONTRAST;
 extern int MAX_PENDING_REQUESTS;
 extern unsigned int CACHE_INVALID_MILIES;
 extern int RENDERER_BACKEND;
+extern bool SLICED_RENDERING;
 
 PdfRenderer::PdfRenderer(BackgroundBookmarkRenderer* bm_renderer, int num_threads, bool* should_quit_pointer, fz_context* context_to_clone) : context_to_clone(context_to_clone),
 bookmark_renderer(bm_renderer),
@@ -318,7 +319,10 @@ void PdfRenderer::delete_old_pages(bool force_all, bool invalidate_all) {
         cached_response_times.push_back(now - cached_responses[i].last_access_time);
     }
 
-    int N = num_cached_pages * NUM_V_SLICES * NUM_H_SLICES;
+    int N = num_cached_pages;
+    if (SLICED_RENDERING){
+        N = num_cached_pages * NUM_V_SLICES * NUM_H_SLICES;
+    }
 
     if (invalidate_all) {
         for (size_t i = 0; i < cached_responses.size(); i++) {
