@@ -5383,23 +5383,25 @@ QRhiTexture* PdfViewRhiWidget::get_texture_for_icon(const QIcon* icon){
 
 void PdfViewRhiWidget::render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted) {
 
-    // SioyekRendererBackend::render_ui_icon_for_current_color_mode(icon_black, icon_white, rect, is_highlighted);
+    if (&icon_black == &download_icon){
+        NormalizedWindowRect nwr = WindowRect::from_qrect(rect).to_absolute(dv()).to_window_normalized(dv());;
 
-    NormalizedWindowRect nwr = WindowRect::from_qrect(rect).to_absolute(dv()).to_window_normalized(dv());;
+        SioyekTextureRenderCall texture_render_call;
+        texture_render_call.texture = get_texture_for_icon(&icon_black);
+        texture_render_call.render_order = current_object_render_order++;
+        texture_render_call.overview = current_overview;
+        texture_render_call.rect = nwr;
+        texture_render_call.is_icon = true;
+        current_frame_texture_render_calls.push_back(texture_render_call);
 
-    SioyekTextureRenderCall texture_render_call;
-    texture_render_call.texture = get_texture_for_icon(&icon_black);
-    texture_render_call.render_order = current_object_render_order++;
-    texture_render_call.overview = current_overview;
-    texture_render_call.rect = nwr;
-    texture_render_call.is_icon = true;
-    current_frame_texture_render_calls.push_back(texture_render_call);
-
-    if (is_highlighted){
-        float highlight_color[3] = {1, 1, 0};
-        set_highlight_color(highlight_color, 0.3f);
-        render_highlight_window(nwr, HRF_FILL);
+        if (is_highlighted){
+            float highlight_color[3] = {1, 1, 0};
+            set_highlight_color(highlight_color, 0.3f);
+            render_highlight_window(nwr, HRF_FILL);
+        }
     }
-
+    else{
+        SioyekRendererBackend::render_ui_icon_for_current_color_mode(icon_black, icon_white, rect, is_highlighted);
+    }
 
 }
