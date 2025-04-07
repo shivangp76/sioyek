@@ -5,6 +5,7 @@
 #include <QQmlContext>
 #include <QQuickItem>
 
+#include "book.h"
 
 class TouchMainMenu : public QWidget {
     Q_OBJECT
@@ -19,8 +20,10 @@ public:
         bool is_logged_in,
         bool is_current_document_synced,
         float current_brightness,
+        DrawingMode drawing_mode,
         QWidget* parent);
     void resizeEvent(QResizeEvent* resize_event) override;
+    void update_context_properties();
 
 public slots:
     void handleSelectText();
@@ -54,6 +57,8 @@ public slots:
     void handleSync();
     void handleRefresh();
     void handleBrightnessChanged(double);
+    void handleDrawingModeSelected(QString);
+    void handleDrawColorClicked();
 
 signals:
     void selectTextClicked();
@@ -87,6 +92,8 @@ signals:
     void syncClicked();
     void refreshClicked();
     void brightnessChanged(double);
+    void drawingModeSelected(QString);
+    void drawColorClicked();
 private:
     QQuickWidget* quick_widget = nullptr;
 

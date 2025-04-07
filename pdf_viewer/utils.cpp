@@ -6820,3 +6820,12 @@ std::wstring ios_remove_appdir(std::wstring path){
 
 #endif
 
+
+QList<QColor> get_symbol_colors_for_qml(){
+    QList<QColor> colors;
+    const int N_COLORS = 26;
+    for (int i = 0; i < N_COLORS; i++) {
+        colors.push_back(convert_float3_to_qcolor(&HIGHLIGHT_COLORS[3 * i]));
+    }
+    return colors;
+}

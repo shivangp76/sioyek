@@ -1140,3 +1140,4 @@ struct DetectedRectResult{
     float y1_strength;
 };
 std::optional<DetectedRectResult> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings);
+QList<QColor> get_symbol_colors_for_qml();

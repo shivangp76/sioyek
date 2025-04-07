@@ -43,6 +43,8 @@ Rectangle{
     signal syncClicked();
     signal refreshClicked();
     signal brightnessChanged(brightness: real);
+    signal drawingModeSelected(mode: string);
+    signal drawColorClicked();
 
     property bool is_fit: _fit;
     property bool is_ruler: _ruler;
@@ -97,7 +99,7 @@ Rectangle{
 
         Item{
 
-            Layout.preferredHeight: Math.max(parent.height / 6, 100)
+            Layout.preferredHeight: Math.max(parent.height / 6, 80)
             Layout.preferredWidth: parent.width
             Item{
                 //anchors.fill: parent
@@ -332,6 +334,71 @@ Rectangle{
                         }
                         if (index == 2){
                             customColorschemeClicked();
+                        }
+                    }
+
+                }
+            }
+        }
+
+        Item{
+
+            Layout.fillHeight: true
+            Layout.preferredWidth: parent.width
+
+            Row{
+                width: parent.width
+                height: parent.height
+
+                spacing: 10
+                leftPadding: 10
+                rightPadding: 10
+
+                Text{
+                    id: drawing_label
+                    text: "Drawing"
+                    color: "white"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Rectangle{
+                    id: color_selector
+                    width: parent.width / 5
+                    height: parent.height
+                    anchors.verticalCenter: parent.verticalCenter
+                    radius: 2
+                    // anchors.left: drawing_label.right
+                    // anchors.top: parent.top
+                    // anchors.bottom: parent.bottom
+                    color: _colors[_currentDrawingColorType]
+                    MouseArea{
+                        anchors.fill: parent
+                        onClicked: {
+                            drawColorClicked();
+                        }
+                    }
+                }
+
+                TouchButtonGroup{
+                    buttons: ["None", "Finger", "Pen"]
+                    radio: true
+                    selectedIndex: _drawingModeIndex
+
+
+                    // anchors.left: color_selector.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - (drawing_label.width + color_selector.width) - 35
+                    height: parent.height - 20
+
+                    onButtonClicked: function(index, name){
+                        if (index == 0){
+                            drawingModeSelected("none");
+                        }
+                        if (index == 1){
+                            drawingModeSelected("finger");
+                        }
+                        if (index == 2){
+                            drawingModeSelected("pen");
                         }
                     }
 

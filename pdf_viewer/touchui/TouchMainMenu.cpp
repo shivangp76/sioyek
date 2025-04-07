@@ -1,6 +1,13 @@
 #include "touchui/TouchMainMenu.h"
 #include "qqmlengine.h"
+#include "utils.h"
 
+
+extern wchar_t FREEHAND_TYPE;
+
+void TouchMainMenu::update_context_properties(){
+    quick_widget->rootContext()->setContextProperty("_currentDrawingColorType", FREEHAND_TYPE-'a');
+}
 
 TouchMainMenu::TouchMainMenu(bool fit_mode,
     bool portaling, 
@@ -12,6 +19,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
     bool is_logged_in,
     bool is_current_document_synced,
     float current_brightness,
+    DrawingMode drawing_mode,
     QWidget* parent) : QWidget(parent) {
 
     setAttribute(Qt::WA_NoMousePropagation);
@@ -32,6 +40,10 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
     quick_widget->rootContext()->setContextProperty("_loggedIn", is_logged_in);
     quick_widget->rootContext()->setContextProperty("_synced", is_current_document_synced);
     quick_widget->rootContext()->setContextProperty("_currentBrightness", current_brightness);
+    quick_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(get_symbol_colors_for_qml()));
+    quick_widget->rootContext()->setContextProperty("_drawingModeIndex", QVariant::fromValue(drawing_mode));
+    // quick_widget->rootContext()->setContextProperty("_currentDrawingMode", )
+    update_context_properties();
 
     quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchMainMenu.qml"));
 
@@ -222,6 +234,18 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
         SIGNAL(brightnessChanged(double)),
         this,
         SLOT(handleBrightnessChanged(double)));
+
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(drawingModeSelected(QString)),
+        this,
+        SLOT(handleDrawingModeSelected(QString)));
+
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(drawColorClicked()),
+        this,
+        SLOT(handleDrawColorClicked()));
 }
 
 void TouchMainMenu::handleDrawingMode() {
@@ -239,6 +263,15 @@ void TouchMainMenu::handleLogin() {
 void TouchMainMenu::handleLogout() {
     emit logoutClicked();
 }
+
+void TouchMainMenu::handleDrawingModeSelected(QString mode) {
+    emit drawingModeSelected(mode);
+}
+
+void TouchMainMenu::handleDrawColorClicked() {
+    emit drawColorClicked();
+}
+
 
 void TouchMainMenu::handleSync() {
     emit syncClicked();

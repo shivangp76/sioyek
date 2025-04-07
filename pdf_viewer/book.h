@@ -26,6 +26,12 @@ enum class VisibleObjectType {
     Highlight
 };
 
+enum class DrawingMode {
+    NotDrawing=0,
+    Drawing=1,
+    PenDrawing=2
+};
+
 struct VisibleObjectIndex {
     VisibleObjectType object_type;
     std::string uuid;

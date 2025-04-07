@@ -69,11 +69,6 @@ class DocumentManager;
 class TextToSpeechHandler;
 class SioyekBookmarkTextBrowser;
 
-enum class DrawingMode {
-    Drawing,
-    PenDrawing,
-    NotDrawing
-};
 
 struct WindowFollowLastState {
     float offset_x;
@@ -600,6 +595,7 @@ public:
     void toggle_pen_drawing_mode();
     void set_pen_drawing_mode(bool enabled);
     void set_hand_drawing_mode(bool enabled);
+    void set_hand_drawing_mode(DrawingMode mode);
     void handle_drawing_ui_visibilty();
 
     void toggle_dark_mode();

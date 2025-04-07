@@ -4330,6 +4330,11 @@ bool MainWidget::pop_current_widget(bool canceled) {
         popped = true;
     }
     if (current_widget_stack.size() > 0) {
+
+        if (dynamic_cast<AndroidSelector*>(current_widget_stack.back())){
+            dynamic_cast<AndroidSelector*>(current_widget_stack.back())->update_context_properties();
+        }
+
         current_widget_stack.back()->show();
     }
     else {
@@ -9209,6 +9214,10 @@ void MainWidget::set_hand_drawing_mode(bool enabled) {
         freehand_drawing_mode = DrawingMode::NotDrawing;
     }
     handle_drawing_ui_visibilty();
+}
+
+void MainWidget::set_hand_drawing_mode(DrawingMode mode){
+    freehand_drawing_mode = mode;
 }
 
 void MainWidget::toggle_pen_drawing_mode() {

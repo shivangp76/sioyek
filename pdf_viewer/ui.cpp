@@ -190,6 +190,9 @@ bool HierarchialSortFilterProxyModel::filterAcceptsRow(int source_row, const QMo
     // parent call for initial behaviour
     return QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent);
 }
+void AndroidSelector::update_context_properties(){
+    main_menu->update_context_properties();
+}
 
 AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     //     layout = new QVBoxLayout();
@@ -204,6 +207,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     bool fit_mode = main_widget->main_document_view->last_smart_fit_page.has_value();
     bool is_logged_in = main_widget->is_logged_in();
     bool is_current_document_synced = main_widget->is_current_document_available_on_server();
+    DrawingMode drawing_mode = main_widget->freehand_drawing_mode;
     #ifdef SIOYEK_ANDROID
     float current_brightness = android_brightness_get();
     #else
@@ -220,6 +224,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         is_logged_in,
         is_current_document_synced,
         current_brightness,
+        drawing_mode,
         this);
 
 
@@ -403,6 +408,24 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     QObject::connect(main_menu, &TouchMainMenu::refreshClicked, [&]() {
         main_widget->pop_current_widget();
         main_widget->run_command_with_name("resync_document");
+        });
+
+    QObject::connect(main_menu, &TouchMainMenu::drawingModeSelected, [&](QString mode) {
+        if (mode == "none") {
+            main_widget->set_hand_drawing_mode(DrawingMode::NotDrawing);
+        }
+        else if (mode == "finger"){
+            main_widget->set_hand_drawing_mode(DrawingMode::Drawing);
+        }
+        else if (mode == "pen"){
+            main_widget->set_hand_drawing_mode(DrawingMode::PenDrawing);
+        }
+        // qDebug() << "drawing mode = " << mode;
+        });
+
+    QObject::connect(main_menu, &TouchMainMenu::drawColorClicked, [&]() {
+        main_widget->execute_macro_if_enabled(L"show_touch_ui_for_config(freehand_drawing_type)");
+        // qDebug() << "draw color clicked";
         });
 
     //    QObject::connect(set_background_color, &QPushButton::pressed, [&](){

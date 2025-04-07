@@ -763,6 +763,7 @@ public:
 
     AndroidSelector(QWidget* parent);
     void resizeEvent(QResizeEvent* resize_event) override;
+    void update_context_properties();
     //    bool event(QEvent *event) override;
 private:
     //    QVBoxLayout* layout;
