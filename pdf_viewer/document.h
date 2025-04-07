@@ -399,6 +399,7 @@ public:
     void index_document();
     void stop_indexing();
     void delete_page_intersecting_drawings(int page, AbsoluteRect absolute_rect, bool mask[26]);
+    void delete_drawings_with_indices(int page, std::vector<int>& indices);
     void delete_drawings_with_indices(int page, std::vector<SelectedObjectIndex>& indices);
     void delete_all_page_drawings(int page);
     void delete_all_drawings();

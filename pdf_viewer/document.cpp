@@ -3928,14 +3928,7 @@ void Document::delete_page_intersecting_drawings(int page, AbsoluteRect absolute
     is_drawings_dirty = true;
 }
 
-void Document::delete_drawings_with_indices(int page, std::vector<SelectedObjectIndex>& drawing_indices) {
-    std::vector<int> raw_indices;
-    for (auto index : drawing_indices) {
-        if (index.type == SelectedObjectType::Drawing) {
-            raw_indices.push_back(index.index);
-        }
-    }
-
+void Document::delete_drawings_with_indices(int page, std::vector<int>& raw_indices){
     std::sort(raw_indices.begin(), raw_indices.end());
 
     for (int j = raw_indices.size() - 1; j >= 0; j--) {
@@ -3943,6 +3936,17 @@ void Document::delete_drawings_with_indices(int page, std::vector<SelectedObject
         page_freehand_drawings[page].drawings.erase(page_freehand_drawings[page].drawings.begin() + index);
     }
     page_freehand_drawings[page].last_deletion_time = QDateTime::currentDateTime();
+}
+
+void Document::delete_drawings_with_indices(int page, std::vector<SelectedObjectIndex>& drawing_indices) {
+    std::vector<int> raw_indices;
+    for (auto index : drawing_indices) {
+        if (index.type == SelectedObjectType::Drawing) {
+            raw_indices.push_back(index.index);
+        }
+    }
+    delete_drawings_with_indices(page, raw_indices);
+
 }
 
 std::wstring Document::get_addtional_sioyek_file_path(QString type) {

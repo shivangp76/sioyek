@@ -7965,7 +7965,13 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    ai_magic_drawing_ask();
+
+    // int current_page = dv()->get_current_page_number();
+    // auto page_drawings = doc()->get_page_drawings(current_page);
+    // std::optional<AbsoluteRect> detected_rect = detect_rect_drawing(page_drawings.drawings);
+    // dv()->debug_highlight_rects.push_back({detected_rect.value()});
+
+    // ai_magic_drawing_ask();
 //    qDebug() << doc()->get_path();
     
 }
@@ -14296,46 +14302,73 @@ void MainWidget::show_tts_voice_selector(){
 void MainWidget::ai_magic_drawing_ask(){
     int current_page = dv()->get_current_page_number();
     auto drawings = doc()->get_page_drawings(current_page);
-    std::optional<AbsoluteRect> selected_rectangle = detect_rect_drawing(drawings.drawings);
+
+    // std::vector<FreehandDrawing> recent_drawings;
+    std::vector<int> recent_drawing_indices;
+    int drawing_index = drawings.drawings.size()-1;
+
+    if (drawing_index >= 0){
+
+        QDateTime prev_drawing_datetime = drawings.drawings[drawing_index].creattion_time;
+
+        while (drawing_index >= 0){
+            if (drawings.drawings[drawing_index].creattion_time.msecsTo(prev_drawing_datetime) > 5000){
+                break;
+            }
+            recent_drawing_indices.push_back(drawing_index);
+            prev_drawing_datetime = drawings.drawings[drawing_index].creattion_time;
+            drawing_index--;
+        }
+    }
+
+    std::vector<FreehandDrawing> recent_drawings;
+    for (auto ind : recent_drawing_indices){
+        recent_drawings.push_back(drawings.drawings[ind]);
+    }
+
+    std::optional<AbsoluteRect> selected_rectangle = detect_rect_drawing(recent_drawings);
     // dv()->debug_highlight_rects.push_back({selected_rectangle.value()});
+    // qDebug() << recent_drawings.size();
+    // return;
 
-    BookMark pending_bookmark;
-    pending_bookmark.description = L"";
+    if (selected_rectangle.has_value()){
+        BookMark pending_bookmark;
+        pending_bookmark.description = L"";
 
-    pending_bookmark.begin_x = selected_rectangle->x0;
-    pending_bookmark.end_x = selected_rectangle->x1;
-    pending_bookmark.begin_y = selected_rectangle->y0;
-    pending_bookmark.end_y = selected_rectangle->y1;
+        pending_bookmark.begin_x = selected_rectangle->x0;
+        pending_bookmark.end_x = selected_rectangle->x1;
+        pending_bookmark.begin_y = selected_rectangle->y0;
+        pending_bookmark.end_y = selected_rectangle->y1;
 
-    std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
+        std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
 
-    
-    QPixmap pixmap;
-    if (dynamic_cast<QRhiWidget*>(opengl_widget->get_widget())){
-        QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
-        QImage framebuffer = rhi_widget->grabFramebuffer();
-        pixmap = QPixmap::fromImage(framebuffer);
-    }
-    else if (dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget())){
-        QOpenGLWidget* rhi_widget = dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget());
-        QImage framebuffer = rhi_widget->grabFramebuffer();
-        pixmap = QPixmap::fromImage(framebuffer);
-    }
-    else{
-       int pixmap_width = size().width() * devicePixelRatio();
-       int pixmap_height = size().height() * devicePixelRatio();
 
-       pixmap = QPixmap(QSize(pixmap_width, pixmap_height));
-       pixmap.setDevicePixelRatio(devicePixelRatio());
-       render(&pixmap, QPoint(), QRegion(rect()));
-    }
+        QPixmap pixmap;
+        if (dynamic_cast<QRhiWidget*>(opengl_widget->get_widget())){
+            QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
+            QImage framebuffer = rhi_widget->grabFramebuffer();
+            pixmap = QPixmap::fromImage(framebuffer);
+        }
+        else if (dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget())){
+            QOpenGLWidget* rhi_widget = dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget());
+            QImage framebuffer = rhi_widget->grabFramebuffer();
+            pixmap = QPixmap::fromImage(framebuffer);
+        }
+        else{
+            int pixmap_width = size().width() * devicePixelRatio();
+            int pixmap_height = size().height() * devicePixelRatio();
 
-    sioyek_network_manager->semantic_ask_with_image(
-        this,
-        doc()->get_super_fast_index(),
-        pixmap,
-        [&, d = doc(), uuid](QString chunk){
-        add_chunk_to_bookmark(d, uuid, chunk);
+            pixmap = QPixmap(QSize(pixmap_width, pixmap_height));
+            pixmap.setDevicePixelRatio(devicePixelRatio());
+            render(&pixmap, QPoint(), QRegion(rect()));
+        }
+
+        sioyek_network_manager->semantic_ask_with_image(
+                    this,
+                    doc()->get_super_fast_index(),
+                    pixmap,
+                    [&, d = doc(), uuid](QString chunk){
+            add_chunk_to_bookmark(d, uuid, chunk);
         },
         [&, d=doc(), uuid, current_page](){
             BookMark* bm = d->get_bookmark_with_uuid(uuid);
@@ -14346,6 +14379,7 @@ void MainWidget::ai_magic_drawing_ask(){
                 on_bookmark_edited(*bm, false, false);
             }
         }
-    );
+        );
 
+    }
 }
