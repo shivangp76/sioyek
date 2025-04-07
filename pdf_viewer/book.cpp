@@ -352,21 +352,28 @@ QString BookMark::get_display_markdown_or_text(QString res){
         QString result;
         QString last_question;
 
+        int question_index = 0;
         for (auto line : lines) {
             if (line.startsWith("? ")) {
                 last_question += "<span style=\"color: #555;\"><b>" + line.mid(2) + "</b></span>\n\n";
+                question_index++;
             }
             else {
                 if (last_question.size() > 0) {
-                    result += "\n---\n";
+                    if (question_index > 1){
+                        result += "\n---\n";
+                    }
                     result += "\n" + last_question + "<br/>\n";
+                    result += "\n---\n";
                     last_question = "";
                 }
                 result += line + "\n";
             }
         }
         if (last_question.size() > 0) {
-            result += "\n---\n";
+            if (question_index > 1){
+                result += "\n---\n";
+            }
             result += "\n" + last_question + "\n";
         }
         return result;
