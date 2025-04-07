@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <qrect.h>
 #include <cmath>
+#include <array>
 
 class Document;
 class DocumentView;
@@ -218,6 +219,7 @@ using PagelessDocumentRect = EnhancedRect<fz_rect, PagelessDocumentPos>;
 //using WindowRect = EnhancedRect<fz_irect, WindowPos>;
 
 struct WindowRect : public EnhancedRect<fz_irect, WindowPos> {
+    static WindowRect from_qrect(const QRect& qrect);
     WindowRect(WindowPos top_left, WindowPos bottom_right);
     WindowRect();
 
@@ -256,6 +258,8 @@ struct NormalizedWindowRect : public EnhancedRect<fz_rect, NormalizedWindowPos> 
 
     bool is_visible(float tolerance=0.0f);
     WindowRect to_window(DocumentView* document_view) const;
+    std::array<float, 12> to_vertices() const;
+
 };
 
 

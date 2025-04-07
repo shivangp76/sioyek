@@ -287,6 +287,27 @@ WindowRect::WindowRect(WindowPos top_left, WindowPos bottom_right) : EnhancedRec
 WindowRect::WindowRect() {
 
 }
+WindowRect WindowRect::from_qrect(const QRect& qrect){
+    WindowRect res;
+    res.x0 = qrect.x();
+    res.y0 = qrect.y();
+    res.x1 = qrect.x() + qrect.width();
+    res.y1 = qrect.y() + qrect.height();
+    return res;
+}
+
+std::array<float, 12> NormalizedWindowRect::to_vertices() const{
+    std::array<float, 12> vertices = {
+        x0, y0,
+        x0, y1,
+        x1, y0,
+
+        x1, y1,
+        x0, y1,
+        x1, y0,
+    };
+    return vertices;
+}
 
 AbsoluteRect WindowRect::to_absolute(DocumentView* dv) {
     AbsoluteDocumentPos abs_top_left = dv->window_to_absolute_document_pos(top_left());

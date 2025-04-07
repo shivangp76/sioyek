@@ -176,7 +176,7 @@ protected:
     void render_text_highlights();
     void render_ruler_thresholds();
     void render_ruler();
-    void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
+    virtual void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false);
     void fill_rect(QRect rect, const QColor& color);
     ColorPalette get_actual_color_palette(ColorPalette forced_color_palette);
     int get_ruler_display_mode();
@@ -405,6 +405,7 @@ struct SioyekTextureRenderCall{
     NormalizedWindowRect rect;
     std::optional<OverviewState> overview;
     int render_order;
+    bool is_icon = false;
 };
 
 struct SioyekHighlightRectRenderCall{
@@ -469,6 +470,9 @@ private:
 
     std::unique_ptr<QRhiShaderResourceBindings> pending_drawings_resource_binding;
 
+    std::vector<std::pair<const QIcon*, std::unique_ptr<QRhiTexture>>> cached_icon_textures;
+    QRhiTexture* get_texture_for_icon(const QIcon* icon);
+
     std::vector<SioyekPageDrawingsShaderResources> cached_page_drawing_shader_resources;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
@@ -483,7 +487,8 @@ private:
     std::vector<std::unique_ptr<QRhiShaderResourceBindings>> preallocated_highlight_resource_bindings;
 
     // std::unique_ptr<QRhiTexture> my_texture;
-    std::unique_ptr<QRhiSampler> my_sampler;
+    std::unique_ptr<QRhiSampler> nearest_sampler;
+    std::unique_ptr<QRhiSampler> linear_sampler;
 
     // float m_rotation = 0.0f;
     float current_highlight_color[4];
@@ -523,7 +528,7 @@ private:
     void render_current_frame_highlights(QRhiCommandBuffer* command_buffer, bool overview);
     void render_current_frame_drawings(QRhiCommandBuffer* command_buffer);
 
-    SioyekTextureShaderResourceBinding* get_shader_resource_binding_for_texture(QRhiTexture* texture);
+    SioyekTextureShaderResourceBinding* get_shader_resource_binding_for_texture(QRhiTexture* texture, bool is_icon);
     void delete_old_texture_shader_resource_bindings();
 
     QPainter* get_painter() override;
@@ -570,6 +575,7 @@ public:
     void render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) override;
     bool is_opengl() override;
     bool update_dynamic_buffer_safe(QRhiResourceUpdateBatch* update_batch, QRhiBuffer* buffer, int offset, int size, float* data, int buffer_size);
+    void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false) override;
     QWidget* get_widget() override;
     std::optional<GraphicsBackendExtras> get_backend_extras() override;
 };

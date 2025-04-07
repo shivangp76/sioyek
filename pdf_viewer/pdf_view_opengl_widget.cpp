@@ -414,8 +414,8 @@ void SioyekRendererBackend::initialize_stuff() {
     bookmark_icon_white = QIcon(":/icons/B_white.svg");
     portal_icon_white = QIcon(":/icons/P_white.svg");
     hourglass_icon = QIcon(":/icons/hourglass.svg");
-    download_icon = QPixmap(":/icons/download.svg");
-    download_icon_dark = QPixmap(":/icons/download_dark.svg");
+    download_icon = QIcon(":/icons/download.svg");
+    download_icon_dark = QIcon(":/icons/download_dark.svg");
 }
 
 void SioyekRendererBackend::handle_escape() {
@@ -1930,6 +1930,7 @@ QColor SioyekRendererBackend::qcc4(const float* input_color) {
     result[3] = input_color[3];
     return convert_float4_to_qcolor(&result[0]);
 }
+
 
 void SioyekRendererBackend::render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect window_qrect, bool is_highlighted){
 
@@ -3941,8 +3942,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline.reset();
         rhi_ptr = rhi();
         cached_page_drawing_shader_resources.clear();
-        my_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Nearest, QRhiSampler::Nearest, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
-        my_sampler->create();
+        nearest_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Nearest, QRhiSampler::Nearest, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
+        nearest_sampler->create();
+
+        linear_sampler.reset(rhi_ptr->newSampler(QRhiSampler::Linear, QRhiSampler::Linear, QRhiSampler::None, QRhiSampler::ClampToEdge, QRhiSampler::ClampToEdge));
+        linear_sampler->create();
     }
 
     rhi_ptr = rhi();
@@ -3963,7 +3967,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         qpainter_resource_binding.reset(rhi()->newShaderResourceBindings());
 
         qpainter_resource_binding->setBindings({
-            QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, qpainter_texture.get(), my_sampler.get()),
+            QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, qpainter_texture.get(), nearest_sampler.get()),
             QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, qpainter_uniform_buffer.get())
         });
         qpainter_resource_binding->create();
@@ -4342,7 +4346,8 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
         int offset = 12 * sizeof(float) * i;
 
         if (texture){
-            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture)->shader_resource_binding;
+            bool is_icon = current_frame_texture_render_calls[i].is_icon;
+            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture, is_icon)->shader_resource_binding;
             command_buffer->setShaderResources(resource_binding);
 
             const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
@@ -4364,7 +4369,8 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
         int offset = 12 * sizeof(float) * i;
 
         if (texture){
-            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture)->shader_resource_binding;
+            bool is_icon = current_frame_texture_render_calls[i].is_icon;
+            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture, is_icon)->shader_resource_binding;
             command_buffer->setShaderResources(resource_binding);
 
             const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
@@ -4889,7 +4895,8 @@ void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(Q
         if (!texture) continue;
 
         float depth = 1.0f / static_cast<float>(current_frame_texture_render_calls[i].render_order + 2.0f);
-        SioyekTextureShaderResourceBinding* shader_resources = get_shader_resource_binding_for_texture(texture);
+        bool is_icon = current_frame_texture_render_calls[i].is_icon;
+        SioyekTextureShaderResourceBinding* shader_resources = get_shader_resource_binding_for_texture(texture, is_icon);
         update_batch->updateDynamicBuffer(shader_resources->uniform_buffer, 0, sizeof(float), &depth);
 
         NormalizedWindowRect rect = current_frame_texture_render_calls[i].rect;
@@ -5174,7 +5181,7 @@ std::optional<GraphicsBackendExtras> SioyekRendererBackend::get_backend_extras()
 }
 
 void PdfViewRhiWidget::delete_old_texture_shader_resource_bindings(){
-    const int RESOURCE_BINDINGS_THRESHOLD = 10;
+    const int RESOURCE_BINDINGS_THRESHOLD = 100;
 
     if (texture_shader_resource_bindings.size() > RESOURCE_BINDINGS_THRESHOLD){
         // sort the resource bindings descending by last access time and delete the RESOURCE_BINDINGS_THRESHOLD / 2 oldest ones
@@ -5194,7 +5201,7 @@ void PdfViewRhiWidget::delete_old_texture_shader_resource_bindings(){
     }
 }
 
-SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_binding_for_texture(QRhiTexture* texture){
+SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_binding_for_texture(QRhiTexture* texture, bool is_icon){
 
     // delete_old_texture_shader_resource_bindings();
 
@@ -5209,10 +5216,18 @@ SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_bindin
 
     QRhiShaderResourceBindings* new_texture_shader_resource_bindings = rhi()->newShaderResourceBindings();
 
-    new_texture_shader_resource_bindings->setBindings({
-        QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, my_sampler.get()),
-        QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
-    });
+    if (is_icon){
+        new_texture_shader_resource_bindings->setBindings({
+              QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, linear_sampler.get()),
+              QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
+          });
+    }
+    else{
+        new_texture_shader_resource_bindings->setBindings({
+              QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, nearest_sampler.get()),
+              QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
+          });
+    }
 
     new_texture_shader_resource_bindings->create();
 
@@ -5340,5 +5355,51 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
     new_page_drawing_resources->num_vertices = num_vertices;
 
     return new_page_drawing_resources;
+
+}
+
+QRhiTexture* PdfViewRhiWidget::get_texture_for_icon(const QIcon* icon){
+    for (int i = 0; i < cached_icon_textures.size(); i++){
+        if (cached_icon_textures[i].first == icon){
+            return cached_icon_textures[i].second.get();
+        }
+    }
+
+    int SIZE = 128;
+    QImage icon_image(SIZE, SIZE, QImage::Format_RGBA8888);
+    icon_image.fill(Qt::transparent);
+    QPainter icon_painter(&icon_image);
+    icon->paint(&icon_painter, icon_image.rect());
+    // icon_painter.fillRect(icon_image.rect(), Qt::red);
+    icon_painter.end();
+
+    QRhiTexture* texture = rhi_ptr->newTexture(QRhiTexture::RGBA8, QSize(SIZE, SIZE));
+    texture->create();
+
+    current_frame_resource_update_batch->uploadTexture(texture, icon_image);
+    cached_icon_textures.push_back(std::make_pair(icon, std::unique_ptr<QRhiTexture>(texture)));
+    return texture;
+}
+
+void PdfViewRhiWidget::render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted) {
+
+    // SioyekRendererBackend::render_ui_icon_for_current_color_mode(icon_black, icon_white, rect, is_highlighted);
+
+    NormalizedWindowRect nwr = WindowRect::from_qrect(rect).to_absolute(dv()).to_window_normalized(dv());;
+
+    SioyekTextureRenderCall texture_render_call;
+    texture_render_call.texture = get_texture_for_icon(&icon_black);
+    texture_render_call.render_order = current_object_render_order++;
+    texture_render_call.overview = current_overview;
+    texture_render_call.rect = nwr;
+    texture_render_call.is_icon = true;
+    current_frame_texture_render_calls.push_back(texture_render_call);
+
+    if (is_highlighted){
+        float highlight_color[3] = {1, 1, 0};
+        set_highlight_color(highlight_color, 0.3f);
+        render_highlight_window(nwr, HRF_FILL);
+    }
+
 
 }
