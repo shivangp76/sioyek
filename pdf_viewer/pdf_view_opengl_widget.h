@@ -117,6 +117,7 @@ protected:
     QDateTime last_scratchpad_update_datetime;
     float background_clear_color[3] = {0};
     bool qpainter_initialized_for_current_frame = false;
+    // we need to know when we are rendering animations so that the main widget can keep updating the view
 
     virtual void clear_background_buffers(float r, float g, float b, GLuint buffer_flags) = 0;
     virtual void begin_native_painting() = 0;
@@ -153,6 +154,7 @@ protected:
     virtual void prepare_highlight_pipeline() = 0;
     virtual std::optional<GraphicsBackendExtras> get_backend_extras();
     virtual QPainter* get_painter() = 0;
+    virtual void render_pending_bookmark_rect(NormalizedWindowRect rect);
 
     void render_search_result_highlights(const std::vector<int>& visible_pages);
     void initialize_stuff();
@@ -219,6 +221,7 @@ protected:
     bool handle_wheel_event(QWheelEvent* wevent);
 
 public:
+    bool is_rendering_animation = false;
     bool is_helper_waiting_for_render = false;
 
     DocumentView* dv();

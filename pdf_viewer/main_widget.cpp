@@ -1736,6 +1736,9 @@ void MainWidget::handle_validation_interval_timeout(){
     if (main_document_view->has_synctex_timed_out()) {
         is_render_invalidated = true;
     }
+    if (opengl_widget->is_rendering_animation){
+        is_render_invalidated = true;
+    }
 
     if (is_render_invalidated) {
         validate_render();
@@ -14342,6 +14345,7 @@ void MainWidget::ai_magic_drawing_ask(){
         pending_bookmark.end_x = selected_rectangle->rect.x1;
         pending_bookmark.begin_y = selected_rectangle->rect.y0;
         pending_bookmark.end_y = selected_rectangle->rect.y1;
+        pending_bookmark.is_pending = true;
 
 
         std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
@@ -14377,6 +14381,7 @@ void MainWidget::ai_magic_drawing_ask(){
         [&, d=doc(), uuid, current_page](){
             BookMark* bm = d->get_bookmark_with_uuid(uuid);
             if (bm) {
+                bm->is_pending = false;
                 doc()->delete_all_page_drawings(current_page);
                 bm->description = replace_verbatim_links(bm->description);
                 d->update_bookmark_text(uuid, bm->description, bm->font_size);

@@ -783,6 +783,7 @@ void SioyekRendererBackend::render_page_separator(int page_number){
 
 void SioyekRendererBackend::my_render() {
 
+    is_rendering_animation = false;
     begin_native_painting();
     prepare_initial_render_pipeline();
 
@@ -3031,6 +3032,18 @@ int SioyekRendererBackend::get_ruler_display_mode() {
     return RULER_DISPLAY_MODE;
 }
 
+void SioyekRendererBackend::render_pending_bookmark_rect(NormalizedWindowRect rect){
+    is_rendering_animation = true;
+    float current_time_in_seconds = static_cast<float>(QDateTime::currentMSecsSinceEpoch() % 1000000) / 1000.f;
+    float pending_bookmark_color[3] = {0};
+    pending_bookmark_color[0] = (std::sin(current_time_in_seconds) + 1) / 2.0f;
+    pending_bookmark_color[1] = (std::sin(current_time_in_seconds * 1.1f) + 1) / 2.0f;
+    pending_bookmark_color[2] = (std::sin(current_time_in_seconds * 1.2f) + 1) / 2.0f;
+    set_highlight_color(pending_bookmark_color, 0.3f);
+
+    render_highlight_window(rect, HRF_FILL);
+}
+
 void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& visible_pages) {
 
     if (!doc()->can_use_highlights()) return;
@@ -3077,6 +3090,10 @@ void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& 
 
 
                 QString desc_qstring = QString::fromStdWString(bookmarks[i].description);
+                // highlight pending bookmarks
+                if (bookmarks[i].is_pending && desc_qstring.size() == 0){
+                    render_pending_bookmark_rect(bookmarks[i].get_rectangle()->to_window_normalized(dv()));
+                }
 
                 if (bookmarks[i].uuid == document_view->get_selected_bookmark_uuid()) {
                     QPainter& painter = *get_painter();
