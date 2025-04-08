@@ -539,8 +539,11 @@ public:
 
     Portal* get_portal_under_absolute_pos(AbsoluteDocumentPos abspos);
     void persist_drawings(bool force = false);
+    void persist_drawings_binary(bool force = false);
+
     void persist_annotations(bool force = false);
     void load_drawings();
+    void load_drawings_binary();
     void load_annotations(bool sync = false);
     void load_drawings_async();
     void lock_highlights_mutex();

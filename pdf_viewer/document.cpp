@@ -4182,7 +4182,9 @@ void Document::load_annotations(bool sync) {
 
 void Document::load_drawings() {
 
+
     std::wstring drawing_file_path = get_drawings_file_path();
+    std::wstring binary_drawing_file_path = get_drawings_file_path() + L".bin";
 
     QFile json_file(QString::fromStdWString(drawing_file_path));
     if (json_file.open(QFile::ReadOnly)) {
@@ -4260,6 +4262,112 @@ void Document::persist_annotations(bool force) {
     output_file.close();
 
     is_annotations_dirty = false;
+}
+
+struct SerializedDrawingHeader{
+    bool is_uniform_thickness;
+    QDateTime creation_time;
+    char color_type;
+    float alpha;
+    float thickness;
+    int num_points;
+};
+
+void Document::load_drawings_binary(){
+    std::wstring drawing_file_path = get_drawings_file_path() + L".bin";
+    QFile binary_file(QString::fromStdWString(drawing_file_path));
+    page_freehand_drawings.clear();
+
+    if (!binary_file.exists()){
+        return;
+    }
+
+    if (!binary_file.open(QIODevice::ReadOnly)){
+        qDebug() << "could not open " << drawing_file_path << " to read drawings.";
+        return;
+    }
+    std::vector<FreehandDrawing> loaded_drawings;
+
+    while (binary_file.bytesAvailable() > 0) {
+        SerializedDrawingHeader header;
+        binary_file.read((char*)&header, sizeof(header));
+
+        FreehandDrawing drawing;
+        drawing.creattion_time = header.creation_time;
+        drawing.type = header.color_type;
+        drawing.alpha = header.alpha;
+
+        for (int i = 0; i < header.num_points; i++) {
+            FreehandDrawingPoint point;
+            binary_file.read((char*)&point.pos, sizeof(point.pos));
+            if (!header.is_uniform_thickness) {
+                binary_file.read((char*)&point.thickness, sizeof(point.thickness));
+            }
+            else {
+                point.thickness = header.thickness;
+            }
+            drawing.points.push_back(point);
+        }
+        // loaded_drawings.push_back(drawing);
+        int loaded_drawing_page = drawing.points[0].pos.to_document(this).page;
+        page_freehand_drawings[loaded_drawing_page].drawings.push_back(drawing);
+
+    }
+
+    for (auto& [page, val] : page_freehand_drawings){
+        val.last_addition_time = QDateTime::currentDateTime();
+        val.last_deletion_time = QDateTime::currentDateTime();
+    }
+
+}
+
+void Document::persist_drawings_binary(bool force){
+    if ((!force) && (!is_drawings_dirty)) {
+        return;
+    }
+
+    std::wstring drawing_file_path = get_drawings_file_path() + L".bin";
+    QFile binary_file(QString::fromStdWString(drawing_file_path));
+    if (!binary_file.open(QIODevice::WriteOnly)){
+        qDebug() << "could not open " << drawing_file_path << " to write drawings.";
+        return;
+    }
+
+    for (auto& [page, drawings] : page_freehand_drawings) {
+
+        for (auto& drawing : drawings.drawings) {
+            if (drawing.points.size() == 0) continue;
+
+            bool is_uniform_thickness = true;
+            if (drawing.points.size() > 1){
+                float thickness = drawing.points[0].thickness;
+                for (int i = 1; i < drawing.points.size(); i++){
+                    if (drawing.points[i].thickness != thickness){
+                        is_uniform_thickness = false;
+                        break;
+                    }
+                }
+            }
+            SerializedDrawingHeader header;
+            header.is_uniform_thickness = is_uniform_thickness;
+            header.alpha = drawing.alpha;
+            header.color_type = drawing.type;
+            header.thickness = drawing.points[0].thickness;
+            header.creation_time = drawing.creattion_time;
+            header.num_points = drawing.points.size();
+            binary_file.write((const char*)&header, sizeof(header));
+
+            for (const FreehandDrawingPoint& point : drawing.points){
+                binary_file.write((const char*)&point.pos, sizeof(point.pos));
+                if (!is_uniform_thickness){
+                    binary_file.write((const char*)&point.thickness, sizeof(point.thickness));
+                }
+            }
+
+
+        }
+    }
+    binary_file.close();
 }
 
 void Document::persist_drawings(bool force) {
