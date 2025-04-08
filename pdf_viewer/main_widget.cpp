@@ -7982,6 +7982,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 void MainWidget::handle_debug_command() {
     // doc()->persist_drawings_binary(true);
     doc()->load_drawings_binary();
+    // doc()->persist_drawings_binary(true);
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

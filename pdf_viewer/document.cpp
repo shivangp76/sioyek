@@ -4270,7 +4270,7 @@ struct SerializedDrawingHeader{
     char color_type;
     float alpha;
     float thickness;
-    int num_points;
+    quint64 num_points;
 };
 
 void Document::load_drawings_binary(){
@@ -4287,6 +4287,9 @@ void Document::load_drawings_binary(){
         return;
     }
     std::vector<FreehandDrawing> loaded_drawings;
+
+    quint64 drawing_file_version=-1;
+    binary_file.read((char*)&drawing_file_version, sizeof(drawing_file_version));
 
     while (binary_file.bytesAvailable() > 0) {
         SerializedDrawingHeader header;
@@ -4332,6 +4335,9 @@ void Document::persist_drawings_binary(bool force){
         qDebug() << "could not open " << drawing_file_path << " to write drawings.";
         return;
     }
+
+    quint64 DRAWING_FILE_VERSION = 1;
+    binary_file.write((const char*)&DRAWING_FILE_VERSION, sizeof(DRAWING_FILE_VERSION));
 
     for (auto& [page, drawings] : page_freehand_drawings) {
 
