@@ -5007,6 +5007,7 @@ void PdfViewRhiWidget::render_transparent_background(){}
 
 void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border){
 
+    current_frame_overview_object_index = current_object_render_order;
     float bg_color[] = { 1.0f, 1.0f, 1.0f };
     get_background_color(bg_color);
 
@@ -5014,7 +5015,6 @@ void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect,
     render_highlight_window(window_rect, HRF_FILL);
 
     current_overview = overview;
-    current_frame_overview_object_index = current_object_render_order;
     for (auto page : get_overview_visible_pages(overview)) {
         render_page(page, overview, ColorPalette::NoPalette, false);
     }
