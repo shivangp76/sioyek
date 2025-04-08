@@ -47,6 +47,8 @@ extern bool SAME_WIDTH;
 extern bool SCROLL_PAST_DOCUMENT_ENDS;
 extern wchar_t FREEHAND_TYPE;
 extern float FREEHAND_SIZE;
+extern bool SIMPLIFY_FREEHAND_DRAWINGS;
+extern int FREEHAND_DRAWING_SMOOTH_AMOUNT;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -5559,7 +5561,19 @@ void DocumentView::finish_drawing(QPoint pos) {
         handle_drawing_move(pos, -1.0f);
     }
 
-    std::vector<FreehandDrawingPoint> pruned_points = prune_freehand_drawing_points(current_drawing.points);
+    current_drawing.points = smooth_filter_drawing_points(current_drawing.points, FREEHAND_DRAWING_SMOOTH_AMOUNT);
+    //    for (int i = 0; i < 8; i++){
+//        current_drawing.points = smooth_filter_drawing_points(current_drawing.points);
+//    }
+
+    std::vector<FreehandDrawingPoint> pruned_points;
+    if (SIMPLIFY_FREEHAND_DRAWINGS){
+        pruned_points = prune_freehand_drawing_points(current_drawing.points);
+    }
+    else{
+        pruned_points = current_drawing.points;
+    }
+    
     current_drawing.points.clear();
 
     FreehandDrawing pruned_drawing;

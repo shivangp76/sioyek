@@ -92,6 +92,7 @@ extern bool SAME_WIDTH;
 
 extern int NUM_PRERENDERED_NEXT_SLIDES;
 extern int NUM_PRERENDERED_PREV_SLIDES;
+extern int FREEHAND_DRAWING_SMOOTH_AMOUNT;
 
 extern float DEFAULT_SEARCH_HIGHLIGHT_COLOR[3];
 extern float DEFAULT_LINK_HIGHLIGHT_COLOR[3];
@@ -2949,7 +2950,11 @@ void SioyekRendererBackend::draw_pending_freehand_drawings(const std::vector<int
 
     std::vector<FreehandDrawing> pending_drawing;
     if (document_view->current_drawing.points.size() > 1) {
-        pending_drawing.push_back(document_view->current_drawing);
+        FreehandDrawing pd = document_view->current_drawing;
+        
+        pd.points = smooth_filter_drawing_points(pd.points, FREEHAND_DRAWING_SMOOTH_AMOUNT);
+        
+        pending_drawing.push_back(pd);
     }
     enable_multisampling();
     if (visible_pages.size() <= MAX_PAGE_DRAWING_CACHE_SIZE){

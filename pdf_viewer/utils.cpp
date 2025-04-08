@@ -2097,7 +2097,13 @@ std::wstring get_canonical_path(const std::wstring& path) {
         return L"";
     }
 #else
-    QDir dir(QString::fromStdWString(path));
+    std::wstring expanded_path = path;
+
+    if (path.size() > 0 && path[0] == '~'){
+        expanded_path = QDir::homePath().toStdWString() + path.substr(1, path.size()-1);
+    }
+
+    QDir dir(QString::fromStdWString(expanded_path));
     //return std::move(dir.canonicalPath().toStdWString());
     return std::move(dir.absolutePath().toStdWString());
 #endif
@@ -3630,6 +3636,33 @@ Line2D line_from_points(AbsoluteDocumentPos p1, AbsoluteDocumentPos p2) {
     res.ny = ny;
     res.c = nx * p1.x + ny * p1.y;
     return res;
+}
+
+std::vector<FreehandDrawingPoint> smooth_filter_drawing_points_helper(const std::vector<FreehandDrawingPoint>& points) {
+    if (points.size() < 3) return points;
+    
+    std::vector<FreehandDrawingPoint> new_points;
+    new_points.push_back(points[0]);
+    for (int i = 1; i < points.size()-1; i++){
+        const FreehandDrawingPoint& next_point = points[i+1];
+        const FreehandDrawingPoint& prev_point = points[i-1];
+        
+        FreehandDrawingPoint new_point;
+        new_point.thickness = (prev_point.thickness + next_point.thickness) / 2;
+        new_point.pos.x = (prev_point.pos.x + next_point.pos.x) / 2;
+        new_point.pos.y = (prev_point.pos.y + next_point.pos.y) / 2;
+        new_points.push_back(new_point);
+    }
+    new_points.push_back(points[points.size()-1]);
+    return new_points;
+}
+
+std::vector<FreehandDrawingPoint> smooth_filter_drawing_points(const std::vector<FreehandDrawingPoint>& points, int amount) {
+    std::vector<FreehandDrawingPoint> smoothed_points = points;
+    for (int i = 0; i < amount; i++){
+        smoothed_points = smooth_filter_drawing_points_helper(smoothed_points);
+    }
+    return smoothed_points;
 }
 
 std::vector<FreehandDrawingPoint> prune_freehand_drawing_points(const std::vector<FreehandDrawingPoint>& points) {

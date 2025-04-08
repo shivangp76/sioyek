@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -7980,15 +7980,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-
-    // int current_page = dv()->get_current_page_number();
-    // auto page_drawings = doc()->get_page_drawings(current_page);
-    // std::optional<AbsoluteRect> detected_rect = detect_rect_drawing(page_drawings.drawings);
-    // dv()->debug_highlight_rects.push_back({detected_rect.value()});
-
-    // ai_magic_drawing_ask();
-//    qDebug() << doc()->get_path();
-    
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

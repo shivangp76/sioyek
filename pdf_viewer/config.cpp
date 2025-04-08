@@ -57,6 +57,8 @@ bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS = false;
 bool SCROLL_PAST_DOCUMENT_ENDS = true;
 // std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
 std::wstring SIOYEK_HOST = L"http://192.168.1.62:8081/";
+bool SIMPLIFY_FREEHAND_DRAWINGS = false;
+int FREEHAND_DRAWING_SMOOTH_AMOUNT = 8;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1426,6 +1428,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"show_statusbar_only_when_hovered", &SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER);
     add_bool(L"scroll_past_document_ends", &SCROLL_PAST_DOCUMENT_ENDS);
     add_bool(L"uniform_page_widths", &SAME_WIDTH);
+    add_bool(L"simplify_freehand_drawings", &SIMPLIFY_FREEHAND_DRAWINGS);
 
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
@@ -1543,6 +1546,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"prerendered_page_count", &PRERENDERED_PAGE_COUNT, IntExtras{0, 10});
     add_int(L"reload_interval_miliseconds", &RELOAD_INTERVAL_MILISECONDS, IntExtras{0, 10000});
     add_int(L"max_custom_status_message_size", &MAX_CUSTOM_STATUS_MESSAGE_SIZE, IntExtras{5, 1000});
+    add_int(L"freehand_drawing_smooth_amount", &FREEHAND_DRAWING_SMOOTH_AMOUNT, IntExtras{0, 20});
 
     add_ivec2(L"main_window_size", MAIN_WINDOW_SIZE);
     add_ivec2(L"helper_window_size", HELPER_WINDOW_SIZE);
