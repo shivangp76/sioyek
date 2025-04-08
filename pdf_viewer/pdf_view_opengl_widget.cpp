@@ -4347,7 +4347,8 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
 
         if (texture){
             bool is_icon = current_frame_texture_render_calls[i].is_icon;
-            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture, is_icon)->shader_resource_binding;
+            // QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture, is_icon)->shader_resource_binding;
+            QRhiShaderResourceBindings* resource_binding = current_frame_texture_render_calls[i].bindings;
             command_buffer->setShaderResources(resource_binding);
 
             const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
@@ -4370,7 +4371,8 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
 
         if (texture){
             bool is_icon = current_frame_texture_render_calls[i].is_icon;
-            QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture, is_icon)->shader_resource_binding;
+            // QRhiShaderResourceBindings* resource_binding = get_shader_resource_binding_for_texture(texture, is_icon)->shader_resource_binding;
+            QRhiShaderResourceBindings* resource_binding = current_frame_texture_render_calls[i].bindings;
             command_buffer->setShaderResources(resource_binding);
 
             const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
@@ -4889,6 +4891,10 @@ void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(Q
 
     int max_iter = std::min((int)current_frame_texture_render_calls.size(), MAX_VISIBLE_PAGES);
 
+    for (int i = 0; i < texture_shader_resource_bindings.size(); i++){
+        texture_shader_resource_bindings[i].in_use_in_current_frame = false;
+    }
+
     for (int i = 0; i < max_iter; i++){
 
         QRhiTexture* texture = std::get<QRhiTexture*>(current_frame_texture_render_calls[i].texture);
@@ -4898,6 +4904,7 @@ void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(Q
         bool is_icon = current_frame_texture_render_calls[i].is_icon;
         SioyekTextureShaderResourceBinding* shader_resources = get_shader_resource_binding_for_texture(texture, is_icon);
         update_batch->updateDynamicBuffer(shader_resources->uniform_buffer, 0, sizeof(float), &depth);
+        current_frame_texture_render_calls[i].bindings = shader_resources->shader_resource_binding;
 
         NormalizedWindowRect rect = current_frame_texture_render_calls[i].rect;
 
@@ -5206,8 +5213,9 @@ SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_bindin
     // delete_old_texture_shader_resource_bindings();
 
     for (int i = 0; i < texture_shader_resource_bindings.size(); i++){
-        if (texture_shader_resource_bindings[i].texture == texture){
+        if ((texture_shader_resource_bindings[i].texture == texture) && (!texture_shader_resource_bindings[i].in_use_in_current_frame)){
             texture_shader_resource_bindings[i].last_acess_time = QDateTime::currentDateTime();
+            texture_shader_resource_bindings[i].in_use_in_current_frame = true;
             return &texture_shader_resource_bindings[i];
         }
     }

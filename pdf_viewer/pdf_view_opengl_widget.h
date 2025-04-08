@@ -399,6 +399,7 @@ public:
 
 QShader get_rhi_shader(const QString &file_path);
 
+struct SioyekTextureShaderResourceBinding;
 
 struct SioyekTextureRenderCall{
     SioyekTextureType texture;
@@ -406,6 +407,7 @@ struct SioyekTextureRenderCall{
     std::optional<OverviewState> overview;
     int render_order;
     bool is_icon = false;
+    QRhiShaderResourceBindings* bindings=nullptr;
 };
 
 struct SioyekHighlightRectRenderCall{
@@ -430,6 +432,7 @@ struct SioyekTextureShaderResourceBinding{
     QRhiShaderResourceBindings* shader_resource_binding;
     QDateTime last_acess_time;
     QRhiBuffer* uniform_buffer;
+    bool in_use_in_current_frame=false;
 };
 
 struct SioyekPageDrawingsShaderResources{
