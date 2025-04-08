@@ -55,6 +55,7 @@ int MAX_CUSTOM_STATUS_MESSAGE_SIZE = 20;
 bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT = true;
 bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS = false;
 bool SCROLL_PAST_DOCUMENT_ENDS = true;
+bool USE_BINARY_DRAWING_FILES = true;
 // std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
 std::wstring SIOYEK_HOST = L"http://192.168.1.62:8081/";
 bool SIMPLIFY_FREEHAND_DRAWINGS = false;
@@ -1431,6 +1432,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"focus_on_sioyek_on_external_editor_accept", &FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT);
     add_bool(L"show_statusbar_only_when_hovered", &SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER);
     add_bool(L"scroll_past_document_ends", &SCROLL_PAST_DOCUMENT_ENDS);
+    add_bool(L"binary_drawing_files", &USE_BINARY_DRAWING_FILES);
     add_bool(L"uniform_page_widths", &SAME_WIDTH);
     add_bool(L"simplify_freehand_drawings", &SIMPLIFY_FREEHAND_DRAWINGS);
 

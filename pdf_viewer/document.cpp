@@ -26,6 +26,7 @@
 #include "database.h"
 #include "utils.h"
 
+extern bool USE_BINARY_DRAWING_FILES;
 extern bool SHOULD_RENDER_PDF_ANNOTATIONS;
 extern std::wstring forced_drawings_path;
 extern std::wstring forced_annotations_path;
@@ -4185,6 +4186,12 @@ void Document::load_drawings() {
 
     std::wstring drawing_file_path = get_drawings_file_path();
     std::wstring binary_drawing_file_path = get_drawings_file_path() + L".bin";
+    QFileInfo binary_drawing_file_info(QString::fromStdWString(binary_drawing_file_path));
+    if (binary_drawing_file_info.exists()){
+        return load_drawings_binary();
+    }
+
+    // we keep the old non-binary file loading for backward compatibility
 
     QFile json_file(QString::fromStdWString(drawing_file_path));
     if (json_file.open(QFile::ReadOnly)) {
@@ -4374,9 +4381,15 @@ void Document::persist_drawings_binary(bool force){
         }
     }
     binary_file.close();
+    is_drawings_dirty = false;
 }
 
 void Document::persist_drawings(bool force) {
+
+    if (USE_BINARY_DRAWING_FILES){
+        return persist_drawings_binary(force);
+    }
+
     if ((!force) && (!is_drawings_dirty)) {
         return;
     }
