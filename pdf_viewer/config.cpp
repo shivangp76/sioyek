@@ -492,7 +492,7 @@ std::wstring VOLUME_DOWN_COMMAND = L"";
 std::wstring VOLUME_UP_COMMAND = L"";
 
 std::wstring BACK_RECT_TAP_COMMAND = L"prev_state";
-std::wstring BACK_RECT_HOLD_COMMAND = L"goto_mark";
+std::wstring BACK_RECT_HOLD_COMMAND = L"delete_freehand_drawings";
 std::wstring FORWARD_RECT_TAP_COMMAND = L"next_state";
 std::wstring FORWARD_RECT_HOLD_COMMAND = L"set_mark";
 std::wstring TOP_CENTER_TAP_COMMAND = L"show_touch_main_menu";
