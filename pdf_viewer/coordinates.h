@@ -50,6 +50,11 @@ struct DocumentPos {
     DocumentPos to_page(int target_page, Document* doc);
 };
 
+struct VirtualPos {
+    float x;
+    float y;
+};
+
 struct AbsoluteDocumentPos {
     float x;
     // this is the concatenated y-coordinate of the current page (sum of all page heights up to current location)
@@ -216,6 +221,7 @@ struct EnhancedRect : public R {
 
 
 using PagelessDocumentRect = EnhancedRect<fz_rect, PagelessDocumentPos>;
+using VirtualRect = EnhancedRect<fz_rect, VirtualPos>;
 //using WindowRect = EnhancedRect<fz_irect, WindowPos>;
 
 struct WindowRect : public EnhancedRect<fz_irect, WindowPos> {
@@ -271,6 +277,7 @@ struct AbsoluteRect : public EnhancedRect<fz_rect, AbsoluteDocumentPos> {
 
     NormalizedWindowRect to_window_normalized(DocumentView* document_view);
     WindowRect to_window(DocumentView* document_view);
+    VirtualRect to_virtual(DocumentView* document_view);
 };
 
 //template<typename T, int dim>
@@ -414,10 +421,6 @@ Vec<T, dim> operator-(const Vec<T, dim>& lhs, const Vec<T, dim>& rhs) {
 }
 
 
-struct VirtualPos {
-    float x;
-    float y;
-};
 
 fvec2 operator-(const AbsoluteDocumentPos& lhs, const AbsoluteDocumentPos& rhs);
 fvec2 operator-(const VirtualPos& lhs, const VirtualPos& rhs);
@@ -438,6 +441,5 @@ VirtualPos operator+(const VirtualPos& lhs, const fvec2& rhs);
 
 VirtualPos operator-(const VirtualPos& lhs, const fvec2& rhs);
 
-using VirtualRect = EnhancedRect<fz_rect, VirtualPos>;
 
 DocumentRect to_document(const WindowRect& window_rect, DocumentView* dv);

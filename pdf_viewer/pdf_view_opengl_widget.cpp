@@ -5074,17 +5074,19 @@ void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, Doc
 
     float uniforms[5];
 
-    // uniforms[0] = -dv->get_offset_x();
-    // uniforms[1] = -dv->get_offset_y();
-    // uniforms[2] = dv->get_zoom_level();
 
-    NormalizedWindowRect page_rect = dv->doc()->get_page_absolute_rect(page).to_window_normalized(dv);
+    DocumentRect page_drect;
+    page_drect.page = page;
+    page_drect.rect.x0 = 0;
+    page_drect.rect.y0 = 0;
+    page_drect.rect.x1 = dv->doc()->get_page_width(page);
+    page_drect.rect.y1 = dv->doc()->get_page_height(page);
+
+    NormalizedWindowRect page_rect = page_drect.to_window_normalized(dv);
 
     uniforms[0] = page_rect.x0;
     uniforms[1] = page_rect.y0;
 
-    // uniforms[0] = 0;
-    // uniforms[1] = 0;
     uniforms[2] = page_rect.width();
     uniforms[3] = page_rect.height();
 
@@ -5093,8 +5095,6 @@ void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, Doc
     current_frame_resource_update_batch->updateDynamicBuffer(uniform_buffer, 0, 5 * sizeof(float), uniforms);
 
     current_frame_drawing_render_calls.push_back(drawing_call);
-    // if (drawings.last_modification_time )
-    // render_drawings(p, dv, drawings.drawings, highlighted);
 }
 
 void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& drawings, bool highlighted) {
