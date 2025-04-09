@@ -145,6 +145,7 @@ protected:
     virtual void draw_stencil_rects_with_page(int page, const std::vector<PagelessDocumentRect>& rects);
     virtual void use_stencil_to_write(bool eq) = 0;
     virtual void disable_stencil() = 0;
+    virtual void disable_stencil_for_two_page();
     virtual void render_transparent_background() = 0;
     virtual void render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true) = 0;
     virtual void render_overview_highlights(OverviewState overview);
@@ -408,6 +409,7 @@ struct SioyekTextureRenderCall{
     int render_order;
     bool is_icon = false;
     QRhiShaderResourceBindings* bindings=nullptr;
+    std::optional<NormalizedWindowRect> scissor_rect = {};
 };
 
 struct SioyekHighlightRectRenderCall{
@@ -501,6 +503,7 @@ private:
     int current_object_render_order = 0;
     int current_frame_pending_drawing_vertices = 0;
     int current_frame_overview_object_index = -1;
+    std::optional<NormalizedWindowRect> current_stencil = {};
     // int num_frame_drawing_triangles = 0;
 
     std::vector<SioyekTextureRenderCall> current_frame_texture_render_calls;
@@ -579,6 +582,8 @@ public:
     bool is_opengl() override;
     bool update_dynamic_buffer_safe(QRhiResourceUpdateBatch* update_batch, QRhiBuffer* buffer, int offset, int size, float* data, int buffer_size);
     void render_ui_icon_for_current_color_mode(const QIcon& icon_black, const QIcon& icon_white, QRect rect, bool is_highlighted=false) override;
+    void disable_stencil_for_two_page() override;
+    void set_scissor_rect(QRhiCommandBuffer* command_buffer, NormalizedWindowRect scissor_rect);
     QWidget* get_widget() override;
     std::optional<GraphicsBackendExtras> get_backend_extras() override;
 };

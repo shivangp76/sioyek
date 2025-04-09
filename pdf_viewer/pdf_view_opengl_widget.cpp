@@ -706,13 +706,17 @@ void SioyekRendererBackend::render_page(int page_number, std::optional<OverviewS
 
 
         if (dv()->is_two_page_mode() && (stencils_allowed)) {
-            disable_stencil();
+            disable_stencil_for_two_page();
         }
 
         render_original_color_images(page_number, overview, forced_color_palette, stencils_allowed);
 
     }
 
+}
+
+void SioyekRendererBackend::disable_stencil_for_two_page() {
+    return disable_stencil();
 }
 
 void PdfViewOpenGLWidget::render_original_color_images(int page_number, std::optional<OverviewState> overview, ColorPalette forced_color_palette, bool stencils_allowed) {
@@ -4359,6 +4363,13 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
             const QRhiCommandBuffer::VertexInput vbufBinding(vertex_buffer_ptr.get(), offset);
             const QRhiCommandBuffer::VertexInput uv_buffer_binding(uv_buffer_ptr.get(), 0);
 
+            if (current_frame_texture_render_calls[i].scissor_rect.has_value()){
+                set_scissor_rect(command_buffer, current_frame_texture_render_calls[i].scissor_rect.value());
+            }
+            else{
+                reset_overview_scissor(command_buffer);
+            }
+
             command_buffer->setVertexInput(0, 1, &vbufBinding);
             command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
             // command_buffer->setVertexInput(1, 1, &uvbufBinding);
@@ -4392,19 +4403,23 @@ void PdfViewRhiWidget::render_current_frame_textures(QRhiCommandBuffer* command_
     reset_overview_scissor(command_buffer);
 
 }
-void PdfViewRhiWidget::set_overview_scissor(QRhiCommandBuffer* command_buffer, std::optional<OverviewState> overview){
-    NormalizedWindowRect overview_rect = dv()->get_overview_rect(overview);
-    // NormalizedWindowRect overview_rect = dv()->get_overview_rect();
-    int x0 = (overview_rect.x0 + 1) / 2 * width() * get_device_pixel_ratio();
-    int x1 = (overview_rect.x1 + 1) / 2 * width() * get_device_pixel_ratio();
-    int y0 = (overview_rect.y0 + 1) / 2 * height() * get_device_pixel_ratio();
-    int y1 = (overview_rect.y1 + 1) / 2 * height() * get_device_pixel_ratio();
+
+void PdfViewRhiWidget::set_scissor_rect(QRhiCommandBuffer* command_buffer, NormalizedWindowRect scissor_rect){
+    int x0 = (scissor_rect.x0 + 1) / 2 * width() * get_device_pixel_ratio();
+    int x1 = (scissor_rect.x1 + 1) / 2 * width() * get_device_pixel_ratio();
+    int y0 = (scissor_rect.y0 + 1) / 2 * height() * get_device_pixel_ratio();
+    int y1 = (scissor_rect.y1 + 1) / 2 * height() * get_device_pixel_ratio();
     if (y1 < y0){
         std::swap(y1, y0);
     }
 
     QRhiScissor overview_scissor(x0, y0, x1 - x0, y1 - y0);
     command_buffer->setScissor(overview_scissor);
+}
+
+void PdfViewRhiWidget::set_overview_scissor(QRhiCommandBuffer* command_buffer, std::optional<OverviewState> overview){
+    NormalizedWindowRect overview_rect = dv()->get_overview_rect(overview);
+    set_scissor_rect(command_buffer, overview_rect);
 }
 
 void PdfViewRhiWidget::reset_overview_scissor(QRhiCommandBuffer* command_buffer){
@@ -4948,6 +4963,7 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
         render_call.texture = texture.value();
         render_call.overview = current_overview;
         render_call.render_order = current_object_render_order++;
+        render_call.scissor_rect = current_stencil;
         current_frame_texture_render_calls.push_back(render_call);
     }
 }
@@ -5033,7 +5049,21 @@ void PdfViewRhiWidget::render_overview_backend(NormalizedWindowRect window_rect,
     render_highlight_window(document_view->get_overview_rect(overview), HRF_BORDER);
 
 }
-void PdfViewRhiWidget::set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level){}
+void PdfViewRhiWidget::set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level){
+    if (BACKGROUND_PIXEL_FIX || (document_view->is_two_page_mode() && (stencils_allowed))) {
+        if (BACKGROUND_PIXEL_FIX) {
+            page_content.x1 -= 1.0f / zoom_level;
+            page_content.y1 -= 1.0f / zoom_level;
+        }
+
+        // std::vector<PagelessDocumentRect> rects = { page_content };
+        DocumentRect page_drect;
+        page_drect.page = page;
+        page_drect.rect = page_content;
+        current_stencil = page_drect.to_window_normalized(dv());
+        // dv->docu
+    }
+}
 
 void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){
     current_highlight_color[0] = *(color + 0);
@@ -5417,4 +5447,8 @@ void PdfViewRhiWidget::render_ui_icon_for_current_color_mode(const QIcon& icon_b
         SioyekRendererBackend::render_ui_icon_for_current_color_mode(icon_black, icon_white, rect, is_highlighted);
     }
 
+}
+
+void PdfViewRhiWidget::disable_stencil_for_two_page(){
+    current_stencil = {};
 }
