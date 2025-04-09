@@ -4915,19 +4915,19 @@ std::vector<PagelessDocumentRect> get_image_blocks_from_stext_page(fz_stext_page
     return image_rects;
 }
 
-bool is_platform_meta_pressed(QKeyEvent* kevent){
+bool is_platform_meta_pressed(Qt::KeyboardModifiers modifiers){
 #ifdef Q_OS_MACOS
-        return (kevent->modifiers() & Qt::ControlModifier);
+        return (modifiers & Qt::ControlModifier);
 #else
-        return (kevent->modifiers() & Qt::MetaModifier);
+        return (modifiers & Qt::MetaModifier);
 #endif
 }
 
-bool is_platform_control_pressed(QKeyEvent* kevent){
+bool is_platform_control_pressed(Qt::KeyboardModifiers modifiers){
 #ifdef Q_OS_MACOS
-        return (kevent->modifiers() & Qt::MetaModifier);
+        return (modifiers & Qt::MetaModifier);
 #else
-        return (kevent->modifiers() & Qt::ControlModifier);
+        return (modifiers & Qt::ControlModifier);
 #endif
 }
 

@@ -640,8 +640,8 @@ std::wstring get_path_extras_file_name(const std::wstring& path);
 QString translate_key_mapping_to_macos(QString mapping);
 std::vector<PagelessDocumentRect> get_image_blocks_from_stext_page(fz_stext_page* stext_page);
 
-bool is_platform_meta_pressed(QKeyEvent* kevent);
-bool is_platform_control_pressed(QKeyEvent* kevent);
+bool is_platform_meta_pressed(Qt::KeyboardModifiers modifiers);
+bool is_platform_control_pressed(Qt::KeyboardModifiers modifiers);
 
 int prune_abbreviation_candidate(const std::wstring& super_fast_search_index, int start_index, int end_index, std::wstring abbr);
 QString create_random_string(int length=31);

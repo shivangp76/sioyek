@@ -2498,8 +2498,8 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat
         }
         int num_repeats = 0;
 
-        bool is_meta_pressed = is_platform_meta_pressed(kevent);
-        bool is_control_pressed =  is_platform_control_pressed(kevent);
+        bool is_meta_pressed = is_platform_meta_pressed(kevent->modifiers());
+        bool is_control_pressed =  is_platform_control_pressed(kevent->modifiers());
 
         std::unique_ptr<Command> commands = input_handler->handle_key(this,
             kevent,
@@ -3236,8 +3236,10 @@ void MainWidget::handle_click(WindowPos click_pos) {
 void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
 
     bool is_shift_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ShiftModifier);
-    bool is_control_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
-    bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
+    // bool is_control_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
+    // bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
+    bool is_control_pressed = is_platform_control_pressed(mevent->modifiers());
+    bool is_command_pressed = is_platform_meta_pressed(mevent->modifiers());
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
 
 
@@ -3263,6 +3265,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     }
 
 
+    qDebug() << mevent->button();
     if (mevent->button() == Qt::MouseButton::LeftButton) {
 
         if (is_shift_pressed) {
@@ -3440,8 +3443,10 @@ void MainWidget::handle_triple_click(AbsoluteDocumentPos mouse_abspos) {
 
 void MainWidget::mousePressEvent(QMouseEvent* mevent) {
     bool is_shift_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ShiftModifier);
-    bool is_control_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
-    bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
+    // bool is_control_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::ControlModifier);
+    // bool is_command_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::MetaModifier);
+    bool is_control_pressed = is_platform_control_pressed(mevent->modifiers());
+    bool is_command_pressed = is_platform_meta_pressed(mevent->modifiers());
     bool is_alt_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::KeyboardModifier::AltModifier);
 
     if (is_mouse_ruler_mode){
