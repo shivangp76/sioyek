@@ -934,27 +934,40 @@ std::optional<QColor> get_color_from_type(std::optional<char> t) {
     return {};
 }
 
-std::optional<QColor> BookMark::get_background_color() const {
+QVariant BookMark::get_background_color() const {
     std::optional<char> background_type = get_background_type();
     if (background_type.has_value()) {
-        return get_color_from_type(background_type);
+        std::optional<QColor> c = get_color_from_type(background_type);
+        if (c){
+            return c.value();
+        }
+        return {};
 
     }
     return {};
 }
 
-std::optional<QColor> BookMark::get_border_color() const {
+QVariant BookMark::get_border_color() const {
     std::optional<char> border_type = get_type();
     if (border_type.has_value()) {
-        return get_color_from_type(border_type);
+        std::optional<QColor> c = get_color_from_type(border_type);
+        if (c){
+            return c.value();
+        }
+        return {};
+
     }
     return {};
 }
 
-std::optional<QColor> BookMark::get_text_color() const {
+QVariant BookMark::get_text_color() const {
     std::optional<char> text_type = get_text_type();
     if (text_type.has_value()) {
-        return get_color_from_type(text_type);
+        std::optional<QColor> c = get_color_from_type(text_type);
+        if (c){
+            return c.value();
+        }
+        return {};
     }
     return QColor::fromRgbF(color[0], color[1], color[2]);
 }

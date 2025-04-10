@@ -2562,9 +2562,9 @@ std::pair<pdf_page*, pdf_annot*> Document::embed_bookmark(pdf_document* pdf_doc,
     if (bookmark.is_freetext() && (!bookmark.is_box() || display_text.size() != 0)) {
         bookmark_annot = pdf_create_annot(context, pdf_page, PDF_ANNOT_FREE_TEXT);
 
-        std::optional<QColor> border_color = bookmark.get_border_color();
-        std::optional<QColor> background_color = bookmark.get_background_color();
-        std::optional<QColor> text_color = bookmark.get_text_color();
+        std::optional<QColor> border_color = optional_from_qvariant<QColor>(bookmark.get_border_color());
+        std::optional<QColor> background_color = optional_from_qvariant<QColor>(bookmark.get_background_color());
+        std::optional<QColor> text_color = optional_from_qvariant<QColor>(bookmark.get_text_color());
 
         if (text_color.has_value()) {
             bookmark_text_color[0] = text_color->redF();

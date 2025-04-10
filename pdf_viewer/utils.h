@@ -1143,3 +1143,10 @@ struct DetectedRectResult{
 };
 std::optional<DetectedRectResult> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings);
 QList<QColor> get_symbol_colors_for_qml();
+
+
+template<typename T>
+std::optional<T> optional_from_qvariant(QVariant variant){
+    if (variant.isNull()) return{};
+    return variant.value<T>();
+}

@@ -5936,21 +5936,45 @@ void MainWidget::handle_goto_bookmark(bool manual_only, bool chat) {
         handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
         };
 
-    if (TOUCH_MODE || (!FANCY_UI_MENUS)) {
-        std::vector<std::wstring> option_names;
-        std::vector<std::wstring> option_location_wstrings;
-        //std::vector<BookMark> bookmarks;
+    if (TOUCH_MODE) {
+        BookmarkModel* bookmark_model = new BookmarkModel(std::move(bookmarks), std::move(option_location_strings), {}, this);
 
-        for (auto bookmark : bookmarks) {
-            // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
-            // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.get_render_text().toStdWString());
-            option_names.push_back(bookmark.get_render_text().toStdWString());
-            auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset() });
-            option_location_wstrings.push_back(get_page_formatted_string(page + 1));
-        }
+        TouchDelegateListView* lv = new TouchDelegateListView(bookmark_model, true, "TouchBookmarksView", {std::make_pair("_selected_index", closest_bookmark_index)}, this);
+        // lv->list_view->proxy_model->set_is_highlight(true);
+        lv->list_view->proxy_model->setFilterKeyColumn(-1);
 
-        set_filtered_select_menu<BookMark>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, bookmarks, closest_bookmark_index,
-            [&, handle_select_fn](BookMark* bm) {
+        lv->set_select_fn([&, bookmark_model, handle_select_fn](int index) {
+            BookMark bm = bookmark_model->bookmarks[index];
+            handle_select_fn(bm);
+            });
+
+        lv->set_delete_fn(
+            [&, bookmark_model, handle_delete_fn](int index) {
+                BookMark bm = bookmark_model->bookmarks[index];
+                handle_delete_fn(bm);
+            }
+        );
+
+        set_current_widget(lv);
+        show_current_widget();
+
+    }
+    else{
+        if (!FANCY_UI_MENUS) {
+            std::vector<std::wstring> option_names;
+            std::vector<std::wstring> option_location_wstrings;
+            //std::vector<BookMark> bookmarks;
+
+            for (auto bookmark : bookmarks) {
+                // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
+                // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.get_render_text().toStdWString());
+                option_names.push_back(bookmark.get_render_text().toStdWString());
+                auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset() });
+                option_location_wstrings.push_back(get_page_formatted_string(page + 1));
+            }
+
+            set_filtered_select_menu<BookMark>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, bookmarks, closest_bookmark_index,
+                                               [&, handle_select_fn](BookMark* bm) {
                 handle_select_fn(*bm);
             },
             [&, handle_delete_fn](BookMark* bm) {
@@ -5959,33 +5983,34 @@ void MainWidget::handle_goto_bookmark(bool manual_only, bool chat) {
             [&, handle_edit_fn](BookMark* bm) {
                 handle_edit_fn(*bm);
             }
-        );
-        show_current_widget();
-    }
-    else {
-        BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
-            std::move(bookmarks), this, std::move(option_location_strings));
-        bookmark_widget->set_selected_index(closest_bookmark_index);
+            );
+            show_current_widget();
+        }
+        else {
+            BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
+                        std::move(bookmarks), this, std::move(option_location_strings));
+            bookmark_widget->set_selected_index(closest_bookmark_index);
 
-        bookmark_widget->set_select_fn([&, bookmark_widget, handle_select_fn](int index) {
-            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
-            handle_select_fn(bm);
+            bookmark_widget->set_select_fn([&, bookmark_widget, handle_select_fn](int index) {
+                BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+                handle_select_fn(bm);
 
             });
 
-        bookmark_widget->set_delete_fn([&, bookmark_widget, handle_delete_fn](int index) {
-            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
-            handle_delete_fn(bm);
+            bookmark_widget->set_delete_fn([&, bookmark_widget, handle_delete_fn](int index) {
+                BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+                handle_delete_fn(bm);
             });
 
-        bookmark_widget->set_edit_fn([&, bookmark_widget, handle_edit_fn](int index) {
-            BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
-            handle_edit_fn(bm);
+            bookmark_widget->set_edit_fn([&, bookmark_widget, handle_edit_fn](int index) {
+                BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+                handle_edit_fn(bm);
             });
 
-        set_current_widget(bookmark_widget);
-        show_current_widget();
+            set_current_widget(bookmark_widget);
+            show_current_widget();
 
+        }
     }
 }
 

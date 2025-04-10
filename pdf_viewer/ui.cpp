@@ -3222,9 +3222,9 @@ void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionView
     painter->fillRect(option.rect, bookmark_background_fill_color);
     //painter->fillRect(option.rect, is_selected ? Qt::red : Qt::blue);
 
-    std::optional<QColor> bookmark_background_color = bookmark.get_background_color();
-    std::optional<QColor> bookmark_border_color = bookmark.get_border_color();
-    std::optional<QColor> bookmark_text_color = bookmark.get_text_color();
+    std::optional<QColor> bookmark_background_color = optional_from_qvariant<QColor>(bookmark.get_background_color());
+    std::optional<QColor> bookmark_border_color = optional_from_qvariant<QColor>(bookmark.get_border_color());
+    std::optional<QColor> bookmark_text_color = optional_from_qvariant<QColor>(bookmark.get_text_color());
 
     if (bookmark_background_color.has_value()){
         bookmark_background_color = bookmark_background_color;
@@ -4799,4 +4799,3 @@ QStringList MyLineEdit::get_autocomplete_suggestions(const QString& prefix) {
 void MyLineEdit::set_autocomplete_strings(QStringList strings) {
     autocomplete_strings = strings;
 }
-

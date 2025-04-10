@@ -110,6 +110,8 @@ struct OpenedBookState {
 };
 
 struct Annotation {
+    Q_GADGET
+public:
 
     static inline const QString CREATION_TIME_COLUMN_NAME = "creation_time";
     std::string creation_time;
@@ -147,6 +149,8 @@ struct Annotation {
     Lower case marks are local to the document and upper case marks are global.
 */
 struct Mark : Annotation {
+    Q_GADGET
+public:
     static Mark from_json(const QJsonObject& json_object);
 
     static inline const std::string TABLE_NAME = "marks";
@@ -171,6 +175,8 @@ struct Mark : Annotation {
     A bookmark is similar to mark but instead of being indexed by a symbol, it has a description.
 */
 struct BookMark : Annotation {
+    Q_GADGET
+public:
     static BookMark from_json(const QJsonObject& json_object);
 
     static inline const std::string TABLE_NAME = "bookmarks";
@@ -232,11 +238,11 @@ struct BookMark : Annotation {
     std::optional<char> get_background_type() const;
     std::optional<char> get_text_type() const;
     std::wstring  get_style_text() const;
-    QString get_render_text() const;
+    Q_INVOKABLE QString get_render_text() const;
 
-    std::optional<QColor> get_background_color() const;
-    std::optional<QColor> get_border_color() const;
-    std::optional<QColor> get_text_color() const;
+    Q_INVOKABLE QVariant get_background_color() const;
+    Q_INVOKABLE QVariant get_border_color() const;
+    Q_INVOKABLE QVariant get_text_color() const;
 
     std::optional<AbsoluteRect> get_rectangle() const override;
     std::optional<AbsoluteRect> get_selection_rectangle() const;
@@ -245,6 +251,8 @@ struct BookMark : Annotation {
 };
 
 struct Highlight : Annotation {
+    Q_GADGET
+public:
     static Highlight from_json(const QJsonObject& json_object);
 
     static inline const std::string TABLE_NAME = "highlights";
@@ -393,6 +401,8 @@ struct OverviewTouchMoveData {
     Note that this is different from PdfLink which is the built-in link functionality in PDF file format.
 */
 struct Portal : Annotation {
+    Q_GADGET
+public:
     static Portal from_json(const QJsonObject& json_object);
 
     static inline const std::string TABLE_NAME = "links";
