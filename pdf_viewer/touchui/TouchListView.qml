@@ -34,6 +34,9 @@ Rectangle {
     signal itemDeleted(item: string, index: int)
     radius: 10
 
+    // resize to avoid onscreen keyboard
+    // height: !inputMethod.visible ? parent.height : Math.max(parent.height - inputMethod.keyboardRectangle.height, 0)
+
     TextInput{
         id: query
         color: "white"

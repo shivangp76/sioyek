@@ -227,6 +227,12 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         drawing_mode,
         this);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(main_menu);
+    setLayout(layout);
+
+    // main_menu->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
 
     //    set_rect_config_button = new QPushButton("Rect Config", this);
     //    goto_page_button = new QPushButton("Goto Page", this);
@@ -562,28 +568,28 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     //     this->setLayout(layout);
 }
 
-void AndroidSelector::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+// void AndroidSelector::resizeEvent(QResizeEvent* resize_event) {
+//     QWidget::resizeEvent(resize_event);
+//     int parent_width = parentWidget()->width();
+//     int parent_height = parentWidget()->height();
 
-    //float parent_width_in_centimeters = static_cast<float>(parent_width) / logicalDpiX() * 2.54f;
-    //float parent_height_in_centimeters = static_cast<float>(parent_height) / logicalDpiY() * 2.54f;
-    int ten_cm = static_cast<int>(12 * logicalDpiX() / 2.54f);
+//     //float parent_width_in_centimeters = static_cast<float>(parent_width) / logicalDpiX() * 2.54f;
+//     //float parent_height_in_centimeters = static_cast<float>(parent_height) / logicalDpiY() * 2.54f;
+//     int ten_cm = static_cast<int>(12 * logicalDpiX() / 2.54f);
 
-    int w = static_cast<int>(parent_width * 0.9f);
-    int h = parent_height;
+//     int w = static_cast<int>(parent_width * 0.9f);
+//     int h = parent_height;
 
-    w = std::min(w, ten_cm);
-    h = std::min(h, static_cast<int>(ten_cm * 1.3f));
+//     w = std::min(w, ten_cm);
+//     h = std::min(h, static_cast<int>(ten_cm * 1.3f));
 
-    main_menu->resize(w, h);
-    setFixedSize(w, h);
+//     main_menu->resize(w, h);
+//     setFixedSize(w, h);
 
-    //    list_view->setFixedSize(parent_width * 0.9f, parent_height);
-    move((parent_width - w) / 2, (parent_height - h) / 2);
+//     //    list_view->setFixedSize(parent_width * 0.9f, parent_height);
+//     move((parent_width - w) / 2, (parent_height - h) / 2);
 
-}
+// }
 
 //TextSelectionButtons::TextSelectionButtons(MainWidget* parent) : QWidget(parent) {
 
@@ -744,6 +750,43 @@ void DrawControlsUI::resizeEvent(QResizeEvent* resize_event) {
     move((pwidth - width) / 2, height);
     setFixedSize(width, height);
 
+}
+
+QRect AndroidSelector::get_prefered_rect(QRect parent_rect){
+
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+
+    int ten_cm = static_cast<int>(12 * logicalDpiX() / 2.54f);
+
+    int w = static_cast<int>(parent_width * 0.9f);
+    int h = parent_height;
+
+    w = std::min(w, ten_cm);
+    h = std::min(h, static_cast<int>(ten_cm * 1.3f));
+
+    int offset_x = (parent_width - w) / 2;
+    int offset_y = (parent_height - h) / 2;
+    return QRect(offset_x, offset_y, w, h);
+    // main_menu->resize(w, h);
+    // setFixedSize(w, h);
+
+    // //    list_view->setFixedSize(parent_width * 0.9f, parent_height);
+    // move((parent_width - w) / 2, (parent_height - h) / 2);
+
+    // int pwidth = parent_rect.width();
+    // int width = parent_rect.width() * 3 / 4;
+    // int height = std::max(parent_rect.height() / 16, 50);
+
+    // int offset_x = (pwidth - width) / 2;
+    // int offset_y = height;
+
+    // return QRect(offset_x, offset_y, width, height);
+
+    // controls_ui->move(0, 0);
+    // controls_ui->resize(width, height);
+    // move((pwidth - width) / 2, height);
+    // setFixedSize(width, height);
 }
 
 void TouchTextSelectionButtons::resizeEvent(QResizeEvent* resize_event) {
@@ -1883,21 +1926,51 @@ void BaseSelectorWidget::on_config_file_changed() {
     view->setStyleSheet(style);
 }
 
-void BaseSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    on_resize();
-}
+QRect BaseSelectorWidget::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
-void BaseSelectorWidget::on_resize(){
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
-    setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height * MENU_SCREEN_HEIGHT_RATIO);
-    move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2);
+    int offset_x = parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2;
+    int offset_y = parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2;
+    int width = parent_width * MENU_SCREEN_WDITH_RATIO;
+    int height = parent_height * MENU_SCREEN_HEIGHT_RATIO;
+
+    QRect result(offset_x, offset_y, width, height);
 
     if (!is_initialized) {
         is_initialized = true;
         on_config_file_changed();
     }
+
+    return result;
+}
+
+// QRect BaseSelectorWidget::on_parent_resize(QRect parent_rect){
+//     QRect pr = get_prefered_rect(parent_rect);
+//     move(pr.x(), pr.y());
+//     resize(pr.width(), pr.height());
+
+//     if (!is_initialized) {
+//         is_initialized = true;
+//         on_config_file_changed();
+//     }
+// }
+
+// void BaseSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
+//     QWidget::resizeEvent(resize_event);
+//     on_resize();
+// }
+
+void BaseSelectorWidget::on_resize(){
+    // int parent_width = parentWidget()->width();
+    // int parent_height = parentWidget()->height();
+    // setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height * MENU_SCREEN_HEIGHT_RATIO);
+    // move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2);
+
+    // if (!is_initialized) {
+    //     is_initialized = true;
+    //     on_config_file_changed();
+    // }
 }
 
 

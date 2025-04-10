@@ -1,4 +1,4 @@
-// deduplicate database code
+﻿// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -191,6 +191,7 @@ const std::wstring SERVER_SYMBOL = L"🌐";
 extern int next_window_id;
 extern std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 
+extern int last_keypad_size;
 extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;
 extern bool MULTILINE_MENUS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
@@ -430,6 +431,44 @@ extern float MACOS_DARK_TITLEBAR_COLOR[3];
 extern bool MACOS_HIDE_TITLEBAR;
 #endif
 
+
+bool qobject_has_method(QObject* obj, const QString& methodName) {
+    const QMetaObject* metaObject = obj->metaObject();
+    int count = metaObject->methodCount();
+    for (int i = 0; i < count; ++i) {
+        QMetaMethod method = metaObject->method(i);
+        if (method.name() == methodName) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void handle_qobject_parent_resize(QRect parent_rect, QWidget* widget){
+    bool has_prefered_rect_method = qobject_has_method(widget, "get_prefered_rect");
+    if (has_prefered_rect_method){
+        QRect prefered_rect;
+        QMetaObject::invokeMethod(widget,
+            "get_prefered_rect",
+            Qt::DirectConnection,
+            Q_RETURN_ARG(QRect, prefered_rect),
+            Q_ARG(QRect, parent_rect)
+        );
+
+        widget->move(prefered_rect.x(), prefered_rect.y());
+        widget->resize(prefered_rect.width(), prefered_rect.height());
+    }
+    else{
+        int offset_x = parent_rect.width() * (1 - MENU_SCREEN_WDITH_RATIO) / 2;
+        int offset_y = parent_rect.height() * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2;
+        int width = parent_rect.width() * MENU_SCREEN_WDITH_RATIO;
+        int height = parent_rect.height() * MENU_SCREEN_HEIGHT_RATIO;
+
+        widget->move(offset_x, offset_y);
+        widget->resize(width, height);
+    }
+}
+
 MainWidget* get_window_with_window_id(int window_id) {
     for (auto window : windows) {
         if (window->get_window_id() == window_id) return window;
@@ -603,7 +642,20 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 
     if ((current_widget_stack.size() > 0)) {
         for (auto w : current_widget_stack) {
-            QCoreApplication::postEvent(w, resize_event->clone());
+            handle_qobject_parent_resize(rect(), w);
+
+            // BaseSelectorWidget* selector_widget = dynamic_cast<BaseSelectorWidget*>(w);
+            // if (selector_widget){
+
+            //     selector_widget->on_parent_resize(rect());
+
+            //     // QRect prefered_rect = selector_widget->get_prefered_rect(rect());
+            //     // selector_widget->move(prefered_rect.x(), prefered_rect.y());
+            //     // selector_widget->resize(prefered_rect.width(), prefered_rect.height());
+            // }
+            // else{
+            //     QCoreApplication::postEvent(w, resize_event->clone());
+            // }
         }
     }
 
@@ -1519,6 +1571,13 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         on_ios_application_state_changed(state);
     });
     registerPinchGestureForWidget(this, ios_pinch_callback);
+#endif
+#ifdef SIOYEK_MOBILE
+    QObject::connect(QGuiApplication::inputMethod(), &QInputMethod::visibleChanged, [&](){
+        // qDebug() << "new visibility: " << QGuiApplication::inputMethod()->isVisible();
+        // qDebug() << "visible window size is : " << height();
+        // qDebug() << "last keypad size = " << last_keypad_size;
+    });
 #endif
     if (DEFAULT_PEN_DRAWING_MODE){
         freehand_drawing_mode = DrawingMode::PenDrawing;
@@ -3265,7 +3324,6 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     }
 
 
-    qDebug() << mevent->button();
     if (mevent->button() == Qt::MouseButton::LeftButton) {
 
         if (is_shift_pressed) {
@@ -4291,6 +4349,7 @@ void MainWidget::set_current_widget(QWidget* new_widget) {
     }
     current_widget_stack.clear();
     current_widget_stack.push_back(new_widget);
+    handle_qobject_parent_resize(rect(), new_widget);
     
     if (!TOUCH_MODE) {
         if (new_widget) {
@@ -8039,8 +8098,11 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    qDebug() << qobject_has_method(this, "resize");
+    qDebug() << qobject_has_method(this, "toggle_dark_mode");
+    qDebug() << qobject_has_method(this, "lansd");
     // doc()->persist_drawings_binary(true);
-    doc()->load_drawings_binary();
+    // doc()->load_drawings_binary();
     // doc()->persist_drawings_binary(true);
 }
 

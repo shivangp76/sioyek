@@ -80,6 +80,7 @@
 
 extern Path standard_data_path;
 
+int last_keypad_size = 0;
 extern std::ofstream LOG_FILE;
 extern int STATUS_BAR_FONT_SIZE;
 extern float STATUS_BAR_COLOR[3];
@@ -3325,6 +3326,27 @@ extern "C" {
                                                           jobject obj)
     {
         on_android_resume_global();
+    }
+
+    // public static native void onAndroidKeypadHide();
+    // public static native void onAndroidKeypadShow(int size);
+
+    JNIEXPORT void JNICALL
+        Java_info_sioyek_sioyek_SioyekActivity_onAndroidKeypadHide(JNIEnv* env,
+                                                          jobject obj)
+    {
+        last_keypad_size = 0;
+        // qDebug() << "keypad hidden";
+    }
+
+    JNIEXPORT void JNICALL
+        Java_info_sioyek_sioyek_SioyekActivity_onAndroidKeypadShow(JNIEnv* env,
+            jobject obj,
+            jint height)
+    {
+        // qDebug() << "keypad shown height=" << height;
+        last_keypad_size = height;
+        // on_android_tts((int)begin, (int)end);
     }
 
     // JNIEXPORT void JNICALL

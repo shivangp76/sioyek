@@ -126,6 +126,7 @@ private:
 QString get_view_stylesheet_type_name(QAbstractItemView* view);
 
 class BaseSelectorWidget : public QWidget {
+    Q_OBJECT
 
 protected:
     BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent, MySortFilterProxyModel* custom_proxy_model=nullptr);
@@ -185,7 +186,9 @@ public:
 #endif
 
     virtual void on_config_file_changed();
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE virtual QRect get_prefered_rect(QRect parent_rect);
+    // virtual QRect on_parent_resize(QRect parent_rect);
 
 };
 
@@ -759,10 +762,13 @@ public:
 };
 
 class AndroidSelector : public QWidget {
+    Q_OBJECT
 public:
 
     AndroidSelector(QWidget* parent);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
     void update_context_properties();
     //    bool event(QEvent *event) override;
 private:

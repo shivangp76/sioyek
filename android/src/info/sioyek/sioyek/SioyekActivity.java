@@ -17,6 +17,7 @@ import android.widget.Toast;
 import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.app.ActivityManager;
+import android.view.ViewTreeObserver;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,6 +43,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.graphics.Rect;
+
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -77,6 +80,8 @@ public class SioyekActivity extends QtActivity{
     public static native boolean onResumeState(boolean isPlaying, boolean readingRest, int offset);
     public static native void onAndroidPause();
     public static native void onAndroidResume();
+    public static native void onAndroidKeypadHide();
+    public static native void onAndroidKeypadShow(int size);
 
     public static boolean isIntentPending;
     public static boolean isInitialized;
@@ -87,6 +92,40 @@ public class SioyekActivity extends QtActivity{
 
     private MediaController mediaController = null;
     private SessionToken ttsSessionToken = null;
+    private int prevKeypadHeight = 0;
+
+    public void setKeyboardListener(final Activity activity) {
+        final View rootView = activity.findViewById(android.R.id.content);
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                qDebug("sioyek: something happened");
+                Rect r = new Rect();
+                rootView.getWindowVisibleDisplayFrame(r);
+                int screenHeight = rootView.getRootView().getHeight();
+                int keypadHeight = screenHeight - r.bottom;
+                if (keypadHeight == 0 && prevKeypadHeight != 0){
+                    onAndroidKeypadHide();
+
+                }
+                if (keypadHeight != 0 && prevKeypadHeight == 0){
+                    onAndroidKeypadShow(keypadHeight);
+                }
+
+                prevKeypadHeight = keypadHeight;
+                // qDebug("sioyek: keypadHeight: " + keypadHeight);
+
+                // Rect r = new Rect();
+                // rootView.getWindowVisibleDisplayFrame(r);
+                // int screenHeight = rootView.getRootView().getHeight();
+                // int keypadHeight = screenHeight - r.bottom;
+
+                // nativeKeyboardHeightChanged(nativePtr, keypadHeight);
+            }
+        });
+    }
+
+    // private static native void nativeKeyboardHeightChanged(long nativePtr, int height);
 
     private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
         @Override
@@ -184,6 +223,8 @@ public class SioyekActivity extends QtActivity{
             catch(Exception e){
             }
         }
+
+        setKeyboardListener(this);
 
     }
 
