@@ -669,7 +669,7 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     //    QCoreApplication::postEvent(get_highlight_buttons(), resize_event->clone());
     //}
     if (draw_controls_) {
-        QCoreApplication::postEvent(get_draw_controls(), resize_event->clone());
+        handle_qobject_parent_resize(rect(), draw_controls_);
     }
     if (RESIZE_COMMAND.size() > 0) {
         execute_macro_if_enabled(RESIZE_COMMAND);
@@ -10027,6 +10027,7 @@ DrawControlsUI* MainWidget::get_draw_controls() {
     if (draw_controls_ == nullptr) {
         draw_controls_ = new DrawControlsUI(this);
         draw_controls_->hide();
+        handle_qobject_parent_resize(rect(), draw_controls_);
     }
 
     draw_controls_->controls_ui->set_scratchpad_mode(is_scratchpad_mode());

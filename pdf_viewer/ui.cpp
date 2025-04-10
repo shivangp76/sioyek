@@ -568,29 +568,6 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     //     this->setLayout(layout);
 }
 
-// void AndroidSelector::resizeEvent(QResizeEvent* resize_event) {
-//     QWidget::resizeEvent(resize_event);
-//     int parent_width = parentWidget()->width();
-//     int parent_height = parentWidget()->height();
-
-//     //float parent_width_in_centimeters = static_cast<float>(parent_width) / logicalDpiX() * 2.54f;
-//     //float parent_height_in_centimeters = static_cast<float>(parent_height) / logicalDpiY() * 2.54f;
-//     int ten_cm = static_cast<int>(12 * logicalDpiX() / 2.54f);
-
-//     int w = static_cast<int>(parent_width * 0.9f);
-//     int h = parent_height;
-
-//     w = std::min(w, ten_cm);
-//     h = std::min(h, static_cast<int>(ten_cm * 1.3f));
-
-//     main_menu->resize(w, h);
-//     setFixedSize(w, h);
-
-//     //    list_view->setFixedSize(parent_width * 0.9f, parent_height);
-//     move((parent_width - w) / 2, (parent_height - h) / 2);
-
-// }
-
 //TextSelectionButtons::TextSelectionButtons(MainWidget* parent) : QWidget(parent) {
 
 //    QHBoxLayout* layout = new QHBoxLayout();
@@ -625,16 +602,6 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
 //    this->setLayout(layout);
 //}
 
-//void TextSelectionButtons::resizeEvent(QResizeEvent* resize_event) {
-//    QWidget::resizeEvent(resize_event);
-//    int parent_width = parentWidget()->width();
-//    int parent_height = parentWidget()->height();
-
-//    setFixedSize(parent_width, parent_height / 5);
-////    list_view->setFixedSize(parent_width * 0.9f, parent_height);
-//    move(0, 0);
-
-//}
 
 TouchTextSelectionButtons::TouchTextSelectionButtons(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
@@ -682,6 +649,10 @@ DrawControlsUI::DrawControlsUI(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
     controls_ui = new TouchDrawControls(FREEHAND_SIZE, FREEHAND_TYPE, this);
     this->setAttribute(Qt::WA_NoMousePropagation);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(controls_ui);
+    setLayout(layout);
 
     QObject::connect(controls_ui, &TouchDrawControls::exitDrawModePressed, [&]() {
         main_widget->exit_freehand_drawing_mode();
@@ -738,18 +709,11 @@ DrawControlsUI::DrawControlsUI(MainWidget* parent) : QWidget(parent) {
 
 
 }
-void DrawControlsUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-
-    int pwidth = parentWidget()->width();
-    int width = parentWidget()->width() * 3 / 4;
-    int height = std::max(parentWidget()->height() / 16, 50);
-
-    controls_ui->move(0, 0);
-    controls_ui->resize(width, height);
-    move((pwidth - width) / 2, height);
-    setFixedSize(width, height);
-
+QRect DrawControlsUI::get_prefered_rect(QRect parent_rect){
+    int pwidth = parent_rect.width();
+    int width = parent_rect.width() * 3 / 4;
+    int height = std::max(parent_rect.height() / 16, 50);
+    return QRect((pwidth - width) / 2, height, width, height);
 }
 
 QRect AndroidSelector::get_prefered_rect(QRect parent_rect){

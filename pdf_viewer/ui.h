@@ -813,9 +813,11 @@ private:
 
 
 class DrawControlsUI : public QWidget {
+    Q_OBJECT
 public:
     DrawControlsUI(MainWidget* parent);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
     TouchDrawControls* controls_ui;
 private:
     MainWidget* main_widget;
