@@ -59,15 +59,14 @@ TouchListView{
 
         height: textContainer.height + 30
 
-        // color: mosuearea.pressed ? "#111" : "black"
-        // color: mosuearea.pressed ? "#222" : (listModel.mapToSource(listModel.index(index, 0)).row == _selected_index ? "#444": "black")
         color: getBackgroundColor(bookmark)
-        // color: bookmark.get_background_color()
 
         Item{
             id: textContainer
             anchors.left: parent.left
             anchors.right: parent.right
+            anchors.leftMargin: 20
+            anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             height: highlight_text.height + location_text.height
 
@@ -96,7 +95,7 @@ TouchListView{
                 horizontalAlignment: Text.AlignRight
                 anchors.rightMargin: 20
 
-                text: "<code>[" + fileNameOrPageNumber + "]</code>"
+                text: "<code>" + fileNameOrPageNumber + "</code>"
                 textFormat: Text.RichText
             }
 
