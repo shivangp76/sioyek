@@ -43,7 +43,6 @@ TouchSettings::TouchSettings(MainWidget* parent) : QWidget(parent) {
 
     quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchSettings.qml"));
 
-
     QObject::connect(
         dynamic_cast<QObject*>(quick_widget->rootObject()),
         SIGNAL(lightApplicationBackgroundClicked()),

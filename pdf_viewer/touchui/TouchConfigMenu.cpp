@@ -24,6 +24,7 @@ TouchConfigMenu::TouchConfigMenu(bool fuzzy, MainWidget* main_widget) :
     quick_widget = new QQuickWidget(this);
 
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
+    quick_widget->setClearColor(Qt::transparent);
     //quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
     //quick_widget->setClearColor(Qt::transparent);
 

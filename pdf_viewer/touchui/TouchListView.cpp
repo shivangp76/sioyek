@@ -13,6 +13,7 @@ void TouchListView::initialize(int selected_index, bool deletable, std::vector<s
     quick_widget = new QQuickWidget(this);
 
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
+    quick_widget->setClearColor(Qt::transparent);
     //quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
     //quick_widget->setClearColor(Qt::transparent);
 
