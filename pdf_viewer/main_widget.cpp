@@ -5942,7 +5942,9 @@ void MainWidget::handle_goto_bookmark(bool manual_only, bool chat) {
         //std::vector<BookMark> bookmarks;
 
         for (auto bookmark : bookmarks) {
-            option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
+            // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
+            // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.get_render_text().toStdWString());
+            option_names.push_back(bookmark.get_render_text().toStdWString());
             auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset() });
             option_location_wstrings.push_back(get_page_formatted_string(page + 1));
         }

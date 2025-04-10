@@ -47,7 +47,7 @@ Rectangle {
                 anchors.right: parent.right
                 font.pixelSize: 15
                 wrapMode: Text.Wrap
-                textFormat: Text.RichText
+                textFormat: Text.MarkdownText
             }
         }
         Item{
