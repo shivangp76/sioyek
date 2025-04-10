@@ -747,21 +747,6 @@ QRect TouchTextSelectionButtons::get_prefered_rect(QRect parent_rect){
     return QRect((pwidth - width) / 2, height, width, height);
 }
 
-// void TouchTextSelectionButtons::resizeEvent(QResizeEvent* resize_event) {
-//     QWidget::resizeEvent(resize_event);
-
-//     int pwidth = parentWidget()->width();
-//     int width = parentWidget()->width() * 3 / 4;
-//     int height = parentWidget()->height() / 16;
-
-//     buttons_ui->move(0, 0);
-//     buttons_ui->resize(width, height);
-//     move((pwidth - width) / 2, height);
-//     //    setFixedSize(0, 0);
-//     setFixedSize(width, height);
-
-// }
-
 HighlightButtons::HighlightButtons(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
     //layout = new QHBoxLayout();
@@ -769,6 +754,10 @@ HighlightButtons::HighlightButtons(MainWidget* parent) : QWidget(parent) {
     //delete_highlight_button = new QPushButton("Delete");
     //buttons_widget = new 
     highlight_buttons = new TouchHighlightButtons(main_widget->get_current_selected_highlight_type(), this);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(highlight_buttons);
+    setLayout(layout);
 
     QObject::connect(highlight_buttons, &TouchHighlightButtons::deletePressed, [&]() {
         main_widget->handle_delete_selected_highlight();
@@ -801,25 +790,41 @@ HighlightButtons::HighlightButtons(MainWidget* parent) : QWidget(parent) {
     //this->setLayout(layout);
 }
 
-void HighlightButtons::resizeEvent(QResizeEvent* resize_event) {
+QRect HighlightButtons::get_prefered_rect(QRect parent_rect){
 
-    QWidget::resizeEvent(resize_event);
-
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
     int dpi = physicalDpiY();
     float parent_height_in_centimeters = static_cast<float>(parent_height) / dpi * 2.54f;
 
     //int w = static_cast<int>(parent_width / 5);
     int w = parent_width;
-    int h = static_cast<int>(static_cast<float>(dpi) / 2.54f);
+    int h = static_cast<int>(static_cast<float>(dpi) * 2 / 2.54f);
     w = std::max(w, h * 6);
 
-    setFixedSize(w, h);
-    highlight_buttons->resize(w, h);
-    move((parent_width - w) / 2, parent_height / 5);
+    return QRect((parent_width - w) / 2, parent_height / 5, w, h);
 }
+
+// void HighlightButtons::resizeEvent(QResizeEvent* resize_event) {
+
+//     QWidget::resizeEvent(resize_event);
+
+//     int parent_width = parentWidget()->width();
+//     int parent_height = parentWidget()->height();
+
+//     int dpi = physicalDpiY();
+//     float parent_height_in_centimeters = static_cast<float>(parent_height) / dpi * 2.54f;
+
+//     //int w = static_cast<int>(parent_width / 5);
+//     int w = parent_width;
+//     int h = static_cast<int>(static_cast<float>(dpi) / 2.54f);
+//     w = std::max(w, h * 6);
+
+//     setFixedSize(w, h);
+//     highlight_buttons->resize(w, h);
+//     move((parent_width - w) / 2, parent_height / 5);
+// }
 
 
 SearchButtons::SearchButtons(MainWidget* parent) : QWidget(parent) {

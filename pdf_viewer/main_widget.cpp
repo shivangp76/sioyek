@@ -10054,6 +10054,7 @@ HighlightButtons* MainWidget::get_highlight_buttons() {
         }
     }
     auto btns = new HighlightButtons(this);
+    handle_qobject_parent_resize(rect(), btns);
     set_current_widget(btns);
     return btns;
 }
