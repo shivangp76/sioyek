@@ -437,6 +437,7 @@ int RENDERER_BACKEND = RenderBackend::SioyekRhiBackend;
 #elif defined(Q_OS_ANDROID)
 // int RENDERER_BACKEND = RenderBackend::SioyekQPainterRendererBackend;
 int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
+// int RENDERER_BACKEND = RenderBackend::SioyekRhiBackend;
 #else
 // int RENDERER_BACKEND = RenderBackend::SioyekOpenGLRendererBackend;
 int RENDERER_BACKEND = RenderBackend::SioyekRhiBackend;
