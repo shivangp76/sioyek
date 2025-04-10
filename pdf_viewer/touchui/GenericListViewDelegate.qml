@@ -4,8 +4,7 @@ import QtQuick.Controls 2.15
 
 
 
-Rectangle {
-    //property list<int> selection_range: model.get_highlight_positions(model.data(model.display.slice(0, 0), query.displayText))
+Rectangle { //property list<int> selection_range: model.get_highlight_positions(model.data(model.display.slice(0, 0), query.displayText))
     anchors {
         left: parent ? parent.left : undefined
         right: parent ? parent.right : undefined
@@ -124,5 +123,12 @@ Rectangle {
 
         }
 
+    }
+
+
+    Behavior on height {
+        NumberAnimation {
+            duration: 50
+        }
     }
 }
