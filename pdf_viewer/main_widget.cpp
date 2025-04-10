@@ -660,7 +660,8 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     }
 
     if (text_selection_buttons_) {
-        QCoreApplication::postEvent(get_text_selection_buttons(), resize_event->clone());
+        // QCoreApplication::postEvent(get_text_selection_buttons(), resize_event->clone());
+        handle_qobject_parent_resize(rect(), text_selection_buttons_);
     }
     if (search_buttons_) {
         QCoreApplication::postEvent(get_search_buttons(), resize_event->clone());
@@ -10017,6 +10018,7 @@ TouchTextSelectionButtons* MainWidget::get_text_selection_buttons() {
     if (text_selection_buttons_ == nullptr) {
         text_selection_buttons_ = new TouchTextSelectionButtons(this);
         text_selection_buttons_->hide();
+        handle_qobject_parent_resize(rect(), text_selection_buttons_);
     }
 
     return text_selection_buttons_;

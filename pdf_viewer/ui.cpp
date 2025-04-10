@@ -608,6 +608,10 @@ TouchTextSelectionButtons::TouchTextSelectionButtons(MainWidget* parent) : QWidg
     buttons_ui = new TouchCopyOptions(this);
     this->setAttribute(Qt::WA_NoMousePropagation);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(buttons_ui);
+    setLayout(layout);
+
     QObject::connect(buttons_ui, &TouchCopyOptions::copyClicked, [&]() {
         copy_to_clipboard(main_widget->main_document_view->get_selected_text());
         main_widget->clear_selection_indicators();
@@ -732,41 +736,31 @@ QRect AndroidSelector::get_prefered_rect(QRect parent_rect){
     int offset_x = (parent_width - w) / 2;
     int offset_y = (parent_height - h) / 2;
     return QRect(offset_x, offset_y, w, h);
-    // main_menu->resize(w, h);
-    // setFixedSize(w, h);
-
-    // //    list_view->setFixedSize(parent_width * 0.9f, parent_height);
-    // move((parent_width - w) / 2, (parent_height - h) / 2);
-
-    // int pwidth = parent_rect.width();
-    // int width = parent_rect.width() * 3 / 4;
-    // int height = std::max(parent_rect.height() / 16, 50);
-
-    // int offset_x = (pwidth - width) / 2;
-    // int offset_y = height;
-
-    // return QRect(offset_x, offset_y, width, height);
-
-    // controls_ui->move(0, 0);
-    // controls_ui->resize(width, height);
-    // move((pwidth - width) / 2, height);
-    // setFixedSize(width, height);
 }
 
-void TouchTextSelectionButtons::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
+QRect TouchTextSelectionButtons::get_prefered_rect(QRect parent_rect){
+    // QWidget::resizeEvent(resize_event);
 
-    int pwidth = parentWidget()->width();
-    int width = parentWidget()->width() * 3 / 4;
-    int height = parentWidget()->height() / 16;
-
-    buttons_ui->move(0, 0);
-    buttons_ui->resize(width, height);
-    move((pwidth - width) / 2, height);
-    //    setFixedSize(0, 0);
-    setFixedSize(width, height);
-
+    int pwidth = parent_rect.width();
+    int width = parent_rect.width() * 3 / 4;
+    int height = parent_rect.height() / 16;
+    return QRect((pwidth - width) / 2, height, width, height);
 }
+
+// void TouchTextSelectionButtons::resizeEvent(QResizeEvent* resize_event) {
+//     QWidget::resizeEvent(resize_event);
+
+//     int pwidth = parentWidget()->width();
+//     int width = parentWidget()->width() * 3 / 4;
+//     int height = parentWidget()->height() / 16;
+
+//     buttons_ui->move(0, 0);
+//     buttons_ui->resize(width, height);
+//     move((pwidth - width) / 2, height);
+//     //    setFixedSize(0, 0);
+//     setFixedSize(width, height);
+
+// }
 
 HighlightButtons::HighlightButtons(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
