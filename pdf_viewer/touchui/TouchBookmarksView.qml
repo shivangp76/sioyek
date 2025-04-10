@@ -25,10 +25,10 @@ TouchListView{
             if (bgColor === undefined){
                 bgColor = Qt.rgba(0.0, 0.0, 0.0, 1);
             }
-            if (mosuearea.pressed){
-                // return a lighter color
-                return Qt.rgba(bgColor.r + 0.1, bgColor.g + 0.1, bgColor.b + 0.1, 1);
-            }
+            // if (mosuearea.pressed){
+            //     // return a lighter color
+            //     return Qt.rgba(bgColor.r + 0.1, bgColor.g + 0.1, bgColor.b + 0.1, 1);
+            // }
             return bgColor;
         }
 
