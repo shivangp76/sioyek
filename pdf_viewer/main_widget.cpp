@@ -640,42 +640,32 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
         update_current_history_index();
     }
 
+    resize_child_widgets_with_window_rect(rect());
+
+
+    if (RESIZE_COMMAND.size() > 0) {
+        execute_macro_if_enabled(RESIZE_COMMAND);
+    }
+
+}
+
+void MainWidget::resize_child_widgets_with_window_rect(QRect window_rect){
     if ((current_widget_stack.size() > 0)) {
         for (auto w : current_widget_stack) {
             handle_qobject_parent_resize(rect(), w);
-
-            // BaseSelectorWidget* selector_widget = dynamic_cast<BaseSelectorWidget*>(w);
-            // if (selector_widget){
-
-            //     selector_widget->on_parent_resize(rect());
-
-            //     // QRect prefered_rect = selector_widget->get_prefered_rect(rect());
-            //     // selector_widget->move(prefered_rect.x(), prefered_rect.y());
-            //     // selector_widget->resize(prefered_rect.width(), prefered_rect.height());
-            // }
-            // else{
-            //     QCoreApplication::postEvent(w, resize_event->clone());
-            // }
         }
     }
 
+
     if (text_selection_buttons_) {
-        // QCoreApplication::postEvent(get_text_selection_buttons(), resize_event->clone());
         handle_qobject_parent_resize(rect(), text_selection_buttons_);
     }
     if (search_buttons_) {
         handle_qobject_parent_resize(rect(), get_search_buttons());
     }
-    //if (highlight_buttons_) {
-    //    QCoreApplication::postEvent(get_highlight_buttons(), resize_event->clone());
-    //}
     if (draw_controls_) {
         handle_qobject_parent_resize(rect(), draw_controls_);
     }
-    if (RESIZE_COMMAND.size() > 0) {
-        execute_macro_if_enabled(RESIZE_COMMAND);
-    }
-
 }
 
 bool MainWidget::handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpos){
@@ -8100,12 +8090,14 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << qobject_has_method(this, "resize");
-    qDebug() << qobject_has_method(this, "toggle_dark_mode");
-    qDebug() << qobject_has_method(this, "lansd");
-    // doc()->persist_drawings_binary(true);
-    // doc()->load_drawings_binary();
-    // doc()->persist_drawings_binary(true);
+
+    QRect full_rect = rect();
+    QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
+    if ((current_widget_stack.size() > 0)) {
+        for (auto w : current_widget_stack) {
+            handle_qobject_parent_resize(half_rect, w);
+        }
+    }
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

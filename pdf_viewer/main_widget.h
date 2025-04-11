@@ -1226,6 +1226,7 @@ public:
     void toggle_mouse_ruler_mode();
     void show_tts_voice_selector();
     void handle_pinch(WindowPos center_window_pos, float scale);
+    void resize_child_widgets_with_window_rect(QRect window_rect);
 
 
 public slots:
