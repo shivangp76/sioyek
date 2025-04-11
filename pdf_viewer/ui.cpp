@@ -739,8 +739,6 @@ QRect AndroidSelector::get_prefered_rect(QRect parent_rect){
 }
 
 QRect TouchTextSelectionButtons::get_prefered_rect(QRect parent_rect){
-    // QWidget::resizeEvent(resize_event);
-
     int pwidth = parent_rect.width();
     int width = parent_rect.width() * 3 / 4;
     int height = parent_rect.height() / 16;
@@ -863,15 +861,6 @@ void ConfigUI::set_should_persist(bool val) {
     this->should_persist = val;
 }
 
-// void ConfigUI::resizeEvent(QResizeEvent* resize_event) {
-//     QWidget::resizeEvent(resize_event);
-//     int parent_width = parentWidget()->width();
-//     int parent_height = parentWidget()->height();
-
-//     setFixedSize(2 * parent_width / 3, parent_height / 2);
-//     move(parent_width / 6, parent_height / 4);
-// }
-
 QRect ConfigUI::get_prefered_rect(QRect parent_rect){
     int parent_width = parent_rect.width();
     int parent_height = parent_rect.height();
@@ -916,28 +905,6 @@ Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* conf
 
 }
 
-// void Color3ConfigUI::resizeEvent(QResizeEvent* resize_event) {
-//     QWidget::resizeEvent(resize_event);
-//     int parent_width = parentWidget()->width();
-//     int parent_height = parentWidget()->height();
-
-//     setFixedSize(2 * parent_width / 3, parent_height / 2);
-//     color_picker->resize(width(), height());
-
-//     move(parent_width / 6, parent_height / 4);
-// }
-
-// QRect Color3ConfigUI::get_prefered_rect(QRect parent_rect){
-//     int parent_width = parent_rect.width();
-//     int parent_height = parent_rect.height();
-
-//     return QRect(parent_width / 6, parent_height / 4, 2 * parent_width / 3, parent_height / 2);
-//     // setFixedSize(2 * parent_width / 3, parent_height / 2);
-//     // color_picker->resize(width(), height());
-
-//     // move(parent_width / 6, parent_height / 4);
-// }
-
 Color4ConfigUI::Color4ConfigUI(std::string name, MainWidget* parent, float* config_location_) : ConfigUI(name, parent) {
     color_location = config_location_;
     QColor initial_color = convert_float4_to_qcolor(color_location);
@@ -973,6 +940,10 @@ Color4ConfigUI::Color4ConfigUI(std::string name, MainWidget* parent, float* conf
 MacroConfigUI::MacroConfigUI(std::string name, MainWidget* parent, std::wstring* config_location, std::wstring initial_macro) : ConfigUI(name, parent) {
 
     macro_editor = new TouchMacroEditor(utf8_encode(initial_macro), this, parent);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(macro_editor);
+    setLayout(layout);
 
     connect(macro_editor, &TouchMacroEditor::macroConfirmed, [&, config_location](std::string macro) {
         //convert_qcolor_to_float4(color, color_location);
@@ -1157,7 +1128,6 @@ BoolConfigUI::BoolConfigUI(std::string name_, MainWidget* parent, bool* config_l
 }
 
 QRect BoolConfigUI::get_prefered_rect(QRect parent_rect){
-    // QWidget::resizeEvent(resize_event);
     int parent_width = parent_rect.width();
     int parent_height = parent_rect.height();
 
@@ -1172,17 +1142,13 @@ QRect BoolConfigUI::get_prefered_rect(QRect parent_rect){
     return QRect((parent_width - w) / 2, (parent_height - h) / 2, w, h);
 }
 
-void MacroConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+QRect MacroConfigUI::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
     int w = 2 * parent_width / 3;
     int h = parent_height / 2;
-    macro_editor->resize(w, h);
-
-    setFixedSize(w, h);
-    move(parent_width / 6, parent_height / 4);
+    return QRect(parent_width / 6, parent_height / 4, w, h);
 }
 
 void FloatConfigUI::resizeEvent(QResizeEvent* resize_event) {
@@ -1256,14 +1222,6 @@ void TouchCommandSelector::resizeEvent(QResizeEvent* resize_event) {
     resize(w, h);
     QWidget::resizeEvent(resize_event);
 
-    // QWidget::resizeEvent(resize_event);
-
-    // int parent_width = parentWidget()->size().width();
-    // int parent_height = parentWidget()->size().height();
-
-    // resize(parent_width * 0.9f, parent_height);
-    // move(parent_width * 0.05f, 0);
-    // list_view->resize(parent_width * 0.9f, parent_height);
 }
 
 
@@ -1889,11 +1847,6 @@ QRect BaseSelectorWidget::get_prefered_rect(QRect parent_rect){
 //     }
 // }
 
-// void BaseSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
-//     QWidget::resizeEvent(resize_event);
-//     on_resize();
-// }
-
 void BaseSelectorWidget::on_resize(){
     // int parent_width = parentWidget()->width();
     // int parent_height = parentWidget()->height();
@@ -2516,7 +2469,6 @@ void BaseCustomSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
     //clear_ca
 
     BaseSelectorWidget::resizeEvent(resize_event);
-    //QWidget::resizeEvent(resize_event);
     update_render();
 }
 

@@ -974,7 +974,8 @@ public slots:
 class MacroConfigUI : public ConfigUI {
 public:
     MacroConfigUI(std::string name, MainWidget* parent, std::wstring* config_location, std::wstring initial_macro);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 private:
     TouchMacroEditor* macro_editor = nullptr;
 };
