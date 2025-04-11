@@ -4377,6 +4377,7 @@ void MainWidget::push_current_widget(QWidget* new_widget, bool hide_previous) {
         current_widget_stack.back()->hide();
     }
     current_widget_stack.push_back(new_widget);
+    handle_qobject_parent_resize(rect(), new_widget);
 }
 
 bool MainWidget::pop_current_widget(bool canceled) {

@@ -914,7 +914,8 @@ private:
 class BoolConfigUI : public ConfigUI {
 public:
     BoolConfigUI(std::string name, MainWidget* parent, bool* config_location, QString name_);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    // void resizeEvent(QResizeEvent* resize_event) override;
 private:
 
     bool* bool_location;
@@ -1000,7 +1001,6 @@ private:
 };
 
 class AudioUI : public ConfigUI {
-    Q_OBJECT
 public:
     AudioUI(MainWidget* parent);
     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);

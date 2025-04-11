@@ -1135,6 +1135,11 @@ BoolConfigUI::BoolConfigUI(std::string name_, MainWidget* parent, bool* config_l
     bool_location = config_location;
 
     checkbox = new TouchCheckbox(qname, *config_location, this);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(checkbox);
+    setLayout(layout);
+
     QObject::connect(checkbox, &TouchCheckbox::itemSelected, [&](bool new_state) {
         *bool_location = static_cast<bool>(new_state);
         main_widget->invalidate_render();
@@ -1151,10 +1156,10 @@ BoolConfigUI::BoolConfigUI(std::string name_, MainWidget* parent, bool* config_l
         });
 }
 
-void BoolConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+QRect BoolConfigUI::get_prefered_rect(QRect parent_rect){
+    // QWidget::resizeEvent(resize_event);
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
     int five_cm = static_cast<int>(12 * logicalDpiX() / 2.54f);
 
@@ -1164,10 +1169,7 @@ void BoolConfigUI::resizeEvent(QResizeEvent* resize_event) {
     w = std::min(w, five_cm);
     h = std::min(h, five_cm);
 
-    checkbox->resize(w, h);
-
-    setFixedSize(w, h);
-    move((parent_width - w) / 2, (parent_height - h) / 2);
+    return QRect((parent_width - w) / 2, (parent_height - h) / 2, w, h);
 }
 
 void MacroConfigUI::resizeEvent(QResizeEvent* resize_event) {
