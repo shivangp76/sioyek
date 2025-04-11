@@ -664,7 +664,7 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
         handle_qobject_parent_resize(rect(), text_selection_buttons_);
     }
     if (search_buttons_) {
-        QCoreApplication::postEvent(get_search_buttons(), resize_event->clone());
+        handle_qobject_parent_resize(rect(), get_search_buttons());
     }
     //if (highlight_buttons_) {
     //    QCoreApplication::postEvent(get_highlight_buttons(), resize_event->clone());
@@ -10041,6 +10041,7 @@ SearchButtons* MainWidget::get_search_buttons() {
     if (search_buttons_ == nullptr) {
         search_buttons_ = new SearchButtons(this);
         search_buttons_->hide();
+        handle_qobject_parent_resize(rect(), search_buttons_);
     }
 
     return search_buttons_;

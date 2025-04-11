@@ -806,42 +806,14 @@ QRect HighlightButtons::get_prefered_rect(QRect parent_rect){
     return QRect((parent_width - w) / 2, parent_height / 5, w, h);
 }
 
-// void HighlightButtons::resizeEvent(QResizeEvent* resize_event) {
-
-//     QWidget::resizeEvent(resize_event);
-
-//     int parent_width = parentWidget()->width();
-//     int parent_height = parentWidget()->height();
-
-//     int dpi = physicalDpiY();
-//     float parent_height_in_centimeters = static_cast<float>(parent_height) / dpi * 2.54f;
-
-//     //int w = static_cast<int>(parent_width / 5);
-//     int w = parent_width;
-//     int h = static_cast<int>(static_cast<float>(dpi) / 2.54f);
-//     w = std::max(w, h * 6);
-
-//     setFixedSize(w, h);
-//     highlight_buttons->resize(w, h);
-//     move((parent_width - w) / 2, parent_height / 5);
-// }
-
 
 SearchButtons::SearchButtons(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
-    //layout = new QHBoxLayout(this);
-
-//    delete_highlight_button = new QPushButton("Delete");
-//    QObject::connect(delete_highlight_button, &QPushButton::clicked, [&](){
-//        main_widget->handle_delete_selected_highlight();
-//        hide();
-//        main_widget->highlight_buttons = nullptr;
-//        deleteLater();
-//    });
-    //next_match_button = new QPushButton("next");
-    //prev_match_button = new QPushButton("prev");
-    //goto_initial_location_button = new QPushButton("initial");
     buttons_widget = new TouchSearchButtons(this);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(buttons_widget);
+    setLayout(layout);
 
     QObject::connect(buttons_widget, &TouchSearchButtons::nextPressed, [&]() {
         //main_widget->opengl_widget->goto_search_result(1);
@@ -868,20 +840,31 @@ SearchButtons::SearchButtons(MainWidget* parent) : QWidget(parent) {
     //this->setLayout(layout);
 }
 
-void SearchButtons::resizeEvent(QResizeEvent* resize_event) {
+// void SearchButtons::resizeEvent(QResizeEvent* resize_event) {
 
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+//     QWidget::resizeEvent(resize_event);
+//     int parent_width = parentWidget()->width();
+//     int parent_height = parentWidget()->height();
 
-    int width = 2 * parentWidget()->width() / 3;
-    int height = parentWidget()->height() / 12;
+//     int width = 2 * parentWidget()->width() / 3;
+//     int height = parentWidget()->height() / 12;
 
 
-    buttons_widget->resize(width, height);
-    setFixedSize(width, height);
-    //layout->update();
-    move((parent_width - width) / 2, parent_height - 3 * height / 2);
+//     buttons_widget->resize(width, height);
+//     setFixedSize(width, height);
+//     //layout->update();
+//     move((parent_width - width) / 2, parent_height - 3 * height / 2);
+// }
+
+QRect SearchButtons::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+
+    int width = 2 * parent_rect.width() / 3;
+    int height = parent_rect.height() / 12;
+
+
+    return QRect((parent_width - width) / 2, parent_height - 3 * height / 2, width, height);
 }
 
 //ConfigUI::ConfigUI(MainWidget* parent) : QQuickWidget(parent){
