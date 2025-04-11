@@ -1076,37 +1076,23 @@ PageSelectorUI::PageSelectorUI(MainWidget* parent, int current, int num_pages) :
 
 }
 
-// void PageSelectorUI::resizeEvent(QResizeEvent* resize_event) {
-//     QWidget::resizeEvent(resize_event);
-//     int parent_width = parentWidget()->width();
-//     int parent_height = parentWidget()->height();
-
-//     int w = 2 * parent_width / 3;
-//     int h = parent_height / 6;
-//     page_selector->resize(w, h);
-
-//     setFixedSize(w, h);
-//     move((parent_width - w) / 2, parent_height - 2 * h);
-// }
-
 QRect PageSelectorUI::get_prefered_rect(QRect parent_rect){
-    // QWidget::resizeEvent(resize_event);
     int parent_width = parent_rect.width();
     int parent_height = parent_rect.height();
 
     int w = 2 * parent_width / 3;
     int h = parent_height / 6;
     return QRect((parent_width - w) / 2, parent_height - 2 * h, w, h);
-    // page_selector->resize(w, h);
-
-    // setFixedSize(w, h);
-    // move((parent_width - w) / 2, parent_height - 2 * h);
 }
 
 AudioUI::AudioUI(MainWidget* parent) : ConfigUI("", parent) {
 
     buttons = new TouchAudioButtons(this);
     buttons->set_rate(TTS_RATE);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(buttons);
+    setLayout(layout);
 
     QObject::connect(buttons, &TouchAudioButtons::playPressed, [&]() {
         //main_widget->main_document_view->goto_page(val);
@@ -1133,36 +1119,16 @@ AudioUI::AudioUI(MainWidget* parent) : ConfigUI("", parent) {
         main_widget->handle_pause();
         main_widget->handle_play();
         });
-    //QObject::connect(buttons, &TouchAudioButtons::speedIncreasePressed, [&](){
-    //    TTS_RATE += 0.1;
-    //    if (TTS_RATE > 1.0f) {
-    //        TTS_RATE = 1.0f;
-    //    }
-    //    buttons->set_rate(TTS_RATE);
-    //});
-
-    //QObject::connect(buttons, &TouchAudioButtons::speedDecreasePressed, [&](){
-    //    TTS_RATE -= 0.1;
-    //    if (TTS_RATE < -1.0f) {
-    //        TTS_RATE = -1.0f;
-    //    }
-    //    buttons->set_rate(TTS_RATE);
-    //});
 }
 
-void AudioUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+QRect AudioUI::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
     int w = parent_width;
     int h = parent_height / 6;
-    buttons->resize(w, h);
-
-    setFixedSize(w, h);
-    move((parent_width - w) / 2, parent_height - h);
+    return QRect((parent_width - w) / 2, parent_height - h, w, h);
 }
-
 
 
 BoolConfigUI::BoolConfigUI(std::string name_, MainWidget* parent, bool* config_location, QString qname) : ConfigUI(name_, parent) {

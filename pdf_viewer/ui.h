@@ -1000,9 +1000,11 @@ private:
 };
 
 class AudioUI : public ConfigUI {
+    Q_OBJECT
 public:
     AudioUI(MainWidget* parent);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    // void resizeEvent(QResizeEvent* resize_event) override;
     TouchAudioButtons* buttons = nullptr;
 };
 
