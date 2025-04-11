@@ -27,8 +27,8 @@ TouchConfigMenu::TouchConfigMenu(bool fuzzy, MainWidget* main_widget) :
     setLayout(layout);
 
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
+    quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
     quick_widget->setClearColor(Qt::transparent);
-    //quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
     //quick_widget->setClearColor(Qt::transparent);
 
     quick_widget->rootContext()->setContextProperty("_model", QVariant::fromValue(proxy_model));
