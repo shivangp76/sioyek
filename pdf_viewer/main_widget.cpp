@@ -591,6 +591,7 @@ bool MainWidget::is_current_document_available_on_server() {
 }
 
 void MainWidget::resizeEvent(QResizeEvent* resize_event) {
+
     QWidget::resizeEvent(resize_event);
 #ifdef SIOYEK_IOS
     opengl_widget->get_widget()->resize(resize_event->size());
@@ -640,7 +641,15 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
         update_current_history_index();
     }
 
-    resize_child_widgets_with_window_rect(rect());
+    QRect full_rect = rect();
+    QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
+
+    if (is_onscreen_keyboard_visible){
+        resize_child_widgets_with_window_rect(half_rect);
+    }
+    else{
+        resize_child_widgets_with_window_rect(rect());
+    }
 
 
     if (RESIZE_COMMAND.size() > 0) {
@@ -1564,19 +1573,27 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     });
     registerPinchGestureForWidget(this, ios_pinch_callback);
 #endif
-#ifdef SIOYEK_MOBILE
+#ifdef SIOYEK_IOS
     QObject::connect(QGuiApplication::inputMethod(), &QInputMethod::visibleChanged, [&](){
-        bool is_onscreen_keyboard_visible =  QGuiApplication::inputMethod()->isVisible();
-
-        QRect full_rect = rect();
-        QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
-
-        if (is_onscreen_keyboard_visible){
-            QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, half_rect));
+        bool is_visible =  QGuiApplication::inputMethod()->isVisible();
+        if (is_visible){
+            QMetaObject::invokeMethod(this, "on_onscreen_keyboard_shown", Qt::QueuedConnection);
         }
         else{
-            QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, full_rect));
+            QMetaObject::invokeMethod(this, "on_onscreen_keyboard_hidden", Qt::QueuedConnection);
         }
+
+        // qDebug() << "isvisible: " << is_onscreen_keyboard_visible;
+
+        // QRect full_rect = rect();
+        // QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
+
+        // if (is_onscreen_keyboard_visible){
+        //     QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, half_rect));
+        // }
+        // else{
+        //     QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, full_rect));
+        // }
             // Q_ARG(QString, macro_string),
 
         // qDebug() << "creating single shot with " << is_onscreen_keyboard_visible;
@@ -14560,4 +14577,17 @@ void MainWidget::ai_magic_drawing_ask(){
         );
 
     }
+}
+
+void MainWidget::on_onscreen_keyboard_shown(){
+    is_onscreen_keyboard_visible = true;
+    QRect full_rect = rect();
+    QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
+    QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, half_rect));
+}
+
+void MainWidget::on_onscreen_keyboard_hidden(){
+    is_onscreen_keyboard_visible =  false;
+    QRect full_rect = rect();
+    QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, full_rect));
 }

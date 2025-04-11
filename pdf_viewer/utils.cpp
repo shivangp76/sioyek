@@ -3335,8 +3335,19 @@ extern "C" {
         Java_info_sioyek_sioyek_SioyekActivity_onAndroidKeypadHide(JNIEnv* env,
                                                           jobject obj)
     {
+        // if (is_onscreen_keyboard_visible){
+        //     QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, half_rect));
+        // }
+        // else{
+        //     QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, full_rect));
+        // }
+
         last_keypad_size = 0;
-        // qDebug() << "keypad hidden";
+        qDebug() << "myandroid: keypad hidden";
+
+        if (windows.size() > 0){
+            QMetaObject::invokeMethod(windows[0], "on_onscreen_keyboard_hidden", Qt::QueuedConnection);
+        }
     }
 
     JNIEXPORT void JNICALL
@@ -3344,9 +3355,11 @@ extern "C" {
             jobject obj,
             jint height)
     {
-        // qDebug() << "keypad shown height=" << height;
+        qDebug() << "myandroid: keypad shown height=" << height;
         last_keypad_size = height;
-        // on_android_tts((int)begin, (int)end);
+        if (windows.size() > 0){
+            QMetaObject::invokeMethod(windows[0], "on_onscreen_keyboard_shown", Qt::QueuedConnection);
+        }
     }
 
     // JNIEXPORT void JNICALL

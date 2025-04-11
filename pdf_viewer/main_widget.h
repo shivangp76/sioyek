@@ -196,6 +196,7 @@ public:
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
+    bool is_onscreen_keyboard_visible = false;
 
     //LastDocumentChecksum last_document_checksum;
 
@@ -1227,6 +1228,8 @@ public:
     void show_tts_voice_selector();
     void handle_pinch(WindowPos center_window_pos, float scale);
     Q_INVOKABLE void resize_child_widgets_with_window_rect(QRect window_rect);
+    Q_INVOKABLE void on_onscreen_keyboard_shown();
+    Q_INVOKABLE void on_onscreen_keyboard_hidden();
 
 
 public slots:
