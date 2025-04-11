@@ -1251,7 +1251,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     //QObject::connect(dynamic_cast<MyLineEdit*>(text_command_line_edit), &MyLineEdit::next_suggestion, this, &MainWidget::on_next_text_suggestion);
     //QObject::connect(dynamic_cast<MyLineEdit*>(text_command_line_edit), &MyLineEdit::prev_suggestion, this, &MainWidget::on_prev_text_suggestion);
     
-    on_command_done = [&](std::string command_name, std::string query_text, bool is_config) {
+    on_command_done = [&, config_manager](std::string command_name, std::string query_text, bool is_config) {
         QString qquery = QString::fromStdString(query_text);
         if (qquery.startsWith("==")) {
             execute_macro_if_enabled(L"show_touch_ui_for_config(" + utf8_decode(command_name) + L")");
