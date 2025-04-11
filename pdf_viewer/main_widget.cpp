@@ -6770,7 +6770,7 @@ void MainWidget::handle_open_prev_doc() {
             }
         }
 
-        set_filtered_select_menu<OpenedBookInfo>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
+        set_filtered_select_menu<OpenedBookInfo>(this, true, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
             [&, handle_select_fn](OpenedBookInfo* info) {
                 handle_select_fn(info->checksum, info->offset_y);
             },
