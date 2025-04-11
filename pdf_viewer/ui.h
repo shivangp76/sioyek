@@ -985,7 +985,8 @@ private:
 class IntConfigUI : public ConfigUI {
 public:
     IntConfigUI(std::string name, MainWidget* parent, int* config_location, int min_value, int max_value);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    // void resizeEvent(QResizeEvent* resize_event) override;
 private:
     int* int_location;
     int min_value;
