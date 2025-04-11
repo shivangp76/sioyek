@@ -1666,6 +1666,7 @@ private:
 };
 
 class SioyekBookmarkTextBrowser : public QWidget {
+    Q_OBJECT
 private:
     MainWidget* main_widget = nullptr;
     //SioyekDocumentationTextBrowser* text_browser = nullptr;
@@ -1685,7 +1686,8 @@ public:
 
     SioyekBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content, bool chat);
 
-    void handle_resize();
+    // void handle_resize();
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
     void update_text(QString new_text);
     void set_follow_output(bool val);
 

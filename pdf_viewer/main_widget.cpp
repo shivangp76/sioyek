@@ -14133,7 +14133,7 @@ void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, boo
         }
 
         set_current_widget(text_browser);
-        text_browser->handle_resize();
+        // text_browser->handle_resize();
         text_browser->show();
 
     }

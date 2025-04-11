@@ -4253,18 +4253,22 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
 }
 
 
-void SioyekBookmarkTextBrowser::handle_resize() {
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
-    setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height * MENU_SCREEN_HEIGHT_RATIO);
-    move(parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2, parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2);
+QRect SioyekBookmarkTextBrowser::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+    return QRect(
+        parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2,
+        parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2,
+        parent_width * MENU_SCREEN_WDITH_RATIO,
+        parent_height * MENU_SCREEN_HEIGHT_RATIO
+        );
 }
 
 void SioyekBookmarkTextBrowser::resizeEvent(QResizeEvent* resize_event) {
 
     QWidget::resizeEvent(resize_event);
 
-    handle_resize();
+    // handle_resize();
 
     QPainterPath path;
     path.addRoundedRect(rect(), 4, 4);
