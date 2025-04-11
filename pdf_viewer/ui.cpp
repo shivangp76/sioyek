@@ -831,30 +831,8 @@ SearchButtons::SearchButtons(MainWidget* parent) : QWidget(parent) {
         main_widget->goto_mark('/');
         main_widget->invalidate_render();
         });
-
-
-    //layout->addWidget(next_match_button);
-    //layout->addWidget(goto_initial_location_button);
-    //layout->addWidget(prev_match_button);
-
-    //this->setLayout(layout);
 }
 
-// void SearchButtons::resizeEvent(QResizeEvent* resize_event) {
-
-//     QWidget::resizeEvent(resize_event);
-//     int parent_width = parentWidget()->width();
-//     int parent_height = parentWidget()->height();
-
-//     int width = 2 * parentWidget()->width() / 3;
-//     int height = parentWidget()->height() / 12;
-
-
-//     buttons_widget->resize(width, height);
-//     setFixedSize(width, height);
-//     //layout->update();
-//     move((parent_width - width) / 2, parent_height - 3 * height / 2);
-// }
 
 QRect SearchButtons::get_prefered_rect(QRect parent_rect){
     int parent_width = parent_rect.width();
@@ -885,20 +863,32 @@ void ConfigUI::set_should_persist(bool val) {
     this->should_persist = val;
 }
 
-void ConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+// void ConfigUI::resizeEvent(QResizeEvent* resize_event) {
+//     QWidget::resizeEvent(resize_event);
+//     int parent_width = parentWidget()->width();
+//     int parent_height = parentWidget()->height();
 
-    setFixedSize(2 * parent_width / 3, parent_height / 2);
-    move(parent_width / 6, parent_height / 4);
+//     setFixedSize(2 * parent_width / 3, parent_height / 2);
+//     move(parent_width / 6, parent_height / 4);
+// }
+
+QRect ConfigUI::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+
+    return QRect(parent_width / 6, parent_height / 4, 2 * parent_width / 3, parent_height / 2);
 }
 
 Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* config_location_) : ConfigUI(name, parent) {
     color_location = config_location_;
     QColor initial_color = convert_float3_to_qcolor(color_location);
+
     color_picker = new QColorDialog(initial_color, this);
     color_picker->show();
+
+    // QVBoxLayout* layout = new QVBoxLayout(this);
+    // layout->addWidget(color_picker);
+    // setLayout(layout)
 
     connect(color_picker, &QColorDialog::finished, [&]() {
         main_widget->pop_current_widget();
@@ -926,16 +916,27 @@ Color3ConfigUI::Color3ConfigUI(std::string name, MainWidget* parent, float* conf
 
 }
 
-void Color3ConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+// void Color3ConfigUI::resizeEvent(QResizeEvent* resize_event) {
+//     QWidget::resizeEvent(resize_event);
+//     int parent_width = parentWidget()->width();
+//     int parent_height = parentWidget()->height();
 
-    setFixedSize(2 * parent_width / 3, parent_height / 2);
-    color_picker->resize(width(), height());
+//     setFixedSize(2 * parent_width / 3, parent_height / 2);
+//     color_picker->resize(width(), height());
 
-    move(parent_width / 6, parent_height / 4);
-}
+//     move(parent_width / 6, parent_height / 4);
+// }
+
+// QRect Color3ConfigUI::get_prefered_rect(QRect parent_rect){
+//     int parent_width = parent_rect.width();
+//     int parent_height = parent_rect.height();
+
+//     return QRect(parent_width / 6, parent_height / 4, 2 * parent_width / 3, parent_height / 2);
+//     // setFixedSize(2 * parent_width / 3, parent_height / 2);
+//     // color_picker->resize(width(), height());
+
+//     // move(parent_width / 6, parent_height / 4);
+// }
 
 Color4ConfigUI::Color4ConfigUI(std::string name, MainWidget* parent, float* config_location_) : ConfigUI(name, parent) {
     color_location = config_location_;
