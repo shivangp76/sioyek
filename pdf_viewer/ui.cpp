@@ -1065,6 +1065,10 @@ PageSelectorUI::PageSelectorUI(MainWidget* parent, int current, int num_pages) :
 
     page_selector = new TouchPageSelector(0, num_pages - 1, current, this);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(page_selector);
+    setLayout(layout);
+
     QObject::connect(page_selector, &TouchPageSelector::pageSelected, [&](int val) {
         main_widget->goto_page_with_page_number(val);
         main_widget->invalidate_render();
@@ -1072,17 +1076,31 @@ PageSelectorUI::PageSelectorUI(MainWidget* parent, int current, int num_pages) :
 
 }
 
-void PageSelectorUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+// void PageSelectorUI::resizeEvent(QResizeEvent* resize_event) {
+//     QWidget::resizeEvent(resize_event);
+//     int parent_width = parentWidget()->width();
+//     int parent_height = parentWidget()->height();
+
+//     int w = 2 * parent_width / 3;
+//     int h = parent_height / 6;
+//     page_selector->resize(w, h);
+
+//     setFixedSize(w, h);
+//     move((parent_width - w) / 2, parent_height - 2 * h);
+// }
+
+QRect PageSelectorUI::get_prefered_rect(QRect parent_rect){
+    // QWidget::resizeEvent(resize_event);
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
     int w = 2 * parent_width / 3;
     int h = parent_height / 6;
-    page_selector->resize(w, h);
+    return QRect((parent_width - w) / 2, parent_height - 2 * h, w, h);
+    // page_selector->resize(w, h);
 
-    setFixedSize(w, h);
-    move((parent_width - w) / 2, parent_height - 2 * h);
+    // setFixedSize(w, h);
+    // move((parent_width - w) / 2, parent_height - 2 * h);
 }
 
 AudioUI::AudioUI(MainWidget* parent) : ConfigUI("", parent) {

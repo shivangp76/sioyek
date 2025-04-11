@@ -990,9 +990,11 @@ private:
 };
 
 class PageSelectorUI : public ConfigUI {
+    Q_OBJECT
 public:
     PageSelectorUI(MainWidget* parent, int current, int num_pages);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    // void resizeEvent(QResizeEvent* resize_event) override;
 private:
     TouchPageSelector* page_selector = nullptr;
 };
