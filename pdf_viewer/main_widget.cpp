@@ -652,19 +652,19 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 void MainWidget::resize_child_widgets_with_window_rect(QRect window_rect){
     if ((current_widget_stack.size() > 0)) {
         for (auto w : current_widget_stack) {
-            handle_qobject_parent_resize(rect(), w);
+            handle_qobject_parent_resize(window_rect, w);
         }
     }
 
 
     if (text_selection_buttons_) {
-        handle_qobject_parent_resize(rect(), text_selection_buttons_);
+        handle_qobject_parent_resize(window_rect, text_selection_buttons_);
     }
     if (search_buttons_) {
-        handle_qobject_parent_resize(rect(), get_search_buttons());
+        handle_qobject_parent_resize(window_rect, get_search_buttons());
     }
     if (draw_controls_) {
-        handle_qobject_parent_resize(rect(), draw_controls_);
+        handle_qobject_parent_resize(window_rect, draw_controls_);
     }
 }
 
@@ -8091,13 +8091,15 @@ void MainWidget::free_renderer_resources_for_current_document() {
 
 void MainWidget::handle_debug_command() {
 
+
     QRect full_rect = rect();
     QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
-    if ((current_widget_stack.size() > 0)) {
-        for (auto w : current_widget_stack) {
-            handle_qobject_parent_resize(half_rect, w);
-        }
-    }
+    resize_child_widgets_with_window_rect(half_rect);
+    // if ((current_widget_stack.size() > 0)) {
+    //     for (auto w : current_widget_stack) {
+    //         handle_qobject_parent_resize(half_rect, w);
+    //     }
+    // }
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
