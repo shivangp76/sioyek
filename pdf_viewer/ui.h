@@ -848,7 +848,6 @@ class HighlightButtons : public QWidget {
 public:
     HighlightButtons(MainWidget* parent);
     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
-    // void resizeEvent(QResizeEvent* resize_event) override;
     TouchHighlightButtons* highlight_buttons;
 private:
 

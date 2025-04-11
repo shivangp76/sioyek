@@ -1,5 +1,6 @@
 #include "touchui/TouchHighlightButtons.h"
 #include "utils.h"
+#include <QVBoxLayout>
 
 extern float HIGHLIGHT_COLORS[26 * 3];
 
@@ -8,6 +9,10 @@ TouchHighlightButtons::TouchHighlightButtons(char selected_symbol, QWidget* pare
     //    quick_widget = new QQuickWidget(QUrl("qrc:/pdf_viewer/touchui/TouchSlider.qml"), this);
     setAttribute(Qt::WA_NoMousePropagation);
     quick_widget = new QQuickWidget(this);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(quick_widget);
+    setLayout(layout);
 
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
     quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
@@ -76,8 +81,11 @@ void TouchHighlightButtons::handleChangeColor(int index) {
     emit changeColorPressed(index);
 }
 
-void TouchHighlightButtons::resizeEvent(QResizeEvent* resize_event) {
-    quick_widget->resize(resize_event->size().width(), resize_event->size().height());
-    QWidget::resizeEvent(resize_event);
+// void TouchHighlightButtons::resizeEvent(QResizeEvent* resize_event) {
+//     quick_widget->resize(resize_event->size().width(), resize_event->size().height());
+//     QWidget::resizeEvent(resize_event);
 
-}
+// }
+
+// QRect TouchHighlightButtons::get_prefered_rect(QRect parent_rect){
+// }

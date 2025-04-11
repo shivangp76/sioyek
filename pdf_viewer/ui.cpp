@@ -745,6 +745,7 @@ QRect TouchTextSelectionButtons::get_prefered_rect(QRect parent_rect){
     return QRect((pwidth - width) / 2, height, width, height);
 }
 
+
 HighlightButtons::HighlightButtons(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
     //layout = new QHBoxLayout();
@@ -794,12 +795,12 @@ QRect HighlightButtons::get_prefered_rect(QRect parent_rect){
     int parent_height = parent_rect.height();
 
     int dpi = physicalDpiY();
-    float parent_height_in_centimeters = static_cast<float>(parent_height) / dpi * 2.54f;
+    // float parent_height_in_centimeters = static_cast<float>(parent_height) / dpi * 2.54f;
 
     //int w = static_cast<int>(parent_width / 5);
     int w = parent_width;
     int h = static_cast<int>(static_cast<float>(dpi) * 2 / 2.54f);
-    w = std::max(w, h * 6);
+    w = std::min(std::max(w, h * 6), parent_width);
 
     return QRect((parent_width - w) / 2, parent_height / 5, w, h);
 }

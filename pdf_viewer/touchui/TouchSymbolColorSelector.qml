@@ -20,7 +20,12 @@ Item{
             anchors.bottom: get_bottom_anchor()
 
             width: is_too_small() ? parent.width / 13 : parent.width / 26
-            x: is_too_small() ?  (visible ? (index % 13) * width : root.width / 2 - width / 2) : (visible ? index * width : root.width / 2 - width / 2)
+            function getX(){
+                let result = is_too_small() ?  (visible ? (index % 13) * width : parent.width / 2 - width / 2) : (visible ? index * width : parent.width / 2 - width / 2);
+                return result;
+            }
+
+            x: getX()
             color: root.colors[index]
 
             function get_top_anchor(){
