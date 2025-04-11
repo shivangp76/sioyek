@@ -940,7 +940,8 @@ private:
 class FloatConfigUI : public ConfigUI {
 public:
     FloatConfigUI(std::string name, MainWidget* parent, float* config_location, float min_value, float max_value);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 private:
     float* float_location;
     float min_value;

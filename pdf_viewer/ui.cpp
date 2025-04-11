@@ -972,6 +972,11 @@ FloatConfigUI::FloatConfigUI(std::string name, MainWidget* parent, float* config
     float current_value = *config_location;
 
     slider = new TouchSlider(min_value, max_value, current_value, this);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(slider);
+    setLayout(layout);
+
     QObject::connect(slider, &TouchSlider::itemSelected, [&](float val) {
         //float value = min_value + (static_cast<float>(val) / 100.0f) * (max_value - min_value);
         *float_location = val;
@@ -1151,17 +1156,14 @@ QRect MacroConfigUI::get_prefered_rect(QRect parent_rect){
     return QRect(parent_width / 6, parent_height / 4, w, h);
 }
 
-void FloatConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+QRect FloatConfigUI::get_prefered_rect(QRect parent_rect){
+    // QWidget::resizeEvent(resize_event);
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
     int w = 2 * parent_width / 3;
     int h = parent_height / 2;
-    slider->resize(w, h);
-
-    setFixedSize(w, h);
-    move(parent_width / 6, parent_height / 4);
+    return QRect(parent_width / 6, parent_height / 4, w, h);
 }
 
 void SymbolConfigUI::resizeEvent(QResizeEvent* resize_event) {
