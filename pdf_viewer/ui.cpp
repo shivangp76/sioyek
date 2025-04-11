@@ -1291,6 +1291,10 @@ RangeConfigUI::RangeConfigUI(std::string name, MainWidget* parent, float* top_co
 
     range_select_ui = new TouchRangeSelectUI(current_top, current_bottom, this);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(range_select_ui);
+    setLayout(layout);
+
     // force a resize event in order to have correct sizes
     resize(parent->width(), parent->height());
 
@@ -1319,13 +1323,9 @@ RangeConfigUI::RangeConfigUI(std::string name, MainWidget* parent, float* top_co
 
 }
 
-void RangeConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    move(0, 0);
-    range_select_ui->resize(resize_event->size().width(), resize_event->size().height());
-
+QRect RangeConfigUI::get_prefered_rect(QRect parent_rect){
+    return parent_rect;
 }
-
 
 QString translate_command_search_string(QString actual_text) {
 

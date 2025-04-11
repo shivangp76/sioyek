@@ -1037,7 +1037,8 @@ class RangeConfigUI : public ConfigUI {
 public:
     RangeConfigUI(std::string name, MainWidget* parent, float* top_location, float* bottom_location);
 
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 private:
     float* top_location;
     float* bottom_location;
