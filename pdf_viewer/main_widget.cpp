@@ -8636,17 +8636,16 @@ void MainWidget::handle_special_bookmarks(std::wstring text, std::wstring bookma
 
     BookMark* bm = doc()->get_bookmark_with_uuid(utf8_encode(bookmark_uuid));
 
-    if (bm){
-        bm->is_pending = true;
-    }
-
     if (text.size() > 2 && text.substr(0, 2) == L"? ") {
+        bm->is_pending = true;
         handle_bookmark_ask_query(text, bookmark_uuid);
     }
     else if (qtext.startsWith("#summarize")) {
+        bm->is_pending = true;
         handle_bookmark_summarize_query(bookmark_uuid);
     }
     else if (qtext.startsWith("#shell")) {
+        bm->is_pending = true;
         handle_bookmark_shell_command(qtext, utf8_encode(bookmark_uuid));
     }
     else if (QString::fromStdWString(text).startsWith("@")) {
