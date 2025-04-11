@@ -1201,6 +1201,10 @@ TouchCommandSelector::TouchCommandSelector(bool is_fuzzy, const QStringList& com
     }
     list_view = new TouchListView(is_fuzzy, touch_commands, -1, this);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(list_view);
+    setLayout(layout);
+
     QObject::connect(list_view, &TouchListView::itemSelected, [&](QString val, int index) {
         //main_widget->current_widget = nullptr;
         main_widget->pop_current_widget();
@@ -1214,18 +1218,12 @@ TouchCommandSelector::TouchCommandSelector(bool is_fuzzy, const QStringList& com
         });
 }
 
-void TouchCommandSelector::resizeEvent(QResizeEvent* resize_event) {
-
+QRect TouchCommandSelector::get_prefered_rect(QRect parent_rect){
     int parent_width = parentWidget()->width();
     int parent_height = parentWidget()->height();
     int w = parent_width * 0.8f;
     int h = parent_height * 0.8f;
-
-    list_view->resize(w, h);
-    move(parent_width * 0.1f, parent_height * 0.1f);
-    resize(w, h);
-    QWidget::resizeEvent(resize_event);
-
+    return QRect(parent_width * 0.1f, parent_height * 0.1f, w, h);
 }
 
 
@@ -1248,6 +1246,10 @@ RectangleConfigUI::RectangleConfigUI(std::string name, MainWidget* parent, UIRec
         (current_right - current_left) / 2.0f,
         (current_bottom - current_top) / 2.0f,
         this);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(rectangle_select_ui);
+    setLayout(layout);
 
 
     //    int current_value = static_cast<int>((*config_location - min_value) / (max_value - min_value) * 100);
@@ -1272,35 +1274,9 @@ RectangleConfigUI::RectangleConfigUI(std::string name, MainWidget* parent, UIRec
 
 }
 
-//bool RectangleConfigUI::eventFilter(QObject *obj, QEvent *event){
-//    if ((obj == parentWidget()) && (event->type() == QEvent::Type::Resize)){
+QRect RectangleConfigUI::get_prefered_rect(QRect parent_rect){
 
-//        QResizeEvent* resize_event = static_cast<QResizeEvent*>(event);
-//        int parent_width = resize_event->size().width();
-//        int parent_height = resize_event->size().height();
-
-//        bool res = QObject::eventFilter(obj, event);
-
-//        qDebug() << "resizing to " << parent_width << " " << parent_height;
-//        rectangle_select_ui->resize(parent_width, parent_height);
-//        setFixedSize(parent_width, parent_height);
-
-////        setFixedSize(parent_width, parent_height);
-//        move(0, 0);
-//        return res;
-//    }
-//    else{
-//        return QObject::eventFilter(obj, event);
-//    }
-//}
-
-void RectangleConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    move(0, 0);
-    //    rectangle_select_ui->resize(resize_event->size().width(), resize_event->size().height());
-    setFixedSize(parentWidget()->size());
-    rectangle_select_ui->resize(parentWidget()->size());
-
+    return parent_rect;
 }
 
 RangeConfigUI::RangeConfigUI(std::string name, MainWidget* parent, float* top_config_location, float* bottom_config_location) : ConfigUI(name, parent) {

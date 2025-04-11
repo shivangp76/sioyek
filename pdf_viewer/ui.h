@@ -617,9 +617,11 @@ public:
 };
 
 class TouchCommandSelector : public QWidget {
+    Q_OBJECT
 public:
     TouchCommandSelector(bool is_fuzzy, const QStringList& commands, MainWidget* mw);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    // void resizeEvent(QResizeEvent* resize_event) override;
     //    void keyReleaseEvent(QKeyEvent* key_event) override;
 
 private:
@@ -912,6 +914,7 @@ private:
 };
 
 class BoolConfigUI : public ConfigUI {
+    Q_OBJECT
 public:
     BoolConfigUI(std::string name, MainWidget* parent, bool* config_location, QString name_);
     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
@@ -938,6 +941,7 @@ private:
 //};
 
 class FloatConfigUI : public ConfigUI {
+    Q_OBJECT
 public:
     FloatConfigUI(std::string name, MainWidget* parent, float* config_location, float min_value, float max_value);
     // void resizeEvent(QResizeEvent* resize_event) override;
@@ -952,6 +956,7 @@ private:
 class SelectHighlightTypeUI;
 
 class SymbolConfigUI : public ConfigUI {
+    Q_OBJECT
 public:
     SymbolConfigUI(std::string name, MainWidget* parent, wchar_t* config_location);
     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
@@ -974,6 +979,7 @@ public slots:
 };
 
 class MacroConfigUI : public ConfigUI {
+    Q_OBJECT
 public:
     MacroConfigUI(std::string name, MainWidget* parent, std::wstring* config_location, std::wstring initial_macro);
     // void resizeEvent(QResizeEvent* resize_event) override;
@@ -983,6 +989,7 @@ private:
 };
 
 class IntConfigUI : public ConfigUI {
+    Q_OBJECT
 public:
     IntConfigUI(std::string name, MainWidget* parent, int* config_location, int min_value, int max_value);
     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
@@ -1005,6 +1012,7 @@ private:
 };
 
 class AudioUI : public ConfigUI {
+    Q_OBJECT
 public:
     AudioUI(MainWidget* parent);
     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
@@ -1013,10 +1021,12 @@ public:
 };
 
 class RectangleConfigUI : public ConfigUI {
+    Q_OBJECT
 public:
     RectangleConfigUI(std::string name, MainWidget* parent, UIRect* config_location);
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
 private:
     UIRect* rect_location;
 
