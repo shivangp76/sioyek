@@ -1998,6 +1998,7 @@ void MainWidget::handle_escape() {
     }
     //if (opengl_widget) opengl_widget->set_should_draw_vertical_line(false);
 
+    set_rect_select_mode(false);
 
     clear_selected_rect();
 
