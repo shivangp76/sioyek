@@ -420,6 +420,7 @@ public:
 };
 
 class TouchDelegateListView : public QWidget {
+    Q_OBJECT
 private:
 
     std::optional<std::function<void(int)>> on_select = {};
@@ -431,7 +432,8 @@ public:
 
     TouchDelegateListView(QAbstractTableModel* model, bool deletable, QString delegate_name, std::vector<std::pair<QString, QVariant>> props, QWidget* parent);
 
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 
     void set_select_fn(std::function<void(int)>&& fn);
     void set_delete_fn(std::function<void(int)>&& fn);

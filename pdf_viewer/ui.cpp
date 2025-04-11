@@ -3758,6 +3758,10 @@ TouchDelegateListView::TouchDelegateListView(QAbstractTableModel* model, bool de
         delegate_name,
         props);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(list_view);
+    setLayout(layout);
+
     QObject::connect(list_view, &TouchListView::itemSelected, [&](QString item, int index) {
         if (on_select.has_value()) {
             on_select.value()(index);
@@ -3771,14 +3775,12 @@ TouchDelegateListView::TouchDelegateListView(QAbstractTableModel* model, bool de
         });
 }
 
-void TouchDelegateListView::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->size().width();
-    int parent_height = parentWidget()->size().height();
+QRect TouchDelegateListView::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
-    list_view->resize(parent_width * 0.9f, parent_height);
-    move(parent_width * 0.05f, 0);
-    resize(parent_width * 0.9f, parent_height);
+    return QRect(parent_width * 0.05f, 0, parent_width * 0.9f, parent_height);
+
 }
 
 void TouchDelegateListView::set_select_fn(std::function<void(int)>&& fn) {
