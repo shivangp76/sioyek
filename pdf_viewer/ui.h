@@ -954,7 +954,8 @@ class SelectHighlightTypeUI;
 class SymbolConfigUI : public ConfigUI {
 public:
     SymbolConfigUI(std::string name, MainWidget* parent, wchar_t* config_location);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    // void resizeEvent(QResizeEvent* resize_event) override;
 private:
     wchar_t* symbol_location;
     SelectHighlightTypeUI* selector = nullptr;

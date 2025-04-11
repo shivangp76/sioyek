@@ -1004,6 +1004,10 @@ SymbolConfigUI::SymbolConfigUI(std::string name, MainWidget* parent, wchar_t* co
     setFocusPolicy(Qt::StrongFocus);
     setFocus();
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(selector);
+    setLayout(layout);
+
     QObject::connect(selector, &SelectHighlightTypeUI::symbolClicked, [&](int val) {
         //float value = min_value + (static_cast<float>(val) / 100.0f) * (max_value - min_value);
         *symbol_location = (wchar_t)(val + 'a');
@@ -1166,13 +1170,11 @@ QRect FloatConfigUI::get_prefered_rect(QRect parent_rect){
     return QRect(parent_width / 6, parent_height / 4, w, h);
 }
 
-void SymbolConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    QWidget::resizeEvent(resize_event);
-    int w = parentWidget()->width();
-    int h = parentWidget()->height();
+QRect SymbolConfigUI::get_prefered_rect(QRect parent_rect){
+    int w = parent_rect.width();
+    int h = parent_rect.height();
 
-    move(0, 0);
-    setFixedSize(w, h);
+    return QRect(0, 0, w, h);
 }
 
 void IntConfigUI::resizeEvent(QResizeEvent* resize_event) {
