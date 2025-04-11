@@ -22,6 +22,9 @@ TouchConfigMenu::TouchConfigMenu(bool fuzzy, MainWidget* main_widget) :
 
     //    quick_widget = new QQuickWidget(QUrl("qrc:/pdf_viewer/touchui/TouchSlider.qml"), this);
     quick_widget = new QQuickWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(quick_widget);
+    setLayout(layout);
 
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
     quick_widget->setClearColor(Qt::transparent);
@@ -132,17 +135,14 @@ void TouchConfigMenu::handleSaveButtonClicked() {
 //    emit itemPressAndHold(val, source_index);
 //}
 
-void TouchConfigMenu::resizeEvent(QResizeEvent* resize_event) {
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+
+QRect TouchConfigMenu::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
     int w = parent_width * 0.8f;
     int h = parent_height * 0.8f;
 
-    quick_widget->resize(w, h);
-    move(parent_width * 0.1f, parent_height * 0.1f);
-    resize(w, h);
-    QWidget::resizeEvent(resize_event);
-
+    return QRect(parent_width * 0.1f, parent_height * 0.1f, w, h);
 }
 
 

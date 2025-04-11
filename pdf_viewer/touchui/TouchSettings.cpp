@@ -35,6 +35,10 @@ TouchSettings::TouchSettings(MainWidget* parent) : QWidget(parent) {
     main_widget = parent;
     quick_widget = new QQuickWidget(this);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(quick_widget);
+    setLayout(layout);
+
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
     quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
     quick_widget->setClearColor(Qt::transparent);
@@ -151,13 +155,37 @@ void TouchSettings::handleCustomPageBackground() {
 
 
 
-void TouchSettings::resizeEvent(QResizeEvent* resize_event) {
-    //quick_widget->resize(resize_event->size().width(), resize_event->size().height());
-    //QWidget::resizeEvent(resize_event);
+// void TouchSettings::resizeEvent(QResizeEvent* resize_event) {
+//     //quick_widget->resize(resize_event->size().width(), resize_event->size().height());
+//     //QWidget::resizeEvent(resize_event);
 
-    QWidget::resizeEvent(resize_event);
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+//     QWidget::resizeEvent(resize_event);
+//     int parent_width = parentWidget()->width();
+//     int parent_height = parentWidget()->height();
+
+//     //float parent_width_in_centimeters = static_cast<float>(parent_width) / logicalDpiX() * 2.54f;
+//     //float parent_height_in_centimeters = static_cast<float>(parent_height) / logicalDpiY() * 2.54f;
+//     int ten_cm = static_cast<int>(12 * logicalDpiX() / 2.54f);
+
+//     int w = static_cast<int>(parent_width * 0.9f);
+//     int h = parent_height;
+
+//     w = std::min(w, ten_cm);
+//     h = std::min(h, static_cast<int>(ten_cm * 1.5f));
+
+//     quick_widget->resize(w, h);
+//     setFixedSize(w, h);
+
+//     //    list_view->setFixedSize(parent_width * 0.9f, parent_height);
+//     move((parent_width - w) / 2, (parent_height - h) / 2);
+
+// }
+
+QRect TouchSettings::get_prefered_rect(QRect parent_rect){
+
+    // QWidget::resizeEvent(resize_event);
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
 
     //float parent_width_in_centimeters = static_cast<float>(parent_width) / logicalDpiX() * 2.54f;
     //float parent_height_in_centimeters = static_cast<float>(parent_height) / logicalDpiY() * 2.54f;
@@ -169,13 +197,9 @@ void TouchSettings::resizeEvent(QResizeEvent* resize_event) {
     w = std::min(w, ten_cm);
     h = std::min(h, static_cast<int>(ten_cm * 1.5f));
 
-    quick_widget->resize(w, h);
-    setFixedSize(w, h);
-
-    //    list_view->setFixedSize(parent_width * 0.9f, parent_height);
-    move((parent_width - w) / 2, (parent_height - h) / 2);
-
+    return QRect((parent_width - w) / 2, (parent_height - h) / 2, w, h);
 }
+
 void TouchSettings::show_dialog_for_color_n(int n, float* color_location) {
     QColorDialog* dialog = new QColorDialog(this);
 

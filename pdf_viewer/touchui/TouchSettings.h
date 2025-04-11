@@ -12,7 +12,8 @@ class TouchSettings : public QWidget {
     Q_OBJECT
 public:
     TouchSettings(MainWidget* parent = nullptr);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 
 public slots:
     void handleLightApplicationBackground();

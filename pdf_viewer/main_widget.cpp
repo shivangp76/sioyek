@@ -650,6 +650,7 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 }
 
 void MainWidget::resize_child_widgets_with_window_rect(QRect window_rect){
+    qDebug() << "resize_child_widgets_with_window_rect called with " << window_rect;
     if ((current_widget_stack.size() > 0)) {
         for (auto w : current_widget_stack) {
             handle_qobject_parent_resize(window_rect, w);
@@ -1565,9 +1566,32 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #endif
 #ifdef SIOYEK_MOBILE
     QObject::connect(QGuiApplication::inputMethod(), &QInputMethod::visibleChanged, [&](){
-        // qDebug() << "new visibility: " << QGuiApplication::inputMethod()->isVisible();
-        // qDebug() << "visible window size is : " << height();
-        // qDebug() << "last keypad size = " << last_keypad_size;
+        bool is_onscreen_keyboard_visible =  QGuiApplication::inputMethod()->isVisible();
+
+        QRect full_rect = rect();
+        QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
+
+        if (is_onscreen_keyboard_visible){
+            QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, half_rect));
+        }
+        else{
+            QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, full_rect));
+        }
+            // Q_ARG(QString, macro_string),
+
+        // qDebug() << "creating single shot with " << is_onscreen_keyboard_visible;
+        // QTimer::singleShot(0, [&, is_onscreen_keyboard_visible](){
+        //     qDebug() << "on screen visibility: " << is_onscreen_keyboard_visible;
+        //     QRect full_rect = rect();
+        //     QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
+
+        //     if (is_onscreen_keyboard_visible){
+        //         resize_child_widgets_with_window_rect(half_rect);
+        //     }
+        //     else{
+        //         resize_child_widgets_with_window_rect(full_rect);
+        //     }
+        // });
     });
 #endif
     if (DEFAULT_PEN_DRAWING_MODE){

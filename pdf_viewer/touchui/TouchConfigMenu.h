@@ -33,7 +33,8 @@ class TouchConfigMenu : public QWidget {
 public:
     //TouchConfigMenu(std::vector<Config>* configs, QWidget* parent = nullptr);
     TouchConfigMenu(bool fuzzy, MainWidget* main_widget);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 
 public slots:
     void handleColor3ConfigChanged(QString config_name, qreal r, qreal g, qreal b);

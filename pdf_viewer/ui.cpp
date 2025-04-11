@@ -316,9 +316,9 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
 
         // main_widget->toggle_scratchpad_mode();
         main_widget->handle_debug_command();
-        main_widget->pop_current_widget();
+        // main_widget->pop_current_widget();
 
-        main_widget->invalidate_render();
+        // main_widget->invalidate_render();
 
         });
 
@@ -1219,8 +1219,8 @@ TouchCommandSelector::TouchCommandSelector(bool is_fuzzy, const QStringList& com
 }
 
 QRect TouchCommandSelector::get_prefered_rect(QRect parent_rect){
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
     int w = parent_width * 0.8f;
     int h = parent_height * 0.8f;
     return QRect(parent_width * 0.1f, parent_height * 0.1f, w, h);
@@ -4745,4 +4745,13 @@ QStringList MyLineEdit::get_autocomplete_suggestions(const QString& prefix) {
 
 void MyLineEdit::set_autocomplete_strings(QStringList strings) {
     autocomplete_strings = strings;
+}
+
+SioyekResizableQWidget::SioyekResizableQWidget(QWidget* parent) : QWidget(parent) {
+}
+
+QRect SioyekResizableQWidget::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+    return QRect(parent_width * 0.05f, 0, parent_width * 0.9f, parent_height);
 }

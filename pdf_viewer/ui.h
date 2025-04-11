@@ -439,8 +439,15 @@ public:
     void set_delete_fn(std::function<void(int)>&& fn);
 };
 
+class SioyekResizableQWidget : public QWidget{
+    Q_OBJECT
+public:
+    SioyekResizableQWidget(QWidget* parent);
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+};
+
 template <typename T>
-class TouchFilteredSelectWidget : public QWidget {
+class TouchFilteredSelectWidget : public SioyekResizableQWidget {
 private:
     //    QStringListModel string_list_model;
     //    MySortFilterProxyModel proxy_model;
@@ -455,6 +462,9 @@ public:
     //		list_view->set_selected_index(index);
     //	}
     void initialize() {
+        QVBoxLayout* layout = new QVBoxLayout(this);
+        layout->addWidget(list_view);
+        setLayout(layout);
 
         QObject::connect(list_view, &TouchListView::itemSelected, [&](QString name, int index) {
             on_done(&values[index]);
@@ -472,7 +482,7 @@ public:
         std::function<void(T*)> on_done_,
         std::function<void(T*)> on_delete,
         QWidget* parent) :
-        QWidget(parent),
+        SioyekResizableQWidget(parent),
         values(values_),
         on_done(on_done_),
         on_delete_function(on_delete) {
@@ -493,7 +503,7 @@ public:
         int selected_index,
         std::function<void(T*)> on_done_,
         QWidget* parent) :
-        QWidget(parent),
+        SioyekResizableQWidget(parent),
         on_done(on_done_) {
         parent_widget = parent;
         list_view = new TouchListView(is_fuzzy, model, selected_index, this, false, false, "TouchTreeView");
@@ -510,7 +520,7 @@ public:
         std::function<void(T*)> on_done_,
         std::function<void(T*)> on_delete,
         QWidget* parent) :
-        QWidget(parent),
+        SioyekResizableQWidget(parent),
         values(values_),
         on_done(on_done_),
         on_delete_function(on_delete) {
@@ -520,18 +530,10 @@ public:
         //        proxy_model.setSourceModel(string_list_model);
 
         list_view = new TouchListView(is_fuzzy, model, selected_index, this, true);
+
         initialize();
     }
 
-    void resizeEvent(QResizeEvent* resize_event) override {
-        QWidget::resizeEvent(resize_event);
-        int parent_width = parentWidget()->size().width();
-        int parent_height = parentWidget()->size().height();
-        //        setFixedSize(parent_width * 0.9f, parent_height);
-        list_view->resize(parent_width * 0.9f, parent_height);
-        move(parent_width * 0.05f, 0);
-        resize(parent_width * 0.9f, parent_height);
-    }
 
     void set_filter_column_index(int index) {
         list_view->proxy_model->setFilterKeyColumn(index);
