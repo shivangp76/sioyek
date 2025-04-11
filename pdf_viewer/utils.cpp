@@ -3343,7 +3343,6 @@ extern "C" {
         // }
 
         last_keypad_size = 0;
-        qDebug() << "myandroid: keypad hidden";
 
         if (windows.size() > 0){
             QMetaObject::invokeMethod(windows[0], "on_onscreen_keyboard_hidden", Qt::QueuedConnection);
@@ -3355,7 +3354,6 @@ extern "C" {
             jobject obj,
             jint height)
     {
-        qDebug() << "myandroid: keypad shown height=" << height;
         last_keypad_size = height;
         if (windows.size() > 0){
             QMetaObject::invokeMethod(windows[0], "on_onscreen_keyboard_shown", Qt::QueuedConnection);

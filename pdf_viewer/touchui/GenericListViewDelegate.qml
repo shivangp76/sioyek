@@ -71,7 +71,7 @@ Rectangle { //property list<int> selection_range: model.get_highlight_positions(
     }
     Item{
         anchors.right: parent.right
-        width: Math.min(pagetext.contentWidth, parent.width / 2)
+        width: rootitem.root_model.columnCount() >= 2 ? Math.min(pagetext.contentWidth, parent.width / 2) : 0
         anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
         id: right_label
