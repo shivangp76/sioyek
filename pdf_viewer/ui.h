@@ -970,7 +970,8 @@ class EnumConfigUI : public ConfigUI {
     Q_OBJECT
 public:
     EnumConfigUI(std::string name, MainWidget* parent, std::vector<std::wstring>& possible_values, int selected_index);
-    void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    // void resizeEvent(QResizeEvent* resize_event) override;
 private:
     QQuickWidget* quick_widget = nullptr;
 
@@ -1050,8 +1051,9 @@ class SelectHighlightTypeUI : public QWidget {
     Q_OBJECT
 public:
     SelectHighlightTypeUI(QWidget* parent);
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
 
-    void resizeEvent(QResizeEvent* resize_event) override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
 
 signals:
     void symbolClicked(int);

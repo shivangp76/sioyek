@@ -1970,6 +1970,11 @@ SelectHighlightTypeUI::SelectHighlightTypeUI(QWidget* parent) :QWidget(parent), 
 
     new_widget = new QQuickWidget(this);
 
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(new_widget);
+    setLayout(layout);
+
+
     new_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
     new_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
     new_widget->setClearColor(Qt::transparent);
@@ -1989,18 +1994,19 @@ SelectHighlightTypeUI::SelectHighlightTypeUI(QWidget* parent) :QWidget(parent), 
     QObject::connect(new_widget->rootObject(), SIGNAL(colorClicked(int)), this, SIGNAL(symbolClicked(int)));
 }
 
-void SelectHighlightTypeUI::resizeEvent(QResizeEvent* resize_event) {
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
-    this->resize(parent_width, parent_height / 5);
-    this->move(0, parent_height / 2 - parent_height / 10);
-    new_widget->resize(size());
-    new_widget->move(0, 0);
+QRect SelectHighlightTypeUI::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+    return QRect(0, parent_height / 2 - parent_height / 10, parent_width, parent_height / 5);
 }
 
 EnumConfigUI::EnumConfigUI(std::string name, MainWidget* parent, std::vector<std::wstring>& possible_values, int selected_index) : ConfigUI(name, parent) {
 
     quick_widget = new QQuickWidget(this);
+
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    layout->addWidget(quick_widget);
+    setLayout(layout);
 
     quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
     quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
@@ -2025,13 +2031,10 @@ void EnumConfigUI::on_select(QString name, int index) {
     main_widget->on_set_enum_config_value(config_name, name.toStdWString());
 }
 
-void EnumConfigUI::resizeEvent(QResizeEvent* resize_event) {
-    int parent_width = parentWidget()->width();
-    int parent_height = parentWidget()->height();
-    this->resize(parent_width * 3 / 4, parent_height * 2 / 3);
-    this->move(parent_width / 8, parent_height / 6);
-    quick_widget->resize(size());
-    quick_widget->move(0, 0);
+QRect EnumConfigUI::get_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+    return QRect(parent_width / 8, parent_height / 6, parent_width * 3 / 4, parent_height * 2 / 3);
 }
 
 
