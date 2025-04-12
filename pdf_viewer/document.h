@@ -94,6 +94,8 @@ struct PageFreehandDrawing{
 
 class Document : public QObject{
     Q_OBJECT
+    Q_PROPERTY(QList<QVariant> bookmarks READ get_bookmarks_qlist)
+    Q_PROPERTY(QList<QVariant> highlights READ get_highlights_qlist)
 
 private:
 
@@ -611,6 +613,9 @@ public:
         }
         return result;
     };
+
+    QList<QVariant> get_bookmarks_qlist();
+    QList<QVariant> get_highlights_qlist();
 
     template <typename T>
     std::unordered_map<int, std::vector<int>>& get_annot_page_indices() = delete;

@@ -10357,6 +10357,7 @@ QJSEngine* MainWidget::take_js_engine(bool async) {
         js_engine->setObjectOwnership(this, QJSEngine::CppOwnership);
 
         js_engine->globalObject().setProperty("sioyek_api", sioyek_object);
+        js_engine->globalObject().setProperty("window", sioyek_object);
         export_javascript_api(*js_engine, false);
         sync_js_engine = js_engine;
         return sync_js_engine;

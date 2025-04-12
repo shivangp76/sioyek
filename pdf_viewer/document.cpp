@@ -6119,3 +6119,11 @@ void Document::update_annotation_js(QJsonObject annot) {
         update_annotation_with_server_annotation(&hl);
     }
 }
+
+QList<QVariant> Document::get_bookmarks_qlist(){
+    return get_annotation_qlist<BookMark>();
+}
+
+QList<QVariant> Document::get_highlights_qlist(){
+    return get_annotation_qlist<Highlight>();
+}

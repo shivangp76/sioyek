@@ -27,6 +27,7 @@
 #include "input.h"
 #include "path.h"
 #include "background_tasks.h"
+#include "document.h"
 
 
 class SelectionIndicator;
@@ -54,9 +55,10 @@ class QTemporaryFile;
 struct fz_context;
 struct fz_stext_char;
 
-class DocumentView;
 class ScratchPad;
-class Document;
+
+class DocumentView;
+
 class InputHandler;
 class ConfigManager;
 class PdfRenderer;
@@ -181,6 +183,7 @@ using SioyekBaseWidget = QMainWindow;
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
     Q_OBJECT
+    Q_PROPERTY(Document* doc READ doc)
 public:
     fz_context* mupdf_context = nullptr;
     DatabaseManager* db_manager = nullptr;
@@ -543,7 +546,7 @@ public:
     void handle_bookmark_shell_command(QString bookmark_text, std::string uuid, QString text_arg="");
     void on_bookmark_shell_output_updated(std::string bookmark_uuid, QString file_path);
 
-    Q_INVOKABLE Document* doc();
+    Document* doc();
 
     MainWidget(
         fz_context* mupdf_context,
@@ -599,8 +602,8 @@ public:
     void set_hand_drawing_mode(DrawingMode mode);
     void handle_drawing_ui_visibilty();
 
-    void toggle_dark_mode();
-    void toggle_custom_color_mode();
+    Q_INVOKABLE void toggle_dark_mode();
+    Q_INVOKABLE void toggle_custom_color_mode();
     void do_synctex_forward_search(const Path& pdf_file_path, const Path& latex_file_path, int line, int column);
     //void handle_args(const QStringList &arguments);
     void update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state, bool async=false);

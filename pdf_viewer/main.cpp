@@ -806,6 +806,7 @@ int main(int argc, char* args[]) {
 #endif
 
     qmlRegisterType<MySortFilterProxyModel>("MySortFilterProxyModel", 1, 0, "MySortFilterProxyModel");
+    qmlRegisterType<MainWidget>("MainWidget", 1, 0, "MainWidget");
     qmlRegisterType<Document>("Document", 1, 0, "Document");
     qmlRegisterType<DocumentView>("DocumentView", 1, 0, "DocumentView");
     QCommandLineParser* parser = get_command_line_parser();
