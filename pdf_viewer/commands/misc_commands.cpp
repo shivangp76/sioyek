@@ -2089,6 +2089,18 @@ public:
                 return matching_config_names[index % matching_config_names.size()];
             }
         }
+        else{
+            Config* conf = widget->config_manager->get_mut_config_with_name(config_name.value());
+            if (conf){
+                if (conf->config_type == ConfigType::Enum){
+                    auto enum_extras = std::get<EnumExtras>(conf->extras);
+                    while (index < 0){
+                        index += enum_extras.possible_values.size();
+                    }
+                    return enum_extras.possible_values[index % enum_extras.possible_values.size()];
+                }
+            }
+        }
         return {};
     }
 
