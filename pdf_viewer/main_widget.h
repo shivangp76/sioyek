@@ -543,7 +543,7 @@ public:
     void handle_bookmark_shell_command(QString bookmark_text, std::string uuid, QString text_arg="");
     void on_bookmark_shell_output_updated(std::string bookmark_uuid, QString file_path);
 
-    Document* doc();
+    Q_INVOKABLE Document* doc();
 
     MainWidget(
         fz_context* mupdf_context,
@@ -944,7 +944,7 @@ public:
     Q_INVOKABLE QString get_current_document_text();
     Q_INVOKABLE void set_state(QJsonObject state);
     Q_INVOKABLE QJsonObject get_json_annotations();
-    Q_INVOKABLE QVariantMap get_annotations();
+    // Q_INVOKABLE QVariantMap get_annotations();
     Q_INVOKABLE void goto_offset(float x_offset, float y_offset);
     Q_INVOKABLE QJsonObject absolute_to_window_rect_json(QJsonObject absolute_rect_json);
     Q_INVOKABLE int absolute_pos_to_page(double pos);

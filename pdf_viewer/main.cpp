@@ -806,6 +806,7 @@ int main(int argc, char* args[]) {
 #endif
 
     qmlRegisterType<MySortFilterProxyModel>("MySortFilterProxyModel", 1, 0, "MySortFilterProxyModel");
+    qmlRegisterType<Document>("Document", 1, 0, "Document");
     QCommandLineParser* parser = get_command_line_parser();
     parser->process(app.arguments());
 

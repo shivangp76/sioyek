@@ -92,8 +92,8 @@ struct PageFreehandDrawing{
     QDateTime last_deletion_time;
 };
 
-class Document {
-    Q_GADGET
+class Document : public QObject{
+    Q_OBJECT
 
 private:
 
@@ -345,8 +345,8 @@ public:
     std::optional<Portal> delete_closest_portal(float to_offset_y);
     int get_portal_index_with_uuid(const std::string& uuid);
     std::optional<Portal> delete_portal_with_uuid(const std::string& uuid, bool delete_only_if_synced=false);
-    std::vector<BookMark>& get_bookmarks();
-    std::vector<Portal>& get_portals();
+    const std::vector<BookMark>& get_bookmarks() const;
+    const std::vector<Portal>& get_portals() const;
     std::vector<BookMark> get_sorted_bookmarks() const;
     std::vector<Portal> get_sorted_portals() const;
     const std::vector<Highlight>& get_highlights() const;
@@ -600,10 +600,10 @@ public:
     int absolute_to_page_index(int absolute_index, int& page);
 
     template <typename T>
-    const std::vector<T>& get_annots() = delete;
+    const std::vector<T>& get_annots() const = delete;
 
     template <typename T>
-    const QList<QVariant> get_annotation_qlist(){
+    const QList<QVariant> get_annotation_qlist() const {
         QList<QVariant> result;
         const std::vector<T>& annots = get_annots<T>();
         for (auto& annot : annots){
@@ -655,6 +655,7 @@ public:
 
     void set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids);
     ParsedUri parse_link(const PdfLink& link);
+    Q_INVOKABLE QVariantMap get_annotations() const;
 
     template<typename T>
     std::vector<int> get_page_visible_annot_indices(int page) {
@@ -739,11 +740,11 @@ public:
 
 
 template <>
-const std::vector<Highlight>& Document::get_annots<Highlight>();
+const std::vector<Highlight>& Document::get_annots<Highlight>() const;
 template <>
-const std::vector<BookMark>& Document::get_annots<BookMark>();
+const std::vector<BookMark>& Document::get_annots<BookMark>() const;
 template <>
-const std::vector<Portal>& Document::get_annots<Portal>();
+const std::vector<Portal>& Document::get_annots<Portal>() const;
 template <>
 std::vector<Highlight>& Document::get_annots_mut<Highlight>();
 template <>

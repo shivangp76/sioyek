@@ -672,7 +672,7 @@ std::optional<Portal> Document::delete_portal_with_uuid(const std::string& uuid,
     return {};
 }
 
-std::vector<BookMark>& Document::get_bookmarks() {
+const std::vector<BookMark>& Document::get_bookmarks() const {
     return bookmarks;
 }
 
@@ -4793,7 +4793,7 @@ void Document::reload_annotations_on_new_checksum() {
         fill_highlight_rects(context, doc);
     }
 }
-std::vector<Portal>& Document::get_portals() {
+const std::vector<Portal>& Document::get_portals() const {
     return portals;
 }
 
@@ -5760,17 +5760,17 @@ bool Document::super_fast_search_index_is_new() {
 }
 
 template <>
-const std::vector<Highlight>& Document::get_annots<Highlight>() {
+const std::vector<Highlight>& Document::get_annots<Highlight>() const {
     return get_highlights();
 }
 
 template <>
-const std::vector<BookMark>& Document::get_annots<BookMark>() {
+const std::vector<BookMark>& Document::get_annots<BookMark>() const {
     return get_bookmarks();
 }
 
 template <>
-const std::vector<Portal>& Document::get_annots<Portal>() {
+const std::vector<Portal>& Document::get_annots<Portal>() const {
     return get_portals();
 }
 
@@ -6085,4 +6085,13 @@ std::vector<FreehandDrawing> Document::zoom_selected_freehand_drawings(float zoo
     }
     return {};
 
+}
+
+QVariantMap Document::get_annotations() const {
+    QVariantMap result;
+    result["bookmarks"] = get_annotation_qlist<BookMark>();
+    result["highlights"] = get_annotation_qlist<Highlight>();
+    result["portals"] = get_annotation_qlist<Portal>();
+
+    return result;
 }

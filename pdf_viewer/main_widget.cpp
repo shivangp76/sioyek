@@ -8309,9 +8309,10 @@ void MainWidget::show_command_menu() {
 }
 
 BookMark* MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk) {
-    int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
-    if (bookmark_index >= 0) {
-        BookMark& bm = document->get_bookmarks()[bookmark_index];
+    // int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+    BookMark* bookmark_ptr = document->get_bookmark_with_uuid(bookmark_uuid);
+    if (bookmark_ptr) {
+        BookMark& bm = *bookmark_ptr;
         bm.is_pending = false;
         bm.description += chunk.toStdWString();
         for (auto& following_window : following_windows) {
@@ -8356,8 +8357,8 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
     int first_page_end_index = doc()->get_first_page_end_index();
 
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
-    int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
-    doc()->get_bookmarks()[ind].description += L"\n\n";
+    BookMark* bm_ptr = doc()->get_bookmark_with_uuid(bookmark_uuid);
+    bm_ptr->description += L"\n\n";
     sioyek_network_manager->summarize(this,  index, first_page_end_index, [this, bookmark_uuid, document=doc()](QString chunk) {
         add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         },
@@ -8382,8 +8383,8 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
 
     const std::wstring& index = doc()->get_super_fast_index();
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
-    int ind = doc()->get_bookmark_index_with_uuid(bookmark_uuid);
-    doc()->get_bookmarks()[ind].description += L"\n\n";
+    BookMark* bm_ptr = doc()->get_bookmark_with_uuid(bookmark_uuid);
+    bm_ptr->description += L"\n\n";
 
     int first_page_end_index = doc()->get_first_page_end_index();
 
@@ -10920,14 +10921,6 @@ QJsonObject MainWidget::get_json_annotations() {
     return annots;
 }
 
-QVariantMap MainWidget::get_annotations(){
-    QVariantMap result;
-    result["bookmarks"] = doc()->get_annotation_qlist<BookMark>();
-    result["highlights"] = doc()->get_annotation_qlist<Highlight>();
-    result["portals"] = doc()->get_annotation_qlist<Portal>();
-
-    return result;
-}
 
 QString MainWidget::handle_action_in_menu(std::wstring action) {
 
@@ -11654,6 +11647,9 @@ void MainWidget::run_javascript_command(std::wstring javascript_code, std::optio
         QStringList stack_trace;
         auto res = engine->evaluate(content, QString(), 1, &stack_trace);
         //release_js_engine(engine);
+        if (res.isError()){
+            qDebug() << res.errorType();
+        }
         if (stack_trace.size() > 0) {
             for (auto line : stack_trace) {
                 qDebug() << line;
@@ -12766,7 +12762,7 @@ void MainWidget::on_new_portal_added(const std::string& uuid) {
     if (AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS) {
         int portal_index = doc()->get_portal_index_with_uuid(uuid);
         if (portal_index >= 0) {
-            Portal& portal = doc()->get_portals()[portal_index];
+            const Portal& portal = doc()->get_portals()[portal_index];
             if (!sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
                 std::optional<std::wstring> document_path = document_manager->get_path_from_hash(portal.dst.document_checksum);
                 if (document_path) {
