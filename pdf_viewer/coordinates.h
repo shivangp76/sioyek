@@ -309,6 +309,10 @@ public:
 
 struct AbsoluteRect : public EnhancedRect<fz_rect, AbsoluteDocumentPos> {
     Q_GADGET
+    Q_PROPERTY(float x0 MEMBER x0);
+    Q_PROPERTY(float x1 MEMBER x1);
+    Q_PROPERTY(float y0 MEMBER y0);
+    Q_PROPERTY(float y1 MEMBER y1);
 public:
     AbsoluteRect(AbsoluteDocumentPos top_left, AbsoluteDocumentPos bottom_right);
     AbsoluteRect(fz_rect r);
