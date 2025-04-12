@@ -3671,10 +3671,10 @@ Line2D line_from_points(AbsoluteDocumentPos p1, AbsoluteDocumentPos p2) {
     return res;
 }
 
-std::vector<FreehandDrawingPoint> smooth_filter_drawing_points_helper(const std::vector<FreehandDrawingPoint>& points) {
+QList<FreehandDrawingPoint> smooth_filter_drawing_points_helper(const QList<FreehandDrawingPoint>& points) {
     if (points.size() < 3) return points;
     
-    std::vector<FreehandDrawingPoint> new_points;
+    QList<FreehandDrawingPoint> new_points;
     new_points.push_back(points[0]);
     for (int i = 1; i < points.size()-1; i++){
         const FreehandDrawingPoint& next_point = points[i+1];
@@ -3690,21 +3690,21 @@ std::vector<FreehandDrawingPoint> smooth_filter_drawing_points_helper(const std:
     return new_points;
 }
 
-std::vector<FreehandDrawingPoint> smooth_filter_drawing_points(const std::vector<FreehandDrawingPoint>& points, int amount) {
-    std::vector<FreehandDrawingPoint> smoothed_points = points;
+QList<FreehandDrawingPoint> smooth_filter_drawing_points(const QList<FreehandDrawingPoint>& points, int amount) {
+    QList<FreehandDrawingPoint> smoothed_points = points;
     for (int i = 0; i < amount; i++){
         smoothed_points = smooth_filter_drawing_points_helper(smoothed_points);
     }
     return smoothed_points;
 }
 
-std::vector<FreehandDrawingPoint> prune_freehand_drawing_points(const std::vector<FreehandDrawingPoint>& points) {
+QList<FreehandDrawingPoint> prune_freehand_drawing_points(const QList<FreehandDrawingPoint>& points) {
 
     if (points.size() < 3) {
         return points;
     }
 
-    std::vector<FreehandDrawingPoint> pruned_points;
+    QList<FreehandDrawingPoint> pruned_points;
     pruned_points.push_back(points[0]);
     int candid_index = 1;
 

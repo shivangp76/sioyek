@@ -212,7 +212,7 @@ void generate_bezier_with_endpoints_and_velocity(
     Vec<float, 2> v1,
     int n_points,
     float thickness,
-    std::vector<FreehandDrawingPoint>& output
+    QList<FreehandDrawingPoint>& output
     ) {
     float alpha = 1.0f / n_points;
     auto q0 = p0;
@@ -348,7 +348,7 @@ void SioyekRendererBackend::render_scratchpad() {
 
     prepare_line_drawing_pipeline();
 
-    std::vector<FreehandDrawing> pending_drawing;
+    QList<FreehandDrawing> pending_drawing;
     if (document_view->current_drawing.points.size() > 1) {
         pending_drawing.push_back(document_view->current_drawing);
     }
@@ -1527,7 +1527,7 @@ FreehandDrawing smoothen_drawing(FreehandDrawing original) {
 
 }
 
-void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) {
+void PdfViewOpenGLWidget::compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) {
     return compile_drawings_opengl_backend(dv, drawings);
 }
 
@@ -1636,7 +1636,7 @@ inline void add_coordinates_for_line_segment(
     coordinates.push_back(p1.y + ortho_y2);
 }
 
-void PdfViewOpenGLWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
+void PdfViewOpenGLWidget::render_drawings(QPainter* p, DocumentView* dv, const QList<FreehandDrawing>& drawings, bool highlighted) {
     if (drawings.size() == 0) return;
 
     glEnable(GL_BLEND);
@@ -2523,7 +2523,7 @@ void PdfViewOpenGLWidget::resizeGL(int w, int h) {
     }
 }
 
-void PdfViewOpenGLWidget::compile_drawings_opengl_backend(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) {
+void PdfViewOpenGLWidget::compile_drawings_opengl_backend(DocumentView* dv, const QList<FreehandDrawing>& drawings) {
     ScratchPad* scratchpad = scratch();
     if (scratchpad->cached_compiled_drawing_data) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -2952,7 +2952,7 @@ void SioyekRendererBackend::draw_pending_freehand_drawings(const std::vector<int
 
     prepare_for_line_drawing();
 
-    std::vector<FreehandDrawing> pending_drawing;
+    QList<FreehandDrawing> pending_drawing;
     if (document_view->current_drawing.points.size() > 1) {
         FreehandDrawing pd = document_view->current_drawing;
         
@@ -3696,7 +3696,7 @@ void PdfViewQPainterWidget::render_line_window(float gl_vertical_pos, std::optio
     }
 }
 
-void SioyekRendererBackend::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted) {
+void SioyekRendererBackend::render_drawings(QPainter* p, DocumentView* dv, const QList<FreehandDrawing>& drawings, bool highlighted) {
 
     float last_thickness = -1;
     char last_drawing_type = 0;
@@ -3866,7 +3866,7 @@ void PdfViewQPainterWidget::draw_overview_border(std::optional<OverviewState> ma
     render_highlight_window(document_view->get_overview_rect(maybe_overview), HRF_BORDER);
 }
 
-void PdfViewQPainterWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) {
+void PdfViewQPainterWidget::compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) {
 
     if (!dv->scratchpad) return;
 
@@ -4561,7 +4561,7 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
         QRhiResourceUpdateBatch* update_batch,
         DocumentView* dv,
         int page,
-        const std::vector<FreehandDrawing>& drawings,
+        const QList<FreehandDrawing>& drawings,
         QRhiBuffer* vertex_buffer,
         QRhiBuffer* color_buffer,
         int append_index,
@@ -5073,7 +5073,7 @@ void PdfViewRhiWidget::set_highlight_color(const float* color, float alpha){
 }
 void PdfViewRhiWidget::prepare_highlight_pipeline(){}
 
-void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, DocumentView* dv, int page, const std::vector<FreehandDrawing>& drawings, bool highlighted){
+void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, DocumentView* dv, int page, const QList<FreehandDrawing>& drawings, bool highlighted){
 
     SioyekDrawingRenderCall drawing_call;
     drawing_call.page = page;
@@ -5133,7 +5133,7 @@ void PdfViewRhiWidget::render_page_drawings(QPainter* p, DocumentView* dv, int p
 
 }
 
-void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted){
+void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const QList<FreehandDrawing>& drawings, bool highlighted){
     if (highlighted){
         AbsoluteRect bbox = drawings[0].bbox();
         for (int i = 1; i < drawings.size(); i++){
@@ -5172,7 +5172,7 @@ void PdfViewRhiWidget::render_drawings(QPainter* p, DocumentView* dv, const std:
 
 void PdfViewRhiWidget::prepare_non_compiled_line_drawing_pipeline(){}
 void PdfViewRhiWidget::render_compiled_drawings(){}
-void PdfViewRhiWidget::compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings){}
+void PdfViewRhiWidget::compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings){}
 void PdfViewRhiWidget::prepare_line_drawing_pipeline(){}
 void PdfViewRhiWidget::enable_multisampling(){}
 void PdfViewRhiWidget::disable_multisampling(){}

@@ -87,9 +87,14 @@ struct CachedPageIndex {
 
 
 struct PageFreehandDrawing{
-    std::vector<FreehandDrawing> drawings;
+    Q_GADGET
+    Q_PROPERTY(QList<FreehandDrawing> drawings READ get_drawings)
+public:
+    QList<FreehandDrawing> drawings;
     QDateTime last_addition_time;
     QDateTime last_deletion_time;
+
+    QList<FreehandDrawing> get_drawings();
 };
 
 class Document : public QObject{
@@ -246,7 +251,7 @@ private:
         }
     }
 
-    std::map<int, PageFreehandDrawing> page_freehand_drawings;
+    QMap<int, PageFreehandDrawing> page_freehand_drawings;
 public:
 
     fz_document* doc = nullptr;
@@ -386,7 +391,7 @@ public:
     std::wstring get_page_label(int page_index);
     int get_page_number_with_label(std::wstring page_label);
     bool is_reflowable();
-    //float get_page_width_smart(int page_index, float* left_ratio, float* right_ratio, int* normal_page_width);
+    // float get_page_width_smart(int page_index, float* left_ratio, float* right_ratio, int* normal_page_width);
     float get_page_size_smart(bool width, int page_index, float* left_ratio, float* right_ratio, int* normal_page_width);
     float get_accum_page_height(int page_index);
     void rotate();
@@ -429,7 +434,7 @@ public:
     std::optional<std::wstring> get_regex_match_at_position(const std::wstring& regex, DocumentPos position, int max_match_size, std::pair<int, int>* out_range);
     std::vector<DocumentPos> find_generic_locations(const std::wstring& type, const std::wstring& name);
     bool can_use_highlights();
-    std::vector<FreehandDrawing> zoom_selected_freehand_drawings(float zoom_factor, std::optional<SelectedDrawings> selected_drawings);
+    QList<FreehandDrawing> zoom_selected_freehand_drawings(float zoom_factor, std::optional<SelectedDrawings> selected_drawings);
 
     bool load_extras();
     bool persist_extras();
@@ -563,9 +568,10 @@ public:
     std::vector<SearchResult> search_regex(std::wstring query, SearchCaseSensitivity case_sensitive, int begin_page, int min_page, int max_page);
     float max_y_offset();
     void add_freehand_drawing(FreehandDrawing new_drawing);
-    void get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, std::vector<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);
+    void get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, QList<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);
     void undo_freehand_drawing();
     const PageFreehandDrawing& get_page_drawings(int page);
+    Q_INVOKABLE QVariantMap get_drawings();
     AbsoluteRect to_absolute(int page, fz_quad quad);
     AbsoluteRect to_absolute(int page, PagelessDocumentRect rect);
 

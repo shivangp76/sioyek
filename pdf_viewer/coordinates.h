@@ -84,6 +84,8 @@ public:
     AbsoluteDocumentPos y_shift(float amount);
 };
 
+Q_DECLARE_METATYPE(AbsoluteDocumentPos)
+
 // normalized window coordinates. x and y are in the range [-1, 1]
 struct NormalizedWindowPos {
     Q_GADGET

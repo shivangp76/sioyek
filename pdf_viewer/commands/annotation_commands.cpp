@@ -270,7 +270,7 @@ public:
         //float diff_y = main_window_pos.y - scratchpad_pos.y;
 
         auto indices = widget->scratchpad->get_intersecting_objects(rect_.value());
-        std::vector<FreehandDrawing> drawings;
+        QList<FreehandDrawing> drawings;
         std::vector<PixmapDrawing> pixmaps;
 
         widget->scratchpad->get_selected_objects_with_indices(indices, drawings, pixmaps);

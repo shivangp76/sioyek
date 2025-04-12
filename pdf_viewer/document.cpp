@@ -2854,7 +2854,7 @@ void Document::embed_annotations(std::wstring new_file_path) {
 
     }
 
-    for (auto [page_number, page_drawings] : page_freehand_drawings) {
+    for (auto [page_number, page_drawings] : page_freehand_drawings.asKeyValueRange()) {
         for (auto drawing : page_drawings.drawings) {
             fz_page* page = load_cached_page(page_number);
             pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
@@ -3859,7 +3859,7 @@ void Document::undo_freehand_drawing() {
     QDateTime most_recent_page_time;
 
     drawings_mutex.lock();
-    for (auto& [page, page_drawings] : page_freehand_drawings) {
+    for (const auto& [page, page_drawings] : page_freehand_drawings.asKeyValueRange()) {
         auto& drawings = page_drawings.drawings;
         if (drawings.size() > 0) {
             if (most_recent_page_index == -1) {
@@ -3886,9 +3886,17 @@ const PageFreehandDrawing& Document::get_page_drawings(int page) {
     return page_freehand_drawings[page];
 }
 
+QVariantMap Document::get_drawings(){
+    QVariantMap res;
+    for (const auto& [key, val] : page_freehand_drawings.asKeyValueRange()){
+        res[QString::number(key)] = QVariant::fromValue(val);
+    }
+    return res;
+}
+
 std::vector<SelectedObjectIndex> Document::get_page_intersecting_drawing_indices(int page, AbsoluteRect absolute_rect, bool mask[26]) {
     std::vector<SelectedObjectIndex> indices;
-    std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page].drawings;
+    auto& page_drawings = page_freehand_drawings[page].drawings;
 
     for (int i = 0; i < page_drawings.size(); i++) {
         if (!mask[page_drawings[i].type - 'a']) {
@@ -3918,7 +3926,7 @@ void Document::delete_all_drawings() {
 }
 
 void Document::delete_page_intersecting_drawings(int page, AbsoluteRect absolute_rect, bool mask[26]) {
-    std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page].drawings;
+    auto& page_drawings = page_freehand_drawings[page].drawings;
     std::vector<SelectedObjectIndex> indices_to_delete = get_page_intersecting_drawing_indices(page, absolute_rect, mask);
 
     for (int j = indices_to_delete.size() - 1; j >= 0; j--) {
@@ -4324,7 +4332,7 @@ void Document::load_drawings_binary(){
 
     }
 
-    for (auto& [page, val] : page_freehand_drawings){
+    for (const auto& [page, val] : page_freehand_drawings.asKeyValueRange()){
         val.last_addition_time = QDateTime::currentDateTime();
         val.last_deletion_time = QDateTime::currentDateTime();
     }
@@ -4346,7 +4354,7 @@ void Document::persist_drawings_binary(bool force){
     quint64 DRAWING_FILE_VERSION = 1;
     binary_file.write((const char*)&DRAWING_FILE_VERSION, sizeof(DRAWING_FILE_VERSION));
 
-    for (auto& [page, drawings] : page_freehand_drawings) {
+    for (const auto& [page, drawings] : page_freehand_drawings.asKeyValueRange()) {
 
         for (auto& drawing : drawings.drawings) {
             if (drawing.points.size() == 0) continue;
@@ -4398,7 +4406,7 @@ void Document::persist_drawings(bool force) {
     QJsonObject root_object;
     QJsonObject drawings_object;
 
-    for (auto& [page, drawings] : page_freehand_drawings) {
+    for (const auto& [page, drawings] : page_freehand_drawings.asKeyValueRange()) {
         QJsonArray page_drawings_array;
 
         for (auto& drawing : drawings.drawings) {
@@ -4680,15 +4688,15 @@ std::vector<Highlight> Document::get_new_sioyek_highlights(const std::vector<Hig
 int Document::num_freehand_drawings() {
     int res = 0;
 
-    for (auto [page, drawings] : page_freehand_drawings) {
+    for (auto [page, drawings] : page_freehand_drawings.asKeyValueRange()) {
         res += drawings.drawings.size();
     }
     return res;
 }
 
-void Document::get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, std::vector<FreehandDrawing>&freehand_drawings, std::vector<PixmapDrawing>&pixmap_drawings){
+void Document::get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, QList<FreehandDrawing>&freehand_drawings, std::vector<PixmapDrawing>&pixmap_drawings){
     //std::vector<FreehandDrawing> results;
-    const std::vector<FreehandDrawing>& page_drawings = page_freehand_drawings[page].drawings;
+    const auto& page_drawings = page_freehand_drawings[page].drawings;
     for (auto index : indices) {
         freehand_drawings.push_back(page_drawings[index.index]);
         //results.push_back(page_drawings[index]);
@@ -6046,10 +6054,10 @@ void Document::delete_fulltext_tag(std::wstring tag) {
     db_manager->delete_document_tag(get_checksum(), tag);
 }
 
-std::vector<FreehandDrawing> Document::zoom_selected_freehand_drawings(float zoom_factor, std::optional<SelectedDrawings> selected_freehand_drawings) {
+QList<FreehandDrawing> Document::zoom_selected_freehand_drawings(float zoom_factor, std::optional<SelectedDrawings> selected_freehand_drawings) {
     if (selected_freehand_drawings.has_value()) {
         if (selected_freehand_drawings->selected_indices.size() > 0) {
-            std::vector<FreehandDrawing>& current_page_drawings = page_freehand_drawings[selected_freehand_drawings->page].drawings;
+            auto& current_page_drawings = page_freehand_drawings[selected_freehand_drawings->page].drawings;
             std::optional<AbsoluteRect> bbox = {};
             for (auto ind : selected_freehand_drawings->selected_indices) {
                 if (ind.type == SelectedObjectType::Drawing) {
@@ -6063,7 +6071,7 @@ std::vector<FreehandDrawing> Document::zoom_selected_freehand_drawings(float zoo
             }
 
             if (bbox) {
-                std::vector<FreehandDrawing> new_moving_drawings;
+                QList<FreehandDrawing> new_moving_drawings;
 
                 AbsoluteDocumentPos zoom_center = bbox->center();
                 QDateTime now = QDateTime::currentDateTime();
@@ -6126,4 +6134,8 @@ QList<QVariant> Document::get_bookmarks_qlist(){
 
 QList<QVariant> Document::get_highlights_qlist(){
     return get_annotation_qlist<Highlight>();
+}
+
+QList<FreehandDrawing> PageFreehandDrawing::get_drawings(){
+    return drawings;
 }

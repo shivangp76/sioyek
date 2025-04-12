@@ -54,7 +54,7 @@ struct ScheduledPortalUpdate {
 
 
 struct FreehandDrawingMoveData {
-    std::vector<FreehandDrawing> initial_drawings;
+    QList<FreehandDrawing> initial_drawings;
     std::vector<PixmapDrawing> initial_pixmaps;
     AbsoluteDocumentPos initial_mouse_position;
 };
@@ -253,7 +253,7 @@ public:
 
     bool visible_drawing_mask[26];
     FreehandDrawing current_drawing;
-    std::vector<FreehandDrawing> moving_drawings;
+    QList<FreehandDrawing> moving_drawings;
     std::vector<PixmapDrawing> moving_pixmaps;
 
     std::vector<DocumentRect> synctex_highlights;
@@ -680,7 +680,7 @@ public:
     std::optional<QString> get_overview_paper_name(QString* full_bib_string=nullptr);
     std::optional<AbsoluteRect> get_overview_source_rect();
     std::optional<OverviewState> get_ith_next_overview(int i);
-    void move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
+    void move_selected_drawings(AbsoluteDocumentPos new_pos, QList<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps);
     bool is_moving_annotations();
     void handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos);
     void select_freehand_drawings(AbsoluteRect rect);
@@ -751,8 +751,8 @@ struct CachedScratchpadPixmapData {
 
 class ScratchPad : public DocumentView {
 private:
-    std::vector<FreehandDrawing> all_drawings;
-    std::vector<FreehandDrawing> non_compiled_drawings;
+    QList<FreehandDrawing> all_drawings;
+    QList<FreehandDrawing> non_compiled_drawings;
     bool is_compile_valid = false;
 public:
 
@@ -773,12 +773,12 @@ public:
     void delete_intersecting_pixmaps(AbsoluteRect selection);
     void delete_intersecting_objects(AbsoluteRect selection);
     void delete_objects_with_indices(const std::vector<SelectedObjectIndex> object_indices);
-    void get_selected_objects_with_indices(const std::vector<SelectedObjectIndex>& indices, std::vector<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);
+    void get_selected_objects_with_indices(const std::vector<SelectedObjectIndex>& indices, QList<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);
     void add_pixmap(QPixmap pixmap);
     AbsoluteRect get_bounding_box();
 
-    const std::vector<FreehandDrawing>& get_all_drawings();
-    const std::vector<FreehandDrawing>& get_non_compiled_drawings();
+    const QList<FreehandDrawing>& get_all_drawings();
+    const QList<FreehandDrawing>& get_non_compiled_drawings();
     void on_compile();
     void invalidate_compile(bool force=false);
     void add_drawing(FreehandDrawing drawing);

@@ -196,7 +196,7 @@ protected:
     bool is_normalized_y_in_window(float y);
     bool is_normalized_y_range_in_window(float y0, float y1);
 
-    virtual void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false);
+    virtual void render_drawings(QPainter* p, DocumentView* dv, const QList<FreehandDrawing>& drawings, bool highlighted = false);
     virtual void render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& page_drawings, bool highlighted = false);
 
     void draw_icon(const QIcon& icon, QRect rect);
@@ -205,7 +205,7 @@ protected:
 
     virtual void prepare_non_compiled_line_drawing_pipeline() = 0;
     virtual void render_compiled_drawings() = 0;
-    virtual void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) = 0;
+    virtual void compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) = 0;
     virtual void prepare_line_drawing_pipeline() = 0;
     virtual void enable_multisampling() = 0;
     virtual void disable_multisampling() = 0;
@@ -255,7 +255,7 @@ protected:
     GLuint LoadShaders(Path vertex_file_path_, Path fragment_file_path_);
     void render_line_window_opengl_backend(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {});
     void render_highlight_window_opengl_backend(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1);
-    void compile_drawings_opengl_backend(DocumentView* dv, const std::vector<FreehandDrawing>& drawings);
+    void compile_drawings_opengl_backend(DocumentView* dv, const QList<FreehandDrawing>& drawings);
     void render_overview_opengl_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border=true);
     void render_overview_backend(NormalizedWindowRect window_rect, OverviewState overview, bool draw_border = true) override;
     CompiledDrawingData compile_drawings_into_vertex_and_index_buffers(const std::vector<float>& line_coordinates,
@@ -273,7 +273,7 @@ protected:
 
     void render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels=-1, bool is_pending=false) override;
     void render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect = {}) override;
-    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+    void render_drawings(QPainter* p, DocumentView* dv, const QList<FreehandDrawing>& drawings, bool highlighted = false) override;
     void render_compiled_drawings() override;
 
     void enable_stencil() override;
@@ -319,7 +319,7 @@ public:
     void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
     void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
 
-    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+    void compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) override;
     bool is_opengl() override;
     QWidget* get_widget() override;
 };
@@ -390,7 +390,7 @@ public:
     void draw_overview_background(std::optional<OverviewState> maybe_overview = {});
     void draw_overview_border(std::optional<OverviewState> maybe_overview = {}, float* color=nullptr);
 
-    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+    void compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) override;
     QWidget* get_widget() override;
 };
 
@@ -424,7 +424,7 @@ struct SioyekHighlightRectRenderCall{
 struct SioyekDrawingRenderCall{
     DocumentView* dv;
     int page = -1;
-    std::vector<FreehandDrawing> drawings;
+    QList<FreehandDrawing> drawings;
     bool highlighted = false;
     int render_order;
 };
@@ -520,7 +520,7 @@ private:
         QRhiResourceUpdateBatch* update_batch,
         DocumentView* dv,
         int page,
-        const std::vector<FreehandDrawing>& drawings,
+        const QList<FreehandDrawing>& drawings,
         QRhiBuffer* vertex_buffer,
         QRhiBuffer* color_buffer,
         int append_index,
@@ -567,12 +567,12 @@ public:
     void set_stencil_for_two_page(int page, PagelessDocumentRect page_content, bool stencils_allowed, float zoom_level) override;
     void set_highlight_color(const float* color, float alpha) override;
     void prepare_highlight_pipeline() override;
-    void render_drawings(QPainter* p, DocumentView* dv, const std::vector<FreehandDrawing>& drawings, bool highlighted = false) override;
+    void render_drawings(QPainter* p, DocumentView* dv, const QList<FreehandDrawing>& drawings, bool highlighted = false) override;
     void render_page_drawings(QPainter* p, DocumentView* dv, int page, const PageFreehandDrawing& drawings, bool highlighted = false) override;
-    void render_page_drawings_impl(QRhiBuffer* uniform_buffer, DocumentView* dv, int page, const std::vector<FreehandDrawing>& drawings, bool highlighted=false);
+    void render_page_drawings_impl(QRhiBuffer* uniform_buffer, DocumentView* dv, int page, const QList<FreehandDrawing>& drawings, bool highlighted=false);
     void prepare_non_compiled_line_drawing_pipeline() override;
     void render_compiled_drawings() override;
-    void compile_drawings(DocumentView* dv, const std::vector<FreehandDrawing>& drawings) override;
+    void compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) override;
     void prepare_line_drawing_pipeline() override;
     void enable_multisampling() override;
     void disable_multisampling() override;

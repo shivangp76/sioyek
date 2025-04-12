@@ -2024,7 +2024,7 @@ void ScratchPad::delete_objects_with_indices(const std::vector<SelectedObjectInd
     }
 }
 
-void ScratchPad::get_selected_objects_with_indices(const std::vector<SelectedObjectIndex>&indices, std::vector<FreehandDrawing>&freehand_drawings, std::vector<PixmapDrawing>&pixmap_drawings){
+void ScratchPad::get_selected_objects_with_indices(const std::vector<SelectedObjectIndex>&indices, QList<FreehandDrawing>&freehand_drawings, std::vector<PixmapDrawing>&pixmap_drawings){
 
     for (auto [index, type] : indices) {
         if (type == SelectedObjectType::Drawing) {
@@ -2103,11 +2103,11 @@ std::vector<SelectedObjectIndex> ScratchPad::get_intersecting_objects(AbsoluteRe
     return selected_objects;
 }
 
-const std::vector<FreehandDrawing>& ScratchPad::get_all_drawings() {
+const QList<FreehandDrawing>& ScratchPad::get_all_drawings() {
     return all_drawings;
 }
 
-const std::vector<FreehandDrawing>& ScratchPad::get_non_compiled_drawings() {
+const QList<FreehandDrawing>& ScratchPad::get_non_compiled_drawings() {
     return non_compiled_drawings;
 }
 
@@ -5170,7 +5170,7 @@ std::optional<OverviewState> DocumentView::get_ith_next_overview(int i) {
     return {};
 }
 
-void DocumentView::move_selected_drawings(AbsoluteDocumentPos new_pos, std::vector<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps) {
+void DocumentView::move_selected_drawings(AbsoluteDocumentPos new_pos, QList<FreehandDrawing>& moved_drawings, std::vector<PixmapDrawing>& moved_pixmaps) {
     float diff_x = -freehand_drawing_move_data->initial_mouse_position.x + new_pos.x;
     float diff_y = -freehand_drawing_move_data->initial_mouse_position.y + new_pos.y;
 
@@ -5201,7 +5201,7 @@ bool DocumentView::is_moving_annotations(){
 }
 
 void DocumentView::handle_freehand_drawing_selection_click(AbsoluteDocumentPos click_pos) {
-    std::vector<FreehandDrawing> moving_drawings;
+    QList<FreehandDrawing> moving_drawings;
     std::vector<PixmapDrawing> moving_pixmaps;
 
     if (scratchpad) {
@@ -5268,7 +5268,7 @@ void DocumentView::select_freehand_drawings(AbsoluteRect rect) {
 }
 
 void DocumentView::freehand_drawing_move_finish(AbsoluteDocumentPos mpos_absolute){
-    std::vector<FreehandDrawing> moved_drawings;
+    QList<FreehandDrawing> moved_drawings;
     std::vector<PixmapDrawing> moved_pixmaps;
 
     move_selected_drawings(mpos_absolute, moved_drawings, moved_pixmaps);
@@ -5574,7 +5574,7 @@ void DocumentView::finish_drawing(QPoint pos) {
 //        current_drawing.points = smooth_filter_drawing_points(current_drawing.points);
 //    }
 
-    std::vector<FreehandDrawingPoint> pruned_points;
+    QList<FreehandDrawingPoint> pruned_points;
     if (SIMPLIFY_FREEHAND_DRAWINGS){
         pruned_points = prune_freehand_drawing_points(current_drawing.points);
     }

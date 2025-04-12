@@ -354,8 +354,8 @@ void lighten_color(float input[3], float output[3]);
 QString clean_bib_item(QString bib_item);
 std::wstring clean_link_source_text(std::wstring link_source_text);
 
-std::vector<FreehandDrawingPoint> smooth_filter_drawing_points(const std::vector<FreehandDrawingPoint>& points, int amount);
-std::vector<FreehandDrawingPoint> prune_freehand_drawing_points(const std::vector<FreehandDrawingPoint>& points);
+QList<FreehandDrawingPoint> smooth_filter_drawing_points(const QList<FreehandDrawingPoint>& points, int amount);
+QList<FreehandDrawingPoint> prune_freehand_drawing_points(const QList<FreehandDrawingPoint>& points);
 std::optional<DocumentRect> find_expanding_rect(bool before, fz_stext_page* page, DocumentRect page_rect);
 std::vector<DocumentRect> find_expanding_rect_word(bool before, fz_stext_page* page, DocumentRect page_rect);
 std::optional<DocumentRect> find_shrinking_rect_word(bool before, fz_stext_page* page, DocumentRect page_rect);

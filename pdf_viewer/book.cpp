@@ -979,3 +979,11 @@ QString BookMark::get_desc_qstring() const {
 void BookMark::set_desc_qstring(const QString& qstr){
     description = qstr.toStdWString();
 }
+
+AbsoluteDocumentPos FreehandDrawingPoint::get_pos(){
+    return pos;
+}
+
+QList<FreehandDrawingPoint> FreehandDrawing::get_points(){
+    return points;
+}
