@@ -856,6 +856,21 @@ std::optional<Requirement> MacroCommand::next_requirement(MainWidget* widget) {
     }
 }
 
+std::optional<std::wstring> MacroCommand::get_text_suggestion(int index) {
+    if (is_modal) {
+        int mode_index = get_current_mode_index();
+        if (mode_index != -1) {
+            return commands[mode_index]->get_text_suggestion(index);
+        }
+    }
+    else {
+        if (commands.size() == 1) {
+            return commands[0]->get_text_suggestion(index);
+        }
+    }
+    return {};
+}
+
 void MacroCommand::perform_subcommand(int index) {
     if (!performed[index]) {
         if (commands[index]->pushes_state()) {

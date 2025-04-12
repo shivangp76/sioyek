@@ -12063,6 +12063,7 @@ void MainWidget::on_next_text_suggestion(int diff) {
         return;
     }
     if (pending_command_instance) {
+        qDebug() << pending_command_instance->get_text_default_value();
         bool this_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index).has_value();
         bool next_has_value = pending_command_instance->get_text_suggestion(text_suggestion_index + diff).has_value();
         if (!this_has_value && !next_has_value) return;

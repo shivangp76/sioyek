@@ -236,6 +236,7 @@ public:
     bool mode_matches(std::string current_mode, std::string command_mode);
     std::string get_name();
     std::string get_human_readable_name() override;
+    std::optional<std::wstring> get_text_suggestion(int index);
 
 };
 
