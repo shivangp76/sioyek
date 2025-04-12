@@ -28,6 +28,7 @@
 #include "path.h"
 #include "background_tasks.h"
 #include "document.h"
+#include "document_view.h"
 
 
 class SelectionIndicator;
@@ -184,6 +185,7 @@ using SioyekBaseWidget = QMainWindow;
 class MainWidget : public SioyekBaseWidget {
     Q_OBJECT
     Q_PROPERTY(Document* doc READ doc)
+    Q_PROPERTY(DocumentView* view READ dv)
 public:
     fz_context* mupdf_context = nullptr;
     DatabaseManager* db_manager = nullptr;

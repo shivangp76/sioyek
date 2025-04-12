@@ -5424,6 +5424,10 @@ void DocumentView::handle_portal_move_finish() {
     doc()->invalidate_page_visible_portals();
 }
 
+QString DocumentView::get_selected_text_qstring(){
+    return QString::fromStdWString(get_selected_text());
+}
+
 const std::wstring& DocumentView::get_selected_text(bool insert_newlines) {
     if (selected_text_is_dirty || insert_newlines) {
         std::deque<AbsoluteRect> dummy_rects;

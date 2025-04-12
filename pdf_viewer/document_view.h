@@ -84,6 +84,7 @@ class DocumentView : public QObject{
     Q_PROPERTY(float zoom_level READ get_zoom_level WRITE set_zoom_level)
     Q_PROPERTY(float offset_x READ get_offset_x WRITE set_offset_x)
     Q_PROPERTY(float offset_y READ get_offset_y WRITE set_offset_y)
+    Q_PROPERTY(QString selected_text READ get_selected_text_qstring)
 protected:
 
     DatabaseManager* db_manager = nullptr;
@@ -689,6 +690,7 @@ public:
     void handle_portal_move_finish();
     void handle_bookmark_move_finish();
     const std::wstring& get_selected_text(bool insert_newlines=false);
+    QString get_selected_text_qstring();
     void expand_selection_vertical(bool begin, bool below);
     void handle_move_text_mark_down();
     void handle_move_text_mark_up();
