@@ -483,6 +483,7 @@ private:
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> inverted_highlight_pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> paintover_highlight_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_borders_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> drawing_pipeline;
     // std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;

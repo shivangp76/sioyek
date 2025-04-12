@@ -4055,6 +4055,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         inverted_highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        paintover_highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_borders_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         drawing_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         // test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
@@ -4070,6 +4071,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         });
 
         inverted_highlight_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_highlight.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight.frag.qsb")) }
+        });
+
+        paintover_highlight_pipeline->setShaderStages({
             { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_highlight.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/highlight.frag.qsb")) }
         });
@@ -4209,6 +4215,31 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             inverted_highlight_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
             inverted_highlight_pipeline->setSampleCount(sample_count);
             inverted_highlight_pipeline->create();
+        }
+
+        {
+            paintover_highlight_pipeline->setVertexInputLayout(highlight_input_layout);
+            paintover_highlight_pipeline->setShaderResourceBindings(preallocated_highlight_resource_bindings[0].get());
+            paintover_highlight_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            paintover_highlight_pipeline->setDepthTest(true);
+            paintover_highlight_pipeline->setDepthWrite(true);
+            QRhiGraphicsPipeline::TargetBlend highlight_target_blends;
+
+            // extern void glBlendFuncSeparate (GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha) OPENGL_DEPRECATED(10.0, 10.14);
+            // glBlendFuncSeparate(GL_ONE_MINUS_SRC_COLOR, GL_SRC_COLOR, GL_ONE, GL_ONE);
+
+            highlight_target_blends.opAlpha = QRhiGraphicsPipeline::BlendOp::Add;
+            highlight_target_blends.opColor = QRhiGraphicsPipeline::BlendOp::Add;
+            highlight_target_blends.srcAlpha = QRhiGraphicsPipeline::BlendFactor::One;
+            highlight_target_blends.dstAlpha = QRhiGraphicsPipeline::BlendFactor::One;
+            highlight_target_blends.srcColor = QRhiGraphicsPipeline::BlendFactor::OneMinusSrcColor;
+            highlight_target_blends.dstColor = QRhiGraphicsPipeline::BlendFactor::SrcColor;
+
+            highlight_target_blends.enable = true;
+            paintover_highlight_pipeline->setTargetBlends({highlight_target_blends});
+            paintover_highlight_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            paintover_highlight_pipeline->setSampleCount(sample_count);
+            paintover_highlight_pipeline->create();
         }
 
         highlight_borders_pipeline->setVertexInputLayout(highlight_borders_input_layout);
@@ -4436,15 +4467,37 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
     }
 
     command_buffer->setGraphicsPipeline(highlight_pipeline.get());
+    auto current_pipeline = highlight_pipeline.get();
+
     for (int i = 0; i < max_iter; i++){
 
         if (current_frame_highlight_rect_render_calls[i].in_overview != overview) continue;
 
         int flags = current_frame_highlight_rect_render_calls[i].flags;
-        bool fill = flags & HighlightRenderFlags::HRF_FILL;
+        // bool fill = flags & HighlightRenderFlags::HRF_FILL;
         bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
-        if (!fill) continue;
-        if (inverted) continue;
+        bool paintover = flags & HighlightRenderFlags::HRF_PAINTOVER;
+        bool border = flags & HighlightRenderFlags::HRF_BORDER;
+        if (border) continue;
+
+        if (inverted){
+            if (current_pipeline != inverted_highlight_pipeline.get()){
+                command_buffer->setGraphicsPipeline(inverted_highlight_pipeline.get());
+                current_pipeline = inverted_highlight_pipeline.get();
+            }
+        }
+        else if (paintover){
+            if (current_pipeline != paintover_highlight_pipeline.get()){
+                command_buffer->setGraphicsPipeline(paintover_highlight_pipeline.get());
+                current_pipeline = paintover_highlight_pipeline.get();
+            }
+        }
+        else if (current_pipeline != highlight_pipeline.get()) {
+            command_buffer->setGraphicsPipeline(highlight_pipeline.get());
+            current_pipeline = highlight_pipeline.get();
+        }
+
+
         int offset = 12 * sizeof(float) * i;
 
         QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i].get();
@@ -4459,28 +4512,28 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
         command_buffer->draw(6);
     }
 
-    command_buffer->setGraphicsPipeline(inverted_highlight_pipeline.get());
+    // command_buffer->setGraphicsPipeline(inverted_highlight_pipeline.get());
 
-    for (int i = 0; i < max_iter; i++){
+    // for (int i = 0; i < max_iter; i++){
 
-        if (current_frame_highlight_rect_render_calls[i].in_overview != overview) continue;
+    //     if (current_frame_highlight_rect_render_calls[i].in_overview != overview) continue;
 
-        int flags = current_frame_highlight_rect_render_calls[i].flags;
-        bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
-        if (!inverted) continue;
-        int offset = 12 * sizeof(float) * i;
+    //     int flags = current_frame_highlight_rect_render_calls[i].flags;
+    //     bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
+    //     if (!inverted) continue;
+    //     int offset = 12 * sizeof(float) * i;
 
-        QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i].get();
-        command_buffer->setShaderResources(resource_bindings);
+    //     QRhiShaderResourceBindings* resource_bindings = preallocated_highlight_resource_bindings[i].get();
+    //     command_buffer->setShaderResources(resource_bindings);
 
-        const QRhiCommandBuffer::VertexInput vbufBinding(highlights_vertex_buffer_ptr.get(), offset);
-        const QRhiCommandBuffer::VertexInput uv_buffer_binding(uv_buffer_ptr.get(), 0);
+    //     const QRhiCommandBuffer::VertexInput vbufBinding(highlights_vertex_buffer_ptr.get(), offset);
+    //     const QRhiCommandBuffer::VertexInput uv_buffer_binding(uv_buffer_ptr.get(), 0);
 
-        command_buffer->setVertexInput(0, 1, &vbufBinding);
-        command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
-        // command_buffer->setVertexInput(1, 1, &uvbufBinding);
-        command_buffer->draw(6);
-    }
+    //     command_buffer->setVertexInput(0, 1, &vbufBinding);
+    //     command_buffer->setVertexInput(1, 1, &uv_buffer_binding);
+    //     // command_buffer->setVertexInput(1, 1, &uvbufBinding);
+    //     command_buffer->draw(6);
+    // }
 
     command_buffer->setGraphicsPipeline(highlight_borders_pipeline.get());
 
