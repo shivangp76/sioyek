@@ -132,8 +132,8 @@ public:
     void add_metadata_to_json(QJsonObject& obj, QString type) const;
     void load_metadata_from_json(const QJsonObject& obj);
 
-    QDateTime get_creation_datetime() const;
-    QDateTime get_modification_datetime() const;
+    Q_INVOKABLE QDateTime get_creation_datetime() const;
+    Q_INVOKABLE QDateTime get_modification_datetime() const;
 
     void update_creation_time();
     void update_modification_time();
@@ -150,6 +150,8 @@ public:
 */
 struct Mark : Annotation {
     Q_GADGET
+    Q_PROPERTY(float y_offset MEMBER y_offset)
+    Q_PROPERTY(char symbol MEMBER symbol)
 public:
     static Mark from_json(const QJsonObject& json_object);
 
@@ -176,6 +178,14 @@ public:
 */
 struct BookMark : Annotation {
     Q_GADGET
+    Q_PROPERTY(float y_offset_ MEMBER y_offset_)
+    Q_PROPERTY(float begin_x MEMBER begin_x)
+    Q_PROPERTY(float begin_y MEMBER begin_y)
+    Q_PROPERTY(float end_x MEMBER end_x)
+    Q_PROPERTY(float end_y MEMBER end_y)
+    Q_PROPERTY(float font_size MEMBER font_size)
+    // Q_PROPERTY(std::wstring description MEMBER description)
+    Q_PROPERTY(QString desc READ get_desc_qstring WRITE set_desc_qstring)
 public:
     static BookMark from_json(const QJsonObject& json_object);
 
@@ -221,6 +231,9 @@ public:
     QJsonObject to_json(std::string doc_checksum) const;
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
     float get_y_offset() const;
+
+    QString get_desc_qstring() const;
+    void set_desc_qstring(const QString& qstr);
 
     QFont get_font(float zoom_level) const;
     bool is_freetext() const;

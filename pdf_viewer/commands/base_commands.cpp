@@ -35,7 +35,10 @@ void CommandManager::handle_new_javascript_command(std::wstring command_name_, J
     QFileInfo javascript_file_info(QString::fromStdWString(command_file_path));
     QString absolute_file_path;
 
-    if (javascript_file_info.isRelative()) {
+    if (javascript_file_info.filePath().startsWith("~")){
+        absolute_file_path = QDir::homePath() + javascript_file_info.filePath().mid(1);
+    }
+    else if (javascript_file_info.isRelative()) {
         absolute_file_path = parent_dir.absoluteFilePath(javascript_file_info.filePath());
     }
     else {
@@ -48,6 +51,9 @@ void CommandManager::handle_new_javascript_command(std::wstring command_name_, J
         new_commands[command_name] = [command_name, code, entry_point = entry_point, is_async, this](MainWidget* w) {
             return std::make_unique<JavascriptCommand>(command_name, code.toStdWString(), entry_point, is_async, w);
             };
+    }
+    else{
+        qDebug() << "Could not open " << absolute_file_path;
     }
 }
 

@@ -8132,15 +8132,8 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-
-
-    QRect full_rect = rect();
-    QRect half_rect  = QRect(full_rect.x(), full_rect.y(), full_rect.width(), full_rect.height() / 2);
-    resize_child_widgets_with_window_rect(half_rect);
-    // if ((current_widget_stack.size() > 0)) {
-    //     for (auto w : current_widget_stack) {
-    //         handle_qobject_parent_resize(half_rect, w);
-    //     }
+    // for (auto& [x, _] : ADDITIONAL_JAVASCRIPT_COMMANDS){
+    //     qDebug() << x;
     // }
 }
 
@@ -10925,6 +10918,15 @@ QJsonObject MainWidget::get_json_annotations() {
     annots["portals"] = doc()->get_portals_json();
     annots["marks"] = doc()->get_marks_json();
     return annots;
+}
+
+QVariantMap MainWidget::get_annotations(){
+    QVariantMap result;
+    result["bookmarks"] = doc()->get_annotation_qlist<BookMark>();
+    result["highlights"] = doc()->get_annotation_qlist<Highlight>();
+    result["portals"] = doc()->get_annotation_qlist<Portal>();
+
+    return result;
 }
 
 QString MainWidget::handle_action_in_menu(std::wstring action) {
@@ -14322,6 +14324,17 @@ void MainWidget::open_text_editor_at_line(QString file_path, int line_number) {
     }
 }
 
+void MainWidget::apply_annotation_changes(QVariant annot){
+    if (annot.canConvert<BookMark>()){
+        BookMark bm = annot.value<BookMark>();
+        update_annotation_js(bm.to_json(doc()->get_checksum()));
+    }
+    if (annot.canConvert<Highlight>()){
+        Highlight hl = annot.value<Highlight>();
+        update_annotation_js(hl.to_json(doc()->get_checksum()));
+    }
+}
+
 void MainWidget::update_annotation_js(QJsonObject annot) {
 
     //QString uuid = annot["uuid"].toString();
@@ -14331,6 +14344,10 @@ void MainWidget::update_annotation_js(QJsonObject annot) {
     if (type == "bookmark") {
         BookMark bm = BookMark::from_json(annot);
         doc()->update_annotation_with_server_annotation(&bm);
+    }
+    if (type == "highlight") {
+        Highlight hl = Highlight::from_json(annot);
+        doc()->update_annotation_with_server_annotation(&hl);
     }
 
     //qDebug() << "what in the hell";

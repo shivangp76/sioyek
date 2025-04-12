@@ -944,6 +944,7 @@ public:
     Q_INVOKABLE QString get_current_document_text();
     Q_INVOKABLE void set_state(QJsonObject state);
     Q_INVOKABLE QJsonObject get_json_annotations();
+    Q_INVOKABLE QVariantMap get_annotations();
     Q_INVOKABLE void goto_offset(float x_offset, float y_offset);
     Q_INVOKABLE QJsonObject absolute_to_window_rect_json(QJsonObject absolute_rect_json);
     Q_INVOKABLE int absolute_pos_to_page(double pos);
@@ -1041,6 +1042,7 @@ public:
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
     Q_INVOKABLE QStringList list_dir(QString path);
     Q_INVOKABLE void update_annotation_js(QJsonObject annot);
+    Q_INVOKABLE void apply_annotation_changes(QVariant annot);
     Q_INVOKABLE QJsonObject get_annotation_js(QString uuid);
 
     void run_startup_js(bool first_run=false);

@@ -93,6 +93,7 @@ struct PageFreehandDrawing{
 };
 
 class Document {
+    Q_GADGET
 
 private:
 
@@ -600,6 +601,16 @@ public:
 
     template <typename T>
     const std::vector<T>& get_annots() = delete;
+
+    template <typename T>
+    const QList<QVariant> get_annotation_qlist(){
+        QList<QVariant> result;
+        const std::vector<T>& annots = get_annots<T>();
+        for (auto& annot : annots){
+            result.push_back(QVariant::fromValue(annot));
+        }
+        return result;
+    };
 
     template <typename T>
     std::unordered_map<int, std::vector<int>>& get_annot_page_indices() = delete;

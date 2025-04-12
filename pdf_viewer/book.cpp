@@ -971,3 +971,11 @@ QVariant BookMark::get_text_color() const {
     }
     return QColor::fromRgbF(color[0], color[1], color[2]);
 }
+
+QString BookMark::get_desc_qstring() const {
+    return QString::fromStdWString(description);
+}
+
+void BookMark::set_desc_qstring(const QString& qstr){
+    description = qstr.toStdWString();
+}

@@ -4,6 +4,7 @@
 #include <mupdf/fitz.h>
 #include <qopengl.h>
 #include <algorithm>
+#include <QObject>
 #include <qrect.h>
 #include <cmath>
 #include <array>
@@ -34,11 +35,15 @@ struct CompiledDrawingData {
 };
 
 struct PagelessDocumentPos {
+    Q_GADGET
+public:
     float x;
     float y;
 };
 
 struct DocumentPos {
+    Q_GADGET
+public:
     int page;
     float x;
     float y;
@@ -51,11 +56,15 @@ struct DocumentPos {
 };
 
 struct VirtualPos {
+    Q_GADGET
+public:
     float x;
     float y;
 };
 
 struct AbsoluteDocumentPos {
+    Q_GADGET
+public:
     float x;
     // this is the concatenated y-coordinate of the current page (sum of all page heights up to current location)
     float y;
@@ -70,6 +79,8 @@ struct AbsoluteDocumentPos {
 
 // normalized window coordinates. x and y are in the range [-1, 1]
 struct NormalizedWindowPos {
+    Q_GADGET
+public:
     float x;
     float y;
 
@@ -80,6 +91,8 @@ struct NormalizedWindowPos {
 
 // window coordinate in pixels
 struct WindowPos {
+    Q_GADGET
+public:
     int x;
     int y;
 
@@ -220,11 +233,21 @@ struct EnhancedRect : public R {
 };
 
 
+// struct PagelessDocumentRect : public EnhancedRect<fz_rect, PagelessDocumentPos>{
+//     Q_GADGET
+// };
+
+// struct VirtualRect : public EnhancedRect<fz_rect, VirtualPos>{
+//     Q_GADGET
+// };
+
 using PagelessDocumentRect = EnhancedRect<fz_rect, PagelessDocumentPos>;
 using VirtualRect = EnhancedRect<fz_rect, VirtualPos>;
 //using WindowRect = EnhancedRect<fz_irect, WindowPos>;
 
 struct WindowRect : public EnhancedRect<fz_irect, WindowPos> {
+    Q_GADGET
+public:
     static WindowRect from_qrect(const QRect& qrect);
     WindowRect(WindowPos top_left, WindowPos bottom_right);
     WindowRect();
@@ -238,6 +261,8 @@ bool operator ==(const EnhancedRect<R, T>& lhs, const EnhancedRect<R, T>& rhs) {
 }
 
 struct DocumentRect {
+    Q_GADGET
+public:
     EnhancedRect<fz_rect, PagelessDocumentPos> rect;
     int page;
 
@@ -257,6 +282,8 @@ struct DocumentRect {
 
 
 struct NormalizedWindowRect : public EnhancedRect<fz_rect, NormalizedWindowPos>  {
+    Q_GADGET
+public:
     NormalizedWindowRect(NormalizedWindowPos top_left, NormalizedWindowPos bottom_right);
     NormalizedWindowRect(fz_rect r);
     NormalizedWindowRect();
@@ -270,6 +297,8 @@ struct NormalizedWindowRect : public EnhancedRect<fz_rect, NormalizedWindowPos> 
 
 
 struct AbsoluteRect : public EnhancedRect<fz_rect, AbsoluteDocumentPos> {
+    Q_GADGET
+public:
     AbsoluteRect(AbsoluteDocumentPos top_left, AbsoluteDocumentPos bottom_right);
     AbsoluteRect(fz_rect r);
     AbsoluteRect();
