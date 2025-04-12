@@ -250,6 +250,10 @@ struct EnhancedRect : public R {
 
 // struct VirtualRect : public EnhancedRect<fz_rect, VirtualPos>{
 //     Q_GADGET
+//     Q_PROPERTY(float x0 MEMBER x0);
+//     Q_PROPERTY(float x1 MEMBER x1);
+//     Q_PROPERTY(float y0 MEMBER y0);
+//     Q_PROPERTY(float y1 MEMBER y1);
 // };
 
 using PagelessDocumentRect = EnhancedRect<fz_rect, PagelessDocumentPos>;
@@ -258,12 +262,16 @@ using VirtualRect = EnhancedRect<fz_rect, VirtualPos>;
 
 struct WindowRect : public EnhancedRect<fz_irect, WindowPos> {
     Q_GADGET
+    Q_PROPERTY(int x0 MEMBER x0);
+    Q_PROPERTY(int x1 MEMBER x1);
+    Q_PROPERTY(int y0 MEMBER y0);
+    Q_PROPERTY(int y1 MEMBER y1);
 public:
     static WindowRect from_qrect(const QRect& qrect);
     WindowRect(WindowPos top_left, WindowPos bottom_right);
     WindowRect();
 
-    AbsoluteRect to_absolute(DocumentView* dv);
+    Q_INVOKABLE AbsoluteRect to_absolute(DocumentView* dv);
 };
 
 template<typename R, typename T>
@@ -273,6 +281,7 @@ bool operator ==(const EnhancedRect<R, T>& lhs, const EnhancedRect<R, T>& rhs) {
 
 struct DocumentRect {
     Q_GADGET
+    Q_PROPERTY(int page MEMBER page);
 public:
     EnhancedRect<fz_rect, PagelessDocumentPos> rect;
     int page;
@@ -281,27 +290,31 @@ public:
     DocumentRect(fz_rect r, int page);
     DocumentRect(DocumentPos top_left, DocumentPos bottom_right, int page);
 
-    AbsoluteRect to_absolute(Document* doc);
-    NormalizedWindowRect to_window_normalized(DocumentView* document_view);
-    WindowRect to_window(DocumentView* document_view);
+    Q_INVOKABLE AbsoluteRect to_absolute(Document* doc);
+    Q_INVOKABLE NormalizedWindowRect to_window_normalized(DocumentView* document_view);
+    Q_INVOKABLE WindowRect to_window(DocumentView* document_view);
     QRect to_window_qrect(DocumentView* document_view);
 
-    DocumentPos top_left();
-    DocumentPos bottom_right();
-    bool is_visible(DocumentView* document_view);
+    Q_INVOKABLE DocumentPos top_left();
+    Q_INVOKABLE DocumentPos bottom_right();
+    Q_INVOKABLE bool is_visible(DocumentView* document_view);
 };
 
 
 struct NormalizedWindowRect : public EnhancedRect<fz_rect, NormalizedWindowPos>  {
     Q_GADGET
+    Q_PROPERTY(float x0 MEMBER x0);
+    Q_PROPERTY(float x1 MEMBER x1);
+    Q_PROPERTY(float y0 MEMBER y0);
+    Q_PROPERTY(float y1 MEMBER y1);
 public:
     NormalizedWindowRect(NormalizedWindowPos top_left, NormalizedWindowPos bottom_right);
     NormalizedWindowRect(fz_rect r);
     NormalizedWindowRect();
 
 
-    bool is_visible(float tolerance=0.0f);
-    WindowRect to_window(DocumentView* document_view) const;
+    Q_INVOKABLE bool is_visible(float tolerance=0.0f);
+    Q_INVOKABLE WindowRect to_window(DocumentView* document_view) const;
     std::array<float, 12> to_vertices() const;
 
 };
@@ -319,8 +332,8 @@ public:
     AbsoluteRect();
     DocumentRect to_document(Document* doc) const;
 
-    NormalizedWindowRect to_window_normalized(DocumentView* document_view);
-    WindowRect to_window(DocumentView* document_view);
+    Q_INVOKABLE NormalizedWindowRect to_window_normalized(DocumentView* document_view);
+    Q_INVOKABLE WindowRect to_window(DocumentView* document_view);
     VirtualRect to_virtual(DocumentView* document_view);
 };
 
