@@ -14320,35 +14320,7 @@ void MainWidget::open_text_editor_at_line(QString file_path, int line_number) {
     }
 }
 
-void MainWidget::apply_annotation_changes(QVariant annot){
-    if (annot.canConvert<BookMark>()){
-        BookMark bm = annot.value<BookMark>();
-        update_annotation_js(bm.to_json(doc()->get_checksum()));
-    }
-    if (annot.canConvert<Highlight>()){
-        Highlight hl = annot.value<Highlight>();
-        update_annotation_js(hl.to_json(doc()->get_checksum()));
-    }
-}
 
-void MainWidget::update_annotation_js(QJsonObject annot) {
-
-    //QString uuid = annot["uuid"].toString();
-    //QString content = annot["desc"].toString();
-    QString type = annot["type"].toString();
-
-    if (type == "bookmark") {
-        BookMark bm = BookMark::from_json(annot);
-        doc()->update_annotation_with_server_annotation(&bm);
-    }
-    if (type == "highlight") {
-        Highlight hl = Highlight::from_json(annot);
-        doc()->update_annotation_with_server_annotation(&hl);
-    }
-
-    //qDebug() << "what in the hell";
-    //qDebug() << annot;
-}
 
 QJsonObject MainWidget::get_annotation_js(QString uuid) {
     auto bm = doc()->get_bookmark_with_uuid(uuid.toStdString());

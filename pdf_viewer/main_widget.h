@@ -1041,8 +1041,6 @@ public:
     Q_INVOKABLE void report_js_error(QString error_message, QString error_file_path, int error_line);
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
     Q_INVOKABLE QStringList list_dir(QString path);
-    Q_INVOKABLE void update_annotation_js(QJsonObject annot);
-    Q_INVOKABLE void apply_annotation_changes(QVariant annot);
     Q_INVOKABLE QJsonObject get_annotation_js(QString uuid);
 
     void run_startup_js(bool first_run=false);

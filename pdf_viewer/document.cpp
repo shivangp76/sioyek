@@ -6095,3 +6095,27 @@ QVariantMap Document::get_annotations() const {
 
     return result;
 }
+
+void Document::apply_annotation_changes(QVariant annot){
+    if (annot.canConvert<BookMark>()){
+        BookMark bm = annot.value<BookMark>();
+        update_annotation_js(bm.to_json(get_checksum()));
+    }
+    if (annot.canConvert<Highlight>()){
+        Highlight hl = annot.value<Highlight>();
+        update_annotation_js(hl.to_json(get_checksum()));
+    }
+}
+
+void Document::update_annotation_js(QJsonObject annot) {
+    QString type = annot["type"].toString();
+
+    if (type == "bookmark") {
+        BookMark bm = BookMark::from_json(annot);
+        update_annotation_with_server_annotation(&bm);
+    }
+    if (type == "highlight") {
+        Highlight hl = Highlight::from_json(annot);
+        update_annotation_with_server_annotation(&hl);
+    }
+}

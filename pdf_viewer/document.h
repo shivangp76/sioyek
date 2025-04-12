@@ -655,7 +655,10 @@ public:
 
     void set_annots_to_synced_with_type(std::string annot_type, std::vector<std::string> uuids);
     ParsedUri parse_link(const PdfLink& link);
+
     Q_INVOKABLE QVariantMap get_annotations() const;
+    Q_INVOKABLE void apply_annotation_changes(QVariant annot);
+    Q_INVOKABLE void update_annotation_js(QJsonObject annot);
 
     template<typename T>
     std::vector<int> get_page_visible_annot_indices(int page) {
