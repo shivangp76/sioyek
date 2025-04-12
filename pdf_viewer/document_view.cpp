@@ -610,6 +610,10 @@ void DocumentView::goto_right() {
     set_offset_x(view_left_offset);
 }
 
+float DocumentView::set_zoom_level(float zl){
+    return set_zoom_level(zl, true);
+}
+
 float DocumentView::set_zoom_level(float zl, bool should_exit_auto_resize_mode, bool readjust) {
 #ifdef SIOYEK_ANDROID
     const float max_zoom_level = 6.0f;

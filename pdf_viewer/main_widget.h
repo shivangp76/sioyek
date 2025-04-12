@@ -1047,7 +1047,7 @@ public:
     Q_INVOKABLE QString get_environment_variable(QString name);
     void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);
     void set_text_prompt_text(QString text);
-    DocumentView* dv();
+    Q_INVOKABLE DocumentView* dv();
     bool should_draw(bool originated_from_pen);
     bool is_scratchpad_mode();
     void toggle_scratchpad_mode();

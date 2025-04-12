@@ -79,7 +79,11 @@ struct PendingDownloadPortal {
     bool marked = false;
 };
 
-class DocumentView {
+class DocumentView : public QObject{
+    Q_OBJECT
+    Q_PROPERTY(float zoom_level READ get_zoom_level WRITE set_zoom_level)
+    Q_PROPERTY(float offset_x READ get_offset_x WRITE set_offset_x)
+    Q_PROPERTY(float offset_y READ get_offset_y WRITE set_offset_y)
 protected:
 
     DatabaseManager* db_manager = nullptr;
@@ -406,6 +410,7 @@ public:
     float get_min_valid_x(bool relenting);
 
     virtual float set_zoom_level(float zl, bool should_exit_auto_resize_mode, bool readjust=true);
+    float set_zoom_level(float zl);
     virtual float zoom_in(float zoom_factor = ZOOM_INC_FACTOR, bool readjust=true);
     virtual float zoom_out(float zoom_factor = ZOOM_INC_FACTOR, bool readjust=true);
     float zoom_in_cursor(WindowPos mouse_pos, float zoom_factor = ZOOM_INC_FACTOR);
