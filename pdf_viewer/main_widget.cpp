@@ -11649,7 +11649,7 @@ void MainWidget::run_javascript_command(std::wstring javascript_code, std::optio
         auto res = engine->evaluate(content, QString(), 1, &stack_trace);
         //release_js_engine(engine);
         if (res.isError()){
-            qDebug() << res.errorType();
+            qDebug() << res.toString();
         }
         if (stack_trace.size() > 0) {
             for (auto line : stack_trace) {
