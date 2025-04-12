@@ -43,20 +43,25 @@ public:
 
 struct DocumentPos {
     Q_GADGET
+    Q_PROPERTY(int page MEMBER page)
+    Q_PROPERTY(float x MEMBER x)
+    Q_PROPERTY(float y MEMBER y)
 public:
     int page;
     float x;
     float y;
 
     PagelessDocumentPos pageless() const;
-    AbsoluteDocumentPos to_absolute(Document* doc) const;
-    NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;
-    WindowPos to_window(DocumentView* document_view) const;
-    DocumentPos to_page(int target_page, Document* doc);
+    Q_INVOKABLE AbsoluteDocumentPos to_absolute(Document* doc) const;
+    Q_INVOKABLE NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;
+    Q_INVOKABLE WindowPos to_window(DocumentView* document_view) const;
+    Q_INVOKABLE DocumentPos to_page(int target_page, Document* doc);
 };
 
 struct VirtualPos {
     Q_GADGET
+    Q_PROPERTY(float x MEMBER x)
+    Q_PROPERTY(float y MEMBER y)
 public:
     float x;
     float y;
@@ -64,14 +69,16 @@ public:
 
 struct AbsoluteDocumentPos {
     Q_GADGET
+    Q_PROPERTY(float x MEMBER x)
+    Q_PROPERTY(float y MEMBER y)
 public:
     float x;
     // this is the concatenated y-coordinate of the current page (sum of all page heights up to current location)
     float y;
 
-    DocumentPos to_document(Document* doc) const;
-    NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;
-    WindowPos to_window(DocumentView* document_view) const;
+    Q_INVOKABLE DocumentPos to_document(Document* doc) const;
+    Q_INVOKABLE NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;
+    Q_INVOKABLE WindowPos to_window(DocumentView* document_view) const;
 
     AbsoluteDocumentPos x_shift(float amount);
     AbsoluteDocumentPos y_shift(float amount);
@@ -80,18 +87,22 @@ public:
 // normalized window coordinates. x and y are in the range [-1, 1]
 struct NormalizedWindowPos {
     Q_GADGET
+    Q_PROPERTY(float x MEMBER x)
+    Q_PROPERTY(float y MEMBER y)
 public:
     float x;
     float y;
 
-    DocumentPos to_document(DocumentView* document_view);
-    AbsoluteDocumentPos to_absolute(DocumentView* document_view);
-    WindowPos to_window(DocumentView* document_view);
+    Q_INVOKABLE DocumentPos to_document(DocumentView* document_view);
+    Q_INVOKABLE AbsoluteDocumentPos to_absolute(DocumentView* document_view);
+    Q_INVOKABLE WindowPos to_window(DocumentView* document_view);
 };
 
 // window coordinate in pixels
 struct WindowPos {
     Q_GADGET
+    Q_PROPERTY(int x MEMBER x)
+    Q_PROPERTY(int y MEMBER y)
 public:
     int x;
     int y;
@@ -101,9 +112,9 @@ public:
     WindowPos();
     WindowPos(QPoint pos);
 
-    DocumentPos to_document(DocumentView* document_view);
-    AbsoluteDocumentPos to_absolute(DocumentView* document_view);
-    NormalizedWindowPos to_window_normalized(DocumentView* document_view);
+    Q_INVOKABLE DocumentPos to_document(DocumentView* document_view);
+    Q_INVOKABLE AbsoluteDocumentPos to_absolute(DocumentView* document_view);
+    Q_INVOKABLE NormalizedWindowPos to_window_normalized(DocumentView* document_view);
     int manhattan(const WindowPos& other);
 
 };

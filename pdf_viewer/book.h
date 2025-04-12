@@ -225,9 +225,9 @@ public:
 
     QString get_question_or_summary_markdown() const;
     static QString get_display_markdown_or_text(QString bookmark_desc);
-    AbsoluteDocumentPos begin_pos() const ;
-    AbsoluteDocumentPos end_pos() const ;
-    AbsoluteRect rect() const;
+    Q_INVOKABLE AbsoluteDocumentPos begin_pos() const ;
+    Q_INVOKABLE AbsoluteDocumentPos end_pos() const ;
+    Q_INVOKABLE AbsoluteRect rect() const;
     QJsonObject to_json(std::string doc_checksum) const;
     void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
     float get_y_offset() const;
