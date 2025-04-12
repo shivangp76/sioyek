@@ -1234,6 +1234,8 @@ public:
     Q_INVOKABLE void on_onscreen_keyboard_shown();
     Q_INVOKABLE void on_onscreen_keyboard_hidden();
 
+    Q_INVOKABLE QList<MainWidget*> all_windows();
+
 
 public slots:
 #ifdef SIOYEK_IOS

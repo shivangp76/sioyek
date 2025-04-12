@@ -14577,3 +14577,11 @@ void MainWidget::on_onscreen_keyboard_hidden(){
     QRect full_rect = rect();
     QMetaObject::invokeMethod(this, "resize_child_widgets_with_window_rect", Qt::QueuedConnection, Q_ARG(QRect, full_rect));
 }
+
+QList<MainWidget*> MainWidget::all_windows(){
+    QList<MainWidget*> result;
+    for (int i = 0; i < windows.size(); i++){
+        result.push_back(windows[i]);
+    }
+    return result;
+}
