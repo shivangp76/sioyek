@@ -4474,11 +4474,11 @@ void PdfViewRhiWidget::render_current_frame_highlights(QRhiCommandBuffer* comman
         if (current_frame_highlight_rect_render_calls[i].in_overview != overview) continue;
 
         int flags = current_frame_highlight_rect_render_calls[i].flags;
-        // bool fill = flags & HighlightRenderFlags::HRF_FILL;
+        bool fill = flags & HighlightRenderFlags::HRF_FILL;
         bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
         bool paintover = flags & HighlightRenderFlags::HRF_PAINTOVER;
         bool border = flags & HighlightRenderFlags::HRF_BORDER;
-        if (border) continue;
+        if (border && !fill) continue;
 
         if (inverted){
             if (current_pipeline != inverted_highlight_pipeline.get()){
