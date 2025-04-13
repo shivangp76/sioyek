@@ -593,7 +593,7 @@ bool MainWidget::is_current_document_available_on_server() {
 void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 
     QWidget::resizeEvent(resize_event);
-#ifdef SIOYEK_IOS
+#ifdef SIOYEK_MOBILE
     opengl_widget->get_widget()->resize(resize_event->size());
 #endif
 

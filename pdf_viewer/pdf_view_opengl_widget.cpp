@@ -5505,3 +5505,10 @@ void PdfViewRhiWidget::render_ui_icon_for_current_color_mode(const QIcon& icon_b
 void PdfViewRhiWidget::disable_stencil_for_two_page(){
     current_stencil = {};
 }
+
+void PdfViewRhiWidget::resizeEvent(QResizeEvent* event) {
+    QRhiWidget::resizeEvent(event);
+    if (dv()) {
+        dv()->on_view_size_change(event->size().width(), event->size().height());
+    }
+}

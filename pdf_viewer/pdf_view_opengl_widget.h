@@ -587,4 +587,5 @@ public:
     void set_scissor_rect(QRhiCommandBuffer* command_buffer, NormalizedWindowRect scissor_rect);
     QWidget* get_widget() override;
     std::optional<GraphicsBackendExtras> get_backend_extras() override;
+    void resizeEvent(QResizeEvent* event) override;
 };
