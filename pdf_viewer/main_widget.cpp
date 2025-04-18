@@ -8132,9 +8132,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    // for (auto& [x, _] : ADDITIONAL_JAVASCRIPT_COMMANDS){
-    //     qDebug() << x;
-    // }
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

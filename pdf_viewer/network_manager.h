@@ -21,6 +21,7 @@ private:
     bool already_downloaded_new_annotations = false;
     std::optional<QDateTime> last_server_sync_time;
     std::optional<QJsonObject> sioyek_json_data = {};
+    QJsonObject current_user;
 public:
     QNetworkAccessManager* network_manager_ = nullptr;
     std::string ACCESS_TOKEN;

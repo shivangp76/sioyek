@@ -150,7 +150,9 @@ void SioyekNetworkManager::load_access_token() {
             status = ServerStatus::LoggingIn;
             QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
                 int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-                QString content = reply->readAll();
+                QByteArray content = reply->readAll();
+                // qDebug() << "got user:";
+                // qDebug() << content;
                 if (status_code == 401) {
                     ACCESS_TOKEN = "";
                     persist_access_token(ACCESS_TOKEN);
@@ -161,6 +163,7 @@ void SioyekNetworkManager::load_access_token() {
                 }
                 else {
                     status = ServerStatus::LoggedIn;
+                    current_user = QJsonDocument::fromJson(content).object()["user"].toObject();
                     handle_one_time_network_operations();
                 }
                 });
@@ -2108,7 +2111,11 @@ QString SioyekNetworkManager::get_login_status_string(Document *current_document
         }
     }
 
-    return "[ " + server_status_string + " ]";
+    QString user_string;
+    if (!current_user.isEmpty()){
+        user_string = current_user["username"].toString() + " " + QString::number(current_user["balance"].toDouble()) + " ";
+    }
+    return "[ " + user_string + server_status_string + " ]";
 }
 
 void SioyekNetworkManager::handle_logout() {
