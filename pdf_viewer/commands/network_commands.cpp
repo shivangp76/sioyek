@@ -76,41 +76,41 @@ public:
 
 };
 
-class SemanticSearchCommand : public ProTextCommand {
-public:
-    static inline const std::string cname = "semantic_search";
-    static inline const std::string hname = "";
+// class SemanticSearchCommand : public ProTextCommand {
+// public:
+//     static inline const std::string cname = "semantic_search";
+//     static inline const std::string hname = "";
 
-    SemanticSearchCommand(MainWidget* w) : ProTextCommand(cname, w) {
-    };
+//     SemanticSearchCommand(MainWidget* w) : ProTextCommand(cname, w) {
+//     };
 
-    void perform() {
-        widget->handle_semantic_search(text.value());
-    }
+//     void perform() {
+//         widget->handle_semantic_search(text.value());
+//     }
 
-    std::string text_requirement_name() {
-        return "Search text";
-    }
+//     std::string text_requirement_name() {
+//         return "Search text";
+//     }
 
-};
+// };
 
-class SemanticSearchExtractiveCommand : public ProTextCommand {
-public:
-    static inline const std::string cname = "semantic_search_extractive";
-    static inline const std::string hname = "";
+// class SemanticSearchExtractiveCommand : public ProTextCommand {
+// public:
+//     static inline const std::string cname = "semantic_search_extractive";
+//     static inline const std::string hname = "";
 
-    SemanticSearchExtractiveCommand(MainWidget* w) : ProTextCommand(cname, w) {
-    };
+//     SemanticSearchExtractiveCommand(MainWidget* w) : ProTextCommand(cname, w) {
+//     };
 
-    void perform() {
-        widget->handle_semantic_search_extractive(text.value());
-    }
+//     void perform() {
+//         widget->handle_semantic_search_extractive(text.value());
+//     }
 
-    std::string text_requirement_name() {
-        return "Search text";
-    }
+//     std::string text_requirement_name() {
+//         return "Search text";
+//     }
 
-};
+// };
 
 class LlmCommand : public ProCommand {
 private:
@@ -771,8 +771,8 @@ void register_network_commands(CommandManager* manager) {
     register_command<StartReadingHighQualityCommand>(manager);
     register_command<DownloadClipboardUrlCommand>(manager);
     register_command<DownloadPaperWithUrlCommand>(manager);
-    register_command<SemanticSearchCommand>(manager);
-    register_command<SemanticSearchExtractiveCommand>(manager);
+    // register_command<SemanticSearchCommand>(manager);
+    // register_command<SemanticSearchExtractiveCommand>(manager);
     register_command<LlmCommand>(manager);
     register_command<DownloadPaperWithNameCommand>(manager);
     register_command<ExtractTableWithPromptCommand>(manager);

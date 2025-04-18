@@ -1394,59 +1394,59 @@ void SioyekNetworkManager::debug(QObject* parent, std::function<void()> on_done)
 
 }
 
-void SioyekNetworkManager::semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
-    QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_ASK_GEMINI_URL_)));
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+// void SioyekNetworkManager::semantic_search_extractive(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
+//     QNetworkRequest req;
+//     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_ASK_GEMINI_URL_)));
+//     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-    QJsonObject obj;
-    obj["document_content"] = QString::fromStdWString(index);
-    obj["query"] = query;
+//     QJsonObject obj;
+//     obj["document_content"] = QString::fromStdWString(index);
+//     obj["query"] = query;
 
-    QJsonDocument json_doc(obj);
-    authorize_request(&req);
+//     QJsonDocument json_doc(obj);
+//     authorize_request(&req);
 
-    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
-    reply->setParent(parent);
-    reply->setProperty("sioyek_network_status_string", "performing semantic search");
-    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
-        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (status_code == 200) {
-            QByteArray raw_response = reply->readAll();
-            QJsonDocument json_document = QJsonDocument::fromJson(raw_response);
-            on_done(json_document.object());
-        }
-        //on_done();
-        });
+//     QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
+//     reply->setParent(parent);
+//     reply->setProperty("sioyek_network_status_string", "performing semantic search");
+//     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+//         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+//         if (status_code == 200) {
+//             QByteArray raw_response = reply->readAll();
+//             QJsonDocument json_document = QJsonDocument::fromJson(raw_response);
+//             on_done(json_document.object());
+//         }
+//         //on_done();
+//         });
 
-}
+// }
 
-void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
-    QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_SEARCH_URL_)));
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+// void SioyekNetworkManager::semantic_search(QObject* parent, const QString& query, const std::wstring& index, std::function<void(QJsonObject response)> on_done) {
+//     QNetworkRequest req;
+//     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_SEMANTIC_SEARCH_URL_)));
+//     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-    QJsonObject obj;
-    obj["document_content"] = QString::fromStdWString(index);
-    obj["query"] = query;
+//     QJsonObject obj;
+//     obj["document_content"] = QString::fromStdWString(index);
+//     obj["query"] = query;
 
-    QJsonDocument json_doc(obj);
-    authorize_request(&req);
+//     QJsonDocument json_doc(obj);
+//     authorize_request(&req);
 
-    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
-    reply->setParent(parent);
-    reply->setProperty("sioyek_network_status_string", "performing semantic search");
-    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
-        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (status_code == 200) {
-            QByteArray raw_response = reply->readAll();
-            QJsonDocument json_document = QJsonDocument::fromJson(raw_response);
-            on_done(json_document.object());
-        }
-        //on_done();
-        });
+//     QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
+//     reply->setParent(parent);
+//     reply->setProperty("sioyek_network_status_string", "performing semantic search");
+//     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+//         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+//         if (status_code == 200) {
+//             QByteArray raw_response = reply->readAll();
+//             QJsonDocument json_document = QJsonDocument::fromJson(raw_response);
+//             on_done(json_document.object());
+//         }
+//         //on_done();
+//         });
 
-}
+// }
 
 void SioyekNetworkManager::does_index_exist(QObject* parent, const std::wstring& index, std::function<void(bool)> on_done) {
     QString index_qstring = QString::fromStdWString(index);
@@ -1558,34 +1558,34 @@ void SioyekNetworkManager::summarize(QObject* parent, const std::wstring& index,
         });
 }
 
-void SioyekNetworkManager::upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done) {
-    QString index_qstring = QString::fromStdWString(document_content);
-    std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
+// void SioyekNetworkManager::upload_document_index(QObject* parent, const std::wstring& document_content, std::function<void(QJsonObject)> on_done) {
+//     QString index_qstring = QString::fromStdWString(document_content);
+//     std::string content_checksum = compute_md5_from_data(index_qstring.toUtf8());
 
-    QNetworkRequest req;
-    req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_UPLOAD_INDEX_URL_)));
-    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+//     QNetworkRequest req;
+//     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_UPLOAD_INDEX_URL_)));
+//     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-    QJsonObject obj;
-    obj["content_checksum"] = QString::fromStdString(content_checksum);
-    obj["text"] = index_qstring;
+//     QJsonObject obj;
+//     obj["content_checksum"] = QString::fromStdString(content_checksum);
+//     obj["text"] = index_qstring;
 
-    QJsonDocument json_doc(obj);
-    authorize_request(&req);
+//     QJsonDocument json_doc(obj);
+//     authorize_request(&req);
 
-    QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
-    reply->setParent(parent);
-    reply->setProperty("sioyek_network_status_string", "creating semantic index");
-    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
-        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (status_code == 200) {
-            QByteArray raw_response = reply->readAll();
-            QJsonDocument json_document = QJsonDocument::fromJson(raw_response);
-            on_done(json_document.object());
-        }
-        //on_done();
-        });
-}
+//     QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
+//     reply->setParent(parent);
+//     reply->setProperty("sioyek_network_status_string", "creating semantic index");
+//     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
+//         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+//         if (status_code == 200) {
+//             QByteArray raw_response = reply->readAll();
+//             QJsonDocument json_document = QJsonDocument::fromJson(raw_response);
+//             on_done(json_document.object());
+//         }
+//         //on_done();
+//         });
+// }
 
 void SioyekNetworkManager::delete_file_from_server(QObject* parent, std::string checksum, std::function<void()> on_done) {
 

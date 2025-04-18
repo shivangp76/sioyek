@@ -8132,6 +8132,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    qDebug() << doc()->get_highlights()[0].to_json(doc()->get_checksum());
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -11239,83 +11240,83 @@ void MainWidget::maximize_window() {
     showMaximized();
 }
 
-void MainWidget::handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already) {
+// void MainWidget::handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already) {
 
-    const std::wstring& index = doc()->get_super_fast_index();
+//     const std::wstring& index = doc()->get_super_fast_index();
 
-    sioyek_network_manager->semantic_search_extractive(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
-        if (document != doc()) return;
+//     sioyek_network_manager->semantic_search_extractive(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
+//         if (document != doc()) return;
 
-        QString status = resp["status"].toString();
+//         QString status = resp["status"].toString();
 
-        if (status == "NO_INDEX") {
-            const std::wstring& local_index = document->get_super_fast_index();
-            if (has_tried_already == false) {
-                sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, query](QJsonObject res) {
-                    handle_semantic_search_extractive(query, true);
-                    });
-            }
-        }
-        else {
-            int range_begin = resp["start_index_in_document"].toInt();
-            int range_end = resp["end_index_in_document"].toInt();
+//         if (status == "NO_INDEX") {
+//             const std::wstring& local_index = document->get_super_fast_index();
+//             if (has_tried_already == false) {
+//                 sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, query](QJsonObject res) {
+//                     handle_semantic_search_extractive(query, true);
+//                     });
+//             }
+//         }
+//         else {
+//             int range_begin = resp["start_index_in_document"].toInt();
+//             int range_end = resp["end_index_in_document"].toInt();
 
-            if (range_begin >= 0 && range_end >= 0) {
-                int page = -1;
-                SearchResult current_result;
-                current_result.begin_index_in_page = document->absolute_to_page_index(range_begin, page);
-                current_result.end_index_in_page = document->absolute_to_page_index(range_end, page);
-                current_result.page = page;
+//             if (range_begin >= 0 && range_end >= 0) {
+//                 int page = -1;
+//                 SearchResult current_result;
+//                 current_result.begin_index_in_page = document->absolute_to_page_index(range_begin, page);
+//                 current_result.end_index_in_page = document->absolute_to_page_index(range_end, page);
+//                 current_result.page = page;
 
-                main_document_view->set_search_results({ current_result });
-                invalidate_render();
-            }
-        }
-        });
-}
+//                 main_document_view->set_search_results({ current_result });
+//                 invalidate_render();
+//             }
+//         }
+//         });
+// }
 
-void MainWidget::handle_semantic_search(const std::wstring& query, bool has_tried_already) {
+// void MainWidget::handle_semantic_search(const std::wstring& query, bool has_tried_already) {
 
-    const std::wstring& index = doc()->get_super_fast_index();
+//     const std::wstring& index = doc()->get_super_fast_index();
 
-    sioyek_network_manager->semantic_search(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
-        if (document != doc()) return;
+//     sioyek_network_manager->semantic_search(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
+//         if (document != doc()) return;
 
-        QString status = resp["status"].toString();
+//         QString status = resp["status"].toString();
 
-        if (status == "NO_INDEX") {
-            const std::wstring& local_index = doc()->get_super_fast_index();
-            if (has_tried_already == false) {
-                sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, document, query](QJsonObject res) {
-                    if (doc() != document) return;
-                    handle_semantic_search(query, true);
-                    });
-            }
-        }
-        else {
-            std::vector<SearchResult> search_results;
+//         if (status == "NO_INDEX") {
+//             const std::wstring& local_index = doc()->get_super_fast_index();
+//             if (has_tried_already == false) {
+//                 sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, document, query](QJsonObject res) {
+//                     if (doc() != document) return;
+//                     handle_semantic_search(query, true);
+//                     });
+//             }
+//         }
+//         else {
+//             std::vector<SearchResult> search_results;
 
-            QJsonArray highlights_json = resp["highlights"].toArray();
-            for (int i = highlights_json.size()-1; i >= 0; i--) {
-                SearchResult current_result;
+//             QJsonArray highlights_json = resp["highlights"].toArray();
+//             for (int i = highlights_json.size()-1; i >= 0; i--) {
+//                 SearchResult current_result;
 
-                QJsonArray range_tuple_json = highlights_json.at(i).toArray();
-                float range_begin = range_tuple_json.at(0).toInt();
-                float range_end = range_tuple_json.at(1).toInt();
+//                 QJsonArray range_tuple_json = highlights_json.at(i).toArray();
+//                 float range_begin = range_tuple_json.at(0).toInt();
+//                 float range_end = range_tuple_json.at(1).toInt();
 
-                int page = -1;
-                current_result.begin_index_in_page = doc()->absolute_to_page_index(range_begin, page);
-                current_result.end_index_in_page = doc()->absolute_to_page_index(range_end, page);
-                current_result.page = page;
+//                 int page = -1;
+//                 current_result.begin_index_in_page = doc()->absolute_to_page_index(range_begin, page);
+//                 current_result.end_index_in_page = doc()->absolute_to_page_index(range_end, page);
+//                 current_result.page = page;
 
-                search_results.push_back(current_result);
+//                 search_results.push_back(current_result);
 
-            }
-            main_document_view->set_search_results(std::move(search_results));
-            invalidate_render();
-        }
-        });
-}
+//             }
+//             main_document_view->set_search_results(std::move(search_results));
+//             invalidate_render();
+//         }
+//         });
+// }
 
 void MainWidget::run_command_with_name(std::string command_name, bool should_pop_current_widget) {
     auto command = command_manager->get_command_with_name(this, command_name);

@@ -702,8 +702,8 @@ public:
     void handle_play();
     void handle_undo_drawing();
     void handle_pause();
-    void handle_semantic_search(const std::wstring& query, bool has_tried_already=false);
-    void handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already=false);
+    // void handle_semantic_search(const std::wstring& query, bool has_tried_already=false);
+    // void handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already=false);
     std::wstring handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid);
     void handle_special_bookmarks(std::wstring bookmark_text, std::wstring bookmark_uuid);
     void handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid);
