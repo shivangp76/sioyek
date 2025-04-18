@@ -20,6 +20,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
     bool is_current_document_synced,
     float current_brightness,
     DrawingMode drawing_mode,
+    QJsonObject current_user,
     QWidget* parent) : QWidget(parent) {
 
     setAttribute(Qt::WA_NoMousePropagation);
@@ -42,6 +43,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
     quick_widget->rootContext()->setContextProperty("_currentBrightness", current_brightness);
     quick_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(get_symbol_colors_for_qml()));
     quick_widget->rootContext()->setContextProperty("_drawingModeIndex", QVariant::fromValue(drawing_mode));
+    quick_widget->rootContext()->setContextProperty("_currentUser", QVariant::fromValue(current_user));
     // quick_widget->rootContext()->setContextProperty("_currentDrawingMode", )
     update_context_properties();
 

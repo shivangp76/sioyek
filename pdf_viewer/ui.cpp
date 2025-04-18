@@ -206,6 +206,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     bool portaling = main_widget->main_document_view->is_pending_link_source_filled();
     bool fit_mode = main_widget->main_document_view->last_smart_fit_page.has_value();
     bool is_logged_in = main_widget->is_logged_in();
+    QJsonObject current_user = main_widget->get_current_user();
     bool is_current_document_synced = main_widget->is_current_document_available_on_server();
     DrawingMode drawing_mode = main_widget->freehand_drawing_mode;
     #ifdef SIOYEK_ANDROID
@@ -225,6 +226,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         is_current_document_synced,
         current_brightness,
         drawing_mode,
+        current_user,
         this);
 
     QVBoxLayout* layout = new QVBoxLayout(this);

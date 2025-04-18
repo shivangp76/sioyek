@@ -21,9 +21,9 @@ private:
     bool already_downloaded_new_annotations = false;
     std::optional<QDateTime> last_server_sync_time;
     std::optional<QJsonObject> sioyek_json_data = {};
-    QJsonObject current_user;
 public:
     QNetworkAccessManager* network_manager_ = nullptr;
+    QJsonObject current_user;
     std::string ACCESS_TOKEN;
     //const std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
     const std::wstring SIOYEK_TOKEN_URL_ = L"token";

@@ -1237,6 +1237,7 @@ public:
     Q_INVOKABLE void on_onscreen_keyboard_hidden();
 
     Q_INVOKABLE QList<MainWidget*> all_windows();
+    QJsonObject get_current_user();
 
 
 public slots:

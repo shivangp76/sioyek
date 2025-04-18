@@ -4,6 +4,7 @@
 #include <QQuickWidget>
 #include <QQmlContext>
 #include <QQuickItem>
+#include <QJsonObject>
 
 #include "book.h"
 
@@ -21,6 +22,7 @@ public:
         bool is_current_document_synced,
         float current_brightness,
         DrawingMode drawing_mode,
+        QJsonObject current_user,
         QWidget* parent);
     void resizeEvent(QResizeEvent* resize_event) override;
     void update_context_properties();

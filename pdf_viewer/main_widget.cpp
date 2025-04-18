@@ -14583,3 +14583,10 @@ QList<MainWidget*> MainWidget::all_windows(){
     }
     return result;
 }
+
+QJsonObject MainWidget::get_current_user(){
+    if (sioyek_network_manager){
+        return sioyek_network_manager->current_user;
+    }
+    return QJsonObject();
+}

@@ -61,17 +61,29 @@ Rectangle{
             Layout.preferredHeight: firsttools.height + 20
             Layout.preferredWidth: parent.width
 
+            Text{
+                id: user_info
+                color: "white"
+
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.margins: 10
+
+                anchors.left: parent.left
+
+                visible: _currentUser != null
+                text: (_currentUser != null) ? _currentUser.username + " " + _currentUser.balance : ""
+            }
+
             Item{
                 width: parent.width
                 height: parent.height
-
 
 
                 TouchButtonGroup{
                     buttons: _loggedIn ? (_synced ? ["Logout", "Refresh"] : ["Logout", "Sync"]) :["Login"]
                     anchors.bottom: parent.bottom
                     anchors.top: parent.top
-                    anchors.left: parent.left
+                    anchors.left: user_info.right
                     anchors.right: parent.right
                     anchors.margins: 10
                     onButtonClicked: function(index, name){
