@@ -50,7 +50,7 @@ void Annotation::add_metadata_to_json(QJsonObject& obj, QString type) const {
     obj[Annotation::CREATION_TIME_COLUMN_NAME] = QString::fromStdString(creation_time);
     obj[Annotation::MODIFICATION_TIME_COLUMN_NAME] = QString::fromStdString(modification_time);
     obj[Annotation::UUID_COLUMN_NAME] = QString::fromStdString(uuid);
-    obj["type"] = type;
+    obj["annotation_type"] = type;
 }
 
 std::string normalize_date_string(QString date_string) {
