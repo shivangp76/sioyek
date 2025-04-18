@@ -116,7 +116,7 @@ public:
     void get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime> last_access_time)> fn);
     void get_annotations_after(QObject* parent, QDateTime last_update_date, std::function<void(std::vector<std::pair<std::string, Highlight>>&&, std::vector<std::pair<std::string, BookMark>>&&, std::vector<std::pair<std::string, Portal>>&&)> fn);
     void perform_unsynced_inserts_and_deletes(QObject* parent, Document* doc, const QString& checksum, std::function<void()> on_done);
-    const std::wstring& get_url_for_annot_upload(const Annotation* annot);
+    const std::wstring get_url_for_annot_upload(const Annotation* annot);
     //const std::wstring& get_url_for_annot_delete(const Annotation* annot);
     void sync_deleted_annot(QObject* parent, Document* doc, const std::string& annot_type, const std::string& uuid);
     bool is_document_available_on_server(Document* doc);

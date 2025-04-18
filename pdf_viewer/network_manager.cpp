@@ -888,6 +888,7 @@ void SioyekNetworkManager::upload_annot(
     std::function<void()> on_fail) {
 
     QNetworkRequest req;
+
     req.setUrl(QUrl(QString::fromStdWString(get_url_for_annot_upload(&annot))));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -1244,7 +1245,7 @@ void SioyekNetworkManager::perform_unsynced_inserts_and_deletes(QObject* parent,
     }
 }
 
-const std::wstring& SioyekNetworkManager::get_url_for_annot_upload(const Annotation* annot) {
+const std::wstring SioyekNetworkManager::get_url_for_annot_upload(const Annotation* annot) {
     if (dynamic_cast<const Highlight*>(annot)) {
         return SIOYEK_HOST + SIOYEK_ADD_HIGHLIGHT_URL_;
     }
