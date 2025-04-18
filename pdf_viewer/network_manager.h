@@ -88,10 +88,11 @@ public:
     void login(std::wstring email, std::wstring password);
     bool handle_network_reply_if_error(QNetworkReply* reply, bool show_message);
     void persist_access_token(std::string access_token);
+    void update_user_data_with_access_token();
     void load_access_token();
     void authorize_request(QNetworkRequest* req);
     void download_file_with_hash(QObject* parent, QString hash, std::function<void(QString)> fn);
-    void upload_file(QObject* parent, QString path, QString hash, std::function<void()> on_done, std::optional<std::function<void(int, int)>> on_progress={});
+    void upload_file(QObject* parent, QString path, QString hash, std::function<void()> on_done, std::function<void()> on_fail, std::optional<std::function<void(int, int)>> on_progress={});
 
     void ocr_file(QObject* parent, QString path, std::function<void(QNetworkReply*)> fn);
     void update_checksum(QObject* parent, QString path, QString old_checksum, QString new_checksum, std::function<void()> fn);

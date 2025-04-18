@@ -8132,7 +8132,8 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << doc()->get_highlights()[0].to_json(doc()->get_checksum());
+    sioyek_network_manager->load_access_token();
+    // qDebug() << doc()->get_highlights()[0].to_json(doc()->get_checksum());
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -12771,7 +12772,7 @@ void MainWidget::on_new_portal_added(const std::string& uuid) {
                         QString::fromStdWString(document_path.value()),
                         QString::fromStdString(portal.dst.document_checksum), [network_manager=sioyek_network_manager]() {
                             network_manager->update_user_files_hash_set();
-                        });
+                        }, [](){});
                 }
             }
         }
@@ -12958,23 +12959,33 @@ void MainWidget::handle_login(std::wstring email, std::wstring password) {
     sioyek_network_manager->login(email, password);
 }
 
-void MainWidget::upload_current_file() {
+void MainWidget::upload_current_file(Document* document_to_upload) {
     if (!doc()) return;
 
-    doc()->set_is_synced(true);
+    if (document_to_upload == nullptr){
+        document_to_upload = doc();
+    }
+
     float offset_y = main_document_view->get_offset_y();
 
     QString status_id = QString::fromStdWString(new_uuid());
 
     sioyek_network_manager->upload_file(
         this,
-        QString::fromStdWString(doc()->get_path()),
-        QString::fromStdString(doc()->get_checksum()),
-        [&, offset_y, status_id,document=doc()]() {
+        QString::fromStdWString(document_to_upload->get_path()),
+        QString::fromStdString(document_to_upload->get_checksum()),
+        [&, offset_y, status_id,document=document_to_upload]() {
+            document->set_is_synced(true);
             sioyek_network_manager->sync_document_annotations_to_server(this, document, [this]() {invalidate_render(); });
             //sync_annotations_with_server();
             sync_document_location_to_servers(document, offset_y, false);
             set_status_message(L"", status_id);
+        },
+        [&, document=document_to_upload](){
+            std::string old_checksum = document->get_checksum();
+            std::string new_checksum = compute_checksum(QString::fromStdWString(document->get_path()), QCryptographicHash::Md5);
+            this->document_manager->update_checksum(old_checksum, new_checksum);
+            upload_current_file(document);
         },
         [&, status_id](int uploaded, int total) {
             QString uploaded_human_readable = file_size_to_human_readable_string(uploaded);

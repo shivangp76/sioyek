@@ -131,6 +131,38 @@ void SioyekNetworkManager::persist_access_token(std::string access_token) {
     }
 }
 
+void SioyekNetworkManager::update_user_data_with_access_token(){
+    // make sure the access token is still valid
+    QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_ECHO_URL_));
+
+    QNetworkRequest req;
+    authorize_request(&req);
+    req.setUrl(url);
+    auto reply = get_network_manager()->get(req);
+    reply->setProperty("sioyek_handled", true);
+    //
+    status = ServerStatus::LoggingIn;
+    QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
+        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        QByteArray content = reply->readAll();
+        // qDebug() << "got user:";
+        // qDebug() << content;
+        if (status_code == 401) {
+            ACCESS_TOKEN = "";
+            persist_access_token(ACCESS_TOKEN);
+            show_error_message(L"Access token was expired, please login again");
+        }
+        else if (status_code == 0) {
+            status = ServerStatus::ServerOffline;
+        }
+        else {
+            status = ServerStatus::LoggedIn;
+            current_user = QJsonDocument::fromJson(content).object()["user"].toObject();
+            handle_one_time_network_operations();
+        }
+    });
+}
+
 void SioyekNetworkManager::load_access_token() {
     QFile access_token_file(QString::fromStdWString(sioyek_access_token_path.get_path()));
     if (access_token_file.open(QIODeviceBase::ReadOnly)) {
@@ -138,35 +170,7 @@ void SioyekNetworkManager::load_access_token() {
         access_token_file.close();
 
         if (ACCESS_TOKEN.size() > 0) {
-            // make sure the access token is still valid
-            QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_ECHO_URL_));
-
-            QNetworkRequest req;
-            authorize_request(&req);
-            req.setUrl(url);
-            auto reply = get_network_manager()->get(req);
-            reply->setProperty("sioyek_handled", true);
-            //
-            status = ServerStatus::LoggingIn;
-            QObject::connect(reply, &QNetworkReply::finished, [this, reply]() {
-                int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-                QByteArray content = reply->readAll();
-                // qDebug() << "got user:";
-                // qDebug() << content;
-                if (status_code == 401) {
-                    ACCESS_TOKEN = "";
-                    persist_access_token(ACCESS_TOKEN);
-                    show_error_message(L"Access token was expired, please login again");
-                }
-                else if (status_code == 0) {
-                    status = ServerStatus::ServerOffline;
-                }
-                else {
-                    status = ServerStatus::LoggedIn;
-                    current_user = QJsonDocument::fromJson(content).object()["user"].toObject();
-                    handle_one_time_network_operations();
-                }
-                });
+            update_user_data_with_access_token();
         }
     }
 }
@@ -317,6 +321,7 @@ void SioyekNetworkManager::upload_file(
     QString path,
     QString hash,
     std::function<void()> done_fn,
+    std::function<void()> fail_fn,
     std::optional<std::function<void(int, int)>> progress_fn
 ) {
     QFile* file = new QFile(path);
@@ -363,7 +368,7 @@ void SioyekNetworkManager::upload_file(
             }
             });
 
-        QObject::connect(reply, &QNetworkReply::finished, [this, reply, done_fn=std::move(done_fn)]() {
+        QObject::connect(reply, &QNetworkReply::finished, [this, reply, done_fn=std::move(done_fn), fail_fn=std::move(fail_fn)]() {
 
             if (handle_network_reply_if_error(reply, true)) {
                 update_user_files_hash_set();
@@ -371,7 +376,12 @@ void SioyekNetworkManager::upload_file(
                 if (json_resp["status"] != "OK" && json_resp["type"] == "incorrect_file_hash") {
                     //todo: update_current_document_checksum()
 
-                    show_error_message(L"the file hash was incorrect");
+                    // show_error_message(L"the file hash was incorrect");
+                    int selected_option = show_option_buttons(L"Can't upload because the saved file checksum is incorrect. Do you want to update the checksum?", {L"Update checksum and upload", L"Cancel upload"});
+                    bool should_update_checksum = selected_option == 2;
+                    if (should_update_checksum){
+                        fail_fn();
+                    }
                 }
                 else {
                     done_fn();
