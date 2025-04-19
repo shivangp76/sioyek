@@ -5650,22 +5650,27 @@ std::wstring replace_verbatim_links(std::wstring input) {
     std::wstring::size_type end = 0;
     int index = 1;
 
+    std::wstring start_tag = L"<verbatim>";
+    std::wstring end_tag = L"</verbatim>";
+    int start_tag_length = start_tag.size();
+    int end_tag_length = end_tag.size();
+
     while (start < input.size()) {
-        start = input.find(L"@verbatim({", start);
+        start = input.find(start_tag, start);
         if (start == std::wstring::npos) {
             result += input.substr(end);
             break;
         }
         result += input.substr(end, start - end);
-        end = input.find(L"})", start);
+        end = input.find(end_tag, start);
         if (end == std::wstring::npos) {
             result += input.substr(start);
             break;
         }
-        std::wstring link = input.substr(start + 11, end - start - 11);
+        std::wstring link = input.substr(start + start_tag_length, end - start - start_tag_length);
         link = QString(QUrl::toPercentEncoding(QString::fromStdWString(link))).toStdWString();
         result += L"[[" + QString::number(index).toStdWString() + L"]](sioyek://" + link + L")";
-        start = end + 2;
+        start = end + end_tag_length;
         end = start;
         index++;
     }
