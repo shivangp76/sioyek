@@ -1150,3 +1150,4 @@ std::optional<T> optional_from_qvariant(QVariant variant){
     if (variant.isNull()) return{};
     return variant.value<T>();
 }
+void open_directory(QString path);

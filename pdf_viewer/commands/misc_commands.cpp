@@ -25,6 +25,7 @@ extern bool ADD_NEWLINES_WHEN_COPYING_TEXT;
 extern std::wstring CONTEXT_MENU_ITEMS;
 extern Path default_config_path;
 extern bool SHOW_SETCONFIG_IN_STATUSBAR;
+extern Path cached_tts_path;
 
 class SendSymbolCommand : public SymbolCommand {
 public:
@@ -1596,6 +1597,23 @@ public:
     bool requires_document() { return false; }
 };
 
+class OpenCachedTTSLocationCommand : public Command {
+public:
+    static inline const std::string cname = "open_cached_tts_directory";
+    static inline const std::string hname = "Open the cached TTS directory";
+    OpenCachedTTSLocationCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        qDebug() << cached_tts_path.get_path();
+        QFileInfo file_info(QString::fromStdWString(cached_tts_path.get_path()));
+        QDir directory = file_info.dir();
+        open_directory(directory.absolutePath());
+    }
+
+    bool requires_document() { return false; }
+};
+
+
 class PrefsUserAllCommand : public Command {
 public:
     static inline const std::string cname = "prefs_user_all";
@@ -1619,7 +1637,7 @@ public:
         std::wstring path = widget->doc()->get_path();
         QFileInfo file_info(QString::fromStdWString(path));
         QDir directory = file_info.dir();
-        QDesktopServices::openUrl(directory.absolutePath());
+        open_directory(directory.absolutePath());
     }
 };
 
@@ -2769,6 +2787,7 @@ void register_misc_commands(CommandManager* manager) {
     register_command<KeysUserAllCommand>(manager);
     register_command<PrefsCommand>(manager);
     register_command<PrefsUserCommand>(manager);
+    register_command<OpenCachedTTSLocationCommand>(manager);
     register_command<PrefsUserAllCommand>(manager);
     register_command<KeyboardSelectLineCommand>(manager);
     register_command<ToggleLineSelectCursor>(manager);

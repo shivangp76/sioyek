@@ -6900,3 +6900,14 @@ QList<QColor> get_symbol_colors_for_qml(){
     }
     return colors;
 }
+
+void open_directory(QString path){
+#ifdef Q_OS_WIN
+    QDesktopServices::openUrl(path);
+#else
+    if (!path.endsWith("/")){
+        path = path + "/";
+    }
+    QDesktopServices::openUrl(QUrl("file://" + path));
+#endif
+}
