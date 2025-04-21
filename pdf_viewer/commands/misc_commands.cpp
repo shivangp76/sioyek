@@ -2117,6 +2117,14 @@ public:
                     }
                     return enum_extras.possible_values[index % enum_extras.possible_values.size()];
                 }
+                if (conf->config_type == ConfigType::DynamicEnum){
+                    auto enum_extras = std::get<DynamicEnumExtras>(conf->extras);
+                    std::vector<std::wstring> values = enum_extras.get_possible_values(widget);
+                    while (index < 0){
+                        index += values.size();
+                    }
+                    return values[index % values.size()];
+                }
             }
         }
         return {};

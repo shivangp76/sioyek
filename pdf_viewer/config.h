@@ -36,7 +36,8 @@ enum class ConfigType {
     Range,
     Macro,
     Symbol,
-    Enum
+    Enum,
+    DynamicEnum
 };
 
 struct UIRange {
@@ -117,6 +118,10 @@ struct EnumExtras {
     std::vector<std::wstring> possible_values;
 };
 
+struct DynamicEnumExtras {
+    std::function<std::vector<std::wstring>(MainWidget* widget)> get_possible_values;
+};
+
 struct EmptyExtras {
 };
 
@@ -131,7 +136,7 @@ struct AdditionalKeymapData {
 //	} rest;
 //};
 
-using Extras = std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras, ColorExtras>;
+using Extras = std::variant<FloatExtras, IntExtras, EmptyExtras, EnumExtras, ColorExtras, DynamicEnumExtras>;
 
 struct Config {
 

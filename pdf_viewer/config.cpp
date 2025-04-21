@@ -900,6 +900,7 @@ private:
         case ConfigType::EnableRectangle: return rect_serializer;
         case ConfigType::Range: return fvec2_serializer;
         case ConfigType::Macro: return string_serializer;
+        case ConfigType::DynamicEnum: return string_serializer;
         case ConfigType::Symbol: return symbol_serializer;
         case ConfigType::Enum: return [this, extras=extras](void* value, std::wstringstream& stream) {
             int enum_index = *static_cast<int*>(value);
@@ -930,6 +931,7 @@ private:
         case ConfigType::EnableRectangle: return rect_deserializer;
         case ConfigType::Range: return fvec2_deserializer;
         case ConfigType::Macro: return string_deserializer;
+        case ConfigType::DynamicEnum: return string_deserializer;
         case ConfigType::Symbol: return symbol_deserializer;
         case ConfigType::Enum: return [this, extras=extras](std::wstringstream& stream, void* res_, bool* changed) {
 
@@ -973,6 +975,7 @@ private:
         case ConfigType::EnableRectangle: return nullptr;
         case ConfigType::Range: return nullptr;
         case ConfigType::Macro: return nullptr;
+        case ConfigType::DynamicEnum: return nullptr;
         case ConfigType::Symbol: return nullptr;
         case ConfigType::Enum: return [extras = extras](const std::wstring& value) {return enum_validator(value, std::get<EnumExtras>(extras)); };
         default: assert(false);
@@ -1021,6 +1024,10 @@ public:
 
     static ConfigBuilder enumeration(std::wstring config_name, int* val, EnumExtras ex){
         return ConfigBuilder(config_name, ConfigType::Enum, val).extra(ex);
+    }
+
+    static ConfigBuilder dynamic_enumeration(std::wstring config_name, std::wstring* val, DynamicEnumExtras ex){
+        return ConfigBuilder(config_name, ConfigType::DynamicEnum, val).extra(ex);
     }
 
     static ConfigBuilder ivec2(std::wstring config_name, int* val){
@@ -1207,6 +1214,13 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     auto add_enum = [&](std::wstring name, int* location, EnumExtras extras){
         configs.push_back(
             ConfigBuilder::enumeration(name, location, extras).build()
+            );
+        return configs.back();
+    };
+
+    auto add_dynamic_enum = [&](std::wstring name, std::wstring* location, DynamicEnumExtras extras){
+        configs.push_back(
+            ConfigBuilder::dynamic_enumeration(name, location, extras).build()
             );
         return configs.back();
     };
@@ -1489,8 +1503,11 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"status_custom_message_b", &STATUS_STRING_CUSTOM_MESSAGE_B_STR);
     add_string(L"status_custom_message_c", &STATUS_STRING_CUSTOM_MESSAGE_C_STR);
     add_string(L"status_custom_message_d", &STATUS_STRING_CUSTOM_MESSAGE_D_STR);
-    add_string(L"tts_voice", &TTS_VOICE);
     add_string(L"python_interpreter_path", &PYTHON_INTERPRETER_PATH);
+
+    add_dynamic_enum(L"tts_voice", &TTS_VOICE, DynamicEnumExtras{[](MainWidget* widget){
+                         return widget->get_tts()->get_available_voices();
+                     }});
 
 
     add_macro(L"startup_commands", &STARTUP_COMMANDS);
