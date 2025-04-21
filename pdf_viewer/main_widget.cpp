@@ -8673,13 +8673,22 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
 }
 
 void MainWidget::focus_on_high_quality_text_being_read() {
+
+#ifdef Q_OS_MACOS
+    if (media_player && !media_player->isPlaying() && (media_player->position() == 0)){
+        // on the macos-specific media player, when we reach the end of the media,
+        // the position resets to 0 and isPlaying will be false, so the if statement below
+        // this one does not trigger on macos, so we handle it here instead
+        handle_high_quality_media_end_reached();
+    }
+#endif
+
     if ((media_player != nullptr) && (media_player->isPlaying()) && high_quality_play_state.has_value()) {
 
 #ifdef SIOYEK_ADVANCED_AUDIO
         if (media_player->isFinished()) {
             handle_high_quality_media_end_reached();
         }
-
 #endif
 
         float current_time = static_cast<float>(media_player->position()) / 1000.0f;
