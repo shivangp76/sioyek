@@ -12,6 +12,10 @@ class BackgroundTaskManager;
 class DocumentManager;
 class Document;
 
+struct PendingTTSInfo{
+    QString document_checksum;
+    QString content_checksum;
+};
 
 class SioyekNetworkManager{
 private:
@@ -21,6 +25,7 @@ private:
     bool already_downloaded_new_annotations = false;
     std::optional<QDateTime> last_server_sync_time;
     std::optional<QJsonObject> sioyek_json_data = {};
+    std::vector<PendingTTSInfo> pending_tts_commands;
 public:
     QNetworkAccessManager* network_manager_ = nullptr;
     QJsonObject current_user;
@@ -157,6 +162,10 @@ public:
         std::function<void(QString)>&& on_chunk,
         std::function<void()>&& on_done
     );
+
+    void add_pending_tts_command(QString document_checksum, QString content_checksum);
+    void remove_pending_tts_command(QString document_checksum, QString content_checksum);
+    bool does_pending_tts_command_exist(QString document_checksum, QString content_string);
 };
 
 void block_for_send(QNetworkReply* reply);

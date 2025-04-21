@@ -13360,6 +13360,10 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     index_into_page = text.size() - dummy_text.size();
     //doc()->get_page_text_and_line_rects_after_rect
 
+    if (sioyek_network_manager->does_pending_tts_command_exist(QString::fromStdString(doc()->get_checksum()), QString::fromStdWString(text))){
+        return;
+    }
+
     QString status_message_id = set_status_message(L"Performing Text to Speech");
     sioyek_network_manager->tts(this, text, doc()->get_checksum(), get_current_page_number(), rate, [&, index_into_page, status_message_id](QString file_path, std::vector<float> timestamps) {
         set_status_message(L"", status_message_id);

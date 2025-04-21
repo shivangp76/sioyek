@@ -1343,9 +1343,13 @@ void SioyekNetworkManager::tts(QObject* parent,
         QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
         reply->setParent(parent);
 
+        add_pending_tts_command(QString::fromStdString(document_checksum), text_checksum);
+
         QObject::connect(reply, &QNetworkReply::finished,
-            [reply, file_path, text_checksum, timestamps_file_path, on_done = std::move(on_done), on_fail=std::move(on_fail)]() {
+            [reply, file_path, text_checksum, document_checksum, timestamps_file_path, on_done = std::move(on_done), on_fail=std::move(on_fail), this]() {
             reply->deleteLater();
+
+            remove_pending_tts_command(QString::fromStdString(document_checksum), text_checksum);
 
             int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             if (status_code == 200) {
@@ -2147,4 +2151,33 @@ void SioyekNetworkManager::cancel_all_downlods() {
     for (auto child : children) {
         child->abort();
     }
+}
+
+void SioyekNetworkManager::add_pending_tts_command(QString document_checksum, QString content_checksum){
+    for (auto pending_tts_command : pending_tts_commands){
+        if (pending_tts_command.document_checksum == document_checksum && pending_tts_command.content_checksum == content_checksum) return;
+    }
+    PendingTTSInfo new_pending_info;
+    new_pending_info.document_checksum = document_checksum;
+    new_pending_info.content_checksum = content_checksum;
+    pending_tts_commands.push_back(new_pending_info);
+}
+
+void SioyekNetworkManager::remove_pending_tts_command(QString document_checksum, QString content_checksum){
+    for (int i=0; i < pending_tts_commands.size(); i++){
+        auto& pending_tts_command = pending_tts_commands[i];
+
+        if (pending_tts_command.document_checksum == document_checksum && pending_tts_command.content_checksum == content_checksum){
+            pending_tts_commands.erase(pending_tts_commands.begin() + i);
+            return;
+        }
+    }
+}
+
+bool SioyekNetworkManager::does_pending_tts_command_exist(QString document_checksum, QString content_string){
+    QString text_checksum = QString::fromStdString(compute_md5_from_data(content_string.toUtf8()));
+    for (auto pending_tts_command : pending_tts_commands){
+        if (pending_tts_command.document_checksum == document_checksum && pending_tts_command.content_checksum == text_checksum) return true;
+    }
+    return false;
 }
