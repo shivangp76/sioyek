@@ -13339,7 +13339,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     play_state.page_number = current_page_number;
     play_state.start_line = line_number;
     high_quality_play_state = play_state;
-    float rate = (TTS_RATE + 2) / 2; // todo: platform-specific conversion
+    float rate = TTS_RATE;
 
     AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
     std::wstring dummy_text;
@@ -14039,8 +14039,8 @@ void MainWidget::show_items(std::vector<std::wstring> items, std::optional<std::
 
 void MainWidget::set_high_quality_tts_rate(float rate) {
     // normal speed is rate=0
-    float converted_rate = rate + 1;
-    get_media_player()->setPlaybackRate(converted_rate);
+    // float converted_rate = rate + 1;
+    get_media_player()->setPlaybackRate(rate);
 }
 
 bool MainWidget::is_high_quality_tts_playing() {

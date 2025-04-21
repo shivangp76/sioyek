@@ -4802,7 +4802,7 @@ void QtTextToSpeechHandler::pause() {
 }
 
 void QtTextToSpeechHandler::set_rate(float rate) {
-    tts->setRate(rate);
+    tts->setRate((rate - 1) / 3);
 }
 
 bool QtTextToSpeechHandler::is_pausable() {

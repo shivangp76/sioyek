@@ -379,7 +379,7 @@ bool AUTOCENTER_VISUAL_SCROLL = false;
 // bool ALPHABETIC_LINK_TAGS = true;
 bool VIMTEX_WSL_FIX = false;
 float RULER_AUTO_MOVE_SENSITIVITY = 0.5f;
-float TTS_RATE = 0.0f;
+float TTS_RATE = 1.0f;
 bool VERBOSE = false;
 bool FILL_TEXTBAR_WITH_SELECTED_TEXT = true;
 int NUM_PRERENDERED_NEXT_SLIDES = 1;
@@ -1314,7 +1314,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"gamma", &GAMMA, FloatExtras{0.0f, 1.0f})->set_change_fn([](MainWidget* w){
         w->invalidate_render();
     });
-    add_float(L"tts_rate", &TTS_RATE, FloatExtras{-1.0f, 1.0f})->set_change_fn([](MainWidget* w){
+    add_float(L"tts_rate", &TTS_RATE, FloatExtras{0.0f, 4.0f})->set_change_fn([](MainWidget* w){
         if (w->is_reading) {
             w->handle_stop_reading();
             w->handle_start_reading();
