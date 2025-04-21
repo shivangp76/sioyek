@@ -38,6 +38,18 @@ public:
 
 };
 
+class ClearHighQualityTTSCache : public ProCommand {
+public:
+    static inline const std::string cname = "clear_high_quality_tts_cache";
+    static inline const std::string hname = "Clear the cached tts mp3 files";
+    ClearHighQualityTTSCache(MainWidget* w) : ProCommand(cname, w) {};
+
+    void perform() {
+        clean_old_high_quality_tts_cached_files(true);
+    }
+
+};
+
 class DownloadClipboardUrlCommand : public Command {
 public:
     static inline const std::string cname = "download_clipboard_url";
@@ -769,6 +781,7 @@ public:
 
 void register_network_commands(CommandManager* manager) {
     register_command<StartReadingHighQualityCommand>(manager);
+    register_command<ClearHighQualityTTSCache>(manager);
     register_command<DownloadClipboardUrlCommand>(manager);
     register_command<DownloadPaperWithUrlCommand>(manager);
     // register_command<SemanticSearchCommand>(manager);

@@ -19,13 +19,13 @@
 
 extern std::string APPLICATION_VERSION;
 extern Path sioyek_access_token_path;
-extern Path cached_tts_path;
 extern Path standard_data_path;
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool AUTOMATICALLY_DOWNLOAD_MATCHING_PAPER_NAME;
 extern std::wstring EXTRACT_TABLE_PROMPT;
 extern Path sioyek_json_data_path;
 extern std::wstring SIOYEK_HOST;
+extern Path cached_tts_path;
 extern int NUM_CACHED_HIGH_QUALITY_TTS_PAGES;
 
 extern Path downloaded_papers_path;
@@ -1290,28 +1290,6 @@ void SioyekNetworkManager::delete_file_with_checksum(const QString& checksum) {
     QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
 }
 
-void clean_old_high_quality_tts_cached_files(){
-    // make sure there are no more than NUM_CACHED_HIGH_QUALITY_TTS_PAGES mp3 files in cached_tts_path
-    // delete the oldest ones
-    QDir dir(QString::fromStdWString(cached_tts_path.get_path()));
-    QStringList filters;
-    // mp3 or json
-    filters << "*.mp3" << "*.json";
-    dir.setNameFilters(filters);
-    dir.setFilter(QDir::Files | QDir::NoSymLinks);
-    dir.setSorting(QDir::Time);
-    QFileInfoList file_list = dir.entryInfoList();
-    int num_files = file_list.size();
-    int threshold = NUM_CACHED_HIGH_QUALITY_TTS_PAGES * 2;
-
-    if (num_files > threshold) {
-        for (int i = threshold; i < num_files; i++) {
-            QFile file(file_list[i].absoluteFilePath());
-            qDebug() << "removing " << file.fileName();
-            file.remove();
-        }
-    }
-}
 
 void SioyekNetworkManager::tts(QObject* parent,
     const std::wstring& text,

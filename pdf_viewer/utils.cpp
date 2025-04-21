@@ -94,7 +94,8 @@ extern float CUSTOM_TEXT_COLOR[3];
 extern float CUSTOM_COLOR_CONTRAST;
 extern int CHAT_FONT_SIZE;
 extern int DOCUMENTATION_FONT_SIZE;
-
+extern Path cached_tts_path;
+extern int NUM_CACHED_HIGH_QUALITY_TTS_PAGES;
 extern float TTS_RATE;
 extern bool ADJUST_ANNOTATION_COLORS_FOR_DARK_MODE;
 extern bool ALWAYS_COPY_SELECTED_TEXT;
@@ -6915,4 +6916,30 @@ void open_directory(QString path){
     }
     QDesktopServices::openUrl(QUrl("file://" + path));
 #endif
+}
+
+void clean_old_high_quality_tts_cached_files(bool force_all){
+    // make sure there are no more than NUM_CACHED_HIGH_QUALITY_TTS_PAGES mp3 files in cached_tts_path
+    // delete the oldest ones
+    QDir dir(QString::fromStdWString(cached_tts_path.get_path()));
+    QStringList filters;
+    // mp3 or json
+    filters << "*.mp3" << "*.json";
+    dir.setNameFilters(filters);
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    dir.setSorting(QDir::Time);
+    QFileInfoList file_list = dir.entryInfoList();
+    int num_files = file_list.size();
+    int threshold = NUM_CACHED_HIGH_QUALITY_TTS_PAGES * 2;
+    if (force_all){
+        threshold = 0;
+    }
+
+    if (num_files > threshold) {
+        for (int i = threshold; i < num_files; i++) {
+            QFile file(file_list[i].absoluteFilePath());
+            qDebug() << "removing " << file.fileName();
+            file.remove();
+        }
+    }
 }
