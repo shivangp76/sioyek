@@ -341,6 +341,7 @@ std::wstring COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR = L"";
 bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS = false;
 bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED = true;
 bool DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR = false;
+int NUM_CACHED_HIGH_QUALITY_TTS_PAGES = 5;
 
 bool RIGHT_CLICK_CONTEXT_MENU = false;
 #ifdef SIOYEK_MOBILE
@@ -1535,6 +1536,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"ruler_pixel_width", &RULER_UNDERLINE_PIXEL_WIDTH, IntExtras{1, 100});
     add_int(L"num_prerendered_next_slides", &NUM_PRERENDERED_NEXT_SLIDES, IntExtras{0, 5});
     add_int(L"num_cached_pages", &NUM_CACHED_PAGES, IntExtras{0, 100});
+    add_int(L"num_cached_high_quality_tts_pages", &NUM_CACHED_HIGH_QUALITY_TTS_PAGES, IntExtras{1, 100});
     add_int(L"num_prerendered_prev_slides", &NUM_PRERENDERED_PREV_SLIDES, IntExtras{0, 5});
     add_int(L"keyboard_select_font_size", &KEYBOARD_SELECT_FONT_SIZE, IntExtras{1, 100});
     add_int(L"documentation_font_size", &DOCUMENTATION_FONT_SIZE, IntExtras{1, 100});

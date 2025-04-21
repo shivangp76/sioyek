@@ -1074,6 +1074,7 @@ public:
     bool isSeekable();
     bool isFinished();
     void setSource(const QUrl& source);
+    float duration();
 };
 
 #else

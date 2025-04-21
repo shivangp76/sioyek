@@ -148,11 +148,11 @@ extern "C" void macos_resumeMp3File(){
     }
 }
 
-extern "C" float macos_getMp3Duration(const char* path){
-    NSString* nsPath = [NSString stringWithUTF8String:path];
-    NSURL* url = [NSURL fileURLWithPath:nsPath];
-    AVAudioPlayer* player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:nil];
-    return player.duration;
+extern "C" float macos_getMp3Duration(){
+    if (current_player){
+        return current_player.duration;
+    }
+    return 0;
 }
 
 extern "C" void macos_setPlaybackRate(float rate){

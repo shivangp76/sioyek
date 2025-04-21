@@ -6803,9 +6803,14 @@ extern "C" void macos_setPlaybackRate(float rate);
 extern "C" void macos_resumeMp3File();
 extern "C" float macos_pauseMp3File();
 extern "C" bool macos_isMp3Finished();
+extern "C" float macos_getMp3Duration();
 
 void MacosMediaPlayer::set_source(std::string path){
     macos_setMp3FileSource(path.c_str());
+}
+
+float MacosMediaPlayer::duration(){
+    return macos_getMp3Duration();
 }
 
 void MacosMediaPlayer::setSource(const QUrl& source){

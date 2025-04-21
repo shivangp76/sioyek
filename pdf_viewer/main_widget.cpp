@@ -8675,11 +8675,16 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
 void MainWidget::focus_on_high_quality_text_being_read() {
 
 #ifdef Q_OS_MACOS
-    if (media_player && !media_player->isPlaying() && (media_player->position() == 0)){
-        // on the macos-specific media player, when we reach the end of the media,
-        // the position resets to 0 and isPlaying will be false, so the if statement below
-        // this one does not trigger on macos, so we handle it here instead
-        handle_high_quality_media_end_reached();
+    if (media_player){
+        MacosMediaPlayer* macos_specific_media_player = dynamic_cast<MacosMediaPlayer*>(media_player);
+        if (!media_player->isPlaying() && (media_player->position() == 0) && (macos_specific_media_player->duration() > 0)){
+            // on the macos-specific media player, when we reach the end of the media,
+            // the position resets to 0 and isPlaying will be false, so the if statement below
+            // this one does not trigger on macos, so we handle it here instead
+            // qDebug() << media_player->
+
+            handle_high_quality_media_end_reached();
+        }
     }
 #endif
 
