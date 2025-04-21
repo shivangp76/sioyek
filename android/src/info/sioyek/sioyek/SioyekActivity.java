@@ -577,6 +577,10 @@ public class SioyekActivity extends QtActivity{
         return TextToSpeech.getMaxSpeechInputLength();
     }
 
+    public boolean ttsIsPlaying(){
+        return mediaController != null && mediaController.getPlayerState() == 2;
+    }
+
     public void ttsStop(){
         runOnUiThread(new Runnable() {
             @Override

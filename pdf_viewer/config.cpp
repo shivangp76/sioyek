@@ -341,6 +341,7 @@ std::wstring COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR = L"";
 bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS = false;
 bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED = true;
 bool DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR = false;
+bool USE_LOCAL_TTS_WHILE_WAITING_FOR_HQ_TTS = true;
 int NUM_CACHED_HIGH_QUALITY_TTS_PAGES = 5;
 
 bool RIGHT_CLICK_CONTEXT_MENU = false;
@@ -1387,6 +1388,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"statusbar_handles_wheel_events", &STATUSBAR_HANDLES_WHEEL_EVENTS);
     add_bool(L"lighten_colors_when_embedding_annotations", &LIGHTEN_COLORS_WHEN_EMBEDDING_ANNOTATIONS);
     add_bool(L"prerender_next_page_presentation", &PRERENDER_NEXT_PAGE);
+    add_bool(L"use_local_tts_while_waiting_for_high_quality_tts", &USE_LOCAL_TTS_WHILE_WAITING_FOR_HQ_TTS);
     add_bool(L"highlight_middle_click", &HIGHLIGHT_MIDDLE_CLICK);
     add_bool(L"auto_rename_downloaded_papers", &AUTO_RENAME_DOWNLOADED_PAPERS);
     add_bool(L"super_fast_search", &SUPER_FAST_SEARCH);

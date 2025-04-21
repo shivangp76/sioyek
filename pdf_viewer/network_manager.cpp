@@ -1291,7 +1291,7 @@ void SioyekNetworkManager::delete_file_with_checksum(const QString& checksum) {
 }
 
 
-void SioyekNetworkManager::tts(QObject* parent,
+bool SioyekNetworkManager::tts(QObject* parent,
     const std::wstring& text,
     const std::string& document_checksum,
     int page,
@@ -1321,6 +1321,7 @@ void SioyekNetworkManager::tts(QObject* parent,
                 timestamps.push_back(items[i].toDouble());
             }
             on_done(file_path, timestamps);
+            return true;
         }
 
     }
@@ -1386,6 +1387,7 @@ void SioyekNetworkManager::tts(QObject* parent,
                 on_fail(text_checksum);
             }
             });
+        return false;
 
     }
 

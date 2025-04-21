@@ -83,7 +83,7 @@ public:
     QDateTime last_document_location_upload_time;
 
     SioyekNetworkManager(DatabaseManager* db_manager, BackgroundTaskManager* task_manager, DocumentManager* document_manager, QObject* parent=nullptr);
-    void tts(QObject* parent,
+    bool tts(QObject* parent,
         const std::wstring& text,
         const std::string& document_checksum,
         int page,

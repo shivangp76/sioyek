@@ -555,9 +555,11 @@ bool should_trigger_delete(QKeyEvent *key_event);
 class TextToSpeechHandler {
 public:
     virtual void set_rate(float rate) = 0;
+
     virtual void say(QString text, int start_offset=-1) = 0;
     virtual void stop() = 0;
     virtual void pause() = 0;
+    virtual bool is_playing() = 0;
     virtual bool is_pausable() = 0;
     virtual bool is_word_by_word() = 0;
     virtual void set_word_callback(std::function<void(int, int)>) = 0;
@@ -590,6 +592,8 @@ public:
     void set_rate(float rate);
 
     bool is_pausable();
+
+    bool is_playing() override;
 
     bool is_word_by_word();
 

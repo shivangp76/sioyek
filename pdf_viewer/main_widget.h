@@ -692,7 +692,7 @@ public:
     std::optional<Highlight> handle_delete_selected_highlight();
     std::optional<BookMark> handle_delete_selected_bookmark();
     std::optional<Portal> handle_delete_selected_portal();
-    void handle_start_reading();
+    void handle_start_reading(bool force_local=false);
     void preload_next_page_for_tts(float rate);
     void set_high_quality_tts_rate(float rate);
     bool is_high_quality_tts_playing();
@@ -709,7 +709,7 @@ public:
     void handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid);
     BookMark* add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk);
     void handle_bookmark_summarize_query(std::wstring bookmark_uuid);
-    void read_current_line();
+    void read_current_line(bool force_local=false);
     void download_paper_under_cursor(bool use_last_touch_pos = false);
     //std::optional<QString> get_direct_paper_name_under_pos(DocumentPos docpos);
     //std::optional<QString> get_paper_name_under_pos(DocumentPos docpos, bool clean = false);

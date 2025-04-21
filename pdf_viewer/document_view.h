@@ -740,6 +740,7 @@ public:
     void update_overview_highlighted_paper_with_position(DocumentPos docpos);
     void zoom_selected_freehand_drawings(float zoom_factor);
     AbsoluteRect get_view_rect();
+    int get_page_text_and_line_rects(int page, std::wstring& text, std::vector<PagelessDocumentRect>& rects);
 };
 
 struct CachedScratchpadPixmapData {
@@ -788,6 +789,7 @@ public:
     void save(std::wstring path);
     bool move_document(float dx, float dy, bool force=false) override;
     bool is_scratchpad() override;
+
 
 
 };

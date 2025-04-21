@@ -3027,6 +3027,12 @@ int android_tts_get_max_text_size(){
     return activity.callMethod<int>("ttsGetMaxTextSize", "()I");
 }
 
+bool android_tts_is_playing(){
+    QJniObject activity = QNativeInterface::QAndroidApplication::context();
+    // returns a boolean
+    return activity.callMethod<bool>("ttsIsPlaying");
+}
+
 void android_tts_say(QString text, int start_offset) {
 
     QJniObject text_jni = QJniObject::fromString(text);
@@ -4809,6 +4815,10 @@ bool QtTextToSpeechHandler::is_pausable() {
     return tts->engineCapabilities().testFlag(QTextToSpeech::Capability::PauseResume);
 }
 
+bool QtTextToSpeechHandler::is_playing() {
+    return tts->state() == QTextToSpeech::Speaking;
+}
+
 bool QtTextToSpeechHandler::is_word_by_word() {
     return tts->engineCapabilities().testFlag(QTextToSpeech::Capability::WordByWordProgress);
 }
@@ -4906,6 +4916,10 @@ bool AndroidTextToSpeechHandler::is_pausable() {
 
 bool AndroidTextToSpeechHandler::is_word_by_word() {
     return true;
+}
+
+bool AndroidTextToSpeechHandler::is_playing() {
+    return android_tts_is_playing();
 }
 
 void AndroidTextToSpeechHandler::set_word_callback(std::function<void(int, int)> callback) {

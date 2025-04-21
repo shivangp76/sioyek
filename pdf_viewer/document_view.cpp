@@ -6252,3 +6252,20 @@ AbsoluteRect DocumentView::get_view_rect(){
     nwr.y1 = 1;
     return nwr.to_window(this).to_absolute(this);
 }
+
+int DocumentView::get_page_text_and_line_rects(int page, std::wstring& text, std::vector<PagelessDocumentRect>& line_rects){
+    std::vector<PagelessDocumentRect> char_rects;
+    AbsoluteRect ruler_rect = get_ruler_rect().value_or(fz_empty_rect);
+    std::wstring dummy_text;
+    std::vector<PagelessDocumentRect> rect1, rect2;
+    doc()->get_page_text_and_line_rects_after_rect(
+        page,
+        INT_MAX,
+        ruler_rect,
+        dummy_text,
+        rect1,
+        rect2);
+
+    doc()->get_page_text_and_line_rects_after_rect(page, INT_MAX, fz_empty_rect, text, line_rects, char_rects);
+    return text.size() - dummy_text.size();
+}

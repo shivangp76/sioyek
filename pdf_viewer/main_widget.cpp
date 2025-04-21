@@ -211,6 +211,7 @@ extern bool SHOW_DOCUMENTATION_IN_WIDGET;
 extern bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER;
 extern bool SHOW_PRO_COMMANDS;
 extern bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION;
+extern bool USE_LOCAL_TTS_WHILE_WAITING_FOR_HQ_TTS;
 
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
@@ -8683,7 +8684,7 @@ void MainWidget::focus_on_high_quality_text_being_read() {
             // this one does not trigger on macos, so we handle it here instead
             // qDebug() << media_player->
 
-            handle_high_quality_media_end_reached();
+            // handle_high_quality_media_end_reached();
         }
     }
 #endif
@@ -8866,9 +8867,9 @@ void MainWidget::on_paper_downloaded(QNetworkReply* reply) {
 
 }
 
-void MainWidget::read_current_line() {
+void MainWidget::read_current_line(bool force_local) {
 
-    if (high_quality_play_state.has_value()) {
+    if (!force_local && high_quality_play_state.has_value()) {
         handle_stop_reading();
         handle_start_reading_high_quality();
     }
@@ -8923,7 +8924,7 @@ void MainWidget::read_current_line() {
     }
 }
 
-void MainWidget::handle_start_reading() {
+void MainWidget::handle_start_reading(bool force_local) {
 
     int line_index = main_document_view->get_line_index();
     if (line_index == -1) {
@@ -8932,7 +8933,7 @@ void MainWidget::handle_start_reading() {
     }
 
     is_reading = true;
-    read_current_line();
+    read_current_line(force_local);
     if (TOUCH_MODE) {
         AudioUI * audio_ui_widget = new AudioUI(this);
         set_current_widget(audio_ui_widget);
@@ -13330,9 +13331,11 @@ SioyekMediaPlayer* MainWidget::get_media_player(){
 }
 
 void MainWidget::handle_start_reading_high_quality(bool should_preload) {
+
     std::vector<PagelessDocumentRect> line_rects;
     std::vector<PagelessDocumentRect> char_rects;
     int current_page_number = get_current_page_number();
+
     int line_number = main_document_view->get_line_index();
     HighQualityPlayState play_state;
     play_state.doc = doc();
@@ -13341,41 +13344,51 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     high_quality_play_state = play_state;
     float rate = TTS_RATE;
 
-    AbsoluteRect ruler_rect = main_document_view->get_ruler_rect().value_or(fz_empty_rect);
-    std::wstring dummy_text;
-    std::vector<PagelessDocumentRect> rect1, rect2;
-    int index_into_page = doc()->get_page_text_and_line_rects_after_rect(
-        current_page_number,
-        INT_MAX,
-        ruler_rect,
-        dummy_text,
-        rect1,
-        rect2);
-
     std::wstring text;
-
-    doc()->get_page_text_and_line_rects_after_rect(current_page_number, INT_MAX, fz_empty_rect, text, line_rects, char_rects);
+    int index_into_page = dv()->get_page_text_and_line_rects(current_page_number, text, line_rects);
     high_quality_play_state->line_rects = line_rects;
-    //qDebug() << "page text size : " << text.size();
-    index_into_page = text.size() - dummy_text.size();
-    //doc()->get_page_text_and_line_rects_after_rect
 
     if (sioyek_network_manager->does_pending_tts_command_exist(QString::fromStdString(doc()->get_checksum()), QString::fromStdWString(text))){
         return;
     }
 
     QString status_message_id = set_status_message(L"Performing Text to Speech");
-    sioyek_network_manager->tts(this, text, doc()->get_checksum(), get_current_page_number(), rate, [&, index_into_page, status_message_id](QString file_path, std::vector<float> timestamps) {
+    bool tts_result_already_exists = sioyek_network_manager->tts(
+                this,
+                text,
+                doc()->get_checksum(),
+                get_current_page_number(),
+                rate,
+                [&, index_into_page, status_message_id, current_page_number](QString file_path, std::vector<float> timestamps) {
         set_status_message(L"", status_message_id);
         SioyekMediaPlayer* mp = get_media_player();
         mp->setSource(QUrl::fromLocalFile(file_path));
         high_quality_play_state->timestamps = timestamps;
         //media_player->audioTracks().at(0).
 
-        auto seek_to_location = [&, mp, index_into_page, timestamps](bool seekable) {
+        auto seek_to_location = [&, mp, index_into_page, timestamps, current_page_number](bool seekable) mutable {
             if (seekable) {
-                QTimer::singleShot(0, [&, mp, timestamps, index_into_page]() {
-                    //media_player->setPosition(20 * 1000);
+                QTimer::singleShot(0, [&, mp, timestamps, index_into_page, current_page_number]() mutable {
+
+                    if (tts && tts->is_playing()){
+                        int new_page_number = get_current_page_number();
+
+                        if (new_page_number != current_page_number){
+                            // the low quality tts has read the entire page before the high quality tts result has arrived
+                            // we don't need to do anything now
+                            return;
+                        }
+                        else{
+                            // we need to continue with high quality result from the last location
+
+                            std::wstring dummy_text;
+                            std::vector<PagelessDocumentRect> dummy_rects;
+                            index_into_page = dv()->get_page_text_and_line_rects(new_page_number, dummy_text, dummy_rects);
+                            tts->stop();
+                        }
+
+
+                    }
                     if (index_into_page < timestamps.size()) {
                         float time = timestamps[index_into_page];
                         media_player->setPosition(static_cast<int>(time * 1000));
@@ -13399,6 +13412,10 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
         }, [&, status_message_id](QString failed_string_checksum) {
             set_status_message(L"Text to Speech Failed", status_message_id);
             });
+
+    if (!tts_result_already_exists && USE_LOCAL_TTS_WHILE_WAITING_FOR_HQ_TTS){
+        handle_start_reading(true);
+    }
 
     if (should_preload) {
         preload_next_page_for_tts(rate);
