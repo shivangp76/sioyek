@@ -13374,9 +13374,9 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
         high_quality_play_state->timestamps = timestamps;
         //media_player->audioTracks().at(0).
 
-        auto seek_to_location = [&, mp, index_into_page, timestamps, current_page_number](bool seekable) mutable {
+        auto seek_to_location = [&, mp, index_into_page, timestamps, current_page_number, rate](bool seekable) mutable {
             if (seekable) {
-                QTimer::singleShot(0, [&, mp, timestamps, index_into_page, current_page_number]() mutable {
+                QTimer::singleShot(0, [&, mp, timestamps, index_into_page, current_page_number, rate]() mutable {
 
                     if (tts && tts->is_playing()){
                         int new_page_number = get_current_page_number();
@@ -13400,7 +13400,9 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
                     if (index_into_page < timestamps.size()) {
                         float time = timestamps[index_into_page];
                         media_player->setPosition(static_cast<int>(time * 1000));
+                        media_player->setPlaybackRate(rate);
                         media_player->play();
+
                         if (high_quality_play_state) {
                             high_quality_play_state->is_playing = true;
                         }
