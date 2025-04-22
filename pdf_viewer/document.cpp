@@ -3886,6 +3886,10 @@ const PageFreehandDrawing& Document::get_page_drawings(int page) {
     return page_freehand_drawings[page];
 }
 
+PageFreehandDrawing& Document::get_page_drawings_mut(int page) {
+    return page_freehand_drawings[page];
+}
+
 QVariantMap Document::get_drawings(){
     QVariantMap res;
     for (const auto& [key, val] : page_freehand_drawings.asKeyValueRange()){
@@ -6138,4 +6142,17 @@ QList<QVariant> Document::get_highlights_qlist(){
 
 QList<FreehandDrawing> PageFreehandDrawing::get_drawings(){
     return drawings;
+}
+
+void Document::delete_page_drawings_with_network_request_id(int page, int request_id){
+    if (page_freehand_drawings.find(page) == page_freehand_drawings.end()) return;
+
+    std::vector<int> indices;
+    for (int i = 0; i < page_freehand_drawings[page].drawings.size(); i++){
+        if (page_freehand_drawings[page].drawings[i].network_pending_request_id == request_id){
+            indices.push_back(i);
+        }
+    }
+
+    delete_drawings_with_indices(page, indices);
 }

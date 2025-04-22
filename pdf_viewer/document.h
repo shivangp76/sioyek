@@ -571,6 +571,7 @@ public:
     void get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, QList<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);
     void undo_freehand_drawing();
     const PageFreehandDrawing& get_page_drawings(int page);
+    PageFreehandDrawing& get_page_drawings_mut(int page);
     Q_INVOKABLE QVariantMap get_drawings();
     AbsoluteRect to_absolute(int page, fz_quad quad);
     AbsoluteRect to_absolute(int page, PagelessDocumentRect rect);
@@ -714,6 +715,8 @@ public:
 
     void on_portal_added();
     void on_portal_deleted();
+
+    void delete_page_drawings_with_network_request_id(int page, int request_id);
 
     friend class DocumentManager;
 };

@@ -8138,6 +8138,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    qDebug() << opengl_widget->is_rendering_animation;
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -14525,7 +14526,7 @@ void MainWidget::show_tts_voice_selector(){
 
 void MainWidget::ai_magic_drawing_ask(){
     int current_page = dv()->get_current_page_number();
-    auto drawings = doc()->get_page_drawings(current_page);
+    PageFreehandDrawing& drawings = doc()->get_page_drawings_mut(current_page);
 
     // std::vector<FreehandDrawing> recent_drawings;
     std::vector<int> recent_drawing_indices;
@@ -14547,14 +14548,23 @@ void MainWidget::ai_magic_drawing_ask(){
         }
     }
 
+    int next_id = next_pending_drawing_request_id++;
     std::vector<FreehandDrawing> recent_drawings;
     for (auto ind : recent_drawing_indices){
+        drawings.drawings[ind].network_pending_request_id = next_id;
         recent_drawings.push_back(drawings.drawings[ind]);
     }
 
     if (recent_drawings.size() == 0){
         return;
     }
+
+    opengl_widget->clear_cached_drawing_buffers();
+
+    QPixmap pixmap;
+    QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
+    QImage framebuffer = rhi_widget->grabFramebuffer();
+    pixmap = QPixmap::fromImage(framebuffer);
 
     std::optional<DetectedRectResult> selected_rectangle = detect_rect_drawing({recent_drawings[0]});
 
@@ -14603,7 +14613,7 @@ void MainWidget::ai_magic_drawing_ask(){
                     [&, d = doc(), uuid](QString chunk){
             add_chunk_to_bookmark(d, uuid, chunk);
         },
-        [&, d=doc(), uuid, current_page](){
+        [&, d=doc(), uuid, current_page, next_id](){
             BookMark* bm = d->get_bookmark_with_uuid(uuid);
             if (bm) {
                 bm->is_pending = false;
@@ -14612,6 +14622,7 @@ void MainWidget::ai_magic_drawing_ask(){
                 // d->update_bookmark_text(uuid, bm->description, bm->font_size);
                 doc()->add_pending_bookmark(uuid, bm->description);
                 on_bookmark_edited(*bm, false, false);
+                doc()->delete_page_drawings_with_network_request_id(current_page, next_id);
             }
         }
         );

@@ -4647,6 +4647,12 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
                                           HIGHLIGHT_COLORS[(drawing.type - 'a') * 3 + 2],
                                           drawing.alpha
         };
+        if (drawing.network_pending_request_id != -1){
+            current_drawing_color[0] = -1;
+            current_drawing_color[1] = -1;
+            current_drawing_color[2] = -1;
+            current_drawing_color[3] = -1;
+        }
 
         std::optional<DocumentPos> last_top_right = {};
         std::optional<DocumentPos> last_bottom_right = {};
@@ -4936,6 +4942,11 @@ void PdfViewRhiWidget::render_current_frame_drawings(QRhiCommandBuffer* command_
                 command_buffer->setVertexInput(1, 1, &color_buffer_binding);
 
                 command_buffer->draw(shader_resources->num_vertices);
+
+                if (shader_resources->contains_pending_network_drawing) {
+                    is_rendering_animation = true;
+                }
+
             }
         }
         else{
@@ -5454,6 +5465,15 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
     new_page_drawing_resources->last_use_time = QDateTime::currentDateTime();
     int prev_num_vertices = !should_append ? 0 : new_page_drawing_resources->num_vertices;
 
+    bool contains_pending = false;
+    for (const auto& drawing : page_drawings.drawings){
+        if (drawing.network_pending_request_id != -1){
+            contains_pending = true;
+            break;
+        }
+    }
+    new_page_drawing_resources->contains_pending_network_drawing = contains_pending;
+
     int num_vertices = update_resources_for_single_freehand_drawing(
         current_frame_resource_update_batch,
         document_view,
@@ -5527,4 +5547,11 @@ void PdfViewRhiWidget::resizeEvent(QResizeEvent* event) {
     if (dv()) {
         dv()->on_view_size_change(event->size().width(), event->size().height());
     }
+}
+
+void SioyekRendererBackend::clear_cached_drawing_buffers(){
+}
+
+void PdfViewRhiWidget::clear_cached_drawing_buffers(){
+    cached_page_drawing_shader_resources.clear();
 }

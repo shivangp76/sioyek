@@ -14,10 +14,11 @@ layout(std140, binding = 0) uniform buf {
 
 void main()
 {
-    if (is_pending){
-        float r = (sin(position.x * 10) + 1) / 2;
-        float g = (sin(position.y) * 10 + 1) / 2;
-        fragColor = vec4(r, g, (sin(time) + 1) / 2, 1);
+    if (color.a < 0){
+        float r = sin(time + position.x * 10.0) * 0.5 + 0.5;
+        float g = sin(time * 1.1 + position.y * 10.0) * 0.5 + 0.5;
+        float b = sin(time * 1.2 + position.x * 10.0 + position.y * 10.0) * 0.5 + 0.5;
+        fragColor = vec4(r, g, b, 1);
     }
     else{
         fragColor = color;

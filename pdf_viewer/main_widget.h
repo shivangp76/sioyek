@@ -226,6 +226,8 @@ public:
     QScrollBar* scroll_bar = nullptr;
     SioyekMediaPlayer* media_player = nullptr;
 
+    int next_pending_drawing_request_id = 0;
+
     QJsonDocument sioyek_documentation_json_document;
 
     // Some commands can not be executed immediately (e.g. because they require a text or symbol

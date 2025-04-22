@@ -350,6 +350,7 @@ public:
     char type;
     float alpha = 1;
     QDateTime creattion_time;
+    int network_pending_request_id = -1;
 
     Q_INVOKABLE AbsoluteRect bbox() const;
     QList<FreehandDrawingPoint> get_points();

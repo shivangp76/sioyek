@@ -235,6 +235,7 @@ public:
     void clear_all_selections();
     virtual bool is_opengl() = 0;
     virtual QWidget* get_widget() = 0;
+    virtual void clear_cached_drawing_buffers();
 
 };
 
@@ -449,6 +450,7 @@ struct SioyekPageDrawingsShaderResources{
     std::unique_ptr<QRhiBuffer> positions;
     std::unique_ptr<QRhiBuffer> colors;
     int num_vertices = 0;
+    bool contains_pending_network_drawing = false;
 
     std::unique_ptr<QRhiShaderResourceBindings> shader_resource_binding;
 };
@@ -589,4 +591,5 @@ public:
     QWidget* get_widget() override;
     std::optional<GraphicsBackendExtras> get_backend_extras() override;
     void resizeEvent(QResizeEvent* event) override;
+    void clear_cached_drawing_buffers();
 };
