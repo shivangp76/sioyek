@@ -848,6 +848,7 @@ QRect SearchButtons::get_prefered_rect(QRect parent_rect){
 
 //ConfigUI::ConfigUI(MainWidget* parent) : QQuickWidget(parent){
 ConfigUI::ConfigUI(std::string name, MainWidget* parent) : QWidget(parent) {
+    setAttribute(Qt::WA_NoMousePropagation);
     main_widget = parent;
     config_name = name;
 }
