@@ -202,6 +202,14 @@ GLfloat rotation_uvs[4][8] = {
     },
 };
 
+struct DrawingUniformBuffer {
+    float offset[2];
+    float scale[2];
+    float depth;
+    float time = 0;
+    bool is_pending = false;
+};
+
 // OpenGLSharedResources PdfViewOpenGLWidget::shared_gl_objects;
 
 
@@ -3998,7 +4006,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         pending_drawing_vertex_colors_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
         pending_drawing_vertex_colors_ptr->create();
 
-        pending_drawing_uniform_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 5 * sizeof(float)));
+        pending_drawing_uniform_buffer.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(DrawingUniformBuffer)));
         pending_drawing_uniform_buffer->create();
 
         // drawings_index_buffer_ptr.reset(rhi_ptr->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::IndexBuffer, drawings_index_buffer_size));
@@ -4018,7 +4026,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         pending_drawings_resource_binding.reset(rhi()->newShaderResourceBindings());
         pending_drawings_resource_binding->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, pending_drawing_uniform_buffer.get())
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::FragmentStage | QRhiShaderResourceBinding::VertexStage, pending_drawing_uniform_buffer.get())
         });
         pending_drawings_resource_binding->create();
 
@@ -5160,7 +5168,6 @@ void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, Doc
     drawing_call.render_order = current_object_render_order++;
     drawing_call.highlighted = highlighted;
 
-    float uniforms[5];
 
 
     DocumentRect page_drect;
@@ -5172,15 +5179,19 @@ void PdfViewRhiWidget::render_page_drawings_impl(QRhiBuffer* uniform_buffer, Doc
 
     NormalizedWindowRect page_rect = page_drect.to_window_normalized(dv);
 
-    uniforms[0] = page_rect.x0;
-    uniforms[1] = page_rect.y0;
+    DrawingUniformBuffer uniforms;
+    uniforms.offset[0] = page_rect.x0;
+    uniforms.offset[1] = page_rect.y0;
 
-    uniforms[2] = page_rect.width();
-    uniforms[3] = page_rect.height();
+    uniforms.scale[0] = page_rect.width();
+    uniforms.scale[1] = page_rect.height();
 
-    uniforms[4] = (1.0f / static_cast<float>(current_object_render_order++ + 2.0f));
+    uniforms.depth = (1.0f / static_cast<float>(current_object_render_order++ + 2.0f));
+    float current_time_in_seconds = static_cast<float>(QDateTime::currentMSecsSinceEpoch() % 1000000) / 1000.f;
+    uniforms.time = current_time_in_seconds;
+    // uniforms.is_pending = true;
 
-    current_frame_resource_update_batch->updateDynamicBuffer(uniform_buffer, 0, 5 * sizeof(float), uniforms);
+    current_frame_resource_update_batch->updateDynamicBuffer(uniform_buffer, 0, sizeof(DrawingUniformBuffer), &uniforms);
 
     current_frame_drawing_render_calls.push_back(drawing_call);
 }
@@ -5412,13 +5423,13 @@ SioyekPageDrawingsShaderResources* PdfViewRhiWidget::get_shader_resources_for_pa
         new_page_drawing_resources->colors.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer, DRAWINGS_VERTEX_BUFFER_SIZE));
         new_page_drawing_resources->colors->create();
 
-        new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 5 * sizeof(float)));
+        new_page_drawing_resources->uniform_buffer.reset(rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(DrawingUniformBuffer)));
         new_page_drawing_resources->uniform_buffer->create();
 
 
         new_page_drawing_resources->shader_resource_binding.reset(rhi()->newShaderResourceBindings());
         new_page_drawing_resources->shader_resource_binding->setBindings({
-             QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, new_page_drawing_resources->uniform_buffer.get())
+             QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, new_page_drawing_resources->uniform_buffer.get())
          });
 
         new_page_drawing_resources->shader_resource_binding->create();
