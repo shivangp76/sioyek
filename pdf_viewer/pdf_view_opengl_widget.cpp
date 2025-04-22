@@ -3042,9 +3042,9 @@ int SioyekRendererBackend::get_ruler_display_mode() {
 }
 
 void SioyekRendererBackend::render_pending_bookmark_rect(NormalizedWindowRect rect){
-    is_rendering_animation = true;
-    float color[3] = {1, 1, 1};
-    set_highlight_color(color, 0.3f);
+    // is_rendering_animation = true;
+    // float color[3] = {1, 1, 1};
+    // set_highlight_color(color, 0.3f);
     render_highlight_window(rect, HRF_PENDING, -1);
 }
 
@@ -5054,6 +5054,13 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
         highlight_call.rect = underline_rect;
         highlight_call.flags = HighlightRenderFlags::HRF_FILL;
         highlight_call.color[3] = 1.f;
+    }
+    if (flags == HighlightRenderFlags::HRF_PENDING){
+        is_rendering_animation = true;
+        highlight_call.color[0] = 0;
+        highlight_call.color[1] = 0;
+        highlight_call.color[2] = 0;
+        highlight_call.color[3] = 0.3f;
     }
 
     current_frame_highlight_rect_render_calls.push_back(highlight_call);
