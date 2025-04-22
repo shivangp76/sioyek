@@ -292,7 +292,7 @@ void PdfViewOpenGLWidget::render_line_window(float gl_vertical_pos, std::optiona
     render_line_window_opengl_backend(gl_vertical_pos, ruler_rect);
 }
 
-void PdfViewOpenGLWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels, bool is_pending) {
+void PdfViewOpenGLWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
     render_highlight_window_opengl_backend(window_rect, flags,  line_width_in_pixels);
 }
 
@@ -2135,7 +2135,7 @@ void SioyekRendererBackend::render_selected_rectangle() {
         set_highlight_color(&rectangle_color[0], 0.3f);
         render_highlight_absolute(document_view->selected_rectangle.value(), HRF_FILL | HRF_BORDER);
         NormalizedWindowRect window_rect({ -1, -1, 1, 1 });
-        render_highlight_window(window_rect, true);
+        render_highlight_window(window_rect, HRF_FILL);
     }
 }
 
@@ -3043,14 +3043,9 @@ int SioyekRendererBackend::get_ruler_display_mode() {
 
 void SioyekRendererBackend::render_pending_bookmark_rect(NormalizedWindowRect rect){
     is_rendering_animation = true;
-    float current_time_in_seconds = static_cast<float>(QDateTime::currentMSecsSinceEpoch() % 1000000) / 1000.f;
-    float pending_bookmark_color[3] = {0};
-    pending_bookmark_color[0] = (std::sin(current_time_in_seconds) + 1) / 2.0f;
-    pending_bookmark_color[1] = (std::sin(current_time_in_seconds * 1.1f) + 1) / 2.0f;
-    pending_bookmark_color[2] = (std::sin(current_time_in_seconds * 1.2f) + 1) / 2.0f;
-    set_highlight_color(pending_bookmark_color, 0.3f);
-
-    render_highlight_window(rect, HRF_FILL, -1, true);
+    float color[3] = {1, 1, 1};
+    set_highlight_color(color, 0.3f);
+    render_highlight_window(rect, HRF_PENDING, -1);
 }
 
 void SioyekRendererBackend::render_bookmark_annotations(const std::vector<int>& visible_pages) {
@@ -3678,7 +3673,7 @@ void PdfViewQPainterWidget::render_texture(std::optional<SioyekTextureType> text
     get_painter()->drawPixmap(window_qrect, *std::get<QPixmap*>(texture.value()));
 }
 
-void PdfViewQPainterWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels, bool is_pending) {
+void PdfViewQPainterWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels) {
     render_highlight_window_qpainter_backend(window_rect, flags, line_width_in_pixels);
 }
 
@@ -5021,7 +5016,7 @@ void PdfViewRhiWidget::render_texture(std::optional<SioyekTextureType> texture, 
     }
 }
 
-void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels, bool is_pending){
+void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect, int flags, int line_width_in_pixels){
     SioyekHighlightRectRenderCall highlight_call;
     bool inverted = flags & HighlightRenderFlags::HRF_INVERTED;
     highlight_call.rect = window_rect;
@@ -5041,7 +5036,7 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
     highlight_call.flags = flags;
     highlight_call.in_overview = current_overview.has_value();
     highlight_call.render_order = current_object_render_order++;
-    highlight_call.is_pending_bookmark = is_pending;
+    highlight_call.is_pending_bookmark = flags & HRF_PENDING;
 
     if (flags == HighlightRenderFlags::HRF_UNDERLINE){
         float scale_factor = dv()->get_zoom_level() / dv()->get_view_height();
