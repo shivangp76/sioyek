@@ -102,6 +102,7 @@ protected:
     std::optional<AbsoluteRect> ruler_rect;
     float ruler_pos = 0;
 
+
     // index of the current highlighted line in ruler mode
     std::optional<RulerLineIndexInfo> ruler_line_index = {};
 
@@ -129,6 +130,9 @@ protected:
 
 public:
     std::vector<std::vector<AbsoluteRect>>  debug_highlight_rects;
+
+    // we render the ruler diffrently to signal that we are waiting for the high quality tts results
+    bool is_waiting_for_high_quality_tts_result = false;
 
     float velocity_x = 0;
     float velocity_y = 0;

@@ -1831,8 +1831,13 @@ void MainWidget::handle_validation_interval_timeout(){
 
     if (opengl_widget->is_rendering_animation){
         is_render_invalidated = true;
-        // validation_interval_timer->setInterval(1000 / screen()->refreshRate());
-        validation_interval_timer->setInterval(0);
+        int new_interval_time = 1000 / screen()->refreshRate() * 4;
+        // if (new_interval_time < validation_interval_timer->interval()){
+        //     validation_interval_timer->setInterval(new_interval_time);
+        // }
+        if (!is_dragging && (dv()->velocity_y == 0)){
+            validation_interval_timer->setInterval(new_interval_time);
+        }
         validation_interval_was_set_because_of_animation = true;
     }
     else if (validation_interval_was_set_because_of_animation){
@@ -8942,7 +8947,8 @@ void MainWidget::handle_start_reading(bool force_local) {
 }
 
 void MainWidget::handle_stop_reading() {
-    if (high_quality_play_state.has_value()) {
+    dv()->is_waiting_for_high_quality_tts_result = false;
+    if (high_quality_play_state.has_value() && media_player->isPlaying()) {
         if (media_player) {
             media_player->stop();
         }
@@ -13353,6 +13359,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     }
 
     QString status_message_id = set_status_message(L"Performing Text to Speech");
+    dv()->is_waiting_for_high_quality_tts_result = true;
     bool tts_result_already_exists = sioyek_network_manager->tts(
                 this,
                 text,
@@ -13360,6 +13367,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
                 get_current_page_number(),
                 rate,
                 [&, index_into_page, status_message_id, current_page_number](QString file_path, std::vector<float> timestamps) {
+        dv()->is_waiting_for_high_quality_tts_result = false;
         set_status_message(L"", status_message_id);
         SioyekMediaPlayer* mp = get_media_player();
         mp->setSource(QUrl::fromLocalFile(file_path));

@@ -3042,9 +3042,6 @@ int SioyekRendererBackend::get_ruler_display_mode() {
 }
 
 void SioyekRendererBackend::render_pending_bookmark_rect(NormalizedWindowRect rect){
-    // is_rendering_animation = true;
-    // float color[3] = {1, 1, 1};
-    // set_highlight_color(color, 0.3f);
     render_highlight_window(rect, HRF_PENDING, -1);
 }
 
@@ -3269,6 +3266,12 @@ void SioyekRendererBackend::render_ruler() {
             }
             else if (ruler_display_mode == RulerDisplayMode::RulerHighlightTransparent) {
                 flags |= HRF_FILL;
+                alpha = 0.3f;
+            }
+
+            if (dv()->is_waiting_for_high_quality_tts_result){
+                flags |= HRF_PENDING;
+                is_rendering_animation = true;
                 alpha = 0.3f;
             }
 

@@ -821,6 +821,7 @@ void DocumentView::reset_doc_state() {
     synctex_highlights.clear();
     handle_escape();
     same_width_mode_first_page_width = {};
+    is_waiting_for_high_quality_tts_result = false;
 }
 
 void DocumentView::open_document(const std::wstring& doc_path,
