@@ -13923,6 +13923,29 @@ void MainWidget::screenshot_js(QString file_path, QJsonObject window_rect_js) {
 
 }
 
+QPixmap MainWidget::get_framebuffer_pixmap(){
+    QPixmap pixmap;
+    if (dynamic_cast<QRhiWidget*>(opengl_widget->get_widget())){
+        QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
+        QImage framebuffer = rhi_widget->grabFramebuffer();
+        pixmap = QPixmap::fromImage(framebuffer);
+    }
+    else if (dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget())){
+        QOpenGLWidget* rhi_widget = dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget());
+        QImage framebuffer = rhi_widget->grabFramebuffer();
+        pixmap = QPixmap::fromImage(framebuffer);
+    }
+    else{
+        int pixmap_width = size().width() * devicePixelRatio();
+        int pixmap_height = size().height() * devicePixelRatio();
+
+        pixmap = QPixmap(QSize(pixmap_width, pixmap_height));
+        pixmap.setDevicePixelRatio(devicePixelRatio());
+        render(&pixmap, QPoint(), QRegion(rect()));
+    }
+    return pixmap;
+}
+
 void MainWidget::framebuffer_screenshot_js(QString file_path, QJsonObject window_rect_js) {
     bool is_on_main_thread = QThread::currentThread() == QApplication::instance()->thread();
     if (is_on_main_thread) {
@@ -14586,25 +14609,7 @@ void MainWidget::ai_magic_drawing_ask(){
         // std::string uuid = doc()->add_pending_bookmark(pending_uuid, text);
 
 
-        QPixmap pixmap;
-        if (dynamic_cast<QRhiWidget*>(opengl_widget->get_widget())){
-            QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
-            QImage framebuffer = rhi_widget->grabFramebuffer();
-            pixmap = QPixmap::fromImage(framebuffer);
-        }
-        else if (dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget())){
-            QOpenGLWidget* rhi_widget = dynamic_cast<QOpenGLWidget*>(opengl_widget->get_widget());
-            QImage framebuffer = rhi_widget->grabFramebuffer();
-            pixmap = QPixmap::fromImage(framebuffer);
-        }
-        else{
-            int pixmap_width = size().width() * devicePixelRatio();
-            int pixmap_height = size().height() * devicePixelRatio();
-
-            pixmap = QPixmap(QSize(pixmap_width, pixmap_height));
-            pixmap.setDevicePixelRatio(devicePixelRatio());
-            render(&pixmap, QPoint(), QRegion(rect()));
-        }
+        QPixmap pixmap = get_framebuffer_pixmap();
 
         sioyek_network_manager->semantic_ask_with_image(
                     this,
