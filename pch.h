@@ -24,7 +24,7 @@
 #include <qtemporarydir.h>
 #include <qtemporaryfile.h>
 
-#include <qkeyevent.h>
+#include <QKeyEvent>
 #include <qlabel.h>
 #include <qlineedit.h>
 #include <qlistview.h>
