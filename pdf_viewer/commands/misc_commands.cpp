@@ -2682,6 +2682,20 @@ public:
             widget->push_current_widget(new EnumConfigUI(confname, widget, possible_values, current_value));
             widget->show_current_widget();
         }
+        if (config->config_type == ConfigType::DynamicEnum) {
+            std::wstring current_value = *(std::wstring*)config->value;
+            std::vector<std::wstring> possible_values = std::get<DynamicEnumExtras>(config->extras).get_possible_values(widget);
+
+            int index = -1;
+            for (int i = 0; i < possible_values.size(); i++){
+                if (possible_values[i] == current_value){
+                    index = i;
+                    break;
+                }
+            }
+            widget->push_current_widget(new EnumConfigUI(confname, widget, possible_values, index));
+            widget->show_current_widget();
+        }
 
         if (config->config_type == ConfigType::Color4) {
             widget->push_current_widget(new Color4ConfigUI(confname, widget, (float*)config->value));
