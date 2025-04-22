@@ -1238,6 +1238,7 @@ public:
 
     Q_INVOKABLE QList<MainWidget*> all_windows();
     QJsonObject get_current_user();
+    void on_playback_finished_callback();
 
 
 public slots:

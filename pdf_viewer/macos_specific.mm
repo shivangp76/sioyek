@@ -3,7 +3,31 @@
 #import <Cocoa/Cocoa.h>
 #import <AVFoundation/AVFoundation.h>
 
+// Define the callback function pointer type
+typedef void (*AudioFinishedCallback)();
+
+// Global variable to store the callback function
+static AudioFinishedCallback g_audioFinishedCallback = NULL;
+
 AVAudioPlayer* current_player = nil;
+
+// Delegate class to handle audio player events
+@interface AudioPlayerDelegateHandler : NSObject <AVAudioPlayerDelegate>
+@end
+
+@implementation AudioPlayerDelegateHandler
+
+- (void)audioPlayerDidFinishPlaying:(AVAudioPlayer *)player successfully:(BOOL)flag {
+    if (flag && g_audioFinishedCallback) {
+        g_audioFinishedCallback();
+    }
+}
+
+@end
+
+// Global instance of the delegate handler
+static AudioPlayerDelegateHandler* g_audioDelegateHandler = nil;
+
 extern "C" void changeTitlebarColor(WId winId, double red, double green, double blue, double alpha){
     if (winId == 0) return;
     NSView* view = (NSView*)winId;
@@ -88,7 +112,17 @@ extern "C" void hideWindowTitleBar(WId winId) {
     [nativeWindow setTitlebarAppearsTransparent:YES];
 }
 
+// Function to set the audio finished callback
+extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback) {
+    g_audioFinishedCallback = callback;
+}
+
 extern "C" void macos_setMp3FileSource(const char* path) {
+    // Initialize the delegate handler if it hasn't been already
+    if (g_audioDelegateHandler == nil) {
+        g_audioDelegateHandler = [[AudioPlayerDelegateHandler alloc] init];
+    }
+
     // plays the mp3 file using AVAudioPlayer
     NSString* nsPath = [NSString stringWithUTF8String:path];
 
@@ -104,6 +138,8 @@ extern "C" void macos_setMp3FileSource(const char* path) {
         current_player.rate = oldRate;
     }
     current_player.enableRate = YES;
+    // Set the delegate for the player
+    current_player.delegate = g_audioDelegateHandler;
 }
 
 extern "C" void macos_playMp3File(const char* path) {

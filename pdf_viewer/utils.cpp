@@ -6820,7 +6820,36 @@ extern "C" float macos_pauseMp3File();
 extern "C" bool macos_isMp3Finished();
 extern "C" float macos_getMp3Duration();
 
+typedef void (*AudioFinishedCallback)();
+extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback);
+// extern std::vector<MainWidget*> windows;
+
+// #include "main_widget.h"
+
+MacosMediaPlayer* global_macos_player = nullptr;
+void macos_audio_finished_callback(){
+    if (global_macos_player){
+        global_macos_player->playback_finished = true;
+        global_macos_player->set_newly_finished(true);
+    }
+    // for (auto window : windows){
+    //     window->on_playback_finished_callback();
+    // }
+}
+
+bool MacosMediaPlayer::get_newly_finished(){
+    bool res = is_newly_finished;
+    is_newly_finished = false;
+    return res;
+}
+
+void MacosMediaPlayer::set_newly_finished(bool state){
+    is_newly_finished = state;
+}
 void MacosMediaPlayer::set_source(std::string path){
+    macos_setAudioFinishedCallback(macos_audio_finished_callback);
+    playback_finished = false;
+    global_macos_player = this;
     macos_setMp3FileSource(path.c_str());
 }
 
@@ -6837,6 +6866,7 @@ void MacosMediaPlayer::setSource(const QUrl& source){
 }
 
 void MacosMediaPlayer::play(){
+    playback_finished = false;
     macos_resumeMp3File();
 }
 
@@ -6882,7 +6912,7 @@ bool MacosMediaPlayer::isSeekable(){
 }
 
 bool MacosMediaPlayer::isFinished(){
-    return macos_isMp3Finished();
+    return playback_finished || macos_isMp3Finished();
 }
 
 #endif

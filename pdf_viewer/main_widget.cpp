@@ -8683,13 +8683,14 @@ void MainWidget::focus_on_high_quality_text_being_read() {
 #ifdef Q_OS_MACOS
     if (media_player){
         MacosMediaPlayer* macos_specific_media_player = dynamic_cast<MacosMediaPlayer*>(media_player);
-        if (!media_player->isPlaying() && (media_player->position() == 0) && (macos_specific_media_player->duration() > 0)){
+        if (!media_player->isPlaying()){
             // on the macos-specific media player, when we reach the end of the media,
             // the position resets to 0 and isPlaying will be false, so the if statement below
             // this one does not trigger on macos, so we handle it here instead
-            // qDebug() << media_player->
 
-            // handle_high_quality_media_end_reached();
+            if (macos_specific_media_player->get_newly_finished()){
+                handle_high_quality_media_end_reached();
+            }
         }
     }
 #endif
@@ -14646,4 +14647,7 @@ QJsonObject MainWidget::get_current_user(){
         return sioyek_network_manager->current_user;
     }
     return QJsonObject();
+}
+
+void MainWidget::on_playback_finished_callback(){
 }

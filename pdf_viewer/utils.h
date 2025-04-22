@@ -1063,7 +1063,9 @@ private:
 #ifdef Q_OS_MACOS
 class MacosMediaPlayer{
 
+    bool is_newly_finished = false;
 public:
+    bool playback_finished = false;
     void set_source(std::string path);
     void play();
     void pause();
@@ -1077,8 +1079,11 @@ public:
     void setPlaybackRate(float rate);
     bool isSeekable();
     bool isFinished();
+    bool isNewlyFinished();
     void setSource(const QUrl& source);
     float duration();
+    void set_newly_finished(bool state);
+    bool get_newly_finished();
 };
 
 #else
