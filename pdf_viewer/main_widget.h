@@ -669,6 +669,9 @@ public:
     void portal_to_definition();
     void move_visual_mark_command(int amount);
     void handle_goto_loaded_document();
+    void handle_goto_tab(const std::wstring& path);
+    int get_current_tab_index();
+    void goto_ith_next_tab(int i);
 
     void handle_goto_portal_list();
     void handle_goto_bookmark(bool manual_only=false, bool chat=false);

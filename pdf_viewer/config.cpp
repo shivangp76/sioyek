@@ -54,6 +54,7 @@ float PERSISTANCE_PERIOD = -1.0f;
 int MAX_CUSTOM_STATUS_MESSAGE_SIZE = 20;
 bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT = true;
 bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS = false;
+float TEXT_SELECTION_MINIMUM_DISTANCE = 5;
 bool SCROLL_PAST_DOCUMENT_ENDS = true;
 bool USE_BINARY_DRAWING_FILES = true;
 // std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
@@ -1340,6 +1341,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_float(L"epub_height", &EPUB_HEIGHT, FloatExtras{0.0f, 1000.0f});
     add_float(L"epub_font_size", &EPUB_FONT_SIZE, FloatExtras{0.0f, 100.0f});
     add_float(L"persistance_period", &PERSISTANCE_PERIOD, FloatExtras{-1.0f, 100000.0f});
+    add_float(L"text_selection_minimum_distance", &TEXT_SELECTION_MINIMUM_DISTANCE, FloatExtras{-0.0f, 100.0f});
 
     add_bool(L"smooth_scroll_mode", &SMOOTH_SCROLL_MODE);
     add_bool(L"use_system_theme", &USE_SYSTEM_THEME)->set_change_fn([](MainWidget* w){

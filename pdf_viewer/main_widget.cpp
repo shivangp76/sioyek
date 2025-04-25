@@ -213,6 +213,7 @@ extern bool SHOW_PRO_COMMANDS;
 extern bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION;
 extern bool USE_LOCAL_TTS_WHILE_WAITING_FOR_HQ_TTS;
 
+extern float TEXT_SELECTION_MINIMUM_DISTANCE;
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
 extern float SMALL_PIXMAP_SCALE;
@@ -3047,7 +3048,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         overview_resize_data = {};
 
         float dist = manhattan_distance(fvec2(last_mouse_down), fvec2(abs_doc_pos));
-        if ((!was_resizing_overview) && (!TOUCH_MODE) && (!mouse_drag_mode) && (dist > 5)) {
+        if ((!was_resizing_overview) && (!TOUCH_MODE) && (!mouse_drag_mode) && (dist > TEXT_SELECTION_MINIMUM_DISTANCE)) {
 
             update_text_selection(abs_doc_pos);
             dv()->selection_mode = SelectionMode::Character;
@@ -5743,11 +5744,12 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstr
             }
             else if (next_requirement.type == RequirementType::File || next_requirement.type == RequirementType::Folder) {
                 std::wstring file_name;
+                std::optional<QString> root_dir = pending_command_instance->get_file_path_requirement_root_dir();
                 if (next_requirement.type == RequirementType::File) {
-                    file_name = select_command_file_name(pending_command_instance->get_name());
+                    file_name = select_command_file_name(pending_command_instance->get_name(), root_dir);
                 }
                 else{
-                    file_name = select_command_folder_name();
+                    file_name = select_command_folder_name(root_dir);
                 }
 #ifdef SIOYEK_ANDROID
 
@@ -9523,6 +9525,35 @@ void MainWidget::handle_toggle_text_mark() {
 }
 
 
+int MainWidget::get_current_tab_index(){
+    std::wstring current_document_path = L"";
+
+    if (doc()) {
+        current_document_path = doc()->get_path();
+    }
+
+    std::vector<std::wstring> loaded_document_paths_ = document_manager->get_tabs();
+    auto loc = std::find(loaded_document_paths_.begin(), loaded_document_paths_.end(), current_document_path);
+    int index = -1;
+    if (loc != loaded_document_paths_.end()) {
+        index = loc - loaded_document_paths_.begin();
+    }
+    return index;
+}
+
+void MainWidget::goto_ith_next_tab(int i){
+    int current_tab_index = get_current_tab_index();
+    std::vector<std::wstring> loaded_document_paths = document_manager->get_tabs();
+    if (loaded_document_paths.size() > 1){
+        int new_index = current_tab_index + i;
+        while (new_index < 0 ){
+            new_index += loaded_document_paths.size();
+        }
+        new_index = new_index % loaded_document_paths.size();
+        handle_goto_tab(loaded_document_paths[new_index]);
+    }
+}
+
 void MainWidget::handle_goto_loaded_document() {
     // opens a list of currently loaded documents. This is basically sioyek's "tab" feature
     // the user can "unload" a document by pressing the delete key while it is highlighted in the list
@@ -9554,18 +9585,7 @@ void MainWidget::handle_goto_loaded_document() {
         }
     }
 
-    std::wstring current_document_path = L"";
-
-    if (doc()) {
-        current_document_path = doc()->get_path();
-    }
-
-
-    auto loc = std::find(loaded_document_paths_.begin(), loaded_document_paths_.end(), current_document_path);
-    int index = -1;
-    if (loc != loaded_document_paths_.end()) {
-        index = loc - loaded_document_paths_.begin();
-    }
+    int index = get_current_tab_index();
 
     std::vector<QString> loaded_document_paths_qstrings;
     std::vector<QString> detected_paper_names_qstrings;
@@ -14664,4 +14684,21 @@ QJsonObject MainWidget::get_current_user(){
 }
 
 void MainWidget::on_playback_finished_callback(){
+}
+
+void MainWidget::handle_goto_tab(const std::wstring& path) {
+
+    // if there is a window with that tab, raise the window
+    for (auto window : windows) {
+        if (window->doc()) {
+            if (window->doc()->get_path() == path) {
+                window->raise();
+                window->activateWindow();
+                return;
+            }
+        }
+    }
+
+    push_state();
+    open_document(path);
 }

@@ -1680,6 +1680,14 @@ public:
         return {};
     }
 
+    std::optional<QString> get_file_path_requirement_root_dir() override {
+        QFileInfo file_info(QString::fromStdWString(widget->doc()->get_path()));
+        QString file_path = file_info.absolutePath();
+        QString file_name = file_info.fileName();
+        QString parent_dir = file_path.mid(file_path.size() - file_name.size());
+        return parent_dir;
+    }
+
     void perform() {
         //std::wstring embedded_pdf_file_name = select_new_pdf_file_name();
         if (file_path->size() > 0) {

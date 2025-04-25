@@ -55,7 +55,6 @@ std::vector<std::string> parse_command_name(const QString& command_names) {
     return res;
 }
 
-
 std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, QString name, QString menu_string) {
     ParseState parser;
     parser.index = 0;
@@ -85,7 +84,6 @@ std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, QString name, Q
 
 
 
-
 CommandManager::CommandManager(ConfigManager* config_manager) {
 
     register_base_commands(this);
@@ -93,7 +91,6 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_annotation_commands(this);
     register_navigation_commands(this);
     register_network_commands(this);
-
     register_command<OpenLinkCommand>(this);
 
     for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {

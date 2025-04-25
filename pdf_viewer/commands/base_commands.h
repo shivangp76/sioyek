@@ -105,6 +105,7 @@ public:
     virtual void on_key_hold();
     virtual void on_text_change(const QString& new_text);
     virtual std::optional<AbsoluteRect> get_text_editor_rectangle();
+    virtual std::optional<QString> get_file_path_requirement_root_dir();
 
     virtual QStringList get_autocomplete_options();
 

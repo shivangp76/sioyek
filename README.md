@@ -2,6 +2,17 @@
 
 Sioyek is a PDF viewer with a focus on textbooks and research papers.
 
+# Development Branch FAQ
+
+## Q: There are build errors with Qt 5.*.
+
+A: If you are building the development branch you need to use Qt 6.7 or 6.8.
+
+## Q: On MacOS I get "sioyek is damaged and cannot be opened. It is recommended to eject the image.".
+
+A: This is related to macOS quarantine. See https://github.com/ahrm/sioyek/discussions/1156#discussioncomment-10822738 .
+
+
 ## Contents
 * [Installation](#install)
 * [Documentation](#documentation)

@@ -262,6 +262,10 @@ std::optional<AbsoluteRect> Command::get_text_editor_rectangle() {
     return {};
 }
 
+std::optional<QString> Command::get_file_path_requirement_root_dir(){
+    return {};
+}
+
 void Command::run() {
     if (this->requires_document() && !(widget->main_document_view_has_document())) {
         return;

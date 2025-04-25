@@ -29,19 +29,9 @@ public:
     }
 
     void perform() {
-        // if there is a window with that tab, raise the window
-        for (auto window : windows) {
-            if (window->doc()) {
-                if (window->doc()->get_path() == selected_path.value()) {
-                    window->raise();
-                    window->activateWindow();
-                    return;
-                }
-            }
+        if (selected_path.has_value()){
+            widget->handle_goto_tab(selected_path.value());
         }
-
-        widget->push_state();
-        widget->open_document(selected_path.value());
     }
 
     bool requires_document() {
@@ -53,6 +43,38 @@ public:
     }
 
 };
+
+class GotoNextTabCommand : public Command {
+ public:
+     static inline const std::string cname = "goto_next_tab";
+     static inline const std::string hname = "Go to the next tab.";
+     GotoNextTabCommand(MainWidget* w) : Command(cname, w) {}
+
+     void perform() {
+         widget->goto_ith_next_tab(1);
+     }
+
+     std::string get_name() {
+         return cname;
+     }
+
+ };
+
+ class GotoPrevTabCommand : public Command {
+ public:
+     static inline const std::string cname = "goto_prev_tab";
+     static inline const std::string hname = "Go to the previous tab.";
+     GotoPrevTabCommand(MainWidget* w) : Command(cname, w) {}
+
+     void perform() {
+         widget->goto_ith_next_tab(-1);
+     }
+
+     std::string get_name() {
+         return cname;
+     }
+
+ };
 
 class NextItemCommand : public Command {
 public:
@@ -1926,6 +1948,8 @@ public:
 
 void register_navigation_commands(CommandManager* manager) {
     register_command<GotoLoadedDocumentCommand>(manager);
+    register_command<GotoNextTabCommand>(manager);
+    register_command<GotoPrevTabCommand>(manager);
     register_command<NextItemCommand>(manager);
     register_command<PrevItemCommand>(manager);
     register_command<SearchCommand>(manager);

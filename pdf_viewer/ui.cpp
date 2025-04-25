@@ -61,24 +61,24 @@ extern "C" QString promptUserToSelectPdfFile(QString);
 #endif
 extern Path standard_data_path;
 
-std::wstring select_command_file_name(std::string command_name) {
+std::wstring select_command_file_name(std::string command_name, std::optional<QString> root_dir) {
     if (command_name == "open_document") {
-        return select_document_file_name();
+        return select_document_file_name(root_dir);
     }
     else if (command_name == "source_config") {
-        return select_any_file_name();
+        return select_any_file_name(root_dir);
     }
     else {
-        return select_any_file_name();
+        return select_any_file_name(root_dir);
     }
 }
 
-std::wstring select_command_folder_name() {
-    QString dir_name = QFileDialog::getExistingDirectory(nullptr, "Select Folder");
+std::wstring select_command_folder_name(std::optional<QString> root_dir) {
+    QString dir_name = QFileDialog::getExistingDirectory(nullptr, "Select Folder", root_dir.value_or(QString()));
     return dir_name.toStdWString();
 }
 
-std::wstring select_document_file_name() {
+std::wstring select_document_file_name(std::optional<QString> root_dir) {
     if (DEFAULT_OPEN_FILE_PATH.size() == 0) {
 
 #ifdef SIOYEK_IOS
@@ -89,13 +89,13 @@ std::wstring select_document_file_name() {
         
         // return file_url.toLocalFile().toStdWString();
 #else
-        QString file_name = QFileDialog::getOpenFileName(nullptr, "Select Document", "", "Documents (*.pdf *.epub *.cbz)");
+        QString file_name = QFileDialog::getOpenFileName(nullptr, "Select Document", root_dir.value_or(""), "Documents (*.pdf *.epub *.cbz)");
         return file_name.toStdWString();
 #endif
     }
     else {
 
-        QFileDialog fd = QFileDialog(nullptr, "Select Document", "", "Documents (*.pdf *.epub *.cbz)");
+        QFileDialog fd = QFileDialog(nullptr, "Select Document", root_dir.value_or(""), "Documents (*.pdf *.epub *.cbz)");
         fd.setDirectory(QString::fromStdWString(DEFAULT_OPEN_FILE_PATH));
         if (fd.exec()) {
 
@@ -109,28 +109,28 @@ std::wstring select_document_file_name() {
 
 }
 
-std::wstring select_json_file_name() {
-    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select Document", "", "Documents (*.json )");
+std::wstring select_json_file_name(std::optional<QString> root_dir) {
+    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select Document", root_dir.value_or(""), "Documents (*.json )");
     return file_name.toStdWString();
 }
 
-std::wstring select_any_file_name() {
-    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select File", "", "Any (*)");
+std::wstring select_any_file_name(std::optional<QString> root_dir) {
+    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select File", root_dir.value_or(""), "Any (*)");
     return file_name.toStdWString();
 }
 
-std::wstring select_any_existing_file_name() {
-    QString file_name = QFileDialog::getOpenFileName(nullptr, "Select File", "", "Any (*)");
+std::wstring select_any_existing_file_name(std::optional<QString> root_dir) {
+    QString file_name = QFileDialog::getOpenFileName(nullptr, "Select File", root_dir.value_or(""), "Any (*)");
     return file_name.toStdWString();
 }
 
-std::wstring select_new_json_file_name() {
-    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select Document", "", "Documents (*.json )");
+std::wstring select_new_json_file_name(std::optional<QString> root_dir) {
+    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select Document", root_dir.value_or(""), "Documents (*.json )");
     return file_name.toStdWString();
 }
 
-std::wstring select_new_pdf_file_name() {
-    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select Document", "", "Documents (*.pdf )");
+std::wstring select_new_pdf_file_name(std::optional<QString> root_dir) {
+    QString file_name = QFileDialog::getSaveFileName(nullptr, "Select Document", root_dir.value_or(""), "Documents (*.pdf )");
     return file_name.toStdWString();
 }
 
