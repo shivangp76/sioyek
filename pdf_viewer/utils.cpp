@@ -6987,3 +6987,30 @@ void clean_old_high_quality_tts_cached_files(bool force_all){
         }
     }
 }
+
+std::optional<AbsoluteRect> get_absolute_rect_from_json_coordinates(QJsonArray gemini_coordinates, AbsoluteRect window_rect){
+    if (gemini_coordinates.size() != 4) return {};
+
+    // [ymin, xmin, ymax, xmax] normalized to 0-1000
+    std::vector<int> coordinates_positions;
+    for (int i = 0; i < gemini_coordinates.size(); i++){
+        coordinates_positions.push_back(gemini_coordinates.at(i).toInt());
+    }
+    float y_min_relative = 1.0f - static_cast<float>(coordinates_positions[0]) / 1000.0f;
+    float x_min_relative = static_cast<float>(coordinates_positions[1]) / 1000.0f;
+    float y_max_relative = 1.0f - static_cast<float>(coordinates_positions[2]) / 1000.0f;
+    float x_max_relative = static_cast<float>(coordinates_positions[3]) / 1000.0f;
+    AbsoluteRect result;
+    result.x0 = window_rect.x0 + window_rect.width() * x_min_relative;
+    result.x1 = window_rect.x0 + window_rect.width() * x_max_relative;
+    result.y0 = window_rect.y0 + window_rect.height() * y_min_relative;
+    result.y1 = window_rect.y0 + window_rect.height() * y_max_relative;
+    if (result.x0 > result.x1){
+        std::swap(result.x0, result.x1);
+    }
+    if (result.y0 > result.y1){
+        std::swap(result.y0, result.y1);
+    }
+    return result;
+}
+            // QJsonArray bookmark_bounding_box_array  = action_data["bookmark_bounding_box"].toArray();

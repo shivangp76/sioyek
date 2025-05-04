@@ -1163,3 +1163,5 @@ std::optional<T> optional_from_qvariant(QVariant variant){
 void open_directory(QString path);
 
 void clean_old_high_quality_tts_cached_files(bool force_all=false);
+
+std::optional<AbsoluteRect> get_absolute_rect_from_json_coordinates(QJsonArray gemini_coordinates, AbsoluteRect window_rect);

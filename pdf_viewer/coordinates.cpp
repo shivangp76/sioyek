@@ -339,3 +339,12 @@ DocumentPos DocumentPos::to_page(int target_page, Document* doc){
     return res;
 
 }
+
+
+DocumentPos DocumentPos::from_pageless(PagelessDocumentPos pos, int page){
+    DocumentPos res;
+    res.x = pos.x;
+    res.y = pos.y;
+    res.page = page;
+    return res;
+}

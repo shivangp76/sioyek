@@ -51,6 +51,8 @@ public:
     float x;
     float y;
 
+    static DocumentPos from_pageless(PagelessDocumentPos pos, int page);
+
     PagelessDocumentPos pageless() const;
     Q_INVOKABLE AbsoluteDocumentPos to_absolute(Document* doc) const;
     Q_INVOKABLE NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;

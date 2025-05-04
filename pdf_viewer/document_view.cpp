@@ -4300,20 +4300,13 @@ std::string DocumentView::get_pending_portal_uuid_at_pos(AbsoluteDocumentPos abs
     return "";
 }
 
+
 std::vector<SearchResult> DocumentView::get_fuzzy_search_results(std::wstring query){
     if (current_document->get_super_fast_index().size() == 0) {
         return {};
     }
 
-    const std::wstring& super_fast_index = current_document->get_super_fast_index();
-    std::wstring lower_index = super_fast_index;
-
-    for (int i = 0; i < lower_index.size(); i++) {
-        if (lower_index[i] > 30 && lower_index[i] < 130) {
-            lower_index[i] = std::tolower(lower_index[i]);
-        }
-    }
-
+    std::wstring lower_index = doc()->get_super_fast_index_lower();
 
     QStringList parts = QString::fromStdWString(query).split("...");
 

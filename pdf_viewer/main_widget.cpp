@@ -8140,7 +8140,14 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << opengl_widget->is_rendering_animation;
+    int current_page = dv()->get_current_page_number();
+    std::wstring something = L"The first is a multi-head self-attention mechanism, and the second is a simple, position-wise fully connected feed-forward network.";
+    auto selection = doc()->fuzzy_page_select_text(current_page, something);
+    if (selection.has_value()){
+        std::string uuid = add_highlight_to_current_document(selection->first, selection->second, 'r');
+        main_document_view->clear_selected_text();
+
+    }
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -14604,55 +14611,69 @@ void MainWidget::ai_magic_drawing_ask(){
 
     opengl_widget->clear_cached_drawing_buffers();
 
-    QPixmap pixmap;
-    QRhiWidget* rhi_widget = dynamic_cast<QRhiWidget*>(opengl_widget->get_widget());
-    QImage framebuffer = rhi_widget->grabFramebuffer();
-    pixmap = QPixmap::fromImage(framebuffer);
+    // doc()->delete_drawings_with_indices(current_page, recent_drawing_indices);
 
-    std::optional<DetectedRectResult> selected_rectangle = detect_rect_drawing({recent_drawings[0]});
+    QPixmap pixmap = get_framebuffer_pixmap();
+    AbsoluteRect window_rect = dv()->get_view_rect();
 
-    if (selected_rectangle.has_value()){
-        doc()->delete_drawings_with_indices(current_page, recent_drawing_indices);
+    sioyek_network_manager->semantic_ask_with_image(
+                this,
+                pixmap,
+                [&, d=doc(), current_page, window_rect, next_id](QString response_content){
 
-        BookMark pending_bookmark;
-        pending_bookmark.description = L"";
+        PageFreehandDrawing& drawings = doc()->get_page_drawings_mut(current_page);
+        for (auto& drawing : drawings.drawings){
+            drawing.network_pending_request_id = -1;
+        }
+        opengl_widget->clear_cached_drawing_buffers();
 
-        pending_bookmark.begin_x = selected_rectangle->rect.x0;
-        pending_bookmark.end_x = selected_rectangle->rect.x1;
-        pending_bookmark.begin_y = selected_rectangle->rect.y0;
-        pending_bookmark.end_y = selected_rectangle->rect.y1;
-        pending_bookmark.is_pending = true;
-
-
-        std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
-
-        // std::string uuid = doc()->add_pending_bookmark(pending_uuid, text);
-
-
-        QPixmap pixmap = get_framebuffer_pixmap();
-
-        sioyek_network_manager->semantic_ask_with_image(
-                    this,
-                    doc()->get_super_fast_index(),
-                    pixmap,
-                    [&, d = doc(), uuid](QString chunk){
-            add_chunk_to_bookmark(d, uuid, chunk);
-        },
-        [&, d=doc(), uuid, current_page, next_id](){
-            BookMark* bm = d->get_bookmark_with_uuid(uuid);
-            if (bm) {
-                bm->is_pending = false;
-                // doc()->delete_all_page_drawings(current_page);
-                bm->description = replace_verbatim_links(bm->description);
-                // d->update_bookmark_text(uuid, bm->description, bm->font_size);
-                doc()->add_pending_bookmark(uuid, bm->description);
-                on_bookmark_edited(*bm, false, false);
-                doc()->delete_page_drawings_with_network_request_id(current_page, next_id);
+        qDebug() << response_content;
+        QJsonDocument json_doc = QJsonDocument::fromJson(response_content.toUtf8());
+        QString action_type = json_doc.object()["action_type"].toString();
+        QJsonObject action_data = json_doc.object()["parsed_response"].toObject()["action_data"].toObject();
+        if (action_type == "HighlightActionData"){
+            QString text_to_highlight = action_data["highlighted_text"].toString();
+            auto possible_selection = doc()->fuzzy_page_select_text(current_page, text_to_highlight.toStdWString());
+            if (possible_selection.has_value()){
+                auto [begin, end] = possible_selection.value();
+                std::string uuid = add_highlight_to_current_document(begin, end, 'r');
+                main_document_view->clear_selected_text();
             }
         }
-        );
+        if (action_type == "BookmarkActionData"){
+            QString bookmark_text = action_data["bookmark_text"].toString();
+            QJsonArray bookmark_bounding_box_array  = action_data["bookmark_bounding_box"].toArray();
+            std::optional<AbsoluteRect> bookmark_absrect = get_absolute_rect_from_json_coordinates(bookmark_bounding_box_array, window_rect);
+            if (bookmark_absrect.has_value()){
+                doc()->add_freetext_bookmark(bookmark_text.toStdWString(), bookmark_absrect.value());
+            }
+        }
+        if (action_type == "AskActionData"){
+            QString ask_text = action_data["ask_text"].toString();
+            QJsonArray ask_bounding_box_array  = action_data["ask_bounding_box"].toArray();
+            std::optional<AbsoluteRect> ask_absrect = get_absolute_rect_from_json_coordinates(ask_bounding_box_array, window_rect);
+            if (ask_absrect.has_value()){
+                std::unique_ptr<Command> cmd = command_manager->get_command_with_name(this, "add_freetext_bookmark");
+                cmd->set_rect_requirement(ask_absrect.value());
+                cmd->set_text_requirement(L"? " + ask_text.toStdWString());
+                advance_command(std::move(cmd));
+            }
+        }
 
+        // qDebug() << response_content;
+        // BookMark* bm = d->get_bookmark_with_uuid(uuid);
+        // if (bm) {
+        //     bm->is_pending = false;
+        //     // doc()->delete_all_page_drawings(current_page);
+        //     bm->description = replace_verbatim_links(bm->description);
+        //     // d->update_bookmark_text(uuid, bm->description, bm->font_size);
+        //     doc()->add_pending_bookmark(uuid, bm->description);
+        //     on_bookmark_edited(*bm, false, false);
+        //     doc()->delete_page_drawings_with_network_request_id(current_page, next_id);
+        // }
     }
+    );
+
 }
 
 void MainWidget::on_onscreen_keyboard_shown(){

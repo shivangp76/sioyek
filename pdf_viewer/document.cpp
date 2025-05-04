@@ -5609,6 +5609,18 @@ const std::wstring& Document::get_super_fast_index() {
     return super_fast_search_index;
 }
 
+std::wstring Document::get_super_fast_index_lower() {
+    const std::wstring& super_fast_index = get_super_fast_index();
+    std::wstring lower_index = super_fast_index;
+
+    for (int i = 0; i < lower_index.size(); i++) {
+        if (lower_index[i] > 30 && lower_index[i] < 130) {
+            lower_index[i] = std::tolower(lower_index[i]);
+        }
+    }
+    return lower_index;
+}
+
 const std::vector<int>& Document::get_super_fast_page_begin_indices() {
     return super_fast_page_begin_indices;
 }
@@ -6155,4 +6167,39 @@ void Document::delete_page_drawings_with_network_request_id(int page, int reques
     }
 
     delete_drawings_with_indices(page, indices);
+}
+
+std::optional<std::pair<AbsoluteDocumentPos, AbsoluteDocumentPos>> Document::fuzzy_page_select_text(int page, std::wstring selected_text){
+    if (get_super_fast_index().size() == 0) {
+        return {};
+    }
+
+    // std::wstring lower_index = doc()->get_super_fast_index_lower();
+    std::wstring page_text = get_page_text(page).toLower().toStdWString();
+
+    auto [begin, end] = find_smallest_substring_containing_fraction_of_n_grams(page_text, selected_text, 2, 0.5f);
+    qDebug() << page_text.substr(begin, end-begin);
+
+    int dummy_page;
+    int begin_index = absolute_to_page_index(begin, dummy_page);
+    int end_index = absolute_to_page_index(end, dummy_page);
+
+    SearchResult result;
+    result.page = page;
+    result.begin_index_in_page = begin_index;
+    result.end_index_in_page = end_index;
+    result.fill(this);
+
+    if (result.rects.size() > 0){
+        PagelessDocumentPos center_left = result.rects[0].center_left();
+        PagelessDocumentPos center_right = result.rects.back().center_right();
+
+        AbsoluteDocumentPos center_left_abspos = DocumentPos::from_pageless(center_left, page).to_absolute(this);
+        AbsoluteDocumentPos center_right_abspos = DocumentPos::from_pageless(center_right, page).to_absolute(this);
+        return std::make_pair(center_left_abspos, center_right_abspos);
+    }
+    return {};
+
+    // int begin_index = current_document->absolute_to_page_index(begin, page);
+    // int end_index = current_document->absolute_to_page_index(end, page);
 }

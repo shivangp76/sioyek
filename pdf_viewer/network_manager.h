@@ -157,10 +157,8 @@ public:
     void cancel_all_downlods();
     void semantic_ask_with_image(
         QObject * parent,
-        const std::wstring& document_content,
         const QPixmap& pixmap,
-        std::function<void(QString)>&& on_chunk,
-        std::function<void()>&& on_done
+        std::function<void(QString)>&& on_done
     );
 
     void add_pending_tts_command(QString document_checksum, QString content_checksum);

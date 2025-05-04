@@ -303,6 +303,7 @@ public:
     int get_page_offset_into_super_fast_index(int from);
     int get_page_from_character_offset(int offset);
     const std::wstring& get_super_fast_index();
+    std::wstring get_super_fast_index_lower();
     const std::vector<int>& get_super_fast_page_begin_indices();
     int get_first_page_end_index();
 
@@ -566,6 +567,7 @@ public:
     bool is_super_fast_index_ready();
     std::vector<SearchResult> search_text(std::wstring query, SearchCaseSensitivity case_sensitive, int begin_page, int min_page, int max_page);
     std::vector<SearchResult> search_regex(std::wstring query, SearchCaseSensitivity case_sensitive, int begin_page, int min_page, int max_page);
+    std::optional<std::pair<AbsoluteDocumentPos, AbsoluteDocumentPos>> fuzzy_page_select_text(int page, std::wstring selected_text);
     float max_y_offset();
     void add_freehand_drawing(FreehandDrawing new_drawing);
     void get_page_freehand_drawings_with_indices(int page, const std::vector<SelectedObjectIndex>& indices, QList<FreehandDrawing>& freehand_drawings, std::vector<PixmapDrawing>& pixmap_drawings);

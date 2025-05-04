@@ -976,10 +976,8 @@ void SioyekNetworkManager::perform_generic_llm_request(QObject* parent, const QS
 
 void SioyekNetworkManager::semantic_ask_with_image(
     QObject * parent,
-    const std::wstring& document_content,
     const QPixmap& pixmap,
-    std::function<void(QString)>&& on_chunk,
-    std::function<void()>&& on_done
+    std::function<void(QString)>&& on_done
     ){
     QByteArray image_data;
     QBuffer image_buffer(&image_data);
@@ -999,7 +997,7 @@ void SioyekNetworkManager::semantic_ask_with_image(
 
     QJsonDocument json_doc;
     QJsonObject root_object;
-    root_object["document_content"] = QString::fromStdWString(document_content);
+    // root_object["document_content"] = QString::fromStdWString(document_content);
     json_doc.setObject(root_object);
 
 
@@ -1014,18 +1012,12 @@ void SioyekNetworkManager::semantic_ask_with_image(
     reply->setParent(parent);
     reply->setProperty("sioyek_network_status_string", "performing query");
 
-    QObject::connect(reply, &QNetworkReply::downloadProgress, [reply, on_chunk=std::move(on_chunk)]() {
-        int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        if (status_code == 200){
-            QString chunk = QString::fromUtf8(reply->readAll());
-            on_chunk(chunk);
-        }
-        });
     QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
 
         int status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status_code == 200) {
-            on_done();
+            QString response_string = QString::fromUtf8(reply->readAll());
+            on_done(response_string);
         }
         });
 
