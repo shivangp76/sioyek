@@ -14613,9 +14613,14 @@ void MainWidget::ai_magic_drawing_ask(){
     opengl_widget->clear_cached_drawing_buffers();
 
 
+    opengl_widget->should_render_pending_drawing_only = true;
     QPixmap pixmap = get_framebuffer_pixmap();
+    opengl_widget->should_render_pending_drawing_only = false;
+
     AbsoluteRect window_rect = dv()->get_view_rect();
 
+    pixmap.save("my_screenshot.png");
+    return;
     sioyek_network_manager->semantic_ask_with_image(
                 this,
                 pixmap,

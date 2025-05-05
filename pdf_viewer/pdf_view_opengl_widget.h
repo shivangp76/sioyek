@@ -224,6 +224,7 @@ protected:
 
 public:
     bool is_rendering_animation = false;
+    bool should_render_pending_drawing_only = false;
     bool is_helper_waiting_for_render = false;
 
     DocumentView* dv();
@@ -489,6 +490,7 @@ private:
     std::unique_ptr<QRhiGraphicsPipeline> paintover_highlight_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_borders_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> drawing_pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> drawing_pipeline_for_commands;
     // std::unique_ptr<QRhiGraphicsPipeline> test_rect_pipeline;
     // std::unique_ptr<QRhiShaderResourceBindings> test_resource_bindings;
 

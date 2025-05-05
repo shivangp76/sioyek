@@ -225,6 +225,7 @@
         <file>qsb_shaders/prebuilt/test.frag.qsb</file>
         <file>qsb_shaders/prebuilt/test.vert.qsb</file>
         <file>qsb_shaders/prebuilt/drawing.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/drawing_command.frag.qsb</file>
         <file>qsb_shaders/prebuilt/drawing.vert.qsb</file>
 
     </qresource>

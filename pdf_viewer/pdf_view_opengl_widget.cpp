@@ -4064,6 +4064,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         paintover_highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_borders_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         drawing_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        drawing_pipeline_for_commands.reset(rhi_ptr->newGraphicsPipeline());
         // test_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
 
         colored_rect_pipeline->setShaderStages({
@@ -4094,6 +4095,11 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         drawing_pipeline->setShaderStages({
             { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/drawing.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/drawing.frag.qsb")) }
+        });
+
+        drawing_pipeline_for_commands->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/drawing.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/drawing_command.frag.qsb")) }
         });
 
         // test_rect_pipeline->setShaderStages({
@@ -4177,6 +4183,21 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             drawing_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
             drawing_pipeline->setSampleCount(sample_count);
             drawing_pipeline->create();
+        }
+
+        {
+            drawing_pipeline_for_commands->setVertexInputLayout(drawing_input_layout);
+            drawing_pipeline_for_commands->setShaderResourceBindings(pending_drawings_resource_binding.get());
+            drawing_pipeline_for_commands->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            drawing_pipeline_for_commands->setDepthTest(true);
+
+            QRhiGraphicsPipeline::TargetBlend drawing_for_command_target_blends;
+            drawing_for_command_target_blends.enable = true;
+            drawing_pipeline_for_commands->setTargetBlends({drawing_for_command_target_blends});
+
+            drawing_pipeline_for_commands->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            drawing_pipeline_for_commands->setSampleCount(sample_count);
+            drawing_pipeline_for_commands->create();
         }
 
         {
@@ -4920,7 +4941,12 @@ void PdfViewRhiWidget::update_resources_for_current_frame_drawing_calls(QRhiReso
 }
 
 void PdfViewRhiWidget::render_current_frame_drawings(QRhiCommandBuffer* command_buffer){
-    command_buffer->setGraphicsPipeline(drawing_pipeline.get());
+    if (should_render_pending_drawing_only){
+        command_buffer->setGraphicsPipeline(drawing_pipeline_for_commands.get());
+    }
+    else{
+        command_buffer->setGraphicsPipeline(drawing_pipeline.get());
+    }
 
     for (int i = 0; i < current_frame_drawing_render_calls.size(); i++){
 
