@@ -1180,9 +1180,9 @@ QRect FloatConfigUI::get_prefered_rect(QRect parent_rect){
 
 QRect SymbolConfigUI::get_prefered_rect(QRect parent_rect){
     int w = parent_rect.width();
-    int h = parent_rect.height();
+    int h = parent_rect.height() / 5;
 
-    return QRect(0, 0, w, h);
+    return QRect(0, (parent_rect.height() - h) / 2, w, h);
 }
 
 QRect IntConfigUI::get_prefered_rect(QRect parent_rect){
