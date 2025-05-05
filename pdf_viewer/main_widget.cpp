@@ -14619,8 +14619,6 @@ void MainWidget::ai_magic_drawing_ask(){
 
     AbsoluteRect window_rect = dv()->get_view_rect();
 
-    pixmap.save("my_screenshot.png");
-    return;
     sioyek_network_manager->semantic_ask_with_image(
                 this,
                 pixmap,
