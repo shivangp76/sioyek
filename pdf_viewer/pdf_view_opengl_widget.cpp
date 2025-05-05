@@ -1453,8 +1453,8 @@ void SioyekRendererBackend::add_coordinates_for_window_point(DocumentView* dv, f
 
 void SioyekRendererBackend::add_coordinates_for_window_point_no_fan(DocumentView* dv, float page_width, float page_height, float window_x, float window_y, float depth, float r, int point_polygon_vertices, std::vector<float>& out_coordinates){
 
-    float thickness_x = 1.0f / page_width;
-    float thickness_y = 1.0f / page_height;
+    float thickness_x = 0.5f / page_width;
+    float thickness_y = 0.5f / page_height;
 
     // float thickness_x = 1.0f;
     // float thickness_y = 1.0f;
@@ -4650,8 +4650,8 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
     // float thickness_x = dv->get_zoom_level() / get_width();
     // float thickness_y = dv->get_zoom_level() / get_height();
 
-    float thickness_x = 1.0f;
-    float thickness_y = 1.0f;
+    float thickness_x = 0.5f;
+    float thickness_y = 0.5f;
     // float depth = 0;
 
     int vertex_offset = prev_num_vertices * sizeof(float) * 2;
