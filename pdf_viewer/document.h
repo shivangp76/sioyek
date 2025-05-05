@@ -112,6 +112,7 @@ private:
     // which means that when we exit, we must write the modified drawings to the drawings file
     bool is_drawings_dirty = false;
     bool is_annotations_dirty = false;
+    bool is_loading_annotations = false;
 
     std::vector<Mark> marks;
     std::vector<BookMark> bookmarks;

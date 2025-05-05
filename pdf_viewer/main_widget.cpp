@@ -8141,14 +8141,9 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    int current_page = dv()->get_current_page_number();
-    std::wstring something = L"The first is a multi-head self-attention mechanism, and the second is a simple, position-wise fully connected feed-forward network.";
-    auto selection = doc()->fuzzy_page_select_text(current_page, something);
-    if (selection.has_value()){
-        std::string uuid = add_highlight_to_current_document(selection->first, selection->second, 'r');
-        main_document_view->clear_selected_text();
-
-    }
+    // std::string bookmark_uuid = dv()->get_selected_bookmark_uuid();
+    // auto bm = doc()->get_bookmark_with_uuid(bookmark_uuid);
+    // doc()->add_freetext_bookmark(bm->description, bm->get_rectangle().value());
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

@@ -157,6 +157,7 @@ CharacterIterator PageIterator::end() const {
 
 void Document::load_document_metadata_from_db() {
 
+    is_loading_annotations = true;
     marks.clear();
     bookmarks.clear();
     highlights.clear();
@@ -201,6 +202,7 @@ void Document::load_document_metadata_from_db() {
         checksum_thread.detach();
         //checksum_thread.join();
     }
+    is_loading_annotations = false;
 }
 
 
@@ -5819,32 +5821,34 @@ std::pair<float, float> Document::get_min_max_annot_x_for_page(int page) {
 
     float min_bookmark_x = 0;
     float max_bookmark_x = 0;
-    for (auto& bm : bookmarks) {
+    if (!is_loading_annotations){
+        for (auto& bm : bookmarks) {
 
-        int bookmark_page = AbsoluteDocumentPos{ 0, bm.begin_y }.to_document(this).page;
-        if (bookmark_page != page) {
-            continue;
-        }
-
-        if (bm.begin_x < min_bookmark_x) {
-            min_bookmark_x = bm.begin_x;
-        }
-        if (bm.end_x > max_bookmark_x) {
-            max_bookmark_x = bm.end_x;
-        }
-    }
-    for (auto& portal : portals){
-        if (portal.is_pinned()){
-            int portal_page = AbsoluteDocumentPos{ 0, portal.src_offset_y }.to_document(this).page;
-            if (portal_page != page) {
+            int bookmark_page = AbsoluteDocumentPos{ 0, bm.begin_y }.to_document(this).page;
+            if (bookmark_page != page) {
                 continue;
             }
-            AbsoluteRect portal_rect = portal.get_rectangle().value();
-            if (portal_rect.x0 < min_bookmark_x) {
-                min_bookmark_x = portal_rect.x0;
+
+            if (bm.begin_x < min_bookmark_x) {
+                min_bookmark_x = bm.begin_x;
             }
-            if (portal_rect.x1 > max_bookmark_x) {
-                max_bookmark_x = portal_rect.x1;
+            if (bm.end_x > max_bookmark_x) {
+                max_bookmark_x = bm.end_x;
+            }
+        }
+        for (auto& portal : portals){
+            if (portal.is_pinned()){
+                int portal_page = AbsoluteDocumentPos{ 0, portal.src_offset_y }.to_document(this).page;
+                if (portal_page != page) {
+                    continue;
+                }
+                AbsoluteRect portal_rect = portal.get_rectangle().value();
+                if (portal_rect.x0 < min_bookmark_x) {
+                    min_bookmark_x = portal_rect.x0;
+                }
+                if (portal_rect.x1 > max_bookmark_x) {
+                    max_bookmark_x = portal_rect.x1;
+                }
             }
         }
     }
