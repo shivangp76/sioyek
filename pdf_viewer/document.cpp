@@ -6203,3 +6203,14 @@ std::optional<std::pair<AbsoluteDocumentPos, AbsoluteDocumentPos>> Document::fuz
     // int begin_index = current_document->absolute_to_page_index(begin, page);
     // int end_index = current_document->absolute_to_page_index(end, page);
 }
+
+void Document::delete_drawings_with_network_request_id(int page, int request_id){
+    auto& page_drawings = page_freehand_drawings[page];
+    std::vector<int> indices_to_delete;
+    for (int i = 0; i < page_drawings.drawings.size(); i++){
+        if (page_drawings.drawings[i].network_pending_request_id == request_id){
+            indices_to_delete.push_back(i);
+        }
+    }
+    delete_drawings_with_indices(page, indices_to_delete);
+}

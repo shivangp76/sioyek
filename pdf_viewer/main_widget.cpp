@@ -322,6 +322,7 @@ extern bool FANCY_UI_MENUS;
 extern bool SAME_WIDTH;
 extern bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT;
 extern bool DEFAULT_PEN_DRAWING_MODE;
+extern bool DELETE_MAGIC_DRAWINGS;
 
 extern int RENDERER_BACKEND;
 
@@ -14611,7 +14612,6 @@ void MainWidget::ai_magic_drawing_ask(){
 
     opengl_widget->clear_cached_drawing_buffers();
 
-    // doc()->delete_drawings_with_indices(current_page, recent_drawing_indices);
 
     QPixmap pixmap = get_framebuffer_pixmap();
     AbsoluteRect window_rect = dv()->get_view_rect();
@@ -14621,13 +14621,18 @@ void MainWidget::ai_magic_drawing_ask(){
                 pixmap,
                 [&, d=doc(), current_page, window_rect, next_id](QString response_content){
 
-        PageFreehandDrawing& drawings = doc()->get_page_drawings_mut(current_page);
-        for (auto& drawing : drawings.drawings){
-            drawing.network_pending_request_id = -1;
+        if (DELETE_MAGIC_DRAWINGS){
+            doc()->delete_page_drawings_with_network_request_id(current_page, next_id);
+            // doc()->delete_drawings_with_indices(current_page, recent_drawing_indices);
         }
-        opengl_widget->clear_cached_drawing_buffers();
+        else{
+            PageFreehandDrawing& drawings = doc()->get_page_drawings_mut(current_page);
+            for (auto& drawing : drawings.drawings){
+                drawing.network_pending_request_id = -1;
+            }
+            opengl_widget->clear_cached_drawing_buffers();
+        }
 
-        qDebug() << response_content;
         QJsonDocument json_doc = QJsonDocument::fromJson(response_content.toUtf8());
         QString action_type = json_doc.object()["action_type"].toString();
         QJsonObject action_data = json_doc.object()["parsed_response"].toObject()["action_data"].toObject();
