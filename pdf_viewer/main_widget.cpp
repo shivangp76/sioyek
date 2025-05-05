@@ -14600,10 +14600,12 @@ void MainWidget::ai_magic_drawing_ask(){
     }
 
     int next_id = next_pending_drawing_request_id++;
+    int drawing_type = 'r';
     std::vector<FreehandDrawing> recent_drawings;
     for (auto ind : recent_drawing_indices){
         drawings.drawings[ind].network_pending_request_id = next_id;
         recent_drawings.push_back(drawings.drawings[ind]);
+        drawing_type = drawings.drawings[ind].type;
     }
 
     if (recent_drawings.size() == 0){
@@ -14622,7 +14624,7 @@ void MainWidget::ai_magic_drawing_ask(){
     sioyek_network_manager->semantic_ask_with_image(
                 this,
                 pixmap,
-                [&, d=doc(), current_page, window_rect, next_id](QString response_content){
+                [&, d=doc(), current_page, window_rect, drawing_type, next_id](QString response_content){
 
         if (DELETE_MAGIC_DRAWINGS){
             doc()->delete_page_drawings_with_network_request_id(current_page, next_id);
@@ -14644,7 +14646,7 @@ void MainWidget::ai_magic_drawing_ask(){
             auto possible_selection = doc()->fuzzy_page_select_text(current_page, text_to_highlight.toStdWString());
             if (possible_selection.has_value()){
                 auto [begin, end] = possible_selection.value();
-                std::string uuid = add_highlight_to_current_document(begin, end, 'r');
+                std::string uuid = add_highlight_to_current_document(begin, end, drawing_type);
                 main_document_view->clear_selected_text();
             }
         }
