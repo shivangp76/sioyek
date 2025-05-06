@@ -151,7 +151,7 @@ extern "C" void ios_pinch_callback(float window_x, float window_y, float scale, 
     
     MainWidget* w = windows[0];
     
-    float exp_factor = 0.5;
+    float exp_factor = 0.8;
     if (state == 1){
         ios_pinch_original_zoom_level = w->main_document_view->get_zoom_level();
         w->pdf_renderer->no_rerender = true;
