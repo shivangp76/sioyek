@@ -70,8 +70,8 @@ Rectangle{
 
                 anchors.left: parent.left
 
-                visible: _currentUser != null
-                text: (_currentUser != null) ? _currentUser.username + " " + _currentUser.balance : ""
+                visible: _hasUser
+                text: (_hasUser) ? _currentUser.username + " " + _currentUser.balance : ""
             }
 
             Item{

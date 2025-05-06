@@ -44,6 +44,7 @@ TouchMainMenu::TouchMainMenu(bool fit_mode,
     quick_widget->rootContext()->setContextProperty("_colors", QVariant::fromValue(get_symbol_colors_for_qml()));
     quick_widget->rootContext()->setContextProperty("_drawingModeIndex", QVariant::fromValue(drawing_mode));
     quick_widget->rootContext()->setContextProperty("_currentUser", QVariant::fromValue(current_user));
+    quick_widget->rootContext()->setContextProperty("_hasUser", !current_user.isEmpty());
     // quick_widget->rootContext()->setContextProperty("_currentDrawingMode", )
     update_context_properties();
 
