@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -140,6 +140,9 @@ extern "C" void registerPinchGestureForWidget(QWidget* widget, PinchGestureCallb
 
 float ios_pinch_original_zoom_level = 1.0f;
 float ios_pinch_last_scale = 1.0f;
+
+float ios_pinch_exponential_scale = 1.0f;
+
 extern "C" void ios_pinch_callback(float window_x, float window_y, float scale, float velocity, int state){
     
     // 1 = begin
@@ -148,14 +151,20 @@ extern "C" void ios_pinch_callback(float window_x, float window_y, float scale, 
     
     MainWidget* w = windows[0];
     
+    float exp_factor = 0.5;
     if (state == 1){
         ios_pinch_original_zoom_level = w->main_document_view->get_zoom_level();
         w->pdf_renderer->no_rerender = true;
         ios_pinch_last_scale = scale;
+        ios_pinch_exponential_scale = 1.0f;
         qDebug() << "no rerender";
     }
     else if (state == 2){
-        float incremental_scale = scale / ios_pinch_last_scale;
+        
+        ios_pinch_exponential_scale =ios_pinch_exponential_scale * exp_factor + scale * (1.0f - exp_factor) ;
+        
+        float incremental_scale = ios_pinch_exponential_scale / ios_pinch_last_scale;
+        
         
         WindowPos pinch_centerpoint;
         pinch_centerpoint.x = static_cast<int>(window_x);
@@ -163,7 +172,7 @@ extern "C" void ios_pinch_callback(float window_x, float window_y, float scale, 
         
         w->handle_pinch(pinch_centerpoint, incremental_scale);
         w->validate_render();
-        ios_pinch_last_scale = scale;
+        ios_pinch_last_scale = ios_pinch_exponential_scale;
         //        w->main_document_view->set_zoom_level(ios_pinch_original_zoom_level * scale, true);
 //        w->validate_render();
     }
