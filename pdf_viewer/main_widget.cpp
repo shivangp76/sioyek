@@ -161,6 +161,7 @@ extern "C" void ios_pinch_callback(float window_x, float window_y, float scale, 
     }
     else if (state == 2){
         
+        w->pdf_renderer->no_rerender = true;
         ios_pinch_exponential_scale =ios_pinch_exponential_scale * exp_factor + scale * (1.0f - exp_factor) ;
         
         float incremental_scale = ios_pinch_exponential_scale / ios_pinch_last_scale;
