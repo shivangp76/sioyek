@@ -159,7 +159,7 @@ struct ClickSpaceTime {
     AbsoluteDocumentPos click_pos;
 };
 
-#ifdef Q_OS_MACOS
+#ifdef Q_OS_APPLE
 using SioyekMediaPlayer = MacosMediaPlayer;
 #else
 #ifdef SIOYEK_ADVANCED_AUDIO
@@ -1246,6 +1246,7 @@ public:
     Q_INVOKABLE QList<MainWidget*> all_windows();
     QJsonObject get_current_user();
     void on_playback_finished_callback();
+    void show_touch_auido_ui_if_in_touch_mode();
 
 
 public slots:

@@ -392,7 +392,8 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         });
 
     QObject::connect(main_menu, &TouchMainMenu::ttsClicked, [&]() {
-        main_widget->run_command_with_name("start_reading", true);
+       // main_widget->run_command_with_name("start_reading", true);
+        main_widget->run_command_with_name("start_reading_high_quality", true);
         });
 
     QObject::connect(main_menu, &TouchMainMenu::horizontalLockClicked, [&]() {

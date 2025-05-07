@@ -6807,7 +6807,7 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
 #endif
 }
 
-#ifdef Q_OS_MACOS
+#ifdef Q_OS_APPLE
 extern "C" void macos_setMp3FileSource(const char* path);
 extern "C" void macos_playMp3File(const char*);
 extern "C" void macos_stopMp3File();

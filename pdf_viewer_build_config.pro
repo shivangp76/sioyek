@@ -15,6 +15,7 @@ ios {
 
     QMAKE_INFO_PLIST = $$PWD/ios/Info.plist
     OBJECTIVE_SOURCES += ios/ios_specific.mm
+    OBJECTIVE_SOURCES += pdf_viewer/apple_specific.mm
     LIBS += -framework MediaPlayer -framework AVFoundation
     DEFINES += SIOYEK_IOS SIOYEK_MOBILE
 
@@ -311,6 +312,7 @@ mac:!ios {
     QMAKE_INFO_PLIST = resources/Info.plist
     LIBS += -framework AppKit -framework AVFoundation
     OBJECTIVE_SOURCES += pdf_viewer/macos_specific.mm
+    OBJECTIVE_SOURCES += pdf_viewer/apple_specific.mm
 }
 
 android{

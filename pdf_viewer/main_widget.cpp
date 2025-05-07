@@ -8695,7 +8695,7 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
 
 void MainWidget::focus_on_high_quality_text_being_read() {
 
-#ifdef Q_OS_MACOS
+#ifdef Q_OS_APPLE
     if (media_player){
         MacosMediaPlayer* macos_specific_media_player = dynamic_cast<MacosMediaPlayer*>(media_player);
         if (!media_player->isPlaying()){
@@ -8955,6 +8955,10 @@ void MainWidget::handle_start_reading(bool force_local) {
 
     is_reading = true;
     read_current_line(force_local);
+    show_touch_auido_ui_if_in_touch_mode();
+}
+
+void MainWidget::show_touch_auido_ui_if_in_touch_mode(){
     if (TOUCH_MODE) {
         AudioUI * audio_ui_widget = new AudioUI(this);
         set_current_widget(audio_ui_widget);
@@ -9013,7 +9017,12 @@ void MainWidget::handle_play() {
 
 void MainWidget::handle_pause() {
     is_reading = false;
-    get_tts()->pause();
+    if (is_high_quality_tts_playing()){
+        get_media_player()->pause();
+    }
+    else{
+        get_tts()->pause();
+    }
 }
 
 bool MainWidget::should_show_status_label(bool check_network) {
@@ -13348,7 +13357,10 @@ void MainWidget::handle_high_quality_media_end_reached() {
 SioyekMediaPlayer* MainWidget::get_media_player(){
     if (media_player == nullptr) {
 
-#ifdef Q_OS_MACOS
+#ifdef Q_OS_APPLE
+#ifdef SIOYEK_IOS
+    makeSureTTSCanUseSpeakers();
+#endif
         media_player = new MacosMediaPlayer();
 #else
 #ifndef SIOYEK_ADVANCED_AUDIO
@@ -13466,6 +13478,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
 
         //sioyek_network_manager->tts(this, )
     }
+    show_touch_auido_ui_if_in_touch_mode();
 }
 
 void MainWidget::preload_next_page_for_tts(float rate) {

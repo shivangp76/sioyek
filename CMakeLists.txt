@@ -210,6 +210,9 @@ if(IOS)
     target_sources(sioyek PUBLIC
         ios/ios_specific.mm
     )
+    target_sources(sioyek PUBLIC
+        pdf_viewer/apple_specific.mm
+    )
 
     target_link_libraries(sioyek PRIVATE
         "-framework AVFoundation"
@@ -400,6 +403,9 @@ endif()
 if(APPLE AND NOT IOS)
     target_sources(sioyek PUBLIC
         pdf_viewer/macos_specific.mm
+    )
+    target_sources(sioyek PUBLIC
+        pdf_viewer/apple__specific.mm
     )
 
     target_link_libraries(sioyek PRIVATE

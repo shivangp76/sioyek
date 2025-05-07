@@ -59,7 +59,7 @@ bool SCROLL_PAST_DOCUMENT_ENDS = true;
 bool USE_BINARY_DRAWING_FILES = true;
 bool DELETE_MAGIC_DRAWINGS = true;
 // std::wstring SIOYEK_HOST = L"http://127.0.0.1:8081/";
-std::wstring SIOYEK_HOST = L"http://192.168.1.62:8081/";
+std::wstring SIOYEK_HOST = L"http://192.168.1.63:8081/";
 bool SIMPLIFY_FREEHAND_DRAWINGS = false;
 #ifdef SIOYEK_IOS
 int FREEHAND_DRAWING_SMOOTH_AMOUNT = 8;

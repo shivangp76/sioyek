@@ -1060,7 +1060,7 @@ private:
     void processFrames();
 };
 
-#ifdef Q_OS_MACOS
+#ifdef Q_OS_APPLE
 class MacosMediaPlayer{
 
     bool is_newly_finished = false;
