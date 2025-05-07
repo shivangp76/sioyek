@@ -1854,6 +1854,7 @@ void MainWidget::handle_validation_interval_timeout(){
     }
     else if (validation_interval_was_set_because_of_animation){
         validation_interval_timer->setInterval(INTERVAL_TIME);
+        validation_interval_was_set_because_of_animation = false;
     }
 
     if (is_render_invalidated) {
