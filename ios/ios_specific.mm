@@ -4,6 +4,7 @@
 #import <MediaPlayer/MediaPlayer.h>
 
 static AVSpeechSynthesizer* synthesizer = nil;
+static AVAudioPlayer* fileAudioPlayer = nil;
 static int currentSpokenWordLocation = -1;
 
 extern "C" void on_ios_file_picked(QString file_path);
@@ -53,7 +54,6 @@ extern "C" void iosStopReading(){
 @end
 
 
-
 extern "C" AVSpeechSynthesizer* createSpeechSynthesizer(){
     synthesizer = [[AVSpeechSynthesizer alloc] init];
     return synthesizer;
@@ -69,7 +69,7 @@ void setupNowPlaying(){
 }
 
 
-void setupRemoteCommandCenter(){
+void setupRemoteCommandCenterForTTS(){
     MPRemoteCommandCenter* sharedCommandCenter = [MPRemoteCommandCenter sharedCommandCenter];
     // MPRemoteCommand* playCommand = [sharedCommandCenter playCommand];
     [sharedCommandCenter.playCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
@@ -120,7 +120,7 @@ extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceN
     synthesizer.delegate = delegate;
     [synthesizer speakUtterance:utterance];
     setupNowPlaying();
-    setupRemoteCommandCenter();
+    setupRemoteCommandCenterForTTS();
     [utterance release];
 }
 

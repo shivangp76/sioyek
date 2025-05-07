@@ -841,11 +841,11 @@ public:
 
     void set_brightness(float brightness);
     int num_visible_links();
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
     //    void onApplicationStateChanged(Qt::ApplicationState applicationState);
     bool pending_intents_checked = false;
-    Q_INVOKABLE void on_android_pause();
-    Q_INVOKABLE void on_android_resume();
+    Q_INVOKABLE void on_mobile_pause();
+    Q_INVOKABLE void on_mobile_resume();
 #endif
 
 protected:

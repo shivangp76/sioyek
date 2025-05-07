@@ -3246,13 +3246,13 @@ void on_android_tts(int begin, int end){
 
 void on_android_pause_global(){
     for (auto window : windows){
-        QMetaObject::invokeMethod(window, "on_android_pause", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(window, "on_mobile_pause", Qt::QueuedConnection);
     }
 }
 
 void on_android_resume_global(){
     for (auto window : windows){
-        QMetaObject::invokeMethod(window, "on_android_resume", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(window, "on_mobile_resume", Qt::QueuedConnection);
     }
 }
 

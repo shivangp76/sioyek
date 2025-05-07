@@ -1542,6 +1542,16 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #endif
     
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QGuiApplication::applicationStateChanged, [&](Qt::ApplicationState state) {
+#ifdef Q_OS_IOS
+        if (state == Qt::ApplicationState::ApplicationActive){
+            on_mobile_resume();
+        }
+        if (state == Qt::ApplicationState::ApplicationInactive){
+            on_mobile_pause();
+        }
+
+#endif
+        
         if ((state == Qt::ApplicationState::ApplicationSuspended) || (state == Qt::ApplicationState::ApplicationInactive)) {
 #ifdef SIOYEK_MOBILE
             persist(true);
@@ -13725,19 +13735,20 @@ void MainWidget::set_brightness(float brightness) {
 #endif
 }
 
-#ifdef SIOYEK_ANDROID
+#ifdef SIOYEK_MOBILE
 
 
-void MainWidget::on_android_pause(){
+void MainWidget::on_mobile_pause(){
     // todo: we should probably stop all threads here
     validation_interval_timer->stop();
     network_timer->stop();
 }
 
-void MainWidget::on_android_resume(){
+void MainWidget::on_mobile_resume(){
     validation_interval_timer->start();
     network_timer->start();
 
+#ifdef SIOYEK_ANDROID
     // on mobile we use setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true)
     // to make the app cover the entire screen including the area above the camera notch
     // however, there seems to be a bug on android where this option stops working after
@@ -13757,6 +13768,7 @@ void MainWidget::on_android_resume(){
             toggle_fullscreen();
         });
     }
+#endif
 
 }
 #endif
