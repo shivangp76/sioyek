@@ -6814,6 +6814,10 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
 }
 
 #ifdef Q_OS_APPLE
+
+#include "main_widget.h"
+extern std::vector<MainWidget*> windows;
+
 extern "C" void macos_setMp3FileSource(const char* path);
 extern "C" void macos_playMp3File(const char*);
 extern "C" void macos_stopMp3File();
@@ -6828,34 +6832,18 @@ extern "C" float macos_getMp3Duration();
 
 typedef void (*AudioFinishedCallback)();
 extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback);
-// extern std::vector<MainWidget*> windows;
 
-// #include "main_widget.h"
-
-MacosMediaPlayer* global_macos_player = nullptr;
 void macos_audio_finished_callback(){
-    if (global_macos_player){
-        global_macos_player->playback_finished = true;
-        global_macos_player->set_newly_finished(true);
+    for (MainWidget* window : windows){
+        window->apple_on_high_quality_tts_playback_finished();
     }
-    // for (auto window : windows){
-    //     window->on_playback_finished_callback();
-    // }
 }
 
-bool MacosMediaPlayer::get_newly_finished(){
-    bool res = is_newly_finished;
-    is_newly_finished = false;
-    return res;
-}
 
-void MacosMediaPlayer::set_newly_finished(bool state){
-    is_newly_finished = state;
-}
 void MacosMediaPlayer::set_source(std::string path){
     macos_setAudioFinishedCallback(macos_audio_finished_callback);
     playback_finished = false;
-    global_macos_player = this;
+    // global_macos_player = this;
     macos_setMp3FileSource(path.c_str());
 }
 

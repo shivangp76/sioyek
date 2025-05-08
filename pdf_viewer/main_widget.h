@@ -745,6 +745,10 @@ public:
 
     std::string get_current_mode_string();
 
+#ifdef Q_OS_APPLE
+    void apple_on_high_quality_tts_playback_finished();
+#endif
+
     void show_audio_buttons();
 
     // void handle_goto_next_block();

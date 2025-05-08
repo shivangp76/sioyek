@@ -8167,7 +8167,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    clean_old_high_quality_tts_cached_files(true);
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -8708,20 +8707,6 @@ std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& te
 
 void MainWidget::focus_on_high_quality_text_being_read() {
 
-#ifdef Q_OS_APPLE
-    if (media_player){
-        MacosMediaPlayer* macos_specific_media_player = dynamic_cast<MacosMediaPlayer*>(media_player);
-        if (!media_player->isPlaying()){
-            // on the macos-specific media player, when we reach the end of the media,
-            // the position resets to 0 and isPlaying will be false, so the if statement below
-            // this one does not trigger on macos, so we handle it here instead
-
-            if (macos_specific_media_player->get_newly_finished()){
-                handle_high_quality_media_end_reached();
-            }
-        }
-    }
-#endif
 
     if ((media_player != nullptr) && (media_player->isPlaying()) && high_quality_play_state.has_value()) {
 
@@ -14772,3 +14757,19 @@ void MainWidget::handle_goto_tab(const std::wstring& path) {
     push_state();
     open_document(path);
 }
+
+#ifdef Q_OS_APPLE
+void MainWidget::apple_on_high_quality_tts_playback_finished(){
+
+    if (media_player){
+        MacosMediaPlayer* macos_specific_media_player = dynamic_cast<MacosMediaPlayer*>(media_player);
+        if (!media_player->isPlaying()){
+            // on the macos-specific media player, when we reach the end of the media,
+            // the position resets to 0 and isPlaying will be false, so the if statement below
+            // this one does not trigger on macos, so we handle it here instead
+
+            handle_high_quality_media_end_reached();
+        }
+    }
+}
+#endif
