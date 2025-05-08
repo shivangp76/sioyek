@@ -13153,7 +13153,7 @@ void MainWidget::on_ios_application_state_changed(Qt::ApplicationState state){
     if (state == Qt::ApplicationState::ApplicationSuspended){
         ios_was_suspended = true;
         on_mobile_pause();
-        if (is_reading){
+        if (is_reading && (!is_high_quality_tts_playing())){
             on_ios_suspend_while_reading();
         }
     }
