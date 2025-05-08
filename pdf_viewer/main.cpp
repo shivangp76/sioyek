@@ -815,6 +815,14 @@ int main(int argc, char* args[]) {
     configure_paths();
     verify_config_paths();
 
+    char* custom_prefs_path = get_argv_value(argc, args, "--prefs-path");
+    char* custom_keys_path = get_argv_value(argc, args, "--keys-path");
+    if (custom_keys_path){
+        default_keys_path = Path(utf8_decode(custom_keys_path));
+    }
+    if (custom_prefs_path){
+        default_config_path = Path(utf8_decode(custom_prefs_path));
+    }
 
 #ifdef SIOYEK_MOBILE
     ConfigManager config_manager(android_config_path, auto_config_path, user_config_paths);

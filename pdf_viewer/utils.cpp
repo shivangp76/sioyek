@@ -2034,6 +2034,12 @@ QCommandLineParser* get_command_line_parser() {
 
     QCommandLineOption local_database_path_option("local-database-path", "Specify which file to use for local data", "path");
     parser->addOption(local_database_path_option);
+    
+    QCommandLineOption prefs_option("prefs-path", "Path to the default prefs.config file.", "path");
+    parser->addOption(prefs_option);
+    
+    QCommandLineOption keys_option("keys-path", "Path to the default keys.config file.", "path");
+    parser->addOption(keys_option);
 
     QCommandLineOption last_file_path_option("last-file-path", "Specify which file to use for last file location.", "path");
     parser->addOption(last_file_path_option);
