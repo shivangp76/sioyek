@@ -1542,15 +1542,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #endif
     
     QObject::connect((QGuiApplication*)QGuiApplication::instance(), &QGuiApplication::applicationStateChanged, [&](Qt::ApplicationState state) {
-#ifdef Q_OS_IOS
-        if (state == Qt::ApplicationState::ApplicationActive){
-            on_mobile_resume();
-        }
-        if (state == Qt::ApplicationState::ApplicationInactive){
-            on_mobile_pause();
-        }
-
-#endif
         
         if ((state == Qt::ApplicationState::ApplicationSuspended) || (state == Qt::ApplicationState::ApplicationInactive)) {
 #ifdef SIOYEK_MOBILE
@@ -13160,6 +13151,7 @@ void MainWidget::on_ios_application_state_changed(Qt::ApplicationState state){
 
     if (state == Qt::ApplicationState::ApplicationSuspended){
         ios_was_suspended = true;
+        on_mobile_pause();
         if (is_reading){
             on_ios_suspend_while_reading();
         }
@@ -13198,6 +13190,7 @@ void MainWidget::on_ios_suspend_while_reading(){
 }
 
 void MainWidget::on_ios_resume(){
+    on_mobile_resume();
     iosStopReading();
     int last_spoken_word_location = getLastSpokenWordLocation();
     int last_spoken_word_index_into_document = last_spoken_word_location + ios_tts_begin_index_into_document;
