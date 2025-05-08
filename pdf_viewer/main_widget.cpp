@@ -8982,6 +8982,7 @@ void MainWidget::show_touch_auido_ui_if_in_touch_mode(){
 void MainWidget::handle_stop_reading() {
     dv()->is_waiting_for_high_quality_tts_result = false;
     if (high_quality_play_state.has_value() && media_player->isPlaying()) {
+        is_reading = false;
         if (media_player) {
             media_player->stop();
         }
