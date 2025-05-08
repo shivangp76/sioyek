@@ -13371,9 +13371,9 @@ void MainWidget::synchronize_if_desynchronized() {
 
 void MainWidget::handle_high_quality_media_end_reached() {
     high_quality_play_state = {};
-    move_ruler_to_next_page();
-    // move_visual_mark(1);
-    handle_start_reading_high_quality(true);
+    if (move_ruler_to_next_page()){
+        handle_start_reading_high_quality(true);
+    }
 
 }
 
