@@ -8167,7 +8167,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    move_ruler_to_next_page();
+    clean_old_high_quality_tts_cached_files(true);
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -13365,6 +13365,7 @@ void MainWidget::synchronize_if_desynchronized() {
 
 void MainWidget::handle_high_quality_media_end_reached() {
     high_quality_play_state = {};
+    handle_stop_reading();
     if (move_ruler_to_next_page()){
         handle_start_reading_high_quality(true);
     }
