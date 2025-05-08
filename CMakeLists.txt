@@ -405,7 +405,7 @@ if(APPLE AND NOT IOS)
         pdf_viewer/macos_specific.mm
     )
     target_sources(sioyek PUBLIC
-        pdf_viewer/apple__specific.mm
+        pdf_viewer/apple_specific.mm
     )
 
     target_link_libraries(sioyek PRIVATE
