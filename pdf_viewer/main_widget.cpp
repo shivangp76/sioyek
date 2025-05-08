@@ -13428,7 +13428,7 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
                 doc()->get_checksum(),
                 get_current_page_number(),
                 rate,
-                [&, index_into_page, status_message_id, current_page_number](QString file_path, std::vector<float> timestamps) {
+                [&, index_into_page, status_message_id, rate, current_page_number](QString file_path, std::vector<float> timestamps) {
         dv()->is_waiting_for_high_quality_tts_result = false;
         set_status_message(L"", status_message_id);
         SioyekMediaPlayer* mp = get_media_player();
