@@ -13461,9 +13461,9 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
                     }
                     if (index_into_page < timestamps.size()) {
                         float time = timestamps[index_into_page];
-                        media_player->setPosition(static_cast<int>(time * 1000));
-                        media_player->setPlaybackRate(rate);
-                        media_player->play();
+                        mp->setPosition(static_cast<int>(time * 1000));
+                        mp->setPlaybackRate(rate);
+                        mp->play();
 
                         if (high_quality_play_state) {
                             high_quality_play_state->is_playing = true;
