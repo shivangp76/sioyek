@@ -5230,6 +5230,20 @@ void MainWidget::move_ruler_prev(){
     }
 }
 
+bool MainWidget::move_ruler_to_next_page(){
+    if (dv()->is_ruler_mode()){
+        int current_ruler_page = dv()->get_vertical_line_page();
+        int num_pages = doc()->num_pages();
+        if (current_ruler_page < num_pages - 1){
+            while (dv()->get_vertical_line_page() == current_ruler_page){
+                move_visual_mark(1);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 AbsoluteRect MainWidget::move_visual_mark(int offset) {
     if ((!main_document_view->is_ruler_mode()) || (main_document_view->get_overview_page().has_value())){
         dv()->handle_vertical_move(offset);
@@ -8162,9 +8176,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    // std::string bookmark_uuid = dv()->get_selected_bookmark_uuid();
-    // auto bm = doc()->get_bookmark_with_uuid(bookmark_uuid);
-    // doc()->add_freetext_bookmark(bm->description, bm->get_rectangle().value());
+    move_ruler_to_next_page();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -13359,7 +13371,8 @@ void MainWidget::synchronize_if_desynchronized() {
 
 void MainWidget::handle_high_quality_media_end_reached() {
     high_quality_play_state = {};
-    move_visual_mark(1);
+    move_ruler_to_next_page();
+    // move_visual_mark(1);
     handle_start_reading_high_quality(true);
 
 }
