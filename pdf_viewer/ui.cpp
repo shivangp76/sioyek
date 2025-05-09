@@ -1104,7 +1104,7 @@ AudioUI::AudioUI(MainWidget* parent) : ConfigUI("", parent) {
 
 
     QObject::connect(buttons, &TouchAudioButtons::rateChanged, [&](qreal rate) {
-        TTS_RATE = rate;
+        TTS_RATE = (rate + 2);
         buttons->set_rate(TTS_RATE);
         main_widget->handle_pause();
         main_widget->handle_play();

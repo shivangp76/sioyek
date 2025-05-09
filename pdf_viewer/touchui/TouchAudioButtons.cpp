@@ -84,7 +84,7 @@ void TouchAudioButtons::handleSetRate(qreal rate) {
 }
 
 void TouchAudioButtons::set_rate(float rate) {
-    quick_widget->rootContext()->setContextProperty("_rate", rate);
+    quick_widget->rootContext()->setContextProperty("_rate", rate - 2);
 }
 
 void TouchAudioButtons::set_playing() {
