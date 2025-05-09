@@ -71,6 +71,7 @@ void SioyekNetworkManager::login(std::wstring email, std::wstring password) {
             ACCESS_TOKEN = json_resp.object()["access_token"].toString().toStdString();
             status = ServerStatus::LoggedIn;
             persist_access_token(ACCESS_TOKEN);
+            update_user_data_with_access_token();
             handle_one_time_network_operations();
         }
         else {
