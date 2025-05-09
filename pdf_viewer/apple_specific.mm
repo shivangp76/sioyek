@@ -92,7 +92,7 @@ extern "C" void macos_stopMp3File() {
     if (current_player != nil) {
         [current_player stop];
 #ifdef Q_OS_IOS
-        updateNowPlayingInfo();
+        [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nil]; // clear notification
 #endif
     }
 }
@@ -184,6 +184,8 @@ static void updateNowPlayingInfo() {
              nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = @(current_player.duration);
         }
     }
+    // Enable stop button in the notification
+    nowPlayingInfo[@"MPNowPlayingInfoPropertyIsStopCommandEnabled"] = @YES;
 
     [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nowPlayingInfo];
 }
