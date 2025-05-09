@@ -58,6 +58,7 @@ extern float FREEHAND_SIZE;
 
 #ifdef SIOYEK_IOS
 extern "C" QString promptUserToSelectPdfFile(QString);
+extern "C" float ios_brightness_get();
 #endif
 extern Path standard_data_path;
 
@@ -211,6 +212,8 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     DrawingMode drawing_mode = main_widget->freehand_drawing_mode;
     #ifdef SIOYEK_ANDROID
     float current_brightness = android_brightness_get();
+    #elif defined(SIOYEK_IOS) 
+    float current_brightness = ios_brightness_get();
     #else
     float current_brightness = 0.5f;
     #endif

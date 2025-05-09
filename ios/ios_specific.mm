@@ -15,6 +15,16 @@ extern "C" void iosResumeFunc(){
 extern "C" void iosPauseFunc(){
 }
 
+extern "C" void ios_brightness_set(float brightness){
+    dispatch_async(dispatch_get_main_queue(), ^{
+         [UIScreen mainScreen].brightness = brightness;
+    });
+}
+
+extern "C" float ios_brightness_get(){
+    return [UIScreen mainScreen].brightness;
+}
+
 extern "C" int getLastSpokenWordLocation(){
     return currentSpokenWordLocation;
 }

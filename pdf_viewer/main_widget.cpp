@@ -1,4 +1,4 @@
-// deduplicate database code
+﻿// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -127,6 +127,7 @@ extern "C" void hideWindowTitleBar(WId);
 #ifdef SIOYEK_IOS
 // extern "C" void iosTestFunc(NSString* text);
 
+extern "C" void ios_brightness_set(float brightness);
 extern "C" void makeSureTTSCanUseSpeakers();
 extern "C" void ios_debug();
 extern "C" void iosResumeFunc();
@@ -13729,7 +13730,9 @@ void MainWidget::restart_all_threads(){
 void MainWidget::set_brightness(float brightness) {
 #ifdef SIOYEK_ANDROID
     android_brightness_set(brightness);
-#else
+#endif
+#ifdef SIOYEK_IOS
+    ios_brightness_set(brightness);
 #endif
 }
 
