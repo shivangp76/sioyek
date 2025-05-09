@@ -26,6 +26,14 @@ Rectangle {
 
     }
 
+    Rectangle{
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: label.bottom
+        height: 1
+        color: "gray"
+    }
+
     Item{
         anchors.left: parent.left
         anchors.right: parent.right
@@ -70,6 +78,14 @@ Rectangle {
             id: textLoader
             sourceComponent: _isPassword ? passwordInput : normalInput
         }
+    }
+
+    Rectangle{
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: edit.bottom
+        height: 1
+        color: "gray"
     }
 
     TouchButtonGroup{
