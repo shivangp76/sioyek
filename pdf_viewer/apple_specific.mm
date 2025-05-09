@@ -3,7 +3,7 @@
 #import <MediaPlayer/MediaPlayer.h>
 
 // Define the callback function pointer type
-typedef void (*AudioFinishedCallback)();
+typedef void (*AudioFinishedCallback)(void* data);
 
 #ifdef Q_OS_IOS
 static void setupAudioSessionAndRemoteCommands();
@@ -13,6 +13,7 @@ static bool remoteCommandsInitialized = false;
 
 // Global variable to store the callback function
 static AudioFinishedCallback g_audioFinishedCallback = NULL;
+static void* g_audioFinishedData = 0;
 
 AVAudioPlayer* current_player = nil;
 
@@ -29,7 +30,7 @@ AVAudioPlayer* current_player = nil;
         updateNowPlayingInfo(); // Update lock screen info to reflect finished state
 #endif
         if (g_audioFinishedCallback) {
-            g_audioFinishedCallback();
+            g_audioFinishedCallback(g_audioFinishedData);
         }
     }
 }
@@ -40,8 +41,9 @@ AVAudioPlayer* current_player = nil;
 static AudioPlayerDelegateHandler* g_audioDelegateHandler = nil;
 
 // Function to set the audio finished callback
-extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback) {
+extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback, void* data) {
     g_audioFinishedCallback = callback;
+    g_audioFinishedData = data;
 }
 
 extern "C" void macos_setMp3FileSource(const char* path) {

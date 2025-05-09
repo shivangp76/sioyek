@@ -6830,18 +6830,21 @@ extern "C" float macos_pauseMp3File();
 extern "C" bool macos_isMp3Finished();
 extern "C" float macos_getMp3Duration();
 
-typedef void (*AudioFinishedCallback)();
-extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback);
+typedef void (*AudioFinishedCallback)(void* data);
+extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback, void* data);
 
-void macos_audio_finished_callback(){
+void macos_audio_finished_callback(void* data){
     for (MainWidget* window : windows){
-        window->apple_on_high_quality_tts_playback_finished();
+        auto mp = dynamic_cast<MacosMediaPlayer*>(window->get_media_player());
+        if (mp == data){
+            window->apple_on_high_quality_tts_playback_finished();
+        }
     }
 }
 
 
 void MacosMediaPlayer::set_source(std::string path){
-    macos_setAudioFinishedCallback(macos_audio_finished_callback);
+    macos_setAudioFinishedCallback(macos_audio_finished_callback, (void*)this);
     playback_finished = false;
     // global_macos_player = this;
     macos_setMp3FileSource(path.c_str());
