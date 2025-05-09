@@ -1,4 +1,5 @@
 #include "commands/network_commands.h"
+#include "commands/misc_commands.h"
 #include "main_widget.h"
 #include "document_view.h"
 #include "network_manager.h"
@@ -33,7 +34,13 @@ public:
     StartReadingHighQualityCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->handle_start_reading_high_quality(true);
+        if (dv()->is_ruler_mode()) {
+            widget->handle_start_reading_high_quality(true);
+        }
+        else{
+            auto cmd = std::make_unique<StartReadingHighQualityCommand>(widget);
+            perform_command_after_line_is_selected(cname, widget, std::move(cmd));
+        }
     }
 
 };

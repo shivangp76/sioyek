@@ -1470,17 +1470,6 @@ public:
         else {
             auto cmd = std::make_unique<StartReadingCommand>(widget);
             perform_command_after_line_is_selected(cname, widget, std::move(cmd));
-            // std::vector<std::unique_ptr<Command>> cmds;
-            // if (TOUCH_MODE){
-            //     cmds.push_back(std::move(std::make_unique<RulerUnderSelectedPointCommand>(widget)));
-            // }
-            // else{
-            //     cmds.push_back(std::move(std::make_unique<KeyboardSelectLineCommand>(widget)));
-            // }
-            // cmds.push_back(std::move());
-
-            // widget->handle_command_types(
-            //     std::make_unique<MacroCommand>(widget, widget->command_manager, cname, std::move(cmds)), 1);
         }
     }
 };
