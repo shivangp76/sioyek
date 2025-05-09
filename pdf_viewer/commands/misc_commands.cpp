@@ -1443,6 +1443,20 @@ public:
 
 };
 
+void perform_command_after_line_is_selected(std::string cname, MainWidget* widget, std::unique_ptr<Command> cmd){
+    std::vector<std::unique_ptr<Command>> cmds;
+    if (TOUCH_MODE){
+        cmds.push_back(std::move(std::make_unique<RulerUnderSelectedPointCommand>(widget)));
+    }
+    else{
+        cmds.push_back(std::move(std::make_unique<KeyboardSelectLineCommand>(widget)));
+    }
+    cmds.push_back(std::move(std::move(cmd)));
+
+    widget->handle_command_types(
+        std::make_unique<MacroCommand>(widget, widget->command_manager, cname, std::move(cmds)), 1);
+}
+
 class StartReadingCommand : public Command {
 public:
     static inline const std::string cname = "start_reading";
@@ -1454,17 +1468,19 @@ public:
             widget->handle_start_reading();
         }
         else {
-            std::vector<std::unique_ptr<Command>> cmds;
-            if (TOUCH_MODE){
-                cmds.push_back(std::move(std::make_unique<RulerUnderSelectedPointCommand>(widget)));
-            }
-            else{
-                cmds.push_back(std::move(std::make_unique<KeyboardSelectLineCommand>(widget)));
-            }
-            cmds.push_back(std::move(std::make_unique<StartReadingCommand>(widget)));
+            auto cmd = std::make_unique<StartReadingCommand>(widget);
+            perform_command_after_line_is_selected(cname, widget, std::move(cmd));
+            // std::vector<std::unique_ptr<Command>> cmds;
+            // if (TOUCH_MODE){
+            //     cmds.push_back(std::move(std::make_unique<RulerUnderSelectedPointCommand>(widget)));
+            // }
+            // else{
+            //     cmds.push_back(std::move(std::make_unique<KeyboardSelectLineCommand>(widget)));
+            // }
+            // cmds.push_back(std::move());
 
-            widget->handle_command_types(
-                std::make_unique<MacroCommand>(widget, widget->command_manager, cname, std::move(cmds)), 1);
+            // widget->handle_command_types(
+            //     std::make_unique<MacroCommand>(widget, widget->command_manager, cname, std::move(cmds)), 1);
         }
     }
 };
