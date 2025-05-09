@@ -8167,6 +8167,7 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    on_onscreen_keyboard_shown();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

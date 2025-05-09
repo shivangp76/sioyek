@@ -30,8 +30,9 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: label.bottom
+        anchors.bottom: buttons.top
         id: edit
-        height: 3 * parent.height / 4
+        // height: 3 * parent.height / 4
         property alias loaderItem:textLoader.item
         Component {
             id: normalInput
@@ -72,10 +73,12 @@ Rectangle {
     }
 
     TouchButtonGroup{
-        anchors.top: edit.bottom
+        // anchors.top: edit.bottom
+        id: buttons
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        height: Math.max(50, parent.height / 4)
 
         buttons: ["Cancel", "Confirm"]
         onButtonClicked: function(index, name){
