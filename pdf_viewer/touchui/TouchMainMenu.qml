@@ -61,30 +61,60 @@ Rectangle{
             Layout.preferredHeight: firsttools.height + 20
             Layout.preferredWidth: parent.width
 
-            Text{
+            Item{
                 id: user_info
-                color: "white"
-
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.margins: 10
 
                 anchors.left: parent.left
+                anchors.bottom: parent.bottom
+                anchors.top: parent.top
+                width: _hasUser ? parent.width / 2 : 0
 
-                visible: _hasUser
-                text: (_hasUser) ? _currentUser.username + " " + _currentUser.balance : ""
+                Text{
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    color: "white"
+
+
+                    visible: _hasUser
+                    text: (_hasUser) ? _currentUser.username : ""
+                }
+
+                Rectangle{
+                    anchors.right: parent.right
+                    color: "green"
+                    anchors.bottom: parent.bottom
+                    anchors.top: parent.top
+                    width: credit_text.width + 10
+                    radius: 2
+                    Text{
+
+                        id: credit_text
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        color: "white"
+
+
+                        visible: _hasUser
+                        text: (_hasUser) ? "" + Math.round(_currentUser.balance * 100) / 100 + "$" : ""
+                    }
+                }
             }
 
             Item{
-                width: parent.width
+                width: parent.width - user_info.width
                 height: parent.height
+
+                anchors.bottom: parent.bottom
+                anchors.top: parent.top
+                anchors.left: user_info.right
+                anchors.right: parent.right
 
 
                 TouchButtonGroup{
                     buttons: _loggedIn ? (_synced ? ["Logout", "Refresh"] : ["Logout", "Sync"]) :["Login"]
-                    anchors.bottom: parent.bottom
-                    anchors.top: parent.top
-                    anchors.left: user_info.right
-                    anchors.right: parent.right
+                    anchors.fill: parent
                     anchors.margins: 10
                     onButtonClicked: function(index, name){
                         if (index == 0){
