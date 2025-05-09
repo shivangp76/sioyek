@@ -6818,8 +6818,7 @@ void move_resize_window(WId parent_hwnd, qint64 pid, int x, int y, int width, in
 #include "main_widget.h"
 extern std::vector<MainWidget*> windows;
 
-extern "C" void macos_setMp3FileSource(const char* path);
-extern "C" void macos_playMp3File(const char*);
+extern "C" void macos_setMp3FileSource(const char* path, const char* notification_text);
 extern "C" void macos_stopMp3File();
 extern "C" bool macos_isMp3Playing();
 extern "C" void macos_seekMp3File(float seconds);
@@ -6843,22 +6842,23 @@ void macos_audio_finished_callback(void* data){
 }
 
 
-void MacosMediaPlayer::set_source(std::string path){
+void MacosMediaPlayer::set_source(std::string path, QString name, int page){
+    std::string notification_text = (name + " Page " + QString::number(page)).toStdString();
     macos_setAudioFinishedCallback(macos_audio_finished_callback, (void*)this);
     playback_finished = false;
     // global_macos_player = this;
-    macos_setMp3FileSource(path.c_str());
+    macos_setMp3FileSource(path.c_str(), notification_text.c_str());
 }
 
 float MacosMediaPlayer::duration(){
     return macos_getMp3Duration();
 }
 
-void MacosMediaPlayer::setSource(const QUrl& source){
+void MacosMediaPlayer::setSource(const QUrl& source, QString name, int page){
     if (source.toString().startsWith("file:///")){
         std::string source_string = source.toString().mid(7).toStdString();
 
-        set_source(source_string);
+        set_source(source_string, name, page);
     }
 }
 

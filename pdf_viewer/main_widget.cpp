@@ -13420,7 +13420,8 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
         dv()->is_waiting_for_high_quality_tts_result = false;
         set_status_message(L"", status_message_id);
         SioyekMediaPlayer* mp = get_media_player();
-        mp->setSource(QUrl::fromLocalFile(file_path));
+        std::wstring notification_file_name = doc()->detect_paper_name();
+        mp->setSource(QUrl::fromLocalFile(file_path), QString::fromStdWString(notification_file_name), current_page_number);
         high_quality_play_state->timestamps = timestamps;
         //media_player->audioTracks().at(0).
 

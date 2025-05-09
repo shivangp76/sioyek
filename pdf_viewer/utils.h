@@ -1065,7 +1065,7 @@ class MacosMediaPlayer{
 
 public:
     bool playback_finished = false;
-    void set_source(std::string path);
+    void set_source(std::string path, QString file_name, int page_number);
     void play();
     void pause();
     void stop();
@@ -1079,7 +1079,7 @@ public:
     bool isSeekable();
     bool isFinished();
     bool isNewlyFinished();
-    void setSource(const QUrl& source);
+    void setSource(const QUrl& source, QString name, int page);
     float duration();
 };
 

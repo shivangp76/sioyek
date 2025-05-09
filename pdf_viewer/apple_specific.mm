@@ -15,6 +15,8 @@ static bool remoteCommandsInitialized = false;
 static AudioFinishedCallback g_audioFinishedCallback = NULL;
 static void* g_audioFinishedData = 0;
 
+QString notification_title = "";
+
 AVAudioPlayer* current_player = nil;
 
 
@@ -46,7 +48,9 @@ extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback, v
     g_audioFinishedData = data;
 }
 
-extern "C" void macos_setMp3FileSource(const char* path) {
+extern "C" void macos_setMp3FileSource(const char* path, const char* notification_text) {
+    notification_title = notification_text;
+
 #ifdef Q_OS_IOS
     // Setup audio session and remote commands once, if not already done
     if (!remoteCommandsInitialized) {
@@ -77,14 +81,6 @@ extern "C" void macos_setMp3FileSource(const char* path) {
     current_player.delegate = g_audioDelegateHandler;
 #ifdef Q_OS_IOS
     updateNowPlayingInfo(); // Update Now Playing info for the new track (initially not playing)
-#endif
-}
-
-extern "C" void macos_playMp3File(const char* path) {
-    macos_setMp3FileSource(path); // This will initialize player and call updateNowPlayingInfo (not playing)
-    [current_player play];
-#ifdef Q_OS_IOS
-    updateNowPlayingInfo(); // Update Now Playing info to reflect playing state
 #endif
 }
 
@@ -171,8 +167,10 @@ static void updateNowPlayingInfo() {
 
     NSMutableDictionary *nowPlayingInfo = [NSMutableDictionary dictionary];
     // Extract filename from path for title
-    NSString *filePath = [NSString stringWithUTF8String:current_player.url.path.UTF8String];
-    nowPlayingInfo[MPMediaItemPropertyTitle] = [filePath lastPathComponent];
+//    NSString *filePath = [NSString stringWithUTF8String:current_player.url.path.UTF8String];
+//    NSString* notificationText = QString().tons
+    
+    nowPlayingInfo[MPMediaItemPropertyTitle] = notification_title.toNSString();
     nowPlayingInfo[MPMediaItemPropertyMediaType] = @(MPMediaTypeMusic);
     nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = @(current_player.duration);
     nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = @(current_player.currentTime);
