@@ -5137,7 +5137,7 @@ std::wstring MainWidget::get_window_configuration_string() {
 void MainWidget::upload_drawings(bool wait_for_send) {
     std::optional<std::string> checksum = doc()->get_checksum_fast();
     if (checksum) {
-        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), doc()->get_drawings_file_path(), []() {
+        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), doc()->get_drawings_file_path() + L".bin", []() {
 
             });
         if (reply && wait_for_send) {
@@ -8182,8 +8182,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << windowFlags();
-    // on_onscreen_keyboard_shown();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

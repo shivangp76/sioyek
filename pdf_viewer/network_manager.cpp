@@ -1865,7 +1865,7 @@ void SioyekNetworkManager::sync_document_annotations_to_server(QObject* parent, 
     }
 
     QString document_checksum = QString::fromStdString(doc->get_checksum_fast().value());
-    get_last_drawing_modification_time(parent, doc->get_checksum_fast().value(), [this, parent, document=doc](std::optional<QDateTime> server_modification_time) {
+    get_last_drawing_modification_time(parent, doc->get_checksum_fast().value(), [this, parent, document_checksum, document=doc](std::optional<QDateTime> server_modification_time) {
         std::optional<QDateTime> local_modification_time = document->get_local_drawings_modification_time();
         // if the server file is newer, update the local file
         if (server_modification_time.has_value() && local_modification_time.has_value()) {
@@ -1875,9 +1875,19 @@ void SioyekNetworkManager::sync_document_annotations_to_server(QObject* parent, 
             (!local_modification_time.has_value() ||
                 (local_modification_time.value().secsTo(server_modification_time.value()) > 10)
                 )) {
-            download_drawings(parent, document->get_checksum_fast().value(), document->get_drawings_file_path(), [this, document]() {
+            download_drawings(parent, document->get_checksum_fast().value(), document->get_drawings_file_path() + L".bin", [this, document]() {
                 document->load_drawings();
                 });
+        }
+        bool should_upload_drawing = false;
+        if (!server_modification_time.has_value() && local_modification_time.has_value()){
+            should_upload_drawing = true;
+        }
+        if (server_modification_time.has_value() && local_modification_time.has_value() && (server_modification_time->secsTo(local_modification_time.value()) > 10)){
+            should_upload_drawing = true;
+        }
+        if (should_upload_drawing){
+            upload_drawings(parent, document_checksum.toStdString(), document->get_drawings_file_path() + L".bin", [](){});
         }
         });
 

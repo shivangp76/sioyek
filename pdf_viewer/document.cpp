@@ -4309,8 +4309,16 @@ void Document::load_drawings_binary(){
     }
     std::vector<FreehandDrawing> loaded_drawings;
 
+    // qDebug() << QString::fromUtf8(binary_file.readAll());
     quint64 drawing_file_version=-1;
     binary_file.read((char*)&drawing_file_version, sizeof(drawing_file_version));
+    
+    if (drawing_file_version > 1000){
+        // the file is probably corrupted, we remove it to prevent crashes
+        binary_file.close();
+        QFile::remove(QString::fromStdWString(drawing_file_path));
+        return;
+    }
 
     while (binary_file.bytesAvailable() > 0) {
         SerializedDrawingHeader header;
@@ -5696,7 +5704,7 @@ void DocumentManager::update_checksum(const std::string& old_checksum, const std
 }
 
 std::optional<QDateTime> Document::get_local_drawings_modification_time() {
-    QString drawing_file_path = QString::fromStdWString(get_drawings_file_path());
+    QString drawing_file_path = QString::fromStdWString(get_drawings_file_path() + L".bin");
     QFileInfo info(drawing_file_path);
     if (info.exists()) {
         return info.lastModified().toUTC();
