@@ -1165,7 +1165,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
     
-    
     central_widget = new QWidget(this);
     central_widget->setMouseTracking(true);
     
@@ -1506,7 +1505,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     opengl_widget->get_widget()->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addLayout(hlayout);
     
-#if defined(SIOYEK_ANDROID) || defined(SIOYEK_QUICKWINDOW)
+#if defined(SIOYEK_ANDROID) || defined(SIOYEK_QUICKWINDOW) || defined(SIOYEK_QWIDGET_WINDOW)
     setLayout(layout);
 #elif !defined(SIOYEK_IOS)
     central_widget->setLayout(layout);
@@ -1568,7 +1567,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         hideWindowTitleBar(winId());
     }
     menu_bar = create_main_menu_bar();
+#ifndef SIOYEK_QWIDGET_WINDOW
     setMenuBar(menu_bar);
+#endif
     menu_bar->stackUnder(text_command_line_edit_container);
 #endif
     
@@ -8168,7 +8169,8 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    on_onscreen_keyboard_shown();
+    qDebug() << windowFlags();
+    // on_onscreen_keyboard_shown();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

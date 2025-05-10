@@ -170,6 +170,7 @@ using SioyekMediaPlayer = QMediaPlayer;
 #endif
 
 // #define SIOYEK_QUICKWINDOW
+// #define SIOYEK_QWIDGET_WINDOW
 
 #ifdef SIOYEK_MOBILE
 using SioyekBaseWidget = QQuickWidget;
@@ -177,7 +178,11 @@ using SioyekBaseWidget = QQuickWidget;
 #ifdef SIOYEK_QUICKWINDOW
 using SioyekBaseWidget = QQuickWidget;
 #else
+#ifdef SIOYEK_QWIDGET_WINDOW
+using SioyekBaseWidget = QWidget;
+#else
 using SioyekBaseWidget = QMainWindow;
+#endif
 #endif
 #endif
 
