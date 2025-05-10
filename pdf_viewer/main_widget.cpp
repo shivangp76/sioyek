@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -1169,10 +1169,13 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #ifdef SIOYEK_MOBILE
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
+    
+#ifdef Q_OS_MACOS
     if (MACOS_HIDE_TITLEBAR){
         setWindowFlag(Qt::ExpandedClientAreaHint, true);
         setWindowFlag(Qt::NoTitleBarBackgroundHint, true);
     }
+#endif
 
     central_widget = new QWidget(this);
     central_widget->setMouseTracking(true);
@@ -13064,8 +13067,10 @@ void MainWidget::upload_current_file(Document* document_to_upload) {
         [&, document=document_to_upload](){
             std::string old_checksum = document->get_checksum();
             std::string new_checksum = compute_checksum(QString::fromStdWString(document->get_path()), QCryptographicHash::Md5);
-            this->document_manager->update_checksum(old_checksum, new_checksum);
-            upload_current_file(document);
+            if (old_checksum != new_checksum){
+                this->document_manager->update_checksum(old_checksum, new_checksum);
+                upload_current_file(document);
+            }
         },
         [&, status_id](int uploaded, int total) {
             QString uploaded_human_readable = file_size_to_human_readable_string(uploaded);

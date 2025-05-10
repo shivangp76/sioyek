@@ -170,7 +170,9 @@ using SioyekMediaPlayer = QMediaPlayer;
 #endif
 
 // #define SIOYEK_QUICKWINDOW
+#ifdef Q_OS_MACOS
 #define SIOYEK_QWIDGET_WINDOW
+#endif
 
 #ifdef SIOYEK_MOBILE
 using SioyekBaseWidget = QQuickWidget;
