@@ -611,6 +611,11 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     opengl_widget->get_widget()->resize(resize_event->size());
 #endif
 
+#ifdef SIOYEK_QWIDGET_WINDOW
+    opengl_widget->get_widget()->move(0, 0);
+    opengl_widget->get_widget()->resize(resize_event->size());
+#endif
+
     main_window_width = size().width();
     main_window_height = size().height();
 
@@ -1164,7 +1169,11 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #ifdef SIOYEK_MOBILE
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
-    
+    if (MACOS_HIDE_TITLEBAR){
+        setWindowFlag(Qt::ExpandedClientAreaHint, true);
+        setWindowFlag(Qt::NoTitleBarBackgroundHint, true);
+    }
+
     central_widget = new QWidget(this);
     central_widget->setMouseTracking(true);
     
@@ -1505,8 +1514,9 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     opengl_widget->get_widget()->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addLayout(hlayout);
     
-#if defined(SIOYEK_ANDROID) || defined(SIOYEK_QUICKWINDOW) || defined(SIOYEK_QWIDGET_WINDOW)
+#if defined(SIOYEK_ANDROID) || defined(SIOYEK_QUICKWINDOW)
     setLayout(layout);
+#elif defined(SIOYEK_QWIDGET_WINDOW)
 #elif !defined(SIOYEK_IOS)
     central_widget->setLayout(layout);
     opengl_widget->get_widget()->stackUnder(status_label);
