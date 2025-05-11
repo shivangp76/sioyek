@@ -406,7 +406,7 @@ void DocumentView::on_view_size_change(int new_width, int new_height) {
 //
 //}
 
-NormalizedWindowPos DocumentView::absolute_to_window_pos(AbsoluteDocumentPos abs) {
+NormalizedWindowPos DocumentView::absolute_to_window_pos(AbsoluteDocumentPos abs) const{
     VirtualPos vpos = absolute_to_virtual_pos(abs);
     WindowPos window_pos = virtual_to_window_pos(vpos);
     return window_pos.to_window_normalized(this);
@@ -420,7 +420,7 @@ NormalizedWindowPos DocumentView::absolute_to_window_pos(AbsoluteDocumentPos abs
 
 }
 
-NormalizedWindowRect DocumentView::absolute_to_window_rect(AbsoluteRect doc_rect) {
+NormalizedWindowRect DocumentView::absolute_to_window_rect(AbsoluteRect doc_rect) const {
     float abs_width = doc_rect.width();
     float abs_height = doc_rect.height();
 
@@ -432,7 +432,7 @@ NormalizedWindowRect DocumentView::absolute_to_window_rect(AbsoluteRect doc_rect
     return NormalizedWindowRect(top_left, bottom_right);
 }
 
-NormalizedWindowPos DocumentView::document_to_window_pos(DocumentPos doc_pos) {
+NormalizedWindowPos DocumentView::document_to_window_pos(DocumentPos doc_pos) const {
 
     if (current_document) {
         WindowPos window_pos = document_to_window_pos_in_pixels_uncentered(doc_pos);
@@ -446,7 +446,7 @@ NormalizedWindowPos DocumentView::document_to_window_pos(DocumentPos doc_pos) {
     return { -10, -10 };
 }
 
-WindowPos DocumentView::absolute_to_window_pos_in_pixels(AbsoluteDocumentPos abspos) {
+WindowPos DocumentView::absolute_to_window_pos_in_pixels(AbsoluteDocumentPos abspos) const {
     VirtualPos vpos = absolute_to_virtual_pos(abspos);
 
     WindowPos window_pos;
@@ -455,14 +455,14 @@ WindowPos DocumentView::absolute_to_window_pos_in_pixels(AbsoluteDocumentPos abs
     return window_pos;
 }
 
-WindowPos DocumentView::document_to_window_pos_in_pixels_uncentered(DocumentPos doc_pos) {
+WindowPos DocumentView::document_to_window_pos_in_pixels_uncentered(DocumentPos doc_pos) const {
     VirtualPos vpos = document_to_virtual_pos(doc_pos);
     return virtual_to_window_pos(vpos);
     //AbsoluteDocumentPos abspos = current_document->document_to_absolute_pos(doc_pos);
     //return absolute_to_window_pos_in_pixels(abspos);
 }
 
-WindowPos DocumentView::document_to_window_pos_in_pixels_banded(DocumentPos doc_pos) {
+WindowPos DocumentView::document_to_window_pos_in_pixels_banded(DocumentPos doc_pos) const {
     if (!fast_coordinates()) {
         VirtualPos vpos = document_to_virtual_pos(doc_pos);
         WindowPos window_pos = virtual_to_window_pos(vpos);
@@ -477,20 +477,20 @@ WindowPos DocumentView::document_to_window_pos_in_pixels_banded(DocumentPos doc_
     }
 }
 
-WindowRect DocumentView::document_to_window_irect(DocumentRect doc_rect) {
+WindowRect DocumentView::document_to_window_irect(DocumentRect doc_rect) const {
     WindowPos top_left = doc_rect.top_left().to_window(this);
     WindowPos bottom_right = doc_rect.bottom_right().to_window(this);
     return WindowRect( top_left, bottom_right );
 }
 
-NormalizedWindowRect DocumentView::document_to_window_rect(DocumentRect doc_rect) {
+NormalizedWindowRect DocumentView::document_to_window_rect(DocumentRect doc_rect) const {
     NormalizedWindowPos top_left = doc_rect.top_left().to_window_normalized(this);
     NormalizedWindowPos bottom_right = doc_rect.bottom_right().to_window_normalized(this);
 
     return NormalizedWindowRect(top_left, bottom_right);
 }
 
-NormalizedWindowRect DocumentView::document_to_window_rect_pixel_perfect(DocumentRect doc_rect, int pixel_width, int pixel_height, bool banded) {
+NormalizedWindowRect DocumentView::document_to_window_rect_pixel_perfect(DocumentRect doc_rect, int pixel_width, int pixel_height, bool banded) const {
 
     if ((pixel_width <= 0) || (pixel_height <= 0)) {
         return doc_rect.to_window_normalized(this);
@@ -530,7 +530,7 @@ NormalizedWindowRect DocumentView::document_to_window_rect_pixel_perfect(Documen
 //    }
 //}
 
-DocumentPos DocumentView::window_to_document_pos(WindowPos window_pos) {
+DocumentPos DocumentView::window_to_document_pos(WindowPos window_pos) const {
     if (current_document) {
         return window_to_absolute_document_pos(window_pos).to_document(current_document);
         //return current_document->absolute_to_page_pos_uncentered(
@@ -542,7 +542,7 @@ DocumentPos DocumentView::window_to_document_pos(WindowPos window_pos) {
     }
 }
 
-AbsoluteDocumentPos DocumentView::window_to_absolute_document_pos(WindowPos window_pos) {
+AbsoluteDocumentPos DocumentView::window_to_absolute_document_pos(WindowPos window_pos) const {
     VirtualPos virtual_pos = window_to_virtual_pos(window_pos);
     return virtual_to_absolute_pos(virtual_pos);
     //float doc_x = (window_pos.x - view_width / 2) / zoom_level - offset.x;
@@ -550,7 +550,7 @@ AbsoluteDocumentPos DocumentView::window_to_absolute_document_pos(WindowPos wind
     //return { doc_x, doc_y };
 }
 
-NormalizedWindowPos DocumentView::window_to_normalized_window_pos(WindowPos window_pos) {
+NormalizedWindowPos DocumentView::window_to_normalized_window_pos(WindowPos window_pos) const {
     float normal_x = 2 * (static_cast<float>(window_pos.x) - view_width / 2.0f) / view_width;
     float normal_y = -2 * (static_cast<float>(window_pos.y) - view_height / 2.0f) / view_height;
     return { normal_x, normal_y };
@@ -1873,17 +1873,17 @@ void DocumentView::toggle_text_mark() {
 }
 
 
-WindowPos DocumentView::normalized_window_to_window_pos(NormalizedWindowPos nwp) {
+WindowPos DocumentView::normalized_window_to_window_pos(NormalizedWindowPos nwp) const {
     int window_x0 = static_cast<int>(nwp.x * view_width / 2 + view_width / 2);
     int window_y0 = static_cast<int>(-nwp.y * view_height / 2 + view_height / 2);
     return { window_x0, window_y0 };
 }
 
-WindowRect DocumentView::normalized_to_window_rect(NormalizedWindowRect normalized_rect) {
+WindowRect DocumentView::normalized_to_window_rect(NormalizedWindowRect normalized_rect) const {
     return WindowRect(normalized_rect.top_left().to_window(this), normalized_rect.bottom_right().to_window(this));
 }
 
-QRect DocumentView::normalized_to_window_qrect(NormalizedWindowRect normalized_rect) {
+QRect DocumentView::normalized_to_window_qrect(NormalizedWindowRect normalized_rect) const {
     auto window_rect = normalized_to_window_rect(normalized_rect);
     return QRect(window_rect.x0, window_rect.y0, window_rect.width(), window_rect.height());
 }
@@ -2288,7 +2288,7 @@ bool DocumentView::is_presentation_mode() {
     return presentation_page_number.has_value();
 }
 
-VirtualPos DocumentView::absolute_to_virtual_pos(const AbsoluteDocumentPos& abspos) {
+VirtualPos DocumentView::absolute_to_virtual_pos(const AbsoluteDocumentPos& abspos) const {
     if (fast_coordinates()) {
         return VirtualPos{ abspos.x, abspos.y };
     }
@@ -2302,7 +2302,7 @@ VirtualPos DocumentView::absolute_to_virtual_pos(const AbsoluteDocumentPos& absp
     return document_to_virtual_pos(docpos);
 }
 
-VirtualPos DocumentView::document_to_virtual_pos(DocumentPos docpos) {
+VirtualPos DocumentView::document_to_virtual_pos(DocumentPos docpos) const {
     if (fast_coordinates()) {
         AbsoluteDocumentPos abspos = docpos.to_absolute(current_document);
         return { abspos.x, abspos.y };
@@ -2322,7 +2322,7 @@ VirtualPos DocumentView::document_to_virtual_pos(DocumentPos docpos) {
     }
 }
 
-AbsoluteDocumentPos DocumentView::virtual_to_absolute_pos(const VirtualPos& vpos) {
+AbsoluteDocumentPos DocumentView::virtual_to_absolute_pos(const VirtualPos& vpos) const {
     if (fast_coordinates()) {
         return AbsoluteDocumentPos{ vpos.x, vpos.y };
     }
@@ -2368,7 +2368,7 @@ AbsoluteDocumentPos DocumentView::virtual_to_absolute_pos(const VirtualPos& vpos
     return docpos.to_absolute(current_document);
 }
 
-void DocumentView::fill_cached_virtual_rects(bool force) {
+void DocumentView::fill_cached_virtual_rects(bool force) const{
     if (!current_document) return;
 
 
@@ -2464,14 +2464,14 @@ void DocumentView::fill_cached_virtual_rects(bool force) {
     }
 }
 
-VirtualPos DocumentView::window_to_virtual_pos(const WindowPos& window_pos) {
+VirtualPos DocumentView::window_to_virtual_pos(const WindowPos& window_pos) const {
 
     float vx = (window_pos.x - view_width / 2) / zoom_level - offset.x;
     float vy = (window_pos.y - view_height / 2) / zoom_level + offset.y;
     return { vx, vy };
 }
 
-WindowPos DocumentView::virtual_to_window_pos(const VirtualPos& vpos) {
+WindowPos DocumentView::virtual_to_window_pos(const VirtualPos& vpos) const {
 
 
     // qDebug() << view_width << " " << view_height;
@@ -2493,7 +2493,7 @@ void DocumentView::toggle_two_page(){
 }
 
 
-NormalizedWindowRect DocumentView::virtual_to_normalized_window_rect(const VirtualRect& virtual_rect){
+NormalizedWindowRect DocumentView::virtual_to_normalized_window_rect(const VirtualRect& virtual_rect) const {
     NormalizedWindowPos top_left = virtual_to_window_pos(VirtualPos{ virtual_rect.x0, virtual_rect.y0 }).to_window_normalized(this);
     NormalizedWindowPos bottom_right = virtual_to_window_pos(VirtualPos{ virtual_rect.x1, virtual_rect.y1 }).to_window_normalized(this);
     return NormalizedWindowRect(top_left, bottom_right);
@@ -2519,7 +2519,7 @@ float DocumentView::get_page_space_y() {
     return page_space_x;
 }
 
-bool DocumentView::fast_coordinates() {
+bool DocumentView::fast_coordinates() const {
     return (!two_page_mode) && (!REAL_PAGE_SEPARATION) && (!SAME_WIDTH);
 }
 
@@ -5958,7 +5958,7 @@ std::optional<Portal> DocumentView::create_portal_to_overview(){
     return {};
 }
 
-bool DocumentView::is_rect_visible(DocumentRect rect) {
+bool DocumentView::is_rect_visible(DocumentRect rect) const {
     WindowRect window_rect = rect.to_window(this);
     if (window_rect.x0 > 0 && window_rect.x1 < view_width && window_rect.y0 > 0 && window_rect.y1 < view_height) {
         return true;

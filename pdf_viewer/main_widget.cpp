@@ -37,6 +37,7 @@
 #include <qtemporarydir.h>
 #include <qtemporaryfile.h>
 #include <QThread>
+#include <QMutableMapIterator>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
@@ -5137,7 +5138,23 @@ std::wstring MainWidget::get_window_configuration_string() {
 void MainWidget::upload_drawings(bool wait_for_send) {
     std::optional<std::string> checksum = doc()->get_checksum_fast();
     if (checksum) {
-        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), doc()->get_drawings_file_path() + L".bin", []() {
+        std::wstring file_path = doc()->get_drawings_file_path() + L".bin";
+        QMap<int, PageFreehandDrawing> drawings = doc()->page_freehand_drawings;
+
+        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), file_path, [file_path, drawings]() mutable {
+            for (int page : drawings.keys()){
+                for (auto& drawing : drawings[page].drawings){
+                    drawing.is_synced = true;
+                }
+            }
+            QFile output_file(QString::fromStdWString(file_path));
+            if (output_file.open(QIODeviceBase::WriteOnly)){
+                save_drawings_to_file(output_file, drawings);
+                output_file.close();
+            }
+            else{
+                qDebug() << "could not open the drawings file";
+            }
 
             });
         if (reply && wait_for_send) {
@@ -5166,13 +5183,13 @@ void MainWidget::handle_close_event(bool is_quiting) {
         close_event_already_handled = true;
         *should_quit = true;
         save_auto_config();
-    }
-
 #ifndef SIOYEK_ANDROID
-    persist(true);
+        persist(true);
 #endif
 
-    perform_sync_operations_when_document_is_closed(true, should_sync_drawings);
+        perform_sync_operations_when_document_is_closed(true, should_sync_drawings);
+    }
+
 
 
     // we need to delete this here (instead of destructor) to ensure that application
@@ -8182,6 +8199,10 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    PageFreehandDrawing page_drawings = doc()->get_page_drawings(dv()->get_current_page_number());
+    for (auto& drawing : page_drawings.drawings){
+        qDebug() << drawing.is_synced;
+    }
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {

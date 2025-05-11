@@ -105,6 +105,7 @@ class Document : public QObject{
 private:
 
     bool is_opened = false;
+    bool are_drawings_loaded = false;
     std::mutex drawings_mutex;
     std::mutex highlights_mutex;
 
@@ -178,7 +179,7 @@ private:
 
     // label of the pages, e.g. "i", "ii", "iii", "1", "2", "3", etc.
     std::vector<std::wstring> page_labels;
-    std::mutex page_dims_mutex;
+    mutable std::mutex page_dims_mutex;
     std::string correct_password = "";
     bool password_was_correct = false;
     bool document_needs_password = false;
@@ -252,8 +253,8 @@ private:
         }
     }
 
-    QMap<int, PageFreehandDrawing> page_freehand_drawings;
 public:
+    QMap<int, PageFreehandDrawing> page_freehand_drawings;
 
     fz_document* doc = nullptr;
     std::wstring detected_paper_name = L"";
@@ -386,7 +387,7 @@ public:
     QDateTime get_last_edit_time();
     unsigned int get_milies_since_last_document_update_time();
     unsigned int get_milies_since_last_edit_time();
-    float get_page_height(int page_index);
+    float get_page_height(int page_index) const;
     fz_pixmap* get_small_pixmap(int page);
     float get_page_width(int page_index);
     float get_page_width_median();
@@ -400,10 +401,10 @@ public:
     void get_visible_pages(float doc_y_range_begin, float doc_y_range_end, std::vector<int>& visible_pages);
     void load_page_dimensions(bool force_load_now);
     int num_pages();
-    AbsoluteRect get_page_absolute_rect(int page);
-    DocumentPos absolute_to_page_pos(AbsoluteDocumentPos absolute_pos);
-    DocumentPos absolute_to_page_pos_uncentered(AbsoluteDocumentPos absolute_pos);
-    DocumentRect absolute_to_page_rect(AbsoluteRect abs_rect);
+    AbsoluteRect get_page_absolute_rect(int page) const ;
+    DocumentPos absolute_to_page_pos(AbsoluteDocumentPos absolute_pos) const ;
+    DocumentPos absolute_to_page_pos_uncentered(AbsoluteDocumentPos absolute_pos) const;
+    DocumentRect absolute_to_page_rect(AbsoluteRect abs_rect) const;
     QStandardItemModel* get_toc_model();
     int get_offset_page_number(float y_offset);
     void index_document();
@@ -529,11 +530,11 @@ public:
         std::vector<TocNode*>& toc_node_stack,
         std::vector<TocNode*>& top_level_node);
 
-    float document_to_absolute_y(int page, float doc_y);
+    float document_to_absolute_y(int page, float doc_y) const;
     //AbsoluteDocumentPos document_to_absolute_pos(DocumentPos, bool center_mid = false);
-    AbsoluteDocumentPos document_to_absolute_pos(DocumentPos docpos);
+    AbsoluteDocumentPos document_to_absolute_pos(DocumentPos docpos) const;
 
-    AbsoluteRect document_to_absolute_rect(DocumentRect doc_rect);
+    AbsoluteRect document_to_absolute_rect(DocumentRect doc_rect) const;
 
     //void get_ith_next_line_from_absolute_y(float absolute_y, int i, bool cont, float* out_begin, float* out_end);
     AbsoluteRect get_ith_next_line_from_absolute_y(int page, int line_index, int i, bool continue_to_next_page, int* out_index, int* out_page);
@@ -555,10 +556,13 @@ public:
     void persist_annotations(bool force = false);
     void load_drawings();
     void load_drawings_binary();
+    QMap<int, PageFreehandDrawing> load_drawings_from_data(QByteArray& data, bool &is_dirty);
+    QMap<int, PageFreehandDrawing> load_drawings_from_io_device(QIODevice& data, bool &is_dirty) const;
     void load_annotations(bool sync = false);
     void load_drawings_async();
     void lock_highlights_mutex();
     void unlock_highlights_mutex();
+    void merge_with_server_drawings(const QMap<int, PageFreehandDrawing>& server_drawings, bool& has_local_drawings_not_on_server);
     //void persist_drawings_async();
 
     std::wstring detect_paper_name(fz_context* context, fz_document* doc);
@@ -721,6 +725,7 @@ public:
     void on_portal_deleted();
 
     void delete_page_drawings_with_network_request_id(int page, int request_id);
+    void set_drawings_dirty(bool val);
 
     friend class DocumentManager;
 };
@@ -782,3 +787,5 @@ std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Book
 
 template <>
 std::unordered_map<int, std::vector<int>>& Document::get_annot_page_indices<Portal>();
+
+void save_drawings_to_file(QIODevice& binary_file, const QMap<int, PageFreehandDrawing>& drawings);

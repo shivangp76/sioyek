@@ -350,6 +350,8 @@ public:
     char type;
     float alpha = 1;
     QDateTime creattion_time;
+    quint128 uuid = 0;
+    bool is_synced = false;
     int network_pending_request_id = -1;
 
     Q_INVOKABLE AbsoluteRect bbox() const;

@@ -6,6 +6,7 @@
 #include "utf8.h"
 #include <qfileinfo.h>
 #include <qdatetime.h>
+#include <QBuffer>
 #include <map>
 #include <regex>
 #include <qcryptographichash.h>
@@ -26,6 +27,7 @@
 #include "database.h"
 #include "utils.h"
 
+const quint64 DRAWING_FILE_VERSION = 2;
 extern bool USE_BINARY_DRAWING_FILES;
 extern bool SHOULD_RENDER_PDF_ANNOTATIONS;
 extern std::wstring forced_drawings_path;
@@ -819,7 +821,7 @@ const std::vector<DocumentPos>& Document::get_flat_toc_pages() {
     return flat_toc_position;
 }
 
-float Document::get_page_height(int page_index) {
+float Document::get_page_height(int page_index) const {
     std::lock_guard guard(page_dims_mutex);
     if ((page_index >= 0) && (page_index < page_heights.size())) {
         return page_heights[page_index];
@@ -1313,7 +1315,7 @@ void Document::load_page_dimensions(bool force_load_now) {
 }
 
 
-AbsoluteRect Document::get_page_absolute_rect(int page) {
+AbsoluteRect Document::get_page_absolute_rect(int page) const {
     std::lock_guard guard(page_dims_mutex);
 
     AbsoluteRect res({0, 0, 1, 1});
@@ -1460,7 +1462,7 @@ void Document::set_page_offset(int new_offset) {
     page_offset = new_offset;
 }
 
-DocumentRect Document::absolute_to_page_rect(AbsoluteRect abs_rect) {
+DocumentRect Document::absolute_to_page_rect(AbsoluteRect abs_rect) const {
     DocumentPos top_left = abs_rect.top_left().to_document(this);
     DocumentPos bottom_right = abs_rect.bottom_right().to_document(this);
     if (top_left.page == bottom_right.page) {
@@ -1477,7 +1479,7 @@ DocumentRect Document::absolute_to_page_rect(AbsoluteRect abs_rect) {
     }
 }
 
-DocumentPos Document::absolute_to_page_pos(AbsoluteDocumentPos absp) {
+DocumentPos Document::absolute_to_page_pos(AbsoluteDocumentPos absp) const {
 
     std::lock_guard guard(page_dims_mutex);
     if (accum_page_heights.size() == 0) {
@@ -1501,7 +1503,7 @@ DocumentPos Document::absolute_to_page_pos(AbsoluteDocumentPos absp) {
     }
 }
 
-DocumentPos Document::absolute_to_page_pos_uncentered(AbsoluteDocumentPos absolute_pos) {
+DocumentPos Document::absolute_to_page_pos_uncentered(AbsoluteDocumentPos absolute_pos) const {
     return absolute_to_page_pos(absolute_pos);
 }
 
@@ -3264,14 +3266,14 @@ int Document::add_stext_page_to_created_toc(fz_stext_page* stext_page,
     return num_new_entries;
 }
 
-float Document::document_to_absolute_y(int page, float doc_y) {
+float Document::document_to_absolute_y(int page, float doc_y) const {
     if ((page < accum_page_heights.size()) && (page >= 0)) {
         return doc_y + accum_page_heights[page];
     }
     return 0;
 }
 
-AbsoluteDocumentPos Document::document_to_absolute_pos(DocumentPos doc_pos) {
+AbsoluteDocumentPos Document::document_to_absolute_pos(DocumentPos doc_pos) const {
     float absolute_y = document_to_absolute_y(doc_pos.page, doc_pos.y);
     AbsoluteDocumentPos res = { doc_pos.x, absolute_y };
     if (doc_pos.page < page_widths.size()) {
@@ -3280,7 +3282,7 @@ AbsoluteDocumentPos Document::document_to_absolute_pos(DocumentPos doc_pos) {
     return res;
 }
 
-AbsoluteRect Document::document_to_absolute_rect(DocumentRect doc_rect){
+AbsoluteRect Document::document_to_absolute_rect(DocumentRect doc_rect) const {
     AbsoluteDocumentPos top_left = doc_rect.top_left().to_absolute(this);
     AbsoluteDocumentPos bottom_right = doc_rect.bottom_right().to_absolute(this);
     return AbsoluteRect(top_left, bottom_right);
@@ -3846,6 +3848,9 @@ std::optional<std::pair<QString, std::vector<PagelessDocumentRect>>> Document::g
 
 
 void Document::add_freehand_drawing(FreehandDrawing new_drawing) {
+    if (new_drawing.uuid == 0){
+        new_drawing.uuid = QUuid::createUuid().toUInt128();
+    }
     if (new_drawing.points.size() > 0) {
         DocumentPos docpos = absolute_to_page_pos_uncentered(new_drawing.points[0].pos);
         drawings_mutex.lock();
@@ -4248,6 +4253,7 @@ void Document::load_drawings() {
         }
 
     }
+    are_drawings_loaded = true;
 
 }
 
@@ -4285,7 +4291,7 @@ void Document::persist_annotations(bool force) {
     is_annotations_dirty = false;
 }
 
-struct SerializedDrawingHeader{
+struct SerializedDrawingHeaderv1{
     bool is_uniform_thickness;
     QDateTime creation_time;
     char color_type;
@@ -4293,6 +4299,94 @@ struct SerializedDrawingHeader{
     float thickness;
     quint64 num_points;
 };
+
+struct SerializedDrawingHeader{
+    bool is_uniform_thickness;
+    QDateTime creation_time;
+    char color_type;
+    float alpha;
+    float thickness;
+    quint64 num_points;
+    quint128 uuid;
+    bool is_synced;
+};
+
+
+QMap<int, PageFreehandDrawing> Document::load_drawings_from_io_device(QIODevice& binary_file, bool &is_dirty) const {
+
+    QMap<int, PageFreehandDrawing> result;
+    // qDebug() << QString::fromUtf8(binary_file.readAll());
+    quint64 drawing_file_version=-1;
+    binary_file.read((char*)&drawing_file_version, sizeof(drawing_file_version));
+
+    if (drawing_file_version == 1){
+        while (binary_file.bytesAvailable() > 0) {
+            SerializedDrawingHeaderv1 header;
+            binary_file.read((char*)&header, sizeof(header));
+
+            FreehandDrawing drawing;
+            drawing.creattion_time = header.creation_time;
+            drawing.type = header.color_type;
+            drawing.alpha = header.alpha;
+
+            for (int i = 0; i < header.num_points; i++) {
+                FreehandDrawingPoint point;
+                binary_file.read((char*)&point.pos, sizeof(point.pos));
+                if (!header.is_uniform_thickness) {
+                    binary_file.read((char*)&point.thickness, sizeof(point.thickness));
+                }
+                else {
+                    point.thickness = header.thickness;
+                }
+                drawing.points.push_back(point);
+            }
+            int loaded_drawing_page = drawing.points[0].pos.to_document(this).page;
+            drawing.uuid = QUuid::createUuid().toUInt128();
+
+            result[loaded_drawing_page].drawings.push_back(drawing);
+            // this is an old format, so we should re-save the drawings with the new format on exit
+            // so we set the dirty flag even though the drawings themselves have not changed
+            is_dirty = true;
+
+        }
+    }
+    else{
+        while (binary_file.bytesAvailable() > 0) {
+            SerializedDrawingHeader header;
+            binary_file.read((char*)&header, sizeof(header));
+
+            FreehandDrawing drawing;
+            drawing.creattion_time = header.creation_time;
+            drawing.type = header.color_type;
+            drawing.alpha = header.alpha;
+            drawing.uuid = header.uuid;
+            drawing.is_synced = header.is_synced;
+
+            for (int i = 0; i < header.num_points; i++) {
+                FreehandDrawingPoint point;
+                binary_file.read((char*)&point.pos, sizeof(point.pos));
+                if (!header.is_uniform_thickness) {
+                    binary_file.read((char*)&point.thickness, sizeof(point.thickness));
+                }
+                else {
+                    point.thickness = header.thickness;
+                }
+                drawing.points.push_back(point);
+            }
+            int loaded_drawing_page = drawing.points[0].pos.to_document(this).page;
+            result[loaded_drawing_page].drawings.push_back(drawing);
+
+        }
+    }
+    return result;
+}
+
+QMap<int, PageFreehandDrawing>  Document::load_drawings_from_data(QByteArray& data, bool& is_dirty){
+    QBuffer binary_file;
+    binary_file.setData(data);
+    binary_file.open(QIODeviceBase::ReadOnly);
+    return load_drawings_from_io_device(binary_file, is_dirty);
+}
 
 void Document::load_drawings_binary(){
     std::wstring drawing_file_path = get_drawings_file_path() + L".bin";
@@ -4307,68 +4401,26 @@ void Document::load_drawings_binary(){
         qDebug() << "could not open " << drawing_file_path << " to read drawings.";
         return;
     }
-    std::vector<FreehandDrawing> loaded_drawings;
 
-    // qDebug() << QString::fromUtf8(binary_file.readAll());
-    quint64 drawing_file_version=-1;
-    binary_file.read((char*)&drawing_file_version, sizeof(drawing_file_version));
-    
-    if (drawing_file_version > 1000){
-        // the file is probably corrupted, we remove it to prevent crashes
-        binary_file.close();
-        QFile::remove(QString::fromStdWString(drawing_file_path));
-        return;
-    }
-
-    while (binary_file.bytesAvailable() > 0) {
-        SerializedDrawingHeader header;
-        binary_file.read((char*)&header, sizeof(header));
-
-        FreehandDrawing drawing;
-        drawing.creattion_time = header.creation_time;
-        drawing.type = header.color_type;
-        drawing.alpha = header.alpha;
-
-        for (int i = 0; i < header.num_points; i++) {
-            FreehandDrawingPoint point;
-            binary_file.read((char*)&point.pos, sizeof(point.pos));
-            if (!header.is_uniform_thickness) {
-                binary_file.read((char*)&point.thickness, sizeof(point.thickness));
-            }
-            else {
-                point.thickness = header.thickness;
-            }
-            drawing.points.push_back(point);
-        }
-        // loaded_drawings.push_back(drawing);
-        int loaded_drawing_page = drawing.points[0].pos.to_document(this).page;
-        page_freehand_drawings[loaded_drawing_page].drawings.push_back(drawing);
-
+    bool are_drawings_dirty = false;
+    page_freehand_drawings = load_drawings_from_io_device(binary_file, are_drawings_dirty);
+    if (are_drawings_dirty){
+        is_drawings_dirty = true;
     }
 
     for (const auto& [page, val] : page_freehand_drawings.asKeyValueRange()){
         val.last_addition_time = QDateTime::currentDateTime();
         val.last_deletion_time = QDateTime::currentDateTime();
     }
+    are_drawings_loaded = true;
 
 }
 
-void Document::persist_drawings_binary(bool force){
-    if ((!force) && (!is_drawings_dirty)) {
-        return;
-    }
-
-    std::wstring drawing_file_path = get_drawings_file_path() + L".bin";
-    QFile binary_file(QString::fromStdWString(drawing_file_path));
-    if (!binary_file.open(QIODevice::WriteOnly)){
-        qDebug() << "could not open " << drawing_file_path << " to write drawings.";
-        return;
-    }
-
-    quint64 DRAWING_FILE_VERSION = 1;
+void save_drawings_to_file(QIODevice& binary_file, const QMap<int, PageFreehandDrawing>& drawings){
     binary_file.write((const char*)&DRAWING_FILE_VERSION, sizeof(DRAWING_FILE_VERSION));
 
-    for (const auto& [page, drawings] : page_freehand_drawings.asKeyValueRange()) {
+    bool has_unsynced = false;
+    for (const auto& [page, drawings] : drawings.asKeyValueRange()) {
 
         for (auto& drawing : drawings.drawings) {
             if (drawing.points.size() == 0) continue;
@@ -4390,7 +4442,12 @@ void Document::persist_drawings_binary(bool force){
             header.thickness = drawing.points[0].thickness;
             header.creation_time = drawing.creattion_time;
             header.num_points = drawing.points.size();
+            header.uuid = drawing.uuid;
+            header.is_synced = drawing.is_synced;
             binary_file.write((const char*)&header, sizeof(header));
+            if (!drawing.is_synced){
+                has_unsynced = true;
+            }
 
             for (const FreehandDrawingPoint& point : drawing.points){
                 binary_file.write((const char*)&point.pos, sizeof(point.pos));
@@ -4402,6 +4459,24 @@ void Document::persist_drawings_binary(bool force){
 
         }
     }
+    if (has_unsynced){
+        qDebug() << "persisted with unsynced drawings";
+    }
+}
+
+void Document::persist_drawings_binary(bool force){
+    if ((!force) && (!is_drawings_dirty)) {
+        return;
+    }
+
+    std::wstring drawing_file_path = get_drawings_file_path() + L".bin";
+    QFile binary_file(QString::fromStdWString(drawing_file_path));
+    if (!binary_file.open(QIODevice::WriteOnly)){
+        qDebug() << "could not open " << drawing_file_path << " to write drawings.";
+        return;
+    }
+
+    save_drawings_to_file(binary_file, page_freehand_drawings);
     binary_file.close();
     is_drawings_dirty = false;
 }
@@ -6225,4 +6300,45 @@ void Document::delete_drawings_with_network_request_id(int page, int request_id)
         }
     }
     delete_drawings_with_indices(page, indices_to_delete);
+}
+
+void Document::merge_with_server_drawings(const QMap<int, PageFreehandDrawing>& server_drawings, bool& has_local_drawings_not_on_server){
+    QSet<quint128> local_drawing_uuids;
+    QSet<quint128> server_drawing_uuids;
+
+    for (auto& page_drawings : page_freehand_drawings){
+        for (auto& drawing : page_drawings.drawings){
+            local_drawing_uuids.insert(drawing.uuid);
+        }
+    }
+
+    for (auto& page_drawings : server_drawings){
+        for (auto& drawing : page_drawings.drawings){
+            server_drawing_uuids.insert(drawing.uuid);
+        }
+    }
+
+    has_local_drawings_not_on_server = !local_drawing_uuids.subtract(server_drawing_uuids).empty();
+    if (has_local_drawings_not_on_server){
+        // this will casue the drawings to be uploaded on exit
+        is_annotations_dirty = true;
+    }
+
+    for (auto& page : server_drawings.keys()){
+        const PageFreehandDrawing& page_drawings = server_drawings[page];
+        for (const FreehandDrawing& drawing : page_drawings.drawings){
+            if (!local_drawing_uuids.contains(drawing.uuid)){
+                auto& local_page_drawings = page_freehand_drawings[page];
+                FreehandDrawing new_drawing = drawing;
+                new_drawing.is_synced = true;
+                local_page_drawings.drawings.push_back(new_drawing);
+                is_drawings_dirty = true;
+            }
+        }
+    }
+
+}
+
+void Document::set_drawings_dirty(bool val){
+    is_drawings_dirty = val;
 }

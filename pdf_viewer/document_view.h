@@ -94,7 +94,7 @@ protected:
 
     float zoom_level = 0.0f;
     VirtualPos offset = {0, 0};
-    std::vector<VirtualRect> cached_virtual_rects;
+    mutable std::vector<VirtualRect> cached_virtual_rects;
     bool two_page_mode = false;
 
 
@@ -124,9 +124,9 @@ protected:
     float page_space_x = 0;
     float page_space_y = 0;
 
-    float max_virtual_y;
-    float min_virtual_x;
-    float max_virtual_x;
+    mutable float max_virtual_y;
+    mutable float min_virtual_x;
+    mutable float max_virtual_x;
 
 public:
     std::vector<std::vector<AbsoluteRect>>  debug_highlight_rects;
@@ -272,12 +272,12 @@ public:
     bool mark_end = true;
     std::wstring last_opened_file_path = L"";
     bool was_set_to_null = false;
-    std::optional<float> same_width_mode_first_page_width = {};
+    mutable std::optional<float> same_width_mode_first_page_width = {};
 
     // when filling the page rects, it is possible that the page dimensions are not yet loaded
     // in that case, needs_refill will be set to true and we will refill the page rects once
     // the page dimensions are loaded
-    bool needs_refill = false;
+    mutable bool needs_refill = false;
 
     DocumentView(DatabaseManager* db_manager, DocumentManager* document_manager, CachedChecksummer* checksummer);
     ~DocumentView();
@@ -375,7 +375,7 @@ public:
     std::string add_highlight_(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
     void on_view_size_change(int new_width, int new_height);
     //void absolute_to_window_pos(float absolute_x, float absolute_y, float* window_x, float* window_y);
-    NormalizedWindowPos absolute_to_window_pos(AbsoluteDocumentPos absolute_pos);
+    NormalizedWindowPos absolute_to_window_pos(AbsoluteDocumentPos absolute_pos) const;
 
     // void set_pending_portal_position(std::optional<AbsoluteRect> rect);
     void set_synctex_highlights(std::vector<DocumentRect> highlights);
@@ -386,22 +386,22 @@ public:
     ColorPalette get_current_color_mode();
 
     void swap_line_select_cursor();
-    void fill_cached_virtual_rects(bool force=false);
-    NormalizedWindowRect absolute_to_window_rect(AbsoluteRect doc_rect);
-    NormalizedWindowPos document_to_window_pos(DocumentPos pos);
-    WindowPos absolute_to_window_pos_in_pixels(AbsoluteDocumentPos abs_pos);
-    WindowPos document_to_window_pos_in_pixels_uncentered(DocumentPos doc_pos);
-    WindowPos document_to_window_pos_in_pixels_banded(DocumentPos doc_pos);
-    NormalizedWindowRect document_to_window_rect(DocumentRect doc_rect);
-    WindowRect document_to_window_irect(DocumentRect);
-    NormalizedWindowRect document_to_window_rect_pixel_perfect(DocumentRect doc_rect, int pixel_width, int pixel_height, bool banded = false);
-    DocumentPos window_to_document_pos(WindowPos window_pos);
+    void fill_cached_virtual_rects(bool force=false) const;
+    NormalizedWindowRect absolute_to_window_rect(AbsoluteRect doc_rect) const;
+    NormalizedWindowPos document_to_window_pos(DocumentPos pos) const;
+    WindowPos absolute_to_window_pos_in_pixels(AbsoluteDocumentPos abs_pos) const;
+    WindowPos document_to_window_pos_in_pixels_uncentered(DocumentPos doc_pos) const;
+    WindowPos document_to_window_pos_in_pixels_banded(DocumentPos doc_pos) const;
+    NormalizedWindowRect document_to_window_rect(DocumentRect doc_rect) const;
+    WindowRect document_to_window_irect(DocumentRect) const;
+    NormalizedWindowRect document_to_window_rect_pixel_perfect(DocumentRect doc_rect, int pixel_width, int pixel_height, bool banded = false) const;
+    DocumentPos window_to_document_pos(WindowPos window_pos) const;
     //DocumentPos window_to_document_pos_uncentered(WindowPos window_pos);
-    AbsoluteDocumentPos window_to_absolute_document_pos(WindowPos window_pos);
-    NormalizedWindowPos window_to_normalized_window_pos(WindowPos window_pos);
-    WindowPos normalized_window_to_window_pos(NormalizedWindowPos normalized_window_pos);
-    WindowRect normalized_to_window_rect(NormalizedWindowRect normalized_rect);
-    QRect normalized_to_window_qrect(NormalizedWindowRect normalized_rect);
+    AbsoluteDocumentPos window_to_absolute_document_pos(WindowPos window_pos) const;
+    NormalizedWindowPos window_to_normalized_window_pos(WindowPos window_pos) const;
+    WindowPos normalized_window_to_window_pos(NormalizedWindowPos normalized_window_pos) const;
+    WindowRect normalized_to_window_rect(NormalizedWindowRect normalized_rect) const;
+    QRect normalized_to_window_qrect(NormalizedWindowRect normalized_rect) const;
     void goto_mark(char symbol);
     void goto_end();
 
@@ -598,12 +598,12 @@ public:
     void set_presentation_page_number(std::optional<int> page);
     std::optional<int> get_presentation_page_number();
     bool is_presentation_mode();
-    VirtualPos absolute_to_virtual_pos(const AbsoluteDocumentPos& abspos);
-    VirtualPos document_to_virtual_pos(DocumentPos docpos);
-    AbsoluteDocumentPos virtual_to_absolute_pos(const VirtualPos& vpos);
-    VirtualPos window_to_virtual_pos(const WindowPos& window_pos);
-    WindowPos virtual_to_window_pos(const VirtualPos& virtual_pos);
-    NormalizedWindowRect virtual_to_normalized_window_rect(const VirtualRect& virtual_rect);
+    VirtualPos absolute_to_virtual_pos(const AbsoluteDocumentPos& abspos) const;
+    VirtualPos document_to_virtual_pos(DocumentPos docpos) const;
+    AbsoluteDocumentPos virtual_to_absolute_pos(const VirtualPos& vpos) const;
+    VirtualPos window_to_virtual_pos(const WindowPos& window_pos) const;
+    WindowPos virtual_to_window_pos(const VirtualPos& virtual_pos) const;
+    NormalizedWindowRect virtual_to_normalized_window_rect(const VirtualRect& virtual_rect) const;
     void toggle_two_page();
     bool is_two_page_mode();
     void set_page_space_x(float space_x);
@@ -612,7 +612,7 @@ public:
 
     float get_page_space_x();
     float get_page_space_y();
-    bool fast_coordinates();
+    bool fast_coordinates() const;
 
     float get_bookmark_scroll_amount(const std::string& uuid);
     void set_bookmark_scroll_amount(const std::string& uuid, float amount);
@@ -728,7 +728,7 @@ public:
     void handle_move_screen(int amount);
     std::optional<DocumentPos> get_overview_position();
     std::optional<Portal> create_portal_to_overview();
-    bool is_rect_visible(DocumentRect rect);
+    bool is_rect_visible(DocumentRect rect) const;
     std::optional<AbsoluteRect> get_selected_rect_absolute();
     std::optional<DocumentRect> get_selected_rect_document();
     void handle_keyboard_select(const std::wstring& text, const std::vector<DocumentRect>& tag_rects);

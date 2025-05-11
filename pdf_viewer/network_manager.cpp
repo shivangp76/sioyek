@@ -1720,7 +1720,7 @@ void SioyekNetworkManager::get_last_drawing_modification_time(QObject* parent, s
         });
 }
 
-void SioyekNetworkManager::download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done) {
+void SioyekNetworkManager::download_drawings(QObject* parent, std::string checksum, std::function<void(QByteArray)> on_done) {
 
     QNetworkRequest req;
     req.setUrl(QUrl(QString::fromStdWString(SIOYEK_HOST + SIOYEK_DOWNLOAD_DRAWINGS_URL_)));
@@ -1735,17 +1735,12 @@ void SioyekNetworkManager::download_drawings(QObject* parent, std::string checks
 
     QNetworkReply* reply = get_network_manager()->post(req, json_doc.toJson());
     reply->setParent(parent);
-    QObject::connect(reply, &QNetworkReply::finished, [reply, target_path, on_done=std::move(on_done)]() {
+    QObject::connect(reply, &QNetworkReply::finished, [reply, on_done=std::move(on_done)]() {
         int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         if (status != 200) {
         }
         else {
-            QFile file(QString::fromStdWString(target_path));
-            if (file.open(QIODevice::WriteOnly)) {
-                file.write(reply->readAll());
-                file.close();
-            }
-            on_done();
+            on_done(reply->readAll());
         }
         });
 
@@ -1840,7 +1835,7 @@ void SioyekNetworkManager::get_annotations_after(QObject* parent, QDateTime last
 
 void block_for_send(QNetworkReply* reply) {
     QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::requestSent, &loop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     loop.exec();
 }
 
@@ -1875,19 +1870,29 @@ void SioyekNetworkManager::sync_document_annotations_to_server(QObject* parent, 
             (!local_modification_time.has_value() ||
                 (local_modification_time.value().secsTo(server_modification_time.value()) > 10)
                 )) {
-            download_drawings(parent, document->get_checksum_fast().value(), document->get_drawings_file_path() + L".bin", [this, document]() {
-                document->load_drawings();
+            download_drawings(parent, document->get_checksum_fast().value(), [this, document](QByteArray drawing_data) {
+                bool is_dirty = false;
+                QMap<int, PageFreehandDrawing> server_drawings = document->load_drawings_from_data(drawing_data, is_dirty);
+                bool should_upload_drawings = false;
+                document->merge_with_server_drawings(server_drawings, should_upload_drawings);
+                if (should_upload_drawings){
+                    qDebug() << "not implemented";
+                }
+                // document->load_drawings();
                 });
         }
-        bool should_upload_drawing = false;
-        if (!server_modification_time.has_value() && local_modification_time.has_value()){
-            should_upload_drawing = true;
-        }
-        if (server_modification_time.has_value() && local_modification_time.has_value() && (server_modification_time->secsTo(local_modification_time.value()) > 10)){
-            should_upload_drawing = true;
-        }
-        if (should_upload_drawing){
-            upload_drawings(parent, document_checksum.toStdString(), document->get_drawings_file_path() + L".bin", [](){});
+        if (!server_modification_time.has_value()){
+            bool should_upload_drawing = false;
+            if (!server_modification_time.has_value() && local_modification_time.has_value()){
+                should_upload_drawing = true;
+            }
+            if (server_modification_time.has_value() && local_modification_time.has_value() && (server_modification_time->secsTo(local_modification_time.value()) > 10)){
+                should_upload_drawing = true;
+            }
+            if (should_upload_drawing){
+                document->set_drawings_dirty(true);
+                // upload_drawings(parent, document_checksum.toStdString(), document->get_drawings_file_path() + L".bin", [](){});
+            }
         }
         });
 

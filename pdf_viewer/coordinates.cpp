@@ -53,68 +53,68 @@ bool are_same(const AbsoluteDocumentPos& lhs, const AbsoluteDocumentPos& rhs) {
 //	return are_same(lhs.x, rhs.x) && are_same(lhs.y, rhs.y);
 //}
 
-AbsoluteDocumentPos DocumentPos::to_absolute(Document* doc) const{
+AbsoluteDocumentPos DocumentPos::to_absolute(const Document* doc) const{
     return doc->document_to_absolute_pos(*this);
 }
 
-NormalizedWindowPos DocumentPos::to_window_normalized(DocumentView* document_view) const{
+NormalizedWindowPos DocumentPos::to_window_normalized(const DocumentView* document_view) const{
     return document_view->document_to_window_pos(*this);
 }
 
-WindowPos DocumentPos::to_window(DocumentView* document_view) const{
+WindowPos DocumentPos::to_window(const DocumentView* document_view) const{
     return document_view->document_to_window_pos_in_pixels_uncentered(*this);
 }
 
-DocumentPos AbsoluteDocumentPos::to_document(Document* doc) const{
+DocumentPos AbsoluteDocumentPos::to_document(const Document* doc) const {
     return doc->absolute_to_page_pos(*this);
 }
 
-NormalizedWindowPos AbsoluteDocumentPos::to_window_normalized(DocumentView* document_view) const{
+NormalizedWindowPos AbsoluteDocumentPos::to_window_normalized(const DocumentView* document_view) const{
     return document_view->absolute_to_window_pos(*this);
 }
 
-WindowPos AbsoluteDocumentPos::to_window(DocumentView* document_view) const{
+WindowPos AbsoluteDocumentPos::to_window(const DocumentView* document_view) const{
     return document_view->absolute_to_window_pos_in_pixels(*this);
 }
 
-DocumentPos NormalizedWindowPos::to_document(DocumentView* document_view) {
+DocumentPos NormalizedWindowPos::to_document(const DocumentView* document_view) const {
     WindowPos window_pos = document_view->normalized_window_to_window_pos(*this);
     return document_view->window_to_document_pos(window_pos);
 }
 
-AbsoluteDocumentPos NormalizedWindowPos::to_absolute(DocumentView* document_view) {
+AbsoluteDocumentPos NormalizedWindowPos::to_absolute(const DocumentView* document_view) const {
     WindowPos window_pos = document_view->normalized_window_to_window_pos(*this);
     return document_view->window_to_absolute_document_pos(window_pos);
 }
 
-WindowPos NormalizedWindowPos::to_window(DocumentView* document_view) {
+WindowPos NormalizedWindowPos::to_window(const DocumentView* document_view) const {
     return document_view->normalized_window_to_window_pos(*this);
 }
 
-DocumentPos WindowPos::to_document(DocumentView* document_view) {
+DocumentPos WindowPos::to_document(const DocumentView* document_view) const {
     return document_view->window_to_document_pos(*this);
 }
 
-AbsoluteDocumentPos WindowPos::to_absolute(DocumentView* document_view) {
+AbsoluteDocumentPos WindowPos::to_absolute(const DocumentView* document_view) const {
     return document_view->window_to_absolute_document_pos(*this);
 }
 
-NormalizedWindowPos WindowPos::to_window_normalized(DocumentView* document_view) {
+NormalizedWindowPos WindowPos::to_window_normalized(const DocumentView* document_view) const{
     return document_view->window_to_normalized_window_pos(*this);
 }
 AbsoluteRect::AbsoluteRect(fz_rect r) : EnhancedRect<fz_rect, AbsoluteDocumentPos>(r) {
 }
 
-AbsoluteRect DocumentRect::to_absolute(Document* doc) {
+AbsoluteRect DocumentRect::to_absolute(const Document* doc) const {
     return doc->document_to_absolute_rect(*this);
 }
 
-DocumentRect AbsoluteRect::to_document(Document* doc) const {
+DocumentRect AbsoluteRect::to_document(const Document* doc) const {
     return doc->absolute_to_page_rect(*this);
 }
 
 
-int WindowPos::manhattan(const WindowPos& other) {
+int WindowPos::manhattan(const WindowPos& other) const {
     return std::abs(x - other.x) + std::abs(y - other.y);
 }
 
@@ -125,19 +125,19 @@ AbsoluteRect::AbsoluteRect(AbsoluteDocumentPos top_left, AbsoluteDocumentPos bot
     y1 = bottom_right.y;
 }
 
-NormalizedWindowRect AbsoluteRect::to_window_normalized(DocumentView* document_view) {
+NormalizedWindowRect AbsoluteRect::to_window_normalized(const DocumentView* document_view) const {
     return NormalizedWindowRect{ document_view->absolute_to_window_rect(*this) };
 }
 
-NormalizedWindowRect DocumentRect::to_window_normalized(DocumentView* document_view) {
+NormalizedWindowRect DocumentRect::to_window_normalized(const DocumentView* document_view) const {
     return NormalizedWindowRect{ document_view->document_to_window_rect(*this) };
 }
 
-DocumentPos DocumentRect::top_left() {
+DocumentPos DocumentRect::top_left() const {
     return DocumentPos{ page, rect.x0, rect.y0 };
 }
 
-DocumentPos DocumentRect::bottom_right() {
+DocumentPos DocumentRect::bottom_right() const {
     return DocumentPos{ page, rect.x1, rect.y1 };
 }
 
@@ -226,11 +226,11 @@ WindowPos operator+(const WindowPos& lhs, const ivec2& rhs) {
     return WindowPos{ lhs.x + rhs[0], lhs.y + rhs[1]};
 }
 
-WindowRect DocumentRect::to_window(DocumentView* document_view) {
+WindowRect DocumentRect::to_window(const DocumentView* document_view) const {
     return document_view->document_to_window_irect(*this);
 }
 
-QRect DocumentRect::to_window_qrect(DocumentView* document_view) {
+QRect DocumentRect::to_window_qrect(const DocumentView* document_view) const {
     WindowRect wind_rect = document_view->document_to_window_irect(*this);
     return QRect(wind_rect.x0, wind_rect.y0, wind_rect.width(), wind_rect.height());
 }
@@ -243,15 +243,15 @@ PagelessDocumentRect rect_from_quad(fz_quad quad) {
     return PagelessDocumentRect(fz_rect_from_quad(quad));
 }
 
-bool NormalizedWindowRect::is_visible(float t) {
+bool NormalizedWindowRect::is_visible(float t) const {
     return (x1 >= -1) && (x0 <= 1) && (y0 >= (-1 - t)) && (y1 <= (1 + t));
 }
 
-WindowRect AbsoluteRect::to_window(DocumentView* document_view) {
+WindowRect AbsoluteRect::to_window(const DocumentView* document_view) const {
     return document_view->normalized_to_window_rect(to_window_normalized(document_view));
 }
 
-VirtualRect AbsoluteRect::to_virtual(DocumentView* document_view){
+VirtualRect AbsoluteRect::to_virtual(const DocumentView* document_view) const {
     VirtualPos tl = document_view->absolute_to_virtual_pos(top_left());
     VirtualPos br = document_view->absolute_to_virtual_pos(bottom_right());
     return VirtualRect(tl, br);
@@ -282,7 +282,7 @@ AbsoluteDocumentPos AbsoluteDocumentPos::y_shift(float amount) {
     return res;
 }
 
-WindowRect NormalizedWindowRect::to_window(DocumentView* document_view) const {
+WindowRect NormalizedWindowRect::to_window(const DocumentView* document_view) const {
     return document_view->normalized_to_window_rect(*this);
 }
 
@@ -321,11 +321,11 @@ AbsoluteRect WindowRect::to_absolute(DocumentView* dv) {
     return AbsoluteRect(abs_top_left, abs_bottom_right);
 }
 
-bool DocumentRect::is_visible(DocumentView *document_view) {
+bool DocumentRect::is_visible(const DocumentView *document_view) const {
     return document_view->is_rect_visible(*this);
 }
 
-DocumentPos DocumentPos::to_page(int target_page, Document* doc){
+DocumentPos DocumentPos::to_page(int target_page, const Document* doc) const {
     DocumentPos res = *this;
 
     while (target_page > res.page){
