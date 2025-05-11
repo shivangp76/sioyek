@@ -5306,7 +5306,7 @@ QWidget* PdfViewQPainterWidget::get_widget(){
 PdfViewRhiWidget::PdfViewRhiWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer_, DocumentManager* docman, bool is_helper_, QWidget* parent)
     : QRhiWidget(parent)
 {
-    // setApi(QRhiWidget::Api::OpenGL);
+     setApi(QRhiWidget::Api::OpenGL);
 
     document_view = document_view_;
     pdf_renderer = pdf_renderer_;

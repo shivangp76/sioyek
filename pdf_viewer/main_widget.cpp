@@ -1169,10 +1169,13 @@ MainWidget::MainWidget(fz_context* mupdf_context,
 #ifdef SIOYEK_MOBILE
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
+
+#ifdef Q_OS_MACOS
     if (MACOS_HIDE_TITLEBAR){
         setWindowFlag(Qt::ExpandedClientAreaHint, true);
         setWindowFlag(Qt::NoTitleBarBackgroundHint, true);
     }
+#endif
 
     central_widget = new QWidget(this);
     central_widget->setMouseTracking(true);
@@ -13437,7 +13440,11 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
         set_status_message(L"", status_message_id);
         SioyekMediaPlayer* mp = get_media_player();
         std::wstring notification_file_name = doc()->detect_paper_name();
+#ifdef Q_OS_APPLE
         mp->setSource(QUrl::fromLocalFile(file_path), QString::fromStdWString(notification_file_name), current_page_number);
+#else
+        mp->setSource(QUrl::fromLocalFile(file_path));
+#endif
         high_quality_play_state->timestamps = timestamps;
         //media_player->audioTracks().at(0).
 
