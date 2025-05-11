@@ -54,10 +54,10 @@ public:
     static DocumentPos from_pageless(PagelessDocumentPos pos, int page);
 
     PagelessDocumentPos pageless() const;
-    Q_INVOKABLE AbsoluteDocumentPos to_absolute(Document* doc) const;
-    Q_INVOKABLE NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;
-    Q_INVOKABLE WindowPos to_window(DocumentView* document_view) const;
-    Q_INVOKABLE DocumentPos to_page(int target_page, Document* doc);
+    Q_INVOKABLE AbsoluteDocumentPos to_absolute(const Document* doc) const;
+    Q_INVOKABLE NormalizedWindowPos to_window_normalized(const DocumentView* document_view) const;
+    Q_INVOKABLE WindowPos to_window(const DocumentView* document_view) const;
+    Q_INVOKABLE DocumentPos to_page(int target_page, const Document* doc) const;
 };
 
 struct VirtualPos {
@@ -78,9 +78,9 @@ public:
     // this is the concatenated y-coordinate of the current page (sum of all page heights up to current location)
     float y;
 
-    Q_INVOKABLE DocumentPos to_document(Document* doc) const;
-    Q_INVOKABLE NormalizedWindowPos to_window_normalized(DocumentView* document_view) const;
-    Q_INVOKABLE WindowPos to_window(DocumentView* document_view) const;
+    Q_INVOKABLE DocumentPos to_document(const Document* doc) const;
+    Q_INVOKABLE NormalizedWindowPos to_window_normalized(const DocumentView* document_view) const;
+    Q_INVOKABLE WindowPos to_window(const DocumentView* document_view) const;
 
     AbsoluteDocumentPos x_shift(float amount);
     AbsoluteDocumentPos y_shift(float amount);
@@ -97,9 +97,9 @@ public:
     float x;
     float y;
 
-    Q_INVOKABLE DocumentPos to_document(DocumentView* document_view);
-    Q_INVOKABLE AbsoluteDocumentPos to_absolute(DocumentView* document_view);
-    Q_INVOKABLE WindowPos to_window(DocumentView* document_view);
+    Q_INVOKABLE DocumentPos to_document(const DocumentView* document_view) const;
+    Q_INVOKABLE AbsoluteDocumentPos to_absolute(const DocumentView* document_view) const;
+    Q_INVOKABLE WindowPos to_window(const DocumentView* document_view) const;
 };
 
 // window coordinate in pixels
@@ -116,10 +116,10 @@ public:
     WindowPos();
     WindowPos(QPoint pos);
 
-    Q_INVOKABLE DocumentPos to_document(DocumentView* document_view);
-    Q_INVOKABLE AbsoluteDocumentPos to_absolute(DocumentView* document_view);
-    Q_INVOKABLE NormalizedWindowPos to_window_normalized(DocumentView* document_view);
-    int manhattan(const WindowPos& other);
+    Q_INVOKABLE DocumentPos to_document(const DocumentView* document_view) const;
+    Q_INVOKABLE AbsoluteDocumentPos to_absolute(const DocumentView* document_view) const;
+    Q_INVOKABLE NormalizedWindowPos to_window_normalized(const DocumentView* document_view) const;
+    int manhattan(const WindowPos& other) const;
 
 };
 
@@ -294,14 +294,14 @@ public:
     DocumentRect(fz_rect r, int page);
     DocumentRect(DocumentPos top_left, DocumentPos bottom_right, int page);
 
-    Q_INVOKABLE AbsoluteRect to_absolute(Document* doc);
-    Q_INVOKABLE NormalizedWindowRect to_window_normalized(DocumentView* document_view);
-    Q_INVOKABLE WindowRect to_window(DocumentView* document_view);
-    QRect to_window_qrect(DocumentView* document_view);
+    Q_INVOKABLE AbsoluteRect to_absolute(const Document* doc) const;
+    Q_INVOKABLE NormalizedWindowRect to_window_normalized(const DocumentView* document_view) const;
+    Q_INVOKABLE WindowRect to_window(const DocumentView* document_view) const;
+    QRect to_window_qrect(const DocumentView* document_view) const;
 
-    Q_INVOKABLE DocumentPos top_left();
-    Q_INVOKABLE DocumentPos bottom_right();
-    Q_INVOKABLE bool is_visible(DocumentView* document_view);
+    Q_INVOKABLE DocumentPos top_left() const;
+    Q_INVOKABLE DocumentPos bottom_right() const;
+    Q_INVOKABLE bool is_visible(const DocumentView* document_view) const;
 };
 
 
@@ -317,8 +317,8 @@ public:
     NormalizedWindowRect();
 
 
-    Q_INVOKABLE bool is_visible(float tolerance=0.0f);
-    Q_INVOKABLE WindowRect to_window(DocumentView* document_view) const;
+    Q_INVOKABLE bool is_visible(float tolerance=0.0f) const;
+    Q_INVOKABLE WindowRect to_window(const DocumentView* document_view) const;
     std::array<float, 12> to_vertices() const;
 
 };
@@ -334,11 +334,11 @@ public:
     AbsoluteRect(AbsoluteDocumentPos top_left, AbsoluteDocumentPos bottom_right);
     AbsoluteRect(fz_rect r);
     AbsoluteRect();
-    DocumentRect to_document(Document* doc) const;
+    DocumentRect to_document(const Document* doc) const;
 
-    Q_INVOKABLE NormalizedWindowRect to_window_normalized(DocumentView* document_view);
-    Q_INVOKABLE WindowRect to_window(DocumentView* document_view);
-    VirtualRect to_virtual(DocumentView* document_view);
+    Q_INVOKABLE NormalizedWindowRect to_window_normalized(const DocumentView* document_view) const;
+    Q_INVOKABLE WindowRect to_window(const DocumentView* document_view) const;
+    VirtualRect to_virtual(const DocumentView* document_view) const;
 };
 
 //template<typename T, int dim>

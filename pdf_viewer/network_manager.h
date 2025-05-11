@@ -147,7 +147,7 @@ public:
     void delete_file_from_server(QObject* parent, std::string checksum, std::function<void()> on_done);
     QNetworkReply* upload_drawings(QObject* parent, std::string pdf_file_checksum, std::wstring drawing_file_path, std::function<void()> on_done);
     void get_last_drawing_modification_time(QObject* parent, std::string pdf_file_checksum, std::function<void(std::optional<QDateTime>)> on_done);
-    void download_drawings(QObject* parent, std::string checksum, std::wstring target_path, std::function<void()> on_done);
+    void download_drawings(QObject* parent, std::string checksum, std::function<void(QByteArray)> on_done);
     void download_new_annotations(QObject* parent, QDateTime last_update_time, bool force=false);
     void search_all_documents(QObject* parentm, QString query, std::function<void(std::vector<QString>)> on_done);
     QNetworkAccessManager* get_network_manager();

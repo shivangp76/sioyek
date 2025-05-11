@@ -1,4 +1,4 @@
-﻿// deduplicate database code
+// deduplicate database code
 // refactor database to use prepared statements
 // make sure jsons exported by previous sioyek versions can be imported
 // change find_closest_*_index and argminf to use the fact that the list is sorted and speed up the search (not important if there are not a ridiculous amount of highlight/bookmarks)
@@ -37,6 +37,7 @@
 #include <qtemporarydir.h>
 #include <qtemporaryfile.h>
 #include <QThread>
+#include <QMutableMapIterator>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>
@@ -5137,7 +5138,23 @@ std::wstring MainWidget::get_window_configuration_string() {
 void MainWidget::upload_drawings(bool wait_for_send) {
     std::optional<std::string> checksum = doc()->get_checksum_fast();
     if (checksum) {
-        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), doc()->get_drawings_file_path(), []() {
+        std::wstring file_path = doc()->get_drawings_file_path() + L".bin";
+        QMap<int, PageFreehandDrawing> drawings = doc()->page_freehand_drawings;
+
+        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), file_path, [file_path, drawings]() mutable {
+            for (int page : drawings.keys()){
+                for (auto& drawing : drawings[page].drawings){
+                    drawing.is_synced = true;
+                }
+            }
+            QFile output_file(QString::fromStdWString(file_path));
+            if (output_file.open(QIODeviceBase::WriteOnly)){
+                save_drawings_to_file(output_file, drawings);
+                output_file.close();
+            }
+            else{
+                qDebug() << "could not open the drawings file";
+            }
 
             });
         if (reply && wait_for_send) {
@@ -5166,13 +5183,13 @@ void MainWidget::handle_close_event(bool is_quiting) {
         close_event_already_handled = true;
         *should_quit = true;
         save_auto_config();
-    }
-
 #ifndef SIOYEK_ANDROID
-    persist(true);
+        persist(true);
 #endif
 
-    perform_sync_operations_when_document_is_closed(true, should_sync_drawings);
+        perform_sync_operations_when_document_is_closed(true, should_sync_drawings);
+    }
+
 
 
     // we need to delete this here (instead of destructor) to ensure that application
@@ -8182,8 +8199,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    qDebug() << windowFlags();
-    // on_onscreen_keyboard_shown();
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -13067,8 +13082,10 @@ void MainWidget::upload_current_file(Document* document_to_upload) {
         [&, document=document_to_upload](){
             std::string old_checksum = document->get_checksum();
             std::string new_checksum = compute_checksum(QString::fromStdWString(document->get_path()), QCryptographicHash::Md5);
-            this->document_manager->update_checksum(old_checksum, new_checksum);
-            upload_current_file(document);
+            if (old_checksum != new_checksum){
+                this->document_manager->update_checksum(old_checksum, new_checksum);
+                upload_current_file(document);
+            }
         },
         [&, status_id](int uploaded, int total) {
             QString uploaded_human_readable = file_size_to_human_readable_string(uploaded);
