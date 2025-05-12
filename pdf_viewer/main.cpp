@@ -985,7 +985,7 @@ int main(int argc, char* args[]) {
     // QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
     // QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
 #else
-    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+    //QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     // QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
 #endif
 #endif
