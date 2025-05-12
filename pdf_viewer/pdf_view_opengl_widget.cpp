@@ -30,7 +30,8 @@
 #endif
 
 const int MAX_PAGE_DRAWING_CACHE_SIZE = 6;
-const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 6 * sizeof(float) * sizeof(bool);
+//const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 6 * sizeof(float) * sizeof(bool);
+const int HIGHLIGHT_UNIFORM_BUFFER_SIZE = 7 * sizeof(float);
 const int NUM_PREALLOCATED_HIGHLIGHT_RESOURCE_BINDINGS = 100;
 const int MAX_VISIBLE_PAGES = 100;
 const int MAX_DRAWING_SIZE = 1000000;
@@ -4618,8 +4619,11 @@ void PdfViewRhiWidget::update_resources_for_current_frame_highlight_render_calls
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 0, 4 * sizeof(float), current_frame_highlight_rect_render_calls[i].color);
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 4 * sizeof(float), sizeof(float), &depth);
 
+
         update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 5 * sizeof(float), sizeof(float), &current_time_in_seconds);
-        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 6 * sizeof(float), sizeof(bool), &current_frame_highlight_rect_render_calls[i].is_pending_bookmark);
+        //update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 6 * sizeof(float), sizeof(bool), &current_frame_highlight_rect_render_calls[i].is_pending_bookmark);
+        float is_pending = current_frame_highlight_rect_render_calls[i].is_pending_bookmark ? 1.0f : 0.0f;
+        update_batch->updateDynamicBuffer(current_highlight_uniform_buffer, 6 * sizeof(float), sizeof(float), &is_pending);
 
         if (current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_BORDER || current_frame_highlight_rect_render_calls[i].flags & HighlightRenderFlags::HRF_UNDERLINE){
 
@@ -5306,7 +5310,9 @@ QWidget* PdfViewQPainterWidget::get_widget(){
 PdfViewRhiWidget::PdfViewRhiWidget(DocumentView* document_view_, PdfRenderer* pdf_renderer_, DocumentManager* docman, bool is_helper_, QWidget* parent)
     : QRhiWidget(parent)
 {
-     setApi(QRhiWidget::Api::OpenGL);
+#ifndef Q_OS_APPLE
+    //setApi(QRhiWidget::Api::OpenGL);
+#endif
 
     document_view = document_view_;
     pdf_renderer = pdf_renderer_;
