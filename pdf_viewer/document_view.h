@@ -703,7 +703,7 @@ public:
     void move_selection_begin(bool expand, bool word);
     void handle_move_text_mark_forward(bool word);
     void clear_selected_text();
-    void finish_drawing(QPoint pos);
+    void finish_drawing(QPoint pos, bool is_from_stylus);
     void handle_drawing_move(QPoint pos, float pressure);
     AbsoluteDocumentPos get_window_abspos(WindowPos window_pos);
     float get_current_freehand_alpha();

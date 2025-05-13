@@ -62,9 +62,11 @@ bool DELETE_MAGIC_DRAWINGS = true;
 std::wstring SIOYEK_HOST = L"http://192.168.1.63:8081/";
 bool SIMPLIFY_FREEHAND_DRAWINGS = false;
 #ifdef SIOYEK_IOS
-int FREEHAND_DRAWING_SMOOTH_AMOUNT = 8;
-#else
 int FREEHAND_DRAWING_SMOOTH_AMOUNT = 1;
+int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT = 8;
+#else
+int FREEHAND_DRAWING_SMOOTH_AMOUNT = 0;
+int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT = 1;
 #endif
 
 #ifdef SIOYEK_MOBILE
@@ -1579,6 +1581,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_int(L"reload_interval_miliseconds", &RELOAD_INTERVAL_MILISECONDS, IntExtras{0, 10000});
     add_int(L"max_custom_status_message_size", &MAX_CUSTOM_STATUS_MESSAGE_SIZE, IntExtras{5, 1000});
     add_int(L"freehand_drawing_smooth_amount", &FREEHAND_DRAWING_SMOOTH_AMOUNT, IntExtras{0, 20});
+    add_int(L"freehand_drawing_stylus_smooth_amount", &FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT, IntExtras{0, 20});
 
     add_ivec2(L"main_window_size", MAIN_WINDOW_SIZE);
     add_ivec2(L"helper_window_size", HELPER_WINDOW_SIZE);

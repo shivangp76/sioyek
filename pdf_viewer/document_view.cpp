@@ -49,6 +49,7 @@ extern wchar_t FREEHAND_TYPE;
 extern float FREEHAND_SIZE;
 extern bool SIMPLIFY_FREEHAND_DRAWINGS;
 extern int FREEHAND_DRAWING_SMOOTH_AMOUNT;
+extern int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -5556,14 +5557,19 @@ void DocumentView::clear_selected_text() {
 
 }
 
-void DocumentView::finish_drawing(QPoint pos) {
+void DocumentView::finish_drawing(QPoint pos, bool is_from_stylus) {
     is_drawing = false;
 
     if (current_drawing.points.size() == 0) {
         handle_drawing_move(pos, -1.0f);
     }
 
-    current_drawing.points = smooth_filter_drawing_points(current_drawing.points, FREEHAND_DRAWING_SMOOTH_AMOUNT);
+    if (is_from_stylus){
+        current_drawing.points = smooth_filter_drawing_points(current_drawing.points, FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT);
+    }
+    else{
+        current_drawing.points = smooth_filter_drawing_points(current_drawing.points, FREEHAND_DRAWING_SMOOTH_AMOUNT);
+    }
     //    for (int i = 0; i < 8; i++){
 //        current_drawing.points = smooth_filter_drawing_points(current_drawing.points);
 //    }

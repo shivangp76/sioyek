@@ -3372,7 +3372,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
 
 
     if (main_document_view->is_drawing) {
-        main_document_view->finish_drawing(mevent->pos());
+        main_document_view->finish_drawing(mevent->pos(), false);
         invalidate_render();
         return;
     }
@@ -9462,7 +9462,7 @@ void MainWidget::handle_pen_drawing_event(QTabletEvent* te) {
     }
 
     if (te->type() == QEvent::TabletRelease) {
-        main_document_view->finish_drawing(te->pos());
+        main_document_view->finish_drawing(te->pos(), true);
         invalidate_render();
     }
 
