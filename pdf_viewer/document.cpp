@@ -6309,38 +6309,47 @@ void Document::delete_drawings_with_network_request_id(int page, int request_id)
 }
 
 void Document::merge_with_server_drawings(const QMap<int, PageFreehandDrawing>& server_drawings, bool& has_local_drawings_not_on_server){
-    QSet<QByteArray> local_drawing_uuids;
-    QSet<QByteArray> server_drawing_uuids;
+    std::lock_guard<std::mutex> lock(drawings_mutex);
+
+    std::set<std::pair<quint64, quint64>> local_drawing_uuids;
+    std::set<std::pair<quint64, quint64>> server_drawing_uuids;
+
 
     for (auto& page_drawings : page_freehand_drawings){
         for (auto& drawing : page_drawings.drawings){
-            local_drawing_uuids.insert(QByteArray::fromRawData((char*)drawing.uuid.data, 16));
+            local_drawing_uuids.insert(std::make_pair(drawing.uuid.data64[0], drawing.uuid.data64[1]));
         }
     }
 
     for (auto& page_drawings : server_drawings){
         for (auto& drawing : page_drawings.drawings){
-            server_drawing_uuids.insert(QByteArray::fromRawData((char*)drawing.uuid.data, 16));
+            server_drawing_uuids.insert(std::make_pair(drawing.uuid.data64[0], drawing.uuid.data64[1]));
         }
-    }
-
-    has_local_drawings_not_on_server = !local_drawing_uuids.subtract(server_drawing_uuids).empty();
-    if (has_local_drawings_not_on_server){
-        // this will casue the drawings to be uploaded on exit
-        is_annotations_dirty = true;
     }
 
     for (auto& page : server_drawings.keys()){
         const PageFreehandDrawing& page_drawings = server_drawings[page];
         for (const FreehandDrawing& drawing : page_drawings.drawings){
-            if (!local_drawing_uuids.contains(QByteArray::fromRawData((char*)drawing.uuid.data, 16))){
+            if (local_drawing_uuids.find(std::make_pair(drawing.uuid.data64[0], drawing.uuid.data64[1])) == local_drawing_uuids.end()){
                 auto& local_page_drawings = page_freehand_drawings[page];
                 FreehandDrawing new_drawing = drawing;
                 new_drawing.is_synced = true;
                 local_page_drawings.drawings.push_back(new_drawing);
+                local_page_drawings.last_addition_time = QDateTime::currentDateTime();
                 is_drawings_dirty = true;
             }
         }
+    }
+
+    has_local_drawings_not_on_server = false;
+    for (auto local_uuid : local_drawing_uuids){
+        if (server_drawing_uuids.find(local_uuid) == server_drawing_uuids.end()){
+            has_local_drawings_not_on_server = true;
+        }
+    }
+    if (has_local_drawings_not_on_server){
+        // this will casue the drawings to be uploaded on exit
+        is_annotations_dirty = true;
     }
 
 }
