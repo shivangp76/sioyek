@@ -6314,7 +6314,6 @@ void Document::merge_with_server_drawings(const QMap<int, PageFreehandDrawing>& 
     std::set<std::pair<quint64, quint64>> local_drawing_uuids;
     std::set<std::pair<quint64, quint64>> server_drawing_uuids;
 
-
     for (auto& page_drawings : page_freehand_drawings){
         for (auto& drawing : page_drawings.drawings){
             local_drawing_uuids.insert(std::make_pair(drawing.uuid.data64[0], drawing.uuid.data64[1]));
@@ -6338,6 +6337,26 @@ void Document::merge_with_server_drawings(const QMap<int, PageFreehandDrawing>& 
                 local_page_drawings.last_addition_time = QDateTime::currentDateTime();
                 is_drawings_dirty = true;
             }
+        }
+    }
+
+    for (PageFreehandDrawing& page_drawings : page_freehand_drawings){
+        std::vector<int> indices_to_remove;
+
+        for (int i = 0; i < page_drawings.drawings.size(); i++){
+            FreehandDrawing& drawing = page_drawings.drawings[i];
+            auto uuid = std::make_pair(drawing.uuid.data64[0], drawing.uuid.data64[1]);
+            if (drawing.is_synced && server_drawing_uuids.find(uuid) == server_drawing_uuids.end()){
+                indices_to_remove.push_back(i);
+            }
+        }
+
+        for (int k = indices_to_remove.size() - 1; k >= 0; k--){
+            page_drawings.drawings.erase(page_drawings.drawings.begin() + indices_to_remove[k]);
+        }
+
+        if (indices_to_remove.size() > 0){
+            page_drawings.last_deletion_time = QDateTime::currentDateTime();
         }
     }
 
