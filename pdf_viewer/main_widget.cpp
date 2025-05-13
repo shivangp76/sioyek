@@ -644,7 +644,12 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     int status_bar_height = get_status_bar_height();
 
     if (text_command_line_edit_container != nullptr) {
-        text_command_line_edit_container->move(0, 0);
+        if (MACOS_HIDE_TITLEBAR){
+            text_command_line_edit_container->move(0, main_window_height - status_bar_height);
+        }
+        else{
+            text_command_line_edit_container->move(0, 0);
+        }
         text_command_line_edit_container->resize(main_window_width, status_bar_height);
     }
 
