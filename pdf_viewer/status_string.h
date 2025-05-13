@@ -26,6 +26,7 @@ const std::vector<QString> STATUS_STRING_PARTS = {
     "mode_string",
     "closest_bookmark",
     "closest_portal",
+    "selected_highlight",
     "rect_select",
     "point_select",
     "custom_message",

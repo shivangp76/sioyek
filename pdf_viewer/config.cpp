@@ -145,6 +145,7 @@ std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS = {
     {L"num_pages", L"show_touch_page_select"},
     {L"chapter_name", L"goto_toc"},
     {L"highlight", L"show_touch_highlight_type_select"},
+    {L"selected_highlight", L"add_annot_to_highlight"},
     {L"preview_index", L"next_overview"},
     {L"download_button", L"download_overview_paper_no_prompt"},
     {L"tts_status", L"stop_reading"},
