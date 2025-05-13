@@ -543,6 +543,7 @@ public:
 
     std::wstring get_addtional_sioyek_file_path(QString type);
     std::wstring get_drawings_file_path();
+    std::wstring get_old_drawings_file_path();
     std::wstring get_scratchpad_file_path();
     std::wstring get_extras_file_path();
     std::wstring get_annotations_file_path();

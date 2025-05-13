@@ -3992,6 +3992,9 @@ std::wstring Document::get_addtional_sioyek_file_path(QString type) {
 }
 
 std::wstring Document::get_drawings_file_path() {
+    return get_old_drawings_file_path() + L".bin";
+}
+std::wstring Document::get_old_drawings_file_path() {
     Path path = Path(file_name);
 #ifdef SIOYEK_ANDROID
     if (file_name == L":/tutorial.pdf") {
@@ -4209,8 +4212,8 @@ void Document::load_annotations(bool sync) {
 void Document::load_drawings() {
 
 
-    std::wstring drawing_file_path = get_drawings_file_path();
-    std::wstring binary_drawing_file_path = get_drawings_file_path() + L".bin";
+    std::wstring drawing_file_path = get_old_drawings_file_path();
+    std::wstring binary_drawing_file_path = get_drawings_file_path();
     QFileInfo binary_drawing_file_info(QString::fromStdWString(binary_drawing_file_path));
     if (binary_drawing_file_info.exists()){
         return load_drawings_binary();
@@ -4395,7 +4398,7 @@ QMap<int, PageFreehandDrawing>  Document::load_drawings_from_data(QByteArray& da
 }
 
 void Document::load_drawings_binary(){
-    std::wstring drawing_file_path = get_drawings_file_path() + L".bin";
+    std::wstring drawing_file_path = get_drawings_file_path();
     QFile binary_file(QString::fromStdWString(drawing_file_path));
     page_freehand_drawings.clear();
 
@@ -4475,7 +4478,7 @@ void Document::persist_drawings_binary(bool force){
         return;
     }
 
-    std::wstring drawing_file_path = get_drawings_file_path() + L".bin";
+    std::wstring drawing_file_path = get_drawings_file_path();
     QFile binary_file(QString::fromStdWString(drawing_file_path));
     if (!binary_file.open(QIODevice::WriteOnly)){
         qDebug() << "could not open " << drawing_file_path << " to write drawings.";
@@ -4497,7 +4500,7 @@ void Document::persist_drawings(bool force) {
         return;
     }
 
-    std::wstring drawing_file_path = get_drawings_file_path();
+    std::wstring drawing_file_path = get_old_drawings_file_path();
     QJsonObject root_object;
     QJsonObject drawings_object;
 
@@ -5785,7 +5788,7 @@ void DocumentManager::update_checksum(const std::string& old_checksum, const std
 }
 
 std::optional<QDateTime> Document::get_local_drawings_modification_time() {
-    QString drawing_file_path = QString::fromStdWString(get_drawings_file_path() + L".bin");
+    QString drawing_file_path = QString::fromStdWString(get_drawings_file_path());
     QFileInfo info(drawing_file_path);
     if (info.exists()) {
         return info.lastModified().toUTC();

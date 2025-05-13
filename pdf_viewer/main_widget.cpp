@@ -5138,7 +5138,7 @@ std::wstring MainWidget::get_window_configuration_string() {
 void MainWidget::upload_drawings(bool wait_for_send) {
     std::optional<std::string> checksum = doc()->get_checksum_fast();
     if (checksum) {
-        std::wstring file_path = doc()->get_drawings_file_path() + L".bin";
+        std::wstring file_path = doc()->get_drawings_file_path();
         QMap<int, PageFreehandDrawing> drawings = doc()->page_freehand_drawings;
 
         QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), file_path, [file_path, drawings]() mutable {
