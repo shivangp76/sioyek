@@ -9,7 +9,6 @@ layout(std140, binding = 0) uniform buf {
     vec2 scale;
     float depth;
     float time;
-    bool is_pending;
 };
 
 void main()

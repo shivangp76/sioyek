@@ -208,7 +208,6 @@ struct DrawingUniformBuffer {
     float scale[2];
     float depth;
     float time = 0;
-    bool is_pending = false;
 };
 
 // OpenGLSharedResources PdfViewOpenGLWidget::shared_gl_objects;
@@ -1464,14 +1463,20 @@ void SioyekRendererBackend::add_coordinates_for_window_point_no_fan(DocumentView
     for (int i = 0; i <= point_polygon_vertices; i++) {
         out_coordinates.push_back(window_x);
         out_coordinates.push_back(window_y);
+        out_coordinates.push_back(0);
+        out_coordinates.push_back(0);
         // out_coordinates.push_back(depth);
 
         out_coordinates.push_back(window_x + r * thickness_x * std::cos(2 * M_PI * i / point_polygon_vertices) / 2);
         out_coordinates.push_back(window_y + r * thickness_y * std::sin(2 * M_PI * i / point_polygon_vertices) / 2);
+        out_coordinates.push_back(0);
+        out_coordinates.push_back(0);
         // out_coordinates.push_back(depth);
 
         out_coordinates.push_back(window_x + r * thickness_x * std::cos(2 * M_PI * (i + 1) / point_polygon_vertices) / 2);
         out_coordinates.push_back(window_y + r * thickness_y * std::sin(2 * M_PI * (i + 1) / point_polygon_vertices) / 2);
+        out_coordinates.push_back(0);
+        out_coordinates.push_back(0);
         // out_coordinates.push_back(depth);
     }
 }
@@ -4127,7 +4132,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
 
         QRhiVertexInputLayout drawing_input_layout;
         drawing_input_layout.setBindings({
-            { 2 * sizeof(float) },
+            { 4 * sizeof(float) },
             { 4 * sizeof(float) },
         });
 
@@ -4155,7 +4160,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
             { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
         });
         drawing_input_layout.setAttributes({
-            { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+            { 0, 0, QRhiVertexInputAttribute::Float4, 0 },
             { 1, 1, QRhiVertexInputAttribute::Float4, 0 },
         });
 
@@ -4658,7 +4663,7 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
     float thickness_y = 0.5f;
     // float depth = 0;
 
-    int vertex_offset = prev_num_vertices * sizeof(float) * 2;
+    int vertex_offset = prev_num_vertices * sizeof(float) * 4;
     int color_offset = prev_num_vertices * sizeof(float) * 4;
     int num_vertices = 0;
 
@@ -4712,16 +4717,16 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
             if (last_top_right.has_value()){
                 // add a triangle from the current point the the corner of the last point
 
-                float upward_vertices[6] = {
-                    segment_begin_document_pos.x / page_width, segment_begin_document_pos.y / page_height,
-                    last_top_right->x / page_width, last_top_right->y / page_height,
-                    top_left.x / page_width, top_left.y / page_height
+                float upward_vertices[12] = {
+                    segment_begin_document_pos.x / page_width, segment_begin_document_pos.y / page_height, 0, 0,
+                    last_top_right->x / page_width, last_top_right->y / page_height, 0, 0,
+                    top_left.x / page_width, top_left.y / page_height, 0, 0,
                 };
 
-                float downward_vertices[6] = {
-                    segment_begin_document_pos.x / page_width, segment_begin_document_pos.y / page_height,
-                    last_bottom_right->x / page_width, last_bottom_right->y / page_height,
-                    bottom_left.x / page_width, bottom_left.y / page_height
+                float downward_vertices[12] = {
+                    segment_begin_document_pos.x / page_width, segment_begin_document_pos.y / page_height, 0, 0,
+                    last_bottom_right->x / page_width, last_bottom_right->y / page_height, 0, 0,
+                    bottom_left.x / page_width, bottom_left.y / page_height, 0, 0
                 };
 
                     // last_top_left->x / page_width, last_top_left->y / page_height,
@@ -4738,6 +4743,7 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
                     current_drawing_color[0], current_drawing_color[1], current_drawing_color[2], current_drawing_color[3],
                 };
 
+
                 if (!update_dynamic_buffer_safe(update_batch, vertex_buffer, vertex_offset, sizeof(upward_vertices), upward_vertices, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;
                 if (!update_dynamic_buffer_safe(update_batch, color_buffer, color_offset, sizeof(vertex_colors), vertex_colors, DRAWINGS_VERTEX_BUFFER_SIZE)) return num_vertices + prev_num_vertices;;
                 vertex_offset += sizeof(upward_vertices);
@@ -4751,14 +4757,14 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
                 num_vertices += 3;
             }
 
-            float vertices[12] = {
-                top_left.x / page_width, top_left.y / page_height,
-                bottom_left.x / page_width, bottom_left.y / page_height,
-                top_right.x / page_width, top_right.y / page_height,
+            float vertices[24] = {
+                top_left.x / page_width, top_left.y / page_height, 0, 0,
+                bottom_left.x / page_width, bottom_left.y / page_height, 0, 0,
+                top_right.x / page_width, top_right.y / page_height, 0, 0,
 
-                bottom_left.x / page_width, bottom_left.y / page_height,
-                bottom_right.x / page_width, bottom_right.y / page_height,
-                top_right.x / page_width, top_right.y / page_height,
+                bottom_left.x / page_width, bottom_left.y / page_height, 0, 0,
+                bottom_right.x / page_width, bottom_right.y / page_height, 0, 0,
+                top_right.x / page_width, top_right.y / page_height, 0, 0
             };
 
             float vertex_colors[24] = {
@@ -4788,7 +4794,7 @@ int PdfViewRhiWidget::update_resources_for_single_freehand_drawing(
             std::vector<float> point_triangles;
             std::vector<float> point_colors;
             add_coordinates_for_window_point_no_fan(dv, page_width, page_height, last_point_document_pos.x / page_width, last_point_document_pos.y / page_height, 0, last_point.thickness * 2, 10, point_triangles);
-            int num_point_vertices = point_triangles.size() / 2;
+            int num_point_vertices = point_triangles.size() / 4;
             for (int i = 0; i < num_point_vertices; i++){
                 point_colors.push_back(current_drawing_color[0]);
                 point_colors.push_back(current_drawing_color[1]);
