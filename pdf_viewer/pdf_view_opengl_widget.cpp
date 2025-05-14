@@ -5190,7 +5190,7 @@ void PdfViewRhiWidget::render_line_window(float vertical_pos, std::optional<Norm
     std::array<float, 4> vertical_line_color = cc4(DEFAULT_VERTICAL_LINE_COLOR);
     set_highlight_color(vertical_line_color.data(), vertical_line_color[3]);
 
-    if (ruler_rect.has_value()){
+    if (ruler_rect.has_value() && (RULER_DISPLAY_MODE == RulerDisplayMode::RulerSlit)){
         NormalizedWindowRect left_rect;
         left_rect.x0 = -1;
         left_rect.x1 = ruler_rect->x0;
@@ -5219,6 +5219,14 @@ void PdfViewRhiWidget::render_line_window(float vertical_pos, std::optional<Norm
         render_highlight_window(right_rect, HRF_FILL);
         render_highlight_window(top_rect, HRF_FILL);
         render_highlight_window(bottom_rect, HRF_FILL);
+    }
+    else{
+        NormalizedWindowRect rect;
+        rect.x0 = -1;
+        rect.x1 = 1;
+        rect.y0 = -1;
+        rect.y1 = vertical_pos;
+        render_highlight_window(rect, HRF_FILL);
     }
 
 }
