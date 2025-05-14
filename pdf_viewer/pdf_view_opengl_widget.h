@@ -485,6 +485,8 @@ private:
     std::vector<SioyekPageDrawingsShaderResources> cached_page_drawing_shader_resources;
 
     std::unique_ptr<QRhiGraphicsPipeline> colored_rect_pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> dark_pipeline;
+    std::unique_ptr<QRhiGraphicsPipeline> custom_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> highlight_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> inverted_highlight_pipeline;
     std::unique_ptr<QRhiGraphicsPipeline> paintover_highlight_pipeline;

@@ -5087,6 +5087,14 @@ void get_custom_color_transform_matrix(float matrix_data[16]) {
     matmul<4, 4, 4>(outputs, inputs_inverse, matrix_data);
 }
 
+void transpose_matrix(float mat[16]){
+    for (int i = 0; i < 4; i++){
+        for (int j = i + 1; j < 4; j++){
+            std::swap(mat[i * 4 + j], mat[j * 4 + i]);
+        }
+    }
+}
+
 // With qpainter backend we need to manually convert pixels to
 // the current colorscheme. The following code basically does this
 // conversion for every pixel. For performance reasons we cache the previous result

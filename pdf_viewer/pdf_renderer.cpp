@@ -252,7 +252,7 @@ std::optional<SioyekTextureType> PdfRenderer::try_closest_rendered_page(std::wst
             (cached_resp.request.path == doc_path) &&
             (cached_resp.request.display_scale == display_scale) &&
             (cached_resp.request.should_render_annotations == should_render_annotations) &&
-            (RENDERER_BACKEND == RenderBackend::SioyekOpenGLRendererBackend || cached_resp.request.color_palette == palette) &&
+            (RENDERER_BACKEND != RenderBackend::SioyekQPainterRendererBackend || cached_resp.request.color_palette == palette) &&
             (cached_resp.request.page == page) &&
             (cached_resp.texture.has_value())) {
             float diff = cached_resp.request.zoom_level - zoom_level;
@@ -659,7 +659,7 @@ void PdfRenderer::run(int thread_index) {
 
 
 
-                if (RENDERER_BACKEND != RenderBackend::SioyekOpenGLRendererBackend) {
+                if (RENDERER_BACKEND == RenderBackend::SioyekQPainterRendererBackend) {
 
                     if (req.color_palette == ColorPalette::Dark) {
                         convert_pixels_with_converter(rendered_pixmap->samples,
@@ -746,7 +746,7 @@ bool operator==(const RenderRequest& lhs, const RenderRequest& rhs) {
     if (rhs.should_render_annotations != lhs.should_render_annotations) {
         return false;
     }
-    if (RENDERER_BACKEND != RenderBackend::SioyekOpenGLRendererBackend) {
+    if (RENDERER_BACKEND == RenderBackend::SioyekQPainterRendererBackend) {
         if (rhs.color_palette != lhs.color_palette) {
             return false;
         }

@@ -215,6 +215,8 @@
         <file>qsb_shaders/prebuilt/color.frag.qsb</file>
         <file>qsb_shaders/prebuilt/color.vert.qsb</file>
         <file>qsb_shaders/prebuilt/colored_rect.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/dark.frag.qsb</file>
+        <file>qsb_shaders/prebuilt/custom.frag.qsb</file>
         <file>qsb_shaders/prebuilt/highlight.frag.qsb</file>
         <file>qsb_shaders/prebuilt/highlight_border.frag.qsb</file>
         <file>qsb_shaders/prebuilt/highlight_border.vert.qsb</file>

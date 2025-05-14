@@ -210,6 +210,12 @@ struct DrawingUniformBuffer {
     float time = 0;
 };
 
+struct RhiTextureUniformBuffer {
+    float transform_matrix[16] = {};
+    float depth;
+    float contrast;
+};
+
 // OpenGLSharedResources PdfViewOpenGLWidget::shared_gl_objects;
 
 
@@ -4039,7 +4045,7 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         QRhiShaderResourceBindings* texture_dummy_resource_bindings = rhi()->newShaderResourceBindings();
         texture_dummy_resource_bindings->setBindings({
             QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, nullptr, nullptr),
-            QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, nullptr)
+            QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage , nullptr)
         });
         texture_dummy_resource_bindings->create();
 
@@ -4065,6 +4071,8 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         // test_resource_bindings->create();
 
         colored_rect_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        dark_pipeline.reset(rhi_ptr->newGraphicsPipeline());
+        custom_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         inverted_highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
         paintover_highlight_pipeline.reset(rhi_ptr->newGraphicsPipeline());
@@ -4076,6 +4084,16 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         colored_rect_pipeline->setShaderStages({
             { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_texture.vert.qsb")) },
             { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/colored_rect.frag.qsb")) }
+        });
+
+        dark_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_texture.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/dark.frag.qsb")) }
+        });
+
+        custom_pipeline->setShaderStages({
+            { QRhiShaderStage::Vertex, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/simple_texture.vert.qsb")) },
+            { QRhiShaderStage::Fragment, get_rhi_shader(QLatin1String(":/qsb_shaders/prebuilt/custom.frag.qsb")) }
         });
 
         highlight_pipeline->setShaderStages({
@@ -4168,17 +4186,47 @@ void PdfViewRhiWidget::initialize(QRhiCommandBuffer *command_buffer)
         //     { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
         // });
 
-        colored_rect_pipeline->setVertexInputLayout(colored_rect_input_layout);
-        colored_rect_pipeline->setShaderResourceBindings(texture_dummy_resource_bindings);
-        colored_rect_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
-        colored_rect_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
-        colored_rect_pipeline->setDepthTest(true);
-        colored_rect_pipeline->setDepthWrite(true);
-        QRhiGraphicsPipeline::TargetBlend texture_target_blends;
-        texture_target_blends.enable = true;
-        colored_rect_pipeline->setTargetBlends({texture_target_blends});
-        colored_rect_pipeline->setSampleCount(sample_count);
-        colored_rect_pipeline->create();
+        {
+            colored_rect_pipeline->setVertexInputLayout(colored_rect_input_layout);
+            colored_rect_pipeline->setShaderResourceBindings(texture_dummy_resource_bindings);
+            colored_rect_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            colored_rect_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            colored_rect_pipeline->setDepthTest(true);
+            colored_rect_pipeline->setDepthWrite(true);
+            QRhiGraphicsPipeline::TargetBlend texture_target_blends;
+            texture_target_blends.enable = true;
+            colored_rect_pipeline->setTargetBlends({texture_target_blends});
+            colored_rect_pipeline->setSampleCount(sample_count);
+            colored_rect_pipeline->create();
+        }
+
+        {
+            dark_pipeline->setVertexInputLayout(colored_rect_input_layout);
+            dark_pipeline->setShaderResourceBindings(texture_dummy_resource_bindings);
+            dark_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            dark_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            dark_pipeline->setDepthTest(true);
+            dark_pipeline->setDepthWrite(true);
+            QRhiGraphicsPipeline::TargetBlend texture_target_blends;
+            texture_target_blends.enable = true;
+            dark_pipeline->setTargetBlends({texture_target_blends});
+            dark_pipeline->setSampleCount(sample_count);
+            dark_pipeline->create();
+        }
+
+        {
+            custom_pipeline->setVertexInputLayout(colored_rect_input_layout);
+            custom_pipeline->setShaderResourceBindings(texture_dummy_resource_bindings);
+            custom_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+            custom_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            custom_pipeline->setDepthTest(true);
+            custom_pipeline->setDepthWrite(true);
+            QRhiGraphicsPipeline::TargetBlend texture_target_blends;
+            texture_target_blends.enable = true;
+            custom_pipeline->setTargetBlends({texture_target_blends});
+            custom_pipeline->setSampleCount(sample_count);
+            custom_pipeline->create();
+        }
 
         {
             drawing_pipeline->setVertexInputLayout(drawing_input_layout);
@@ -4376,7 +4424,16 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     const QSize outputSize = renderTarget()->pixelSize();
     command_buffer->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
 
-    command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
+    if (document_view->get_current_color_mode() == ColorPalette::Custom){
+        command_buffer->setGraphicsPipeline(custom_pipeline.get());
+    }
+    else if (document_view->get_current_color_mode() == ColorPalette::Dark){
+        command_buffer->setGraphicsPipeline(dark_pipeline.get());
+    }
+    else{
+        command_buffer->setGraphicsPipeline(colored_rect_pipeline.get());
+    }
+
     render_current_frame_textures(command_buffer);
 
 
@@ -5029,7 +5086,12 @@ void PdfViewRhiWidget::update_resources_for_current_frame_texture_render_calls(Q
         float depth = 1.0f / static_cast<float>(current_frame_texture_render_calls[i].render_order + 2.0f);
         bool is_icon = current_frame_texture_render_calls[i].is_icon;
         SioyekTextureShaderResourceBinding* shader_resources = get_shader_resource_binding_for_texture(texture, is_icon);
-        update_batch->updateDynamicBuffer(shader_resources->uniform_buffer, 0, sizeof(float), &depth);
+        RhiTextureUniformBuffer uniforms;
+        uniforms.depth = depth;
+        uniforms.contrast = DARK_MODE_CONTRAST;
+        get_custom_color_transform_matrix(uniforms.transform_matrix);
+        transpose_matrix(uniforms.transform_matrix);
+        update_batch->updateDynamicBuffer(shader_resources->uniform_buffer, 0, sizeof(RhiTextureUniformBuffer), &uniforms);
         current_frame_texture_render_calls[i].bindings = shader_resources->shader_resource_binding;
 
         NormalizedWindowRect rect = current_frame_texture_render_calls[i].rect;
@@ -5372,7 +5434,7 @@ SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_bindin
             return &texture_shader_resource_bindings[i];
         }
     }
-    QRhiBuffer* uniform_buffer = rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(float));
+    QRhiBuffer* uniform_buffer = rhi()->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(RhiTextureUniformBuffer));
     uniform_buffer->create();
 
     QRhiShaderResourceBindings* new_texture_shader_resource_bindings = rhi()->newShaderResourceBindings();
@@ -5380,13 +5442,13 @@ SioyekTextureShaderResourceBinding* PdfViewRhiWidget::get_shader_resource_bindin
     if (is_icon){
         new_texture_shader_resource_bindings->setBindings({
               QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, linear_sampler.get()),
-              QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
+              QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, uniform_buffer)
           });
     }
     else{
         new_texture_shader_resource_bindings->setBindings({
               QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, nearest_sampler.get()),
-              QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage, uniform_buffer)
+              QRhiShaderResourceBinding::uniformBuffer(1, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, uniform_buffer)
           });
     }
 

@@ -5,7 +5,9 @@ layout(location = 1) in vec2 uv_in;
 layout(location = 0) out vec2 uv;
 
 layout(std140, binding = 1) uniform buf {
+    mat4 transform_matrix;
     float depth;
+    float contrast;
 };
 
 void main()
