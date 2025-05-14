@@ -50,6 +50,7 @@ extern float FREEHAND_SIZE;
 extern bool SIMPLIFY_FREEHAND_DRAWINGS;
 extern int FREEHAND_DRAWING_SMOOTH_AMOUNT;
 extern int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT;
+extern bool RECTO_VERSO_ADJUSTMENT;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -2400,17 +2401,18 @@ void DocumentView::fill_cached_virtual_rects(bool force) const{
                 page_rect.y0 = cum_offset;
                 page_rect.y1 = cum_offset + page_height;
 
+                int recto_verso = (int)RECTO_VERSO_ADJUSTMENT;
                 float leftmost_x = -(page_width + page_space_x) * NUM_PAGE_COLUMNS / 2;
-                if (i % NUM_PAGE_COLUMNS == (NUM_PAGE_COLUMNS - 1)) {
+                if ((i + recto_verso) % NUM_PAGE_COLUMNS == (NUM_PAGE_COLUMNS - 1)) {
                     cum_offset += page_height + page_space_y;
                 }
 
                 if (page_space_x >= 0) {
-                    page_rect.x0 = leftmost_x + (i % NUM_PAGE_COLUMNS) * (page_width + page_space_x);
+                    page_rect.x0 = leftmost_x + ((i + recto_verso) % NUM_PAGE_COLUMNS) * (page_width + page_space_x);
                     page_rect.x1 = page_rect.x0 + page_width;
                 }
                 else {
-                    page_rect.x0 = leftmost_x + (i % NUM_PAGE_COLUMNS) * (page_width + 2 * page_space_x);
+                    page_rect.x0 = leftmost_x + ((i + recto_verso) % NUM_PAGE_COLUMNS) * (page_width + 2 * page_space_x);
                     page_rect.x1 = page_rect.x0 + page_width +  page_space_x;
 
                 }

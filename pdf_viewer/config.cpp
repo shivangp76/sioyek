@@ -68,6 +68,7 @@ int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT = 8;
 int FREEHAND_DRAWING_SMOOTH_AMOUNT = 0;
 int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT = 1;
 #endif
+bool RECTO_VERSO_ADJUSTMENT = false;
 
 #ifdef SIOYEK_MOBILE
 bool TOUCH_MODE = true;
@@ -1460,6 +1461,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_bool(L"delete_magic_drawings", &DELETE_MAGIC_DRAWINGS);
     add_bool(L"uniform_page_widths", &SAME_WIDTH);
     add_bool(L"simplify_freehand_drawings", &SIMPLIFY_FREEHAND_DRAWINGS);
+    add_bool(L"recto_verso_adjustment", &RECTO_VERSO_ADJUSTMENT)->set_change_fn([](MainWidget* w){
+        w->dv()->fill_cached_virtual_rects(true);
+    });
 
     add_string(L"item_list_prefix", &ITEM_LIST_PREFIX);
     add_string(L"inverse_search_command", &INVERSE_SEARCH_COMMAND);
