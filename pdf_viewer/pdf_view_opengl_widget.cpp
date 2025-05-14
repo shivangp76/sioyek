@@ -5186,7 +5186,42 @@ void PdfViewRhiWidget::render_highlight_window(NormalizedWindowRect window_rect,
     current_frame_highlight_rect_render_calls.push_back(highlight_call);
 
 }
-void PdfViewRhiWidget::render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect){}
+void PdfViewRhiWidget::render_line_window(float vertical_pos, std::optional<NormalizedWindowRect> ruler_rect){
+    std::array<float, 4> vertical_line_color = cc4(DEFAULT_VERTICAL_LINE_COLOR);
+    set_highlight_color(vertical_line_color.data(), vertical_line_color[3]);
+
+    if (ruler_rect.has_value()){
+        NormalizedWindowRect left_rect;
+        left_rect.x0 = -1;
+        left_rect.x1 = ruler_rect->x0;
+        left_rect.y0 = -1;
+        left_rect.y1 = 1;
+
+        NormalizedWindowRect top_rect;
+        top_rect.x0 = ruler_rect->x0;
+        top_rect.x1 = ruler_rect->x1;
+        top_rect.y1 = 1;
+        top_rect.y0 = ruler_rect->y0;
+
+        NormalizedWindowRect bottom_rect;
+        bottom_rect.x0 = ruler_rect->x0;
+        bottom_rect.x1 = ruler_rect->x1;
+        bottom_rect.y1 = ruler_rect->y1;
+        bottom_rect.y0 = -1;
+
+        NormalizedWindowRect right_rect;
+        right_rect.x0 = ruler_rect->x1;;
+        right_rect.x1 = 1;
+        right_rect.y0 = -1;
+        right_rect.y1 = 1;
+
+        render_highlight_window(left_rect, HRF_FILL);
+        render_highlight_window(right_rect, HRF_FILL);
+        render_highlight_window(top_rect, HRF_FILL);
+        render_highlight_window(bottom_rect, HRF_FILL);
+    }
+
+}
 void PdfViewRhiWidget::prepare_initial_render_pipeline(){}
 
 void PdfViewRhiWidget::prepare_link_highlight_state(){
