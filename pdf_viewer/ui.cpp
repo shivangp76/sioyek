@@ -4209,9 +4209,9 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
 
     bookmark_uuid = uuid;
     main_widget = parent;
+    layout = new QVBoxLayout(this);
 
-    text_browser = new SioyekChatTextBrowser(this, content);
-    QObject::connect(text_browser, &SioyekChatTextBrowser::anchorClicked, [this](QString url_string) {
+    auto handle_anchor_clicked = [this](QString url_string){
         // percent decode the url string
         url_string = QUrl::fromPercentEncoding(url_string.toUtf8());
         if (url_string.startsWith("sioyeklink#")) {
@@ -4225,52 +4225,57 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
         else if (url_string.startsWith("http")) {
             open_web_url(url_string.toStdWString());
         }
+    };
+
+    if (!TOUCH_MODE){
+        text_browser = new SioyekChatTextBrowser(this, content);
+        QObject::connect(text_browser, &SioyekChatTextBrowser::anchorClicked, handle_anchor_clicked);
+
+
+
+        if (chat) {
+            line_edit = new MyLineEdit(main_widget);
+            line_edit->setPlaceholderText("Chat with the document.");
+            line_edit->setParent(this);
+            line_edit->setFont(get_chat_font_face_name());
+
+            QColor background_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR);
+            QColor text_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR);
+
+            line_edit->setStyleSheet("QLineEdit{background-color: " + background_color.name() + "; color: " + text_color.name() + "; border-radius: 0px; padding: 10px;}");
+            text_browser->setFocusPolicy(Qt::NoFocus);
+        }
+
+
+        layout->addWidget(text_browser);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(0);
+        if (chat) {
+            layout->addWidget(line_edit);
+        }
+
+        layout->setStretch(0, 1);
+
+        if (chat) {
+            line_edit->setFocus();
+        }
+    }
+    else{
+        touch_text_browser = new TouchChat(this);
+        layout->addWidget(touch_text_browser);
+        update_text(content);
+        QObject::connect(touch_text_browser, &TouchChat::anchorClicked, handle_anchor_clicked);
+        QObject::connect(touch_text_browser, &TouchChat::onMessageSend, [this](QString message){
+            main_widget->accept_new_bookmark_message_with_text(message);
         });
 
-
-
-    if (chat) {
-        line_edit = new MyLineEdit(main_widget);
-        line_edit->setPlaceholderText("Chat with the document.");
-        line_edit->setParent(this);
-        line_edit->setFont(get_chat_font_face_name());
-
-        QColor background_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR);
-        QColor text_color = convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR);
-
-        line_edit->setStyleSheet("QLineEdit{background-color: " + background_color.name() + "; color: " + text_color.name() + "; border-radius: 0px; padding: 10px;}");
-        text_browser->setFocusPolicy(Qt::NoFocus);
     }
 
-    layout = new QVBoxLayout(this);
-
-    layout->addWidget(text_browser);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
-    if (chat) {
-        layout->addWidget(line_edit);
-    }
-
-    layout->setStretch(0, 1);
-
-    if (chat) {
-        line_edit->setFocus();
-    }
 
     setLayout(layout);
 }
 
 
-QRect SioyekBookmarkTextBrowser::get_prefered_rect(QRect parent_rect){
-    int parent_width = parent_rect.width();
-    int parent_height = parent_rect.height();
-    return QRect(
-        parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2,
-        parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2,
-        parent_width * MENU_SCREEN_WDITH_RATIO,
-        parent_height * MENU_SCREEN_HEIGHT_RATIO
-        );
-}
 
 void SioyekBookmarkTextBrowser::resizeEvent(QResizeEvent* resize_event) {
 
@@ -4285,31 +4290,78 @@ void SioyekBookmarkTextBrowser::resizeEvent(QResizeEvent* resize_event) {
 
 }
 
+QList<ChatMessage> get_chat_messages_from_bookmark_text(QString new_text){
+    QList<ChatMessage> messages;
+
+    QStringList lines = new_text.split("\n", Qt::KeepEmptyParts);
+
+    QString current_response;
+    QString current_question;
+
+    for (auto line : lines) {
+        bool is_question = line.startsWith("? ");
+        QString actual_line_text = line;
+        if (is_question) {
+            actual_line_text = line.mid(2);
+        }
+        if (is_question && current_response.size() > 0) {
+            messages.push_back({ ChatMessageType::ResponseMessage, current_response });
+            current_response = "";
+        }
+        if (!is_question && current_question.size() > 0) {
+            messages.push_back({ ChatMessageType::UserMessage, current_question });
+            current_question = "";
+        }
+
+        if (is_question) {
+            current_question += actual_line_text + "\n\n";
+        }
+        else {
+            current_response += actual_line_text + "\n";
+        }
+    }
+    if (current_question.size() > 0) {
+        messages.push_back({ ChatMessageType::UserMessage, current_question });
+    }
+    if (current_response.size() > 0) {
+        messages.push_back({ ChatMessageType::ResponseMessage, current_response });
+    }
+    return messages;
+}
+
 void SioyekBookmarkTextBrowser::update_text(QString new_text) {
 
-    int current_scroll_amount = text_browser->verticalScrollBar()->value();
-    if (current_scroll_amount != last_set_scroll_amount) {
-        follow_output = false;
+    if (text_browser){
+        int current_scroll_amount = text_browser->verticalScrollBar()->value();
+        if (current_scroll_amount != last_set_scroll_amount) {
+            follow_output = false;
+        }
+
+        //text_browser->setMarkdown(new_text);
+        text_browser->update_text(new_text);
+
+
+        if (follow_output) {
+            int scroll_amount = text_browser->verticalScrollBar()->maximum();
+            text_browser->verticalScrollBar()->setValue(scroll_amount);
+            last_set_scroll_amount = scroll_amount;
+
+        }
+        else {
+            text_browser->verticalScrollBar()->setValue(current_scroll_amount);
+        }
     }
-
-    //text_browser->setMarkdown(new_text);
-    text_browser->update_text(new_text);
-
-
-    if (follow_output) {
-        int scroll_amount = text_browser->verticalScrollBar()->maximum();
-        text_browser->verticalScrollBar()->setValue(scroll_amount);
-        last_set_scroll_amount = scroll_amount;
-
-    }
-    else {
-        text_browser->verticalScrollBar()->setValue(current_scroll_amount);
+    else{
+        QList<ChatMessage> chat_messages = get_chat_messages_from_bookmark_text(new_text);
+        touch_text_browser->set_messages(chat_messages);
     }
 }
 
 void SioyekBookmarkTextBrowser::set_follow_output(bool val) {
-    last_set_scroll_amount = text_browser->verticalScrollBar()->value();
-    follow_output = val;
+    if (text_browser){
+        last_set_scroll_amount = text_browser->verticalScrollBar()->value();
+        follow_output = val;
+    }
 }
 
 std::pair<int, int> SioyekChatTextBrowser::get_cursor_message_and_char_index(QPoint cursor_pos, int forced_message_index) {
@@ -4465,42 +4517,11 @@ SioyekChatTextBrowser::SioyekChatTextBrowser(QWidget* parent, QString text): QAb
     chat_font.setPointSize(get_chat_font_size());
 }
 
+
 void SioyekChatTextBrowser::update_text(QString new_text) {
-    messages.clear();
+    // messages.clear();
     cached_documents.clear();
-    QStringList lines = new_text.split("\n", Qt::KeepEmptyParts);
-
-    QString current_response;
-    QString current_question;
-
-    for (auto line : lines) {
-        bool is_question = line.startsWith("? ");
-        QString actual_line_text = line;
-        if (is_question) {
-            actual_line_text = line.mid(2);
-        }
-        if (is_question && current_response.size() > 0) {
-            messages.push_back({ ChatMessageType::ResponseMessage, current_response });
-            current_response = "";
-        }
-        if (!is_question && current_question.size() > 0) {
-            messages.push_back({ ChatMessageType::UserMessage, current_question });
-            current_question = "";
-        }
-
-        if (is_question) {
-            current_question += actual_line_text + "\n\n";
-        }
-        else {
-            current_response += actual_line_text + "\n";
-        }
-    }
-    if (current_question.size() > 0) {
-        messages.push_back({ ChatMessageType::UserMessage, current_question });
-    }
-    if (current_response.size() > 0) {
-        messages.push_back({ ChatMessageType::ResponseMessage, current_response });
-    }
+    messages = get_chat_messages_from_bookmark_text(new_text);
 }
 
 void SioyekChatTextBrowser::paintEvent(QPaintEvent* event) {
@@ -4601,21 +4622,28 @@ void SioyekChatTextBrowser::wheelEvent(QWheelEvent* event) {
 
 void SioyekBookmarkTextBrowser::scroll_amount(int amount) {
 
-    int current_scroll_amount = text_browser->verticalScrollBar()->value();
-    int step = text_browser->verticalScrollBar()->singleStep() * amount * 60;
-    int new_scroll_amount = current_scroll_amount + step;
-    text_browser->verticalScrollBar()->setValue(new_scroll_amount);
-    last_set_scroll_amount = new_scroll_amount;
+    if (text_browser){
+        int current_scroll_amount = text_browser->verticalScrollBar()->value();
+        int step = text_browser->verticalScrollBar()->singleStep() * amount * 60;
+        int new_scroll_amount = current_scroll_amount + step;
+        text_browser->verticalScrollBar()->setValue(new_scroll_amount);
+        last_set_scroll_amount = new_scroll_amount;
+    }
 }
 
 void SioyekBookmarkTextBrowser::scroll_to_start(){
-    text_browser->verticalScrollBar()->setValue(0);
-    last_set_scroll_amount = 0;
+    if (text_browser){
+        text_browser->verticalScrollBar()->setValue(0);
+        last_set_scroll_amount = 0;
+    }
 }
 
 void SioyekBookmarkTextBrowser::scroll_to_end() {
-    text_browser->verticalScrollBar()->setValue(text_browser->verticalScrollBar()->maximum());
-    last_set_scroll_amount = text_browser->verticalScrollBar()->maximum();
+    if (text_browser){
+        text_browser->verticalScrollBar()->setValue(text_browser->verticalScrollBar()->maximum());
+        last_set_scroll_amount = text_browser->verticalScrollBar()->maximum();
+    }
+
 }
 
 void SioyekBookmarkTextBrowser::set_pending(bool pending) {
@@ -4763,3 +4791,35 @@ QRect SioyekResizableQWidget::get_prefered_rect(QRect parent_rect){
     int parent_height = parent_rect.height();
     return QRect(parent_width * 0.05f, 0, parent_width * 0.9f, parent_height);
 }
+
+QRect get_bookmark_chat_prefered_rect(QRect parent_rect){
+    int parent_width = parent_rect.width();
+    int parent_height = parent_rect.height();
+    return QRect(
+        parent_width * (1 - MENU_SCREEN_WDITH_RATIO) / 2,
+        parent_height * (1 - MENU_SCREEN_HEIGHT_RATIO) / 2,
+        parent_width * MENU_SCREEN_WDITH_RATIO,
+        parent_height * MENU_SCREEN_HEIGHT_RATIO
+        );
+}
+
+QRect SioyekBookmarkTextBrowser::get_prefered_rect(QRect parent_rect){
+    return get_bookmark_chat_prefered_rect(parent_rect);
+}
+
+// QRect SioyekTouchBookmarkTextBrowser::get_prefered_rect(QRect parent_rect){
+//     return get_bookmark_chat_prefered_rect(parent_rect);
+// }
+
+// SioyekTouchBookmarkTextBrowser::SioyekTouchBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content, bool chat) : QWidget(parent) {
+//     layout = new QVBoxLayout(this);
+//     text_browser = new TouchChat(this);
+//     layout->addWidget(text_browser);
+//     setLayout(layout);
+
+// }
+
+// void SioyekTouchBookmarkTextBrowser::update_text(QString new_text){
+//     QList<ChatMessage> chat_messages = get_chat_messages_from_bookmark_text(new_text);
+//     text_browser->set_messages(chat_messages);
+// }

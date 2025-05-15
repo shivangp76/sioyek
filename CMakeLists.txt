@@ -162,6 +162,7 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/touchui/TouchSettings.cpp pdf_viewer/touchui/TouchSettings.h
     pdf_viewer/touchui/TouchSlider.cpp pdf_viewer/touchui/TouchSlider.h
     pdf_viewer/touchui/TouchTextEdit.cpp pdf_viewer/touchui/TouchTextEdit.h
+    pdf_viewer/touchui/TouchChat.cpp pdf_viewer/touchui/TouchChat.h
     pdf_viewer/ui.cpp pdf_viewer/ui.h
     pdf_viewer/utf8.h
     pdf_viewer/utf8/checked.h

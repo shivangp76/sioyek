@@ -1234,6 +1234,7 @@ public:
     void open_selected_bookmark_in_widget(std::string bookmark_uuid="", bool force_chat=false, bool is_bookmark_pending=false);
     bool is_in_bookmark_widget_mode();
     void accept_new_bookmark_message();
+    void accept_new_bookmark_message_with_text(QString message);
     void update_current_bookmark_widget_text(BookMark* bm);
     QString get_selected_text_in_chat_window();
     std::optional<SioyekBookmarkTextBrowser*> get_current_bookmark_browser();

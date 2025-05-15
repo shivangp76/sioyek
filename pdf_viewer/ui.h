@@ -62,6 +62,7 @@
 #include "touchui/TouchDrawControls.h"
 #include "touchui/TouchMacroEditor.h"
 #include "touchui/TouchGenericButtons.h"
+#include "touchui/TouchChat.h"
 
 #include "mysortfilterproxymodel.h"
 #include "rapidfuzz_amalgamated.hpp"
@@ -1607,15 +1608,6 @@ public:
 };
 
 
-enum class ChatMessageType {
-    UserMessage,
-    ResponseMessage
-};
-
-struct ChatMessage {
-    ChatMessageType message_type;
-    QString messgae;
-};
 
 class SioyekChatTextBrowser : public QAbstractScrollArea {
     Q_OBJECT
@@ -1646,7 +1638,7 @@ protected:
 private:
     void update_scrollbar(int contentHeight);
 
-    std::vector<ChatMessage> messages;
+    QList<ChatMessage> messages;
     int full_width = 0;
     int response_content_width = 0;
     int user_box_width = 0;
@@ -1675,15 +1667,17 @@ private:
     QVBoxLayout* layout = nullptr;
     int last_set_scroll_amount = 0;
 
+
 protected:
     void resizeEvent(QResizeEvent* resize_event) override;
 public:
     bool follow_output = true;
-    bool is_pending = false;
     bool is_bookmark_pending = false;
+    bool is_pending = false;
     MyLineEdit* line_edit = nullptr;
     QString bookmark_uuid;
     SioyekChatTextBrowser* text_browser = nullptr;
+    TouchChat* touch_text_browser = nullptr;
 
     SioyekBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content, bool chat);
 
@@ -1699,3 +1693,28 @@ public:
     ~SioyekBookmarkTextBrowser();
 
 };
+
+// class sioyektouchbookmarktextbrowser : public qwidget {
+//     Q_OBJECT
+// private:
+//     MainWidget* main_widget = nullptr;
+
+// public:
+//     QString bookmark_uuid;
+//     QVBoxLayout* layout = nullptr;
+//     TouchChat* text_browser = nullptr;
+
+//     SioyekTouchBookmarkTextBrowser(MainWidget* parent, QString bookmark_uuid, QString content, bool chat);
+
+//     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+//     void update_text(QString new_text);
+
+//     // void set_follow_output(bool val);
+
+//     // void scroll_amount(int amount);
+//     // void scroll_to_start();
+//     // void scroll_to_end();
+//     // void set_pending(bool pending);
+//     // ~SioyekBookmarkTextBrowser();
+
+// };

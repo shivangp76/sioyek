@@ -987,3 +987,13 @@ AbsoluteDocumentPos FreehandDrawingPoint::get_pos(){
 QList<FreehandDrawingPoint> FreehandDrawing::get_points(){
     return points;
 }
+
+QString ChatMessage::get_message_type_string(){
+    if (message_type == ChatMessageType::ResponseMessage){
+        return "response";
+    }
+    if (message_type == ChatMessageType::UserMessage){
+        return "user";
+    }
+    return "";
+}

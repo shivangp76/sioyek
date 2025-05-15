@@ -103,6 +103,7 @@
 #include "touchui/TouchMarkSelector.h"
 #include "checksum.h"
 #include "touchui/TouchSettings.h"
+#include "touchui/TouchChat.h"
 #include "network_manager.h"
 #include "status_string.h"
 
@@ -8204,6 +8205,18 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
+    TouchChat* touch_chat = new TouchChat(this);
+    touch_chat->resize(500, 500);
+    touch_chat->show();
+
+    // QList<ChatMessage> new_messages;
+    // new_messages.push_back(ChatMessage{ChatMessageType::UserMessage, "new req"});
+    // new_messages.push_back(ChatMessage{ChatMessageType::ResponseMessage, "new resp"});
+    // touch_chat->set_messages(new_messages);
+    // QStringList list;
+
+    // touch_chat->set_messages(list);
+
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -14353,15 +14366,15 @@ void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, boo
     }
 }
 
-void MainWidget::accept_new_bookmark_message() {
+void MainWidget::accept_new_bookmark_message_with_text(QString message){
     if (current_widget_stack.size() > 0) {
         auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
-        if (bookmark_widget && bookmark_widget->line_edit && (!bookmark_widget->is_pending)) {
+        if (bookmark_widget){
             if (bookmark_widget->is_bookmark_pending) {
                 doc()->add_pending_bookmark(bookmark_widget->bookmark_uuid.toStdString(), L"");
                 bookmark_widget->is_bookmark_pending = false;
             }
-            QString text_ = bookmark_widget->line_edit->text();
+            QString text_ = message;
             QString text;
 
             for (auto line : text_.split("\n")) {
@@ -14373,9 +14386,19 @@ void MainWidget::accept_new_bookmark_message() {
             if (bookmark) {
                 bookmark->description += text.toStdWString();
                 handle_bookmark_ask_query(bookmark->description, utf8_decode(bookmark->uuid));
-                bookmark_widget->line_edit->clear();
                 bookmark_widget->set_follow_output(true);
             }
+        }
+    }
+}
+
+void MainWidget::accept_new_bookmark_message() {
+    if (current_widget_stack.size() > 0) {
+        auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
+        if (bookmark_widget && bookmark_widget->line_edit && (!bookmark_widget->is_pending)) {
+            QString text_ = bookmark_widget->line_edit->text();
+            accept_new_bookmark_message_with_text(text_);
+            bookmark_widget->line_edit->clear();
         }
     }
 
