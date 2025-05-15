@@ -9532,8 +9532,9 @@ void MainWidget::handle_toggle_drawing_mask(char symbol) {
 
 std::string MainWidget::get_current_mode_string() {
     std::string res;
+    bool is_line_select_mode = main_document_view->is_line_select_mode();
     res += (main_document_view->is_ruler_mode()) ? "r" : "R";
-    res += main_document_view->is_line_select_mode() ? "l" : "L";
+    res += is_line_select_mode ? "l" : "L";
     res += (synctex_mode) ? "x" : "X";
     //res += (is_select_highlight_mode) ? "h" : "H";
     res += (freehand_drawing_mode == DrawingMode::Drawing) ? "q" : "Q";
@@ -9548,7 +9549,7 @@ std::string MainWidget::get_current_mode_string() {
     res += is_in_bookmark_widget_mode() ? "b" : "B";
 
     if (main_document_view) {
-        res += (main_document_view->selected_character_rects.size() > 0) ? "t" : "T";
+        res += (main_document_view->selected_character_rects.size() > 0 && !is_line_select_mode) ? "t" : "T";
     }
     else {
         res += "T";
