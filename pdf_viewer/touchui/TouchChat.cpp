@@ -33,6 +33,7 @@ TouchChat::TouchChat(QWidget* parent) : QWidget(parent) {
     quick_widget->rootContext()->setContextProperty("_text_color", text_color);
     quick_widget->rootContext()->setContextProperty("_user_text_color", user_text_color);
     quick_widget->rootContext()->setContextProperty("_font_name", font_name);
+    quick_widget->rootContext()->setContextProperty("_pending", false);
 
     quick_widget->setSource(QUrl("qrc:/pdf_viewer/touchui/TouchChat.qml"));
 
@@ -71,4 +72,8 @@ void TouchChat::set_messages(QList<ChatMessage> messages){
     quick_widget->rootContext()->setContextProperty("_messages", QVariant::fromValue(messages));
     // model->setStringList(messages);
     // quick_widget->rootContext()->setContextProperty("_messages", model);
+}
+
+void TouchChat::set_pending(bool is_pending){
+    quick_widget->rootContext()->setContextProperty("_pending", is_pending);
 }

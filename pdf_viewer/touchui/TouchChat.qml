@@ -79,6 +79,7 @@ Rectangle {
             // anchors.verticalCenter: parent.verticalCenter
             verticalAlignment: "AlignVCenter"
             font: _font_name
+            enabled: !_pending
             id: input_text
 
             onAccepted: {
@@ -94,8 +95,8 @@ Rectangle {
             anchors.leftMargin: rootitem.anchorMargin
             verticalAlignment: "AlignVCenter"
             color: "#555"
-            visible: !input_text.focus && input_text.text.length == 0
-            text: "Ask"
+            visible: (!input_text.focus && input_text.text.length == 0) || _pending
+            text: _pending ? "Waiting for response ..." : "Ask"
 
         }
         Button{
@@ -105,6 +106,7 @@ Rectangle {
             anchors.top: parent.top
             anchors.margins: 5
             text: "Send"
+            visible: !_pending
             onClicked: {
                 message_input.handle_submit();
             }

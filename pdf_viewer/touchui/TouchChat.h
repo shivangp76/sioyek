@@ -11,6 +11,7 @@ public:
     TouchChat(QWidget* parent);
     void resizeEvent(QResizeEvent* resize_event) override;
     void set_messages(QList<ChatMessage> messages);
+    void set_pending(bool is_pending);
     // void update_context_properties();
 
 public slots:

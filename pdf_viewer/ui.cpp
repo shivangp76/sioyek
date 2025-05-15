@@ -4657,6 +4657,9 @@ void SioyekBookmarkTextBrowser::set_pending(bool pending) {
             line_edit->setStyleSheet("QLineEdit{background-color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR).name() + "; color: " + convert_float3_to_qcolor(CHAT_WINDOW_USER_TEXT_COLOR).name() + "; border-radius: 0px; padding: 10px;}");
         }
     }
+    if (touch_text_browser){
+        touch_text_browser->set_pending(is_pending);
+    }
 }
 
 SioyekBookmarkTextBrowser::~SioyekBookmarkTextBrowser() {
