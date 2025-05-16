@@ -50,6 +50,15 @@ TouchChat::TouchChat(QWidget* parent) : QWidget(parent) {
         this,
         SLOT(handleAnchorClicked(QString)));
 
+    QObject::connect(
+        dynamic_cast<QObject*>(quick_widget->rootObject()),
+        SIGNAL(showKeyboard()),
+        this,
+        SLOT(handleShowKeyboard()));
+
+    setFocusProxy(quick_widget);
+    quick_widget->setFocus();
+
 }
 
 
@@ -59,6 +68,10 @@ void TouchChat::handleOnMessageSend(QString message) {
 
 void TouchChat::handleAnchorClicked(QString message) {
     emit anchorClicked(message);
+}
+
+void TouchChat::handleShowKeyboard() {
+    emit showKeyboard();
 }
 
 void TouchChat::resizeEvent(QResizeEvent* resize_event) {

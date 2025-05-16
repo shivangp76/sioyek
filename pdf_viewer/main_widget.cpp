@@ -8215,18 +8215,6 @@ void MainWidget::free_renderer_resources_for_current_document() {
 }
 
 void MainWidget::handle_debug_command() {
-    TouchChat* touch_chat = new TouchChat(this);
-    touch_chat->resize(500, 500);
-    touch_chat->show();
-
-    // QList<ChatMessage> new_messages;
-    // new_messages.push_back(ChatMessage{ChatMessageType::UserMessage, "new req"});
-    // new_messages.push_back(ChatMessage{ChatMessageType::ResponseMessage, "new resp"});
-    // touch_chat->set_messages(new_messages);
-    // QStringList list;
-
-    // touch_chat->set_messages(list);
-
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
@@ -14856,3 +14844,9 @@ void MainWidget::apple_on_high_quality_tts_playback_finished(){
     }
 }
 #endif
+
+void MainWidget::focus_current_widget(){
+    if (current_widget_stack.size() > 0){
+        current_widget_stack.back()->setFocus();
+    }
+}

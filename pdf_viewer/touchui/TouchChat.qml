@@ -1,6 +1,5 @@
 import QtQuick 2.2
 import QtQuick.Controls 2.15
-import Qt.labs.platform 1.1
 
 Rectangle {
     id: rootitem
@@ -9,6 +8,7 @@ Rectangle {
 
     signal onMessageSend(message: string);
     signal anchorClicked(link: string);
+    signal showKeyboard();
 
     ListView {
         id: message_list
@@ -76,16 +76,26 @@ Rectangle {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.leftMargin: rootitem.anchorMargin
+            inputMethodHints: Qt.ImhPreferLowercase | Qt.ImhNoPredictiveText
             // anchors.verticalCenter: parent.verticalCenter
             verticalAlignment: "AlignVCenter"
             font: _font_name
             enabled: !_pending
             id: input_text
 
+            onActiveFocusChanged: {
+                if (activeFocus){
+                    /* emit */ showKeyboard();
+                }
+            }
+
             onAccepted: {
                 message_input.handle_submit();
             }
+
         }
+
+
         Text{
             id: placeholder_text
             anchors.left: input_text.anchors.left
@@ -99,6 +109,7 @@ Rectangle {
             text: _pending ? "Waiting for response ..." : "Ask"
 
         }
+
         Button{
             id: submit_button
             anchors.right: parent.right

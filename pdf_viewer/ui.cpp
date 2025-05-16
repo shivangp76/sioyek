@@ -4268,6 +4268,10 @@ SioyekBookmarkTextBrowser::SioyekBookmarkTextBrowser(MainWidget* parent, QString
         QObject::connect(touch_text_browser, &TouchChat::onMessageSend, [this](QString message){
             main_widget->accept_new_bookmark_message_with_text(message);
         });
+        QObject::connect(touch_text_browser, &TouchChat::showKeyboard, [this](){
+            main_widget->focus_current_widget();
+        });
+        setFocusProxy(touch_text_browser);
 
     }
 

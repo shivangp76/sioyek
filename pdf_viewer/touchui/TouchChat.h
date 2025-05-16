@@ -18,10 +18,12 @@ public slots:
     // void handleSelectText();
     void handleOnMessageSend(QString);
     void handleAnchorClicked(QString);
+    void handleShowKeyboard();
 
 signals:
     void onMessageSend(QString);
     void anchorClicked(QString);
+    void showKeyboard();
 private:
     QQuickWidget* quick_widget = nullptr;
     // QStringListModel* model = nullptr;
