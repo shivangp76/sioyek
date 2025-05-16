@@ -5286,8 +5286,11 @@ QColor qconvert_color3(const float* input_color, ColorPalette palette) {
 std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction) {
     // optimized version of find_smallest_substring_containing_fraction_of_n_grams_unoptimized
 
-    int n_gram_remaining_counts[256][256] = {0};
-    int n_gram_required_counts[256][256] = {0};
+//    int n_gram_remaining_counts[256][256] = {0};
+//    int n_gram_required_counts[256][256] = {0};
+    std::vector<std::vector<int>> n_gram_remaining_counts(256, std::vector<int>(256, 0));
+    std::vector<std::vector<int>> n_gram_required_counts(256, std::vector<int>(256, 0));
+
 
     std::unordered_map<std::wstring_view, int> n_gram_remaining_counts_unicode;
     std::unordered_map<std::wstring_view, int> n_gram_required_counts_unicode;
