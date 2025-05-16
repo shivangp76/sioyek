@@ -645,12 +645,16 @@ void MainWidget::resizeEvent(QResizeEvent* resize_event) {
     int status_bar_height = get_status_bar_height();
 
     if (text_command_line_edit_container != nullptr) {
+#ifdef Q_OS_MACOS
         if (MACOS_HIDE_TITLEBAR){
             text_command_line_edit_container->move(0, main_window_height - status_bar_height);
         }
         else{
             text_command_line_edit_container->move(0, 0);
         }
+#else
+        text_command_line_edit_container->move(0, 0);
+#endif
         text_command_line_edit_container->resize(main_window_width, status_bar_height);
     }
 
@@ -7330,7 +7334,7 @@ bool MainWidget::event(QEvent* event) {
                     if (bookmark_uuid.size() > 0) {
                         main_document_view->begin_bookmark_move(bookmark_uuid, hold_abspos);
                         main_document_view->set_selected_bookmark_uuid(bookmark_uuid);
-                        show_touch_buttons({ L"Delete", L"Edit" }, {}, [this](int index, std::wstring name) {
+                        show_touch_buttons({ L"Delete", L"Edit", L"Chat" }, {}, [this, bookmark_uuid](int index, std::wstring name) {
 
                             std::string selected_bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
                             if (selected_bookmark_uuid.size() > 0) {
@@ -7340,9 +7344,15 @@ bool MainWidget::event(QEvent* event) {
                                     pop_current_widget();
                                     invalidate_render();
                                 }
-                                else {
+                                else if (name == L"Edit"){
                                     pop_current_widget();
                                     handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
+                                    return;
+                                }
+                                else if (name == L"Chat"){
+                                    pop_current_widget();
+                                    open_selected_bookmark_in_widget(bookmark_uuid);
+                                    // handle_command_types(command_manager->get_command_with_name(this, "edit_selected_bookmark"), 0);
                                     return;
                                 }
                             }
