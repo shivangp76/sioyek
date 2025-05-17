@@ -6,7 +6,7 @@
 #include "TouchBaseWidget.h"
 #include "book.h"
 
-class TouchChat : public TouchShowKeyboardWidget {
+class TouchChat : public TouchBaseWidget {
     Q_OBJECT
 public:
     TouchChat(QWidget* parent);

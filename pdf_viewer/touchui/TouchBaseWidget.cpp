@@ -1,9 +1,9 @@
 #include "TouchBaseWidget.h"
 
-TouchShowKeyboardWidget::TouchShowKeyboardWidget(QWidget* parent) : QWidget(parent) {
+TouchBaseWidget::TouchBaseWidget(QWidget* parent) : QWidget(parent) {
 }
 
-void TouchShowKeyboardWidget::initialize_base(){
+void TouchBaseWidget::initialize_base(){
     setAttribute(Qt::WA_NoMousePropagation);
 
     quick_widget = new QQuickWidget(this);
@@ -19,7 +19,7 @@ void TouchShowKeyboardWidget::initialize_base(){
     quick_widget->setFocus();
 }
 
-void TouchShowKeyboardWidget::connect_show_signal(){
+void TouchBaseWidget::connect_show_signal(){
     QObject::connect(
         dynamic_cast<QObject*>(quick_widget->rootObject()),
         SIGNAL(showKeyboard()),
@@ -27,11 +27,11 @@ void TouchShowKeyboardWidget::connect_show_signal(){
         SLOT(handleShowKeyboard()));
 }
 
-void TouchShowKeyboardWidget::handleShowKeyboard(){
+void TouchBaseWidget::handleShowKeyboard(){
     quick_widget->setFocus();
 }
 
-void TouchShowKeyboardWidget::resizeEvent(QResizeEvent* resize_event) {
+void TouchBaseWidget::resizeEvent(QResizeEvent* resize_event) {
     quick_widget->resize(resize_event->size().width(), resize_event->size().height());
     QWidget::resizeEvent(resize_event);
 

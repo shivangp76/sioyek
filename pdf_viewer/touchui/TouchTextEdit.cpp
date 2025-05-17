@@ -22,7 +22,7 @@ void TouchTextEdit::initialize_widget(){
         SLOT(handleCancel()));
 }
 
-TouchTextEdit::TouchTextEdit(QString name_, QString initial_value_, bool is_password_, QWidget* parent) : TouchShowKeyboardWidget(parent) {
+TouchTextEdit::TouchTextEdit(QString name_, QString initial_value_, bool is_password_, QWidget* parent) : TouchBaseWidget(parent) {
     name = name_;
     initial_value = initial_value_;
     is_password = is_password_;

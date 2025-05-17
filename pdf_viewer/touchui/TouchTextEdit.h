@@ -7,7 +7,7 @@
 #include "TouchBaseWidget.h"
 
 
-class TouchTextEdit : public TouchShowKeyboardWidget {
+class TouchTextEdit : public TouchBaseWidget {
     Q_OBJECT
 public:
     TouchTextEdit(QString name, QString initial_value, bool is_password, QWidget* parent);

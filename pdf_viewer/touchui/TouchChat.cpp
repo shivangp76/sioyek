@@ -42,7 +42,7 @@ void TouchChat::initialize_widget() {
         SLOT(handleAnchorClicked(QString)));
 }
 
-TouchChat::TouchChat(QWidget* parent) : TouchShowKeyboardWidget(parent) {
+TouchChat::TouchChat(QWidget* parent) : TouchBaseWidget(parent) {
     initialize_base();
 }
 

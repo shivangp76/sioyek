@@ -6,10 +6,10 @@
 #include <QQuickItem>
 
 
-class TouchShowKeyboardWidget : public QWidget {
+class TouchBaseWidget : public QWidget {
     Q_OBJECT
 public:
-    TouchShowKeyboardWidget(QWidget* parent);
+    TouchBaseWidget(QWidget* parent);
 
     virtual void initialize_widget() = 0;
     void connect_show_signal();
