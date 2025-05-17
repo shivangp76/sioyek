@@ -7,20 +7,20 @@
 #include <QStringList>
 #include <QStringListModel>
 #include <QSortFilterProxyModel>
+#include "TouchBaseWidget.h"
 
 class MySortFilterProxyModel;
 
-class TouchListView : public QWidget {
+class TouchListView : public TouchBaseWidget {
     Q_OBJECT
 public:
     QString component_name = "TouchListView";
     QAbstractItemModel* model;
     MySortFilterProxyModel* proxy_model;
-    QQuickWidget* quick_widget = nullptr;
     TouchListView(bool is_fuzzy, QStringList elements, int selected_index, QWidget* parent = nullptr, bool deletable = false, QString component_name = "TouchListView");
     TouchListView(bool is_fuzzy, QAbstractItemModel* elements, int selected_index, QWidget* parent = nullptr, bool deletable = false, bool move = true, QString component_name="TouchListView", std::vector<std::pair<QString, QVariant>> context_variables = {});
-    void initialize(int selected_index, bool deletable, std::vector<std::pair<QString, QVariant>> context_props = {});
-    void resizeEvent(QResizeEvent* resize_event) override;
+    void initialize_widget() override;
+    // void resizeEvent(QResizeEvent* resize_event) override;
     void set_keyboard_focus();
     void keyPressEvent(QKeyEvent* kevent) override;
     void update_model();
@@ -34,5 +34,8 @@ signals:
     void itemSelected(QString value, int index);
     void itemPressAndHold(QString value, int index);
     void itemDeleted(QString value, int index);
-
+private:
+    int selected_index;
+    bool deletable;
+    std::vector<std::pair<QString, QVariant>> context_props = {};
 };

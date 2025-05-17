@@ -32,6 +32,7 @@ Rectangle {
     signal itemSelected(item: string, index: int)
     signal itemPressAndHold(item: string, index: int)
     signal itemDeleted(item: string, index: int)
+    signal showKeyboard();
     radius: 10
 
     // resize to avoid onscreen keyboard
@@ -64,6 +65,13 @@ Rectangle {
 
         onDisplayTextChanged: {
             lview.model.setFilterCustom(displayText);
+        }
+
+        onActiveFocusChanged: {
+            if (activeFocus){
+
+                /* emit */ showKeyboard();
+            }
         }
 
         onAccepted: {

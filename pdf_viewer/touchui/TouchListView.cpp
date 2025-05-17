@@ -4,18 +4,9 @@
 
 #include "mysortfilterproxymodel.h"
 
-void TouchListView::initialize(int selected_index, bool deletable, std::vector<std::pair<QString, QVariant>> context_props) {
-    setAttribute(Qt::WA_NoMousePropagation);
+void TouchListView::initialize_widget() {
 
     proxy_model->setSourceModel(model);
-
-    //    quick_widget = new QQuickWidget(QUrl("qrc:/pdf_viewer/touchui/TouchSlider.qml"), this);
-    quick_widget = new QQuickWidget(this);
-
-    quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
-    quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
-    quick_widget->setClearColor(Qt::transparent);
-    //quick_widget->setClearColor(Qt::transparent);
 
     quick_widget->rootContext()->setContextProperty("_selected_index", QVariant::fromValue(selected_index));
     quick_widget->rootContext()->setContextProperty("_focus", QVariant::fromValue(false));
@@ -48,10 +39,9 @@ void TouchListView::initialize(int selected_index, bool deletable, std::vector<s
     QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(itemSelected(QString, int)), this, SLOT(handleSelect(QString, int)));
     QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(itemPressAndHold(QString, int)), this, SLOT(handlePressAndHold(QString, int)));
     QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(itemDeleted(QString, int)), this, SLOT(handleDelete(QString, int)));
-    quick_widget->setFocus();
 }
 
-TouchListView::TouchListView(bool is_fuzzy, QAbstractItemModel* items_, int selected_index, QWidget* parent, bool deletable, bool move, QString component_name_, std::vector<std::pair<QString, QVariant>> props) : QWidget(parent) {
+TouchListView::TouchListView(bool is_fuzzy, QAbstractItemModel* items_, int selected_index_, QWidget* parent, bool deletable_, bool move, QString component_name_, std::vector<std::pair<QString, QVariant>> props) : TouchBaseWidget(parent) {
 
     component_name = component_name_;
     proxy_model = new MySortFilterProxyModel(is_fuzzy, false);
@@ -60,15 +50,22 @@ TouchListView::TouchListView(bool is_fuzzy, QAbstractItemModel* items_, int sele
     if (move) {
         items_->setParent(this);
     }
-    initialize(selected_index, deletable, props);
+    selected_index = selected_index_;
+    deletable = deletable_;
+    context_props = props;
+    initialize_base();
 }
 
-TouchListView::TouchListView(bool is_fuzzy, QStringList items_, int selected_index, QWidget* parent, bool deletable, QString component_name_) : QWidget(parent) {
+TouchListView::TouchListView(bool is_fuzzy, QStringList items_, int selected_index_, QWidget* parent, bool deletable_, QString component_name_) : TouchBaseWidget(parent) {
 
     component_name = component_name_;
     proxy_model = new MySortFilterProxyModel(is_fuzzy, false);
+    proxy_model->setParent(this);
     model = new QStringListModel(items_, this);
-    initialize(selected_index, deletable);
+
+    selected_index = selected_index_;
+    deletable = deletable_;
+    initialize_base();
 }
 
 void TouchListView::handleSelect(QString val, int index) {
@@ -86,11 +83,11 @@ void TouchListView::handlePressAndHold(QString val, int index) {
     emit itemPressAndHold(val, source_index);
 }
 
-void TouchListView::resizeEvent(QResizeEvent* resize_event) {
-    quick_widget->resize(resize_event->size().width(), resize_event->size().height());
-    QWidget::resizeEvent(resize_event);
+// void TouchListView::resizeEvent(QResizeEvent* resize_event) {
+//     quick_widget->resize(resize_event->size().width(), resize_event->size().height());
+//     QWidget::resizeEvent(resize_event);
 
-}
+// }
 
 void TouchListView::set_keyboard_focus() {
     quick_widget->rootContext()->setContextProperty("_focus", QVariant::fromValue(true));
