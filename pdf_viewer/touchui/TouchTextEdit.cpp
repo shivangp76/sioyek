@@ -3,21 +3,7 @@
 #include <QVBoxLayout>
 
 
-TouchTextEdit::TouchTextEdit(QString name, QString initial_value, bool is_password, QWidget* parent) : TouchShowKeyboardWidget(parent) {
-
-
-    setAttribute(Qt::WA_NoMousePropagation);
-
-    quick_widget = new QQuickWidget(this);
-
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->addWidget(quick_widget);
-    setLayout(layout);
-
-    quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
-    quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
-    quick_widget->setClearColor(Qt::transparent);
-
+void TouchTextEdit::initialize_widget(){
     quick_widget->rootContext()->setContextProperty("_initialValue", initial_value);
     quick_widget->rootContext()->setContextProperty("_name", name);
     quick_widget->rootContext()->setContextProperty("_isPassword", is_password);
@@ -34,11 +20,13 @@ TouchTextEdit::TouchTextEdit(QString name, QString initial_value, bool is_passwo
         SIGNAL(cancelled()),
         this,
         SLOT(handleCancel()));
+}
 
-    connect_show_signal();
-
-    quick_widget->setFocus();
-
+TouchTextEdit::TouchTextEdit(QString name_, QString initial_value_, bool is_password_, QWidget* parent) : TouchShowKeyboardWidget(parent) {
+    name = name_;
+    initial_value = initial_value_;
+    is_password = is_password_;
+    initialize_base();
 }
 
 void TouchTextEdit::set_text(const std::wstring& txt) {

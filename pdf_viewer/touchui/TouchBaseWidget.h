@@ -11,11 +11,14 @@ class TouchShowKeyboardWidget : public QWidget {
 public:
     TouchShowKeyboardWidget(QWidget* parent);
 
+    virtual void initialize_widget() = 0;
     void connect_show_signal();
 public slots:
     void handleShowKeyboard();
+    void resizeEvent(QResizeEvent* resize_event);
 
 protected:
     QQuickWidget* quick_widget = nullptr;
+    void initialize_base();
 
 };

@@ -9,16 +9,7 @@ extern float CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR[3];
 extern float CHAT_WINDOW_TEXT_COLOR[3];
 extern float CHAT_WINDOW_USER_TEXT_COLOR[3];
 
-TouchChat::TouchChat(QWidget* parent) : TouchShowKeyboardWidget(parent) {
-
-    setAttribute(Qt::WA_NoMousePropagation);
-
-    quick_widget = new QQuickWidget(this);
-
-    quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
-    quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
-    quick_widget->setClearColor(Qt::transparent);
-
+void TouchChat::initialize_widget() {
     QList<ChatMessage> messages;
 
     QColor user_background_color = qconvert_color3(CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR, ColorPalette::Normal);
@@ -49,17 +40,10 @@ TouchChat::TouchChat(QWidget* parent) : TouchShowKeyboardWidget(parent) {
         SIGNAL(anchorClicked(QString)),
         this,
         SLOT(handleAnchorClicked(QString)));
+}
 
-    connect_show_signal();
-    // QObject::connect(
-    //     dynamic_cast<QObject*>(quick_widget->rootObject()),
-    //     SIGNAL(showKeyboard()),
-    //     this,
-    //     SLOT(handleShowKeyboard()));
-
-    setFocusProxy(quick_widget);
-    quick_widget->setFocus();
-
+TouchChat::TouchChat(QWidget* parent) : TouchShowKeyboardWidget(parent) {
+    initialize_base();
 }
 
 
@@ -71,21 +55,9 @@ void TouchChat::handleAnchorClicked(QString message) {
     emit anchorClicked(message);
 }
 
-// void TouchChat::handleShowKeyboard() {
-//     quick_widget->setFocus();
-// }
-
-void TouchChat::resizeEvent(QResizeEvent* resize_event) {
-    quick_widget->resize(resize_event->size().width(), resize_event->size().height());
-    QWidget::resizeEvent(resize_event);
-
-}
-
 void TouchChat::set_messages(QList<ChatMessage> messages){
 
     quick_widget->rootContext()->setContextProperty("_messages", QVariant::fromValue(messages));
-    // model->setStringList(messages);
-    // quick_widget->rootContext()->setContextProperty("_messages", model);
 }
 
 void TouchChat::set_pending(bool is_pending){
