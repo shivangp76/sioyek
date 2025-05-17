@@ -3,7 +3,7 @@
 #include <QWidget>
 #include <QQuickWidget>
 #include <QStringListModel>
-#include "TouchShowKeyboardWidget.h"
+#include "TouchBaseWidget.h"
 #include "book.h"
 
 class TouchChat : public TouchShowKeyboardWidget {

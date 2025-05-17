@@ -4,7 +4,7 @@
 #include <QQuickWidget>
 #include <QQmlContext>
 #include <QQuickItem>
-#include "TouchShowKeyboardWidget.h"
+#include "TouchBaseWidget.h"
 
 
 class TouchTextEdit : public TouchShowKeyboardWidget {

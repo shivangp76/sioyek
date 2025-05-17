@@ -1,4 +1,4 @@
-#include "TouchShowKeyboardWidget.h"
+#include "TouchBaseWidget.h"
 
 TouchShowKeyboardWidget::TouchShowKeyboardWidget(QWidget* parent) : QWidget(parent) {
 }
