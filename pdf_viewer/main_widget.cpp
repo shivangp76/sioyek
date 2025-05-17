@@ -877,7 +877,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         return;
     }
 
-    if (main_document_view->visible_object_scroll_data) {
+    if (main_document_view->visible_object_scroll_data && !main_document_view->visible_object_scroll_data->has_mouse_lifted) {
 
         std::string uuid = main_document_view->visible_object_scroll_data->object_uuid;
         float height = background_bookmark_renderer->get_cached_bookmark_height(uuid);
@@ -1804,6 +1804,13 @@ void MainWidget::handle_validation_interval_timeout(){
         QFileInfo file_info(file_name);
         if (file_info.lastModified().msecsTo(shell_bookmark.last_update_time) < 0){
             on_bookmark_shell_output_updated(shell_bookmark.uuid, file_name);
+        }
+    }
+    if (main_document_view->visible_object_scroll_data.has_value()){
+        bool mouse_lifted = main_document_view->visible_object_scroll_data->has_mouse_lifted;
+
+        if ((main_document_view->visible_object_scroll_data->speed == 0 && mouse_lifted) || main_document_view->visible_object_scroll_data->type != VisibleObjectType::Bookmark){
+            main_document_view->visible_object_scroll_data = {};
         }
     }
 
@@ -3064,7 +3071,18 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
         }
 
         if (main_document_view->visible_object_scroll_data) {
-            main_document_view->visible_object_scroll_data = {};
+            if (main_document_view->visible_object_scroll_data->speed == 0){
+                main_document_view->visible_object_scroll_data = {};
+            }
+            else{
+                validation_interval_timer->setInterval(0);
+                main_document_view->visible_object_scroll_data->has_mouse_lifted = true;
+                last_speed_update_time = QTime::currentTime();
+                if (main_document_view->visible_object_scroll_data->type == VisibleObjectType::Bookmark){
+                    main_document_view->visible_object_scroll_data->bookmark_height =  background_bookmark_renderer->get_cached_bookmark_height(
+                                main_document_view->visible_object_scroll_data->object_uuid);
+                }
+            }
             //return;
         }
 
@@ -3431,7 +3449,9 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
 
     }
 
-    main_document_view->visible_object_scroll_data = {};
+    if (main_document_view->visible_object_scroll_data.has_value() && main_document_view->visible_object_scroll_data->speed == 0){
+        main_document_view->visible_object_scroll_data = {};
+    }
 
     if (mevent->button() == Qt::MouseButton::RightButton) {
         if (is_shift_pressed) {
@@ -7693,8 +7713,11 @@ bool MainWidget::is_flicking(QPointF* out_velocity) {
     if (main_document_view->get_overview_page()) {
         return false;
     }
+    bool flicking_scrollable_object = false;
+    QPointF scrollable_object_velocity = QPointF(0, 0);
     if (main_document_view->visible_object_scroll_data.has_value()) {
-        return false;
+        flicking_scrollable_object = true;
+        out_velocity = &scrollable_object_velocity;
     }
 
     std::vector<float> speeds;
@@ -7725,6 +7748,13 @@ bool MainWidget::is_flicking(QPointF* out_velocity) {
 
     if (out_velocity) {
         *out_velocity = 2 * compute_average<QPointF>(velocities);
+    }
+
+    if (flicking_scrollable_object){
+        if (average_speed > 500.0f){
+            main_document_view->visible_object_scroll_data->speed = scrollable_object_velocity.y();
+        }
+        return false;
     }
 
     if (average_speed > 500.0f) {

@@ -414,6 +414,9 @@ struct VisibleObjectScrollData {
     float original_scroll_amount;
     std::optional<float> original_scroll_amount_x = {};
     AbsoluteDocumentPos original_mouse_pos;
+    bool has_mouse_lifted = false;
+    float speed = 0;
+    float bookmark_height = 0;
 };
 
 

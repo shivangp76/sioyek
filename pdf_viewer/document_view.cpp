@@ -4798,6 +4798,24 @@ void DocumentView::velocity_tick(float secs, bool horizontal_scroll_locked){
         velocity_y = dampen_velocity(velocity_y, secs);
     }
 
+    if (visible_object_scroll_data.has_value() && (visible_object_scroll_data->speed != 0) && visible_object_scroll_data->has_mouse_lifted){
+        std::string bookmark_uuid = visible_object_scroll_data->object_uuid;
+        BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
+        if (bookmark){
+            QDateTime current_time = QDateTime::currentDateTime();
+
+            float current_scroll = get_bookmark_scroll_amount(bookmark_uuid);
+            float new_scroll = current_scroll + visible_object_scroll_data->speed * secs;
+            float height = visible_object_scroll_data->bookmark_height;
+            if (new_scroll > (height - bookmark->get_rectangle()->height() * get_zoom_level())) {
+                new_scroll = height - bookmark->get_rectangle()->height() * get_zoom_level();
+            }
+            set_bookmark_scroll_amount(bookmark_uuid, new_scroll);
+        }
+
+        visible_object_scroll_data->speed = dampen_velocity(visible_object_scroll_data->speed, secs);
+    }
+
     if (!TOUCH_MODE) {
         if (!is_velocity_fixed) {
             // when using smooth_move commands not in touch mode we stop much faster
@@ -4808,7 +4826,7 @@ void DocumentView::velocity_tick(float secs, bool horizontal_scroll_locked){
 }
 
 bool DocumentView::is_moving(){
-    return (velocity_x != 0) || (velocity_y != 0);
+    return (velocity_x != 0) || (velocity_y != 0) || (visible_object_scroll_data.has_value() && visible_object_scroll_data->speed != 0);
 }
 
 void DocumentView::move_selected_bookmark_to_pos(AbsoluteDocumentPos pos) {
