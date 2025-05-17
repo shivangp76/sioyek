@@ -9,6 +9,7 @@
 #include <QSortFilterProxyModel>
 #include "mysortfilterproxymodel.h"
 #include "config.h"
+#include "TouchBaseWidget.h"
 
 
 class Config;
@@ -28,13 +29,14 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
 };
 
-class TouchConfigMenu : public QWidget {
+class TouchConfigMenu : public TouchBaseWidget {
     Q_OBJECT
 public:
     //TouchConfigMenu(std::vector<Config>* configs, QWidget* parent = nullptr);
     TouchConfigMenu(bool fuzzy, MainWidget* main_widget);
     // void resizeEvent(QResizeEvent* resize_event) override;
     Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+    void initialize_widget() override;
 
 public slots:
     void handleColor3ConfigChanged(QString config_name, qreal r, qreal g, qreal b);
@@ -54,12 +56,12 @@ signals:
     //void itemDeleted(QString value, int index);
 
 private:
-    QQuickWidget* quick_widget = nullptr;
     ConfigManager* config_manager;
     //QStringList items;
     //QStringListModel model;
     MainWidget* main_widget;
     ConfigModel config_model;
     MySortFilterProxyModel* proxy_model;
+    bool fuzzy;
 
 };

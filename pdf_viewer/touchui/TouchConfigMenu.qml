@@ -53,6 +53,7 @@ Rectangle {
     signal color4ConfigChanged(configName: string, r: real, g: real, b: real, a: real);
     signal onSetConfigPressed(configName: string);
     signal onSaveButtonClicked();
+    signal showKeyboard();
     // signal itemPressAndHold(item: string, index: int)
     // signal itemDeleted(item: string, index: int)
     radius: 10
@@ -87,6 +88,13 @@ Rectangle {
                 color: "#888"
                 visible: !query.text
                 font.pixelSize: 15
+            }
+
+            onActiveFocusChanged: {
+                if (activeFocus){
+
+                    /* emit */ showKeyboard();
+                }
             }
 
 

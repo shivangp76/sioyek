@@ -4,32 +4,12 @@
 #include "main_widget.h"
 #include "config.h"
 
-
-TouchConfigMenu::TouchConfigMenu(bool fuzzy, MainWidget* main_widget) :
-    QWidget(main_widget),
-    config_model(main_widget->config_manager->get_configs_ptr()),
-    config_manager(main_widget->config_manager),
-    main_widget(main_widget)
-{
-
-    setAttribute(Qt::WA_NoMousePropagation);
-
+void TouchConfigMenu::initialize_widget() {
     proxy_model = new MySortFilterProxyModel(fuzzy, false);
     proxy_model->setParent(this);
 
     proxy_model->setSourceModel(&config_model);
     proxy_model->setFilterKeyColumn(1);
-
-    //    quick_widget = new QQuickWidget(QUrl("qrc:/pdf_viewer/touchui/TouchSlider.qml"), this);
-    quick_widget = new QQuickWidget(this);
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->addWidget(quick_widget);
-    setLayout(layout);
-
-    quick_widget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
-    quick_widget->setAttribute(Qt::WA_AlwaysStackOnTop);
-    quick_widget->setClearColor(Qt::transparent);
-    //quick_widget->setClearColor(Qt::transparent);
 
     quick_widget->rootContext()->setContextProperty("_model", QVariant::fromValue(proxy_model));
     quick_widget->rootContext()->setContextProperty("_deletable", QVariant::fromValue(proxy_model));
@@ -62,9 +42,17 @@ TouchConfigMenu::TouchConfigMenu(bool fuzzy, MainWidget* main_widget) :
         SIGNAL(onSaveButtonClicked()),
         this,
         SLOT(handleSaveButtonClicked()));
-    //QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(itemPressAndHold(QString, int)), this, SLOT(handlePressAndHold(QString, int)));
-    //QObject::connect(dynamic_cast<QObject*>(quick_widget->rootObject()), SIGNAL(itemDeleted(QString, int)), this, SLOT(handleDelete(QString, int)));
 
+}
+
+TouchConfigMenu::TouchConfigMenu(bool fuzzy_, MainWidget* main_widget) :
+    TouchBaseWidget(main_widget),
+    main_widget(main_widget),
+    config_manager(main_widget->config_manager),
+    config_model(main_widget->config_manager->get_configs_ptr())
+{
+    fuzzy = fuzzy_;
+    initialize_base();
 }
 
 void TouchConfigMenu::handleBoolConfigChanged(QString config_name, bool new_value) {
