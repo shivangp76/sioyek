@@ -1181,7 +1181,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
 #endif
 
-#ifdef Q_OS_MACOS
+#if defined(Q_OS_MACOS) and QT_VERSION > QT_VERSION_CHECK(6, 8, 0)
     if (MACOS_HIDE_TITLEBAR){
         setWindowFlag(Qt::ExpandedClientAreaHint, true);
         setWindowFlag(Qt::NoTitleBarBackgroundHint, true);
@@ -14844,9 +14844,3 @@ void MainWidget::apple_on_high_quality_tts_playback_finished(){
     }
 }
 #endif
-
-void MainWidget::focus_current_widget(){
-    if (current_widget_stack.size() > 0){
-        current_widget_stack.back()->setFocus();
-    }
-}

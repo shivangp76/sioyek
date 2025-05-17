@@ -85,6 +85,7 @@ Rectangle {
 
             onActiveFocusChanged: {
                 if (activeFocus){
+
                     /* emit */ showKeyboard();
                 }
             }

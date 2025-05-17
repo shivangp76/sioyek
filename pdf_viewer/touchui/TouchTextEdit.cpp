@@ -3,7 +3,7 @@
 #include <QVBoxLayout>
 
 
-TouchTextEdit::TouchTextEdit(QString name, QString initial_value, bool is_password, QWidget* parent) : QWidget(parent) {
+TouchTextEdit::TouchTextEdit(QString name, QString initial_value, bool is_password, QWidget* parent) : TouchShowKeyboardWidget(parent) {
 
 
     setAttribute(Qt::WA_NoMousePropagation);
@@ -34,6 +34,9 @@ TouchTextEdit::TouchTextEdit(QString name, QString initial_value, bool is_passwo
         SIGNAL(cancelled()),
         this,
         SLOT(handleCancel()));
+
+    connect_show_signal();
+
     quick_widget->setFocus();
 
 }

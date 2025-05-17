@@ -10,6 +10,7 @@ Rectangle {
 
     signal confirmed(text: string);
     signal cancelled();
+    signal showKeyboard();
     id: root
 
 
@@ -54,6 +55,12 @@ Rectangle {
                 onAccepted:{
                     root.confirmed(edit.loaderItem.text);
                 }
+                onActiveFocusChanged: {
+                    if (activeFocus){
+
+                        /* emit */ showKeyboard();
+                    }
+                }
             }
         }
 
@@ -69,6 +76,13 @@ Rectangle {
                 wrapMode: TextInput.WrapAnywhere
                 onAccepted:{
                     root.confirmed(edit.loaderItem.text);
+                }
+
+                onActiveFocusChanged: {
+                    if (activeFocus){
+
+                        /* emit */ showKeyboard();
+                    }
                 }
             }
         }

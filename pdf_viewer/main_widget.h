@@ -1260,7 +1260,6 @@ public:
     QJsonObject get_current_user();
     void on_playback_finished_callback();
     void show_touch_auido_ui_if_in_touch_mode();
-    void focus_current_widget();
 
 
 public slots:

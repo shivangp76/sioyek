@@ -9,7 +9,7 @@ extern float CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR[3];
 extern float CHAT_WINDOW_TEXT_COLOR[3];
 extern float CHAT_WINDOW_USER_TEXT_COLOR[3];
 
-TouchChat::TouchChat(QWidget* parent) : QWidget(parent) {
+TouchChat::TouchChat(QWidget* parent) : TouchShowKeyboardWidget(parent) {
 
     setAttribute(Qt::WA_NoMousePropagation);
 
@@ -50,11 +50,12 @@ TouchChat::TouchChat(QWidget* parent) : QWidget(parent) {
         this,
         SLOT(handleAnchorClicked(QString)));
 
-    QObject::connect(
-        dynamic_cast<QObject*>(quick_widget->rootObject()),
-        SIGNAL(showKeyboard()),
-        this,
-        SLOT(handleShowKeyboard()));
+    connect_show_signal();
+    // QObject::connect(
+    //     dynamic_cast<QObject*>(quick_widget->rootObject()),
+    //     SIGNAL(showKeyboard()),
+    //     this,
+    //     SLOT(handleShowKeyboard()));
 
     setFocusProxy(quick_widget);
     quick_widget->setFocus();
@@ -70,9 +71,9 @@ void TouchChat::handleAnchorClicked(QString message) {
     emit anchorClicked(message);
 }
 
-void TouchChat::handleShowKeyboard() {
-    emit showKeyboard();
-}
+// void TouchChat::handleShowKeyboard() {
+//     quick_widget->setFocus();
+// }
 
 void TouchChat::resizeEvent(QResizeEvent* resize_event) {
     quick_widget->resize(resize_event->size().width(), resize_event->size().height());

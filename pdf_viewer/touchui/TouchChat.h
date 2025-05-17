@@ -3,9 +3,10 @@
 #include <QWidget>
 #include <QQuickWidget>
 #include <QStringListModel>
+#include "TouchShowKeyboardWidget.h"
 #include "book.h"
 
-class TouchChat : public QWidget {
+class TouchChat : public TouchShowKeyboardWidget {
     Q_OBJECT
 public:
     TouchChat(QWidget* parent);
@@ -18,15 +19,10 @@ public slots:
     // void handleSelectText();
     void handleOnMessageSend(QString);
     void handleAnchorClicked(QString);
-    void handleShowKeyboard();
+    // void handleShowKeyboard();
 
 signals:
     void onMessageSend(QString);
     void anchorClicked(QString);
-    void showKeyboard();
-private:
-    QQuickWidget* quick_widget = nullptr;
-    // QStringListModel* model = nullptr;
-    // QList<ChatMessage> messages;
 
 };

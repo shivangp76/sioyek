@@ -4,9 +4,10 @@
 #include <QQuickWidget>
 #include <QQmlContext>
 #include <QQuickItem>
+#include "TouchShowKeyboardWidget.h"
 
 
-class TouchTextEdit : public QWidget {
+class TouchTextEdit : public TouchShowKeyboardWidget {
     Q_OBJECT
 public:
     TouchTextEdit(QString name, QString initial_value, bool is_password, QWidget* parent);
@@ -22,8 +23,5 @@ public slots:
 signals:
     void confirmed(QString text);
     void cancelled();
-
-private:
-    QQuickWidget* quick_widget = nullptr;
 
 };
