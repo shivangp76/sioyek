@@ -4409,12 +4409,13 @@ void PdfViewRhiWidget::render(QRhiCommandBuffer *command_buffer)
     if (qpainter_initialized_for_current_frame){
         qpainter_image = qpainter_image.mirrored(false, true);
         resource_updates->uploadTexture(qpainter_texture.get(), qpainter_image);
-        float depth = 0.0f;
+        RhiTextureUniformBuffer uniform_data = {};
+        uniform_data.depth = 0.0f;
         // if we are rendering the overview, make sure it is rendered on top of the qpainter objects
         if (current_frame_overview_object_index != -1){
-            depth = 1.0f / static_cast<float>(current_frame_overview_object_index + 2.0f);
+            uniform_data.depth = 1.0f / static_cast<float>(current_frame_overview_object_index + 2.0f);
         }
-        resource_updates->updateDynamicBuffer(qpainter_uniform_buffer.get(), 0, sizeof(float), &depth);
+        resource_updates->updateDynamicBuffer(qpainter_uniform_buffer.get(), 0, sizeof(RhiTextureUniformBuffer), &uniform_data);
     }
 
     QColor background_color = QColor::fromRgbF(background_clear_color[0], background_clear_color[1], background_clear_color[2]);
