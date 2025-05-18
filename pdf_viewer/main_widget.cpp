@@ -104,9 +104,11 @@
 #include "checksum.h"
 #include "touchui/TouchSettings.h"
 #include "touchui/TouchChat.h"
+#include "ui/bookmark_ui.h"
 #include "network_manager.h"
 #include "status_string.h"
 #include "controllers/tts_controller.h"
+#include "controllers/annotation_controller.h"
 
 #include "commands/base_commands.h"
 #include "main_widget.h"
@@ -1212,7 +1214,8 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
     }
     tts_controller.reset(new TTSController(this));
-    
+    annotation_controller.reset(new AnnotationController(this));
+
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
     
@@ -8487,66 +8490,8 @@ void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
+    annotation_controller->handle_bookmark_ask_query(query, bookmark_uuid_);
 
-    auto bookmark_browser = get_current_bookmark_browser();
-    if (bookmark_browser) {
-        bookmark_browser.value()->set_pending(true);
-    }
-
-    const std::wstring& index = doc()->get_super_fast_index();
-    std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
-    BookMark* bm_ptr = doc()->get_bookmark_with_uuid(bookmark_uuid);
-    bm_ptr->description += L"\n\n";
-
-    int first_page_end_index = doc()->get_first_page_end_index();
-
-    QString query_qstring = QString::fromStdWString(query);
-
-    std::wstring context = L"";
-    bool use_context = false;
-
-    if (query_qstring.contains("@selection")) {
-        context = dv()->get_selected_text();
-        use_context = true;
-        first_page_end_index = -1;
-        query_qstring = query_qstring.replace("@selection", "");
-    }
-    else if (query_qstring.contains("@chapter")) {
-        context = mdv()->get_current_chapter_text();
-        use_context = true;
-        first_page_end_index = -1;
-        query_qstring = query_qstring.replace("@chapter", "");
-    }
-
-    sioyek_network_manager->semantic_ask(this, query_qstring, use_context ? context : index, first_page_end_index,
-        [this, bookmark_uuid, document=doc()](QString chunk) {
-        BookMark* bm = add_chunk_to_bookmark(document, bookmark_uuid, chunk);
-        if (bm) {
-            update_current_bookmark_widget_text(bm);
-        }
-        },
-        [this, bookmark_uuid, bookmark_browser, document=doc()]() {
-            //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
-            BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
-            if (bm) {
-                bm->description = replace_verbatim_links(bm->description);
-                bm->description += L"\n";
-                document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
-                update_current_bookmark_widget_text(bm);
-                on_bookmark_edited(*bm, false, false);
-
-                auto current_bookmark_browser = get_current_bookmark_browser();
-                if (current_bookmark_browser.has_value() && (current_bookmark_browser == bookmark_browser)) {
-                    current_bookmark_browser.value()->set_pending(false);
-                    QTimer::singleShot(100, [this]() {
-                        auto new_current_bookmark_browser = get_current_bookmark_browser();
-                        if (new_current_bookmark_browser && new_current_bookmark_browser.value()->follow_output) {
-                            new_current_bookmark_browser.value()->scroll_to_end();
-                        }
-                        });
-                }
-            }
-        });
 }
 
 std::optional<ShellOutputBookmark> MainWidget::get_shell_output_bookmark_with_uuid(std::string uuid){
@@ -13381,15 +13326,7 @@ std::optional<SioyekBookmarkTextBrowser*> MainWidget::get_current_bookmark_brows
 }
 
 void MainWidget::scroll_selected_bookmark(int amount) {
-    auto bookmark_browser = get_current_bookmark_browser();
-    if (bookmark_browser) {
-        bookmark_browser.value()->scroll_amount(amount);
-    }
-    else {
-        std::string bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
-        scroll_bookmark_with_uuid(bookmark_uuid, amount);
-    }
-
+    annotation_controller->scroll_selected_bookmark(amount);
 }
 
 void MainWidget::pin_current_overview_as_portal() {

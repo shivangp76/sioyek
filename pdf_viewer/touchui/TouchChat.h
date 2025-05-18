@@ -4,7 +4,7 @@
 #include <QQuickWidget>
 #include <QStringListModel>
 #include "TouchBaseWidget.h"
-#include "book.h"
+#include "types/common_types.h"
 
 class TouchChat : public TouchBaseWidget {
     Q_OBJECT
