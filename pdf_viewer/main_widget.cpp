@@ -14106,15 +14106,8 @@ void MainWidget::delete_old_backend() {
 void MainWidget::delete_old_helper() {
     if (helper_opengl_widget_ == nullptr) return;
 
-    if (dynamic_cast<PdfViewOpenGLWidget*>(helper_opengl_widget_)) {
-        dynamic_cast<PdfViewOpenGLWidget*>(helper_opengl_widget_)->deleteLater();
-        helper_opengl_widget_ = nullptr;
-    }
-    else if (dynamic_cast<PdfViewQPainterWidget*>(helper_opengl_widget_)) {
-        dynamic_cast<PdfViewQPainterWidget*>(helper_opengl_widget_)->deleteLater();
-        helper_opengl_widget_ = nullptr;
-    }
-
+    helper_opengl_widget_->get_widget()->deleteLater();
+    helper_opengl_widget_ = nullptr;
 }
 void MainWidget::set_renderer_backend(RenderBackend backend) {
     RenderBackend current_backend = RenderBackend::SioyekNoRendererBackend;
