@@ -496,7 +496,7 @@ std::optional<QJsonDocument> SioyekNetworkManager::get_network_json_reply(QNetwo
 }
 
 QNetworkReply* SioyekNetworkManager::get_citers_with_name(
-    QObject* parent, const std::wstring& name, std::function<void(QNetworkReply*)> fn) {
+    QObject* parent, const std::wstring& name, std::function<void(std::vector<QString>, std::vector<QString>, std::vector<QString>)> fn) {
 
     QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_PAPER_CITERS_URL_));
     QUrlQuery params;
@@ -515,7 +515,29 @@ QNetworkReply* SioyekNetworkManager::get_citers_with_name(
 
     QObject::connect(reply, &QNetworkReply::finished, [this, reply, fn = std::move(fn)]() {
         if (handle_network_reply_if_error(reply, true)) {
-            fn(reply);
+            auto content = reply->readAll();
+            QJsonDocument json_doc = QJsonDocument::fromJson(content);
+            QJsonObject root_object = json_doc.object();
+
+            std::vector<QString> citer_urls;
+            std::vector<QString> citer_titles;
+            std::vector<QString> citer_descriptions;
+
+            for (auto obj : root_object["citers"].toArray()) {
+                QJsonObject citer_props = obj.toObject();
+                citer_titles.push_back(citer_props["title"].toString());
+                citer_urls.push_back(citer_props["url"].toString());
+
+                QString cite_count =QString::number(citer_props["cited_by_count"].toInt());
+                QString publication_year = QString::number(citer_props["publication_year"].toInt());
+                QString pulibcation_location = citer_props["publication_location"].toString();
+                QString description = pulibcation_location + ", " + publication_year + ", " + cite_count + " citations";
+                if (pulibcation_location.size() == 0) {
+                    description = publication_year + ", " + cite_count + " citations";
+                }
+                citer_descriptions.push_back(description);
+            }
+            fn(citer_urls, citer_titles, citer_descriptions);
         }
         });
     return reply;

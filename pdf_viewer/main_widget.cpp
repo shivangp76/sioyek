@@ -13879,32 +13879,7 @@ void MainWidget::handle_highlight_text_in_document(std::string document_checksum
 }
 
 void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
-    sioyek_network_manager->get_citers_with_name(this, paper_name, [this](QNetworkReply* reply) {
-        auto content = reply->readAll();
-        QJsonDocument json_doc = QJsonDocument::fromJson(content);
-        QJsonObject root_object = json_doc.object();
-
-        //std::vector<QString> citer_titles;
-        //std::vector<QString> citer_citations;
-        //std::vector<QString> citer_publication_year;
-        std::vector<QString> citer_urls;
-        std::vector<QString> citer_titles;
-        std::vector<QString> citer_descriptions;
-
-        for (auto obj : root_object["citers"].toArray()) {
-            QJsonObject citer_props = obj.toObject();
-            citer_titles.push_back(citer_props["title"].toString());
-            citer_urls.push_back(citer_props["url"].toString());
-
-            QString cite_count =QString::number(citer_props["cited_by_count"].toInt());
-            QString publication_year = QString::number(citer_props["publication_year"].toInt());
-            QString pulibcation_location = citer_props["publication_location"].toString();
-            QString description = pulibcation_location + ", " + publication_year + ", " + cite_count + " citations";
-            if (pulibcation_location.size() == 0) {
-                description = publication_year + ", " + cite_count + " citations";
-            }
-            citer_descriptions.push_back(description);
-        }
+    sioyek_network_manager->get_citers_with_name(this, paper_name, [this](std::vector<QString> citer_urls, std::vector<QString> citer_titles, std::vector<QString> citer_descriptions) {
 
         auto selector_widget = ItemWithDescriptionSelectorWidget::from_items(std::move(citer_titles), std::move(citer_descriptions), std::move(citer_urls), this);
         selector_widget->set_select_fn([this, selector_widget](int index) {
