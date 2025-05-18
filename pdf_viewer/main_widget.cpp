@@ -14075,29 +14075,19 @@ void MainWidget::framebuffer_screenshot_js(QString file_path, QJsonObject window
     bool is_on_main_thread = QThread::currentThread() == QApplication::instance()->thread();
     if (is_on_main_thread) {
 
-        if (opengl_widget->is_opengl()) {
-            WindowRect window_rect;
-            window_rect.x0 = window_rect_js["x0"].toDouble();
-            window_rect.x1 = window_rect_js["x1"].toDouble();
-            window_rect.y0 = window_rect_js["y0"].toDouble();
-            window_rect.y1 = window_rect_js["y1"].toDouble();
-            QRect window_qrect = QRect(window_rect.x0, window_rect.y0, window_rect.x1 - window_rect.x0, std::abs(window_rect.y1 - window_rect.y0));
+        WindowRect window_rect;
+        window_rect.x0 = window_rect_js["x0"].toDouble();
+        window_rect.x1 = window_rect_js["x1"].toDouble();
+        window_rect.y0 = window_rect_js["y0"].toDouble();
+        window_rect.y1 = window_rect_js["y1"].toDouble();
+        QRect window_qrect = QRect(window_rect.x0, window_rect.y0, window_rect.x1 - window_rect.x0, std::abs(window_rect.y1 - window_rect.y0));
 
-            if (window_qrect.width() > 0 && window_qrect.height() > 0) {
-
-                QOpenGLWidget* w = dynamic_cast<QOpenGLWidget*>(opengl_widget);
-                QImage image = w->grabFramebuffer();
-                QPixmap pixmap = QPixmap::fromImage(image);
-                pixmap = pixmap.copy(window_qrect);
-
-                pixmap.save(file_path);
-            }
-
+        if (window_qrect.width() > 0 && window_qrect.height() > 0) {
+            QPixmap pixmap = opengl_widget->get_framebuffer_pixmap();
+            pixmap = pixmap.copy(window_qrect);
+            pixmap.save(file_path);
         }
-        else {
 
-            return screenshot_js(file_path, window_rect_js);
-        }
     }
     else {
         QMetaObject::invokeMethod(this,
