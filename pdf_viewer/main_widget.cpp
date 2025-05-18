@@ -14100,16 +14100,7 @@ void MainWidget::framebuffer_screenshot_js(QString file_path, QJsonObject window
 }
 
 void MainWidget::delete_old_backend() {
-    if (dynamic_cast<PdfViewOpenGLWidget*>(opengl_widget)) {
-        dynamic_cast<PdfViewOpenGLWidget*>(opengl_widget)->deleteLater();
-    }
-    else if (dynamic_cast<PdfViewQPainterWidget*>(opengl_widget)) {
-        dynamic_cast<PdfViewQPainterWidget*>(opengl_widget)->deleteLater();
-    }
-    else if (dynamic_cast<PdfViewRhiWidget*>(opengl_widget)) {
-        dynamic_cast<PdfViewRhiWidget*>(opengl_widget)->deleteLater();
-    }
-
+    opengl_widget->get_widget()->deleteLater();
 }
 
 void MainWidget::delete_old_helper() {
