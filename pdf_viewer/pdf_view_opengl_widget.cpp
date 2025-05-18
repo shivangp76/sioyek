@@ -5699,3 +5699,28 @@ void SioyekRendererBackend::clear_cached_drawing_buffers(){
 void PdfViewRhiWidget::clear_cached_drawing_buffers(){
     cached_page_drawing_shader_resources.clear();
 }
+
+QPixmap PdfViewOpenGLWidget::get_framebuffer_pixmap() {
+    QPixmap pixmap;
+    QImage framebuffer = grabFramebuffer();
+    pixmap = QPixmap::fromImage(framebuffer);
+    return pixmap;
+}
+
+QPixmap PdfViewQPainterWidget::get_framebuffer_pixmap() {
+    QPixmap pixmap;
+    int pixmap_width = size().width() * devicePixelRatio();
+    int pixmap_height = size().height() * devicePixelRatio();
+
+    pixmap = QPixmap(QSize(pixmap_width, pixmap_height));
+    pixmap.setDevicePixelRatio(devicePixelRatio());
+    render(&pixmap, QPoint(), QRegion(rect()));
+    return pixmap;
+}
+
+QPixmap PdfViewRhiWidget::get_framebuffer_pixmap() {
+    QPixmap pixmap;
+    QImage framebuffer = grabFramebuffer();
+    pixmap = QPixmap::fromImage(framebuffer);
+    return pixmap;
+}

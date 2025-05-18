@@ -237,6 +237,7 @@ public:
     virtual bool is_opengl() = 0;
     virtual QWidget* get_widget() = 0;
     virtual void clear_cached_drawing_buffers();
+    virtual QPixmap get_framebuffer_pixmap() = 0;
 
 };
 
@@ -325,6 +326,7 @@ public:
     void compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) override;
     bool is_opengl() override;
     QWidget* get_widget() override;
+    QPixmap get_framebuffer_pixmap() override;
 };
 
 class PdfViewQPainterWidget : public QWidget, public SioyekRendererBackend{
@@ -395,6 +397,7 @@ public:
 
     void compile_drawings(DocumentView* dv, const QList<FreehandDrawing>& drawings) override;
     QWidget* get_widget() override;
+    QPixmap get_framebuffer_pixmap() override;
 };
 
 #include <QRhiWidget>
@@ -596,4 +599,5 @@ public:
     std::optional<GraphicsBackendExtras> get_backend_extras() override;
     void resizeEvent(QResizeEvent* event) override;
     void clear_cached_drawing_buffers();
+    QPixmap get_framebuffer_pixmap() override;
 };

@@ -974,8 +974,6 @@ public:
     Q_INVOKABLE void screenshot_js(QString file_path, QJsonObject window_rect);
     Q_INVOKABLE void framebuffer_screenshot_js(QString file_path, QJsonObject window_rect);
 
-    QPixmap get_framebuffer_pixmap();
-
     Q_INVOKABLE QString perform_network_request_with_headers(QString method, QString url, QJsonObject headers, QJsonObject request, bool* is_done=nullptr, QByteArray* response=nullptr);
     Q_INVOKABLE void copy_text_to_clipboard(QString str);
     Q_INVOKABLE void add_async_utility_code(QString str);
