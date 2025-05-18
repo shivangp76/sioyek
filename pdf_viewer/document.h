@@ -683,6 +683,7 @@ public:
     Q_INVOKABLE QVariantMap get_annotations() const;
     Q_INVOKABLE void apply_annotation_changes(QVariant annot);
     Q_INVOKABLE void update_annotation_js(QJsonObject annot);
+    Q_INVOKABLE QJsonObject get_annotation_js(QString uuid);
 
     template<typename T>
     std::vector<int> get_page_visible_annot_indices(int page) {

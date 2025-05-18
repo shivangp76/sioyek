@@ -14559,22 +14559,6 @@ void MainWidget::open_text_editor_at_line(QString file_path, int line_number) {
 
 
 
-QJsonObject MainWidget::get_annotation_js(QString uuid) {
-    auto bm = doc()->get_bookmark_with_uuid(uuid.toStdString());
-    if (bm) {
-        return bm->to_json(doc()->get_checksum());
-    }
-    auto hl = doc()->get_highlight_with_uuid(uuid.toStdString());
-    if (hl) {
-        return hl->to_json(doc()->get_checksum());
-    }
-    auto portal = doc()->get_portal_with_uuid(uuid.toStdString());
-    if (portal) {
-        return portal->to_json(doc()->get_checksum());
-    }
-
-    return {};
-}
 
 
 

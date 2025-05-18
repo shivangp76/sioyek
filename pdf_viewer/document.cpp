@@ -6391,3 +6391,20 @@ std::wstring_view Document::get_page_range_text(int begin_page, int end_page){
     }
     return L"";
 }
+
+QJsonObject Document::get_annotation_js(QString uuid) {
+    auto bm = get_bookmark_with_uuid(uuid.toStdString());
+    if (bm) {
+        return bm->to_json(get_checksum());
+    }
+    auto hl = get_highlight_with_uuid(uuid.toStdString());
+    if (hl) {
+        return hl->to_json(get_checksum());
+    }
+    auto portal = get_portal_with_uuid(uuid.toStdString());
+    if (portal) {
+        return portal->to_json(get_checksum());
+    }
+
+    return {};
+}
