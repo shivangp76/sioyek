@@ -752,6 +752,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
             float distance = mouse_window_pos.manhattan(ruler_moving_last_window_pos);
             handle_ruler_touch_move(distance * RULER_MOUSE_SENSITIVITY);
             ruler_moving_last_window_pos = mouse_window_pos;
+            validate_render();
         }
         return;
     }
