@@ -94,3 +94,57 @@ void AnnotationController::handle_bookmark_ask_query(std::wstring query, std::ws
             }
         });
 }
+
+void AnnotationController::pin_current_overview_as_portal() {
+    std::optional<Portal> new_portal = mdv()->pin_current_overview_as_portal();
+    if (new_portal){
+        mw->add_portal(doc()->get_path(), new_portal.value());
+    }
+}
+
+void AnnotationController::scroll_selected_bookmark_to_end() {
+
+    std::string bookmark_uuid = mdv()->get_selected_bookmark_uuid();
+    if (bookmark_uuid.size() > 0) {
+        BookMark* bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
+        if (bookmark) {
+            float scroll_amount = mw->background_bookmark_renderer->get_cached_bookmark_height(bookmark_uuid) - bookmark->get_rectangle()->height() * dv()->get_zoom_level();
+            dv()->set_bookmark_scroll_amount(bookmark_uuid, scroll_amount);
+        }
+    }
+}
+
+void AnnotationController::handle_ask() {
+    float current_y_offset = mdv()->get_offset_y();
+    BookMark pending_bookmark;
+    pending_bookmark.description = L"";
+    pending_bookmark.y_offset_ = current_y_offset;
+    //std::string uuid = doc()->add_bookmark(L"", current_y_offset);
+    std::string uuid = doc()->add_incomplete_bookmark(pending_bookmark);
+    //on_new_bookmark_added(uuid);
+    mw->open_selected_bookmark_in_widget(uuid, true, true);
+}
+
+void AnnotationController::open_selected_bookmark_in_widget(std::string bookmark_uuid, bool force_chat, bool is_bookmark_pending) {
+    if (bookmark_uuid.size() == 0) {
+        bookmark_uuid = mdv()->get_selected_bookmark_uuid();
+    }
+    auto selected_bookmark = doc()->get_bookmark_with_uuid(bookmark_uuid);
+    if (selected_bookmark) {
+        bool is_question_bookmark = selected_bookmark->is_question();
+        QString bookmark_display_text = QString::fromStdWString(selected_bookmark->description);
+        bookmark_display_text = bookmark_display_text.replace("sioyek://", "sioyeklink#");
+
+        SioyekBookmarkTextBrowser* text_browser = new SioyekBookmarkTextBrowser(
+            mw, QString::fromStdString(selected_bookmark->uuid), bookmark_display_text, is_question_bookmark || force_chat
+        );
+        if (is_bookmark_pending) {
+            text_browser->is_bookmark_pending = true;
+        }
+
+        mw->set_current_widget(text_browser);
+        // text_browser->handle_resize();
+        text_browser->show();
+
+    }
+}
