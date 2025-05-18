@@ -13839,54 +13839,15 @@ void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, boo
 }
 
 void MainWidget::accept_new_bookmark_message_with_text(QString message){
-    if (current_widget_stack.size() > 0) {
-        auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
-        if (bookmark_widget){
-            if (bookmark_widget->is_bookmark_pending) {
-                doc()->add_pending_bookmark(bookmark_widget->bookmark_uuid.toStdString(), L"");
-                bookmark_widget->is_bookmark_pending = false;
-            }
-            QString text_ = message;
-            QString text;
-
-            for (auto line : text_.split("\n")) {
-                text += "? " + line + "\n";
-            }
-
-            auto bookmark = doc()->get_bookmark_with_uuid(bookmark_widget->bookmark_uuid.toStdString());
-
-            if (bookmark) {
-                bookmark->description += text.toStdWString();
-                handle_bookmark_ask_query(bookmark->description, utf8_decode(bookmark->uuid));
-                bookmark_widget->set_follow_output(true);
-            }
-        }
-    }
+    annotation_controller->accept_new_bookmark_message_with_text(message);
 }
 
 void MainWidget::accept_new_bookmark_message() {
-    if (current_widget_stack.size() > 0) {
-        auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
-        if (bookmark_widget && bookmark_widget->line_edit && (!bookmark_widget->is_pending)) {
-            QString text_ = bookmark_widget->line_edit->text();
-            accept_new_bookmark_message_with_text(text_);
-            bookmark_widget->line_edit->clear();
-        }
-    }
-
+    annotation_controller->accept_new_bookmark_message();
 }
 
 void MainWidget::update_current_bookmark_widget_text(BookMark* bm) {
-    if (current_widget_stack.size() > 0) {
-        auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(current_widget_stack.back());
-        if (bookmark_widget) {
-            if (bookmark_widget->bookmark_uuid.toStdString() == bm->uuid) {
-                QString bookmark_display_text = QString::fromStdWString(bm->description);
-                bookmark_display_text = bookmark_display_text.replace("sioyek://", "sioyeklink#");
-                bookmark_widget->update_text(bookmark_display_text);
-            }
-        }
-    }
+    annotation_controller->update_current_bookmark_widget_text(bm);
 }
 
 QString MainWidget::get_selected_text_in_chat_window() {
@@ -13900,26 +13861,7 @@ QString MainWidget::get_selected_text_in_chat_window() {
 }
 
 void MainWidget::handle_scroll_selected_bookmark_to_ends(bool goto_start){
-
-    auto bookmark_browser = get_current_bookmark_browser();
-    if (bookmark_browser) {
-        if (goto_start) {
-            bookmark_browser.value()->scroll_to_start();
-        }
-        else {
-            bookmark_browser.value()->scroll_to_end();
-        }
-    }
-    else {
-        std::string bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
-        if (goto_start) {
-            scroll_bookmark_with_uuid(bookmark_uuid, -INT_MAX / 2);
-        }
-        else {
-            scroll_bookmark_with_uuid(bookmark_uuid, INT_MAX / 2);
-        }
-        //scroll_bookmark_with_uuid(bookmark_uuid, amount);
-    }
+    annotation_controller->handle_scroll_selected_bookmark_to_ends(goto_start);
 }
 
 void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
