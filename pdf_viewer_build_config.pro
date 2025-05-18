@@ -62,6 +62,8 @@ DEFINES += QT_3DINPUT_LIB QT_OPENGL_LIB QT_OPENGLEXTENSIONS_LIB QT_WIDGETS_LIB B
 RESOURCES += resources.qrc
 
 SOURCES += \
+        pdf_viewer/touchui/AudioUI.cpp \
+        pdf_viewer/touchui/ConfigUI.cpp \
         pdf_viewer/touchui/TouchSlider.cpp \
         pdf_viewer/touchui/TouchCheckbox.cpp \
         pdf_viewer/touchui/TouchListView.cpp \
@@ -85,6 +87,8 @@ SOURCES += \
         pdf_viewer/touchui/TouchMainMenu.cpp
 
 HEADERS += \
+    pdf_viewer/touchui/AudioUI.h \
+    pdf_viewer/touchui/ConfigUI.h \
     pdf_viewer/touchui/TouchSlider.h \
     pdf_viewer/touchui/TouchCheckbox.h \
     pdf_viewer/touchui/TouchListView.h \
@@ -159,6 +163,7 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/background_tasks.h \
            pdf_viewer/network_manager.h \
            pdf_viewer/status_string.h \
+           pdf_viewer/controllers/tts_controller.h \
            fzf/fzf.h
 
 
@@ -191,6 +196,7 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/background_tasks.cpp \
            pdf_viewer/network_manager.cpp \
            pdf_viewer/status_string.cpp \
+           pdf_viewer/controllers/tts_controller.cpp \
            fzf/fzf.c
 
 !android{

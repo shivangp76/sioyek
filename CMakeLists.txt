@@ -123,6 +123,7 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/database.cpp pdf_viewer/database.h
     pdf_viewer/document.cpp pdf_viewer/document.h
     pdf_viewer/document_view.cpp pdf_viewer/document_view.h
+    pdf_viewer/controllers/tts_controller.cpp pdf_viewer/controllers/tts_controller.h
     pdf_viewer/fts_fuzzy_match.h
     pdf_viewer/input.cpp pdf_viewer/input.h
     pdf_viewer/commands/command_parser.cpp pdf_viewer/commands/command_parser.h
@@ -164,6 +165,8 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/touchui/TouchTextEdit.cpp pdf_viewer/touchui/TouchTextEdit.h
     pdf_viewer/touchui/TouchChat.cpp pdf_viewer/touchui/TouchChat.h
     pdf_viewer/touchui/TouchBaseWidget.cpp pdf_viewer/touchui/TouchBaseWidget.h
+    pdf_viewer/touchui/AudioUI.cpp pdf_viewer/touchui/AudioUI.h
+    pdf_viewer/touchui/ConfigUI.cpp pdf_viewer/touchui/ConfigUI.h
     pdf_viewer/ui.cpp pdf_viewer/ui.h
     pdf_viewer/utf8.h
     pdf_viewer/utf8/checked.h

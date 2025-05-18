@@ -188,6 +188,8 @@ using SioyekBaseWidget = QMainWindow;
 #endif
 #endif
 
+class TTSController;
+
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
     Q_OBJECT
@@ -205,6 +207,7 @@ public:
     PdfRenderer* pdf_renderer = nullptr;
     InputHandler* input_handler = nullptr;
     CachedChecksummer* checksummer = nullptr;
+    std::unique_ptr<TTSController> tts_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;

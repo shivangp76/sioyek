@@ -46,6 +46,7 @@
 #include <qhash.h>
 #include <QQuickWidget>
 
+#include "touchui/ConfigUI.h"
 #include "touchui/TouchSlider.h"
 #include "touchui/TouchCheckbox.h"
 #include "touchui/TouchListView.h"
@@ -876,23 +877,6 @@ private:
     //QPushButton* goto_initial_location_button;
 };
 
-class ConfigUI : public QWidget {
-    //class ConfigUI : public QQuickWidget{
-    Q_OBJECT
-public:
-    ConfigUI(std::string name, MainWidget* parent);
-    // void resizeEvent(QResizeEvent* resize_event) override;
-    Q_INVOKABLE virtual QRect get_prefered_rect(QRect parent_rect);
-    void set_should_persist(bool val);
-    void on_change();
-    ~ConfigUI();
-
-protected:
-    MainWidget* main_widget;
-    std::string config_name;
-    bool should_persist = true;
-};
-
 class Color3ConfigUI : public ConfigUI {
     Q_OBJECT
 public:
@@ -1016,14 +1000,6 @@ private:
     TouchPageSelector* page_selector = nullptr;
 };
 
-class AudioUI : public ConfigUI {
-    Q_OBJECT
-public:
-    AudioUI(MainWidget* parent);
-    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
-    // void resizeEvent(QResizeEvent* resize_event) override;
-    TouchAudioButtons* buttons = nullptr;
-};
 
 class RectangleConfigUI : public ConfigUI {
     Q_OBJECT
