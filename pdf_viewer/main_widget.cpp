@@ -130,6 +130,13 @@ extern "C" void hideWindowTitleBar(WId);
 #ifdef SIOYEK_IOS
 // extern "C" void iosTestFunc(NSString* text);
 
+extern "C" void makeSureTTSCanUseSpeakers();
+extern "C" void iosResumeFunc();
+extern "C" void iosPauseFunc();
+extern "C" AVSpeechSynthesizer* createSpeechSynthesizer();
+extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceName, double rate);
+extern "C" int getLastSpokenWordLocation();
+extern "C" int iosStopReading();
 extern "C" void ios_brightness_set(float brightness);
 extern "C" void ios_debug();
 typedef void (*PinchGestureCallback)(float x, float y, float scale, float velocity, int state);
@@ -9802,30 +9809,7 @@ TextToSpeechHandler* MainWidget::get_tts() {
 }
 
 void MainWidget::handle_app_tts_resume(bool is_playing, bool is_on_rest, int offset){
-    // set_status_message(L"got on resume callback");
-
-    // return;
-    if (is_reading && (is_playing == false)){
-        is_reading = false;
-    }
-
-    if (is_playing){
-        ensure_player_state("Ended");
-
-        handle_stop_reading();
-
-        if (doc() && doc()->is_super_fast_index_ready()){
-            if (offset > 0){
-                focus_on_character_offset_into_document(offset);
-            }
-        }
-        else{
-            dv()->on_super_fast_compute_focus_offset = offset;
-        }
-    }
-    else{
-        ensure_player_state("Ended");
-    }
+    tts_controller->handle_app_tts_resume(is_playing, is_on_rest, offset);
 }
 
 void MainWidget::update_bookmark_with_uuid(const std::string& uuid) {

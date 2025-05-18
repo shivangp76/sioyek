@@ -18,4 +18,5 @@ public:
     void ensure_player_state(QString state);
     void handle_start_reading_high_quality(bool should_preload=false);
     void focus_on_high_quality_text_being_read();
+    void handle_app_tts_resume(bool is_playing, bool is_on_rest, int offset);
 };

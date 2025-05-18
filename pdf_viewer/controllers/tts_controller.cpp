@@ -13,12 +13,6 @@ extern bool USE_LOCAL_TTS_WHILE_WAITING_FOR_HQ_TTS;
 
 #ifdef SIOYEK_IOS
 extern "C" void makeSureTTSCanUseSpeakers();
-extern "C" void iosResumeFunc();
-extern "C" void iosPauseFunc();
-extern "C" AVSpeechSynthesizer* createSpeechSynthesizer();
-extern "C" void iosPlayTextToSpeechInBackground(NSString* text, NSString* voiceName, double rate);
-extern "C" int getLastSpokenWordLocation();
-extern "C" int iosStopReading();
 #endif
 
 TTSController::TTSController(MainWidget* parent) : mw(parent){
@@ -240,7 +234,7 @@ TextToSpeechHandler* TTSController::get_tts() {
 
     mw->tts->set_on_app_resume_callback([&](bool is_playing, bool is_on_rest, int offset){
 
-        mw->handle_app_tts_resume(is_playing, is_on_rest, offset);
+        handle_app_tts_resume(is_playing, is_on_rest, offset);
     });
 
 #else
@@ -419,5 +413,32 @@ void TTSController::focus_on_high_quality_text_being_read() {
             }
         }
 
+    }
+}
+
+void TTSController::handle_app_tts_resume(bool is_playing, bool is_on_rest, int offset){
+    // set_status_message(L"got on resume callback");
+
+    // return;
+    if (mw->is_reading && (is_playing == false)){
+        mw->is_reading = false;
+    }
+
+    if (is_playing){
+        ensure_player_state("Ended");
+
+        handle_stop_reading();
+
+        if (mw->doc() && mw->doc()->is_super_fast_index_ready()){
+            if (offset > 0){
+                mw->focus_on_character_offset_into_document(offset);
+            }
+        }
+        else{
+            mw->dv()->on_super_fast_compute_focus_offset = offset;
+        }
+    }
+    else{
+        ensure_player_state("Ended");
     }
 }
