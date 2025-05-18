@@ -745,6 +745,7 @@ public:
     void zoom_selected_freehand_drawings(float zoom_factor);
     AbsoluteRect get_view_rect();
     int get_page_text_and_line_rects(int page, std::wstring& text, std::vector<PagelessDocumentRect>& rects);
+    std::wstring_view get_current_chapter_text();
 };
 
 struct CachedScratchpadPixmapData {

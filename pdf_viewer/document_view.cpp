@@ -6289,3 +6289,12 @@ int DocumentView::get_page_text_and_line_rects(int page, std::wstring& text, std
     doc()->get_page_text_and_line_rects_after_rect(page, INT_MAX, fz_empty_rect, text, line_rects, char_rects);
     return text.size() - dummy_text.size();
 }
+
+std::wstring_view DocumentView::get_current_chapter_text() {
+    auto chapter_page_range = get_current_page_range();
+    if (chapter_page_range) {
+        auto [begin_page, end_page] = chapter_page_range.value();
+        return doc()->get_page_range_text(begin_page, end_page);
+    }
+    return L"";
+}

@@ -8510,7 +8510,7 @@ void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring book
         query_qstring = query_qstring.replace("@selection", "");
     }
     else if (query_qstring.contains("@chapter")) {
-        context = get_current_chapter_text();
+        context = mdv()->get_current_chapter_text();
         use_context = true;
         first_page_end_index = -1;
         query_qstring = query_qstring.replace("@chapter", "");
@@ -12037,13 +12037,17 @@ void MainWidget::set_text_prompt_text(QString text) {
     }
 }
 
-DocumentView* MainWidget::dv() {
+DocumentView* MainWidget::dv() const {
     if (main_document_view->scratchpad) {
         return scratchpad;
     }
     else{
         return main_document_view;
     }
+}
+
+DocumentView* MainWidget::mdv() const {
+    return main_document_view;
 }
 
 bool MainWidget::should_draw(bool originated_from_pen) {
@@ -14571,22 +14575,6 @@ QJsonObject MainWidget::get_annotation_js(QString uuid) {
     return {};
 }
 
-std::wstring MainWidget::get_current_chapter_text() {
-    auto chapter_page_range = main_document_view->get_current_page_range();
-    if (chapter_page_range) {
-        auto [begin_page, end_page] = chapter_page_range.value();
-        auto page_indices = doc()->get_super_fast_page_begin_indices();
-        const std::wstring& doc_text = doc()->get_super_fast_index();
-        if (begin_page >= 0 && begin_page < page_indices.size() && end_page >= 0 && end_page < page_indices.size()) {
-            int begin_index = page_indices[begin_page];
-            int end_index = end_page < page_indices.size() - 1 ? page_indices[end_page + 1] : doc_text.size();
-            return doc_text.substr(begin_index, end_index - begin_index);
-
-        }
-
-    }
-    return L"";
-}
 
 std::wstring MainWidget::get_current_page_text(){
     if (!doc()->is_super_fast_index_ready()) return L"";
@@ -14629,7 +14617,7 @@ void MainWidget::update_query_tokens_status_message_for_bookmark(QString message
             QString text = line_edit->text();
             if (text.contains("@chapter")) {
                 if (!current_status_message.has_value() || !current_status_message->message.startsWith("chapter: ")) {
-                    int size = get_current_chapter_text().size() / chars_per_token;
+                    int size = mdv()->get_current_chapter_text().size() / chars_per_token;
                     QString message = "chapter: ~" + QString::number(size) + " tokens";
                     set_status_message(message.toStdWString(), message_uuid);
                 }

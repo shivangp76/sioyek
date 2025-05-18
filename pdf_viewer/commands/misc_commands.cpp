@@ -426,7 +426,7 @@ public:
     GetCurrentChapterTextCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        result = widget->get_current_chapter_text();
+        result = widget->mdv()->get_current_chapter_text();
     }
 };
 
@@ -1109,7 +1109,7 @@ public:
     static inline const std::string hname = "Copy current chapter's text";
     CopyCurrentChapterTextCommand(MainWidget* w) : Command(cname, w) {};
     void perform() {
-        std::wstring chapter_text = widget->get_current_chapter_text();
+        std::wstring chapter_text = std::wstring(widget->mdv()->get_current_chapter_text());
         copy_to_clipboard(chapter_text);
 
     }

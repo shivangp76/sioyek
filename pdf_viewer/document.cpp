@@ -6379,3 +6379,15 @@ void Document::merge_with_server_drawings(const QMap<int, PageFreehandDrawing>& 
 void Document::set_drawings_dirty(bool val){
     is_drawings_dirty = val;
 }
+
+std::wstring_view Document::get_page_range_text(int begin_page, int end_page){
+    auto page_indices = get_super_fast_page_begin_indices();
+    const std::wstring_view doc_text_view = std::wstring_view(get_super_fast_index());
+    if (begin_page >= 0 && begin_page < page_indices.size() && end_page >= 0 && end_page < page_indices.size()) {
+        int begin_index = page_indices[begin_page];
+        int end_index = end_page < page_indices.size() - 1 ? page_indices[end_page + 1] : doc_text_view.size();
+        return doc_text_view.substr(begin_index, end_index - begin_index);
+
+    }
+    return L"";
+}

@@ -1071,7 +1071,8 @@ public:
     Q_INVOKABLE QString get_environment_variable(QString name);
     void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);
     void set_text_prompt_text(QString text);
-    Q_INVOKABLE DocumentView* dv();
+    Q_INVOKABLE DocumentView* dv() const;
+    Q_INVOKABLE DocumentView* mdv() const;
     bool should_draw(bool originated_from_pen);
     bool is_scratchpad_mode();
     void toggle_scratchpad_mode();
@@ -1243,7 +1244,6 @@ public:
     void handle_edit_selected_bookmark_with_external_editor();
     void open_file(std::wstring file_path, bool show_error_message);
     void open_text_editor_at_line(QString file_path, int line_number);
-    std::wstring get_current_chapter_text();
     std::wstring get_current_page_text();
     void set_textbar_autocomlete_strings(QStringList strings);
     void update_query_tokens_status_message_for_bookmark(QString message_uuid);
