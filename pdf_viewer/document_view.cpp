@@ -6298,3 +6298,10 @@ std::wstring_view DocumentView::get_current_chapter_text() {
     }
     return L"";
 }
+
+std::wstring_view DocumentView::get_current_page_text(){
+    if (!doc()->is_super_fast_index_ready()) return L"";
+    int current_page_number = get_current_page_number();
+    int total_page_count = doc()->num_pages();
+    return doc()->get_page_range_text(current_page_number, current_page_number);
+}

@@ -438,7 +438,7 @@ public:
     GetCurrentPageTextCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        result = widget->get_current_page_text();
+        result = std::wstring(widget->mdv()->get_current_page_text());
     }
 };
 

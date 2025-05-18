@@ -14576,20 +14576,6 @@ QJsonObject MainWidget::get_annotation_js(QString uuid) {
 }
 
 
-std::wstring MainWidget::get_current_page_text(){
-    if (!doc()->is_super_fast_index_ready()) return L"";
-    int current_page_number = main_document_view->get_current_page_number();
-    int total_page_count = doc()->num_pages();
-    int begin_index = doc()->get_page_offset_into_super_fast_index(current_page_number);
-    int end_index = -1;
-    if (current_page_number < total_page_count - 1){
-        end_index = doc()->get_page_offset_into_super_fast_index(current_page_number + 1);
-    }
-    else{
-        end_index = doc()->get_super_fast_index().size();
-    }
-    return doc()->get_super_fast_index().substr(begin_index, end_index - begin_index);
-}
 
 void MainWidget::set_textbar_autocomlete_strings(QStringList strings) {
     auto line_edit = dynamic_cast<MyLineEdit*>(focusWidget());

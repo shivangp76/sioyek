@@ -746,6 +746,7 @@ public:
     AbsoluteRect get_view_rect();
     int get_page_text_and_line_rects(int page, std::wstring& text, std::vector<PagelessDocumentRect>& rects);
     std::wstring_view get_current_chapter_text();
+    std::wstring_view get_current_page_text();
 };
 
 struct CachedScratchpadPixmapData {
