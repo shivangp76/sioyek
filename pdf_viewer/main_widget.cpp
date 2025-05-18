@@ -13912,7 +13912,7 @@ void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
             auto reply = download_paper_with_url(url.toStdWString(), false, PaperDownloadFinishedAction::OpenInNewWindow);
             reply->setProperty("sioyek_downloading", true);
             reply->setProperty("sioyek_network_message", "starting download");
-            QObject::connect(reply, &QNetworkReply::downloadProgress, [this, reply](qint64 received, qint64 total) {
+            QObject::connect(reply, &QNetworkReply::downloadProgress, this, [this, reply](qint64 received, qint64 total) {
                 if (total > 0) {
                     float ratio = static_cast<float>(received) / total;
                     int percent = static_cast<int>(ratio * 100);
