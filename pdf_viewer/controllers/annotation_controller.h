@@ -56,4 +56,7 @@ public:
 
     void handle_goto_portal_list();
     void handle_goto_bookmark(bool manual_only=false, bool chat=false);
+    void handle_goto_bookmark_global(bool manual_only=false);
+    void handle_goto_highlight();
+    void handle_goto_highlight_global();
 };

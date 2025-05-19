@@ -332,3 +332,19 @@ QVariant FulltextResultModel::headerData(int section, Qt::Orientation orientatio
     }
     return QVariant();
 }
+
+bool HighlightModel::removeRows(int row, int count, const QModelIndex& parent) {
+    beginRemoveRows(parent, row, row + count - 1);
+    highlights.erase(highlights.begin() + row, highlights.begin() + row + count);
+
+    if (documents.size() > 0) {
+        documents.erase(documents.begin() + row, documents.begin() + row + count);
+    }
+
+    if (checksums.size() > 0) {
+        checksums.erase(checksums.begin() + row, checksums.begin() + row + count);
+    }
+
+    endRemoveRows();
+    return true;
+}
