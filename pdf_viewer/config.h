@@ -206,6 +206,7 @@ public:
     std::vector<std::wstring> get_auto_config_names();
     void handle_set_color_palette(MainWidget* w, ColorPalette palette);
     void export_config_names(std::wstring file_path);
+    void export_default_config_file(std::wstring file_path);
 };
 
 bool get_custom_command_definition_file_and_line_number(std::wstring command_name, std::wstring& out_path, int& out_line_number);

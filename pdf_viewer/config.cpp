@@ -1738,9 +1738,9 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     }
 
 
-    // for (auto& config : configs) {
-    //     config.save_value_into_default();
-    // }
+    for (auto config : configs) {
+        config->save_value_into_default();
+    }
 
     deserialize(nullptr, default_path, auto_path, user_paths);
 }
@@ -2247,6 +2247,26 @@ void ConfigManager::export_config_names(std::wstring file_path){
         //QStringList command_names = command_manager->get_all_command_names();
         for (auto config : configs){
             output_file.write((QString::fromStdWString(config->name) + "\n").toUtf8());
+        }
+
+        output_file.close();
+    }
+}
+
+
+void ConfigManager::export_default_config_file(std::wstring file_path){
+    // load_sioyek_documentation();
+
+    QFile output_file(QString::fromStdWString(file_path));
+    if (output_file.open(QIODeviceBase::WriteOnly)){
+        for (auto config : configs){
+            QString config_name = QString::fromStdWString(config->name);
+            if (config->default_value_string.size() > 0){
+                output_file.write((config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
+            }
+            else{
+                output_file.write(("# " + config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
+            }
         }
 
         output_file.close();

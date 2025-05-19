@@ -7783,25 +7783,6 @@ void MainWidget::export_command_names(std::wstring file_path){
 }
 
 
-void MainWidget::export_default_config_file(std::wstring file_path){
-    load_sioyek_documentation();
-
-    QFile output_file(QString::fromStdWString(file_path));
-    if (output_file.open(QIODeviceBase::WriteOnly)){
-        std::vector<Config*> configs = config_manager->get_configs();
-        for (auto config : configs){
-            QString config_name = QString::fromStdWString(config->name);
-            if (config->default_value_string.size() > 0){
-                output_file.write((config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
-            }
-            else{
-                output_file.write(("# " + config_name + " " + QString::fromStdWString(config->default_value_string) + "\n\n").toUtf8());
-            }
-        }
-
-        output_file.close();
-    }
-}
 
 void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
     if (is_scratchpad_mode()){

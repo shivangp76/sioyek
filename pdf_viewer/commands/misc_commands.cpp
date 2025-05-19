@@ -910,7 +910,7 @@ public:
     }
 
     void perform() {
-        widget->export_default_config_file(file_name);
+        widget->config_manager->export_default_config_file(file_name);
     }
 
     bool requires_document() { return false; }
