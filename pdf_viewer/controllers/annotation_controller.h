@@ -31,6 +31,7 @@ public:
     void handle_bookmark_summarize_query(std::wstring bookmark_uuid);
     BookMark* add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk);
     void sync_newly_added_annot(const std::string& annot_type, const std::string& uuid);
+    void sync_edited_annot(const std::string& annot_type, const std::string& uuid);
 
     void on_bookmark_edited(BookMark bm, bool was_manual_edit, bool was_move_or_resize);
     void on_highlight_deleted(const Highlight& highlight, const std::string& document_checksum);
@@ -40,8 +41,16 @@ public:
     void on_portal_deleted(const Portal& uuid, const std::string& document_checksum);
     void on_portal_edited(const std::string& uuid);
     void on_mark_added(const std::string& uuid, char type);
+    void on_new_highlight_added(const std::string& uuid);
+    void on_highlight_annotation_edited(const std::string& uuid);
+    void on_highlight_type_edited(const std::string& uuid);
 
     void delete_highlight_with_uuid(const std::string& uuid);
     std::optional<Highlight> delete_current_document_highlight_with_uuid(const std::string& uuid);
     void delete_current_document_highlight(Highlight* hl);
+
+    std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
+    std::wstring handle_add_highlight(char symbol);
+    void change_selected_highlight_type(char new_type);
+    char get_current_selected_highlight_type();
 };

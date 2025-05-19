@@ -445,3 +445,81 @@ void AnnotationController::sync_newly_added_annot(const std::string& annot_type,
         }
     }
 }
+
+void AnnotationController::on_new_highlight_added(const std::string& uuid) {
+    if (mw->add_highlight_hook_function_name) {
+        mw->call_js_function_with_highlight_arg_with_uuid(mw->add_highlight_hook_function_name.value(), uuid);
+    }
+    sync_newly_added_annot("highlight", uuid);
+
+    doc()->update_last_local_edit_time();
+}
+
+void AnnotationController::on_highlight_annotation_edited(const std::string& uuid) {
+    if (mw->highlight_annotation_changed_hook_function_name) {
+        mw->call_js_function_with_highlight_arg_with_uuid(mw->highlight_annotation_changed_hook_function_name.value(), uuid);
+    }
+    mw->sync_edited_annot("highlight", uuid);
+}
+
+void AnnotationController::on_highlight_type_edited(const std::string& uuid) {
+    if (mw->highlight_type_changed_hook_function_name) {
+        mw->call_js_function_with_highlight_arg_with_uuid(mw->highlight_type_changed_hook_function_name.value(), uuid);
+    }
+    mw->sync_edited_annot("highlight", uuid);
+}
+
+void AnnotationController::sync_edited_annot(const std::string& annot_type, const std::string& uuid) {
+    if (mw->is_current_document_available_on_server()) {
+        const Annotation* annot = doc()->get_annot_with_uuid(annot_type, uuid);
+        if (annot) {
+            std::optional<std::string> doc_checksum = doc()->get_checksum_fast();
+            if (doc_checksum.has_value()) {
+                mw->sioyek_network_manager->upload_annot(mw,
+                    QString::fromStdString(doc_checksum.value()),
+                    *annot,
+                    []() {},
+                    []() {}
+                );
+            }
+        }
+    }
+    doc()->update_last_local_edit_time();
+}
+
+std::string AnnotationController::add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type) {
+    std::string uuid = mw->main_document_view->add_highlight_(selection_begin, selection_end, type);
+    on_new_highlight_added(uuid);
+    return uuid;
+}
+
+std::wstring AnnotationController::handle_add_highlight(char symbol) {
+    if (mdv()->selected_character_rects.size() > 0) {
+        std::string uuid = add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, symbol);
+        mdv()->clear_selected_text();
+        return utf8_decode(uuid);
+    }
+    else {
+        mw->change_selected_highlight_type(symbol);
+        return utf8_decode(mdv()->get_selected_highlight_uuid());
+    }
+}
+
+void AnnotationController::change_selected_highlight_type(char new_type) {
+    std::string selected_highlight_uuid = mdv()->get_selected_highlight_uuid();
+    if (selected_highlight_uuid.size() > 0) {
+        doc()->update_highlight_type(selected_highlight_uuid, new_type);
+        on_highlight_type_edited(selected_highlight_uuid);
+    }
+}
+
+char AnnotationController::get_current_selected_highlight_type() {
+    std::string selected_highlight_uuid = mdv()->get_selected_highlight_uuid();
+    if (selected_highlight_uuid.size() > 0) {
+        Highlight* highlight = doc()->get_highlight_with_uuid(selected_highlight_uuid);
+        if (highlight) {
+            return highlight->type;
+        }
+    }
+    return 'a';
+}

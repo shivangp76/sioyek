@@ -6334,62 +6334,22 @@ void MainWidget::handle_goto_bookmark_global(bool manual_only) {
             show_current_widget();
         }
     }
-
-    //set_filtered_select_menu<BookState>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names }, book_states, -1,
-    //    [&](BookState* book_state) {
-    //        QString path = QString::fromStdWString(book_state->document_path);
-    //        if (path.startsWith("SERVER://")) {
-    //            download_and_open(path.mid(9).toStdString(), book_state->offset_y);
-    //        }
-    //        else {
-    //            if (pending_command_instance) {
-    //                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdWString(book_state->document_path) << book_state->offset_y);
-    //            }
-    //            advance_command(std::move(pending_command_instance));
-    //        }
-    //    },
-    //    [&](BookState* book_state) {
-    //        delete_global_bookmark(book_state->uuid);
-    //    }
-    //    );
-    //show_current_widget();
 }
 
 std::string MainWidget::add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type) {
-    std::string uuid = main_document_view->add_highlight_(selection_begin, selection_end, type);
-    on_new_highlight_added(uuid);
-    return uuid;
+    return annotation_controller->add_highlight_to_current_document(selection_begin, selection_end, type);
 }
 
 std::wstring MainWidget::handle_add_highlight(char symbol) {
-    if (main_document_view->selected_character_rects.size() > 0) {
-        std::string uuid = add_highlight_to_current_document(dv()->selection_begin, dv()->selection_end, symbol);
-        main_document_view->clear_selected_text();
-        return utf8_decode(uuid);
-    }
-    else {
-        change_selected_highlight_type(symbol);
-        return utf8_decode(main_document_view->get_selected_highlight_uuid());
-    }
+    return annotation_controller->handle_add_highlight(symbol);
 }
 
 void MainWidget::change_selected_highlight_type(char new_type) {
-    std::string selected_highlight_uuid = main_document_view->get_selected_highlight_uuid();
-    if (selected_highlight_uuid.size() > 0) {
-        doc()->update_highlight_type(selected_highlight_uuid, new_type);
-        on_highlight_type_edited(selected_highlight_uuid);
-    }
+    return annotation_controller->change_selected_highlight_type(new_type);
 }
 
 char MainWidget::get_current_selected_highlight_type() {
-    std::string selected_highlight_uuid = main_document_view->get_selected_highlight_uuid();
-    if (selected_highlight_uuid.size() > 0) {
-        Highlight* highlight = doc()->get_highlight_with_uuid(selected_highlight_uuid);
-        if (highlight) {
-            return highlight->type;
-        }
-    }
-    return 'a';
+    return annotation_controller->get_current_selected_highlight_type();
 }
 
 void MainWidget::handle_goto_highlight() {
@@ -8423,7 +8383,7 @@ void MainWidget::show_command_menu() {
 }
 
 BookMark* MainWidget::add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk) {
-    annotation_controller->add_chunk_to_bookmark(document, bookmark_uuid, chunk);
+    return annotation_controller->add_chunk_to_bookmark(document, bookmark_uuid, chunk);
 }
 
 bool MainWidget::ensure_super_fast_search_index() {
@@ -8446,11 +8406,11 @@ bool MainWidget::ensure_super_fast_search_index() {
 }
 
 void MainWidget::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
-    annotation_controller->handle_bookmark_summarize_query(bookmark_uuid_);
+    return annotation_controller->handle_bookmark_summarize_query(bookmark_uuid_);
 }
 
 void MainWidget::handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid_) {
-    annotation_controller->handle_bookmark_ask_query(query, bookmark_uuid_);
+    return annotation_controller->handle_bookmark_ask_query(query, bookmark_uuid_);
 
 }
 
@@ -12352,11 +12312,11 @@ void MainWidget::open_external_text_editor() {
 }
 
 void MainWidget::on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum){
-        annotation_controller->on_bookmark_deleted(bookmark, document_checksum);
+    return annotation_controller->on_bookmark_deleted(bookmark, document_checksum);
 }
 
 void MainWidget::on_highlight_deleted(const Highlight& hl, const std::string& document_checksum){
-    annotation_controller->on_highlight_deleted(hl, document_checksum);
+    return annotation_controller->on_highlight_deleted(hl, document_checksum);
 }
 
 void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::string& uuid) {
@@ -12365,15 +12325,15 @@ void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::st
 
 
 void MainWidget::delete_highlight_with_uuid(const std::string& uuid) {
-    annotation_controller->delete_highlight_with_uuid(uuid);
+    return annotation_controller->delete_highlight_with_uuid(uuid);
 }
 
 std::optional<Highlight> MainWidget::delete_current_document_highlight_with_uuid(const std::string& uuid) {
-    annotation_controller->delete_current_document_highlight_with_uuid(uuid);
+    return annotation_controller->delete_current_document_highlight_with_uuid(uuid);
 }
 
 void MainWidget::delete_current_document_highlight(Highlight* hl) {
-    annotation_controller->delete_current_document_highlight(hl);
+    return annotation_controller->delete_current_document_highlight(hl);
 }
 
 void MainWidget::delete_current_document_bookmark_with_bookmark(BookMark* bm) {
@@ -12381,7 +12341,7 @@ void MainWidget::delete_current_document_bookmark_with_bookmark(BookMark* bm) {
 }
 
 void MainWidget::on_bookmark_edited(BookMark bm, bool was_manual_edit, bool was_move_or_resize) {
-    annotation_controller->on_bookmark_edited(bm, was_manual_edit, was_move_or_resize);
+    return annotation_controller->on_bookmark_edited(bm, was_manual_edit, was_move_or_resize);
 }
 
 //void MainWidget::call_js_function_with_args(const QString& function_name) {
@@ -12452,68 +12412,43 @@ void MainWidget::call_js_function_with_portal_arg_with_uuid(const QString& funct
 }
 
 void MainWidget::on_new_bookmark_added(const std::string& uuid) {
-    annotation_controller->on_new_bookmark_added(uuid);
+    return annotation_controller->on_new_bookmark_added(uuid);
 }
 
 void MainWidget::on_new_portal_added(const std::string& uuid) {
-    annotation_controller->on_new_portal_added(uuid);
+    return annotation_controller->on_new_portal_added(uuid);
 }
 
 void MainWidget::on_portal_deleted(const Portal& deleted_portal, const std::string& document_checksum) {
-    annotation_controller->on_portal_deleted(deleted_portal, document_checksum);
+    return annotation_controller->on_portal_deleted(deleted_portal, document_checksum);
 }
 
 void MainWidget::on_portal_edited(const std::string& uuid) {
-    annotation_controller->on_portal_edited(uuid);
+    return annotation_controller->on_portal_edited(uuid);
 }
 
 void MainWidget::on_mark_added(const std::string& uuid, char type) {
-    annotation_controller->on_mark_added(uuid, type);
+    return annotation_controller->on_mark_added(uuid, type);
 }
 
 void MainWidget::sync_newly_added_annot(const std::string& annot_type, const std::string& uuid) {
-    annotation_controller->sync_newly_added_annot(annot_type, uuid);
+    return annotation_controller->sync_newly_added_annot(annot_type, uuid);
 }
 
 void MainWidget::on_new_highlight_added(const std::string& uuid) {
-    if (add_highlight_hook_function_name) {
-        call_js_function_with_highlight_arg_with_uuid(add_highlight_hook_function_name.value(), uuid);
-    }
-    sync_newly_added_annot("highlight", uuid);
-
-    doc()->update_last_local_edit_time();
+    return annotation_controller->on_new_highlight_added(uuid);
 }
 
 void MainWidget::on_highlight_annotation_edited(const std::string& uuid) {
-    if (highlight_annotation_changed_hook_function_name) {
-        call_js_function_with_highlight_arg_with_uuid(highlight_annotation_changed_hook_function_name.value(), uuid);
-    }
-    sync_edited_annot("highlight", uuid);
+    return annotation_controller->on_highlight_annotation_edited(uuid);
 }
 
 void MainWidget::on_highlight_type_edited(const std::string& uuid) {
-    if (highlight_type_changed_hook_function_name) {
-        call_js_function_with_highlight_arg_with_uuid(highlight_type_changed_hook_function_name.value(), uuid);
-    }
-    sync_edited_annot("highlight", uuid);
+    return annotation_controller->on_highlight_type_edited(uuid);
 }
 
 void MainWidget::sync_edited_annot(const std::string& annot_type, const std::string& uuid) {
-    if (is_current_document_available_on_server()) {
-        const Annotation* annot = doc()->get_annot_with_uuid(annot_type, uuid);
-        if (annot) {
-            std::optional<std::string> doc_checksum = doc()->get_checksum_fast();
-            if (doc_checksum.has_value()) {
-                sioyek_network_manager->upload_annot(this,
-                    QString::fromStdString(doc_checksum.value()),
-                    *annot,
-                    []() {},
-                    []() {}
-                );
-            }
-        }
-    }
-    doc()->update_last_local_edit_time();
+    return annotation_controller->sync_edited_annot(annot_type, uuid);
 }
 
 void MainWidget::on_open_document(const std::wstring& path) {
@@ -13160,11 +13095,11 @@ std::optional<SioyekBookmarkTextBrowser*> MainWidget::get_current_bookmark_brows
 }
 
 void MainWidget::scroll_selected_bookmark(int amount) {
-    annotation_controller->scroll_selected_bookmark(amount);
+    return annotation_controller->scroll_selected_bookmark(amount);
 }
 
 void MainWidget::pin_current_overview_as_portal() {
-    annotation_controller->pin_current_overview_as_portal();
+    return annotation_controller->pin_current_overview_as_portal();
 }
 
 void MainWidget::set_mouse_cursor_for_side_resize(std::optional<OverviewSide> side){
@@ -13652,7 +13587,7 @@ QString MainWidget::get_environment_variable(QString name) {
 }
 
 void MainWidget::scroll_selected_bookmark_to_end() {
-    annotation_controller->scroll_selected_bookmark_to_end();
+    return annotation_controller->scroll_selected_bookmark_to_end();
 }
 
 void MainWidget::repeat_last_command() {
@@ -13665,23 +13600,23 @@ void MainWidget::repeat_last_command() {
 }
 
 void MainWidget::handle_ask() {
-    annotation_controller->handle_ask();
+    return annotation_controller->handle_ask();
 }
 
 void MainWidget::open_selected_bookmark_in_widget(std::string bookmark_uuid, bool force_chat, bool is_bookmark_pending) {
-    annotation_controller->open_selected_bookmark_in_widget(bookmark_uuid, force_chat, is_bookmark_pending);
+    return annotation_controller->open_selected_bookmark_in_widget(bookmark_uuid, force_chat, is_bookmark_pending);
 }
 
 void MainWidget::accept_new_bookmark_message_with_text(QString message){
-    annotation_controller->accept_new_bookmark_message_with_text(message);
+    return annotation_controller->accept_new_bookmark_message_with_text(message);
 }
 
 void MainWidget::accept_new_bookmark_message() {
-    annotation_controller->accept_new_bookmark_message();
+    return annotation_controller->accept_new_bookmark_message();
 }
 
 void MainWidget::update_current_bookmark_widget_text(BookMark* bm) {
-    annotation_controller->update_current_bookmark_widget_text(bm);
+    return annotation_controller->update_current_bookmark_widget_text(bm);
 }
 
 QString MainWidget::get_selected_text_in_chat_window() {
@@ -13695,7 +13630,7 @@ QString MainWidget::get_selected_text_in_chat_window() {
 }
 
 void MainWidget::handle_scroll_selected_bookmark_to_ends(bool goto_start){
-    annotation_controller->handle_scroll_selected_bookmark_to_ends(goto_start);
+    return annotation_controller->handle_scroll_selected_bookmark_to_ends(goto_start);
 }
 
 void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
