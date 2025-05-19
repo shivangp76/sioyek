@@ -221,3 +221,93 @@ void AnnotationController::handle_scroll_selected_bookmark_to_ends(bool goto_sta
         }
     }
 }
+
+BookMark* AnnotationController::add_chunk_to_bookmark(Document* document, std::string bookmark_uuid, QString chunk) {
+    // int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+    BookMark* bookmark_ptr = document->get_bookmark_with_uuid(bookmark_uuid);
+    if (bookmark_ptr) {
+        BookMark& bm = *bookmark_ptr;
+        bm.is_pending = false;
+        bm.description += chunk.toStdWString();
+        for (auto& following_window : mw->following_windows) {
+            if (following_window.bookmark_uuid == bm.uuid) {
+                following_window.file->open(QFile::WriteOnly);
+                following_window.file->write(QString::fromStdWString(bm.description).toUtf8());
+                following_window.file->close();
+            }
+        }
+
+        mw->invalidate_render();
+        return &bm;
+    }
+    return nullptr;
+}
+
+void AnnotationController::handle_bookmark_summarize_query(std::wstring bookmark_uuid_) {
+    if (!mw->ensure_super_fast_search_index()) {
+        return;
+    }
+    const std::wstring& index = doc()->get_super_fast_index();
+
+    int first_page_end_index = doc()->get_first_page_end_index();
+
+    std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
+    BookMark* bm_ptr = doc()->get_bookmark_with_uuid(bookmark_uuid);
+    bm_ptr->description += L"\n\n";
+    mw->sioyek_network_manager->summarize(mw,  index, first_page_end_index, [this, bookmark_uuid, document=doc()](QString chunk) {
+        add_chunk_to_bookmark(document, bookmark_uuid, chunk);
+        },
+        [this, bookmark_uuid, document=doc()]() {
+            //int bookmark_index = document->get_bookmark_index_with_uuid(bookmark_uuid);
+            BookMark* bm = document->get_bookmark_with_uuid(bookmark_uuid);
+            if (bm) {
+                bm->is_pending = false;
+                bm->description = replace_verbatim_links(bm->description);
+                document->update_bookmark_text(bookmark_uuid, bm->description, bm->font_size);
+                on_bookmark_edited(*bm, false, false);
+            }
+        });
+}
+
+
+void AnnotationController::on_bookmark_edited(BookMark bm, bool was_manual_edit, bool was_move_or_resize) {
+    if (mw->edit_bookmark_hook_function_name) {
+        mw->call_js_function_with_bookmark_arg_with_uuid(mw->edit_bookmark_hook_function_name.value(), bm.uuid);
+    }
+    if (was_manual_edit && !was_move_or_resize) {
+        QStringList lines = QString::fromStdWString(bm.description).split("\n", Qt::SkipEmptyParts);
+        if (lines.size() > 0) {
+            if (lines.last().trimmed().startsWith("? ")) {
+                //qDebug() << "we should continue";
+                handle_bookmark_ask_query(bm.description, utf8_decode(bm.uuid));
+            }
+        }
+
+    }
+    mw->sync_edited_annot("bookmark", bm.uuid);
+}
+
+void AnnotationController::delete_highlight_with_uuid(const std::string& uuid) {
+    //db_manager->delete_highlight(uuid);
+    std::vector<std::pair<std::string, Highlight>> deleted_highlight;
+    mw->db_manager->select_highlight_with_uuid(uuid, deleted_highlight);
+
+    if (deleted_highlight.size() > 0) {
+        if (deleted_highlight[0].first == doc()->get_checksum()) {
+            doc()->delete_highlight(deleted_highlight[0].second);
+        }
+        else {
+            mw->db_manager->delete_highlight(uuid);
+        }
+
+        mw->on_highlight_deleted(deleted_highlight[0].second, deleted_highlight[0].first);
+    }
+}
+
+std::optional<Highlight> AnnotationController::delete_current_document_highlight_with_uuid(const std::string& uuid) {
+    std::optional<Highlight> deleted_highlight = doc()->delete_highlight_with_uuid(uuid);
+    if (deleted_highlight.has_value()) {
+        mw->on_highlight_deleted(deleted_highlight.value(), doc()->get_checksum());
+    }
+    return deleted_highlight;
+}
