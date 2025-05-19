@@ -65,4 +65,10 @@ public:
     std::optional<Portal> handle_delete_selected_portal();
     void handle_overview_to_portal();
     void handle_special_bookmarks(std::wstring bookmark_text, std::wstring bookmark_uuid);
+    std::wstring handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid);
+
+    void add_portal(std::wstring source_path, Portal new_link);
+    void change_bookmark_text(std::string uuid, const std::wstring& new_text);
+    void change_highlight_text_annot(std::string uuid, const std::wstring& new_text);
+    std::optional<BookMark> delete_current_document_bookmark(const std::string& uuid);
 };

@@ -1224,3 +1224,112 @@ void AnnotationController::handle_special_bookmarks(std::wstring text, std::wstr
         }
     }
 }
+
+std::wstring AnnotationController::handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid) {
+    std::wstring result = L"";
+    if (text.size() > 0) {
+        std::string uuid = doc()->add_pending_bookmark(pending_uuid, text);
+        on_new_bookmark_added(uuid);
+        result = utf8_decode(uuid);
+        mdv()->set_selected_bookmark_uuid("");
+        handle_special_bookmarks(text, utf8_decode(uuid));
+    }
+    else {
+        doc()->undo_pending_bookmark(pending_uuid);
+        result = L"";
+    }
+
+    mw->clear_selected_rect();
+    mw->invalidate_render();
+    return result;
+}
+
+void AnnotationController::add_portal(std::wstring source_path, Portal new_link) {
+    if (source_path == mdv()->get_document()->get_path()) {
+        std::string uuid = mdv()->get_document()->add_portal(new_link);
+        on_new_portal_added(uuid);
+    }
+    else if (mw->document_manager->get_cached_document(source_path)){
+        // if the source of the portal is not the current document
+        // we should add it to the loaded document if exists
+        Document* source_doc = mw->document_manager->get_cached_document(source_path).value();
+        source_doc->add_portal(new_link);
+        on_new_portal_added(new_link.uuid);
+    }
+    else {
+        //const std::unordered_map<std::wstring, Document*> cached_documents = document_manager->get_cached_documents();
+        Document* doc = mw->document_manager->get_document(source_path);
+        std::string uuid = doc->add_portal(new_link, false);
+        on_new_portal_added(uuid);
+
+        if (new_link.is_visible()) {
+            std::string uuid = utf8_encode(new_uuid());
+            bool success = mw->db_manager->insert_visible_portal(mw->checksummer->get_checksum(source_path),
+                new_link.dst.document_checksum,
+                new_link.dst.book_state.offset_x,
+                new_link.dst.book_state.offset_y,
+                new_link.dst.book_state.zoom_level,
+                new_link.src_offset_x.value(),
+                new_link.src_offset_y,
+                utf8_decode(uuid));
+            if (success) {
+                on_new_portal_added(uuid);
+            }
+        }
+        else {
+            std::string uuid = utf8_encode(new_uuid());
+            bool success = mw->db_manager->insert_portal(mw->checksummer->get_checksum(source_path),
+                new_link.dst.document_checksum,
+                new_link.dst.book_state.offset_x,
+                new_link.dst.book_state.offset_y,
+                new_link.dst.book_state.zoom_level,
+                new_link.src_offset_y,
+                utf8_decode(uuid));
+            if (success) {
+                on_new_portal_added(uuid);
+            }
+        }
+    }
+}
+
+void AnnotationController::change_bookmark_text(std::string uuid, const std::wstring& new_text) {
+    std::string selected_bookmark_uuid = uuid;
+    if (selected_bookmark_uuid.size() > 0) {
+        BookMark* selected_bookmark = doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
+        if (selected_bookmark) {
+            if (new_text.size() > 0) {
+                float new_font_size = selected_bookmark->font_size;
+                doc()->update_bookmark_text(selected_bookmark_uuid, new_text, new_font_size);
+
+                if (new_text[0] == '?') {
+                    int last_newline_index = new_text.find_last_of(L"\n");
+                    int next_index = last_newline_index + 1;
+                    if (next_index < new_text.size() - 1 && new_text[next_index] == '?' && new_text[next_index + 1] == ' ') {
+                        handle_special_bookmarks(new_text, utf8_decode(selected_bookmark->uuid));
+                    }
+
+                }
+
+                on_bookmark_edited(*selected_bookmark, true, false);
+            }
+            else {
+                delete_current_document_bookmark(selected_bookmark_uuid);
+            }
+        }
+    }
+}
+
+void AnnotationController::change_highlight_text_annot(std::string uuid, const std::wstring& new_text) {
+    std::string selected_highlight_uuid = uuid;
+    if (selected_highlight_uuid.size() > 0) {
+        mw->update_highlight_annot_with_uuid(selected_highlight_uuid, new_text);
+    }
+}
+
+std::optional<BookMark> AnnotationController::delete_current_document_bookmark(const std::string& uuid) {
+    std::optional<BookMark> deleted_bookmark = doc()->delete_bookmark_with_uuid(uuid);
+    if (deleted_bookmark) {
+        on_bookmark_deleted(deleted_bookmark.value(), doc()->get_checksum());
+    }
+    return deleted_bookmark;
+}
