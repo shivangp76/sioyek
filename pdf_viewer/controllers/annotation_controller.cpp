@@ -1501,3 +1501,45 @@ bool AnnotationController::handle_visible_object_resize_finish() {
     }
     return false;
 }
+
+void AnnotationController::set_mark_in_current_location(char symbol) {
+    // it is a global mark, we delete other marks with the same symbol from database and add the new mark
+    std::string uuid;
+    if (isupper(symbol)) {
+        mw->db_manager->delete_mark_with_symbol(symbol);
+        // we should also delete the cached marks
+        mw->document_manager->delete_global_mark(symbol);
+        uuid = mdv()->add_mark(symbol);
+    }
+    else {
+        uuid = mdv()->add_mark(symbol);
+        mw->validate_render();
+    }
+    on_mark_added(uuid, symbol);
+}
+
+void AnnotationController::goto_mark(char symbol) {
+    if (symbol == '`' || symbol == '\'') {
+        mw->return_to_last_visual_mark();
+    }
+    else if (isupper(symbol)) { // global mark
+        std::vector<std::pair<std::string, float>> mark_vector;
+        mw->db_manager->select_global_mark(symbol, mark_vector);
+        if (mark_vector.size() > 0) {
+            assert(mark_vector.size() == 1); // we can not have more than one global mark with the same name
+            std::wstring doc_path = mw->checksummer->get_path(mark_vector[0].first).value();
+            mw->open_document(doc_path, 0.0f, mark_vector[0].second);
+        }
+
+    }
+    else {
+        mdv()->goto_mark(symbol);
+    }
+}
+
+void AnnotationController::handle_portal_to_overview() {
+    std::optional<Portal> new_portal = mdv()->create_portal_to_overview();
+    if (new_portal.has_value()) {
+        add_portal(mdv()->get_document()->get_path(), new_portal.value());
+    }
+}

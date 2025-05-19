@@ -85,4 +85,7 @@ public:
     void handle_bookmark_move();
     void handle_portal_move();
     bool handle_visible_object_resize_finish();
+    void set_mark_in_current_location(char symbol);
+    void goto_mark(char symbol);
+    void handle_portal_to_overview();
 };

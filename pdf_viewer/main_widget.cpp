@@ -5564,38 +5564,11 @@ float CharacterAddress::focus_offset() {
 }
 
 void MainWidget::set_mark_in_current_location(char symbol) {
-    // it is a global mark, we delete other marks with the same symbol from database and add the new mark
-    std::string uuid;
-    if (isupper(symbol)) {
-        db_manager->delete_mark_with_symbol(symbol);
-        // we should also delete the cached marks
-        document_manager->delete_global_mark(symbol);
-        uuid = main_document_view->add_mark(symbol);
-    }
-    else {
-        uuid = main_document_view->add_mark(symbol);
-        validate_render();
-    }
-    on_mark_added(uuid, symbol);
+    return annotation_controller->set_mark_in_current_location(symbol);
 }
 
 void MainWidget::goto_mark(char symbol) {
-    if (symbol == '`' || symbol == '\'') {
-        return_to_last_visual_mark();
-    }
-    else if (isupper(symbol)) { // global mark
-        std::vector<std::pair<std::string, float>> mark_vector;
-        db_manager->select_global_mark(symbol, mark_vector);
-        if (mark_vector.size() > 0) {
-            assert(mark_vector.size() == 1); // we can not have more than one global mark with the same name
-            std::wstring doc_path = checksummer->get_path(mark_vector[0].first).value();
-            open_document(doc_path, 0.0f, mark_vector[0].second);
-        }
-
-    }
-    else {
-        main_document_view->goto_mark(symbol);
-    }
+    return annotation_controller->goto_mark(symbol);
 }
 
 void MainWidget::advance_command(std::unique_ptr<Command> new_command, std::wstring* result) {
@@ -6272,10 +6245,7 @@ void MainWidget::handle_prefs_user_all() {
 }
 
 void MainWidget::handle_portal_to_overview() {
-    std::optional<Portal> new_portal = main_document_view->create_portal_to_overview();
-    if (new_portal.has_value()) {
-        add_portal(main_document_view->get_document()->get_path(), new_portal.value());
-    }
+    annotation_controller->handle_portal_to_overview();
 }
 
 void MainWidget::handle_goto_window() {
@@ -8981,7 +8951,6 @@ void MainWidget::handle_overview_to_ruler_portal() {
         set_overview_page(state.value(), true);
         invalidate_render();
     }
-
 }
 
 void MainWidget::handle_goto_ruler_portal(std::string tag) {
