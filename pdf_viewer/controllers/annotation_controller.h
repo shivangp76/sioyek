@@ -71,4 +71,18 @@ public:
     void change_bookmark_text(std::string uuid, const std::wstring& new_text);
     void change_highlight_text_annot(std::string uuid, const std::wstring& new_text);
     std::optional<BookMark> delete_current_document_bookmark(const std::string& uuid);
+    void delete_global_bookmark(const std::string& uuid);
+    void update_highlight_annot_with_uuid(const std::string& uuid, const std::wstring& new_annot);
+    void handle_portal();
+    void start_creating_rect_portal(AbsoluteDocumentPos location);
+
+    void update_portal_with_uuid(const std::string& uuid);
+    void update_bookmark_with_uuid(const std::string& uuid);
+    bool handle_annotation_move_finish();
+    void handle_bookmark_move_finish();
+    void handle_portal_move_finish();
+    void handle_visible_object_move();
+    void handle_bookmark_move();
+    void handle_portal_move();
+    bool handle_visible_object_resize_finish();
 };

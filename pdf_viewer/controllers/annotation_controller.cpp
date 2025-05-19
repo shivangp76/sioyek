@@ -22,6 +22,7 @@ extern bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION;
 extern bool FANCY_UI_MENUS;
 extern std::wstring SERVER_SYMBOL;
 extern std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
+extern float FREETEXT_BOOKMARK_FONT_SIZE;
 
 AnnotationController::AnnotationController(MainWidget* parent) : mw(parent) {
 }
@@ -1332,4 +1333,171 @@ std::optional<BookMark> AnnotationController::delete_current_document_bookmark(c
         on_bookmark_deleted(deleted_bookmark.value(), doc()->get_checksum());
     }
     return deleted_bookmark;
+}
+
+void AnnotationController::delete_global_bookmark(const std::string& uuid) {
+    std::vector<std::pair<std::string, BookMark>> deleted_bookmark;
+    mw->db_manager->select_bookmark_with_uuid(uuid, deleted_bookmark);
+    if (deleted_bookmark.size() > 0) {
+        if (deleted_bookmark[0].first == doc()->get_checksum()) {
+            doc()->delete_bookmark_with_uuid(uuid);
+        }
+        else {
+            mw->db_manager->delete_bookmark(uuid);
+        }
+        on_bookmark_deleted(deleted_bookmark[0].second, deleted_bookmark[0].first);
+    }
+}
+
+void AnnotationController::update_highlight_annot_with_uuid(const std::string& uuid, const std::wstring& new_annot) {
+    doc()->update_highlight_add_text_annotation(uuid, new_annot);
+    on_highlight_annotation_edited(uuid);
+}
+
+
+void AnnotationController::handle_portal() {
+    if (!mw->main_document_view_has_document()) return;
+
+    if (mdv()->is_pending_link_source_filled()) {
+        auto [source_path, pl] = mdv()->current_pending_portal.value();
+        pl.dst = mdv()->get_checksum_state();
+
+        if (source_path.has_value()) {
+            add_portal(source_path.value(), pl);
+        }
+
+        mdv()->set_pending_portal({});
+    }
+    else {
+        // if an overview is opened, add the overview as a pinned portal
+        if (dv()->get_overview_page().has_value()){
+            pin_current_overview_as_portal();
+            mw->close_overview();
+        }
+        else{
+            mdv()->set_pending_portal(mdv()->get_document()->get_path(),
+                Portal::with_src_offset(mdv()->get_offset_y()));
+        }
+    }
+
+    mw->synchronize_pending_link();
+    mw->refresh_all_windows();
+    mw->validate_render();
+}
+
+void AnnotationController::start_creating_rect_portal(AbsoluteDocumentPos location) {
+
+    Portal new_portal;
+    new_portal.src_offset_y = location.y;
+    new_portal.src_offset_x = location.x;
+
+    mdv()->set_pending_portal(mdv()->get_document()->get_path(), new_portal);
+
+    mw->synchronize_pending_link();
+    mw->refresh_all_windows();
+    mw->validate_render();
+}
+
+bool AnnotationController::handle_annotation_move_finish(){
+
+    if (mdv()->visible_object_move_data && mdv()->visible_object_move_data->is_moving) {
+        mdv()->visible_object_move_data->handle_move_end(mw);
+        mdv()->visible_object_move_data = {};
+        mw->stop_dragging();
+        mdv()->is_selecting = false;
+        return true;
+    }
+
+    if (mdv()->freehand_drawing_move_data) {
+        mdv()->handle_freehand_drawing_move_finish(mw->get_cursor_abspos());
+        mw->invalidate_render();
+        mdv()->is_selecting = false;
+        return true;
+    }
+
+    return false;
+}
+
+void AnnotationController::update_bookmark_with_uuid(const std::string& uuid) {
+    if (uuid.size() > 0) {
+        //BookMark& bm = doc()->get_bookmarks()[index];
+        BookMark* bm = doc()->get_bookmark_with_uuid(uuid);
+        if (bm) {
+            doc()->update_bookmark_position(uuid, { bm->begin_x, bm->begin_y }, { bm->end_x, bm->end_y });
+            on_bookmark_edited(*bm, true, true);
+        }
+    }
+}
+
+void AnnotationController::handle_bookmark_move_finish() {
+    std::string uuid = mdv()->visible_object_move_data->index.uuid;
+    update_bookmark_with_uuid(uuid);
+    mdv()->handle_bookmark_move_finish();
+}
+
+void AnnotationController::update_portal_with_uuid(const std::string& uuid) {
+    if (uuid.size() > 0) {
+        //Portal& portal = doc()->get_portals()[index];
+        Portal* portal = doc()->get_portal_with_uuid(uuid);
+
+        if (portal) {
+            if (portal->is_pinned()) {
+                doc()->update_portal_src_position(uuid,
+                    AbsoluteDocumentPos{ portal->src_offset_x.value(), portal->src_offset_y },
+                    AbsoluteDocumentPos{ portal->src_offset_end_x.value(), portal->src_offset_end_y.value() }
+                );
+            }
+            else {
+                if (portal->src_offset_end_x.has_value()) {
+                    doc()->update_portal_src_position(uuid,
+                        AbsoluteDocumentPos{ portal->src_offset_x.value(), portal->src_offset_y },
+                        {}
+                    );
+                }
+            }
+            //doc()->update_portal(portal);
+            on_portal_edited(uuid);
+        }
+    }
+}
+
+void AnnotationController::handle_visible_object_move() {
+    if (mdv()->visible_object_move_data.has_value()) {
+        auto type = mdv()->visible_object_move_data->index.object_type;
+        if (type == VisibleObjectType::Bookmark) {
+            handle_bookmark_move();
+        }
+        else if (type == VisibleObjectType::Portal || type == VisibleObjectType::PendingPortal) {
+            handle_portal_move();
+        }
+    }
+}
+
+void AnnotationController::handle_bookmark_move() {
+    AbsoluteDocumentPos current_mouse_abspos = mw->get_cursor_abspos();
+    mdv()->handle_bookmark_move(current_mouse_abspos);
+}
+
+void AnnotationController::handle_portal_move(){
+    mdv()->handle_portal_move(mw->get_cursor_abspos());
+}
+
+void AnnotationController::handle_portal_move_finish() {
+    mdv()->handle_portal_move_finish();
+}
+
+bool AnnotationController::handle_visible_object_resize_finish() {
+    auto& visible_object_resize_data = mdv()->visible_object_resize_data;
+
+    if (visible_object_resize_data->type == VisibleObjectType::Bookmark) {
+        update_bookmark_with_uuid(visible_object_resize_data->object_uuid);
+        visible_object_resize_data = {};
+        return true;
+    }
+    if (visible_object_resize_data->type == VisibleObjectType::PinnedPortal) {
+        update_portal_with_uuid(visible_object_resize_data->object_uuid);
+        visible_object_resize_data = {};
+        return true;
+    }
+    return false;
 }
