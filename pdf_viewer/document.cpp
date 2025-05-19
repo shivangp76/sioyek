@@ -26,6 +26,7 @@
 #include "checksum.h"
 #include "database.h"
 #include "utils.h"
+#include "utils/text_utils.h"
 
 const quint64 DRAWING_FILE_VERSION = 2;
 extern bool USE_BINARY_DRAWING_FILES;

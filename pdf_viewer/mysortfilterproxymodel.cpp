@@ -2,7 +2,8 @@
 #include <string>
 
 #include "rapidfuzz_amalgamated.hpp"
-#include "utils.h"
+
+#include "utils/text_utils.h"
 #include "ui.h"
 
 bool MySortFilterProxyModel::filter_accepts_row_column(int row, int col, const QModelIndex& source_parent) const {

@@ -47,6 +47,8 @@
 #include <QTimer>
 #include <QApplication>
 
+#include "utils/text_utils.h"
+
 #include <cstdint>
 
 #if defined(_WIN32)

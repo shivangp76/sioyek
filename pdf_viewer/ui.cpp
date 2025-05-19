@@ -23,6 +23,7 @@
 #include "touchui/TouchConfigMenu.h"
 #include "touchui/TouchSettings.h"
 
+#include "utils/text_utils.h"
 #include "commands/base_commands.h"
 
 extern std::wstring MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE;
@@ -1972,61 +1973,6 @@ QRect EnumConfigUI::get_prefered_rect(QRect parent_rect){
 }
 
 
-
-HighlightModel::HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& docs, std::vector<QString>&& doc_checksums, QObject* parent) : QAbstractTableModel(parent) {
-    highlights = data;
-    documents = docs;
-    checksums = doc_checksums;
-}
-
-int HighlightModel::rowCount(const QModelIndex& parent) const {
-    if (parent == QModelIndex()) {
-        return highlights.size();
-    }
-    return 0;
-}
-
-int HighlightModel::columnCount(const QModelIndex& parent) const {
-    if (documents.size() == 0) {
-        return 3;
-    }
-    else if (checksums.size() == 0) {
-        return 4;
-    }
-    else {
-        return 5;
-    }
-}
-
-QVariant HighlightModel::data(const QModelIndex& index, int role) const {
-    if (role == Qt::DisplayRole) {
-        if (index.column() == HighlightModelColumn::text) {
-            return QString::fromStdWString(highlights[index.row()].description);
-        }
-        if (index.column() == HighlightModelColumn::type) {
-            return highlights[index.row()].type;
-        }
-        if (index.column() == HighlightModelColumn::description) {
-            return QString::fromStdWString(highlights[index.row()].text_annot);
-        }
-        if (index.column() == HighlightModelColumn::file_name) {
-            return documents[index.row()];
-        }
-        if (index.column() == HighlightModelColumn::checksum) {
-            return checksums[index.row()];
-        }
-    }
-
-    return QVariant();
-}
-
-QVariant HighlightModel::headerData(int section, Qt::Orientation orientation, int role) const {
-    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-        return "Highlight";
-    }
-    return QVariant();
-}
-
 void HighlightSearchItemDelegate::set_pattern(QString p) {
     if (p.size() >= 2 && p[1] == ' ') {
         pattern = p.mid(2).toLower();
@@ -2282,9 +2228,6 @@ HighlightSelectorWidget::HighlightSelectorWidget(QAbstractItemView* view, QAbstr
 
 }
 
-void BaseCustomSelectorWidget::update_render() {
-    emit lv->model()->dataChanged(lv->model()->index(0, 0), lv->model()->index(lv->model()->rowCount() - 1, 0));
-}
 
 
 //bool HighlightSelectorWidget::on_text_change(const QString& text) {
@@ -2342,147 +2285,8 @@ bool HighlightModel::removeRows(int row, int count, const QModelIndex& parent) {
     return true;
 }
 
-bool ItemWithDescriptionModel::removeRows(int row, int count, const QModelIndex& parent) {
-    beginRemoveRows(parent, row, row + count - 1);
-    items.erase(items.begin() + row, items.begin() + row + count);
-
-    if (descriptions.size() > 0) {
-        descriptions.erase(descriptions.begin() + row, descriptions.begin() + row + count);
-    }
-
-    if (metadatas.size() > 0) {
-        metadatas.erase(metadatas.begin() + row, metadatas.begin() + row + count);
-    }
-
-    endRemoveRows();
-    return true;
-}
-
-void BaseCustomSelectorWidget::set_select_fn(std::function<void(int)>&& fn) {
-    select_fn = fn;
-}
-
-void BaseCustomSelectorWidget::set_delete_fn(std::function<void(int)>&& fn) {
-    delete_fn = fn;
-}
-
-void BaseCustomSelectorWidget::set_edit_fn(std::function<void(int)>&& fn) {
-    edit_fn = fn;
-}
-
-BaseCustomSelectorWidget::BaseCustomSelectorWidget(
-    QAbstractItemView* view,
-    QAbstractItemModel* model,
-    MainWidget* parent
-) : BaseSelectorWidget(view, true, model, parent){
-
-    lv = dynamic_cast<decltype(lv)>(get_view());
 
 
-}
-
-void BaseCustomSelectorWidget::resizeEvent(QResizeEvent* resize_event) {
-    dynamic_cast<BaseCustomDelegate*>(lv->itemDelegate())->clear_cache();
-    //clear_ca
-
-    BaseSelectorWidget::resizeEvent(resize_event);
-    update_render();
-}
-
-void BaseCustomSelectorWidget::on_select(QModelIndex value) {
-    if (value.isValid()){
-        QModelIndex source_index = dynamic_cast<const QSortFilterProxyModel*>(value.model())->mapToSource(value);
-        int source_row = source_index.row();
-
-        if (select_fn.has_value()) {
-
-            select_fn.value()(source_row);
-        }
-    }
-    else{
-        select_fn.value()(-1);
-    }
-}
-
-void BaseCustomSelectorWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
-    int source_row = source_index.row();
-
-    if (delete_fn.has_value()) {
-        delete_fn.value()(source_row);
-    }
-
-    bool result = proxy_model->removeRow(selected_index.row());
-    update_render();
-}
-
-void BaseCustomSelectorWidget::on_edit(const QModelIndex& source_index, const QModelIndex& selected_index) {
-    int source_row = source_index.row();
-
-    if (edit_fn.has_value()) {
-        edit_fn.value()(source_row);
-    }
-
-}
-
-void BaseCustomSelectorWidget::set_selected_index(int index) {
-
-    auto model = proxy_model->sourceModel();
-    if (index != -1) {
-        lv->selectionModel()->setCurrentIndex(model->index(index, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
-        lv->scrollTo(this->proxy_model->mapFromSource(lv->currentIndex()), QAbstractItemView::EnsureVisible);
-    }
-    else{
-        lv->selectionModel()->setCurrentIndex(model->index(0, 0), QItemSelectionModel::Rows | QItemSelectionModel::SelectCurrent);
-    }
-}
-
-CommandModel::CommandModel(
-    std::vector<QString> commands,
-    std::vector<QStringList> keybinds,
-    std::vector<bool> requires_pro)
-    : commands(commands), keybinds(keybinds), requires_pro(requires_pro){
-
-}
-
-int CommandModel::rowCount(const QModelIndex& parent) const {
-    if (parent == QModelIndex()) {
-        return commands.size();
-    }
-    return 0;
-}
-
-int CommandModel::columnCount(const QModelIndex& parent) const {
-    return CommandModel::max_columns;
-}
-
-QVariant CommandModel::data(const QModelIndex& index, int role) const {
-    if (role == Qt::DisplayRole) {
-        if (index.column() == CommandModel::command_name) {
-            return commands[index.row()];
-        }
-        else if (index.column() == CommandModel::keybind) {
-            if (index.row() < keybinds.size()) {
-                return keybinds[index.row()];
-            }
-        }
-        else if (index.column() == CommandModel::is_pro) {
-            if (index.row() < requires_pro.size()) {
-                // return QVariant::fromValue(requires_pro[index.row()]);
-                return (bool)requires_pro[index.row()];
-            }
-            return false;
-        }
-    }
-    return QVariant();
-}
-
-QVariant CommandModel::headerData(int section, Qt::Orientation orientation, int role) const {
-
-    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-        return "Command";
-    }
-    return QVariant();
-}
 
 
 CommandItemDelegate::CommandItemDelegate() {
@@ -2613,40 +2417,6 @@ QSize CommandItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QM
     return QSize(option.rect.width(), cached_size.value());
 }
 
-int BaseCustomDelegate::similarity_score_cached(QString haystack, QString needle, int* match_begin, int* match_end, float ratio) const{
-    std::tuple<QString, QString, float> key = std::make_tuple(haystack, needle, ratio);
-    auto cached_result = cached_similarity_scores.find(key);
-    if (cached_result != cached_similarity_scores.end()) {
-        *match_begin = cached_result->second.highlight_begin;
-        *match_end = cached_result->second.highlight_end;
-        return cached_result->second.score;
-    }
-
-    int score = similarity_score(haystack.toStdWString(), needle.toStdWString(), match_begin, match_end, ratio);
-    SimilarityScoreResult result;
-    result.score = score;
-    result.highlight_begin = *match_begin;
-    result.highlight_end = *match_end;
-    cached_similarity_scores[key] = result;
-
-    return score;
-
-}
-
-void BaseCustomDelegate::set_pattern(QString p) {
-    pattern = p.toLower();
-}
-
-QString BaseCustomDelegate::highlight_pattern(QString txt) const{
-    int text_highlight_begin = 0;
-    int text_highlight_end = 0;
-    int text_similarity = similarity_score_cached(txt.toLower(), pattern, &text_highlight_begin, &text_highlight_end, 0.8f);
-    const int similarity_threshold = 70;
-    if (text_similarity > similarity_threshold) {
-        txt = txt.left(text_highlight_begin) + "<span style=\"" + QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) + "\">" + txt.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + txt.mid(text_highlight_end);
-    }
-    return txt;
-}
 
 CommandSelectorWidget* CommandSelectorWidget::from_commands(
     std::vector<QString> commands,
@@ -2799,10 +2569,6 @@ CommandSelectorWidget::CommandSelectorWidget(
 
 }
 
-//BaseCustomDelegate::BaseCustomDelegate(QAbstractItemModel* model){
-//
-//}
-
 void HighlightSearchItemDelegate::clear_cache() {
     cached_sizes.clear();
 }
@@ -2936,336 +2702,8 @@ QString CommandSelectorWidget::get_command_with_index(int index) {
     return proxy_model->sourceModel()->data(proxy_model->sourceModel()->index(index, CommandModel::command_name)).toString();
 }
 
-BookmarkModel::BookmarkModel(std::vector<BookMark>&& data, std::vector<QString>&& docs, std::vector<QString>&& doc_checksums, QObject* parent) : QAbstractTableModel(parent) {
-    bookmarks = data;
-    documents = docs;
-    checksums = doc_checksums;
-}
-
-int BookmarkModel::rowCount(const QModelIndex& parent) const {
-    if (parent == QModelIndex()) {
-        return bookmarks.size();
-    }
-    return 0;
-}
-
-int BookmarkModel::columnCount(const QModelIndex& parent) const {
-    if (documents.size() == 0) {
-        return 2;
-    }
-    else if (checksums.size() == 0) {
-        return 3;
-    }
-    else {
-        return 4;
-    }
-}
-
-QVariant BookmarkModel::data(const QModelIndex& index, int role) const {
-    if (role == Qt::DisplayRole) {
-        if (index.column() == BookmarkModelColumn::description) {
-            return QString::fromStdWString(bookmarks[index.row()].description);
-        }
-        if (index.column() == BookmarkModelColumn::bookmark) {
-            return QVariant::fromValue(bookmarks[index.row()]);
-        }
-        if (index.column() == BookmarkModelColumn::file_name) {
-            return documents[index.row()];
-        }
-        if (index.column() == BookmarkModelColumn::checksum) {
-            return checksums[index.row()];
-        }
-    }
-    return QVariant();
-}
-
-QVariant BookmarkModel::headerData(int section, Qt::Orientation orientation, int role) const {
-    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-        return "Bookmark";
-    }
-    return QVariant();
-}
-
-bool BookmarkModel::removeRows(int row, int count, const QModelIndex& parent) {
-    beginRemoveRows(parent, row, row + count - 1);
-    bookmarks.erase(bookmarks.begin() + row, bookmarks.begin() + row + count);
-
-    if (documents.size() > 0) {
-        documents.erase(documents.begin() + row, documents.begin() + row + count);
-    }
-
-    if (checksums.size() > 0) {
-        checksums.erase(checksums.begin() + row, checksums.begin() + row + count);
-    }
-
-    endRemoveRows();
-    return true;
-}
-
-BookmarkSearchItemDelegate::BookmarkSearchItemDelegate(){
-    QFont bookmark_font(get_ui_font_face_name());
-    QFont file_name_font;
-
-    int font_size = FONT_SIZE > 0 ? FONT_SIZE : bookmark_font.pointSize();
-
-    if (font_size >= 0) {
-        bookmark_font.setPointSize(font_size);
-        file_name_font.setPointSize(font_size * 3 / 4);
-    }
-
-    bookmark_document.setDefaultFont(bookmark_font);
-    file_name_document.setDefaultFont(file_name_font);
-}
-
-QSize BookmarkSearchItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
-    const QSortFilterProxyModel *proxy_model = dynamic_cast<const QSortFilterProxyModel*>(index.model());
-    auto source_index = proxy_model->mapToSource(index);
-    if (cached_sizes.find(source_index.row()) != cached_sizes.end()) {
-        return QSize(option.rect.width(), cached_sizes[source_index.row()]);
-    }
-
-    BookMark bookmark = index.siblingAtColumn(BookmarkModel::bookmark).data().value<BookMark>();
-
-    QString bookmark_text = QString::fromStdWString(bookmark.description);
-    bool is_markdown = BookMark::should_be_displayed_as_markdown(bookmark_text);
-    bookmark_text = BookMark::get_display_markdown_or_text(bookmark_text);
-
-    bookmark_document.setTextWidth(option.rect.width());
-    if (is_markdown) {
-        bookmark_document.setMarkdown(bookmark_text);
-    }
-    else {
-        bookmark_document.setHtml(bookmark_text);
-    }
-
-    QSize res = bookmark_document.size().toSize();
-    int col_count = index.model()->columnCount();
-    bool is_global = index.model()->columnCount() == BookmarkModel::max_columns;
-
-    file_name_document.setTextWidth(option.rect.width());
-    file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
-    res = QSize(res.width(), res.height() + file_name_document.size().toSize().height());
-
-    cached_sizes[source_index.row()] = res.height();
-    return res;
-}
-
-void BookmarkSearchItemDelegate::clear_cache() {
-    cached_sizes.clear();
-}
-
-void BookmarkSearchItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
-    const QModelIndex& index) const {
-
-    painter->save();
-    bool is_selected = option.state & QStyle::State_Selected;
-    bool is_global = index.model()->columnCount() == BookmarkModel::max_columns;
-    //BookMark bookmark = index.data().value<BookMark>();
-    BookMark bookmark = index.siblingAtColumn(BookmarkModel::bookmark).data().value<BookMark>();
-
-    bookmark_document.setTextWidth(option.rect.width());
 
 
-    QString bookmark_text = index.data().toString();
-    bool is_markdown = BookMark::should_be_displayed_as_markdown(bookmark_text);
-    bookmark_text = BookMark::get_display_markdown_or_text(bookmark_text);
-
-    int text_highlight_begin = -1, text_highlight_end=-1;
-    int text_similarity = similarity_score_cached(bookmark_text.toLower(), pattern, &text_highlight_begin, &text_highlight_end);
-
-    if (bookmark_text.size() > 0 && text_similarity > 0 && text_highlight_begin >= 0) {
-        bookmark_text = bookmark_text.left(text_highlight_begin) + "<span style=\""+ QString::fromStdWString(MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE) +"\">" + bookmark_text.mid(text_highlight_begin, text_highlight_end - text_highlight_begin) + "</span>" + bookmark_text.mid(text_highlight_end);
-    }
-
-    if (is_markdown) {
-        bookmark_document.setMarkdown(bookmark_text);
-    }
-    else{
-        bookmark_document.setHtml(bookmark_text);
-    }
-
-    QAbstractTextDocumentLayout::PaintContext ctx;
-
-
-    if (is_selected) {
-        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_SELECTED_TEXT_COLOR));
-    }
-    else {
-        ctx.palette.setColor(QPalette::Text, convert_float3_to_qcolor(UI_TEXT_COLOR));
-    }
-    QColor bookmark_background_fill_color = is_selected ? convert_float3_to_qcolor(UI_SELECTED_BACKGROUND_COLOR) : convert_float3_to_qcolor(UI_BACKGROUND_COLOR);
-    painter->fillRect(option.rect, bookmark_background_fill_color);
-    //painter->fillRect(option.rect, is_selected ? Qt::red : Qt::blue);
-
-    std::optional<QColor> bookmark_background_color = optional_from_qvariant<QColor>(bookmark.get_background_color());
-    std::optional<QColor> bookmark_border_color = optional_from_qvariant<QColor>(bookmark.get_border_color());
-    std::optional<QColor> bookmark_text_color = optional_from_qvariant<QColor>(bookmark.get_text_color());
-
-    if (bookmark_background_color.has_value()){
-        bookmark_background_color = bookmark_background_color;
-        if (is_selected){
-            painter->fillRect(option.rect, QBrush(bookmark_background_color.value().lighter()));
-        }
-        else{
-            painter->fillRect(option.rect, QBrush(bookmark_background_color.value()));
-        }
-    }
-
-    if (bookmark_border_color.has_value()){
-        painter->save();
-        painter->setPen(bookmark_border_color.value());
-        painter->drawRect(option.rect);
-        painter->restore();
-    }
-
-    if (bookmark_text_color.has_value()) {
-        if (!bookmark_background_color.has_value() && (bookmark_text_color->lightness() < 50)){
-            if (bookmark_text_color.value() == Qt::black){
-                if (is_selected){
-                    ctx.palette.setColor(QPalette::Text, QColor(0, 0, 0));
-                }
-                else{
-                    ctx.palette.setColor(QPalette::Text, QColor(255, 255, 255));
-                }
-            }
-            else{
-                ctx.palette.setColor(QPalette::Text, bookmark_text_color.value().lighter());
-            }
-        }
-        else{
-            ctx.palette.setColor(QPalette::Text, bookmark_text_color.value());
-        }
-    }
-
-    // if (bookmark_text.size() == 0) {
-    //     if (bookmark.description.size() > 1 && bookmark.description[0] == '#') {
-    //         if (bookmark.description[1] >= 'a' && bookmark.description[1] <= 'z') {
-    //             int symbol_index = bookmark.description[1] - 'a';
-    //             float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
-    //             QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2]);
-    //             painter->save();
-    //             painter->setPen(qcolor);
-    //             painter->drawRect(option.rect);
-    //             painter->restore();
-    //         }
-    //         if (bookmark.description[1] >= 'A' && bookmark.description[1] <= 'Z') {
-    //             int symbol_index = bookmark.description[1] - 'A';
-    //             float* color = &HIGHLIGHT_COLORS[3 * symbol_index];
-    //             QColor qcolor = QColor::fromRgbF(color[0], color[1], color[2], 0.5f);
-    //             painter->fillRect(option.rect, QBrush(qcolor));
-    //         }
-    //     }
-    // }
-    painter->translate(option.rect.topLeft());
-    painter->setClipRect(0, 0, option.rect.width(), option.rect.height());
-    //qDebug() << "size in paint is :" << bookmark_document.toPlainText().size() << " " << index;
-
-    bookmark_document.documentLayout()->draw(painter, ctx);
-
-    //if (is_global) {
-    painter->translate(0, bookmark_document.size().height());
-
-    if (!bookmark_text_color.has_value()){
-        if (!is_selected) {
-            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(1, 1, 1, 0.5));
-        }
-        else {
-            ctx.palette.setColor(QPalette::Text, QColor::fromRgbF(0, 0, 0, 0.5));
-        }
-    }
-
-    file_name_document.setHtml("<div align=\"right\">" + index.siblingAtColumn(BookmarkModel::file_name).data().toString() + "</div>");
-    file_name_document.documentLayout()->draw(painter, ctx);
-    //}
-
-    painter->restore();
-}
-
-BookmarkSelectorWidget::BookmarkSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent) 
-    : BaseCustomSelectorWidget(view, model, parent) {
-
-    bookmark_model = dynamic_cast<BookmarkModel*>(model);
-
-    if (lv) {
-        lv->setItemDelegate(new BookmarkSearchItemDelegate());
-    }
-}
-
-BookmarkSelectorWidget* BookmarkSelectorWidget::from_bookmarks(std::vector<BookMark>&& bookmarks, MainWidget* parent, std::vector<QString>&& doc_names, std::vector<QString>&& doc_checksums) {
-
-    BookmarkModel* bookmark_model = new BookmarkModel(std::move(bookmarks), std::move(doc_names), std::move(doc_checksums));
-
-    QListView* list_view = get_ui_new_listview();
-
-    BookmarkSelectorWidget* bookmark_selector_widget = new BookmarkSelectorWidget(list_view, bookmark_model, parent);
-
-    bookmark_model->setParent(bookmark_selector_widget);
-    list_view->setParent(bookmark_selector_widget);
-
-    //setFixedSize(parent_width * MENU_SCREEN_WDITH_RATIO, parent_height);
-    //bookmark_selector_widget->resize(parent->width() * MENU_SCREEN_WDITH_RATIO, parent->height());
-    bookmark_selector_widget->on_resize();
-    bookmark_selector_widget->set_filter_column_index(-1);
-
-    bookmark_selector_widget->update_render();
-    return bookmark_selector_widget;
-}
-
-DocumentNameModel::DocumentNameModel(
-    std::vector<OpenedBookInfo>&& books, QObject* parent)
-    : QAbstractTableModel(parent) {
-    opened_documents = books;
-}
-
-
-int DocumentNameModel::rowCount(const QModelIndex& parent) const {
-    if (parent == QModelIndex()) {
-        return opened_documents.size();
-    }
-    return 0;
-}
-
-int DocumentNameModel::columnCount(const QModelIndex& parent) const {
-    return DocumentNameColumn::max_columns;
-}
-
-QVariant DocumentNameModel::data(const QModelIndex& index, int role) const {
-    if (role == Qt::DisplayRole) {
-        if (index.column() == DocumentNameColumn::file_path) {
-            //return file_paths[index.row()];
-            return opened_documents[index.row()].file_name;
-        }
-        if (index.column() == DocumentNameColumn::document_title) {
-            //return document_titles[index.row()];
-            return opened_documents[index.row()].document_title;
-        }
-        if (index.column() == DocumentNameColumn::last_access_time) {
-            return opened_documents[index.row()].last_access_time;
-        }
-        if (index.column() == DocumentNameColumn::is_server_only) {
-            return opened_documents[index.row()].is_server_only;
-        }
-    }
-
-    return QVariant();
-}
-
-QVariant DocumentNameModel::headerData(int section, Qt::Orientation orientation, int role) const {
-    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-        return "Document";
-    }
-    return QVariant();
-}
-
-
-bool DocumentNameModel::removeRows(int row, int count, const QModelIndex& parent) {
-    beginRemoveRows(parent, row, row + count - 1);
-
-    opened_documents.erase(opened_documents.begin() + row, opened_documents.begin() + row + count);
-
-    endRemoveRows();
-    return true;
-}
 
 DocumentItemDelegate::DocumentItemDelegate() {
 
@@ -3614,44 +3052,6 @@ void FulltextSearchWidget::on_text_changed(const QString& text) {
 //    opened_documents = books;
 //}
 
-FulltextResultModel::FulltextResultModel(std::vector<FulltextSearchResult>&& results, QObject* parent)
-    : QAbstractTableModel(parent) {
-    search_results = results;
-}
-
-int FulltextResultModel::rowCount(const QModelIndex& parent) const {
-    if (parent == QModelIndex()) {
-        return search_results.size();
-    }
-    return 0;
-}
-
-int FulltextResultModel::columnCount(const QModelIndex& parent) const {
-    return SearchResultColumn::max_columns;
-}
-
-QVariant FulltextResultModel::data(const QModelIndex& index, int role) const {
-    if (role == Qt::DisplayRole) {
-        if (index.column() == SearchResultColumn::snippet) {
-            return QString::fromStdWString(search_results[index.row()].snippet);
-        }
-        if (index.column() == SearchResultColumn::document_title) {
-            return QString::fromStdWString(search_results[index.row()].document_title);
-        }
-        if (index.column() == SearchResultColumn::page) {
-            return search_results[index.row()].page;
-        }
-    }
-
-    return QVariant();
-}
-
-QVariant FulltextResultModel::headerData(int section, Qt::Orientation orientation, int role) const {
-    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-        return "Search Result";
-    }
-    return QVariant();
-}
 
 void FulltextSearchWidget::on_select(QModelIndex value) {
     if (select_fn.has_value()) {
@@ -3663,66 +3063,6 @@ void FulltextSearchWidget::on_select(QModelIndex value) {
 
 void FulltextSearchWidget::on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) {
 
-}
-
-QHash<int, QByteArray> HighlightModel::roleNames() const {
-
-    QHash<int, QByteArray> roles;
-    roles[HighlightModelColumn::checksum] = "checksum";
-    roles[HighlightModelColumn::description] = "description";
-    roles[HighlightModelColumn::file_name] = "fileName";
-    roles[HighlightModelColumn::type] = "highlightType";
-    roles[HighlightModelColumn::text] = "highlightText";
-    return roles;
-
-}
-
-TouchDelegateListView::TouchDelegateListView(QAbstractTableModel* model, bool deletable, QString delegate_name, std::vector<std::pair<QString, QVariant>> props, QWidget* parent) : QWidget(parent) {
-    //std::vector<Highlight> highlights = doc()->get_highlights();
-    //QAbstractTableModel* highlights_model = new HighlightModel(std::move(highlights), {}, {}, this);
-    model->setParent(this);
-
-    list_view = new TouchListView(
-        true,
-        model,
-        -1,
-        this,
-        deletable,
-        true,
-        delegate_name,
-        props);
-
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->addWidget(list_view);
-    setLayout(layout);
-
-    QObject::connect(list_view, &TouchListView::itemSelected, [&](QString item, int index) {
-        if (on_select.has_value()) {
-            on_select.value()(index);
-        }
-        });
-
-    QObject::connect(list_view, &TouchListView::itemDeleted, [&](QString item, int index) {
-        if (on_delete.has_value()) {
-            on_delete.value()(index);
-        }
-        });
-}
-
-QRect TouchDelegateListView::get_prefered_rect(QRect parent_rect){
-    int parent_width = parent_rect.width();
-    int parent_height = parent_rect.height();
-
-    return QRect(parent_width * 0.05f, 0, parent_width * 0.9f, parent_height);
-
-}
-
-void TouchDelegateListView::set_select_fn(std::function<void(int)>&& fn) {
-    on_select = fn;
-}
-
-void TouchDelegateListView::set_delete_fn(std::function<void(int)>&& fn) {
-    on_delete = fn;
 }
 
 DocumentationSearchWidget::DocumentationSearchWidget(
@@ -4061,47 +3401,6 @@ void ItemWithDescriptionDelegate::paint(QPainter* painter, const QStyleOptionVie
     painter->restore();
 }
 
-ItemWithDescriptionModel::ItemWithDescriptionModel(std::vector<QString> && items_, std::vector<QString> && descriptions_, std::vector<QString> && metadata_, QObject * parent): QAbstractTableModel(parent) {
-    items = items_;
-    descriptions = descriptions_;
-    metadatas = metadata_;
-}
-
-int ItemWithDescriptionModel::rowCount(const QModelIndex& parent) const {
-    if (parent == QModelIndex()) {
-        return items.size();
-    }
-    return 0;
-}
-
-int ItemWithDescriptionModel::columnCount(const QModelIndex& parent) const {
-    if (metadatas.size() == 0) {
-        return 2;
-    }
-    return 3;
-}
-
-QVariant ItemWithDescriptionModel::data(const QModelIndex& index, int role) const {
-    if (role == Qt::DisplayRole) {
-        if (index.column() == ItemWithDescriptionColumn::item_text) {
-            return items[index.row()];
-        }
-        if (index.column() == ItemWithDescriptionColumn::description) {
-            return descriptions[index.row()];
-        }
-        if (index.column() == ItemWithDescriptionColumn::metadata) {
-            return metadatas[index.row()];
-        }
-    }
-    return QVariant();
-}
-
-QVariant ItemWithDescriptionModel::headerData(int section, Qt::Orientation orientation, int role) const {
-    if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-        return "Item";
-    }
-    return QVariant();
-}
 
 ItemWithDescriptionSelectorWidget::ItemWithDescriptionSelectorWidget(QAbstractItemView* view, QAbstractItemModel* model, MainWidget* parent) 
     : BaseCustomSelectorWidget(view, model, parent) {
@@ -4257,4 +3556,124 @@ QRect SioyekResizableQWidget::get_prefered_rect(QRect parent_rect){
     int parent_width = parent_rect.width();
     int parent_height = parent_rect.height();
     return QRect(parent_width * 0.05f, 0, parent_width * 0.9f, parent_height);
+}
+
+QString FileSelector::get_view_stylesheet_type_name() {
+    return "QListView";
+}
+
+FileSelector::FileSelector(bool is_fuzzy, std::function<void(std::wstring)> on_done, MainWidget* parent, QString last_path) :
+    BaseSelectorWidget(new QListView(), is_fuzzy, nullptr, parent),
+    on_done(on_done)
+{
+
+
+    QString root_path;
+    QString file_name;
+
+    if (last_path.size() > 0) {
+        split_root_file(last_path, root_path, file_name);
+        root_path += QDir::separator();
+    }
+
+    QStringList dir_contents = get_dir_contents(root_path, "");
+    int current_index = -1;
+    for (int i = 0; i < dir_contents.size(); i++) {
+        if (dir_contents.at(i) == file_name) {
+            current_index = i;
+            break;
+        }
+    }
+
+    list_model = new QStringListModel(dir_contents);
+    last_root = root_path;
+    line_edit->setText(last_root);
+
+
+    dynamic_cast<QListView*>(get_view())->setModel(list_model);
+
+    if (current_index != -1) {
+        dynamic_cast<QListView*>(get_view())->setCurrentIndex(list_model->index(current_index));
+    }
+    else {
+        dynamic_cast<QListView*>(get_view())->setCurrentIndex(list_model->index(0, 0));
+    }
+    //dynamic_cast<QListView*>(get_view())->setCurrentIndex();
+}
+
+bool FileSelector::on_text_change(const QString& text) {
+    QString root_path;
+    QString partial_name;
+    split_root_file(text, root_path, partial_name);
+
+    last_root = root_path;
+    if (last_root.size() > 0) {
+        if (last_root.at(last_root.size() - 1) == QDir::separator()) {
+            last_root.chop(1);
+        }
+    }
+
+    QStringList match_list = get_dir_contents(root_path, partial_name);
+    QStringListModel* new_list_model = new QStringListModel(match_list);
+    dynamic_cast<QListView*>(get_view())->setModel(new_list_model);
+    delete list_model;
+    list_model = new_list_model;
+    dynamic_cast<QListView*>(get_view())->setCurrentIndex(list_model->index(0, 0));
+    return true;
+}
+
+QStringList FileSelector::get_dir_contents(QString root, QString prefix) {
+
+    root = expand_home_dir(root);
+    QDir directory(root);
+    QStringList res = directory.entryList({ prefix + "*" });
+    if (res.size() == 0) {
+
+        bool should_consider_case = false;
+        if (!prefix.isLower()) {
+            should_consider_case = true;
+        }
+
+        std::wstring encoded_prefix = prefix.toStdWString();
+        QStringList all_directory_files = directory.entryList();
+        std::vector<std::pair<std::wstring, float>> file_scores;
+
+        for (auto file : all_directory_files) {
+            std::wstring encoded_file = file.toStdWString();
+            std::wstring encoded_file_case_corrected;
+            if (should_consider_case) {
+                encoded_file_case_corrected = encoded_file;
+            }
+            else {
+                encoded_file_case_corrected = file.toLower().toStdWString();
+            }
+
+            float score = similarity_score(encoded_file_case_corrected, encoded_prefix);
+            file_scores.push_back(std::make_pair(encoded_file, score));
+        }
+        std::sort(file_scores.begin(), file_scores.end(), [](std::pair<std::wstring, float> lhs, std::pair<std::wstring, float> rhs) {
+            return lhs.second > rhs.second;
+        });
+        for (auto [file, score] : file_scores) {
+            if (score > 50) {
+                res.push_back(QString::fromStdWString(file));
+            }
+        }
+    }
+    return res;
+}
+
+void FileSelector::on_select(QModelIndex index) {
+    QString name = list_model->data(index).toString();
+    QChar sep = QDir::separator();
+    QString full_path = expand_home_dir((last_root.size() > 0) ? (last_root + sep + name) : name);
+
+    if (QFileInfo(full_path).isFile()) {
+        on_done(full_path.toStdWString());
+        hide();
+        parentWidget()->setFocus();
+    }
+    else {
+        line_edit->setText(full_path + sep);
+    }
 }

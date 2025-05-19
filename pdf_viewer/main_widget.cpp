@@ -109,6 +109,7 @@
 #include "status_string.h"
 #include "controllers/tts_controller.h"
 #include "controllers/annotation_controller.h"
+#include "ui/annotation_widgets.h"
 
 #include "commands/base_commands.h"
 #include "main_widget.h"

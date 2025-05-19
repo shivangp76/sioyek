@@ -41,11 +41,12 @@
 #include <qlabel.h>
 #include <qcheckbox.h>
 #include <qstyleditemdelegate.h>
-#include <qabstractitemmodel.h>
 #include <qtextdocument.h>
 #include <qhash.h>
 #include <QQuickWidget>
 
+#include "ui/base_delegate.h"
+#include "ui/ui_models.h"
 #include "ui/common_ui.h"
 #include "touchui/ConfigUI.h"
 #include "touchui/TouchSlider.h"
@@ -132,28 +133,6 @@ QString get_view_stylesheet_type_name(QAbstractItemView* view);
 
 
 
-class TouchDelegateListView : public QWidget {
-    Q_OBJECT
-private:
-
-    std::optional<std::function<void(int)>> on_select = {};
-    std::optional<std::function<void(int)>> on_delete = {};
-
-public:
-    TouchListView* list_view = nullptr;
-    QAbstractTableModel* model = nullptr;
-
-    TouchDelegateListView(QAbstractTableModel* model, bool deletable, QString delegate_name, std::vector<std::pair<QString, QVariant>> props, QWidget* parent);
-
-    // void resizeEvent(QResizeEvent* resize_event) override;
-    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
-
-    void set_select_fn(std::function<void(int)>&& fn);
-    void set_delete_fn(std::function<void(int)>&& fn);
-};
-
-
-
 
 class TouchCommandSelector : public QWidget {
     Q_OBJECT
@@ -181,125 +160,11 @@ protected:
 
 public:
 
-    QString get_view_stylesheet_type_name() {
-        return "QListView";
-    }
-
-    FileSelector(bool is_fuzzy, std::function<void(std::wstring)> on_done, MainWidget* parent, QString last_path) :
-        BaseSelectorWidget(new QListView(), is_fuzzy, nullptr, parent),
-        on_done(on_done)
-    {
-
-
-        QString root_path;
-        QString file_name;
-
-        if (last_path.size() > 0) {
-            split_root_file(last_path, root_path, file_name);
-            root_path += QDir::separator();
-        }
-
-        QStringList dir_contents = get_dir_contents(root_path, "");
-        int current_index = -1;
-        for (int i = 0; i < dir_contents.size(); i++) {
-            if (dir_contents.at(i) == file_name) {
-                current_index = i;
-                break;
-            }
-        }
-
-        list_model = new QStringListModel(dir_contents);
-        last_root = root_path;
-        line_edit->setText(last_root);
-
-
-        dynamic_cast<QListView*>(get_view())->setModel(list_model);
-
-        if (current_index != -1) {
-            dynamic_cast<QListView*>(get_view())->setCurrentIndex(list_model->index(current_index));
-        }
-        else {
-            dynamic_cast<QListView*>(get_view())->setCurrentIndex(list_model->index(0, 0));
-        }
-        //dynamic_cast<QListView*>(get_view())->setCurrentIndex();
-    }
-
-    virtual bool on_text_change(const QString& text) {
-        QString root_path;
-        QString partial_name;
-        split_root_file(text, root_path, partial_name);
-
-        last_root = root_path;
-        if (last_root.size() > 0) {
-            if (last_root.at(last_root.size() - 1) == QDir::separator()) {
-                last_root.chop(1);
-            }
-        }
-
-        QStringList match_list = get_dir_contents(root_path, partial_name);
-        QStringListModel* new_list_model = new QStringListModel(match_list);
-        dynamic_cast<QListView*>(get_view())->setModel(new_list_model);
-        delete list_model;
-        list_model = new_list_model;
-        dynamic_cast<QListView*>(get_view())->setCurrentIndex(list_model->index(0, 0));
-        return true;
-    }
-
-    QStringList get_dir_contents(QString root, QString prefix) {
-
-        root = expand_home_dir(root);
-        QDir directory(root);
-        QStringList res = directory.entryList({ prefix + "*" });
-        if (res.size() == 0) {
-
-            bool should_consider_case = false;
-            if (!prefix.isLower()) {
-                should_consider_case = true;
-            }
-
-            std::wstring encoded_prefix = prefix.toStdWString();
-            QStringList all_directory_files = directory.entryList();
-            std::vector<std::pair<std::wstring, float>> file_scores;
-
-            for (auto file : all_directory_files) {
-                std::wstring encoded_file = file.toStdWString();
-                std::wstring encoded_file_case_corrected;
-                if (should_consider_case) {
-                    encoded_file_case_corrected = encoded_file;
-                }
-                else {
-                    encoded_file_case_corrected = file.toLower().toStdWString();
-                }
-
-                float score = similarity_score(encoded_file_case_corrected, encoded_prefix);
-                file_scores.push_back(std::make_pair(encoded_file, score));
-            }
-            std::sort(file_scores.begin(), file_scores.end(), [](std::pair<std::wstring, float> lhs, std::pair<std::wstring, float> rhs) {
-                return lhs.second > rhs.second;
-                });
-            for (auto [file, score] : file_scores) {
-                if (score > 50) {
-                    res.push_back(QString::fromStdWString(file));
-                }
-            }
-        }
-        return res;
-    }
-
-    void on_select(QModelIndex index) {
-        QString name = list_model->data(index).toString();
-        QChar sep = QDir::separator();
-        QString full_path = expand_home_dir((last_root.size() > 0) ? (last_root + sep + name) : name);
-
-        if (QFileInfo(full_path).isFile()) {
-            on_done(full_path.toStdWString());
-            hide();
-            parentWidget()->setFocus();
-        }
-        else {
-            line_edit->setText(full_path + sep);
-        }
-    }
+    QString get_view_stylesheet_type_name();
+    FileSelector(bool is_fuzzy, std::function<void(std::wstring)> on_done, MainWidget* parent, QString last_path);
+    virtual bool on_text_change(const QString& text);
+    QStringList get_dir_contents(QString root, QString prefix);
+    void on_select(QModelIndex index);
 };
 
 class AndroidSelector : public QWidget {
@@ -599,84 +464,8 @@ std::wstring select_any_existing_file_name(std::optional<QString> root_dir={});
 //    return new BoolConfigUI(main_widget, (float*)location, name);
 //}
 
-class HighlightModel : public QAbstractTableModel {
-    Q_OBJECT
-public:
-    enum HighlightModelColumn {
-        text = 0,
-        type = 1,
-        description = 2,
-        file_name = 3,
-        checksum = 4,
-        max_columns = 5,
-    };
-
-    std::vector<Highlight> highlights;
-    std::vector<QString> documents;
-    std::vector<QString> checksums;
 
 
-    HighlightModel(std::vector<Highlight>&& data, std::vector<QString>&& documents = {}, std::vector<QString>&& checksums = {}, QObject * parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
-    QHash<int, QByteArray> roleNames() const override;
-
-
-};
-
-class CommandModel : public QAbstractTableModel {
-    Q_OBJECT
-public:
-    enum CommandModelColumn{
-        command_name = 0,
-        keybind = 1,
-        is_pro = 2,
-        max_columns = 3
-    };
-
-    std::vector<QString> commands;
-    std::vector<QStringList> keybinds;
-    std::vector<bool> requires_pro;
-
-
-    CommandModel(std::vector<QString> commands, std::vector<QStringList> keybinds, std::vector<bool> requires_pro);
-
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-};
-
-struct SimilarityScoreResult {
-    int score;
-    int highlight_begin;
-    int highlight_end;
-};
-
-class BaseCustomDelegate : public QStyledItemDelegate {
-    Q_OBJECT
-public:
-    QString pattern;
-
-    mutable std::map<std::tuple<QString, QString, float>, SimilarityScoreResult> cached_similarity_scores;
-
-
-    virtual void set_pattern(QString p);
-    virtual void clear_cache() = 0;
-    QString highlight_pattern(QString txt) const;
-
-    int similarity_score_cached(QString haystack, QString needle, int* match_begin, int* match_end, float ratio=0.5f) const;
-};
 
 class HighlightSearchItemDelegate : public BaseCustomDelegate {
     Q_OBJECT
@@ -715,37 +504,6 @@ public:
 };
 
 
-class BaseCustomSelectorWidget : public BaseSelectorWidget {
-
-private:
-
-    mutable std::unordered_map<int, float> cached_sizes;
-public:
-    std::optional<std::function<void(int)>> select_fn = {};
-    std::optional<std::function<void(int)>> delete_fn = {};
-    std::optional<std::function<void(int)>> edit_fn = {};
-    QListView* lv = nullptr;
-    BaseCustomSelectorWidget(
-        QAbstractItemView* view,
-        QAbstractItemModel* model,
-        MainWidget* parent
-    );
-
-    void set_select_fn(std::function<void(int)>&& fn);
-    void set_delete_fn(std::function<void(int)>&& fn);
-    void set_edit_fn(std::function<void(int)>&& fn);
-    void resizeEvent(QResizeEvent* resize_event) override;
-
-    void on_select(QModelIndex value) override;
-    void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
-    void on_edit(const QModelIndex& source_index, const QModelIndex& selected_index) override;
-
-    void set_selected_index(int index);
-    void update_render();
-    virtual bool on_text_change(const QString& text) override;
-
-    //virtual void update_render() = 0;
-};
 
 
 class HighlightSelectorWidget : public BaseCustomSelectorWidget{
@@ -815,61 +573,7 @@ public:
 
 QString translate_command_search_string(QString raw_search_string);
 
-class BookmarkModel : public QAbstractTableModel {
-    Q_OBJECT
-public:
-    enum BookmarkModelColumn {
-        description = 0,
-        bookmark = 1,
-        file_name = 2,
-        checksum = 3,
-        max_columns = 4
-    };
 
-    std::vector<BookMark> bookmarks;
-    std::vector<QString> documents;
-    std::vector<QString> checksums;
-
-
-    BookmarkModel(std::vector<BookMark>&& data, std::vector<QString>&& documents = {}, std::vector<QString>&& checksums = {}, QObject * parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
-};
-
-class ItemWithDescriptionModel : public QAbstractTableModel {
-    Q_OBJECT
-public:
-    enum ItemWithDescriptionColumn {
-        item_text = 0,
-        description = 1,
-        metadata = 2,
-        max_columns = 4
-    };
-
-    std::vector<QString> items;
-    std::vector<QString> descriptions;
-    std::vector<QString> metadatas;
-
-
-    ItemWithDescriptionModel(std::vector<QString>&& items, std::vector<QString>&& descriptions, std::vector<QString>&& metadata, QObject * parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
-
-};
 
 class ItemWithDescriptionDelegate : public BaseCustomDelegate {
     Q_OBJECT
@@ -887,36 +591,6 @@ public:
     void clear_cache();
 };
 
-class BookmarkSearchItemDelegate : public BaseCustomDelegate {
-    Q_OBJECT
-public:
-    //QString pattern;
-
-    mutable QTextDocument bookmark_document;
-    mutable QTextDocument file_name_document;
-    mutable std::unordered_map<int, float> cached_sizes;
-
-    BookmarkSearchItemDelegate();
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-
-    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-    //QString get_display_text(const QString& highlight_text, int highlight_type, QString type_text_color="#000000", QString type_label_bg = "#ffffff") const;
-    void clear_cache();
-};
-
-class BookmarkSelectorWidget : public BaseCustomSelectorWidget{
-private:
-    BookmarkSelectorWidget(
-        QAbstractItemView* view,
-        QAbstractItemModel* model,
-        MainWidget* parent
-    );
-public:
-
-    static BookmarkSelectorWidget* from_bookmarks(std::vector<BookMark>&& bookmarks, MainWidget* parent, std::vector<QString>&& doc_names = {}, std::vector<QString>&& doc_checksums = {});
-
-    BookmarkModel* bookmark_model = nullptr;
-};
 
 class ItemWithDescriptionSelectorWidget : public BaseCustomSelectorWidget{
 private:
@@ -932,34 +606,6 @@ public:
     ItemWithDescriptionModel* item_model = nullptr;
 };
 
-class DocumentNameModel : public QAbstractTableModel {
-    Q_OBJECT
-public:
-    enum DocumentNameColumn {
-        file_path = 0,
-        document_title = 1,
-        last_access_time = 2,
-        is_server_only = 3,
-        max_columns = 4,
-    };
-
-    std::vector<OpenedBookInfo> opened_documents;
-    //std::vector<QString> document_titles;
-    //std::vector<QDateTime> last_access_times;
-
-
-    DocumentNameModel(std::vector<OpenedBookInfo>&& books, QObject * parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-    bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
-
-};
 
 class DocumentItemDelegate : public BaseCustomDelegate {
     Q_OBJECT
@@ -1011,30 +657,6 @@ public:
     DocumentNameModel* document_model = nullptr;
 };
 
-class FulltextResultModel : public QAbstractTableModel {
-    Q_OBJECT
-public:
-    enum SearchResultColumn {
-        snippet = 0,
-        document_title = 1,
-        page = 2,
-        max_columns = 3,
-    };
-
-    std::vector<FulltextSearchResult> search_results;
-
-
-    FulltextResultModel(std::vector<FulltextSearchResult>&& results, QObject * parent = nullptr);
-
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
-
-    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-
-};
 
 class FulltextSearchWidget : public BaseCustomSelectorWidget{
 public:

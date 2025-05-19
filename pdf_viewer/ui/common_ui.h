@@ -472,3 +472,56 @@ public:
         on_done(indices);
     }
 };
+
+class TouchDelegateListView : public QWidget {
+    Q_OBJECT
+private:
+
+    std::optional<std::function<void(int)>> on_select = {};
+    std::optional<std::function<void(int)>> on_delete = {};
+
+public:
+    TouchListView* list_view = nullptr;
+    QAbstractTableModel* model = nullptr;
+
+    TouchDelegateListView(QAbstractTableModel* model, bool deletable, QString delegate_name, std::vector<std::pair<QString, QVariant>> props, QWidget* parent);
+
+    // void resizeEvent(QResizeEvent* resize_event) override;
+    Q_INVOKABLE QRect get_prefered_rect(QRect parent_rect);
+
+    void set_select_fn(std::function<void(int)>&& fn);
+    void set_delete_fn(std::function<void(int)>&& fn);
+};
+
+
+class BaseCustomSelectorWidget : public BaseSelectorWidget {
+
+private:
+
+    mutable std::unordered_map<int, float> cached_sizes;
+public:
+    std::optional<std::function<void(int)>> select_fn = {};
+    std::optional<std::function<void(int)>> delete_fn = {};
+    std::optional<std::function<void(int)>> edit_fn = {};
+    QListView* lv = nullptr;
+    BaseCustomSelectorWidget(
+        QAbstractItemView* view,
+        QAbstractItemModel* model,
+        MainWidget* parent
+    );
+
+    void set_select_fn(std::function<void(int)>&& fn);
+    void set_delete_fn(std::function<void(int)>&& fn);
+    void set_edit_fn(std::function<void(int)>&& fn);
+    void resizeEvent(QResizeEvent* resize_event) override;
+
+    void on_select(QModelIndex value) override;
+    void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
+    void on_edit(const QModelIndex& source_index, const QModelIndex& selected_index) override;
+
+    void set_selected_index(int index);
+    void update_render();
+    virtual bool on_text_change(const QString& text) override;
+
+    //virtual void update_render() = 0;
+};

@@ -55,4 +55,5 @@ public:
     char get_current_selected_highlight_type();
 
     void handle_goto_portal_list();
+    void handle_goto_bookmark(bool manual_only=false, bool chat=false);
 };

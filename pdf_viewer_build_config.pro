@@ -166,9 +166,13 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/types/common_types.h \
            pdf_viewer/ui/bookmark_ui.h \
            pdf_viewer/ui/selector_ui.h \
+           pdf_viewer/ui/ui_models.h \
            pdf_viewer/ui/common_ui.h \
+           pdf_viewer/ui/annotation_widgets.h \
+           pdf_viewer/ui/base_delegate.h \
            pdf_viewer/controllers/tts_controller.h \
            pdf_viewer/controllers/annotation_controller.h \
+           pdf_viewer/utils/text_utils.h \
            fzf/fzf.h
 
 
@@ -204,8 +208,13 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/types/common_types.cpp \
            pdf_viewer/ui/bookmark_ui.cpp \
            pdf_viewer/ui/selector_ui.cpp \
+           pdf_viewer/ui/ui_models.cpp \
+           pdf_viewer/ui/common_ui.cpp \
+           pdf_viewer/ui/annotation_widgets.cpp \
+           pdf_viewer/ui/base_delegate.cpp \
            pdf_viewer/controllers/tts_controller.cpp \
            pdf_viewer/controllers/annotation_controller.cpp \
+           pdf_viewer/utils/text_utils.cpp \
            fzf/fzf.c
 
 !android{

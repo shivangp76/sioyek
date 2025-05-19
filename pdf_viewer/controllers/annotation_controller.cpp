@@ -9,6 +9,8 @@
 #include "checksum.h"
 #include "commands/base_commands.h"
 #include "ui/common_ui.h"
+#include "ui/ui_models.h"
+#include "ui/annotation_widgets.h"
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
@@ -16,6 +18,8 @@ extern bool SORT_HIGHLIGHTS_BY_LOCATION;
 extern std::wstring ITEM_LIST_PREFIX;
 extern bool FUZZY_SEARCHING;
 extern bool MULTILINE_MENUS;
+extern bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION;
+extern bool FANCY_UI_MENUS;
 
 AnnotationController::AnnotationController(MainWidget* parent) : mw(parent) {
 }
@@ -584,4 +588,163 @@ void AnnotationController::handle_goto_portal_list() {
         );
 
     mw->show_current_widget();
+}
+
+void AnnotationController::handle_goto_bookmark(bool manual_only, bool chat) {
+    //std::vector<std::wstring> option_names;
+    std::vector<QString> option_location_strings;
+    std::vector<BookMark> bookmarks;
+
+    if (!doc()) return;
+
+    if (SORT_BOOKMARKS_BY_LOCATION) {
+        bookmarks = mdv()->get_document()->get_sorted_bookmarks();
+    }
+    else {
+        bookmarks = mdv()->get_document()->get_bookmarks();
+    }
+
+    if (manual_only) {
+        auto predicate = [](const BookMark& bm) {
+            return bm.is_question() || bm.is_summary();
+            };
+
+        bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), predicate), bookmarks.end());
+    }
+    else if (chat) {
+        auto predicate = [](const BookMark& bm) {
+            return !bm.is_question();
+            };
+        bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), predicate), bookmarks.end());
+    }
+
+    for (auto bookmark : bookmarks) {
+        //option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
+        //option_locations.push_back(bookmark.y_offset);
+        auto [page, _, __] = mdv()->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset()});
+        option_location_strings.push_back(QString::fromStdWString(get_page_formatted_string(page + 1)));
+    }
+
+    int closest_bookmark_index = mdv()->get_document()->find_closest_bookmark_index(bookmarks, mdv()->get_offset_y());
+
+    auto handle_select_fn = [&, chat](BookMark bm) {
+        if (mw->pending_command_instance) {
+            if (chat) {
+                mw->pending_command_instance->set_generic_requirement(QString::fromStdString(bm.uuid));
+            }
+            else {
+                mw->pending_command_instance->set_generic_requirement(bm.get_y_offset());
+            }
+        }
+
+        if (!chat && NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION && bm.can_have_links()) {
+            auto [link_names, link_targets] = bm.get_links();
+            std::vector<std::wstring> queries;
+            std::vector<QString> messages;
+
+            for (int i = 0; i < link_names.size(); i++) {
+                QString link = link_targets[i];
+                QString message = link_names[i];
+                if (link.startsWith("sioyek://")) {
+                    QString decoded = QUrl::fromPercentEncoding(link.mid(9).toUtf8());
+                    QStringList parts = decoded.split("...");
+                    for (auto part : parts) {
+                        queries.push_back(part.trimmed().toStdWString());
+                        messages.push_back(message);
+                    }
+                }
+            }
+            dv()->perform_fuzzy_searches(queries, messages);
+        }
+
+        mw->pop_current_widget();
+        mw->advance_command(std::move(mw->pending_command_instance));
+        };
+
+    auto handle_delete_fn = [&](BookMark bm) {
+        mw->delete_current_document_bookmark_with_bookmark(&bm);
+        };
+
+    auto handle_edit_fn = [&](BookMark bm) {
+        mdv()->set_selected_bookmark_uuid(bm.uuid);
+        mw->pop_current_widget();
+        mw->handle_command_types(mw->command_manager->get_command_with_name(mw, "edit_selected_bookmark"), 0);
+        };
+
+    if (TOUCH_MODE) {
+        BookmarkModel* bookmark_model = new BookmarkModel(std::move(bookmarks), std::move(option_location_strings), {}, mw);
+
+        TouchDelegateListView* lv = new TouchDelegateListView(bookmark_model, true, "TouchBookmarksView", {std::make_pair("_selected_index", closest_bookmark_index)}, mw);
+        // lv->list_view->proxy_model->set_is_highlight(true);
+        lv->list_view->proxy_model->setFilterKeyColumn(-1);
+
+        lv->set_select_fn([&, bookmark_model, handle_select_fn](int index) {
+            BookMark bm = bookmark_model->bookmarks[index];
+            handle_select_fn(bm);
+            });
+
+        lv->set_delete_fn(
+            [&, bookmark_model, handle_delete_fn](int index) {
+                BookMark bm = bookmark_model->bookmarks[index];
+                handle_delete_fn(bm);
+            }
+        );
+
+        mw->set_current_widget(lv);
+        mw->show_current_widget();
+
+    }
+    else{
+        if (!FANCY_UI_MENUS) {
+            std::vector<std::wstring> option_names;
+            std::vector<std::wstring> option_location_wstrings;
+            //std::vector<BookMark> bookmarks;
+
+            for (auto bookmark : bookmarks) {
+                // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.description);
+                // option_names.push_back(ITEM_LIST_PREFIX + L" " + bookmark.get_render_text().toStdWString());
+                option_names.push_back(bookmark.get_render_text().toStdWString());
+                auto [page, _, __] = mdv()->get_document()->absolute_to_page_pos({ 0, bookmark.get_y_offset() });
+                option_location_wstrings.push_back(get_page_formatted_string(page + 1));
+            }
+
+            set_filtered_select_menu<BookMark>(mw, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, bookmarks, closest_bookmark_index,
+                                               [&, handle_select_fn](BookMark* bm) {
+                handle_select_fn(*bm);
+            },
+            [&, handle_delete_fn](BookMark* bm) {
+                handle_delete_fn(*bm);
+            },
+            [&, handle_edit_fn](BookMark* bm) {
+                handle_edit_fn(*bm);
+            }
+            );
+            mw->show_current_widget();
+        }
+        else {
+            BookmarkSelectorWidget* bookmark_widget = BookmarkSelectorWidget::from_bookmarks(
+                        std::move(bookmarks), mw, std::move(option_location_strings));
+            bookmark_widget->set_selected_index(closest_bookmark_index);
+
+            bookmark_widget->set_select_fn([&, bookmark_widget, handle_select_fn](int index) {
+                BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+                handle_select_fn(bm);
+
+            });
+
+            bookmark_widget->set_delete_fn([&, bookmark_widget, handle_delete_fn](int index) {
+                BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+                handle_delete_fn(bm);
+            });
+
+            bookmark_widget->set_edit_fn([&, bookmark_widget, handle_edit_fn](int index) {
+                BookMark bm = bookmark_widget->bookmark_model->bookmarks[index];
+                handle_edit_fn(bm);
+            });
+
+            mw->set_current_widget(bookmark_widget);
+            mw->show_current_widget();
+
+        }
+    }
 }
