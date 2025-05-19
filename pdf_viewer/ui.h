@@ -102,31 +102,6 @@ public:
 };
 
 
-class MyLineEdit: public QLineEdit {
-    Q_OBJECT
-
-public:
-    MainWidget* main_widget;
-    MyLineEdit(MainWidget* parent);
-
-    void keyPressEvent(QKeyEvent* event) override;
-    int get_next_word_position();
-    int get_prev_word_position();
-    bool is_autocomplete_active = false;
-    void set_autocomplete_strings(QStringList strings);
-
-private:
-    QListWidget* autocomplete_popup = nullptr;
-    QString current_autocomplete_prefix;
-    QStringList autocomplete_strings;
-    int autocomplete_start_pos = -1;
-
-    void show_autocomplete_popup();
-    void hide_autocomplete_popup();
-    void update_autocomplete_popup();
-    void insert_autocomplete_suggestion(const QString& suggestion);
-    QStringList get_autocomplete_suggestions(const QString& prefix);
-};
 
 QString get_view_stylesheet_type_name(QAbstractItemView* view);
 
@@ -592,23 +567,6 @@ public:
     QString get_time_string(QDateTime time) const;
 };
 
-class SearchItemDelegate : public BaseCustomDelegate {
-    Q_OBJECT
-public:
-    //QString pattern;
-
-    mutable QTextDocument snippet_document;
-    mutable QTextDocument location_document;
-    //mutable std::unordered_map<int, float> cached_sizes;
-
-    SearchItemDelegate();
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-
-    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-    void clear_cache();
-    QString highlight_match(QString match) const;
-    QString get_location_string(const QModelIndex& index) const;
-};
 
 class DocumentSelectorWidget : public BaseCustomSelectorWidget{
 private:
@@ -622,46 +580,6 @@ public:
     static DocumentSelectorWidget* from_documents(std::vector<OpenedBookInfo>&& opened_documents, MainWidget* parent);
 
     DocumentNameModel* document_model = nullptr;
-};
-
-
-class FulltextSearchWidget : public BaseCustomSelectorWidget{
-public:
-    DatabaseManager* db_manager = nullptr;
-    MainWidget* main_widget = nullptr;
-    std::wstring maybe_file_checksum = L"";
-    std::wstring maybe_tag = L"";
-    FulltextSearchWidget(
-        DatabaseManager* manager,
-        QAbstractItemView* view,
-        QAbstractItemModel* model,
-        MainWidget* parent,
-        std::wstring checksum=L"",
-        std::wstring tag=L""
-    );
-    ~FulltextSearchWidget();
-
-    static FulltextSearchWidget* create(MainWidget* parent, std::wstring checksum=L"", std::wstring tag=L"");
-
-    virtual void on_text_changed(const QString& text) override;
-    virtual void on_select(QModelIndex value) override;
-    virtual void on_delete(const QModelIndex& source_index, const QModelIndex& selected_index) override;
-
-    //QStringListModel* result_model = nullptr;
-    FulltextResultModel* result_model = nullptr;
-};
-
-class DocumentationSearchWidget : public FulltextSearchWidget {
-public:
-    DocumentationSearchWidget(
-        DatabaseManager* manager,
-        QAbstractItemView* view,
-        QAbstractItemModel* model,
-        MainWidget* parent
-    );
-
-    static DocumentationSearchWidget* create(MainWidget* parent);
-    virtual void on_text_changed(const QString& text) override;
 };
 
 
@@ -690,20 +608,6 @@ public:
     void paintEvent(QPaintEvent* event);
 };
 
-class SioyekDocumentationTextBrowser : public QTextBrowser {
-private:
-    MainWidget* main_widget = nullptr;
-protected:
-    void wheelEvent(QWheelEvent* wevent) override;
-public:
-    SioyekDocumentationTextBrowser(MainWidget* parent);
-
-    void mousePressEvent(QMouseEvent* mevent) override;
-    void mouseReleaseEvent(QMouseEvent* mevent) override;
-    void backward() override;
-    void forward() override;
-    void doSetSource(const QUrl& url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) override;
-};
 
 
 

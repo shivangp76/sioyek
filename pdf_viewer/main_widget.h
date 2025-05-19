@@ -189,6 +189,7 @@ using SioyekBaseWidget = QMainWindow;
 
 class TTSController;
 class AnnotationController;
+class DocumentationController;
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
@@ -209,6 +210,7 @@ public:
     CachedChecksummer* checksummer = nullptr;
     std::unique_ptr<TTSController> tts_controller;
     std::unique_ptr<AnnotationController> annotation_controller;
+    std::unique_ptr<DocumentationController> documentation_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
@@ -238,8 +240,6 @@ public:
     SioyekMediaPlayer* media_player = nullptr;
 
     int next_pending_drawing_request_id = 0;
-
-    QJsonDocument sioyek_documentation_json_document;
 
     // Some commands can not be executed immediately (e.g. because they require a text or symbol
     // input to be completed) this is where they are stored until they can be executed.
@@ -1009,7 +1009,6 @@ public:
     void show_documentation_with_title(QString doctype, QString title);
     void show_markdown_text_widget(QString url, QString text);
     void open_documentation_file_for_name(QString doctype, QString name);
-    QString get_related_command_and_configs_string(QJsonArray related_commands, QJsonArray related_configs);
     float get_align_to_top_offset();
 
     QString handle_action_in_menu(std::wstring action);

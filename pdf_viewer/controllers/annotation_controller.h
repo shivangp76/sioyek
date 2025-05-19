@@ -3,20 +3,15 @@
 #include <string>
 #include <QString>
 #include "book.h"
+#include "controllers/base_controller.h"
 
 class MainWidget;
 class Document;
 class DocumentView;
 
-class AnnotationController{
-private:
-    MainWidget* mw;
+class AnnotationController : BaseController{
 public:
     AnnotationController(MainWidget* parent);
-
-    Document* doc();
-    DocumentView* dv();
-    DocumentView* mdv();
 
     void scroll_selected_bookmark(int amount);
     void handle_bookmark_ask_query(std::wstring query, std::wstring bookmark_uuid);

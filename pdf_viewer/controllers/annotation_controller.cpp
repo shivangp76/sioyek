@@ -24,20 +24,9 @@ extern std::wstring SERVER_SYMBOL;
 extern std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 
-AnnotationController::AnnotationController(MainWidget* parent) : mw(parent) {
+AnnotationController::AnnotationController(MainWidget* parent) : BaseController(parent) {
 }
 
-Document* AnnotationController::doc(){
-    return mw->doc();
-}
-
-DocumentView* AnnotationController::dv(){
-    return mw->dv();
-}
-
-DocumentView* AnnotationController::mdv(){
-    return mw->mdv();
-}
 
 void AnnotationController::scroll_selected_bookmark(int amount){
     auto bookmark_browser = mw->get_current_bookmark_browser();
