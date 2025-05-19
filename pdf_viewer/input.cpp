@@ -1009,5 +1009,3 @@ bool is_macro_command_enabled(Command* command) {
 
     return false;
 }
-
-

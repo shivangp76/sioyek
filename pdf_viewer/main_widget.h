@@ -986,7 +986,6 @@ public:
     void framebuffer_screenshot(std::wstring file_path);
 
     QJsonArray get_all_json_states();
-    void export_command_names(std::wstring file_path);
     void print_undocumented_commands();
     void print_documented_but_removed_commands();
     void print_undocumented_configs();

@@ -39,6 +39,7 @@ public:
     QStringList get_all_command_names();
     void handle_new_javascript_command(std::wstring command_name, JsCommandInfo command_files_pair, bool is_async, std::wstring code=L"");
     void update_command_last_use(std::string command_name);
+    void export_command_names(std::wstring file_path);
 
 };
 

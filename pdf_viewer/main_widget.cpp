@@ -7770,19 +7770,6 @@ void MainWidget::focus_on_high_quality_text_being_read() {
     tts_controller->focus_on_high_quality_text_being_read();
 }
 
-void MainWidget::export_command_names(std::wstring file_path){
-    QFile output_file(QString::fromStdWString(file_path));
-    if (output_file.open(QIODeviceBase::WriteOnly)){
-        QStringList command_names = command_manager->get_all_command_names();
-        for (auto command_name : command_names){
-            output_file.write((command_name + "\n").toUtf8());
-        }
-
-        output_file.close();
-    }
-}
-
-
 
 void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
     if (is_scratchpad_mode()){

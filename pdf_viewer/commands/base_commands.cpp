@@ -1539,3 +1539,16 @@ bool HoldableCommand::is_holdable() {
 void register_base_commands(CommandManager* manager) {
     register_command<NoopCommand>(manager);
 }
+
+
+void CommandManager::export_command_names(std::wstring file_path){
+    QFile output_file(QString::fromStdWString(file_path));
+    if (output_file.open(QIODeviceBase::WriteOnly)){
+        QStringList command_names = get_all_command_names();
+        for (auto command_name : command_names){
+            output_file.write((command_name + "\n").toUtf8());
+        }
+
+        output_file.close();
+    }
+}

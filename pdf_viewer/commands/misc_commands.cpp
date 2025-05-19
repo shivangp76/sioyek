@@ -939,7 +939,7 @@ public:
 
     void perform() {
         //widget->framebuffer_screenshot(file_name);
-        widget->export_command_names(file_name);
+        widget->command_manager->export_command_names(file_name);
     }
 
     bool requires_document() { return false; }
