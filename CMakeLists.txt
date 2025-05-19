@@ -125,6 +125,8 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/document_view.cpp pdf_viewer/document_view.h
     pdf_viewer/types/common_types.cpp pdf_viewer/types/common_types.h
     pdf_viewer/ui/bookmark_ui.cpp pdf_viewer/ui/bookmark_ui.h
+    pdf_viewer/ui/selector_ui.cpp pdf_viewer/ui/selector_ui.h
+    pdf_viewer/ui/common_ui.h
     pdf_viewer/controllers/tts_controller.cpp pdf_viewer/controllers/tts_controller.h
     pdf_viewer/controllers/annotation_controller.cpp pdf_viewer/controllers/annotation_controller.h
     pdf_viewer/fts_fuzzy_match.h

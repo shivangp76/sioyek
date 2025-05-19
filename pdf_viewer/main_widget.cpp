@@ -431,7 +431,6 @@ extern bool STATUSBAR;
 extern bool STATUSBAR_HANDLES_WHEEL_EVENTS;
 extern bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH;
 extern bool SNAP_DRAGGING;
-extern bool TOUCH_MODE;
 extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS;
 extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_UP_COMMANDS;
 extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_WHEEL_DOWN_COMMANDS;
@@ -498,110 +497,6 @@ bool MainWidget::main_document_view_has_document()
     return (main_document_view != nullptr) && (doc() != nullptr);
 }
 
-
-template<typename T>
-void set_filtered_select_menu(
-    MainWidget* main_widget,
-     bool fuzzy,
-     bool multiline,
-     std::vector<std::vector<std::wstring>> columns,
-    std::vector<T> values,
-    int selected_index,
-    std::function<void(T*)> on_select,
-    std::function<void(T*)> on_delete,
-    std::function<void(T*)> on_edit = nullptr
-) {
-    if (columns.size() > 1) {
-
-        if (TOUCH_MODE) {
-
-            // we will set the parent of model to be the widget in the constructor,
-            // and it will delete the model when it is freed, so this is not a memory leak
-            QStandardItemModel* model = create_table_model(columns);
-
-            auto widget = new TouchFilteredSelectWidget<T>(
-                fuzzy, model, values, selected_index,
-                [&, main_widget, on_select = std::move(on_select)](T* val) {
-                    if (val) {
-                        on_select(val);
-                    }
-                    main_widget->pop_current_widget();
-                },
-                [&, on_delete = std::move(on_delete)](T* val) {
-                    if (val) {
-                        on_delete(val);
-                    }
-                }, main_widget);
-
-            widget->set_filter_column_index(-1);
-            main_widget->set_current_widget(widget);
-        }
-        else {
-            auto w = new FilteredSelectTableWindowClass<T>(
-                fuzzy,
-                multiline,
-                columns,
-                values,
-                selected_index,
-                [on_select = std::move(on_select)](T* val) {
-                    if (val) {
-                        on_select(val);
-                    }
-                },
-                main_widget,
-                    [on_delete = std::move(on_delete)](T* val) {
-                    if (val && on_delete) {
-                        on_delete(val);
-                    }
-                });
-            w->set_filter_column_index(-1);
-            if (on_edit) {
-                w->set_on_edit_function(on_edit);
-            }
-            main_widget->set_current_widget(w);
-        }
-    }
-    else {
-
-        if (TOUCH_MODE) {
-            // when will this be released?
-            auto widget = new TouchFilteredSelectWidget<T>(
-                fuzzy, columns[0], values, selected_index,
-                [&, main_widget, on_select = std::move(on_select)](T* val) {
-                    if (val) {
-                        on_select(val);
-                    }
-                    main_widget->pop_current_widget();
-                },
-                [&, on_delete = std::move(on_delete)](T* val) {
-                    if (val) {
-                        on_delete(val);
-                    }
-                }, main_widget);
-            main_widget->set_current_widget(widget);
-        }
-        else {
-
-            std::vector<std::wstring> empty_column;
-            main_widget->set_current_widget(new FilteredSelectWindowClass<T>(
-                fuzzy,
-                columns.size() > 0 ? columns[0] : empty_column,
-                values,
-                [on_select = std::move(on_select)](T* val) {
-                    if (val) {
-                        on_select(val);
-                    }
-                },
-                main_widget,
-                    [on_delete = std::move(on_delete)](T* val) {
-                    if (val) {
-                        on_delete(val);
-                    }
-                },
-                    selected_index));
-        }
-    }
-}
 
 bool MainWidget::is_current_document_available_on_server() {
     return sioyek_network_manager->is_document_available_on_server(doc());
@@ -5997,56 +5892,7 @@ void MainWidget::show_current_widget() {
 }
 
 void MainWidget::handle_goto_portal_list() {
-    std::vector<std::wstring> option_names;
-    std::vector<std::wstring> option_location_strings;
-    std::vector<Portal> portals;
-
-    if (!doc()) return;
-
-    if (SORT_BOOKMARKS_BY_LOCATION) {
-        portals = main_document_view->get_document()->get_sorted_portals();
-    }
-    else {
-        portals = main_document_view->get_document()->get_portals();
-    }
-
-    for (auto portal : portals) {
-        std::wstring portal_type_string = L"[*]";
-        if (!portal.is_visible()) {
-            portal_type_string = L"[.]";
-        }
-
-        option_names.push_back(ITEM_LIST_PREFIX + L" " + portal_type_string + L" " +  checksummer->get_path(portal.dst.document_checksum).value_or(L"[ERROR]"));
-        //option_locations.push_back(bookmark.y_offset);
-        auto [page, _, __] = main_document_view->get_document()->absolute_to_page_pos({ 0, portal.src_offset_y });
-        option_location_strings.push_back(get_page_formatted_string(page + 1));
-    }
-
-    int closest_portal_index = main_document_view->get_document()->find_closest_portal_index(portals, main_document_view->get_offset_y());
-
-    set_filtered_select_menu<Portal>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_strings }, portals, closest_portal_index,
-        [&](Portal* portal) {
-            pending_command_instance->set_generic_requirement(portal->src_offset_y);
-            advance_command(std::move(pending_command_instance));
-            pop_current_widget();
-
-        },
-        [&](Portal* portal) {
-            std::string uuid = portal->uuid;
-            std::optional<Portal> deleted_portal = doc()->delete_portal_with_uuid(uuid);
-            if (deleted_portal) {
-                on_portal_deleted(deleted_portal.value(), doc()->get_checksum());
-            }
-        },
-            [&](Portal* portal) {
-                portal_to_edit = *portal;
-                open_document(portal->dst);
-                pop_current_widget();
-                invalidate_render();
-        }
-        );
-
-    show_current_widget();
+    return annotation_controller->handle_goto_portal_list();
 }
 
 void MainWidget::handle_goto_bookmark(bool manual_only, bool chat) {

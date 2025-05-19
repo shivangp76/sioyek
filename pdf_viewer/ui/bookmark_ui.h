@@ -6,6 +6,7 @@
 
 class MainWidget;
 class MyLineEdit;
+class QLineEdit;
 class TouchChat;
 class QVBoxLayout;
 class QPaintEvent;
@@ -92,6 +93,7 @@ public:
     void scroll_to_start();
     void scroll_to_end();
     void set_pending(bool pending);
+    QLineEdit* get_line_edit();
     ~SioyekBookmarkTextBrowser();
 
 };

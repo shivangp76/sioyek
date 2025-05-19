@@ -30,7 +30,6 @@
 #include "document.h"
 #include "document_view.h"
 
-
 class SelectionIndicator;
 class QLocalSocket;
 class QLineEdit;

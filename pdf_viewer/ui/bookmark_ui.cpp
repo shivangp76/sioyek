@@ -495,3 +495,7 @@ SioyekBookmarkTextBrowser::~SioyekBookmarkTextBrowser() {
 QRect SioyekBookmarkTextBrowser::get_prefered_rect(QRect parent_rect){
     return get_bookmark_chat_prefered_rect(parent_rect);
 }
+
+QLineEdit* SioyekBookmarkTextBrowser::get_line_edit(){
+    return dynamic_cast<QLineEdit*>(line_edit);
+}

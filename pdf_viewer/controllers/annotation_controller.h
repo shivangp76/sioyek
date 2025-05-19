@@ -53,4 +53,6 @@ public:
     std::wstring handle_add_highlight(char symbol);
     void change_selected_highlight_type(char new_type);
     char get_current_selected_highlight_type();
+
+    void handle_goto_portal_list();
 };

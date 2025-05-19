@@ -1,12 +1,21 @@
 #include <QTimer>
+#include <QLineEdit>
+#include <QApplication>
 
 #include "main_widget.h"
 #include "network_manager.h"
 #include "controllers/annotation_controller.h"
 #include "ui/bookmark_ui.h"
-#include "ui.h"
+#include "checksum.h"
+#include "commands/base_commands.h"
+#include "ui/common_ui.h"
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
+extern bool SORT_BOOKMARKS_BY_LOCATION;
+extern bool SORT_HIGHLIGHTS_BY_LOCATION;
+extern std::wstring ITEM_LIST_PREFIX;
+extern bool FUZZY_SEARCHING;
+extern bool MULTILINE_MENUS;
 
 AnnotationController::AnnotationController(MainWidget* parent) : mw(parent) {
 }
@@ -182,9 +191,9 @@ void AnnotationController::accept_new_bookmark_message() {
     if (mw->current_widget_stack.size() > 0) {
         auto bookmark_widget = dynamic_cast<SioyekBookmarkTextBrowser*>(mw->current_widget_stack.back());
         if (bookmark_widget && bookmark_widget->line_edit && (!bookmark_widget->is_pending)) {
-            QString text_ = bookmark_widget->line_edit->text();
+            QString text_ = bookmark_widget->get_line_edit()->text();
             accept_new_bookmark_message_with_text(text_);
-            bookmark_widget->line_edit->clear();
+            bookmark_widget->get_line_edit()->clear();
         }
     }
 }
@@ -522,4 +531,57 @@ char AnnotationController::get_current_selected_highlight_type() {
         }
     }
     return 'a';
+}
+
+void AnnotationController::handle_goto_portal_list() {
+    std::vector<std::wstring> option_names;
+    std::vector<std::wstring> option_location_strings;
+    std::vector<Portal> portals;
+
+    if (!doc()) return;
+
+    if (SORT_BOOKMARKS_BY_LOCATION) {
+        portals = mdv()->get_document()->get_sorted_portals();
+    }
+    else {
+        portals = mdv()->get_document()->get_portals();
+    }
+
+    for (auto portal : portals) {
+        std::wstring portal_type_string = L"[*]";
+        if (!portal.is_visible()) {
+            portal_type_string = L"[.]";
+        }
+
+        option_names.push_back(ITEM_LIST_PREFIX + L" " + portal_type_string + L" " +  mw->checksummer->get_path(portal.dst.document_checksum).value_or(L"[ERROR]"));
+        //option_locations.push_back(bookmark.y_offset);
+        auto [page, _, __] = mdv()->get_document()->absolute_to_page_pos({ 0, portal.src_offset_y });
+        option_location_strings.push_back(get_page_formatted_string(page + 1));
+    }
+
+    int closest_portal_index = mdv()->get_document()->find_closest_portal_index(portals, mdv()->get_offset_y());
+
+    set_filtered_select_menu<Portal>(mw, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_strings }, portals, closest_portal_index,
+        [&](Portal* portal) {
+            mw->pending_command_instance->set_generic_requirement(portal->src_offset_y);
+            mw->advance_command(std::move(mw->pending_command_instance));
+            mw->pop_current_widget();
+
+        },
+        [&](Portal* portal) {
+            std::string uuid = portal->uuid;
+            std::optional<Portal> deleted_portal = doc()->delete_portal_with_uuid(uuid);
+            if (deleted_portal) {
+                on_portal_deleted(deleted_portal.value(), doc()->get_checksum());
+            }
+        },
+            [&](Portal* portal) {
+                mw->portal_to_edit = *portal;
+                mw->open_document(portal->dst);
+                mw->pop_current_widget();
+                mw->invalidate_render();
+        }
+        );
+
+    mw->show_current_widget();
 }
