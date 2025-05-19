@@ -6,6 +6,8 @@
 #include "ui/bookmark_ui.h"
 #include "ui.h"
 
+extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
+
 AnnotationController::AnnotationController(MainWidget* parent) : mw(parent) {
 }
 
@@ -355,4 +357,91 @@ void AnnotationController::on_bookmark_deleted(const BookMark& bookmark, const s
     }
 
     mw->sync_deleted_annot("bookmark", bookmark.uuid);
+}
+
+void AnnotationController::on_new_bookmark_added(const std::string& uuid) {
+    if (mw->add_bookmark_hook_function_name) {
+        mw->call_js_function_with_bookmark_arg_with_uuid(mw->add_bookmark_hook_function_name.value(), uuid);
+    }
+
+    mw->sync_newly_added_annot("bookmark", uuid);
+
+    doc()->update_last_local_edit_time();
+}
+
+void AnnotationController::on_new_portal_added(const std::string& uuid) {
+    if (mw->add_portal_hook_function_name) {
+        mw->call_js_function_with_portal_arg_with_uuid(mw->add_bookmark_hook_function_name.value(), uuid);
+    }
+    mw->sync_newly_added_annot("portal", uuid);
+    if (AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS) {
+        int portal_index = doc()->get_portal_index_with_uuid(uuid);
+        if (portal_index >= 0) {
+            const Portal& portal = doc()->get_portals()[portal_index];
+            if (!mw->sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
+                std::optional<std::wstring> document_path = mw->document_manager->get_path_from_hash(portal.dst.document_checksum);
+                if (document_path) {
+                    mw->sioyek_network_manager->upload_file(
+                        QApplication::instance(),
+                        QString::fromStdWString(document_path.value()),
+                        QString::fromStdString(portal.dst.document_checksum), [network_manager=mw->sioyek_network_manager]() {
+                            network_manager->update_user_files_hash_set();
+                        }, [](){});
+                }
+            }
+        }
+    }
+
+    doc()->update_last_local_edit_time();
+}
+
+void AnnotationController::on_portal_deleted(const Portal& deleted_portal, const std::string& document_checksum) {
+
+    DeletedObject deleted_portal_object;
+    deleted_portal_object.document_checksum = document_checksum;
+    deleted_portal_object.object = deleted_portal;
+    mw->deleted_objects.push_back(deleted_portal_object);
+
+    if (mw->delete_portal_hook_function_name) {
+        mw->call_async_js_function_with_args(mw->delete_portal_hook_function_name.value(),
+            QJsonArray() << QString::fromStdString(deleted_portal.uuid));
+    }
+    mw->sync_deleted_annot("portal", deleted_portal.uuid);
+}
+
+void AnnotationController::on_portal_edited(const std::string& uuid) {
+    if (mw->edit_portal_hook_function_name) {
+        mw->call_async_js_function_with_args(mw->edit_portal_hook_function_name.value(),
+            QJsonArray() << QString::fromStdString(uuid));
+    }
+    mw->sync_edited_annot("portal", uuid);
+}
+
+void AnnotationController::on_mark_added(const std::string& uuid, char type) {
+    if (mw->add_mark_hook_function_name) {
+
+        QString type_string = QString(QChar(type));
+        mw->call_async_js_function_with_args(mw->add_mark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid) << type_string);
+    }
+}
+
+void AnnotationController::sync_newly_added_annot(const std::string& annot_type, const std::string& uuid) {
+    if (mw->is_current_document_available_on_server()) {
+        //int highlight_index = doc()->get_highlight_index_with_uuid(uuid);
+        const Annotation* annot = doc()->get_annot_with_uuid(annot_type, uuid);
+        std::optional<std::string> checksum = doc()->get_checksum_fast();
+        if ((annot != nullptr) && checksum) {
+            mw->sioyek_network_manager->upload_annot(mw,
+                QString::fromStdString(checksum.value()),
+                *annot,
+                [&, uuid, this, annot_type, document=doc()]() { // on success
+                    if (document != doc()) return;
+                    std::vector<std::string> uuids = { uuid };
+                    doc()->set_annots_to_synced_with_type(annot_type, uuids);
+                },
+                [&, uuid, this]() { // on failure
+                }
+            );
+        }
+    }
 }

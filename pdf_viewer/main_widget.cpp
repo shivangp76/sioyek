@@ -430,7 +430,6 @@ extern bool SCROLLBAR;
 extern bool STATUSBAR;
 extern bool STATUSBAR_HANDLES_WHEEL_EVENTS;
 extern bool AUTOMATICALLY_INDEX_DOCUMENT_FOR_FULLTEXT_SEARCH;
-extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SNAP_DRAGGING;
 extern bool TOUCH_MODE;
 extern std::unordered_map<std::wstring, std::wstring> STATUS_BAR_COMMANDS;
@@ -12453,90 +12452,27 @@ void MainWidget::call_js_function_with_portal_arg_with_uuid(const QString& funct
 }
 
 void MainWidget::on_new_bookmark_added(const std::string& uuid) {
-    if (add_bookmark_hook_function_name) {
-        call_js_function_with_bookmark_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
-    }
-
-    sync_newly_added_annot("bookmark", uuid);
-
-    doc()->update_last_local_edit_time();
+    annotation_controller->on_new_bookmark_added(uuid);
 }
 
 void MainWidget::on_new_portal_added(const std::string& uuid) {
-    if (add_portal_hook_function_name) {
-        call_js_function_with_portal_arg_with_uuid(add_bookmark_hook_function_name.value(), uuid);
-    }
-    sync_newly_added_annot("portal", uuid);
-    if (AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS) {
-        int portal_index = doc()->get_portal_index_with_uuid(uuid);
-        if (portal_index >= 0) {
-            const Portal& portal = doc()->get_portals()[portal_index];
-            if (!sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
-                std::optional<std::wstring> document_path = document_manager->get_path_from_hash(portal.dst.document_checksum);
-                if (document_path) {
-                    sioyek_network_manager->upload_file(
-                        QApplication::instance(),
-                        QString::fromStdWString(document_path.value()),
-                        QString::fromStdString(portal.dst.document_checksum), [network_manager=sioyek_network_manager]() {
-                            network_manager->update_user_files_hash_set();
-                        }, [](){});
-                }
-            }
-        }
-    }
-
-    doc()->update_last_local_edit_time();
+    annotation_controller->on_new_portal_added(uuid);
 }
 
 void MainWidget::on_portal_deleted(const Portal& deleted_portal, const std::string& document_checksum) {
-
-    DeletedObject deleted_portal_object;
-    deleted_portal_object.document_checksum = document_checksum;
-    deleted_portal_object.object = deleted_portal;
-    deleted_objects.push_back(deleted_portal_object);
-
-    if (delete_portal_hook_function_name) {
-        call_async_js_function_with_args(delete_portal_hook_function_name.value(),
-            QJsonArray() << QString::fromStdString(deleted_portal.uuid));
-    }
-    sync_deleted_annot("portal", deleted_portal.uuid);
+    annotation_controller->on_portal_deleted(deleted_portal, document_checksum);
 }
 
 void MainWidget::on_portal_edited(const std::string& uuid) {
-    if (edit_portal_hook_function_name) {
-        call_async_js_function_with_args(edit_portal_hook_function_name.value(),
-            QJsonArray() << QString::fromStdString(uuid));
-    }
-    sync_edited_annot("portal", uuid);
+    annotation_controller->on_portal_edited(uuid);
 }
 
 void MainWidget::on_mark_added(const std::string& uuid, char type) {
-    if (add_mark_hook_function_name) {
-
-        QString type_string = QString(QChar(type));
-        call_async_js_function_with_args(add_mark_hook_function_name.value(), QJsonArray() << QString::fromStdString(uuid) << type_string);
-    }
+    annotation_controller->on_mark_added(uuid, type);
 }
 
 void MainWidget::sync_newly_added_annot(const std::string& annot_type, const std::string& uuid) {
-    if (is_current_document_available_on_server()) {
-        //int highlight_index = doc()->get_highlight_index_with_uuid(uuid);
-        const Annotation* annot = doc()->get_annot_with_uuid(annot_type, uuid);
-        std::optional<std::string> checksum = doc()->get_checksum_fast();
-        if ((annot != nullptr) && checksum) {
-            sioyek_network_manager->upload_annot(this,
-                QString::fromStdString(checksum.value()),
-                *annot,
-                [&, uuid, this, annot_type, document=doc()]() { // on success
-                    if (document != doc()) return;
-                    std::vector<std::string> uuids = { uuid };
-                    doc()->set_annots_to_synced_with_type(annot_type, uuids);
-                },
-                [&, uuid, this]() { // on failure
-                }
-            );
-        }
-    }
+    annotation_controller->sync_newly_added_annot(annot_type, uuid);
 }
 
 void MainWidget::on_new_highlight_added(const std::string& uuid) {
