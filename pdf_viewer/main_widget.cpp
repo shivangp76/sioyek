@@ -12353,40 +12353,11 @@ void MainWidget::open_external_text_editor() {
 }
 
 void MainWidget::on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum){
-    DeletedObject deleted_bookmark_object;
-    deleted_bookmark_object.document_checksum = document_checksum;
-    deleted_bookmark_object.object = bookmark;
-    deleted_objects.push_back(deleted_bookmark_object);
-
-    if (delete_bookmark_hook_function_name) {
-        //call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(bookmark.uuid));
-        call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << bookmark.to_json(document_checksum));
-    }
-
-    // if we have deleted a bookmark which shows the output of a command
-    // we need to kill the process and remove it from shell_output_bookmarks
-    for (int i = 0; i < shell_output_bookmarks.size(); i++){
-        if (shell_output_bookmarks[i].uuid == bookmark.uuid) {
-            kill_process(shell_output_bookmarks[i].pid);
-            remove_finished_shell_bookmark_with_index(i);
-            break;
-        }
-    }
-
-    sync_deleted_annot("bookmark", bookmark.uuid);
+        annotation_controller->on_bookmark_deleted(bookmark, document_checksum);
 }
 
 void MainWidget::on_highlight_deleted(const Highlight& hl, const std::string& document_checksum){
-
-    DeletedObject deleted_highlight_object;
-    deleted_highlight_object.document_checksum = document_checksum;
-    deleted_highlight_object.object = hl;
-    deleted_objects.push_back(deleted_highlight_object);
-
-    if (delete_highlight_hook_function_name) {
-        call_async_js_function_with_args(delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(hl.uuid));
-    }
-    sync_deleted_annot("highlight", hl.uuid);
+    annotation_controller->on_highlight_deleted(hl, document_checksum);
 }
 
 void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::string& uuid) {
@@ -12403,11 +12374,7 @@ std::optional<Highlight> MainWidget::delete_current_document_highlight_with_uuid
 }
 
 void MainWidget::delete_current_document_highlight(Highlight* hl) {
-    std::string uuid = hl->uuid;
-    std::optional<Highlight> deleted_highlight = doc()->delete_highlight(*hl);
-    if (deleted_highlight) {
-        on_highlight_deleted(deleted_highlight.value(), doc()->get_checksum());
-    }
+    annotation_controller->delete_current_document_highlight(hl);
 }
 
 void MainWidget::delete_current_document_bookmark_with_bookmark(BookMark* bm) {

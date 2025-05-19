@@ -311,3 +311,48 @@ std::optional<Highlight> AnnotationController::delete_current_document_highlight
     }
     return deleted_highlight;
 }
+
+void AnnotationController::delete_current_document_highlight(Highlight* hl) {
+    std::string uuid = hl->uuid;
+    std::optional<Highlight> deleted_highlight = doc()->delete_highlight(*hl);
+    if (deleted_highlight) {
+        mw->on_highlight_deleted(deleted_highlight.value(), doc()->get_checksum());
+    }
+}
+
+void AnnotationController::on_highlight_deleted(const Highlight& hl, const std::string& document_checksum){
+
+    DeletedObject deleted_highlight_object;
+    deleted_highlight_object.document_checksum = document_checksum;
+    deleted_highlight_object.object = hl;
+    mw->deleted_objects.push_back(deleted_highlight_object);
+
+    if (mw->delete_highlight_hook_function_name) {
+        mw->call_async_js_function_with_args(mw->delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(hl.uuid));
+    }
+    mw->sync_deleted_annot("highlight", hl.uuid);
+}
+
+void AnnotationController::on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum){
+    DeletedObject deleted_bookmark_object;
+    deleted_bookmark_object.document_checksum = document_checksum;
+    deleted_bookmark_object.object = bookmark;
+    mw->deleted_objects.push_back(deleted_bookmark_object);
+
+    if (mw->delete_bookmark_hook_function_name) {
+        //call_async_js_function_with_args(delete_bookmark_hook_function_name.value(), QJsonArray() << QString::fromStdString(bookmark.uuid));
+        mw->call_async_js_function_with_args(mw->delete_bookmark_hook_function_name.value(), QJsonArray() << bookmark.to_json(document_checksum));
+    }
+
+    // if we have deleted a bookmark which shows the output of a command
+    // we need to kill the process and remove it from shell_output_bookmarks
+    for (int i = 0; i < mw->shell_output_bookmarks.size(); i++){
+        if (mw->shell_output_bookmarks[i].uuid == bookmark.uuid) {
+            kill_process(mw->shell_output_bookmarks[i].pid);
+            mw->remove_finished_shell_bookmark_with_index(i);
+            break;
+        }
+    }
+
+    mw->sync_deleted_annot("bookmark", bookmark.uuid);
+}
