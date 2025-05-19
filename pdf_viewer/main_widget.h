@@ -987,7 +987,6 @@ public:
 
     QJsonArray get_all_json_states();
     void export_command_names(std::wstring file_path);
-    void export_config_names(std::wstring file_path);
     void export_default_config_file(std::wstring file_path);
     void print_undocumented_commands();
     void print_documented_but_removed_commands();

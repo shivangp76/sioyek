@@ -968,7 +968,7 @@ public:
 
     void perform() {
         //widget->framebuffer_screenshot(file_name);
-        widget->export_config_names(file_name);
+        widget->config_manager->export_config_names(file_name);
     }
 
     bool requires_document() { return false; }

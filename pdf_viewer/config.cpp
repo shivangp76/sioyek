@@ -2239,3 +2239,16 @@ void ConfigManager::handle_set_color_palette(MainWidget* w, ColorPalette palette
     }
 
 }
+
+void ConfigManager::export_config_names(std::wstring file_path){
+    QFile output_file(QString::fromStdWString(file_path));
+    if (output_file.open(QIODeviceBase::WriteOnly)){
+        std::vector<Config*> configs = get_configs();
+        //QStringList command_names = command_manager->get_all_command_names();
+        for (auto config : configs){
+            output_file.write((QString::fromStdWString(config->name) + "\n").toUtf8());
+        }
+
+        output_file.close();
+    }
+}

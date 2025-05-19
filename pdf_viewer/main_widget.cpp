@@ -7782,18 +7782,6 @@ void MainWidget::export_command_names(std::wstring file_path){
     }
 }
 
-void MainWidget::export_config_names(std::wstring file_path){
-    QFile output_file(QString::fromStdWString(file_path));
-    if (output_file.open(QIODeviceBase::WriteOnly)){
-        std::vector<Config*> configs = config_manager->get_configs();
-        //QStringList command_names = command_manager->get_all_command_names();
-        for (auto config : configs){
-            output_file.write((QString::fromStdWString(config->name) + "\n").toUtf8());
-        }
-
-        output_file.close();
-    }
-}
 
 void MainWidget::export_default_config_file(std::wstring file_path){
     load_sioyek_documentation();
