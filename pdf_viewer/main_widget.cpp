@@ -6396,27 +6396,7 @@ void MainWidget::handle_toggle_smooth_scroll_mode() {
 
 
 void MainWidget::handle_overview_to_portal() {
-    if (main_document_view->get_overview_page()) {
-        set_overview_page({}, false);
-    }
-    else {
-
-        OverviewState overview_state;
-        std::optional<Portal> portal_ = main_document_view->get_target_portal(false);
-        if (portal_) {
-            Portal portal = portal_.value();
-            auto destination_path = checksummer->get_path(portal.dst.document_checksum);
-            if (destination_path) {
-                Document* doc = document_manager->get_document(destination_path.value());
-                if (doc) {
-                    doc->open(true);
-                    overview_state.absolute_offset_y = portal.dst.book_state.offset_y;
-                    overview_state.doc = doc;
-                    set_overview_page(overview_state, true);
-                }
-            }
-        }
-    }
+    return annotation_controller->handle_overview_to_portal();
 }
 
 void MainWidget::handle_toggle_typing_mode() {
@@ -6436,55 +6416,19 @@ void MainWidget::handle_toggle_typing_mode() {
 }
 
 void MainWidget::handle_delete_highlight_under_cursor() {
-    QPoint mouse_pos = mapFromGlobal(cursor_pos());
-    WindowPos window_pos = WindowPos{ mouse_pos.x(), mouse_pos.y() };
-    std::string sel_highlight = main_document_view->get_highlight_uuid_in_pos(window_pos);
-    if (sel_highlight.size() > 0) {
-        if (main_document_view->get_selected_highlight_uuid() == sel_highlight) {
-            main_document_view->clear_selected_object();
-        }
-        delete_current_document_highlight_with_uuid(sel_highlight);
-    }
+    return annotation_controller->handle_delete_highlight_under_cursor();
 }
 
 std::optional<Highlight> MainWidget::handle_delete_selected_highlight() {
-    std::string selected_highlight_uuid = main_document_view->get_selected_highlight_uuid();
-    std::optional<Highlight> deleted_highlight = {};
-    if (selected_highlight_uuid.size() > 0) {
-        main_document_view->set_selected_highlight_uuid("");
-        deleted_highlight = delete_current_document_highlight_with_uuid(selected_highlight_uuid);
-    }
-    validate_render();
-    main_document_view->clear_selected_object();
-    return deleted_highlight;
+    return annotation_controller->handle_delete_selected_highlight();
 }
 
 std::optional<BookMark> MainWidget::handle_delete_selected_bookmark() {
-    std::string selected_bookmark_uuid = main_document_view->get_selected_bookmark_uuid();
-    std::optional<BookMark> deleted_bookmark = {};
-    if (selected_bookmark_uuid.size() > 0) {
-        main_document_view->set_selected_bookmark_uuid("");
-        deleted_bookmark = delete_current_document_bookmark(selected_bookmark_uuid);
-    }
-    main_document_view->clear_selected_object();
-    validate_render();
-    return deleted_bookmark;
+    return annotation_controller->handle_delete_selected_bookmark();
 }
 
 std::optional<Portal> MainWidget::handle_delete_selected_portal() {
-    std::string selected_portal_uuid = main_document_view->get_selected_portal_uuid();
-    std::optional<Portal> deleted_portal = {};
-    if (selected_portal_uuid.size() > 0) {
-        main_document_view->clear_selected_object();
-        deleted_portal = doc()->delete_portal_with_uuid(selected_portal_uuid);
-        if (deleted_portal.has_value()) {
-            on_portal_deleted(deleted_portal.value(), doc()->get_checksum());
-        }
-        //push_deleted_portal(deleted_portal);
-    }
-    main_document_view->clear_selected_object();
-    validate_render();
-    return deleted_portal;
+    return annotation_controller->handle_delete_selected_portal();
 }
 
 void MainWidget::synchronize_pending_link() {
@@ -7938,33 +7882,7 @@ void MainWidget::handle_bookmark_shell_command(QString text, std::string pending
 }
 
 void MainWidget::handle_special_bookmarks(std::wstring text, std::wstring bookmark_uuid) {
-
-    QString qtext = QString::fromStdWString(text);
-
-    BookMark* bm = doc()->get_bookmark_with_uuid(utf8_encode(bookmark_uuid));
-
-    if (text.size() > 2 && text.substr(0, 2) == L"? ") {
-        bm->is_pending = true;
-        handle_bookmark_ask_query(text, bookmark_uuid);
-    }
-    else if (qtext.startsWith("#summarize")) {
-        bm->is_pending = true;
-        handle_bookmark_summarize_query(bookmark_uuid);
-    }
-    else if (qtext.startsWith("#shell")) {
-        bm->is_pending = true;
-        handle_bookmark_shell_command(qtext, utf8_encode(bookmark_uuid));
-    }
-    else if (QString::fromStdWString(text).startsWith("@")) {
-        // the text after the @ and before the first space is the command name
-        QString command_name = qtext.mid(1).split(" ").at(0);
-        QString text_arg = qtext.mid(1 + command_name.size()).trimmed();
-        if (SHELL_BOOKMARK_COMMANDS.find(command_name.toStdWString()) != SHELL_BOOKMARK_COMMANDS.end()) {
-            QString command_string = QString::fromStdWString(SHELL_BOOKMARK_COMMANDS[command_name.toStdWString()]);
-            QString equivalent_shell_command = "#shell " + command_string;
-            handle_bookmark_shell_command(equivalent_shell_command, utf8_encode(bookmark_uuid), text_arg);
-        }
-    }
+    return annotation_controller->handle_special_bookmarks(text, bookmark_uuid);
 }
 
 std::wstring MainWidget::handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid) {

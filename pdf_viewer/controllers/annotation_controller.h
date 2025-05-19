@@ -59,4 +59,10 @@ public:
     void handle_goto_bookmark_global(bool manual_only=false);
     void handle_goto_highlight();
     void handle_goto_highlight_global();
+    void handle_delete_highlight_under_cursor();
+    std::optional<Highlight> handle_delete_selected_highlight();
+    std::optional<BookMark> handle_delete_selected_bookmark();
+    std::optional<Portal> handle_delete_selected_portal();
+    void handle_overview_to_portal();
+    void handle_special_bookmarks(std::wstring bookmark_text, std::wstring bookmark_uuid);
 };

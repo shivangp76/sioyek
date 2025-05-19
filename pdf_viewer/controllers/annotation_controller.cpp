@@ -21,6 +21,7 @@ extern bool MULTILINE_MENUS;
 extern bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION;
 extern bool FANCY_UI_MENUS;
 extern std::wstring SERVER_SYMBOL;
+extern std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 
 AnnotationController::AnnotationController(MainWidget* parent) : mw(parent) {
 }
@@ -1114,6 +1115,112 @@ void AnnotationController::handle_goto_highlight_global() {
             );
             mw->show_current_widget();
 
+        }
+    }
+}
+
+void AnnotationController::handle_delete_highlight_under_cursor() {
+    QPoint mouse_pos = mw->mapFromGlobal(mw->cursor_pos());
+    WindowPos window_pos = WindowPos{ mouse_pos.x(), mouse_pos.y() };
+    std::string sel_highlight = mdv()->get_highlight_uuid_in_pos(window_pos);
+    if (sel_highlight.size() > 0) {
+        if (mdv()->get_selected_highlight_uuid() == sel_highlight) {
+            mdv()->clear_selected_object();
+        }
+        delete_current_document_highlight_with_uuid(sel_highlight);
+    }
+}
+
+std::optional<Highlight> AnnotationController::handle_delete_selected_highlight() {
+    std::string selected_highlight_uuid = mdv()->get_selected_highlight_uuid();
+    std::optional<Highlight> deleted_highlight = {};
+    if (selected_highlight_uuid.size() > 0) {
+        mdv()->set_selected_highlight_uuid("");
+        deleted_highlight = delete_current_document_highlight_with_uuid(selected_highlight_uuid);
+    }
+    mw->validate_render();
+    mdv()->clear_selected_object();
+    return deleted_highlight;
+}
+
+std::optional<BookMark> AnnotationController::handle_delete_selected_bookmark() {
+    std::string selected_bookmark_uuid = mdv()->get_selected_bookmark_uuid();
+    std::optional<BookMark> deleted_bookmark = {};
+    if (selected_bookmark_uuid.size() > 0) {
+        mdv()->set_selected_bookmark_uuid("");
+        deleted_bookmark = mw->delete_current_document_bookmark(selected_bookmark_uuid);
+    }
+    mdv()->clear_selected_object();
+    mw->validate_render();
+    return deleted_bookmark;
+}
+
+std::optional<Portal> AnnotationController::handle_delete_selected_portal() {
+    std::string selected_portal_uuid = mdv()->get_selected_portal_uuid();
+    std::optional<Portal> deleted_portal = {};
+    if (selected_portal_uuid.size() > 0) {
+        mdv()->clear_selected_object();
+        deleted_portal = doc()->delete_portal_with_uuid(selected_portal_uuid);
+        if (deleted_portal.has_value()) {
+            on_portal_deleted(deleted_portal.value(), doc()->get_checksum());
+        }
+        //push_deleted_portal(deleted_portal);
+    }
+    mdv()->clear_selected_object();
+    mw->validate_render();
+    return deleted_portal;
+}
+
+void AnnotationController::handle_overview_to_portal() {
+    if (mdv()->get_overview_page()) {
+        mw->set_overview_page({}, false);
+    }
+    else {
+
+        OverviewState overview_state;
+        std::optional<Portal> portal_ = mdv()->get_target_portal(false);
+        if (portal_) {
+            Portal portal = portal_.value();
+            auto destination_path = mw->checksummer->get_path(portal.dst.document_checksum);
+            if (destination_path) {
+                Document* doc = mw->document_manager->get_document(destination_path.value());
+                if (doc) {
+                    doc->open(true);
+                    overview_state.absolute_offset_y = portal.dst.book_state.offset_y;
+                    overview_state.doc = doc;
+                    mw->set_overview_page(overview_state, true);
+                }
+            }
+        }
+    }
+}
+
+void AnnotationController::handle_special_bookmarks(std::wstring text, std::wstring bookmark_uuid) {
+
+    QString qtext = QString::fromStdWString(text);
+
+    BookMark* bm = doc()->get_bookmark_with_uuid(utf8_encode(bookmark_uuid));
+
+    if (text.size() > 2 && text.substr(0, 2) == L"? ") {
+        bm->is_pending = true;
+        handle_bookmark_ask_query(text, bookmark_uuid);
+    }
+    else if (qtext.startsWith("#summarize")) {
+        bm->is_pending = true;
+        handle_bookmark_summarize_query(bookmark_uuid);
+    }
+    else if (qtext.startsWith("#shell")) {
+        bm->is_pending = true;
+        mw->handle_bookmark_shell_command(qtext, utf8_encode(bookmark_uuid));
+    }
+    else if (QString::fromStdWString(text).startsWith("@")) {
+        // the text after the @ and before the first space is the command name
+        QString command_name = qtext.mid(1).split(" ").at(0);
+        QString text_arg = qtext.mid(1 + command_name.size()).trimmed();
+        if (SHELL_BOOKMARK_COMMANDS.find(command_name.toStdWString()) != SHELL_BOOKMARK_COMMANDS.end()) {
+            QString command_string = QString::fromStdWString(SHELL_BOOKMARK_COMMANDS[command_name.toStdWString()]);
+            QString equivalent_shell_command = "#shell " + command_string;
+            mw->handle_bookmark_shell_command(equivalent_shell_command, utf8_encode(bookmark_uuid), text_arg);
         }
     }
 }
