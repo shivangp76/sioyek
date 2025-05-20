@@ -364,26 +364,6 @@ struct PixmapDrawing {
     AbsoluteRect rect;
 };
 
-struct CharacterAddress {
-    int page;
-    fz_stext_block* block;
-    fz_stext_line* line;
-    fz_stext_char* character;
-    Document* doc;
-
-    CharacterAddress* previous_character = nullptr;
-
-    bool advance(char c);
-    bool backspace();
-    bool next_char();
-    bool next_line();
-    bool next_block();
-    bool next_page();
-
-    float focus_offset();
-
-};
-
 struct DocumentViewState {
     std::wstring document_path;
     OpenedBookState book_state;

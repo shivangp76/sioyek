@@ -378,9 +378,6 @@ public:
 
     bool should_show_status_label(bool check_network=true);
 
-    // the location of current character in sioyek's typing minigame
-    std::optional<CharacterAddress> typing_location;
-
     int main_window_width = 0;
     int main_window_height = 0;
 
@@ -703,7 +700,6 @@ public:
     void handle_goto_window();
     void handle_toggle_smooth_scroll_mode();
     void handle_overview_to_portal();
-    void handle_toggle_typing_mode();
     void handle_delete_highlight_under_cursor();
     std::optional<Highlight> handle_delete_selected_highlight();
     std::optional<BookMark> handle_delete_selected_bookmark();

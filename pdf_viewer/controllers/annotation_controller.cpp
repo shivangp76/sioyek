@@ -1532,3 +1532,19 @@ void AnnotationController::handle_portal_to_overview() {
         add_portal(mdv()->get_document()->get_path(), new_portal.value());
     }
 }
+
+void AnnotationController::portal_to_definition() {
+    std::vector<SmartViewCandidate> defpos = mdv()->find_line_definitions();
+    if (defpos.size() > 0) {
+        //AbsoluteDocumentPos abspos = doc()->document_to_absolute_pos(defpos[0].first, true);
+        AbsoluteDocumentPos abspos = defpos[0].get_abspos(mdv());
+        Portal link;
+        link.dst.document_checksum = doc()->get_checksum();
+        link.dst.book_state.offset_x = abspos.x;
+        link.dst.book_state.offset_y = abspos.y;
+        link.dst.book_state.zoom_level = mdv()->get_zoom_level();
+        link.src_offset_y = mdv()->get_ruler_pos();
+        std::string uuid = doc()->add_portal(link, true);
+        on_new_portal_added(uuid);
+    }
+}

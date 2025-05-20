@@ -83,4 +83,5 @@ public:
     void set_mark_in_current_location(char symbol);
     void goto_mark(char symbol);
     void handle_portal_to_overview();
+    void portal_to_definition();
 };

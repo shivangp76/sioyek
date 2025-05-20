@@ -2386,18 +2386,6 @@ public:
 
 };
 
-class ToggleTypingModeCommand : public Command {
-public:
-    static inline const std::string cname = "toggle_typing_mode";
-    static inline const std::string hname = "Toggle typing minigame";
-    ToggleTypingModeCommand(MainWidget* w) : Command(cname, w) {};
-
-    void perform() {
-        widget->handle_toggle_typing_mode();
-    }
-
-};
-
 class DonateCommand : public Command {
 public:
     static inline const std::string cname = "donate";
@@ -2857,7 +2845,6 @@ void register_misc_commands(CommandManager* manager) {
     register_command<ShowTouchSettingsMenu>(manager);
     register_command<ExportPythonApiCommand>(manager);
     register_command<SelectRectCommand>(manager);
-    register_command<ToggleTypingModeCommand>(manager);
     register_command<DonateCommand>(manager);
     register_command<ImportLocalDatabaseCommand>(manager);
     register_command<ImportSharedDatabaseCommand>(manager);

@@ -1908,7 +1908,6 @@ void MainWidget::handle_escape() {
     }
 
     clear_selection_indicators();
-    typing_location = {};
     if (pending_command_instance) {
         pending_command_instance->on_cancel();
     }
@@ -2454,45 +2453,6 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent, bool is_auto_repeat
     if (released && (!is_auto_repeat)) {
         set_last_performed_command({});
     }
-    if (typing_location.has_value()) {
-
-        if (released == false) {
-            if (kevent->key() == Qt::Key::Key_Escape) {
-                handle_escape();
-                return;
-            }
-
-            bool should_focus = false;
-            if (kevent->key() == Qt::Key::Key_Return) {
-                typing_location.value().next_char();
-            }
-            else if (kevent->key() == Qt::Key::Key_Backspace) {
-                typing_location.value().backspace();
-            }
-            else if (kevent->text().size() > 0) {
-                char c = kevent->text().at(0).unicode();
-                should_focus = typing_location.value().advance(c);
-            }
-
-            int page = typing_location.value().page;
-            DocumentRect character_rect = DocumentRect(rect_from_quad(typing_location.value().character->quad), page);
-            std::optional<DocumentRect> wrong_rect = {};
-
-            if (typing_location.value().previous_character) {
-                wrong_rect = DocumentRect(rect_from_quad(typing_location.value().previous_character->character->quad), page);
-            }
-
-            if (should_focus) {
-                main_document_view->set_offset_y(typing_location.value().focus_offset());
-            }
-            main_document_view->set_typing_rect(character_rect, wrong_rect);
-
-        }
-        validate_render();
-        return;
-
-    }
-
 
     if (released == false) {
 
@@ -5475,94 +5435,6 @@ void MainWidget::clear_selected_rect() {
     //rect_select_end = {};
 }
 
-bool CharacterAddress::backspace() {
-    if (previous_character) {
-        CharacterAddress& prev = *previous_character;
-
-        this->page = prev.page;
-        this->block = prev.block;
-        this->line = prev.line;
-        this->doc = prev.doc;
-        this->character = prev.character;
-        delete previous_character;
-        this->previous_character = nullptr;
-        return false;
-    }
-    else {
-        return false;
-    }
-}
-
-bool CharacterAddress::advance(char c) {
-    if (!previous_character) {
-        if (character->c == c) {
-            return next_char();
-        }
-        else {
-            previous_character = new CharacterAddress();
-            previous_character->page = page;
-            previous_character->block = block;
-            previous_character->line = line;
-            previous_character->doc = doc;
-            previous_character->character = character;
-            next_char();
-            return false;
-        }
-    }
-    return false;
-}
-
-bool CharacterAddress::next_char() {
-    if (character->next) {
-        character = character->next;
-        return false;
-    }
-    else {
-        next_line();
-        return true;
-    }
-}
-
-bool CharacterAddress::next_line() {
-    if (line->next) {
-        line = line->next;
-        character = line->first_char;
-        return false;
-    }
-    else {
-        next_block();
-        return true;
-    }
-}
-
-bool CharacterAddress::next_block() {
-    if (block->next) {
-        block = block->next;
-        line = block->u.t.first_line;
-        character = line->first_char;
-        return false;
-    }
-    else {
-        next_page();
-        return true;
-    }
-}
-
-bool CharacterAddress::next_page() {
-    if (page < doc->num_pages() - 1) {
-        page = page + 1;
-        block = doc->get_stext_with_page_number(page)->first_block;
-        line = block->u.t.first_line;
-        character = line->first_char;
-        return true;
-    }
-    return false;
-}
-
-float CharacterAddress::focus_offset() {
-    return doc->document_to_absolute_y(page, character->quad.ll.y);
-}
-
 void MainWidget::set_mark_in_current_location(char symbol) {
     return annotation_controller->set_mark_in_current_location(symbol);
 }
@@ -5742,19 +5614,7 @@ void MainWidget::overview_to_definition() {
 }
 
 void MainWidget::portal_to_definition() {
-    std::vector<SmartViewCandidate> defpos = main_document_view->find_line_definitions();
-    if (defpos.size() > 0) {
-        //AbsoluteDocumentPos abspos = doc()->document_to_absolute_pos(defpos[0].first, true);
-        AbsoluteDocumentPos abspos = defpos[0].get_abspos(main_document_view);
-        Portal link;
-        link.dst.document_checksum = doc()->get_checksum();
-        link.dst.book_state.offset_x = abspos.x;
-        link.dst.book_state.offset_y = abspos.y;
-        link.dst.book_state.zoom_level = main_document_view->get_zoom_level();
-        link.src_offset_y = main_document_view->get_ruler_pos();
-        std::string uuid = doc()->add_portal(link, true);
-        on_new_portal_added(uuid);
-    }
+    annotation_controller->portal_to_definition();
 }
 
 void MainWidget::move_visual_mark_command(int amount) {
@@ -6274,22 +6134,6 @@ void MainWidget::handle_toggle_smooth_scroll_mode() {
 
 void MainWidget::handle_overview_to_portal() {
     return annotation_controller->handle_overview_to_portal();
-}
-
-void MainWidget::handle_toggle_typing_mode() {
-    if (!typing_location.has_value()) {
-        int page = main_document_view->get_center_page_number();
-        CharacterAddress charaddr;
-        charaddr.doc = main_document_view->get_document();
-        charaddr.page = page - 1;
-        charaddr.next_page();
-
-        main_document_view->set_typing_rect(DocumentRect(rect_from_quad(charaddr.character->quad), charaddr.page), {});
-
-        typing_location = std::move(charaddr);
-        main_document_view->set_offset_y(typing_location.value().focus_offset());
-
-    }
 }
 
 void MainWidget::handle_delete_highlight_under_cursor() {
