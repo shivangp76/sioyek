@@ -157,6 +157,7 @@ class TTSController;
 class AnnotationController;
 class DocumentationController;
 class ExternalController;
+class JavascriptController;
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
@@ -179,6 +180,7 @@ public:
     std::unique_ptr<AnnotationController> annotation_controller;
     std::unique_ptr<DocumentationController> documentation_controller;
     std::unique_ptr<ExternalController> external_controller;
+    std::unique_ptr<JavascriptController> js_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
@@ -399,10 +401,6 @@ public:
 
     std::optional<ServerStatus> last_server_status = {};
 
-    QJSEngine* sync_js_engine = nullptr;
-    std::vector<QJSEngine*> available_async_engines;
-    std::mutex available_engine_mutex;
-    int num_js_engines = 0;
 
     bool main_document_view_has_document();
     std::optional<std::string> get_last_opened_file_checksum();
@@ -732,7 +730,6 @@ public:
     QPoint last_quick_tap_position;
     std::optional<QPoint> context_menu_right_click_pos = {};
 
-    QString async_utility_code = "";
     std::optional<QString> add_bookmark_hook_function_name = {};
     std::optional<QString> delete_bookmark_hook_function_name = {};
     std::optional<QString> edit_bookmark_hook_function_name = {};
@@ -913,10 +910,7 @@ public:
     void update_touch_overview_buttons(const std::optional<OverviewState>& overview);
     void set_overview_page(std::optional<OverviewState> overview, bool should_update_buttons);
     void export_python_api();
-    QJSEngine* take_js_engine(bool async);
-    void release_async_js_engine(QJSEngine* engine);
 
-    QJSValue export_javascript_api(QJSEngine& engine, bool is_async);
     void show_custom_option_list(std::vector<std::wstring> option_list);
     void on_socket_deleted(QLocalSocket* deleted_socket);
     Q_INVOKABLE QJsonObject get_json_state();
@@ -1017,9 +1011,7 @@ public:
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
     Q_INVOKABLE QStringList list_dir(QString path);
 
-    void run_startup_js(bool first_run=false);
     Q_INVOKABLE QString get_environment_variable(QString name);
-    void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);
     void set_text_prompt_text(QString text);
     Q_INVOKABLE DocumentView* dv() const;
     Q_INVOKABLE DocumentView* mdv() const;
@@ -1080,10 +1072,6 @@ public:
     // void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     bool is_ruler_mode();
     void handle_text_edit_return_pressed();
-    void call_async_js_function_with_args(const QString& code, QJsonArray args);
-    void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
-    void call_js_function_with_portal_arg_with_uuid(const QString& function_name, const std::string& uuid);
-    void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void on_new_bookmark_added(const std::string& uuid);
     void on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum);
     void on_bookmark_edited(BookMark bm, bool was_manual_edit, bool was_move_or_resize);
@@ -1102,6 +1090,13 @@ public:
     void sync_edited_annot(const std::string& annot_type, const std::string& uuid);
     void sync_deleted_annot(const std::string& annot_type, const std::string& uuid);
     std::vector<OpenedBookInfo> get_all_opened_books(bool include_server_books=true, bool force_full_path=false);
+
+    void run_startup_js(bool first_run=false);
+    void call_async_js_function_with_args(const QString& code, QJsonArray args);
+    void run_javascript_command(std::wstring javascript_code, std::optional<std::wstring> entry_point, bool is_async);
+    void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
+    void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
+    void call_js_function_with_portal_arg_with_uuid(const QString& function_name, const std::string& uuid);
 
     void handle_sync_open_document();
 

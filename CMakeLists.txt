@@ -136,6 +136,7 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/controllers/annotation_controller.cpp pdf_viewer/controllers/annotation_controller.h
     pdf_viewer/controllers/documentation_controller.cpp pdf_viewer/controllers/documentation_controller.h
     pdf_viewer/controllers/base_controller.cpp pdf_viewer/controllers/base_controller.h
+    pdf_viewer/controllers/javascript_controller.cpp pdf_viewer/controllers/javascript_controller.h
     pdf_viewer/utils/text_utils.cpp pdf_viewer/utils/text_utils.h
     pdf_viewer/utils/window_utils.cpp pdf_viewer/utils/window_utils.h
     pdf_viewer/fts_fuzzy_match.h
