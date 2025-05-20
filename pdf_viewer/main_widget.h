@@ -141,17 +141,6 @@ struct HighQualityPlayState {
     std::optional<PagelessDocumentRect> last_focused_rect = {};
 };
 
-struct ShellOutputBookmark{
-    std::string uuid;
-    qint64 pid;
-    QTemporaryFile* output_file;
-    QTemporaryFile* document_content_file = nullptr;
-    QTemporaryFile* image_file = nullptr;
-    QFileSystemWatcher* watcher;
-    QProcess* process;
-    QString style_string = "";
-    QDateTime last_update_time;
-};
 
 struct ClickSpaceTime {
     QDateTime click_time;
@@ -190,6 +179,7 @@ using SioyekBaseWidget = QMainWindow;
 class TTSController;
 class AnnotationController;
 class DocumentationController;
+class ExternalController;
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
@@ -211,6 +201,7 @@ public:
     std::unique_ptr<TTSController> tts_controller;
     std::unique_ptr<AnnotationController> annotation_controller;
     std::unique_ptr<DocumentationController> documentation_controller;
+    std::unique_ptr<ExternalController> external_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
@@ -253,7 +244,6 @@ public:
     std::vector<int> last_status_string_ids;
     std::wstring last_titlebar_string = L"";
 
-    std::vector<ShellOutputBookmark> shell_output_bookmarks;
 
     std::optional<std::function<std::pair<QString, std::vector<int>>()>> left_status_string_generator = {};
     std::optional<std::function<std::pair<QString, std::vector<int>>()>> right_status_string_generator = {};
@@ -552,11 +542,8 @@ public:
     void toggle_pdf_annotations();
     void on_paper_downloaded(QNetworkReply* reply);
 
-    std::optional<ShellOutputBookmark> get_shell_output_bookmark_with_uuid(std::string uuid);
-    void remove_finished_shell_bookmark_with_index(int index);
-    void remove_finished_shell_bookmarks();
     void handle_bookmark_shell_command(QString bookmark_text, std::string uuid, QString text_arg="");
-    void on_bookmark_shell_output_updated(std::string bookmark_uuid, QString file_path);
+    void handle_shell_bookmark_deleted(std::string uuid);
 
     Document* doc();
 

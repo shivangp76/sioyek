@@ -353,13 +353,7 @@ void AnnotationController::on_bookmark_deleted(const BookMark& bookmark, const s
 
     // if we have deleted a bookmark which shows the output of a command
     // we need to kill the process and remove it from shell_output_bookmarks
-    for (int i = 0; i < mw->shell_output_bookmarks.size(); i++){
-        if (mw->shell_output_bookmarks[i].uuid == bookmark.uuid) {
-            kill_process(mw->shell_output_bookmarks[i].pid);
-            mw->remove_finished_shell_bookmark_with_index(i);
-            break;
-        }
-    }
+    mw->handle_shell_bookmark_deleted(bookmark.uuid);
 
     mw->sync_deleted_annot("bookmark", bookmark.uuid);
 }
@@ -1547,4 +1541,43 @@ void AnnotationController::portal_to_definition() {
         std::string uuid = doc()->add_portal(link, true);
         on_new_portal_added(uuid);
     }
+}
+
+void AnnotationController::update_link_with_opened_book_state(Portal lnk, const OpenedBookState& new_state, bool async) {
+    std::wstring docpath = mdv()->get_document()->get_path();
+    Document* link_owner = mw->document_manager->get_document(docpath);
+
+    lnk.dst.book_state = new_state;
+
+    if (link_owner) {
+        link_owner->update_portal(lnk);
+    }
+
+    if (async) {
+        mw->background_task_manager->add_task([this, lnk, new_state]() {
+            mw->db_manager->update_portal(lnk.uuid, new_state.offset_x, new_state.offset_y, new_state.zoom_level);
+            }, mw);
+    }
+    else {
+        mw->db_manager->update_portal(lnk.uuid, new_state.offset_x, new_state.offset_y, new_state.zoom_level);
+    }
+    set_recently_updated_portal(lnk.uuid);
+
+    mw->portal_to_edit = {};
+}
+
+void AnnotationController::set_recently_updated_portal(const std::string& uuid) {
+    if (mw->recently_updated_portal.has_value()) {
+        if (mw->recently_updated_portal->uuid == uuid) {
+            mw->recently_updated_portal->last_modification_time = QDateTime::currentDateTime();
+            return;
+        }
+        else {
+            on_portal_edited(mw->recently_updated_portal->uuid);
+        }
+    }
+    RecentlyUpdatedPortalState s;
+    s.uuid = uuid;
+    s.last_modification_time = QDateTime::currentDateTime();
+    mw->recently_updated_portal = s;
 }

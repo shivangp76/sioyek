@@ -132,6 +132,7 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/ui/base_delegate.cpp pdf_viewer/ui/base_delegate.h
     pdf_viewer/ui/documentation_ui.cpp pdf_viewer/ui/documentation_ui.h
     pdf_viewer/controllers/tts_controller.cpp pdf_viewer/controllers/tts_controller.h
+    pdf_viewer/controllers/external_controller.cpp pdf_viewer/controllers/external_controller.h
     pdf_viewer/controllers/annotation_controller.cpp pdf_viewer/controllers/annotation_controller.h
     pdf_viewer/controllers/documentation_controller.cpp pdf_viewer/controllers/documentation_controller.h
     pdf_viewer/controllers/base_controller.cpp pdf_viewer/controllers/base_controller.h

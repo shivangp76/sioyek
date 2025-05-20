@@ -175,6 +175,7 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/controllers/annotation_controller.h \
            pdf_viewer/controllers/documentation_controller.h \
            pdf_viewer/controllers/base_controller.h \
+           pdf_viewer/controllers/external_controller.h \
            pdf_viewer/utils/text_utils.h \
            fzf/fzf.h
 
@@ -220,6 +221,7 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/controllers/annotation_controller.cpp \
            pdf_viewer/controllers/documentation_controller.cpp \
            pdf_viewer/controllers/base_controller.cpp \
+           pdf_viewer/controllers/external_controller.cpp \
            pdf_viewer/utils/text_utils.cpp \
            fzf/fzf.c
 
