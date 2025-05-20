@@ -236,13 +236,8 @@ BookMark* AnnotationController::add_chunk_to_bookmark(Document* document, std::s
         BookMark& bm = *bookmark_ptr;
         bm.is_pending = false;
         bm.description += chunk.toStdWString();
-        for (auto& following_window : mw->following_windows) {
-            if (following_window.bookmark_uuid == bm.uuid) {
-                following_window.file->open(QFile::WriteOnly);
-                following_window.file->write(QString::fromStdWString(bm.description).toUtf8());
-                following_window.file->close();
-            }
-        }
+
+        mw->update_following_window_when_bookmark_is_update(bm.uuid, bm.description);
 
         mw->invalidate_render();
         return &bm;

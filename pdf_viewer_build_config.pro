@@ -177,6 +177,7 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/controllers/base_controller.h \
            pdf_viewer/controllers/external_controller.h \
            pdf_viewer/utils/text_utils.h \
+           pdf_viewer/utils/window_utils.h \
            fzf/fzf.h
 
 
@@ -223,6 +224,7 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/controllers/base_controller.cpp \
            pdf_viewer/controllers/external_controller.cpp \
            pdf_viewer/utils/text_utils.cpp \
+           pdf_viewer/utils/window_utils.cpp \
            fzf/fzf.c
 
 !android{

@@ -331,7 +331,6 @@ extern bool DEBUG;
 extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 extern bool SAME_WIDTH;
-extern bool FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT;
 extern bool DEFAULT_PEN_DRAWING_MODE;
 extern bool DELETE_MAGIC_DRAWINGS;
 
@@ -365,13 +364,9 @@ extern bool USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS;
 extern float MENU_SCREEN_WDITH_RATIO;
 extern float MENU_SCREEN_HEIGHT_RATIO;
 
-extern float EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
-extern float EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
-
 extern bool DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR;
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
-extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern std::wstring EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND;
 extern bool FORCE_CUSTOM_LINE_ALGORITHM;
 
@@ -1332,62 +1327,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
         handle_server_actions_button_pressed();
     });
     
-    QObject::connect(&external_command_edit_watcher, &QFileSystemWatcher::fileChanged, [&]() {
-        
-        // hack: this should not be necessary (after all, how could we be receiving fileChanged events
-        // if external_command_edit_watcher.files().size() == 0?) but for some reason when editing files
-        // using vim they somehow get unregistered from the file watcher
-        if (external_command_edit_watcher.files().size() == 0) {
-            QString path_qstring = QString::fromStdWString(sioyek_temp_text_path.get_path());
-            external_command_edit_watcher.addPath(path_qstring);
-        }
-        
-        // get the focused widget
-        auto focused_widget = previousInFocusChain();
-        QLineEdit* editor_widget = dynamic_cast<QLineEdit*>(focused_widget);
-        if (editor_widget == nullptr && text_command_line_edit != nullptr) {
-            if (text_command_line_edit->isVisible()) {
-                editor_widget = text_command_line_edit;
-            }
-        }
-        if (editor_widget) {
-            is_external_file_edited = true;
-            QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
-            
-            if (file.open(QIODeviceBase::ReadOnly)) {
-                QString content = QString::fromUtf8(file.readAll());
-                content = content.replace("\r", "");
-                if (content.endsWith("\n\n\n")) {
-                    editor_widget->setText(content.left(content.size() - 3));
-                    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
-                    QCoreApplication::postEvent(editor_widget, enter_key_event);
-                    file.close();
-                    
-                    //clear the file
-                    
-                    QFile file(QString::fromStdWString(sioyek_temp_text_path.get_path()));
-                    if (file.open(QIODeviceBase::WriteOnly)) {
-                        file.write("");
-                        file.close();
-                    }
-                    if (FOCUS_ON_SIOYEK_ON_EXTERNAL_EDITOR_ACCEPT) {
-                        focus_on_widget(this, true);
-                    }
-                    return;
-                    
-                }
-                else {
-                    if (content.size() > 0) {
-                        editor_widget->setText(content);
-                        editor_widget->textEdited(content);
-                    }
-                }
-                
-            }
-            
-            file.close();
-        }
-    });
     
     // we check periodically to see if the ui needs updating
     // this is done so that thousands of search results only trigger
@@ -1612,81 +1551,9 @@ MainWidget::~MainWidget() {
     }
 }
 
-void MainWidget::update_following_windows() {
-    if (following_windows.size() > 0) {
-
-        bool is_window_focused = window()->hasFocus();
-
-        WId hwnd = winId();
-        WindowFollowLastState current_state;
-        current_state.offset_x = dv()->get_offset_x();
-        current_state.offset_y = dv()->get_offset_y();
-        current_state.zoom_level = dv()->get_zoom_level();
-        current_state.pos_x = pos().x();
-        current_state.pos_y = pos().y();
-        current_state.width = width();
-        current_state.height = height();
-        current_state.window_is_focused = is_window_focused;
-        QDateTime current_time = QDateTime::currentDateTime();
-
-        for (int i = following_windows.size() - 1; i >= 0; i--) {
-            qint64 pid = following_windows[i].pid;
-            bool still_running = is_process_still_running(pid);
-            if (!still_running) {
-                auto completed_item_file = following_windows[i].file;
-                auto completed_item_uuid = following_windows[i].bookmark_uuid;
-                auto completed_item_command = std::move(following_windows[i].pending_text_command);
-                following_windows.erase(following_windows.begin() + i);
-
-                // completed_item_file->open();
-                // QString content = QString::fromUtf8(completed_item_file->readAll());
-                // completed_item_file->close();
-                QString content;
-                if (completed_item_file != nullptr) {
-                    QFile completed_file(completed_item_file->fileName());
-                    completed_file.open(QFile::ReadOnly);
-                    content = QString::fromUtf8(completed_file.readAll());
-                    completed_file.close();
-                    delete completed_item_file;
-                }
-
-
-                if (completed_item_command) {
-                    completed_item_command->set_text_requirement(content.toStdWString());
-                    advance_command(std::move(completed_item_command));
-                    //if (text_command_line_edit->isVisible()) {
-                    //    text_command_line_edit->setText(content);
-                    //    QKeyEvent* enter_key_event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Return, Qt::KeyboardModifier::NoModifier);
-                    //    QCoreApplication::postEvent(text_command_line_edit, enter_key_event);
-                    //}
-                }
-                else if (completed_item_uuid.size() > 0){
-                    BookMark* updated_bookmark_ptr = doc()->update_bookmark_text(completed_item_uuid, content.toStdWString(), -1);
-                    if (updated_bookmark_ptr) {
-                        on_bookmark_edited(*updated_bookmark_ptr, true, false);
-                    }
-                    invalidate_render();
-                }
-            }
-            else {
-                auto& following_window = following_windows[i];
-                if (!(current_state == following_window.last_state) || (following_window.creation_time.msecsTo(current_time) < 1000)) {
-                    WindowRect window_rect = following_window.rect.to_window(dv());
-                    // the coordinate relative to screen (not widget)
-                    auto global_point = mapToGlobal(QPoint(window_rect.x0, window_rect.y0));
-                    QRect absolute_rect(global_point.x(), global_point.y(), window_rect.width(), window_rect.height());
-
-                    move_resize_window(hwnd, pid, absolute_rect.x(), absolute_rect.y(), absolute_rect.width(), absolute_rect.height(), is_window_focused);
-                    following_windows[i].last_state = current_state;
-                }
-
-            }
-        }
-    }
-}
 void MainWidget::handle_validation_interval_timeout(){
 
-    update_following_windows();
+    external_controller->update_following_windows();
 
     if (PERSISTANCE_PERIOD > 0) {
         QDateTime now = QDateTime::currentDateTime();
@@ -1970,7 +1837,7 @@ void MainWidget::keyReleaseEvent(QKeyEvent* kevent) {
 
 void MainWidget::validate_render() {
 
-    update_following_windows();
+    external_controller->update_following_windows();
 
     if (SMOOTH_SCROLL_MODE) {
         if (main_document_view_has_document()) {
@@ -3800,7 +3667,7 @@ void MainWidget::show_textbar(const std::wstring& command_name, bool is_password
                     // of the command is updated.
                     QTimer::singleShot(0, [this]() {
                         QString content = text_command_line_edit->text();
-                        open_embedded_external_text_editor(content, pending_command_instance->get_text_editor_rectangle());
+                        external_controller->open_embedded_external_text_editor(content, pending_command_instance->get_text_editor_rectangle());
                         text_command_line_edit_container->hide();
                         setFocus();
                         });
@@ -5919,10 +5786,10 @@ bool MainWidget::event(QEvent* event) {
     QKeyEvent* ke = dynamic_cast<QKeyEvent*>(event);
 
     if (event->type() == QEvent::WindowActivate) {
-        if (SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS && is_external_file_edited) {
+        if (SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS && external_controller->is_external_file_edited) {
             if (text_command_line_edit->isVisible()) {
                 handle_text_edit_return_pressed();
-                is_external_file_edited = false;
+                external_controller->is_external_file_edited = false;
             }
         }
     }
@@ -10250,103 +10117,6 @@ void MainWidget:: run_startup_js(bool first_run) {
 #endif
 }
 
-void MainWidget::start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path, int line_number) {
-
-#ifndef SIOYEK_MOBILE
-    follow_data.creation_time = QDateTime::currentDateTime();
-    if (!file_path.has_value()) {
-        follow_data.file = new QTemporaryFile();
-
-        follow_data.file->open(QFile::WriteOnly);
-        follow_data.file->write(content.toUtf8());
-        follow_data.file->close();
-    }
-
-    QStringList command_parts = QProcess::splitCommand(QString::fromStdWString(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND));
-    for (int i = 0; i < command_parts.size(); i++) {
-        command_parts[i] = command_parts[i].replace("%{file}", file_path.has_value() ? file_path.value() : follow_data.file->fileName());
-        command_parts[i] = command_parts[i].replace("%{line}", QString::number(line_number));
-    }
-    QProcess* process = new QProcess(this);
-    process->start(command_parts[0], command_parts.mid(1));
-
-    process->waitForStarted();
-    qint64 pid = process->processId();
-    follow_data.pid = pid;
-#endif
-}
-
-void MainWidget::open_embedded_external_text_editor(QString content, std::optional<AbsoluteRect> rect) {
-    if (text_command_line_edit->isVisible() || content.size() > 0) {
-        //QString content = text_command_line_edit->text();
-        if (content.size() == 0) {
-            content = text_command_line_edit->text();
-        }
-
-        WindowFollowData follow_data;
-        if (rect) {
-            follow_data.rect = rect.value();
-        }
-        else {
-            NormalizedWindowRect nwr;
-            nwr.x0 = -EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
-            nwr.x1 = EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
-            nwr.y0 = EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
-            nwr.y1 = -EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
-            follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
-        }
-
-        follow_data.pending_text_command = std::move(pending_command_instance);
-
-        start_embedded_external_editor(follow_data, content);
-
-        following_windows.push_back(std::move(follow_data));
-
-    }
-}
-
-void MainWidget::open_embedded_external_text_editor_to_edit_file(QString file_path, int line_number) {
-    WindowFollowData follow_data;
-    NormalizedWindowRect nwr;
-    nwr.x0 = -EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
-    nwr.x1 = EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
-    nwr.y0 = EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
-    nwr.y1 = -EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
-    follow_data.rect = nwr.to_window(dv()).to_absolute(dv());
-    //follow_data.file = new QFile(file_path);
-
-    //follow_data.pending_text_command = std::move(pending_command_instance);
-
-    start_embedded_external_editor(follow_data, "", file_path, line_number);
-    following_windows.push_back(std::move(follow_data));
-
-    //following_windows.push_back(std::move(follow_data));
-}
-
-void MainWidget::open_external_text_editor() {
-    if (EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
-        show_error_message(L"You should configure external_text_editor_command in you configs file");
-        return;
-    }
-
-    QString path_qstring = QString::fromStdWString(sioyek_temp_text_path.get_path());
-    QFile external_file(path_qstring);
-
-    external_file.open(QIODeviceBase::WriteOnly);
-    external_file.write(text_command_line_edit->text().toUtf8());
-    external_file.close();
-
-    std::wstring command = QString::fromStdWString(EXTERNAL_TEXT_EDITOR_COMMAND)
-        .replace("%{file}", QString::fromStdWString(sioyek_temp_text_path.get_path()))
-        .replace("%{line}", QString::number(1))
-        .toStdWString();
-    execute_command(command);
-    is_external_file_edited = false;
-    if (external_command_edit_watcher.files().size() == 0) {
-        external_command_edit_watcher.addPath(path_qstring);
-    }
-}
-
 void MainWidget::on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum){
     return annotation_controller->on_bookmark_deleted(bookmark, document_checksum);
 }
@@ -11670,40 +11440,7 @@ void MainWidget::handle_scroll_selected_bookmark_to_ends(bool goto_start){
 }
 
 void MainWidget::handle_edit_selected_bookmark_with_external_editor() {
-#ifndef SIOYEK_MOBILE
-    if (EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND.size() == 0) {
-        show_error_message(L"You must configure the embedded_external_text_editor_command in your prefs_user.config");
-        return;
-    }
-
-    std::string selected_bookmark_uuid = dv()->get_selected_bookmark_uuid();
-    if (selected_bookmark_uuid.size() > 0) {
-        BookMark bm = *doc()->get_bookmark_with_uuid(selected_bookmark_uuid);
-        std::optional<AbsoluteRect> rect = bm.get_rectangle();
-        if (rect) {
-            QStringList command_parts = QProcess::splitCommand(QString::fromStdWString(EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND));
-            if (command_parts.size() > 0) {
-                WindowFollowData follow;
-                follow.bookmark_uuid = selected_bookmark_uuid;
-                follow.rect = rect.value();
-                follow.bookmark_uuid = bm.uuid;
-                if (!bm.is_freetext()) {
-                    NormalizedWindowRect nwr;
-                    nwr.x0 = -EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
-                    nwr.x1 = EMBEDDED_EDITOR_SCREEN_WDITH_RATIO;
-                    nwr.y0 = EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
-                    nwr.y1 = -EMBEDDED_EDITOR_SCREEN_HEIGHT_RATIO;
-                    follow.rect = nwr.to_window(dv()).to_absolute(dv());
-                }
-
-                start_embedded_external_editor(follow, QString::fromStdWString(bm.description));
-
-                following_windows.push_back(std::move(follow));
-            }
-        }
-
-    }
-#endif
+    return external_controller->handle_edit_selected_bookmark_with_external_editor();
 }
 
 bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& rhs) {
@@ -11721,22 +11458,34 @@ bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& r
 #ifndef SIOYEK_MOBILE
 void MainWidget::moveEvent(QMoveEvent* move_event) {
     QWidget::moveEvent(move_event);
-    update_following_windows();
+    external_controller->update_following_windows();
 }
 #endif
 
 void MainWidget::open_file(std::wstring file_path, bool show_error_message) {
     if (USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS) {
-        open_embedded_external_text_editor_to_edit_file(QString::fromStdWString(file_path));
+        external_controller->open_embedded_external_text_editor_to_edit_file(QString::fromStdWString(file_path));
     }
     else{
         ::open_file(file_path, show_error_message);
     }
 }
 
+void MainWidget::open_external_text_editor(){
+    return external_controller->open_external_text_editor();
+}
+
+void MainWidget::open_embedded_external_text_editor(){
+    return external_controller->open_embedded_external_text_editor();
+}
+
+void MainWidget::update_following_window_when_bookmark_is_update(std::string uuid, std::wstring new_description){
+    return external_controller->update_following_window_when_bookmark_is_updated(uuid, new_description);
+}
+
 void MainWidget::open_text_editor_at_line(QString file_path, int line_number) {
     if (EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND.size() > 0 && USE_EMBEDDED_EDITOR_FOR_USER_AND_PREFS) {
-        open_embedded_external_text_editor_to_edit_file(file_path, line_number);
+        external_controller->open_embedded_external_text_editor_to_edit_file(file_path, line_number);
     }
     else {
         ::open_text_editor_at_line(file_path, line_number);

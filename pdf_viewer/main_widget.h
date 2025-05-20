@@ -72,28 +72,6 @@ class TextToSpeechHandler;
 class SioyekBookmarkTextBrowser;
 
 
-struct WindowFollowLastState {
-    float offset_x;
-    float offset_y;
-    float zoom_level;
-    int pos_x;
-    int pos_y;
-    int width;
-    int height;
-    bool window_is_focused;
-};
-
-bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& rhs);
-
-struct WindowFollowData{
-    AbsoluteRect rect;
-    qint64 pid;
-    std::string bookmark_uuid = "";
-    QFile* file = nullptr;
-    std::unique_ptr<Command> pending_text_command = {};
-    std::optional<WindowFollowLastState> last_state={};
-    QDateTime creation_time;
-};
 
 
 
@@ -208,10 +186,6 @@ public:
     bool is_onscreen_keyboard_visible = false;
 
     //LastDocumentChecksum last_document_checksum;
-
-    QFileSystemWatcher external_command_edit_watcher;
-    bool is_external_file_edited = false;
-
     TextToSpeechHandler* tts = nullptr;
     // is the TTS engine currently reading text?
     bool is_reading = false;
@@ -385,8 +359,6 @@ public:
     int text_suggestion_index = 0;
     bool is_mouse_ruler_mode = false;
 
-    std::vector<WindowFollowData> following_windows;
-
     std::deque<std::wstring> search_terms;
 
     // determines if the widget render is invalid and needs to be updated
@@ -474,7 +446,6 @@ public:
     void manage_last_document_checksum();
     void on_checksum_computed();
 
-    void update_following_windows();
     void handle_validation_interval_timeout();
     void update_selected_bookmark_font_size();
     //bool eventFilter(QObject* obj, QEvent* event) override;
@@ -1109,10 +1080,6 @@ public:
     // void set_pending_portal(std::optional<std::wstring> doc_path, Portal portal);
     // void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
     bool is_ruler_mode();
-    void open_external_text_editor();
-    void start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path = {}, int line_number=0);
-    void open_embedded_external_text_editor(QString force_content = "", std::optional<AbsoluteRect> rect = {});
-    void open_embedded_external_text_editor_to_edit_file(QString file_path, int line_number=0);
     void handle_text_edit_return_pressed();
     void call_async_js_function_with_args(const QString& code, QJsonArray args);
     void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
@@ -1219,6 +1186,10 @@ public:
     void update_current_bookmark_widget_text(BookMark* bm);
     QString get_selected_text_in_chat_window();
     std::optional<SioyekBookmarkTextBrowser*> get_current_bookmark_browser();
+
+    void open_external_text_editor();
+    void open_embedded_external_text_editor();
+    void update_following_window_when_bookmark_is_update(std::string uuid, std::wstring new_description);
 
     void handle_scroll_selected_bookmark_to_ends(bool goto_start);
     void handle_edit_selected_bookmark_with_external_editor();

@@ -10,6 +10,8 @@ class Path;
 class QTemporaryFile;
 class QFileSystemWatcher;
 class QProcess;
+class Command;
+class QFile;
 
 struct ShellOutputBookmark{
     std::string uuid;
@@ -23,10 +25,37 @@ struct ShellOutputBookmark{
     QDateTime last_update_time;
 };
 
+struct WindowFollowLastState {
+    float offset_x;
+    float offset_y;
+    float zoom_level;
+    int pos_x;
+    int pos_y;
+    int width;
+    int height;
+    bool window_is_focused;
+};
+
+bool operator==(const WindowFollowLastState& lhs, const WindowFollowLastState& rhs);
+
+struct WindowFollowData{
+    AbsoluteRect rect;
+    qint64 pid;
+    std::string bookmark_uuid = "";
+    QFile* file = nullptr;
+    std::unique_ptr<Command> pending_text_command = {};
+    std::optional<WindowFollowLastState> last_state={};
+    QDateTime creation_time;
+};
+
 class ExternalController : public BaseController{
 private:
     std::vector<ShellOutputBookmark> shell_output_bookmarks;
+    std::vector<WindowFollowData> following_windows;
+    std::unique_ptr<QFileSystemWatcher> external_command_edit_watcher;
 public:
+    bool is_external_file_edited = false;
+
     ExternalController(MainWidget* parent);
     std::wstring handle_synctex_to_ruler();
     std::wstring synctex_under_pos(WindowPos position);
@@ -39,5 +68,13 @@ public:
     void remove_finished_shell_bookmark_with_index(int index);
     void remove_finished_shell_bookmarks();
     void handle_shell_bookmark_deleted(std::string uuid);
+    void start_embedded_external_editor(WindowFollowData& follow_data, QString content, std::optional<QString> file_path = {}, int line_number=0);
+    void open_embedded_external_text_editor(QString force_content = "", std::optional<AbsoluteRect> rect = {});
+    void open_embedded_external_text_editor_to_edit_file(QString file_path, int line_number=0);
+    void open_external_text_editor();
+    void update_following_windows();
+    void handle_edit_selected_bookmark_with_external_editor();
+    void update_following_window_when_bookmark_is_updated(std::string uuid, std::wstring new_description);
 
 };
+

@@ -61,6 +61,7 @@
 #include "database.h"
 #include "book.h"
 #include "utils.h"
+#include "utils/window_utils.h"
 #include "pdf_renderer.h"
 #include "ui.h"
 #include "document.h"
