@@ -1337,7 +1337,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
         w->invalidate_render();
     });
     add_float(L"tts_rate", &TTS_RATE, FloatExtras{0.0f, 4.0f})->set_change_fn([](MainWidget* w){
-        if (w->is_reading) {
+        if (w->is_lq_ttsing()) {
             w->handle_stop_reading();
             w->handle_start_reading();
         }

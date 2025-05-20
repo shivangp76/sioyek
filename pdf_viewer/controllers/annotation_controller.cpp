@@ -1577,3 +1577,25 @@ void AnnotationController::set_recently_updated_portal(const std::string& uuid) 
     s.last_modification_time = QDateTime::currentDateTime();
     mw->recently_updated_portal = s;
 }
+
+void VisibleObjectMoveData::handle_move(MainWidget* widget){
+    if (is_moving) {
+        if (index.object_type == VisibleObjectType::Bookmark) {
+            widget->handle_bookmark_move();
+        }
+        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal) || (index.object_type == VisibleObjectType::PinnedPortal)) {
+            widget->handle_portal_move();
+        }
+    }
+}
+
+void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
+    if (is_moving) {
+        if (index.object_type == VisibleObjectType::Bookmark) {
+            widget->handle_bookmark_move_finish();
+        }
+        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal)) {
+            widget->handle_portal_move_finish();
+        }
+    }
+}

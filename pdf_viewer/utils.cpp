@@ -6741,7 +6741,7 @@ extern "C" void macos_setAudioFinishedCallback(AudioFinishedCallback callback, v
 
 void macos_audio_finished_callback(void* data){
     for (MainWidget* window : windows){
-        auto mp = dynamic_cast<MacosMediaPlayer*>(window->get_media_player());
+        void* mp = window->get_media_player_ptr();
         if (mp == data){
             window->apple_on_high_quality_tts_playback_finished();
         }

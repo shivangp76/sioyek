@@ -378,10 +378,10 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         };
 
     auto tts_status_fn = [widget=main_widget]() {
-        if (widget->is_reading) {
+        if (widget->is_lq_ttsing()) {
             return P(" [ stop reading ]");
         }
-        else if (widget->high_quality_play_state) {
+        else if (widget->is_hq_ttsing()) {
             return P(" [ stop reading ]");
         }
         else{
@@ -390,10 +390,10 @@ std::function<std::pair<QString, std::vector<int>>()> compile_status_string(QStr
         };
 
     auto tts_rate_fn = [widget=main_widget]() {
-        if (widget->is_reading) {
+        if (widget->is_lq_ttsing()) {
             return P(" [ rate " + QString::number(TTS_RATE) + " ]");
         }
-        else if (widget->high_quality_play_state) {
+        else if (widget->is_hq_ttsing()) {
             return P(" [ rate " + QString::number(TTS_RATE) + " ]");
         }
         else {

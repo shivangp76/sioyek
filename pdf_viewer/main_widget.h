@@ -73,8 +73,6 @@ class SioyekBookmarkTextBrowser;
 
 
 
-
-
 struct RecentlyUpdatedPortalState {
     std::string uuid;
     QDateTime last_modification_time;
@@ -109,31 +107,12 @@ struct DeletedObject {
     std::variant<BookMark, Portal, Highlight> object;
 };
 
-struct HighQualityPlayState {
-    bool is_playing = false;
-    int page_number = -1;
-    int start_line = -1;
-    std::vector<PagelessDocumentRect> line_rects;
-    std::vector<float> timestamps;
-    Document* doc = nullptr;
-    std::optional<PagelessDocumentRect> last_focused_rect = {};
-};
-
 
 struct ClickSpaceTime {
     QDateTime click_time;
     AbsoluteDocumentPos click_pos;
 };
 
-#ifdef Q_OS_APPLE
-using SioyekMediaPlayer = MacosMediaPlayer;
-#else
-#ifdef SIOYEK_ADVANCED_AUDIO
-using SioyekMediaPlayer = MyPlayer;
-#else
-using SioyekMediaPlayer = QMediaPlayer;
-#endif
-#endif
 
 // #define SIOYEK_QUICKWINDOW
 #ifdef Q_OS_MACOS
@@ -189,23 +168,11 @@ public:
     bool is_onscreen_keyboard_visible = false;
 
     //LastDocumentChecksum last_document_checksum;
-    TextToSpeechHandler* tts = nullptr;
-    // is the TTS engine currently reading text?
-    bool is_reading = false;
-    bool word_by_word_reading = false;
-    QString prev_tts_state = "";
-    bool tts_has_pause_resume_capability = false;
-    bool tts_is_about_to_finish = false;
-    std::wstring tts_text = L"";
-    std::vector<PagelessDocumentRect> tts_corresponding_line_rects;
-    std::vector<PagelessDocumentRect> tts_corresponding_char_rects;
-    std::optional<PagelessDocumentRect> last_focused_rect = {};
 
     SioyekRendererBackend* opengl_widget = nullptr;
     SioyekRendererBackend* helper_opengl_widget_ = nullptr;
 
     QScrollBar* scroll_bar = nullptr;
-    SioyekMediaPlayer* media_player = nullptr;
 
     int next_pending_drawing_request_id = 0;
 
@@ -276,7 +243,6 @@ public:
     bool rect_select_mode = false;
     bool point_select_mode = false;
 
-    std::optional<HighQualityPlayState> high_quality_play_state = {};
 
     // begin/end of current selected rectangle
     std::optional<AbsoluteDocumentPos> rect_select_begin = {};
@@ -704,6 +670,8 @@ public:
     void apple_on_high_quality_tts_playback_finished();
 #endif
 
+    void* get_media_player_ptr();
+
     void show_audio_buttons();
 
     // void handle_goto_next_block();
@@ -1106,7 +1074,7 @@ public:
     void on_document_changed();
     void on_server_hashes_loaded();
     // Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
-    SioyekMediaPlayer* get_media_player();
+    // SioyekMediaPlayer* get_media_player();
     void handle_high_quality_media_end_reached();
     void show_command_menu();
 
@@ -1189,6 +1157,10 @@ public slots:
     void auto_login();
     bool is_network_manager_running(bool* is_downloading = nullptr, std::wstring* message=nullptr);
     QString get_network_status_string();
+
+    bool is_lq_ttsing();
+    bool is_hq_ttsing();
+    bool is_ttsing();
 };
 
 MainWidget* get_window_with_window_id(int window_id);

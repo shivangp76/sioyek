@@ -151,7 +151,7 @@ public:
         float new_rate = TTS_RATE + TTS_RATE_INCREMENT;
         if (new_rate > 4) new_rate = 4;
         TTS_RATE = new_rate;
-        if (widget->is_reading) {
+        if (widget->is_lq_ttsing()) {
             widget->handle_stop_reading();
             widget->handle_start_reading();
         }
@@ -171,7 +171,7 @@ public:
         float new_rate = TTS_RATE - TTS_RATE_INCREMENT;
         if (new_rate < 0) new_rate = 0;
         TTS_RATE = new_rate;
-        if (widget->is_reading) {
+        if (widget->is_lq_ttsing()) {
             widget->handle_stop_reading();
             widget->handle_start_reading();
         }

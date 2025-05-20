@@ -199,7 +199,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     bool horizontal_locked = main_widget->horizontal_scroll_locked;
     bool fullscreen = main_widget->isFullScreen();
     bool ruler = main_widget->main_document_view->is_ruler_mode();
-    bool speaking = main_widget->is_reading;
+    bool speaking = main_widget->is_lq_ttsing();
     bool portaling = main_widget->main_document_view->is_pending_link_source_filled();
     bool fit_mode = main_widget->main_document_view->last_smart_fit_page.has_value();
     bool is_logged_in = main_widget->is_logged_in();

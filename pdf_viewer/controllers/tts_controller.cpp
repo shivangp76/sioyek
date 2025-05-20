@@ -16,7 +16,18 @@ extern bool USE_LOCAL_TTS_WHILE_WAITING_FOR_HQ_TTS;
 extern "C" void makeSureTTSCanUseSpeakers();
 #endif
 
+
 TTSController::TTSController(MainWidget* parent) : mw(parent){
+}
+
+TTSController::~TTSController(){
+    if (is_reading) {
+        is_reading = false;
+        get_tts()->stop();
+    }
+    if (tts) {
+        delete tts;
+    }
 }
 
 void TTSController::handle_start_reading(bool force_local){
@@ -26,31 +37,31 @@ void TTSController::handle_start_reading(bool force_local){
         return;
     }
 
-    mw->is_reading = true;
+    is_reading = true;
     read_current_line(force_local);
     show_touch_auido_ui_if_in_touch_mode();
 }
 
 void TTSController::read_current_line(bool force_local){
-    if (!force_local && mw->high_quality_play_state.has_value()) {
+    if (!force_local && high_quality_play_state.has_value()) {
         mw->handle_stop_reading();
         mw->handle_start_reading_high_quality();
     }
     else {
 
-        if (!mw->word_by_word_reading){
-            if (mw->is_reading){
-                mw->is_reading = false;
-                mw->prev_tts_state = "Stopped";
+        if (!word_by_word_reading){
+            if (is_reading){
+                is_reading = false;
+                prev_tts_state = "Stopped";
                 get_tts()->stop();
             }
         }
 
         std::wstring selected_line_text = mw->main_document_view->get_selected_line_text().value_or(L"");
         //std::wstring text = main_document_view->get_selected_line_text().value_or(L"");
-        mw->tts_text.clear();
-        mw->tts_corresponding_line_rects.clear();
-        mw->tts_corresponding_char_rects.clear();
+        tts_text.clear();
+        tts_corresponding_line_rects.clear();
+        tts_corresponding_char_rects.clear();
 
         int page_number = mw->main_document_view->get_vertical_line_page();
         AbsoluteRect ruler_rect = mw->main_document_view->get_ruler_rect().value_or(fz_empty_rect);
@@ -59,9 +70,9 @@ void TTSController::read_current_line(bool force_local){
             page_number,
             maximum_size,
             ruler_rect,
-            mw->tts_text,
-            mw->tts_corresponding_line_rects,
-            mw->tts_corresponding_char_rects);
+            tts_text,
+            tts_corresponding_line_rects,
+            tts_corresponding_char_rects);
 
 
         //fz_stext_page* stext_page = doc()->get_stext_with_page_number(page_number);
@@ -69,11 +80,11 @@ void TTSController::read_current_line(bool force_local){
         //get_flat_chars_from_stext_page(stext_page, flat_chars, true);
 
         get_tts()->set_rate(TTS_RATE);
-        if (mw->word_by_word_reading) {
+        if (word_by_word_reading) {
             int page_offset = mw->doc()->get_page_offset_into_super_fast_index(page_number);
             int current_offset_into_document = page_offset + index_into_page;
-            if (mw->tts_text.size() > 0) {
-                get_tts()->say(QString::fromStdWString(mw->tts_text), current_offset_into_document);
+            if (tts_text.size() > 0) {
+                get_tts()->say(QString::fromStdWString(tts_text), current_offset_into_document);
             }
         }
         else {
@@ -83,24 +94,24 @@ void TTSController::read_current_line(bool force_local){
         // last_page_read = page_number;
         // last_index_into_page_read = index_into_page;
 
-        mw->is_reading = true;
+        is_reading = true;
     }
 }
 
 void TTSController::handle_stop_reading(){
     mw->dv()->is_waiting_for_high_quality_tts_result = false;
-    bool was_high_quality_playing = mw->high_quality_play_state.has_value() && mw->media_player && mw->media_player->isPlaying();
+    bool was_high_quality_playing = high_quality_play_state.has_value() && media_player && media_player->isPlaying();
 
-    if (mw->high_quality_play_state.has_value() && mw->media_player){
-        mw->media_player->stop();
+    if (high_quality_play_state.has_value() && media_player){
+        media_player->stop();
     }
 
     if (was_high_quality_playing) {
-        mw->is_reading = false;
-        mw->high_quality_play_state = {};
+        is_reading = false;
+        high_quality_play_state = {};
     }
     else {
-        mw->is_reading = false;
+        is_reading = false;
 
         get_tts()->stop();
 
@@ -111,9 +122,9 @@ void TTSController::handle_stop_reading(){
 }
 
 void TTSController::handle_pause(){
-    mw->is_reading = false;
+    is_reading = false;
     if (mw->is_high_quality_tts_playing()){
-        mw->get_media_player()->pause();
+        get_media_player()->pause();
     }
     else{
         mw->get_tts()->pause();
@@ -121,38 +132,38 @@ void TTSController::handle_pause(){
 }
 
 TextToSpeechHandler* TTSController::get_tts() {
-    if (mw->tts) return mw->tts;
+    if (tts) return tts;
 
 #ifdef SIOYEK_IOS
     makeSureTTSCanUseSpeakers();
 #endif
 
 #ifdef SIOYEK_ANDROID
-    mw->tts = new AndroidTextToSpeechHandler();
+    tts = new AndroidTextToSpeechHandler();
 #else
-    mw->tts = new QtTextToSpeechHandler();
+    tts = new QtTextToSpeechHandler();
 #endif
 
 
     if (TTS_VOICE.size() > 0) {
-        mw->tts->set_voice(TTS_VOICE);
+        tts->set_voice(TTS_VOICE);
     }
     //void sayingWord(const QString &word, qsizetype id, qsizetype start, qsizetype length);
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
 
-    mw->tts_has_pause_resume_capability = mw->tts->is_pausable();
-    if (mw->tts->is_word_by_word()) {
-        mw->word_by_word_reading = true;
+    tts_has_pause_resume_capability = tts->is_pausable();
+    if (tts->is_word_by_word()) {
+        word_by_word_reading = true;
     }
 
     //void aboutToSynthesize(qsizetype id);
-    mw->tts->set_word_callback([&](int start, int length) {
-        if (mw->is_reading) {
-            if (start >= mw->tts_corresponding_line_rects.size()) return;
+    tts->set_word_callback([&](int start, int length) {
+        if (is_reading) {
+            if (start >= tts_corresponding_line_rects.size()) return;
 
-            PagelessDocumentRect line_being_read_rect = mw->tts_corresponding_line_rects[start];
-            PagelessDocumentRect char_being_read_rect = mw->tts_corresponding_char_rects[start];
+            PagelessDocumentRect line_being_read_rect = tts_corresponding_line_rects[start];
+            PagelessDocumentRect char_being_read_rect = tts_corresponding_char_rects[start];
 
             int ruler_page = mw->main_document_view->get_vertical_line_page();
 
@@ -160,7 +171,7 @@ TextToSpeechHandler* TTSController::get_tts() {
             NormalizedWindowRect char_being_read_window_rect = char_being_read_document_rect.to_window_normalized(mw->main_document_view);
 
             int end = start + length;
-            if (mw->last_focused_rect.has_value() && (mw->last_focused_rect.value() == line_being_read_rect)) {
+            if (last_focused_rect.has_value() && (last_focused_rect.value() == line_being_read_rect)) {
 
                 if (char_being_read_window_rect.x0 > 1) {
                     mw->main_document_view->move_visual_mark_next();
@@ -168,8 +179,8 @@ TextToSpeechHandler* TTSController::get_tts() {
                 }
             }
 
-            if (!mw->tts_is_about_to_finish && ((!mw->last_focused_rect.has_value()) || !(mw->last_focused_rect.value() == line_being_read_rect))) {
-                mw->last_focused_rect = line_being_read_rect;
+            if (!tts_is_about_to_finish && ((!last_focused_rect.has_value()) || !(last_focused_rect.value() == line_being_read_rect))) {
+                last_focused_rect = line_being_read_rect;
                 DocumentRect line_being_read_document_rect = DocumentRect(line_being_read_rect, ruler_page);
                 WindowRect line_being_read_window_rect = line_being_read_document_rect.to_window(mw->main_document_view);
                 NormalizedWindowRect line_being_read_normalized_window_rect = line_being_read_document_rect.to_window_normalized(mw->main_document_view);
@@ -183,17 +194,17 @@ TextToSpeechHandler* TTSController::get_tts() {
             }
 
 
-            if ((mw->tts_text.size() - end) <= 5) {
-                mw->tts_is_about_to_finish = true;
+            if ((tts_text.size() - end) <= 5) {
+                tts_is_about_to_finish = true;
             }
 
         }
         });
 
 
-    mw->tts->set_state_change_callback([&](QString state) {
+    tts->set_state_change_callback([&](QString state) {
 
-        if ((!mw->word_by_word_reading) && mw->is_reading && (state == "Ready") && (mw->prev_tts_state == "Speaking")){
+        if ((!word_by_word_reading) && is_reading && (state == "Ready") && (prev_tts_state == "Speaking")){
             // when word_by_word_reading is not available, we can't rely on tts_is_about_to_finish
             mw->move_visual_mark(1);
             mw->invalidate_render();
@@ -201,21 +212,21 @@ TextToSpeechHandler* TTSController::get_tts() {
         }
         else{
             if ((state == "Ready") || (state == "Error")) {
-                if (mw->is_reading && mw->tts_is_about_to_finish) {
-                    mw->tts_is_about_to_finish = false;
+                if (is_reading && tts_is_about_to_finish) {
+                    tts_is_about_to_finish = false;
                     mw->move_visual_mark(1);
                     mw->invalidate_render();
                 }
             }
         }
-        mw->prev_tts_state = state;
+        prev_tts_state = state;
         });
 
-    mw->tts->set_external_state_change_callback([&](QString state){
+    tts->set_external_state_change_callback([&](QString state){
         mw->ensure_player_state_(state);
     });
 
-    mw->tts->set_on_app_pause_callback([&](){
+    tts->set_on_app_pause_callback([&](){
 
         bool is_audio_ui_visible = false;
         if (mw->current_widget_stack.size() > 0){
@@ -225,7 +236,7 @@ TextToSpeechHandler* TTSController::get_tts() {
             }
         }
 
-        if (mw->is_reading || is_audio_ui_visible) {
+        if (is_reading || is_audio_ui_visible) {
             return mw->get_rest_of_document_pages_text();
         }
         else{
@@ -233,7 +244,7 @@ TextToSpeechHandler* TTSController::get_tts() {
         }
     });
 
-    mw->tts->set_on_app_resume_callback([&](bool is_playing, bool is_on_rest, int offset){
+    tts->set_on_app_resume_callback([&](bool is_playing, bool is_on_rest, int offset){
 
         handle_app_tts_resume(is_playing, is_on_rest, offset);
     });
@@ -255,7 +266,7 @@ TextToSpeechHandler* TTSController::get_tts() {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 #endif
 
-    return mw->tts;
+    return tts;
 }
 
 void TTSController::show_touch_auido_ui_if_in_touch_mode(){
@@ -272,11 +283,11 @@ void TTSController::ensure_player_state(QString state){
         if (audio_ui) {
             if (state == "Ready") {
                 audio_ui->buttons->set_playing();
-                mw->is_reading = true;
+                is_reading = true;
             }
             if (state == "Ended") {
                 audio_ui->buttons->set_paused();
-                mw->is_reading = false;
+                is_reading = false;
             }
         }
     }
@@ -293,12 +304,12 @@ void TTSController::handle_start_reading_high_quality(bool should_preload) {
     play_state.doc = mw->doc();
     play_state.page_number = current_page_number;
     play_state.start_line = line_number;
-    mw->high_quality_play_state = play_state;
+    high_quality_play_state = play_state;
     float rate = TTS_RATE;
 
     std::wstring text;
     int index_into_page = mw->dv()->get_page_text_and_line_rects(current_page_number, text, line_rects);
-    mw->high_quality_play_state->line_rects = line_rects;
+    high_quality_play_state->line_rects = line_rects;
 
     if (mw->network_controller->sioyek_network_manager->does_pending_tts_command_exist(QString::fromStdString(mw->doc()->get_checksum()), QString::fromStdWString(text))){
         return;
@@ -315,21 +326,21 @@ void TTSController::handle_start_reading_high_quality(bool should_preload) {
                 [&, index_into_page, status_message_id, rate, current_page_number](QString file_path, std::vector<float> timestamps) {
         mw->dv()->is_waiting_for_high_quality_tts_result = false;
         mw->set_status_message(L"", status_message_id);
-        SioyekMediaPlayer* mp = mw->get_media_player();
+        SioyekMediaPlayer* mp = get_media_player();
         std::wstring notification_file_name = mw->doc()->detect_paper_name();
 #ifdef Q_OS_APPLE
         mp->setSource(QUrl::fromLocalFile(file_path), QString::fromStdWString(notification_file_name), current_page_number);
 #else
         mp->setSource(QUrl::fromLocalFile(file_path));
 #endif
-        mw->high_quality_play_state->timestamps = timestamps;
+        high_quality_play_state->timestamps = timestamps;
         //media_player->audioTracks().at(0).
 
         auto seek_to_location = [&, mp, index_into_page, timestamps, current_page_number, rate](bool seekable) mutable {
             if (seekable) {
                 QTimer::singleShot(0, [&, mp, timestamps, index_into_page, current_page_number, rate]() mutable {
 
-                    if (mw->tts && mw->tts->is_playing()){
+                    if (tts && tts->is_playing()){
                         int new_page_number = mw->get_current_page_number();
 
                         if (new_page_number != current_page_number){
@@ -343,7 +354,7 @@ void TTSController::handle_start_reading_high_quality(bool should_preload) {
                             std::wstring dummy_text;
                             std::vector<PagelessDocumentRect> dummy_rects;
                             index_into_page = mw->dv()->get_page_text_and_line_rects(new_page_number, dummy_text, dummy_rects);
-                            mw->tts->stop();
+                            tts->stop();
                         }
 
 
@@ -354,8 +365,8 @@ void TTSController::handle_start_reading_high_quality(bool should_preload) {
                         mp->setPlaybackRate(rate);
                         mp->play();
 
-                        if (mw->high_quality_play_state) {
-                            mw->high_quality_play_state->is_playing = true;
+                        if (high_quality_play_state) {
+                            high_quality_play_state->is_playing = true;
                         }
                     }
                     });
@@ -389,7 +400,7 @@ void TTSController::handle_start_reading_high_quality(bool should_preload) {
 void TTSController::focus_on_high_quality_text_being_read() {
 
 
-    if ((mw->media_player != nullptr) && (mw->media_player->isPlaying()) && mw->high_quality_play_state.has_value()) {
+    if ((media_player != nullptr) && (media_player->isPlaying()) && high_quality_play_state.has_value()) {
 
 #ifdef SIOYEK_ADVANCED_AUDIO
         if (media_player->isFinished()) {
@@ -397,19 +408,19 @@ void TTSController::focus_on_high_quality_text_being_read() {
         }
 #endif
 
-        float current_time = static_cast<float>(mw->media_player->position()) / 1000.0f;
+        float current_time = static_cast<float>(media_player->position()) / 1000.0f;
         int index = -1;
-        for (int i = 0; i < mw->high_quality_play_state->timestamps.size(); i++) {
-            if (mw->high_quality_play_state->timestamps[i] > current_time) {
+        for (int i = 0; i < high_quality_play_state->timestamps.size(); i++) {
+            if (high_quality_play_state->timestamps[i] > current_time) {
                 index = i;
                 break;
             }
         }
         if (index >= 0) {
-            PagelessDocumentRect rect_to_focus = mw->high_quality_play_state->line_rects[index];
-            if (!(rect_to_focus == mw->high_quality_play_state->last_focused_rect)) {
-                mw->main_document_view->focus_rect(DocumentRect(rect_to_focus, mw->high_quality_play_state->page_number));
-                mw->high_quality_play_state->last_focused_rect = rect_to_focus;
+            PagelessDocumentRect rect_to_focus = high_quality_play_state->line_rects[index];
+            if (!(rect_to_focus == high_quality_play_state->last_focused_rect)) {
+                mw->main_document_view->focus_rect(DocumentRect(rect_to_focus, high_quality_play_state->page_number));
+                high_quality_play_state->last_focused_rect = rect_to_focus;
                 mw->invalidate_render();
             }
         }
@@ -421,8 +432,8 @@ void TTSController::handle_app_tts_resume(bool is_playing, bool is_on_rest, int 
     // set_status_message(L"got on resume callback");
 
     // return;
-    if (mw->is_reading && (is_playing == false)){
-        mw->is_reading = false;
+    if (is_reading && (is_playing == false)){
+        is_reading = false;
     }
 
     if (is_playing){
@@ -443,3 +454,54 @@ void TTSController::handle_app_tts_resume(bool is_playing, bool is_on_rest, int 
         ensure_player_state("Ended");
     }
 }
+
+SioyekMediaPlayer* TTSController::get_media_player(){
+    if (media_player == nullptr) {
+
+#ifdef Q_OS_APPLE
+#ifdef SIOYEK_IOS
+    makeSureTTSCanUseSpeakers();
+#endif
+        media_player = new MacosMediaPlayer();
+#else
+#ifndef SIOYEK_ADVANCED_AUDIO
+        QAudioOutput* audio_output = new QAudioOutput(this);
+        audio_output->setVolume(10);
+        media_player = new QMediaPlayer(this);
+        media_player->setAudioOutput(audio_output);
+        QObject::connect(media_player, &QMediaPlayer::mediaStatusChanged, [this](QMediaPlayer::MediaStatus status) {
+            if (status == QMediaPlayer::MediaStatus::EndOfMedia) {
+                //qDebug() << "end of media reached";
+                handle_high_quality_media_end_reached();
+            }
+            });
+#else
+        media_player = new MyPlayer();
+#endif
+#endif
+    }
+    return media_player;
+}
+
+bool TTSController::is_high_quality_tts_playing() {
+    if (media_player) {
+        return media_player->isPlaying();
+    }
+    return false;
+}
+
+#ifdef Q_OS_APPLE
+void TTSController::apple_on_high_quality_tts_playback_finished(){
+
+    if (media_player){
+        MacosMediaPlayer* macos_specific_media_player = dynamic_cast<MacosMediaPlayer*>(media_player);
+        if (!media_player->isPlaying()){
+            // on the macos-specific media player, when we reach the end of the media,
+            // the position resets to 0 and isPlaying will be false, so the if statement below
+            // this one does not trigger on macos, so we handle it here instead
+
+            mw->handle_high_quality_media_end_reached();
+        }
+    }
+}
+#endif

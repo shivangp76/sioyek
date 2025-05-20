@@ -1493,10 +1493,6 @@ void MainWidget::handle_periodic_network_operations() {
 MainWidget::~MainWidget() {
     background_task_manager->delete_tasks_with_parent(this);
 
-    if (is_reading) {
-        is_reading = false;
-        get_tts()->stop();
-    }
     validation_interval_timer->stop();
     network_timer->stop();
     remove_self_from_windows();
@@ -1504,10 +1500,6 @@ MainWidget::~MainWidget() {
     if (windows.size() == 0) {
         *should_quit = true;
         pdf_renderer->join_threads();
-    }
-
-    if (tts) {
-        delete tts;
     }
 
     // todo: use a reference counting pointer for document so we can delete main_doc
@@ -3803,7 +3795,7 @@ void MainWidget::visual_mark_under_pos(WindowPos pos) {
         }
         validate_render();
 
-        if (is_reading) {
+        if (is_lq_ttsing()) {
             read_current_line();
         }
     }
@@ -4657,7 +4649,7 @@ void MainWidget::move_ruler_next(){
         return;
     }
     main_document_view->move_visual_mark_next();
-    if (is_reading || high_quality_play_state.has_value()) {
+    if (is_ttsing()) {
         read_current_line();
     }
 }
@@ -4668,7 +4660,7 @@ void MainWidget::move_ruler_prev(){
         return;
     }
     main_document_view->move_visual_mark_prev();
-    if (is_reading || high_quality_play_state.has_value()) {
+    if (is_ttsing()) {
         read_current_line();
     }
 }
@@ -4695,7 +4687,7 @@ AbsoluteRect MainWidget::move_visual_mark(int offset) {
     else{
         AbsoluteRect ruler_rect = main_document_view->move_visual_mark(offset);
 
-        if (is_reading || high_quality_play_state.has_value()) {
+        if (is_ttsing()) {
             read_current_line();
         }
         if (AUTOCENTER_VISUAL_SCROLL) {
@@ -6888,7 +6880,7 @@ void MainWidget::handle_stop_reading() {
 }
 
 void MainWidget::handle_toggle_reading() {
-    if (is_reading){
+    if (is_lq_ttsing()){
         handle_stop_reading();
     }
     else{
@@ -7129,8 +7121,8 @@ void MainWidget::on_configs_changed(std::vector<std::string>* config_names) {
             }
         }
         if (confname == "tts_voice") {
-            if (tts) {
-                tts->set_voice(TTS_VOICE);
+            if (tts_controller->tts) {
+                tts_controller->tts->set_voice(TTS_VOICE);
             }
         }
 
@@ -9709,27 +9701,6 @@ void MainWidget::on_open_document(const std::wstring& path) {
 
 
 
-void VisibleObjectMoveData::handle_move(MainWidget* widget){
-    if (is_moving) {
-        if (index.object_type == VisibleObjectType::Bookmark) {
-            widget->handle_bookmark_move();
-        }
-        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal) || (index.object_type == VisibleObjectType::PinnedPortal)) {
-            widget->handle_portal_move();
-        }
-    }
-}
-
-void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
-    if (is_moving) {
-        if (index.object_type == VisibleObjectType::Bookmark) {
-            widget->handle_bookmark_move_finish();
-        }
-        else if ((index.object_type == VisibleObjectType::Portal) || (index.object_type == VisibleObjectType::PendingPortal)) {
-            widget->handle_portal_move_finish();
-        }
-    }
-}
 
 void MainWidget::update_current_document_checksum(std::string checksum) {
     //todo:
@@ -9779,7 +9750,7 @@ void MainWidget::on_ios_application_state_changed(Qt::ApplicationState state){
     if (state == Qt::ApplicationState::ApplicationSuspended){
         ios_was_suspended = true;
         on_mobile_pause();
-        if (is_reading && (!is_high_quality_tts_playing())){
+        if (is_lq_ttsing() && (!is_high_quality_tts_playing())){
             on_ios_suspend_while_reading();
         }
     }
@@ -9851,7 +9822,7 @@ void MainWidget::on_overview_move_end() {
 }
 
 void MainWidget::handle_high_quality_media_end_reached() {
-    high_quality_play_state = {};
+    tts_controller->high_quality_play_state = {};
     handle_stop_reading();
     if (move_ruler_to_next_page()){
         handle_start_reading_high_quality(true);
@@ -9859,33 +9830,6 @@ void MainWidget::handle_high_quality_media_end_reached() {
 
 }
 
-SioyekMediaPlayer* MainWidget::get_media_player(){
-    if (media_player == nullptr) {
-
-#ifdef Q_OS_APPLE
-#ifdef SIOYEK_IOS
-    makeSureTTSCanUseSpeakers();
-#endif
-        media_player = new MacosMediaPlayer();
-#else
-#ifndef SIOYEK_ADVANCED_AUDIO
-        QAudioOutput* audio_output = new QAudioOutput(this);
-        audio_output->setVolume(10);
-        media_player = new QMediaPlayer(this);
-        media_player->setAudioOutput(audio_output);
-        QObject::connect(media_player, &QMediaPlayer::mediaStatusChanged, [this](QMediaPlayer::MediaStatus status) {
-            if (status == QMediaPlayer::MediaStatus::EndOfMedia) {
-                //qDebug() << "end of media reached";
-                handle_high_quality_media_end_reached();
-            }
-            });
-#else
-        media_player = new MyPlayer();
-#endif
-#endif
-    }
-    return media_player;
-}
 
 void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     tts_controller->handle_start_reading_high_quality(should_preload);
@@ -10365,14 +10309,11 @@ void MainWidget::show_items(std::vector<std::wstring> items, std::optional<std::
 void MainWidget::set_high_quality_tts_rate(float rate) {
     // normal speed is rate=0
     // float converted_rate = rate + 1;
-    get_media_player()->setPlaybackRate(rate);
+    tts_controller->get_media_player()->setPlaybackRate(rate);
 }
 
 bool MainWidget::is_high_quality_tts_playing() {
-    if (media_player) {
-        return media_player->isPlaying();
-    }
-    return false;
+    return tts_controller->is_high_quality_tts_playing();
 }
 
 QString MainWidget::perform_network_request_with_headers(QString method, QString url, QJsonObject headers, QJsonObject request, bool* is_done, QByteArray* response){
@@ -10758,17 +10699,7 @@ void MainWidget::handle_goto_tab(const std::wstring& path) {
 
 #ifdef Q_OS_APPLE
 void MainWidget::apple_on_high_quality_tts_playback_finished(){
-
-    if (media_player){
-        MacosMediaPlayer* macos_specific_media_player = dynamic_cast<MacosMediaPlayer*>(media_player);
-        if (!media_player->isPlaying()){
-            // on the macos-specific media player, when we reach the end of the media,
-            // the position resets to 0 and isPlaying will be false, so the if statement below
-            // this one does not trigger on macos, so we handle it here instead
-
-            handle_high_quality_media_end_reached();
-        }
-    }
+    return tts_controller->apple_on_high_quality_tts_playback_finished();
 }
 #endif
 
@@ -10790,4 +10721,20 @@ bool MainWidget::is_network_manager_running(bool* is_downloading, std::wstring* 
 
 QString MainWidget::get_network_status_string(){
     return network_controller->get_network_status_string();
+}
+
+bool MainWidget::is_lq_ttsing(){
+    return tts_controller->is_reading;
+}
+
+bool MainWidget::is_hq_ttsing(){
+    return tts_controller->high_quality_play_state.has_value();
+}
+
+bool MainWidget::is_ttsing(){
+    return is_lq_ttsing() || is_hq_ttsing();
+}
+
+void* MainWidget::get_media_player_ptr(){
+    return tts_controller->media_player;
 }
