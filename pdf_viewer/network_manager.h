@@ -6,6 +6,7 @@
 #include <qnetworkaccessmanager.h>
 
 #include "book.h"
+#include "types/common_types.h"
 
 class DatabaseManager;
 class BackgroundTaskManager;

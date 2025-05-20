@@ -5,6 +5,7 @@
 #include "touchui/AudioUI.h"
 #include "touchui/TouchAudioButtons.h"
 #include "network_manager.h"
+#include "controllers/network_controller.h"
 
 extern float TTS_RATE;
 extern bool TOUCH_MODE;
@@ -299,13 +300,13 @@ void TTSController::handle_start_reading_high_quality(bool should_preload) {
     int index_into_page = mw->dv()->get_page_text_and_line_rects(current_page_number, text, line_rects);
     mw->high_quality_play_state->line_rects = line_rects;
 
-    if (mw->sioyek_network_manager->does_pending_tts_command_exist(QString::fromStdString(mw->doc()->get_checksum()), QString::fromStdWString(text))){
+    if (mw->network_controller->sioyek_network_manager->does_pending_tts_command_exist(QString::fromStdString(mw->doc()->get_checksum()), QString::fromStdWString(text))){
         return;
     }
 
     QString status_message_id = mw->set_status_message(L"Performing Text to Speech");
     mw->dv()->is_waiting_for_high_quality_tts_result = true;
-    bool tts_result_already_exists = mw->sioyek_network_manager->tts(
+    bool tts_result_already_exists = mw->network_controller->sioyek_network_manager->tts(
                 mw,
                 text,
                 mw->doc()->get_checksum(),
@@ -378,7 +379,7 @@ void TTSController::handle_start_reading_high_quality(bool should_preload) {
     }
 
     if (should_preload) {
-        mw->preload_next_page_for_tts(rate);
+        mw->network_controller->preload_next_page_for_tts(rate);
 
         //sioyek_network_manager->tts(this, )
     }

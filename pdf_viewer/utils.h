@@ -25,6 +25,7 @@
 #include <mupdf/fitz.h>
 
 #include "book.h"
+#include "types/common_types.h"
 #include "utf8.h"
 #include "coordinates.h"
 

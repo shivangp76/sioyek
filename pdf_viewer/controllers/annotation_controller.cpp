@@ -11,6 +11,7 @@
 #include "ui/common_ui.h"
 #include "ui/ui_models.h"
 #include "ui/annotation_widgets.h"
+#include "controllers/network_controller.h"
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
@@ -72,7 +73,7 @@ void AnnotationController::handle_bookmark_ask_query(std::wstring query, std::ws
         query_qstring = query_qstring.replace("@chapter", "");
     }
 
-    mw->sioyek_network_manager->semantic_ask(mw, query_qstring, use_context ? context : index, first_page_end_index,
+    mw->network_controller->sioyek_network_manager->semantic_ask(mw, query_qstring, use_context ? context : index, first_page_end_index,
         [this, bookmark_uuid, document=doc()](QString chunk) {
         BookMark* bm = mw->add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         if (bm) {
@@ -256,7 +257,7 @@ void AnnotationController::handle_bookmark_summarize_query(std::wstring bookmark
     std::string bookmark_uuid = utf8_encode(bookmark_uuid_);
     BookMark* bm_ptr = doc()->get_bookmark_with_uuid(bookmark_uuid);
     bm_ptr->description += L"\n\n";
-    mw->sioyek_network_manager->summarize(mw,  index, first_page_end_index, [this, bookmark_uuid, document=doc()](QString chunk) {
+    mw->network_controller->sioyek_network_manager->summarize(mw,  index, first_page_end_index, [this, bookmark_uuid, document=doc()](QString chunk) {
         add_chunk_to_bookmark(document, bookmark_uuid, chunk);
         },
         [this, bookmark_uuid, document=doc()]() {
@@ -332,7 +333,7 @@ void AnnotationController::on_highlight_deleted(const Highlight& hl, const std::
     if (mw->delete_highlight_hook_function_name) {
         mw->call_async_js_function_with_args(mw->delete_highlight_hook_function_name.value(), QJsonArray() << QString::fromStdString(hl.uuid));
     }
-    mw->sync_deleted_annot("highlight", hl.uuid);
+    mw->network_controller->sync_deleted_annot("highlight", hl.uuid);
 }
 
 void AnnotationController::on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum){
@@ -350,7 +351,7 @@ void AnnotationController::on_bookmark_deleted(const BookMark& bookmark, const s
     // we need to kill the process and remove it from shell_output_bookmarks
     mw->handle_shell_bookmark_deleted(bookmark.uuid);
 
-    mw->sync_deleted_annot("bookmark", bookmark.uuid);
+    mw->network_controller->sync_deleted_annot("bookmark", bookmark.uuid);
 }
 
 void AnnotationController::on_new_bookmark_added(const std::string& uuid) {
@@ -372,13 +373,13 @@ void AnnotationController::on_new_portal_added(const std::string& uuid) {
         int portal_index = doc()->get_portal_index_with_uuid(uuid);
         if (portal_index >= 0) {
             const Portal& portal = doc()->get_portals()[portal_index];
-            if (!mw->sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
+            if (!mw->network_controller->sioyek_network_manager->is_checksum_available_on_server(portal.dst.document_checksum)) {
                 std::optional<std::wstring> document_path = mw->document_manager->get_path_from_hash(portal.dst.document_checksum);
                 if (document_path) {
-                    mw->sioyek_network_manager->upload_file(
+                    mw->network_controller->sioyek_network_manager->upload_file(
                         QApplication::instance(),
                         QString::fromStdWString(document_path.value()),
-                        QString::fromStdString(portal.dst.document_checksum), [network_manager=mw->sioyek_network_manager]() {
+                        QString::fromStdString(portal.dst.document_checksum), [network_manager=mw->network_controller->sioyek_network_manager]() {
                             network_manager->update_user_files_hash_set();
                         }, [](){});
                 }
@@ -400,7 +401,7 @@ void AnnotationController::on_portal_deleted(const Portal& deleted_portal, const
         mw->call_async_js_function_with_args(mw->delete_portal_hook_function_name.value(),
             QJsonArray() << QString::fromStdString(deleted_portal.uuid));
     }
-    mw->sync_deleted_annot("portal", deleted_portal.uuid);
+    mw->network_controller->sync_deleted_annot("portal", deleted_portal.uuid);
 }
 
 void AnnotationController::on_portal_edited(const std::string& uuid) {
@@ -425,7 +426,7 @@ void AnnotationController::sync_newly_added_annot(const std::string& annot_type,
         const Annotation* annot = doc()->get_annot_with_uuid(annot_type, uuid);
         std::optional<std::string> checksum = doc()->get_checksum_fast();
         if ((annot != nullptr) && checksum) {
-            mw->sioyek_network_manager->upload_annot(mw,
+            mw->network_controller->sioyek_network_manager->upload_annot(mw,
                 QString::fromStdString(checksum.value()),
                 *annot,
                 [&, uuid, this, annot_type, document=doc()]() { // on success
@@ -469,7 +470,7 @@ void AnnotationController::sync_edited_annot(const std::string& annot_type, cons
         if (annot) {
             std::optional<std::string> doc_checksum = doc()->get_checksum_fast();
             if (doc_checksum.has_value()) {
-                mw->sioyek_network_manager->upload_annot(mw,
+                mw->network_controller->sioyek_network_manager->upload_annot(mw,
                     QString::fromStdString(doc_checksum.value()),
                     *annot,
                     []() {},
@@ -744,7 +745,7 @@ void AnnotationController::handle_goto_bookmark_global(bool manual_only) {
 
     auto handle_select_fn = [&](QString checksum, float offset_y) {
         if (checksum.startsWith("SERVER://")) {
-            mw->download_and_open(checksum.mid(9).toStdString(), offset_y);
+            mw->network_controller->download_and_open(checksum.mid(9).toStdString(), offset_y);
         }
         else {
             if (mw->pending_command_instance) {
@@ -769,7 +770,7 @@ void AnnotationController::handle_goto_bookmark_global(bool manual_only) {
         std::string checksum = desc_bm_pair.first;
         bool is_remote = false;
         std::optional<std::wstring> path = mw->checksummer->get_path(checksum);
-        if (!path.has_value() && mw->sioyek_network_manager->is_checksum_available_on_server(checksum)) {
+        if (!path.has_value() && mw->network_controller->sioyek_network_manager->is_checksum_available_on_server(checksum)) {
             is_remote = true;
             path = L"SERVER://" + utf8_decode(checksum);
         }
@@ -985,7 +986,7 @@ void AnnotationController::handle_goto_highlight_global() {
     auto handle_select_fn = [&](float offset_y, std::string checksum) {
         if (checksum.size() > 0) {
             if (QString::fromStdString(checksum).startsWith("SERVER://")) {
-                mw->download_and_open(QString::fromStdString(checksum).mid(9).toStdString(), offset_y);
+                mw->network_controller->download_and_open(QString::fromStdString(checksum).mid(9).toStdString(), offset_y);
 
             }
             else {
@@ -1012,7 +1013,7 @@ void AnnotationController::handle_goto_highlight_global() {
 
         QString file_name = QString::fromStdWString(mw->checksummer->get_path(checksum).value_or(L""));
         if (file_name.size() == 0) {
-            if (mw->sioyek_network_manager->is_checksum_available_on_server(checksum)) {
+            if (mw->network_controller->sioyek_network_manager->is_checksum_available_on_server(checksum)) {
                 file_name = QString::fromStdWString(SERVER_SYMBOL);
                 checksum = "SERVER://" + checksum;
             }

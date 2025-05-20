@@ -110,6 +110,7 @@
 #include "controllers/documentation_controller.h"
 #include "controllers/external_controller.h"
 #include "controllers/javascript_controller.h"
+#include "controllers/network_controller.h"
 #include "ui/documentation_ui.h"
 
 #include "commands/base_commands.h"
@@ -210,7 +211,6 @@ extern int next_window_id;
 extern std::map<std::wstring, std::wstring> SHELL_BOOKMARK_COMMANDS;
 
 extern int last_keypad_size;
-extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;
 extern bool MULTILINE_MENUS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
 extern bool SORT_HIGHLIGHTS_BY_LOCATION;
@@ -224,7 +224,6 @@ extern std::wstring INVERSE_SEARCH_COMMAND;
 // extern std::wstring PAPER_SEARCH_TILE_PATH;
 // extern std::wstring PAPER_SEARCH_CONTRIB_PATH;
 extern bool FUZZY_SEARCHING;
-extern bool AUTO_RENAME_DOWNLOADED_PAPERS;
 extern bool SHOW_DOCUMENTATION_IN_WIDGET;
 extern bool SHOW_STATUSBAR_ONLY_WHEN_MOUSE_OVER;
 extern bool SHOW_PRO_COMMANDS;
@@ -291,7 +290,6 @@ extern std::wstring ALT_MIDDLE_CLICK_COMMAND;
 extern std::wstring CONTROL_RIGHT_CLICK_COMMAND;
 extern std::wstring ALT_CLICK_COMMAND;
 extern std::wstring ALT_RIGHT_CLICK_COMMAND;
-extern Path downloaded_papers_path;
 extern bool HIGHLIGHT_MIDDLE_CLICK;
 extern std::wstring STARTUP_COMMANDS;
 extern float CUSTOM_BACKGROUND_COLOR[3];
@@ -327,7 +325,6 @@ extern bool USE_SYSTEM_THEME;
 extern bool USE_CUSTOM_COLOR_FOR_DARK_SYSTEM_THEME;
 extern bool ALLOW_MAIN_VIEW_SCROLL_WHILE_IN_OVERVIEW;
 extern bool DEBUG;
-extern bool AUTO_LOGIN_ON_STARTUP;
 extern bool FANCY_UI_MENUS;
 extern bool SAME_WIDTH;
 extern bool DEFAULT_PEN_DRAWING_MODE;
@@ -352,7 +349,6 @@ extern std::wstring CONTEXT_MENU_ITEMS_FOR_BOOKMARKS;
 extern std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW;
 extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
-extern int DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern int NUM_PAGE_COLUMNS;
 extern Path python_api_base_path;
 extern float PERSISTANCE_PERIOD;
@@ -412,7 +408,6 @@ extern UIRect PORTRAIT_MIDDLE_RIGHT_UI_RECT;
 extern UIRect LANDSCAPE_MIDDLE_LEFT_UI_RECT;
 extern UIRect LANDSCAPE_MIDDLE_RIGHT_UI_RECT;
 
-extern bool PAPER_DOWNLOAD_CREATE_PORTAL;
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern bool USE_KEYBOARD_POINT_SELECTION;
 
@@ -488,9 +483,6 @@ bool MainWidget::main_document_view_has_document()
 }
 
 
-bool MainWidget::is_current_document_available_on_server() {
-    return sioyek_network_manager->is_document_available_on_server(doc());
-}
 
 void MainWidget::resizeEvent(QResizeEvent* resize_event) {
 
@@ -1019,7 +1011,7 @@ MainWidget::MainWidget(MainWidget* other) :
         other->command_manager,
         other->input_handler,
         other->checksummer,
-        other->sioyek_network_manager,
+        other->network_controller->sioyek_network_manager,
         other->background_task_manager,
         other->background_bookmark_renderer,
         other->should_quit) {
@@ -1047,7 +1039,6 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     config_manager(config_manager),
     input_handler(input_handler),
     checksummer(checksummer),
-    sioyek_network_manager(sioyek_network_manager_),
     should_quit(should_quit_ptr),
     background_task_manager(task_manager),
     background_bookmark_renderer(bookmark_renderer),
@@ -1102,6 +1093,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     documentation_controller.reset(new DocumentationController(this));
     external_controller.reset(new ExternalController(this));
     js_controller.reset(new JavascriptController(this));
+    network_controller.reset(new NetworkController(this, sioyek_network_manager_));
 
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
@@ -1122,7 +1114,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     status_label_right->setStyleSheet(get_status_stylesheet());
     status_label_right->setFont(label_font);
     
-    server_actions_button = new QPushButton(sioyek_network_manager->get_login_status_string(doc()));
+    server_actions_button = new QPushButton(network_controller->get_login_status_string());
     server_actions_button->setCursor(Qt::PointingHandCursor);
     
     resume_to_server_position_button = new QPushButton("RESUME");
@@ -1291,7 +1283,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     QObject::connect(pdf_renderer->get_bookmark_renderer(), &BackgroundBookmarkRenderer::bookmark_rendered, this, &MainWidget::invalidate_render);
     
     QObject::connect(resume_to_server_position_button, &QPushButton::clicked, [&]() {
-        handle_resume_to_server_location();
+        network_controller->handle_resume_to_server_location();
     });
     
     // when screen is rotated, we may be below the minimum zoom level for the new orientation
@@ -1324,7 +1316,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     //    });
     
     QObject::connect(server_actions_button, &QPushButton::clicked, [&]() {
-        handle_server_actions_button_pressed();
+        network_controller->handle_server_actions_button_pressed();
     });
     
     
@@ -1574,10 +1566,10 @@ void MainWidget::handle_validation_interval_timeout(){
         validation_interval_timer->setInterval(INTERVAL_TIME);
     }
 
-    if (download_checksum_when_ready.has_value() && (sioyek_network_manager->status == ServerStatus::LoggedIn)) {
+    if (download_checksum_when_ready.has_value() && is_logged_in()) {
         std::string checksum = download_checksum_when_ready.value();
         download_checksum_when_ready = {};
-        download_and_open(checksum, 0);
+        network_controller->download_and_open(checksum, 0);
     }
 
     external_controller->remove_finished_shell_bookmarks();
@@ -1593,13 +1585,13 @@ void MainWidget::handle_validation_interval_timeout(){
         main_document_view->scheduled_portal_update = {};
 
     }
-    if (sioyek_network_manager->status != last_server_status) {
-        last_server_status = sioyek_network_manager->status;
+    if (network_controller->get_status() != last_server_status) {
+        last_server_status = network_controller->get_status();
         invalidate_ui();
     }
 
-    cleanup_expired_pending_portals();
-    manage_last_document_checksum();
+    network_controller->cleanup_expired_pending_portals();
+    network_controller->manage_last_document_checksum();
     if (TOUCH_MODE && selection_begin_indicator) {
         selection_begin_indicator->update_pos();
         selection_end_indicator->update_pos();
@@ -1662,7 +1654,7 @@ void MainWidget::handle_validation_interval_timeout(){
     }
     if (doc() && doc()->annotations_are_freshly_loaded) {
         doc()->annotations_are_freshly_loaded = false;
-        sync_annotations_with_server();
+        network_controller->sync_annotations_with_server();
     }
 
     if (QGuiApplication::mouseButtons() & Qt::MouseButton::MiddleButton) {
@@ -1944,7 +1936,7 @@ void MainWidget::validate_ui() {
         }
     }
 
-    server_actions_button->setText(sioyek_network_manager->get_login_status_string(doc()));
+    server_actions_button->setText(network_controller->get_login_status_string());
     is_ui_invalidated = false;
 }
 
@@ -2035,7 +2027,7 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
         if (resume_to_server_position_button->isVisible()) {
             resume_to_server_position_button->hide();
         }
-        sync_current_file_location_to_servers();
+        network_controller->sync_current_file_location_to_servers();
     }
 
     opengl_widget->clear_all_selections();
@@ -2044,7 +2036,7 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     if (main_document_view && doc()) {
         bool should_sync_drawings = doc()->get_drawings_are_dirty();
         main_document_view->persist(true);
-        perform_sync_operations_when_document_is_closed(false, should_sync_drawings);
+        network_controller->perform_sync_operations_when_document_is_closed(false, should_sync_drawings);
     }
 
     if (main_document_view->get_view_width() > main_window_width) {
@@ -2940,11 +2932,13 @@ void MainWidget::handle_click(WindowPos click_pos) {
             if (document_manager->get_document_with_checksum(portal->dst.document_checksum)) {
                 open_document(portal->dst);
             }
-            else if (sioyek_network_manager->is_checksum_available_on_server(portal->dst.document_checksum)) {
-                sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal->dst.document_checksum), [this, portal](QString path) {
-                    //void open_document(const std::wstring& doc_path, bool* invalid_flag, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
+            else{
+                network_controller->try_download_file_with_hash(
+                            QString::fromStdString(portal->dst.document_checksum),
+                            [this, portal](QString path){
                     open_document(path.toStdWString(), false, portal->dst.book_state);
-                    });
+                });
+
             }
         }
 
@@ -3851,19 +3845,18 @@ bool MainWidget::overview_under_pos(WindowPos pos) {
             invalidate_render();
             return true;
         }
-        else if (sioyek_network_manager->is_checksum_available_on_server(portal->dst.document_checksum)) { // check if the document is available on server
-            sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(portal->dst.document_checksum),
-                [this, portal_v=*portal](QString path) {
+        else{
+            QString hash = QString::fromStdString(portal->dst.document_checksum);
+            bool was_available = network_controller->try_download_file_with_hash(hash, [this, portal_v=*portal](QString path){
                 Document* downloaded_dst_doc = document_manager->get_document(path.toStdWString());
                 if (downloaded_dst_doc) {
                     main_document_view->set_selected_portal_uuid(portal_v.uuid);
                     open_overview_to_portal(downloaded_dst_doc, portal_v);
                     invalidate_render();
                 }
-                });
-            return true;
+            });
+            return was_available;
         }
-
     }
 
     if (main_document_view && (link = main_document_view->get_link_in_pos(pos))) {
@@ -4597,42 +4590,7 @@ std::wstring MainWidget::get_window_configuration_string() {
     }
 }
 
-void MainWidget::upload_drawings(bool wait_for_send) {
-    std::optional<std::string> checksum = doc()->get_checksum_fast();
-    if (checksum) {
-        std::wstring file_path = doc()->get_drawings_file_path();
-        QMap<int, PageFreehandDrawing> drawings = doc()->page_freehand_drawings;
 
-        QNetworkReply* reply = sioyek_network_manager->upload_drawings(this, checksum.value(), file_path, [file_path, drawings]() mutable {
-            for (int page : drawings.keys()){
-                for (auto& drawing : drawings[page].drawings){
-                    drawing.is_synced = true;
-                }
-            }
-            QFile output_file(QString::fromStdWString(file_path));
-            if (output_file.open(QIODeviceBase::WriteOnly)){
-                save_drawings_to_file(output_file, drawings);
-                output_file.close();
-            }
-            else{
-                qDebug() << "could not open the drawings file";
-            }
-
-            });
-        if (reply && wait_for_send) {
-            block_for_send(reply);
-        }
-    }
-}
-
-void MainWidget::perform_sync_operations_when_document_is_closed(bool wait_for_send, bool sync_drawings) {
-    if (is_logged_in() && doc() && doc()->get_is_synced()) {
-        sync_current_file_location_to_servers(wait_for_send);
-        if (sync_drawings) {
-            upload_drawings(wait_for_send);
-        }
-    }
-}
 
 void MainWidget::handle_close_event(bool is_quiting) {
 
@@ -4649,7 +4607,7 @@ void MainWidget::handle_close_event(bool is_quiting) {
         persist(true);
 #endif
 
-        perform_sync_operations_when_document_is_closed(true, should_sync_drawings);
+        network_controller->perform_sync_operations_when_document_is_closed(true, should_sync_drawings);
     }
 
 
@@ -5367,12 +5325,12 @@ std::vector<OpenedBookInfo> MainWidget::get_all_opened_books(bool include_server
         });
     res.erase(new_end, res.end());
 
-    if ((sioyek_network_manager->status == ServerStatus::LoggedIn) && include_server_books) {
+    if ((network_controller->is_logged_in()) && include_server_books) {
         std::vector<std::string> local_file_hashes;
         for (auto info : res) {
             local_file_hashes.push_back(info.checksum);
         }
-        std::vector<OpenedBookInfo> server_opened_books = sioyek_network_manager->get_excluded_opened_files(local_file_hashes);
+        std::vector<OpenedBookInfo> server_opened_books = network_controller->get_excluded_opened_files(local_file_hashes);
 
         auto middle_index = res.size();
 
@@ -5404,7 +5362,7 @@ void MainWidget::handle_open_prev_doc() {
             QString doc_hash_qstring = QString::fromStdString(checksum);
             if (doc_hash_qstring.startsWith("SERVER://")) {
                 doc_hash_qstring = doc_hash_qstring.mid(9);
-                download_and_open(doc_hash_qstring.toStdString(), offset_y);
+                network_controller->download_and_open(doc_hash_qstring.toStdString(), offset_y);
             }
             else {
                 pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(checksum));
@@ -5417,7 +5375,7 @@ void MainWidget::handle_open_prev_doc() {
     auto handle_delete_fn = [&](std::string checksum) {
         QString doc_hash_qstring = QString::fromStdString(checksum);
         if (doc_hash_qstring.startsWith("SERVER://")) {
-            sioyek_network_manager->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
+            network_controller->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
         }
         else {
             db_manager->delete_opened_book(checksum);
@@ -5511,7 +5469,7 @@ MainWidget* MainWidget::handle_new_window() {
         command_manager,
         input_handler,
         checksummer,
-        sioyek_network_manager,
+        network_controller->sioyek_network_manager,
         background_task_manager,
         background_bookmark_renderer,
         should_quit);
@@ -5642,9 +5600,6 @@ void MainWidget::handle_keys_user_all() {
     show_current_widget();
 }
 
-void MainWidget::sync_annotations_with_server() {
-    sioyek_network_manager->sync_document_annotations_to_server(this, doc(), [this]() {invalidate_render(); });
-}
 
 
 void MainWidget::handle_prefs_user_all() {
@@ -6893,7 +6848,7 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
         QString bib_text = clean_bib_item(paper_name.value());
         std::string pending_portal_handle = "";
 
-        if (get_default_paper_download_finish_action() == PaperDownloadFinishedAction::Portal) {
+        if (network_controller->get_default_paper_download_finish_action() == PaperDownloadFinishedAction::Portal) {
             AbsoluteDocumentPos source_position;
             if (main_document_view->get_overview_page() && main_document_view->get_overview_source_rect())  {
                 source_position = main_document_view->get_overview_source_rect()->center();
@@ -6906,74 +6861,15 @@ void MainWidget::download_paper_under_cursor(bool use_last_touch_pos) {
         }
         if (TOUCH_MODE) {
             show_text_prompt(bib_text.toStdWString(), [this, pending_portal_handle](std::wstring text) {
-                download_paper_with_name(text, "", {}, pending_portal_handle);
+                network_controller->download_paper_with_name(text, "", {}, pending_portal_handle);
                 });
         }
         else {
-            download_paper_with_name(bib_text.toStdWString(), "", {}, pending_portal_handle);
+            network_controller->download_paper_with_name(bib_text.toStdWString(), "", {}, pending_portal_handle);
         }
     }
 }
 
-void MainWidget::on_paper_downloaded(QNetworkReply* reply) {
-    QByteArray pdf_data = reply->readAll();
-    QString header = reply->header(QNetworkRequest::ContentTypeHeader).toString();
-
-    if ((pdf_data.size() == 0) || (!header.startsWith("application/pdf"))) {
-        return;
-    }
-
-    QString file_name = reply->url().fileName();
-    if (!file_name.endsWith(".pdf") && header.startsWith("application/pdf")) {
-        file_name = file_name + ".pdf";
-    }
-
-    if (AUTO_RENAME_DOWNLOADED_PAPERS && (!reply->property("sioyek_actual_paper_name").isNull())) {
-        QString detected_file_name = get_file_name_from_paper_name(reply->property("sioyek_actual_paper_name").toString());
-
-        if (detected_file_name.size() > 0) {
-            QString extension = file_name.split(".").back();
-            file_name = detected_file_name + "." + extension;
-        }
-    }
-    //reply->property("sioyek_paper_name").toString().replace("/", "_")
-
-    PaperDownloadFinishedAction finish_action = get_paper_download_action_from_string(reply->property("sioyek_finish_action").toString());
-    QString path = QString::fromStdWString(downloaded_papers_path.slash(file_name.toStdWString()).get_path());
-    QDir dir;
-    dir.mkpath(QString::fromStdWString(downloaded_papers_path.get_path()));
-
-    QFile file(path);
-    bool opened = file.open(QIODeviceBase::WriteOnly);
-    if (opened) {
-        file.write(pdf_data);
-        file.close();
-        if (finish_action == PaperDownloadFinishedAction::Portal) {
-            //std::string checksum = this->checksummer->get_checksum(path.toStdWString());
-
-            std::string new_portal_uuid = this->main_document_view->finish_pending_download_portal(
-                reply->property("sioyek_paper_name").toString().toStdWString(),
-                path.toStdWString()
-            );
-
-            if (new_portal_uuid.size() > 0){
-                on_new_portal_added(new_portal_uuid);
-            }
-
-        }
-        else {
-#ifdef SIOYEK_MOBILE
-            // todo: maybe show a dialog asking the user if they want to open the downloaded document
-            push_state();
-            open_document(path.toStdWString());
-#else
-            MainWidget* new_window = handle_new_window();
-            new_window->open_document(path.toStdWString());
-#endif
-        }
-    }
-
-}
 
 void MainWidget::read_current_line(bool force_local) {
     tts_controller->read_current_line();
@@ -7027,7 +6923,7 @@ void MainWidget::handle_pause() {
 
 bool MainWidget::should_show_status_label(bool check_network) {
     float prog;
-    if (check_network && is_network_manager_running()) {
+    if (check_network && network_controller->is_network_manager_running()) {
         return true;
     }
 
@@ -7338,45 +7234,6 @@ void MainWidget::show_download_paper_menu(
     show_current_widget();
 }
 
-
-bool MainWidget::is_network_manager_running(bool* is_downloading, std::wstring* message) {
-    if (sioyek_network_manager->network_manager_ == nullptr) {
-        return false;
-    }
-
-    auto children = sioyek_network_manager->network_manager_->findChildren<QNetworkReply*>();
-    bool running = false;
-
-    for (int i = 0; i < children.size(); i++) {
-        if (children.at(i)->isRunning()) {
-            running = true;
-            if (is_downloading) {
-                bool downloading = !children.at(i)->property("sioyek_downloading").isNull();
-
-                if (!children.at(i)->property("sioyek_network_message").isNull()) {
-                    *message = children.at(i)->property("sioyek_network_message").toString().toStdWString();
-                }
-
-                *is_downloading = downloading;
-                return running;
-            }
-        }
-    }
-    return running;
-}
-
-QString MainWidget::get_network_status_string() {
-    auto children = findChildren<QNetworkReply*>();
-    for (int i = 0; i < children.size(); i++) {
-        if (children.at(i)->isRunning()) {
-            QVariant status_message = children.at(i)->property("sioyek_network_status_string");
-            if (!status_message.isNull()) {
-                return status_message.toString();
-            }
-        }
-    }
-    return "";
-}
 
 void MainWidget::exit_freehand_drawing_mode() {
     freehand_drawing_mode = DrawingMode::NotDrawing;
@@ -7956,45 +7813,6 @@ AbsoluteDocumentPos MainWidget::get_cursor_abspos() {
     return main_document_view->window_to_absolute_document_pos(current_mouse_window_pos);
 }
 
-void MainWidget::cleanup_expired_pending_portals() {
-    std::vector<int> indices_to_delete;
-
-    if ((main_document_view->pending_download_portals.size() > 0) && (current_widget_stack.size() == 0)) {
-        if (sioyek_network_manager->network_manager_ == nullptr) {
-            return;
-        }
-
-        auto children_ = findChildren<QNetworkReply*>() + sioyek_network_manager->network_manager_->findChildren<QNetworkReply*>();
-
-        for (int i = 0; i < main_document_view->pending_download_portals.size(); i++) {
-            auto paper_name = main_document_view->pending_download_portals[i].paper_name;
-            bool still_pending = false;
-            //network_manager.
-            for (int i = 0; i < children_.size(); i++) {
-                auto paper_name_prop = children_[i]->property("sioyek_paper_name");
-                if ((!paper_name_prop.isNull()) && paper_name_prop.toString().toStdWString() == paper_name) {
-                    still_pending = true;
-                }
-            }
-            if (!still_pending) {
-                if (main_document_view->pending_download_portals[i].marked) {
-                    indices_to_delete.push_back(i);
-                }
-                else {
-                    main_document_view->pending_download_portals[i].marked = true;
-                }
-            }
-        }
-    }
-    if (indices_to_delete.size() > 0) {
-        //update_pending_portal_indices_after_removed_indices(indices_to_delete);
-        for (int i = indices_to_delete.size() - 1; i >= 0; i--) {
-            main_document_view->pending_download_portals.erase(main_document_view->pending_download_portals.begin() + indices_to_delete[i]);
-        }
-        // update_opengl_pending_download_portals();
-    }
-
-}
 
 void MainWidget::close_overview() {
     set_overview_page({}, false);
@@ -8074,7 +7892,7 @@ void MainWidget::download_and_portal(std::wstring unclean_paper_name, QString fu
 
     std::wstring cleaned_paper_name = clean_bib_item(QString::fromStdWString(unclean_paper_name)).toStdWString();
     std::string pending_portal_handle = main_document_view->create_pending_download_portal(source_pos, cleaned_paper_name);
-    download_paper_with_name(cleaned_paper_name, full_bib_text, PaperDownloadFinishedAction::Portal, pending_portal_handle);
+    network_controller->download_paper_with_name(cleaned_paper_name, full_bib_text, PaperDownloadFinishedAction::Portal, pending_portal_handle);
 }
 
 void MainWidget::show_text_prompt(std::wstring initial_value, std::function<void(std::wstring)> on_select) {
@@ -8915,83 +8733,6 @@ void MainWidget::maximize_window() {
     showMaximized();
 }
 
-// void MainWidget::handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already) {
-
-//     const std::wstring& index = doc()->get_super_fast_index();
-
-//     sioyek_network_manager->semantic_search_extractive(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
-//         if (document != doc()) return;
-
-//         QString status = resp["status"].toString();
-
-//         if (status == "NO_INDEX") {
-//             const std::wstring& local_index = document->get_super_fast_index();
-//             if (has_tried_already == false) {
-//                 sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, query](QJsonObject res) {
-//                     handle_semantic_search_extractive(query, true);
-//                     });
-//             }
-//         }
-//         else {
-//             int range_begin = resp["start_index_in_document"].toInt();
-//             int range_end = resp["end_index_in_document"].toInt();
-
-//             if (range_begin >= 0 && range_end >= 0) {
-//                 int page = -1;
-//                 SearchResult current_result;
-//                 current_result.begin_index_in_page = document->absolute_to_page_index(range_begin, page);
-//                 current_result.end_index_in_page = document->absolute_to_page_index(range_end, page);
-//                 current_result.page = page;
-
-//                 main_document_view->set_search_results({ current_result });
-//                 invalidate_render();
-//             }
-//         }
-//         });
-// }
-
-// void MainWidget::handle_semantic_search(const std::wstring& query, bool has_tried_already) {
-
-//     const std::wstring& index = doc()->get_super_fast_index();
-
-//     sioyek_network_manager->semantic_search(this, QString::fromStdWString(query), index, [&, has_tried_already, query, document=doc()](QJsonObject resp) {
-//         if (document != doc()) return;
-
-//         QString status = resp["status"].toString();
-
-//         if (status == "NO_INDEX") {
-//             const std::wstring& local_index = doc()->get_super_fast_index();
-//             if (has_tried_already == false) {
-//                 sioyek_network_manager->upload_document_index(this, local_index, [this, has_tried_already, document, query](QJsonObject res) {
-//                     if (doc() != document) return;
-//                     handle_semantic_search(query, true);
-//                     });
-//             }
-//         }
-//         else {
-//             std::vector<SearchResult> search_results;
-
-//             QJsonArray highlights_json = resp["highlights"].toArray();
-//             for (int i = highlights_json.size()-1; i >= 0; i--) {
-//                 SearchResult current_result;
-
-//                 QJsonArray range_tuple_json = highlights_json.at(i).toArray();
-//                 float range_begin = range_tuple_json.at(0).toInt();
-//                 float range_end = range_tuple_json.at(1).toInt();
-
-//                 int page = -1;
-//                 current_result.begin_index_in_page = doc()->absolute_to_page_index(range_begin, page);
-//                 current_result.end_index_in_page = doc()->absolute_to_page_index(range_end, page);
-//                 current_result.page = page;
-
-//                 search_results.push_back(current_result);
-
-//             }
-//             main_document_view->set_search_results(std::move(search_results));
-//             invalidate_render();
-//         }
-//         });
-// }
 
 void MainWidget::run_command_with_name(std::string command_name, bool should_pop_current_widget) {
     auto command = command_manager->get_command_with_name(this, command_name);
@@ -9244,37 +8985,7 @@ void MainWidget::delete_file(QString path) {
 }
 
 QByteArray MainWidget::perform_network_request(QString url, QString method, QString json_data){
-    bool is_done = false;
-    QByteArray res;
-
-    QMetaObject::invokeMethod(this, [&, url]() {
-            QNetworkRequest req;
-            req.setUrl(url);
-            if (json_data.size() > 0) {
-                req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-            }
-            QNetworkReply* reply = nullptr;
-            if (method == "get") {
-                reply = sioyek_network_manager->get_network_manager()->get(req);
-            }
-            else if (method == "post") {
-                reply = sioyek_network_manager->get_network_manager()->post(req, json_data.toUtf8());
-            }
-
-            if (reply) {
-                reply->setProperty("sioyek_js_extension", "true");
-                QObject::connect(reply, &QNetworkReply::finished, [&, reply]() {
-                    //res = QString::fromUtf8(reply->readAll());
-                    reply->deleteLater();
-                    res = reply->readAll();
-                    is_done = true;
-                    });
-            }
-        });
-    while (!is_done) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    };
-    return res;
+    return network_controller->perform_network_request(url, method, json_data);
 }
 
 void MainWidget::execute_macro_and_return_result(QString macro_string, bool* is_done, std::wstring* result, std::optional<QStringList> args) {
@@ -9450,14 +9161,6 @@ void MainWidget::clear_scratchpad() {
 
 void MainWidget::show_draw_controls() {
     get_draw_controls()->show();
-}
-
-PaperDownloadFinishedAction MainWidget::get_default_paper_download_finish_action() {
-    if (PAPER_DOWNLOAD_CREATE_PORTAL) {
-        return PaperDownloadFinishedAction::Portal;
-    }
-
-    return PaperDownloadFinishedAction::OpenInNewWindow;
 }
 
 
@@ -9926,9 +9629,6 @@ void MainWidget::on_highlight_deleted(const Highlight& hl, const std::string& do
     return annotation_controller->on_highlight_deleted(hl, document_checksum);
 }
 
-void MainWidget::sync_deleted_annot(const std::string& annot_type, const std::string& uuid) {
-    sioyek_network_manager->sync_deleted_annot(this, doc(), annot_type, uuid);
-}
 
 
 void MainWidget::delete_highlight_with_uuid(const std::string& uuid) {
@@ -10003,52 +9703,10 @@ void MainWidget::on_open_document(const std::wstring& path) {
             QJsonArray() << QString::fromStdWString(path));
     }
 
-    handle_sync_open_document();
+    network_controller->handle_sync_open_document();
 }
 
-void MainWidget::handle_sync_open_document() {
-    if (sioyek_network_manager->ACCESS_TOKEN.size() > 0) {
-        // check if the server's document location is different from the local location
-        if (doc() && doc()->get_checksum_fast()) {
-            sioyek_network_manager->get_opened_book_data_from_checksum(this, QString::fromStdString(doc()->get_checksum_fast().value()), [&, document=doc()](QJsonObject obj) {
-                if (document != doc()) return;
 
-                if (obj["status"] == "OK") {
-                    float server_offset_y = obj["result"].toObject()["offset_y"].toDouble();
-                    if (std::abs(server_offset_y - main_document_view->get_offset_y()) > SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD) {
-                        handle_server_document_location_mismatch(main_document_view->get_offset_y(), server_offset_y);
-                    }
-                }
-                else if (obj["status"] == "DELETED") {
-                    doc()->set_is_synced(false);
-                }
-
-                });
-        }
-    }
-}
-
-void MainWidget::handle_server_document_location_mismatch(float local_offset_y, float server_offset_y) {
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::Local) return;
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::Server) {
-        long_jump_to_destination(server_offset_y);
-    }
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::Ask) {
-        int res = show_option_buttons(L"Do you want to move to server location?", { L"Yes", L"No" });
-        if (res == 0) {
-            long_jump_to_destination(server_offset_y);
-        }
-    }
-    if (DOCUMENT_LOCATION_MISMATCH_STRATEGY == DocumentLocationMismatchStrategy::ShowButton) {
-        if (main_document_view) {
-            if (doc() && doc()->get_checksum_fast()) {
-                sioyek_network_manager->set_last_server_location(doc()->get_checksum_fast().value(), server_offset_y);
-                resume_to_server_position_button->show();
-            }
-        }
-    }
-
-}
 
 
 void VisibleObjectMoveData::handle_move(MainWidget* widget){
@@ -10073,60 +9731,12 @@ void VisibleObjectMoveData::handle_move_end(MainWidget* widget){
     }
 }
 
-void MainWidget::handle_login(std::wstring email, std::wstring password) {
-    sioyek_network_manager->login(email, password);
-}
-
-void MainWidget::upload_current_file(Document* document_to_upload) {
-    if (!doc()) return;
-
-    if (document_to_upload == nullptr){
-        document_to_upload = doc();
-    }
-
-    float offset_y = main_document_view->get_offset_y();
-
-    QString status_id = QString::fromStdWString(new_uuid());
-
-    sioyek_network_manager->upload_file(
-        this,
-        QString::fromStdWString(document_to_upload->get_path()),
-        QString::fromStdString(document_to_upload->get_checksum()),
-        [&, offset_y, status_id,document=document_to_upload]() {
-            document->set_is_synced(true);
-            sioyek_network_manager->sync_document_annotations_to_server(this, document, [this]() {invalidate_render(); });
-            //sync_annotations_with_server();
-            sync_document_location_to_servers(document, offset_y, false);
-            set_status_message(L"", status_id);
-        },
-        [&, document=document_to_upload](){
-            std::string old_checksum = document->get_checksum();
-            std::string new_checksum = compute_checksum(QString::fromStdWString(document->get_path()), QCryptographicHash::Md5);
-            if (old_checksum != new_checksum){
-                this->document_manager->update_checksum(old_checksum, new_checksum);
-                upload_current_file(document);
-            }
-        },
-        [&, status_id](int uploaded, int total) {
-            QString uploaded_human_readable = file_size_to_human_readable_string(uploaded);
-            QString total_human_readable = file_size_to_human_readable_string(total);
-            set_status_message(("Uploading " + uploaded_human_readable + " / " + total_human_readable).toStdWString(), status_id);
-        }
-    );
-}
-
-
 void MainWidget::update_current_document_checksum(std::string checksum) {
     //todo:
     qDebug() << "update_current_document_checksum not implemented";
     assert(false);
 }
  
-void MainWidget::auto_login() {
-    if (AUTO_LOGIN_ON_STARTUP) {
-        sioyek_network_manager->load_access_token();
-    }
-}
 
 void MainWidget::on_server_hashes_loaded() {
 
@@ -10218,97 +9828,7 @@ void MainWidget::on_ios_resume(){
 #endif
 
 
-QNetworkReply* MainWidget::download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action) {
-    QNetworkReply* reply = sioyek_network_manager->download_paper_with_url(paper_url, use_archive_url, action);
-    QObject::connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        on_paper_downloaded(reply);
-        });
-    return reply;
-}
 
-
-void MainWidget::sync_current_file_location_to_servers(bool wait_for_send) {
-    return sync_document_location_to_servers(doc(), main_document_view->get_offset_y(), wait_for_send);
-}
-
-void MainWidget::sync_document_location_to_servers(Document* document, float offset_y, bool wait_for_send) {
-    QDateTime current_datetime = QDateTime::currentDateTime();
-
-    if (document && document->get_checksum_fast()) {
-        QNetworkReply* reply = sioyek_network_manager->sync_file_location(
-            QString::fromStdString(document->get_checksum_fast().value()),
-            QString::fromStdWString(document->detect_paper_name()),
-            current_datetime.toString(Qt::DateFormat::ISODate),
-            offset_y
-        );
-
-        if (wait_for_send) {
-            block_for_send(reply);
-        }
-    }
-}
-
-
-void MainWidget::handle_open_server_only_file() {
-
-    std::vector<std::string> local_checksums;
-    db_manager->get_all_local_checksums(local_checksums);
-
-    std::vector<std::vector<std::wstring>> values;
-    std::vector<OpenedBookInfo> keys;
-
-    values.push_back({});
-
-    for (auto&  opened_file_info : sioyek_network_manager->get_excluded_opened_files(local_checksums)) {
-        //values.push_back({});
-        values.back().push_back(opened_file_info.file_name.toStdWString());
-        keys.push_back(opened_file_info);
-    }
-
-    set_filtered_select_menu<OpenedBookInfo>(this, false, true, values, keys, -1, [this](OpenedBookInfo* val) {
-
-        download_and_open(val->checksum, val->offset_y);
-        },
-        [](OpenedBookInfo* val) {
-
-        });
-    show_current_widget();
-}
-
-void MainWidget::download_and_open(std::string checksum, float offset_y) {
-
-    sioyek_network_manager->download_file_with_hash(this, QString::fromStdString(checksum), [&, checksum, offset_y](QString file_path) {
-        checksummer->set_checksum(checksum, file_path.toStdWString());
-
-        std::optional<float> offset_x = {};
-        push_state();
-        open_document(file_path.toStdWString(), offset_x, offset_y, {}, checksum);
-        //doc()->annotations_are_freshly_loaded = true;
-        invalidate_render();
-        });
-}
-
-void MainWidget::manage_last_document_checksum() {
-    if (doc()) {
-        if (doc()->checksum_is_new && sioyek_network_manager->server_hashes_loaded) {
-            doc()->checksum_is_new = false;
-            on_checksum_computed();
-        }
-        //if (last_document_checksum.doc != doc()) {
-        //    last_document_checksum.checksum = doc()->get_checksum_fast();
-        //    last_document_checksum.doc = doc();
-        //}
-        //else {
-        //    if (!last_document_checksum.checksum.has_value()) {
-        //        last_document_checksum.checksum = doc()->get_checksum_fast();
-        //        if (last_document_checksum.checksum.has_value()) {
-        //            on_checksum_computed();
-        //        }
-        //    }
-        //}
-    }
-
-}
 
 void MainWidget::on_checksum_computed() {
     //std::optional<std::string> checksum = doc()->get_checksum_fast();
@@ -10322,61 +9842,12 @@ void MainWidget::on_checksum_computed() {
 }
 
 
-void MainWidget::handle_resume_to_server_location() {
-    if (doc() && doc()->get_checksum_fast()) {
-        auto res = sioyek_network_manager->last_server_location.find(doc()->get_checksum_fast().value());
-        if (res != sioyek_network_manager->last_server_location.end()) {
-            long_jump_to_destination(res->second);
-            resume_to_server_position_button->hide();
-            invalidate_render();
-        }
-    }
-}
-
-void MainWidget::handle_server_actions_button_pressed() {
-    if (sioyek_network_manager->status == ServerStatus::LoggedIn) {
-        if (!is_current_document_available_on_server()) {
-            show_context_menu("logout|upload_current_file");
-        }
-        else {
-            show_context_menu("logout");
-        }
-    }
-    else if ((sioyek_network_manager->status == ServerStatus::NotLoggedIn) || (sioyek_network_manager->status == ServerStatus::InvalidCredentials)) {
-        show_context_menu("login");
-    }
-
-}
-
-void MainWidget::delete_current_file_from_server() {
-    if (doc() && doc()->get_checksum_fast()) {
-        doc()->set_is_synced(false);
-        sioyek_network_manager->delete_file_with_checksum(QString::fromStdString(doc()->get_checksum_fast().value()));
-    }
-}
-
 bool MainWidget::is_logged_in() {
-    return sioyek_network_manager->status == ServerStatus::LoggedIn;
+    return network_controller->is_logged_in();
 }
 
 void MainWidget::on_overview_move_end() {
     main_document_view->handle_portal_overview_update();
-}
-
-void MainWidget::do_synchronize() {
-    doc()->set_is_synced(true);
-    handle_sync_open_document();
-    sync_annotations_with_server();
-}
-
-void MainWidget::synchronize_if_desynchronized() {
-    if (doc()) {
-        if (is_current_document_available_on_server()) {
-            if (!doc()->get_is_synced()) {
-                do_synchronize();
-            }
-        }
-    }
 }
 
 void MainWidget::handle_high_quality_media_end_reached() {
@@ -10420,34 +9891,17 @@ void MainWidget::handle_start_reading_high_quality(bool should_preload) {
     tts_controller->handle_start_reading_high_quality(should_preload);
 }
 
-void MainWidget::preload_next_page_for_tts(float rate) {
-    int next_page_number = get_current_page_number() + 1;
-    if (next_page_number < doc()->num_pages()) {
-        std::vector<PagelessDocumentRect> dummy_next_lines;
-        std::vector<PagelessDocumentRect> dummy_next_chars;
-        std::wstring next_page_text;
-        doc()->get_page_text_and_line_rects_after_rect(next_page_number, INT_MAX, fz_empty_rect, next_page_text, dummy_next_lines, dummy_next_chars);
-        sioyek_network_manager->tts(this,
-            next_page_text,
-            doc()->get_checksum(),
-            next_page_number,
-            rate,
-            [](QString path, std::vector<float> timestamps) {},
-            [](QString checksum) {}
-        );
-    }
-}
 
-Q_INVOKABLE void MainWidget::update_checksum_impl(std::string old_checksum, std::string new_checksum) {
-    this->sioyek_network_manager->update_checksum(this, QString::fromStdWString(doc()->get_path()), QString::fromStdString(old_checksum), QString::fromStdString(new_checksum), [this, document=doc(), old_checksum, new_checksum]() {
-        this->sioyek_network_manager->update_user_files_hash_set();
-        document->reload_annotations_on_new_checksum();
+// void MainWidget::update_checksum_impl(std::string old_checksum, std::string new_checksum) {
+//     this->sioyek_network_manager->update_checksum(this, QString::fromStdWString(doc()->get_path()), QString::fromStdString(old_checksum), QString::fromStdString(new_checksum), [this, document=doc(), old_checksum, new_checksum]() {
+//         this->sioyek_network_manager->update_user_files_hash_set();
+//         document->reload_annotations_on_new_checksum();
 
-        this->background_task_manager->add_task([this, old_checksum, new_checksum]() {
-            this->document_manager->update_checksum(old_checksum, new_checksum);
-            }, this);
-        });
-}
+//         this->background_task_manager->add_task([this, old_checksum, new_checksum]() {
+//             this->document_manager->update_checksum(old_checksum, new_checksum);
+//             }, this);
+//         });
+// }
 
 void MainWidget::on_document_changed() {
     //return;
@@ -10474,29 +9928,6 @@ bool MainWidget::import_local_database(std::wstring path) {
 
 bool MainWidget::import_shared_database(std::wstring path) {
     return db_manager->import_shared(QString::fromStdWString(path));
-}
-
-void MainWidget::on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle) {
-
-    QObject::connect(reply, &QNetworkReply::downloadProgress, [this, pending_portal_handle](qint64 received, qint64 total) {
-        int pending_index = main_document_view->get_pending_portal_index_with_handle(pending_portal_handle);
-        float ratio = static_cast<float>(received) / total;
-        main_document_view->pending_download_portals[pending_index].downloaded_fraction = ratio;
-        invalidate_render();
-        });
-}
-
-
-QNetworkReply* MainWidget::download_paper_with_name(std::wstring name, QString full_bib_text, std::optional<PaperDownloadFinishedAction> action, std::string pending_portal_handle) {
-    QNetworkReply* reply = sioyek_network_manager->download_paper_with_name(this, name, full_bib_text,
-        action.value_or(get_default_paper_download_finish_action()),
-        [this, pending_portal_handle](QNetworkReply* reply) {
-            on_paper_download_begin(reply, pending_portal_handle);
-        },
-        [this](QNetworkReply* reply) {
-            on_paper_downloaded(reply);
-        });
-    return reply;
 }
 
 void MainWidget::on_super_fast_search_index_computed() {
@@ -10709,44 +10140,6 @@ void MainWidget::handle_highlight_text_in_document(std::string document_checksum
     }
 }
 
-void MainWidget::show_citers_with_paper_name(std::wstring paper_name) {
-    sioyek_network_manager->get_citers_with_name(this, paper_name, [this](std::vector<QString> citer_urls, std::vector<QString> citer_titles, std::vector<QString> citer_descriptions) {
-
-        auto selector_widget = ItemWithDescriptionSelectorWidget::from_items(std::move(citer_titles), std::move(citer_descriptions), std::move(citer_urls), this);
-        selector_widget->set_select_fn([this, selector_widget](int index) {
-            QString url = selector_widget->item_model->metadatas[index];
-            auto reply = download_paper_with_url(url.toStdWString(), false, PaperDownloadFinishedAction::OpenInNewWindow);
-            reply->setProperty("sioyek_downloading", true);
-            reply->setProperty("sioyek_network_message", "starting download");
-            QObject::connect(reply, &QNetworkReply::downloadProgress, this, [this, reply](qint64 received, qint64 total) {
-                if (total > 0) {
-                    float ratio = static_cast<float>(received) / total;
-                    int percent = static_cast<int>(ratio * 100);
-                    reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(percent) + "% (cancel)");
-                }
-                else {
-                    reply->setProperty("sioyek_network_message", "downloading ... " + QString::number(received) + "B (cancel)");
-
-                }
-                //main_document_view->pending_download_portals[pending_index].downloaded_fraction = ratio;
-                invalidate_ui();
-                });
-            pop_current_widget();
-            invalidate_ui();
-
-            });
-        set_current_widget(selector_widget);
-        show_current_widget();
-
-        });
-
-}
-
-void MainWidget::show_citers_of_current_paper() {
-    std::wstring paper_name = doc()->detect_paper_name();
-    show_citers_with_paper_name(paper_name);
-}
-
 void MainWidget::push_deleted_object(DeletedObject object) {
     deleted_objects.push_back(object);
 }
@@ -10952,29 +10345,6 @@ void MainWidget::set_renderer_backend(RenderBackend backend) {
     opengl_widget = new_backend;
     new_backend->get_widget()->stackUnder(status_label);
     new_backend->get_widget()->setAttribute(Qt::WA_TransparentForMouseEvents);
-
-    // if (backend == RenderBackend::SioyekOpenGLRendererBackend) {
-    //     auto new_opengl_widget = new PdfViewOpenGLWidget(main_document_view, pdf_renderer, document_manager, false, this);
-    //      layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
-
-    //     delete_old_backend();
-    //     delete_old_helper();
-
-    //     opengl_widget = new_opengl_widget;
-    //     new_opengl_widget->stackUnder(status_label);
-    //     new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
-    // }
-    // else {
-    //     auto new_opengl_widget = new PdfViewQPainterWidget(main_document_view, pdf_renderer, document_manager, false, this);
-    //     layout->replaceWidget(opengl_widget->get_widget(), new_opengl_widget);
-
-    //     delete_old_backend();
-    //     delete_old_helper();
-
-    //     opengl_widget = new_opengl_widget;
-    //     new_opengl_widget->stackUnder(status_label);
-    //     new_opengl_widget->setAttribute(Qt::WA_TransparentForMouseEvents);
-    // }
 }
 
 void MainWidget::show_items(std::vector<std::wstring> items, std::optional<std::function<void(std::wstring)>> on_select, std::optional<std::function<void(std::wstring)>> on_delete){
@@ -11006,72 +10376,7 @@ bool MainWidget::is_high_quality_tts_playing() {
 }
 
 QString MainWidget::perform_network_request_with_headers(QString method, QString url, QJsonObject headers, QJsonObject request, bool* is_done, QByteArray* response){
-    bool is_on_main_thread = QThread::currentThread() == QApplication::instance()->thread();
-    if (is_on_main_thread) {
-
-        QNetworkRequest req;
-
-        for (auto header : headers.keys()) {
-            QString header_name = header;
-            QString header_value = headers[header].toString();
-            req.setRawHeader(header.toUtf8(), headers[header].toString().toUtf8());
-        }
-
-        req.setUrl(QUrl(url));
-        QString req_content = QJsonDocument(request).toJson();
-        qDebug() << req_content;
-        QNetworkReply* reply = nullptr;
-
-        if (method.toLower() == "post") {
-            reply = sioyek_network_manager->get_network_manager()->post(req, QJsonDocument(request).toJson());
-        }
-        else {
-            reply = sioyek_network_manager->get_network_manager()->get(req, QJsonDocument(request).toJson());
-        }
-
-        QObject::connect(reply, &QNetworkReply::readyRead, [reply, is_done, response]() {
-            auto content = reply->readAll();
-            if (is_done) {
-                *is_done = true;
-            }
-            if (response) {
-                *response = content;
-            }
-            });
-
-        QObject::connect(reply, &QNetworkReply::finished, [reply, is_done]() {
-            if (is_done) {
-                *is_done = true;
-            }
-            reply->deleteLater();
-            });
-        return "";
-
-    }
-    else {
-
-        bool done = false;
-        QByteArray resp;
-        QMetaObject::invokeMethod(this,
-            "perform_network_request_with_headers",
-            Qt::BlockingQueuedConnection,
-            Q_ARG(QString, method),
-            Q_ARG(QString, url),
-            Q_ARG(QJsonObject, headers),
-            Q_ARG(QJsonObject, request),
-            Q_ARG(bool*, &done),
-            Q_ARG(QByteArray*, &resp)
-        );
-
-        while (!done) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-
-        return QString::fromUtf8(resp);
-
-    }
-
-
+    return network_controller->perform_network_request_with_headers(method, url, headers, request, is_done, response);
 }
 
 
@@ -11344,7 +10649,7 @@ void MainWidget::ai_magic_drawing_ask(){
 
     AbsoluteRect window_rect = dv()->get_view_rect();
 
-    sioyek_network_manager->semantic_ask_with_image(
+    network_controller->semantic_ask_with_image(
                 this,
                 pixmap,
                 [&, d=doc(), current_page, window_rect, drawing_type, next_id](QString response_content){
@@ -11430,12 +10735,6 @@ QList<MainWidget*> MainWidget::all_windows(){
     return result;
 }
 
-QJsonObject MainWidget::get_current_user(){
-    if (sioyek_network_manager){
-        return sioyek_network_manager->current_user;
-    }
-    return QJsonObject();
-}
 
 void MainWidget::on_playback_finished_callback(){
 }
@@ -11472,3 +10771,23 @@ void MainWidget::apple_on_high_quality_tts_playback_finished(){
     }
 }
 #endif
+
+QJsonObject MainWidget::get_current_user(){
+    return network_controller->get_current_user();
+}
+
+bool MainWidget::is_current_document_available_on_server(){
+    return network_controller->is_current_document_available_on_server();
+}
+
+void MainWidget::auto_login(){
+    return network_controller->auto_login();
+}
+
+bool MainWidget::is_network_manager_running(bool* is_downloading, std::wstring* message){
+    return network_controller->is_network_manager_running(is_downloading, message);
+}
+
+QString MainWidget::get_network_status_string(){
+    return network_controller->get_network_status_string();
+}

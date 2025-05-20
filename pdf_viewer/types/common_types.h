@@ -18,3 +18,25 @@ public:
 
     QString get_message_type_string();
 };
+
+enum DocumentLocationMismatchStrategy {
+    Local = 0,
+    Server = 1,
+    Ask = 2,
+    ShowButton = 3
+};
+
+enum class ServerStatus {
+    NotLoggedIn,
+    InvalidCredentials,
+    ServerOffline,
+    LoggingIn,
+    LoggedIn
+};
+
+enum class PaperDownloadFinishedAction {
+    DoNothing,
+    OpenInSameWindow,
+    OpenInNewWindow,
+    Portal
+};

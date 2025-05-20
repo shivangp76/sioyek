@@ -29,6 +29,7 @@
 #include "background_tasks.h"
 #include "document.h"
 #include "document_view.h"
+#include "types/common_types.h"
 
 class SelectionIndicator;
 class QLocalSocket;
@@ -158,6 +159,7 @@ class AnnotationController;
 class DocumentationController;
 class ExternalController;
 class JavascriptController;
+class NetworkController;
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
@@ -170,7 +172,6 @@ public:
     DocumentManager* document_manager = nullptr;
     CommandManager* command_manager = nullptr;
     ConfigManager* config_manager = nullptr;
-    SioyekNetworkManager* sioyek_network_manager = nullptr;
     BackgroundTaskManager* background_task_manager = nullptr;
     BackgroundBookmarkRenderer* background_bookmark_renderer = nullptr;
     PdfRenderer* pdf_renderer = nullptr;
@@ -181,6 +182,7 @@ public:
     std::unique_ptr<DocumentationController> documentation_controller;
     std::unique_ptr<ExternalController> external_controller;
     std::unique_ptr<JavascriptController> js_controller;
+    std::unique_ptr<NetworkController> network_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
@@ -440,7 +442,6 @@ public:
 
     void set_main_document_view_state(DocumentViewState new_view_state);
     void handle_click(WindowPos pos);
-    void manage_last_document_checksum();
     void on_checksum_computed();
 
     void handle_validation_interval_timeout();
@@ -474,8 +475,6 @@ public:
     void open_overview_to_portal(Document* document, Portal portal);
     bool overview_under_pos(WindowPos pos);
     void visual_mark_under_pos(WindowPos pos);
-    bool is_network_manager_running(bool* is_downloading = nullptr, std::wstring* message=nullptr);
-    QString get_network_status_string();
     void show_download_paper_menu(
         const std::vector<std::wstring>& paper_names,
         const std::vector<std::wstring>& download_urls,
@@ -501,14 +500,12 @@ public:
     void handle_close_event(bool is_quiting=false);
     void return_to_last_visual_mark();
     void reload(bool flush = true);
-    QNetworkReply* download_paper_with_url(std::wstring paper_url, bool use_archive_url, PaperDownloadFinishedAction action);
 
     void reset_highlight_links();
     void set_rect_select_mode(bool mode);
     void set_point_select_mode(bool mode);
     void clear_selected_rect();
     void toggle_pdf_annotations();
-    void on_paper_downloaded(QNetworkReply* reply);
 
     void handle_bookmark_shell_command(QString bookmark_text, std::string uuid, QString text_arg="");
     void handle_shell_bookmark_deleted(std::string uuid);
@@ -602,8 +599,6 @@ public:
     void apply_window_params_for_one_window_mode(bool force_resize = false);
     void apply_window_params_for_two_window_mode();
     bool helper_window_overlaps_main_window();
-    void upload_drawings(bool wait_for_send = false);
-    void perform_sync_operations_when_document_is_closed(bool wait_for_send, bool sync_drawings);
 
     // get rects using tags (tags are strings shown when executing `keyboard_*` commands)
     bool is_rotated();
@@ -660,7 +655,6 @@ public:
     std::optional<BookMark> handle_delete_selected_bookmark();
     std::optional<Portal> handle_delete_selected_portal();
     void handle_start_reading(bool force_local=false);
-    void preload_next_page_for_tts(float rate);
     void set_high_quality_tts_rate(float rate);
     bool is_high_quality_tts_playing();
     void handle_start_reading_high_quality(bool should_preload=false);
@@ -693,7 +687,6 @@ public:
     void hande_turn_off_all_drawings();
     void handle_toggle_drawing_mask(char symbol);
     void show_command_palette();
-    void auto_login();
     void index_current_document_for_fulltext_search(bool async=false,  std::wstring tag=L"");
     void on_super_fast_search_index_computed();
     bool is_current_document_fulltext_indexed();
@@ -893,7 +886,6 @@ public:
     void open_document(const std::wstring& doc_path, bool load_prev_state = true, std::optional<OpenedBookState> prev_state = {}, bool foce_load_dimensions = false);
 
     AbsoluteDocumentPos get_cursor_abspos();
-    void cleanup_expired_pending_portals();
     //void update_pending_portal_indices_after_removed_indices(std::vector<int>& removed_indices);
     void close_overview();
     void handle_overview_to_ruler_portal();
@@ -1023,7 +1015,6 @@ public:
     void load_scratchpad();
     void clear_scratchpad();
     void show_draw_controls();
-    PaperDownloadFinishedAction get_default_paper_download_finish_action();
     void set_tag_prefix(std::wstring prefix);
     void clear_tag_prefix();
     bool show_contextual_context_menu(QString default_context_menu="");
@@ -1088,7 +1079,6 @@ public:
     void on_portal_edited(const std::string& uuid);
     void on_open_document(const std::wstring& path);
     void sync_edited_annot(const std::string& annot_type, const std::string& uuid);
-    void sync_deleted_annot(const std::string& annot_type, const std::string& uuid);
     std::vector<OpenedBookInfo> get_all_opened_books(bool include_server_books=true, bool force_full_path=false);
 
     void run_startup_js(bool first_run=false);
@@ -1098,9 +1088,7 @@ public:
     void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void call_js_function_with_portal_arg_with_uuid(const QString& function_name, const std::string& uuid);
 
-    void handle_sync_open_document();
 
-    void handle_server_document_location_mismatch(float local_offset_y, float server_offset_y);
 
     std::string add_highlight_to_current_document(AbsoluteDocumentPos selection_begin, AbsoluteDocumentPos selection_end, char type);
 
@@ -1110,35 +1098,20 @@ public:
     void delete_current_document_bookmark_with_bookmark(BookMark* bm);
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
-    void upload_current_file(Document* document_to_upload=nullptr);
     void update_current_document_checksum(std::string checksum);
-    bool is_current_document_available_on_server();
-    void handle_login(std::wstring email, std::wstring password);
-    void sync_current_file_location_to_servers(bool wait_for_send=false);
-    void sync_document_location_to_servers(Document* doc, float offset_y, bool wait_for_send=false);
-    void handle_open_server_only_file();
-    void download_and_open(std::string checksum, float offset_y);
-    void handle_resume_to_server_location();
-    void handle_server_actions_button_pressed();
-    void sync_annotations_with_server();
     void sync_newly_added_annot(const std::string& annot_type, const std::string& uuid);
-    void delete_current_file_from_server();
     bool is_logged_in();
     void on_set_enum_config_value(std::string config_name, std::wstring config_value);
     void focus_on_high_quality_text_being_read();
     void on_document_changed();
-    void do_synchronize();
-    void synchronize_if_desynchronized();
     void on_server_hashes_loaded();
-    Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
+    // Q_INVOKABLE void update_checksum_impl(std::string old_checksum, std::string new_checksum);
     SioyekMediaPlayer* get_media_player();
     void handle_high_quality_media_end_reached();
     void show_command_menu();
 
     bool import_local_database(std::wstring path);
     bool import_shared_database(std::wstring path);
-    void on_paper_download_begin(QNetworkReply* reply, std::string pending_portal_handle);
-    QNetworkReply* download_paper_with_name(std::wstring name, QString full_bib_text, std::optional<PaperDownloadFinishedAction> action = {}, std::string pending_portal_handle="");
     void handle_type_text_into_input(QString txt);
     void send_symbol_to_last_command(char symbol);
     void ensure_titlebar_colors_match_color_mode();
@@ -1156,8 +1129,6 @@ public:
     bool handle_visible_object_resize_finish();
     void stop_all_threads();
     void restart_all_threads();
-    void show_citers_with_paper_name(std::wstring paper_name);
-    void show_citers_of_current_paper();
 
     void push_deleted_object(DeletedObject object);
     void push_deleted_highlight(std::optional<Highlight> hl);
@@ -1200,7 +1171,6 @@ public:
     Q_INVOKABLE void on_onscreen_keyboard_hidden();
 
     Q_INVOKABLE QList<MainWidget*> all_windows();
-    QJsonObject get_current_user();
     void on_playback_finished_callback();
     void show_touch_auido_ui_if_in_touch_mode();
 
@@ -1214,6 +1184,11 @@ public slots:
     void handle_triple_click(AbsoluteDocumentPos mouse_abspos);
     void repeat_last_command();
     void ai_magic_drawing_ask();
+    QJsonObject get_current_user();
+    bool is_current_document_available_on_server();
+    void auto_login();
+    bool is_network_manager_running(bool* is_downloading = nullptr, std::wstring* message=nullptr);
+    QString get_network_status_string();
 };
 
 MainWidget* get_window_with_window_id(int window_id);

@@ -73,12 +73,6 @@ struct IntExtras {
     int max_val;
 };
 
-enum DocumentLocationMismatchStrategy {
-    Local = 0,
-    Server = 1,
-    Ask = 2,
-    ShowButton = 3
-};
 
 enum RulerDisplayMode {
     RulerBox = 0,

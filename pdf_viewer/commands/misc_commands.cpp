@@ -1041,18 +1041,6 @@ public:
     }
 };
 
-class WaitForDownloadsToFinish : public GenericWaitCommand {
-public:
-    static inline const std::string cname = "wait_for_downloads_to_finish";
-    static inline const std::string hname = "";
-    WaitForDownloadsToFinish(MainWidget* w) : GenericWaitCommand(cname, w) {};
-
-    bool is_ready() override {
-        bool is_downloading = false;
-        bool is_running = widget->is_network_manager_running(&is_downloading);
-        return !(is_downloading || is_running);
-    }
-};
 
 class CopyCommand : public Command {
 public:
@@ -2782,7 +2770,6 @@ void register_misc_commands(CommandManager* manager) {
     register_command<WaitForIndexingToFinishCommand>(manager);
     register_command<WaitForRendersToFinishCommand>(manager);
     register_command<WaitForSearchToFinishCommand>(manager);
-    register_command<WaitForDownloadsToFinish>(manager);
     register_command<CopyCommand>(manager);
     register_command<CopyAllTextCommand>(manager);
     register_command<CopyCurrentChapterTextCommand>(manager);

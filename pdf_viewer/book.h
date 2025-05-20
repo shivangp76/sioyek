@@ -59,20 +59,6 @@ enum class SelectedObjectType {
     Pixmap
 };
 
-enum class PaperDownloadFinishedAction {
-    DoNothing,
-    OpenInSameWindow,
-    OpenInNewWindow,
-    Portal
-};
-
-enum class ServerStatus {
-    NotLoggedIn,
-    InvalidCredentials,
-    ServerOffline,
-    LoggingIn,
-    LoggedIn
-};
 
 struct SelectedObjectIndex {
     int index;

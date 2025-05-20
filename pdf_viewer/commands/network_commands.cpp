@@ -7,6 +7,7 @@
 #include <qdesktopservices.h>
 #include "config.h"
 #include "ui.h"
+#include "controllers/network_controller.h"
 
 extern std::wstring EXTRACT_TABLE_PROMPT;
 extern int TABLE_EXTRACT_BEHAVIOUR;
@@ -68,13 +69,26 @@ public:
     void perform() {
         auto clipboard = QGuiApplication::clipboard();
         std::wstring url = clipboard->text().toStdWString();
-        widget->download_paper_with_url(url, false, PaperDownloadFinishedAction::OpenInNewWindow);
+        widget->network_controller->download_paper_with_url(url, false, PaperDownloadFinishedAction::OpenInNewWindow);
     }
 
     std::string text_requirement_name() {
         return "Paper Url";
     }
 
+};
+
+class WaitForDownloadsToFinish : public GenericWaitCommand {
+public:
+    static inline const std::string cname = "wait_for_downloads_to_finish";
+    static inline const std::string hname = "";
+    WaitForDownloadsToFinish(MainWidget* w) : GenericWaitCommand(cname, w) {};
+
+    bool is_ready() override {
+        bool is_downloading = false;
+        bool is_running = widget->network_controller->is_network_manager_running(&is_downloading);
+        return !(is_downloading || is_running);
+    }
 };
 
 class DownloadPaperWithUrlCommand : public TextCommand {
@@ -86,7 +100,7 @@ public:
     };
 
     void perform() {
-        widget->download_paper_with_url(text.value(), false, PaperDownloadFinishedAction::OpenInNewWindow);
+        widget->network_controller->download_paper_with_url(text.value(), false, PaperDownloadFinishedAction::OpenInNewWindow);
     }
 
     std::string text_requirement_name() {
@@ -218,7 +232,7 @@ public:
             widget->set_rect_select_mode(false);
             widget->invalidate_render();
         }
-        widget->sioyek_network_manager->perform_generic_llm_request(
+        widget->network_controller->sioyek_network_manager->perform_generic_llm_request(
             widget,
             processed_system_prompt,
             processed_user_prompt,
@@ -243,7 +257,7 @@ public:
     DownloadPaperWithNameCommand(MainWidget* w) : ProTextCommand(cname, w) {};
 
     void perform() {
-        widget->download_paper_with_name(text.value(), "", PaperDownloadFinishedAction::OpenInNewWindow);
+        widget->network_controller->download_paper_with_name(text.value(), "", PaperDownloadFinishedAction::OpenInNewWindow);
 
     }
 
@@ -314,7 +328,7 @@ public:
 
         MainWidget* w = widget;
         AbsoluteRect r = rect_.value();
-        widget->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, bookmark_type_ = bookmark_type_](QString data) {
+        widget->network_controller->sioyek_network_manager->extract_table_data(widget, pixmap, [w, r, bookmark_type_ = bookmark_type_](QString data) {
             if (TABLE_EXTRACT_BEHAVIOUR == TableExtractBehaviour::Copy) {
 
                 copy_to_clipboard(data.toStdWString());
@@ -409,7 +423,7 @@ public:
     }
 
     void perform() {
-        widget->handle_open_server_only_file();
+        widget->network_controller->handle_open_server_only_file();
     }
 
     bool requires_document() { return false; }
@@ -479,11 +493,11 @@ public:
     }
 
     void perform() {
-        widget->sioyek_network_manager->ACCESS_TOKEN = utf8_encode(token.value());
-        widget->sioyek_network_manager->persist_access_token(utf8_encode(token.value()));
+        widget->network_controller->sioyek_network_manager->ACCESS_TOKEN = utf8_encode(token.value());
+        widget->network_controller->sioyek_network_manager->persist_access_token(utf8_encode(token.value()));
 
-        widget->sioyek_network_manager->status = ServerStatus::LoggedIn;
-        widget->sioyek_network_manager->handle_one_time_network_operations();
+        widget->network_controller->sioyek_network_manager->status = ServerStatus::LoggedIn;
+        widget->network_controller->sioyek_network_manager->handle_one_time_network_operations();
     }
 };
 
@@ -515,7 +529,7 @@ public:
     }
 
     void perform() {
-        widget->handle_login(email.value(), password.value());
+        widget->network_controller->handle_login(email.value(), password.value());
     }
 };
 
@@ -527,7 +541,7 @@ public:
     LogoutCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->handle_logout();
+        widget->network_controller->sioyek_network_manager->handle_logout();
     }
 };
 
@@ -539,7 +553,7 @@ public:
     CancelAllDownloadsCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->cancel_all_downlods();
+        widget->network_controller->sioyek_network_manager->cancel_all_downlods();
     }
 };
 
@@ -551,7 +565,7 @@ public:
     CitersCommand(MainWidget* w) : ProCommand(cname, w) {};
     
     void perform() {
-        widget->show_citers_of_current_paper();
+        widget->network_controller->show_citers_of_current_paper();
     }
 };
 
@@ -575,7 +589,7 @@ public:
     ResumeToServerLocationCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->handle_resume_to_server_location();
+        widget->network_controller->handle_resume_to_server_location();
     }
 };
 
@@ -586,7 +600,7 @@ public:
     LoginUsingAccessTokenCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->load_access_token();
+        widget->network_controller->sioyek_network_manager->load_access_token();
     }
 
 };
@@ -598,7 +612,7 @@ public:
     SynchronizeCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->synchronize_if_desynchronized();
+        widget->network_controller->synchronize_if_desynchronized();
     }
 
 };
@@ -610,7 +624,7 @@ public:
     DashboardCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        open_web_url(SIOYEK_HOST + widget->sioyek_network_manager->SIOYEK_DASHBOARD_URL_);
+        open_web_url(SIOYEK_HOST + widget->network_controller->sioyek_network_manager->SIOYEK_DASHBOARD_URL_);
     }
 
 };
@@ -622,7 +636,7 @@ public:
     ForceDownloadAnnotations(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->download_annotations_since_last_sync(true);
+        widget->network_controller->sioyek_network_manager->download_annotations_since_last_sync(true);
     }
 
 };
@@ -634,7 +648,7 @@ public:
     UploadCurrentFileCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->upload_current_file();
+        widget->network_controller->upload_current_file();
     }
 
 };
@@ -646,7 +660,7 @@ public:
     DeleteCurrentFileFromServer(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->delete_current_file_from_server();
+        widget->network_controller->delete_current_file_from_server();
     }
 
 };
@@ -659,7 +673,7 @@ public:
     ResyncDocumentCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->handle_sync_open_document();
+        widget->network_controller->handle_sync_open_document();
     }
 
 };
@@ -671,7 +685,7 @@ public:
     DownloadUnsyncedFilesCommand(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->sioyek_network_manager->download_unsynced_files(widget, widget->db_manager);
+        widget->network_controller->sioyek_network_manager->download_unsynced_files(widget, widget->db_manager);
     }
 
 };
@@ -683,7 +697,7 @@ public:
     SyncCurrentFileLocation(MainWidget* w) : ProCommand(cname, w) {};
 
     void perform() {
-        widget->sync_current_file_location_to_servers();
+        widget->network_controller->sync_current_file_location_to_servers();
     }
 };
 
@@ -716,7 +730,7 @@ public:
             widget->download_and_portal(text_, full_bib_text, source_rect->center());
         }
         else {
-            widget->download_paper_with_name(text_, full_bib_text);
+            widget->network_controller->download_paper_with_name(text_, full_bib_text);
         }
 
     }
@@ -809,4 +823,5 @@ void register_network_commands(CommandManager* manager) {
     register_command<DownloadOverviewPaperNoPrompt>(manager);
     register_command<LoadAnnotationsFileSyncDeletedCommand>(manager);
     register_command<DashboardCommand>(manager);
+    register_command<WaitForDownloadsToFinish>(manager);
 }
