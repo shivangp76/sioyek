@@ -57,7 +57,6 @@
 #include <qtreeview.h>
 #include <qwindow.h>
 #include <qstandardpaths.h>
-#include <qprocess.h>
 #include <qguiapplication.h>
 #include <qmimedata.h>
 #include <qscreen.h>

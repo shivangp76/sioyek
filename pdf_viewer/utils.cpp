@@ -6720,9 +6720,6 @@ void PhaseVocoder::processFrames() {
     }
 }
 
-
-
-
 #ifdef Q_OS_APPLE
 
 #include "main_widget.h"

@@ -49,7 +49,6 @@ class HighlightButtons;
 class SioyekNetworkManager;
 class QMediaPlayer;
 class QTemporaryFile;
-class QProcess;
 class QTemporaryFile;
 
 struct fz_context;
