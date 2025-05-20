@@ -10380,32 +10380,6 @@ void MainWidget::upload_current_file(Document* document_to_upload) {
     );
 }
 
-void MainWidget::ocr_current_file() {
-    if (!doc()) return;
-
-    QString original_doc_path = QString::fromStdWString(doc()->get_path());
-    set_status_message(L"Performing OCR");
-    sioyek_network_manager->ocr_file(this, original_doc_path, [original_doc_path, this](QNetworkReply* reply) {
-        set_status_message(L"");
-
-        QFileInfo original_doc_info(original_doc_path);
-        QDir parent_dir = original_doc_info.dir();
-        QString original_filename = original_doc_info.fileName();
-        QString new_filename = original_filename + "_ocr.pdf";
-
-        QString new_doc_path = parent_dir.filePath(new_filename);
-        QFile file(new_doc_path);
-        if (file.open(QIODevice::WriteOnly)) {
-            file.write(reply->readAll());
-            file.close();
-
-            // open the new file
-            push_state();
-            open_document(new_doc_path.toStdWString());
-        }
-        });
-}
-
 
 void MainWidget::update_current_document_checksum(std::string checksum) {
     //todo:

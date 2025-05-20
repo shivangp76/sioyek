@@ -639,18 +639,6 @@ public:
 
 };
 
-class OcrCurrentFileCommand : public ProCommand {
-public:
-    static inline const std::string cname = "ocr";
-    static inline const std::string hname = "Create a new pdf ocr of current file";
-    OcrCurrentFileCommand(MainWidget* w) : ProCommand(cname, w) {};
-
-    void perform() {
-        widget->ocr_current_file();
-    }
-
-};
-
 class DeleteCurrentFileFromServer : public ProCommand {
 public:
     static inline const std::string cname = "delete_current_file_from_server";
@@ -812,7 +800,6 @@ void register_network_commands(CommandManager* manager) {
     register_command<SynchronizeCommand>(manager);
     register_command<ForceDownloadAnnotations>(manager);
     register_command<UploadCurrentFileCommand>(manager);
-    register_command<OcrCurrentFileCommand>(manager);
     register_command<DeleteCurrentFileFromServer>(manager);
     register_command<ResyncDocumentCommand>(manager);
     register_command<DownloadUnsyncedFilesCommand>(manager);

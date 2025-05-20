@@ -1116,7 +1116,6 @@ public:
     void delete_global_bookmark(const std::string& uuid);
     void download_and_portal_to_highlighted_overview_paper();
     void upload_current_file(Document* document_to_upload=nullptr);
-    void ocr_current_file();
     void update_current_document_checksum(std::string checksum);
     bool is_current_document_available_on_server();
     void handle_login(std::wstring email, std::wstring password);
