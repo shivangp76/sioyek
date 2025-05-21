@@ -12,6 +12,7 @@
 #include "document_view.h"
 #include "main_widget.h"
 #include "types/common_types.h"
+#include "background_tasks.h"
 
 //#include <ui.h>
 extern Path android_config_path;

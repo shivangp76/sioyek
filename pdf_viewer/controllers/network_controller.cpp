@@ -1,10 +1,12 @@
 #include <QPushButton>
 #include <QFile>
 #include <QDir>
+#include <QThread>
 
 #include "network_manager.h"
 #include "controllers/network_controller.h"
 #include "main_widget.h"
+#include "document_view.h"
 #include "checksum.h"
 #include "ui.h"
 #include "path.h"

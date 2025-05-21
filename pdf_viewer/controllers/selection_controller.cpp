@@ -2,6 +2,7 @@
 
 #include "controllers/selection_controller.h"
 #include "main_widget.h"
+#include "document_view.h"
 
 extern float RULER_AUTO_MOVE_SENSITIVITY;
 extern bool FORCE_CUSTOM_LINE_ALGORITHM;

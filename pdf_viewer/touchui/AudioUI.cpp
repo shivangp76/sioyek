@@ -1,6 +1,7 @@
 #include "touchui/AudioUI.h"
 #include "touchui/TouchAudioButtons.h"
 #include "main_widget.h"
+#include <QVBoxLayout>
 
 extern float TTS_RATE;
 

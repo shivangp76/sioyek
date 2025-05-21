@@ -6,6 +6,7 @@
 #include "ui/ui_models.h"
 #include "config.h"
 #include "main_widget.h"
+#include "document_view.h"
 #include "utils/window_utils.h"
 #include "utils/color_utils.h"
 

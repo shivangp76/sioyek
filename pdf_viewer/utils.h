@@ -55,11 +55,6 @@ struct CustomCommandInfo {
     int definition_line_number = 0;
 };
 
-struct MenuNode {
-    QString name;
-    QString doc;
-    std::vector<MenuNode*> children;
-};
 
 class QListView;
 std::wstring to_lower(const std::wstring& inp);
@@ -672,12 +667,6 @@ struct MaximumRectangleResult {
 
 std::vector<MaximumRectangleResult> maximum_rectangle(std::vector<std::vector<bool>>& rect);
 
-enum RenderBackend {
-    SioyekNoRendererBackend = 0,
-    SioyekOpenGLRendererBackend = 1,
-    SioyekQPainterRendererBackend = 2,
-    SioyekRhiBackend = 3
-};
 
 void open_text_editor_at_line(QString file_path, int line_number);
 bool stext_page_has_lines(fz_stext_page* page);

@@ -3,6 +3,7 @@
 
 #include "controllers/javascript_controller.h"
 #include "main_widget.h"
+#include "document.h"
 #include "commands/base_commands.h"
 #include "path.h"
 

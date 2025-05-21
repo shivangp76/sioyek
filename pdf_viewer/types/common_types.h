@@ -46,3 +46,16 @@ struct AdditionalKeymapData {
     int line_number;
     std::wstring keymap_string;
 };
+
+enum RenderBackend {
+    SioyekNoRendererBackend = 0,
+    SioyekOpenGLRendererBackend = 1,
+    SioyekQPainterRendererBackend = 2,
+    SioyekRhiBackend = 3
+};
+
+struct MenuNode {
+    QString name;
+    QString doc;
+    std::vector<MenuNode*> children;
+};

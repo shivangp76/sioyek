@@ -38,6 +38,7 @@
 #include <qtemporaryfile.h>
 #include <QThread>
 #include <QMutableMapIterator>
+#include <QFileSystemWatcher>
 
 #ifndef SIOYEK_QT6
 #include <qdesktopwidget.h>

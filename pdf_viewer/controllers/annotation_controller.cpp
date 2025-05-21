@@ -3,6 +3,7 @@
 #include <QApplication>
 
 #include "main_widget.h"
+#include "document_view.h"
 #include "network_manager.h"
 #include "controllers/annotation_controller.h"
 #include "ui/bookmark_ui.h"
@@ -14,6 +15,7 @@
 #include "controllers/network_controller.h"
 #include "utils/color_utils.h"
 #include "path.h"
+#include "background_tasks.h"
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;

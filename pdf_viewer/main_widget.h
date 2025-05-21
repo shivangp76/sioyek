@@ -9,28 +9,24 @@
 #include <optional>
 #include <deque>
 
-#include <qnetworkaccessmanager.h>
 #include <qquickwidget.h>
 #include <qjsondocument.h>
 #include <qmainwindow.h>
-#include <qfilesystemwatcher.h>
-#include <qlayout.h>
 
 #ifdef SIOYEK_IOS
 #include <QApplicationStateChangeEvent>
 #endif
 
 #include "book.h"
-// #include "input.h"
-// #include "path.h"
-#include "background_tasks.h"
-#include "document.h"
-#include "document_view.h"
 #include "types/common_types.h"
 
+class Document;
+class BackgroundBookmarkRenderer;
+class BackgroundTaskManager;
 class Path;
 class SelectionIndicator;
 class MenuItems;
+class QVBoxLayout;
 class QLocalSocket;
 class QLineEdit;
 class QTextEdit;
@@ -70,8 +66,6 @@ class DocumentManager;
 class TextToSpeechHandler;
 class SioyekBookmarkTextBrowser;
 
-
-
 struct RecentlyUpdatedPortalState {
     std::string uuid;
     QDateTime last_modification_time;
@@ -86,20 +80,6 @@ struct StatusMessage {
 #ifdef SIOYEK_IOS
 struct AVSpeechSynthesizer;
 #endif
-
-
-
-//struct LastDocumentChecksum {
-//    Document* doc = nullptr;
-//    std::optional<std::string> checksum;
-//};
-
-//struct StatusString {
-//    //std::unordered_map<QString>
-//    QString actual_status_string;
-//    QString role_string;
-//
-//};
 
 struct DeletedObject {
     std::string document_checksum;
@@ -144,8 +124,6 @@ class WidgetController;
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
     Q_OBJECT
-    Q_PROPERTY(Document* doc READ doc)
-    Q_PROPERTY(DocumentView* view READ dv)
 public:
     fz_context* mupdf_context = nullptr;
     DatabaseManager* db_manager = nullptr;

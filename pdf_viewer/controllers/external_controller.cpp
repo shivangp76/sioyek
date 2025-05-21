@@ -1,6 +1,7 @@
 #include <QProcess>
 #include <QTemporaryFile>
 #include <QFileInfo>
+#include <QFileSystemWatcher>
 #include <QLineEdit>
 
 #include "synctex/synctex_parser.h"

@@ -6,6 +6,7 @@
 #include "touchui/TouchChat.h"
 #include "ui/bookmark_ui.h"
 #include "main_widget.h"
+#include "document_view.h"
 #include "ui.h"
 #include "utils/window_utils.h"
 #include "utils/color_utils.h"
