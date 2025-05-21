@@ -57,25 +57,11 @@
 #include "touchui/TouchRangeSelectUI.h"
 #include "touchui/TouchPageSelector.h"
 #include "touchui/TouchMainMenu.h"
-#include "touchui/TouchTextEdit.h"
 #include "touchui/TouchSearchButtons.h"
-#include "touchui/TouchDeleteButton.h"
 #include "touchui/TouchHighlightButtons.h"
-#include "touchui/TouchAudioButtons.h"
 #include "touchui/TouchDrawControls.h"
 #include "touchui/TouchMacroEditor.h"
-#include "touchui/TouchGenericButtons.h"
-#include "touchui/TouchChat.h"
 
-#include "mysortfilterproxymodel.h"
-#include "rapidfuzz_amalgamated.hpp"
-
-#define FTS_FUZZY_MATCH_IMPLEMENTATION
-#include "fts_fuzzy_match.h"
-#undef FTS_FUZZY_MATCH_IMPLEMENTATION
-
-
-#include "utils.h"
 #include "config.h"
 
 class DatabaseManager;

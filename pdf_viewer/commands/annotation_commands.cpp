@@ -782,19 +782,7 @@ public:
             initial_font_size = bookmark->font_size;
             uuid = selected_bookmark_uuid;
 
-            if (TOUCH_MODE) {
-                if (widget->current_widget_stack.size() > 0) {
-                    TouchTextEdit* stack_top = dynamic_cast<TouchTextEdit*>(widget->current_widget_stack.back());
-                    if (stack_top) {
-                        stack_top->set_text(bookmark->description);
-                    }
-                }
-            }
-            else {
-                widget->text_command_line_edit->setText(
-                    QString::fromStdWString(bookmark->description)
-                );
-            }
+            widget->set_current_text_editor_text(bookmark->get_desc_qstring());
         }
     }
 

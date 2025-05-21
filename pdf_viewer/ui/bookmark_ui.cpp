@@ -3,6 +3,7 @@
 #include <QAbstractTextDocumentLayout>
 #include <QPainter>
 
+#include "touchui/TouchChat.h"
 #include "ui/bookmark_ui.h"
 #include "main_widget.h"
 #include "ui.h"

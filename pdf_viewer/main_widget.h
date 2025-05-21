@@ -1152,6 +1152,7 @@ public slots:
     void clear_cached_drawing_buffers();
     void set_should_render_pending_drawing_only(bool value);
     QPixmap get_framebuffer_pixmap();
+    void set_current_text_editor_text(QString text);
 };
 
 MainWidget* get_window_with_window_id(int window_id);

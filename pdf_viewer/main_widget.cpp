@@ -102,7 +102,8 @@
 #include "touchui/TouchMarkSelector.h"
 #include "checksum.h"
 #include "touchui/TouchSettings.h"
-#include "touchui/TouchChat.h"
+#include "touchui/TouchTextEdit.h"
+#include "touchui/TouchGenericButtons.h"
 #include "ui/bookmark_ui.h"
 #include "network_manager.h"
 #include "status_string.h"
@@ -10523,4 +10524,18 @@ void MainWidget::set_should_render_pending_drawing_only(bool value){
 
 QPixmap MainWidget::get_framebuffer_pixmap(){
     opengl_widget->get_framebuffer_pixmap();
+}
+
+void MainWidget::set_current_text_editor_text(QString text){
+    if (TOUCH_MODE) {
+        TouchTextEdit* paper_name_editor = dynamic_cast<TouchTextEdit*>(current_widget_stack.back());
+        if (paper_name_editor) {
+            paper_name_editor->set_text(text.toStdWString());
+            close_overview();
+        }
+        //widget->close_overview();
+    }
+    else {
+        text_command_line_edit->setText(text);
+    }
 }
