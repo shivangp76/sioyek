@@ -1,3 +1,6 @@
+#include <QFileInfo>
+#include <QDir>
+
 #include <qlineedit.h>
 #include <qclipboard.h>
 #include <qapplication.h>

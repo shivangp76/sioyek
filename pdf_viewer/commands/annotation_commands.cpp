@@ -2,6 +2,7 @@
 #include "main_widget.h"
 #include "document_view.h"
 #include "ui.h"
+#include <QFileInfo>
 
 extern float FREETEXT_BOOKMARK_COLOR[3];
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
