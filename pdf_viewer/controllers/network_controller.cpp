@@ -7,6 +7,7 @@
 #include "main_widget.h"
 #include "checksum.h"
 #include "ui.h"
+#include "path.h"
 
 extern int DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;

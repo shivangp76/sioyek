@@ -2,6 +2,7 @@
 #include "ui/base_delegate.h"
 #include "commands/base_commands.h"
 #include "main_widget.h"
+#include "input.h"
 
 QRect TouchDelegateListView::get_prefered_rect(QRect parent_rect){
     int parent_width = parent_rect.width();

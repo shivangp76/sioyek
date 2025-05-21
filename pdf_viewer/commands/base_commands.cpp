@@ -8,6 +8,7 @@
 
 #include "commands/command_parser.h"
 #include "commands/base_commands.h"
+#include "path.h"
 
 extern bool USE_KEYBOARD_POINT_SELECTION;
 extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;

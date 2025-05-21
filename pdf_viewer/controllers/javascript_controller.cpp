@@ -4,6 +4,7 @@
 #include "controllers/javascript_controller.h"
 #include "main_widget.h"
 #include "commands/base_commands.h"
+#include "path.h"
 
 extern Path sioyek_js_path;
 

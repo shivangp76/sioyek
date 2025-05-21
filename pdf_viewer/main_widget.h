@@ -8,9 +8,6 @@
 #include <vector>
 #include <optional>
 #include <deque>
-#include <mutex>
-#include <thread>
-#include <unordered_set>
 
 #include <qnetworkaccessmanager.h>
 #include <qquickwidget.h>
@@ -24,14 +21,16 @@
 #endif
 
 #include "book.h"
-#include "input.h"
-#include "path.h"
+// #include "input.h"
+// #include "path.h"
 #include "background_tasks.h"
 #include "document.h"
 #include "document_view.h"
 #include "types/common_types.h"
 
+class Path;
 class SelectionIndicator;
+class MenuItems;
 class QLocalSocket;
 class QLineEdit;
 class QTextEdit;

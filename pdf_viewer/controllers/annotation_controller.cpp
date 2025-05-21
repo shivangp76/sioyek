@@ -13,6 +13,7 @@
 #include "ui/annotation_widgets.h"
 #include "controllers/network_controller.h"
 #include "utils/color_utils.h"
+#include "path.h"
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;

@@ -10,6 +10,7 @@
 #include "controllers/external_controller.h"
 #include "document_view.h"
 #include "utils/window_utils.h"
+#include "path.h"
 
 extern bool USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE;
 extern bool DONT_FOCUS_IF_SYNCTEX_RECT_IS_VISIBLE;

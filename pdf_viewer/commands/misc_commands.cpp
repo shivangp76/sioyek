@@ -8,6 +8,7 @@
 
 #include "commands/misc_commands.h"
 #include "main_widget.h"
+#include "input.h"
 #include "document_view.h"
 #include "config.h"
 #include "ui.h"

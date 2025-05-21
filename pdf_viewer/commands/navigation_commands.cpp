@@ -4,6 +4,7 @@
 #include "main_widget.h"
 #include "document_view.h"
 #include "ui.h"
+#include "path.h"
 
 extern std::vector<MainWidget*> windows;
 
