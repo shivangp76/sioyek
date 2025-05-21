@@ -40,3 +40,9 @@ enum class PaperDownloadFinishedAction {
     OpenInNewWindow,
     Portal
 };
+
+struct AdditionalKeymapData {
+    std::wstring file_name;
+    int line_number;
+    std::wstring keymap_string;
+};

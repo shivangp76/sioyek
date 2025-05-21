@@ -119,11 +119,6 @@ struct DynamicEnumExtras {
 struct EmptyExtras {
 };
 
-struct AdditionalKeymapData {
-    std::wstring file_name;
-    int line_number;
-    std::wstring keymap_string;
-};
 //union ConfigExtras {
 //	struct Rest {
 //

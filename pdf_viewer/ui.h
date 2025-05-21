@@ -42,8 +42,9 @@ class TouchSearchButtons;
 class TouchHighlightButtons;
 class TouchDrawControls;
 class TouchMacroEditor;
+class ConfigManager;
+class UIRect;
 
-#include "config.h"
 
 class DatabaseManager;
 class MainWidget;

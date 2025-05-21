@@ -17,7 +17,7 @@
 #include "utils.h"
 #include "input.h"
 #include "main_widget.h"
-#include "ui.h"
+// #include "ui.h"
 #include "document.h"
 #include "document_view.h"
 #include "network_manager.h"
@@ -27,6 +27,9 @@
 #include "commands/misc_commands.h"
 #include "commands/navigation_commands.h"
 #include "commands/network_commands.h"
+
+#include "config.h"
+#include "types/common_types.h"
 
 
 

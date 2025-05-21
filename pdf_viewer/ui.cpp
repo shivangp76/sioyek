@@ -16,6 +16,7 @@
 #include <qscrollbar.h>
 #include <qpainterpath.h>
 
+#include "config.h"
 #include "document_view.h"
 #include "touchui/TouchSlider.h"
 #include "touchui/TouchConfigMenu.h"
