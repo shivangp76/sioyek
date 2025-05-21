@@ -1120,7 +1120,6 @@ public:
     void update_query_tokens_status_message_for_bookmark(QString message_uuid);
     std::optional<StatusMessage> get_status_message_with_id(QString id);
     void toggle_mouse_ruler_mode();
-    void show_tts_voice_selector();
     void handle_pinch(WindowPos center_window_pos, float scale);
     Q_INVOKABLE void resize_child_widgets_with_window_rect(QRect window_rect);
     Q_INVOKABLE void on_onscreen_keyboard_shown();
@@ -1139,7 +1138,6 @@ public slots:
     int update_recent_clicks(AbsoluteDocumentPos mouse_abspos);
     void handle_triple_click(AbsoluteDocumentPos mouse_abspos);
     void repeat_last_command();
-    void ai_magic_drawing_ask();
     QJsonObject get_current_user();
     bool is_current_document_available_on_server();
     void auto_login();
@@ -1149,6 +1147,9 @@ public slots:
     bool is_lq_ttsing();
     bool is_hq_ttsing();
     bool is_ttsing();
+    void clear_cached_drawing_buffers();
+    void set_should_render_pending_drawing_only(bool value);
+    QPixmap get_framebuffer_pixmap();
 };
 
 MainWidget* get_window_with_window_id(int window_id);

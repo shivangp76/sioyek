@@ -8,6 +8,7 @@
 #include "document_view.h"
 #include "config.h"
 #include "ui.h"
+#include "ui/common_ui.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -18,6 +19,7 @@ extern Path sioyek_js_path;
 extern Path local_database_file_path;
 extern Path global_database_file_path;
 
+extern std::wstring TTS_VOICE;
 extern float TTS_RATE;
 extern float TTS_RATE_INCREMENT;
 extern bool TOUCH_MODE;
@@ -137,7 +139,22 @@ public:
     SetTtsVoiceCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->show_tts_voice_selector();
+        auto w = widget;
+        auto voices = w->get_tts()->get_available_voices();
+        std::wstring current_voice = w->get_tts()->current_voice();
+        int current_voice_index = -1;
+        for (int i = 0; i < voices.size(); i++){
+            if (voices[i] == current_voice){
+                current_voice_index = i;
+            }
+        }
+        set_filtered_select_menu<std::wstring>(w, true, false, {voices}, {voices}, current_voice_index, [w](std::wstring* sel){
+            TTS_VOICE = *sel;
+            w->get_tts()->set_voice(TTS_VOICE);
+        }, [](std::wstring* sel){
+
+        });
+        w->show_current_widget();
     }
 };
 

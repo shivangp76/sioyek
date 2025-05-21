@@ -13,6 +13,7 @@ extern std::wstring EXTRACT_TABLE_PROMPT;
 extern int TABLE_EXTRACT_BEHAVIOUR;
 extern bool TOUCH_MODE;
 extern std::wstring SIOYEK_HOST;
+extern bool DELETE_MAGIC_DRAWINGS;
 
 class ProCommand : public Command {
 public:
@@ -577,7 +578,103 @@ public:
     MagicDrawingAskCommand(MainWidget* w) : ProCommand(cname, w) {};
     
     void perform() {
-        widget->ai_magic_drawing_ask();
+        auto w = widget;
+        int current_page = dv()->get_current_page_number();
+        PageFreehandDrawing& drawings = w->doc()->get_page_drawings_mut(current_page);
+
+        // std::vector<FreehandDrawing> recent_drawings;
+        std::vector<int> recent_drawing_indices;
+        int drawing_index = drawings.drawings.size()-1;
+
+        // we use the most recent drawings for this (we don't want to delete all the previous page drawings, only the ones
+        // intended for the magic command
+        if (drawing_index >= 0){
+
+            QDateTime prev_drawing_datetime = drawings.drawings[drawing_index].creattion_time;
+
+            while (drawing_index >= 0){
+                if (drawings.drawings[drawing_index].creattion_time.msecsTo(prev_drawing_datetime) > 5000){
+                    break;
+                }
+                recent_drawing_indices.push_back(drawing_index);
+                prev_drawing_datetime = drawings.drawings[drawing_index].creattion_time;
+                drawing_index--;
+            }
+        }
+
+        int next_id = w->next_pending_drawing_request_id++;
+        int drawing_type = 'r';
+        std::vector<FreehandDrawing> recent_drawings;
+        for (auto ind : recent_drawing_indices){
+            drawings.drawings[ind].network_pending_request_id = next_id;
+            recent_drawings.push_back(drawings.drawings[ind]);
+            drawing_type = drawings.drawings[ind].type;
+        }
+
+        if (recent_drawings.size() == 0){
+            return;
+        }
+
+        w->clear_cached_drawing_buffers();
+
+
+        w->set_should_render_pending_drawing_only(true);
+        QPixmap pixmap = w->get_framebuffer_pixmap();
+        w->set_should_render_pending_drawing_only(false);
+
+        AbsoluteRect window_rect = dv()->get_view_rect();
+
+        w->network_controller->semantic_ask_with_image(
+            w,
+            pixmap,
+            [&, d=w->doc(), current_page, window_rect, drawing_type, next_id](QString response_content){
+
+                if (DELETE_MAGIC_DRAWINGS){
+                    w->doc()->delete_page_drawings_with_network_request_id(current_page, next_id);
+                    // doc()->delete_drawings_with_indices(current_page, recent_drawing_indices);
+                }
+                else{
+                    PageFreehandDrawing& drawings = w->doc()->get_page_drawings_mut(current_page);
+                    for (auto& drawing : drawings.drawings){
+                        drawing.network_pending_request_id = -1;
+                    }
+                    w->clear_cached_drawing_buffers();
+                }
+
+                QJsonDocument json_doc = QJsonDocument::fromJson(response_content.toUtf8());
+                QString action_type = json_doc.object()["action_type"].toString();
+                QJsonObject action_data = json_doc.object()["parsed_response"].toObject()["action_data"].toObject();
+                if (action_type == "HighlightActionData"){
+                    QString text_to_highlight = action_data["highlighted_text"].toString();
+                    auto possible_selection = w->doc()->fuzzy_page_select_text(current_page, text_to_highlight.toStdWString());
+                    if (possible_selection.has_value()){
+                        auto [begin, end] = possible_selection.value();
+                        std::string uuid = w->add_highlight_to_current_document(begin, end, drawing_type);
+                        w->main_document_view->clear_selected_text();
+                    }
+                }
+                if (action_type == "BookmarkActionData"){
+                    QString bookmark_text = action_data["bookmark_text"].toString();
+                    QJsonArray bookmark_bounding_box_array  = action_data["bookmark_bounding_box"].toArray();
+                    std::optional<AbsoluteRect> bookmark_absrect = get_absolute_rect_from_json_coordinates(bookmark_bounding_box_array, window_rect);
+                    if (bookmark_absrect.has_value()){
+                        w->doc()->add_freetext_bookmark(bookmark_text.toStdWString(), bookmark_absrect.value());
+                    }
+                }
+                if (action_type == "AskActionData"){
+                    QString ask_text = action_data["ask_text"].toString();
+                    QJsonArray ask_bounding_box_array  = action_data["ask_bounding_box"].toArray();
+                    std::optional<AbsoluteRect> ask_absrect = get_absolute_rect_from_json_coordinates(ask_bounding_box_array, window_rect);
+                    if (ask_absrect.has_value()){
+                        std::unique_ptr<Command> cmd = w->command_manager->get_command_with_name(w, "add_freetext_bookmark");
+                        cmd->set_rect_requirement(ask_absrect.value());
+                        cmd->set_text_requirement(L"? " + ask_text.toStdWString());
+                        w->advance_command(std::move(cmd));
+                    }
+                }
+            }
+            );
+
     }
 };
 
