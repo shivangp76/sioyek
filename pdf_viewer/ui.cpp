@@ -16,12 +16,22 @@
 #include <qscrollbar.h>
 #include <qpainterpath.h>
 
-#include "database.h"
-#include "document.h"
 #include "document_view.h"
 #include "touchui/TouchSlider.h"
 #include "touchui/TouchConfigMenu.h"
 #include "touchui/TouchSettings.h"
+#include "touchui/TouchSlider.h"
+#include "touchui/TouchCheckbox.h"
+#include "touchui/TouchListView.h"
+#include "touchui/TouchCopyOptions.h"
+#include "touchui/TouchRectangleSelectUI.h"
+#include "touchui/TouchRangeSelectUI.h"
+#include "touchui/TouchPageSelector.h"
+#include "touchui/TouchMainMenu.h"
+#include "touchui/TouchSearchButtons.h"
+#include "touchui/TouchHighlightButtons.h"
+#include "touchui/TouchDrawControls.h"
+#include "touchui/TouchMacroEditor.h"
 
 #include "utils/text_utils.h"
 #include "utils/color_utils.h"

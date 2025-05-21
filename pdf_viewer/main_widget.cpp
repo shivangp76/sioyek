@@ -104,6 +104,8 @@
 #include "touchui/TouchSettings.h"
 #include "touchui/TouchTextEdit.h"
 #include "touchui/TouchGenericButtons.h"
+#include "touchui/TouchHighlightButtons.h"
+#include "touchui/TouchDrawControls.h"
 #include "ui/bookmark_ui.h"
 #include "network_manager.h"
 #include "status_string.h"

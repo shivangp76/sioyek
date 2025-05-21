@@ -29,18 +29,19 @@
 #include "ui/ui_models.h"
 #include "ui/common_ui.h"
 #include "touchui/ConfigUI.h"
-#include "touchui/TouchSlider.h"
-#include "touchui/TouchCheckbox.h"
-#include "touchui/TouchListView.h"
-#include "touchui/TouchCopyOptions.h"
-#include "touchui/TouchRectangleSelectUI.h"
-#include "touchui/TouchRangeSelectUI.h"
-#include "touchui/TouchPageSelector.h"
-#include "touchui/TouchMainMenu.h"
-#include "touchui/TouchSearchButtons.h"
-#include "touchui/TouchHighlightButtons.h"
-#include "touchui/TouchDrawControls.h"
-#include "touchui/TouchMacroEditor.h"
+
+class TouchSlider;
+class TouchCheckbox;
+class TouchListView;
+class TouchCopyOptions;
+class TouchRectangleSelectUI;
+class TouchRangeSelectUI;
+class TouchPageSelector;
+class TouchMainMenu;
+class TouchSearchButtons;
+class TouchHighlightButtons;
+class TouchDrawControls;
+class TouchMacroEditor;
 
 #include "config.h"
 
