@@ -1,5 +1,6 @@
 #include "touchui/TouchDrawControls.h"
-#include "utils.h"
+// #include "utils.h"
+#include "utils/color_utils.h"
 
 extern float HIGHLIGHT_COLORS[26 * 3];
 

@@ -5,6 +5,8 @@
 
 class BookmarkModel;
 class HighlightModel;
+struct BookMark;
+struct Highlight;
 
 class BookmarkSearchItemDelegate : public BaseCustomDelegate {
     Q_OBJECT

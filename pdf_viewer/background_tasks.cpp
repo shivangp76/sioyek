@@ -10,6 +10,7 @@
 
 #include "background_tasks.h"
 #include "utils.h"
+#include "utils/color_utils.h"
 #include "path.h"
 
 #ifdef SIOYEK_MICROTEX

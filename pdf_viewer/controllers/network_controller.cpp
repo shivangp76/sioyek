@@ -632,7 +632,7 @@ void NetworkController::handle_open_server_only_file() {
         keys.push_back(opened_file_info);
     }
 
-    set_filtered_select_menu<OpenedBookInfo>(mw, false, true, values, keys, -1, [this](OpenedBookInfo* val) {
+    set_filtered_select_menu<OpenedBookInfo>(mw->widget_controller.get(), false, true, values, keys, -1, [this](OpenedBookInfo* val) {
 
         download_and_open(val->checksum, val->offset_y);
         },

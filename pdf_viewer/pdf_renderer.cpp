@@ -1,6 +1,7 @@
 #include "pdf_renderer.h"
 #include "utils.h"
 //#include "background_tasks.h"
+#include "utils/color_utils.h"
 
 #include <qdatetime.h>
 #include <rhi/qrhi.h>

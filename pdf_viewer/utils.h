@@ -17,7 +17,6 @@
 #include <qmediaplayer.h>
 
 #include <QKeyEvent>
-#include <qstandarditemmodel.h>
 #include <qpoint.h>
 #include <qjsonarray.h>
 #include <qtexttospeech.h>
@@ -96,7 +95,6 @@ std::string utf8_encode(const std::wstring& decoded_str);
 bool is_rtl(int c);
 std::wstring reverse_wstring(const std::wstring& inp);
 bool parse_search_command(const std::wstring& search_command, int* out_begin, int* out_end, std::wstring* search_text);
-QStandardItemModel* get_model_from_toc(const std::vector<TocNode*>& roots);
 
 // given a tree of toc nodes and an array of indices, returns the node whose ith parent is indexed by the ith element
 // of the indices array. That is:
@@ -175,7 +173,6 @@ int find_nth_larger_element_in_sorted_list(std::vector<T> sorted_list, T value, 
 
 }
 
-QString get_color_qml_string(float r, float g, float b);
 void copy_file(std::wstring src_path, std::wstring dst_path);
 fz_quad quad_from_rect(fz_rect r);
 std::vector<fz_quad> quads_from_rects(const std::vector<fz_rect>& rects);
@@ -211,38 +208,15 @@ bool has_arg(int argc, char** argv, std::string key);
 std::vector<std::wstring> find_all_regex_matches(std::wstring haystack, const std::wstring& regex_string, std::vector<std::pair<int, int>>* match_ranges = nullptr);
 bool command_requires_text(const std::wstring& command);
 bool command_requires_rect(const std::wstring& command);
-void hexademical_to_normalized_color(std::wstring color_string, float* color, int n_components);
 void parse_command_string(std::wstring command_string, std::string& command_name, std::wstring& command_data);
-void parse_color(std::wstring color_string, float* out_color, int n_components);
-int get_status_bar_height();
 void flat_char_prism2(const std::vector<fz_stext_char*>& chars, int page, std::wstring& output_text, std::vector<int>& page_begin_indices);
 void flat_char_prism(const std::vector<fz_stext_char*>& chars, int page, std::wstring& output_text, std::vector<int>& pages, std::vector<PagelessDocumentRect>& rects);
-QString get_status_stylesheet(bool nofont = false, int font_size=-1);
-QString get_status_button_stylesheet(bool nofont = false, int font_size=-1);
-QString get_ui_stylesheet(bool nofont, int font_size=-1);
-QString get_selected_stylesheet(bool nofont = false);
 
-template<int d1, int d2, int d3>
-void matmul(const float m1[], const float m2[], float result[]) {
-    for (int i = 0; i < d1; i++) {
-        for (int j = 0; j < d3; j++) {
-            result[i * d3 + j] = 0;
-            for (int k = 0; k < d2; k++) {
-                result[i * d3 + j] += m1[i * d2 + k] * m2[k * d3 + j];
-            }
-        }
-    }
-}
 
-void convert_color3(const float* in_color, int* out_color);
-void convert_color4(const float* in_color, int* out_color);
-QColor convert_float3_to_qcolor(const float* floats);
-QColor convert_float4_to_qcolor(const float* floats);
+
 std::string get_aplph_tag(int n, int max_n);
 fz_document* open_document_with_file_name(fz_context* context, std::wstring file_name);
 
-QString get_list_item_stylesheet();
-QString get_scrollbar_stylesheet();
 
 #ifdef SIOYEK_ANDROID
 QString android_file_name_from_uri(QString uri);
@@ -271,20 +245,13 @@ T compute_average(std::vector<T> items) {
     return acc / items.size();
 }
 
-void convert_qcolor_to_float3(const QColor& color, float* out_floats);
-void convert_qcolor_to_float4(const QColor& color, float* out_floats);
 fz_irect get_index_irect(fz_rect original, int index, fz_matrix transform, int num_h_slices, int num_v_slices);
 fz_rect get_index_rect(fz_rect original, int index, int num_h_slices, int num_v_slices);
-QStandardItemModel* create_table_model(std::vector<std::wstring> lefts, std::vector<std::wstring> rights);
-QStandardItemModel* create_table_model(const std::vector<std::vector<std::wstring>> column_texts);
 
 #ifdef SIOYEK_ANDROID
 QString android_file_uri_from_content_uri(QString uri);
 #endif
 
-char get_highlight_color_type(float color[3]);
-float* get_highlight_type_color(char type);
-void lighten_color(float input[3], float output[3]);
 QString clean_bib_item(QString bib_item);
 std::wstring clean_link_source_text(std::wstring link_source_text);
 
@@ -406,8 +373,6 @@ std::vector<std::wstring> get_path_unique_prefix(const std::vector<std::wstring>
 bool is_block_vertical(fz_stext_block* block);
 QString get_file_name_from_paper_name(QString paper_name);
 
-void rgb2hsv(float* rgb_color, float* hsv_color);
-void hsv2rgb(float* hsv_color, float* rgb_color);
 bool operator==(const fz_rect& lhs, const fz_rect& rhs);
 
 fz_rect bound_rects(const std::vector<fz_rect>& rects);
@@ -478,10 +443,7 @@ bool is_bright(float color[3]);
 bool is_abbreviation(const std::wstring& txt);
 bool is_in(char c, std::vector<char> candidates);
 bool is_doc_valid(fz_context* ctx, std::string path);
-QString get_ui_font_face_name();
-QString get_chat_font_face_name();
 int get_chat_font_size();
-QString get_status_font_face_name();
 std::vector<fz_stext_char*> reorder_stext_line(fz_stext_line* line);
 std::vector<fz_stext_char*> reorder_mixed_stext_line(fz_stext_line* line);
 bool should_trigger_delete(QKeyEvent *key_event);
@@ -682,12 +644,7 @@ PageMergedLinesInfo merge_lines2(const std::vector<fz_stext_line*>& lines);
 
 #define TIME_BEGIN QDateTime time_begin=QDateTime::currentDateTime();
 #define TIME_END QDateTime time_end=QDateTime::currentDateTime();qDebug() << time_begin.msecsTo(time_end);
-void get_color_for_mode(ColorPalette color_mode, const float* input_color, float* output_color);
-void get_custom_color_transform_matrix(float matrix_data[16]);
 void transpose_matrix(float mat[16]);
-void convert_pixels_with_converter(unsigned char* pixels, int width, int height, int stride, int n_channels, std::function<void(unsigned char*)> converter);
-void convert_pixel_to_dark_mode(unsigned char* pixel);
-void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[16]);
 //std::pair<int, int> find_smallest_containing_substring(const std::wstring& haystack, const std::wstring needle, wchar_t delimeter = ' ');
 //int similarity_score(const std::wstring& haystack, const std::wstring& needle);
 
@@ -695,12 +652,9 @@ void convert_pixel_to_custom_color(unsigned char* pixel, float transform_matrix[
 
 
 bool is_alpha_only(const std::wstring& str);
-QColor qconvert_color3(const float* input_color, ColorPalette palette);
 std::pair<int, int> find_smallest_substring_containing_fraction_of_n_grams(const std::wstring& haystack, const std::wstring& needle, int N, float fraction);
 std::vector<MenuNode*> get_top_level_menu_nodes();
 std::wstring replace_verbatim_links(std::wstring input);
-QVariantMap get_color_mapping();
-QListView* get_ui_new_listview();
 
 void log_d(QString text);
 bool is_process_still_running(qint64 pid);
@@ -858,7 +812,6 @@ struct DetectedRectResult{
     float y1_strength;
 };
 std::optional<DetectedRectResult> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings);
-QList<QColor> get_symbol_colors_for_qml();
 
 
 template<typename T>

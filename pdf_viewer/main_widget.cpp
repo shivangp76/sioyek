@@ -89,6 +89,7 @@
 #include "database.h"
 #include "book.h"
 #include "utils.h"
+#include "utils/window_utils.h"
 #include "ui.h"
 #include "pdf_renderer.h"
 #include "document.h"
@@ -112,6 +113,7 @@
 #include "controllers/javascript_controller.h"
 #include "controllers/network_controller.h"
 #include "controllers/selection_controller.h"
+#include "controllers/widget_controller.h"
 #include "ui/documentation_ui.h"
 
 #include "commands/base_commands.h"
@@ -1077,6 +1079,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     js_controller.reset(new JavascriptController(this));
     network_controller.reset(new NetworkController(this, sioyek_network_manager_));
     ruler_controller.reset(new RulerController(this));
+    widget_controller.reset(new WidgetController(this));
 
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
@@ -1196,7 +1199,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                         open_text_editor_at_line(QString::fromStdWString(locations[0].file_path), locations[0].line_number);
                     }
                     else if (locations.size() > 1) {
-                        set_filtered_select_menu<KeybindDefinitionLocation>(this,
+                        set_filtered_select_menu<KeybindDefinitionLocation>(widget_controller.get(),
                                                                             true,
                                                                             false,
                                                                             {option_texts},
@@ -5212,7 +5215,7 @@ void MainWidget::handle_open_all_docs() {
     }
 
 
-    set_filtered_select_menu<std::string>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { paths }, hashes, -1,
+    set_filtered_select_menu<std::string>(widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { paths }, hashes, -1,
         [&](std::string* doc_hash) {
             if ((doc_hash->size() > 0) && (pending_command_instance)) {
                 pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(*doc_hash));
@@ -5350,7 +5353,7 @@ void MainWidget::handle_open_prev_doc() {
             }
         }
 
-        set_filtered_select_menu<OpenedBookInfo>(this, true, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
+        set_filtered_select_menu<OpenedBookInfo>(widget_controller.get(), true, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
             [&, handle_select_fn](OpenedBookInfo* info) {
                 handle_select_fn(info->checksum, info->offset_y);
             },
@@ -7620,7 +7623,7 @@ void MainWidget::show_command_palette() {
     std::vector<std::vector<std::wstring>> columns = { command_descs, command_names };
     //widget->set_filtered_selelect_menu()
 
-    set_filtered_select_menu<std::wstring>(this, true,
+    set_filtered_select_menu<std::wstring>(widget_controller.get(), true,
         false,
         columns,
         command_names,
@@ -8026,7 +8029,7 @@ bool MainWidget::execute_macro_from_origin(std::wstring macro_command_string, QL
 
 void MainWidget::show_custom_option_list(std::vector<std::wstring> options) {
     std::vector<std::vector<std::wstring>> values = { options };
-    set_filtered_select_menu<std::wstring>(this, false, true, values, options, -1, [this](std::wstring* val) {
+    set_filtered_select_menu<std::wstring>(widget_controller.get(), false, true, values, options, -1, [this](std::wstring* val) {
         //selected_option = *val;
         pending_command_instance->set_generic_requirement(QString::fromStdWString(*val));
         advance_command(std::move(pending_command_instance));
@@ -9852,7 +9855,7 @@ void MainWidget::handle_delete_document_from_fulltext_search_index() {
 
     std::vector<std::vector<std::wstring>> columns = { corresponding_paths };
 
-    set_filtered_select_menu<std::string>(this, true, false, columns, indexed_checksums, -1,
+    set_filtered_select_menu<std::string>(widget_controller.get(), true, false, columns, indexed_checksums, -1,
         [this](std::string* val) {
             std::wstring path = document_manager->get_path_from_hash(*val).value_or(L"");
             if (path.size() > 0) {
@@ -10195,7 +10198,7 @@ void MainWidget::set_renderer_backend(RenderBackend backend) {
 }
 
 void MainWidget::show_items(std::vector<std::wstring> items, std::optional<std::function<void(std::wstring)>> on_select, std::optional<std::function<void(std::wstring)>> on_delete){
-    set_filtered_select_menu<std::wstring>(this, false, false, { items }, items, -1,
+    set_filtered_select_menu<std::wstring>(widget_controller.get(), false, false, { items }, items, -1,
         [this, on_select](std::wstring* val) {
             if (on_select.has_value()) {
                 on_select.value()(*val);

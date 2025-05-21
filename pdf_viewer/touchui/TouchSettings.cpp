@@ -2,7 +2,8 @@
 #include "touchui/TouchConfigMenu.h"
 #include "main_widget.h"
 #include "config.h"
-#include "utils.h"
+// #include "utils.h"
+#include "utils/color_utils.h"
 #include "qcolordialog.h"
 #include "ui.h"
 #include <qscreen.h>

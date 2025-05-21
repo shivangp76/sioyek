@@ -7,9 +7,14 @@
 #include <QListView>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QStandardItemModel>
 
-#include "main_widget.h"
+#include "controllers/widget_controller.h"
+// #include "main_widget.h"
 #include "ui/selector_ui.h"
+#include "utils/model_utils.h"
+
+class MainWidget;
 
 extern bool TOUCH_MODE;
 extern bool SMALL_TOC;
@@ -18,7 +23,7 @@ class BaseSelectorWidget : public QWidget {
     Q_OBJECT
 
 protected:
-    BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent, MySortFilterProxyModel* custom_proxy_model=nullptr);
+    BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, QWidget* parent, MySortFilterProxyModel* custom_proxy_model=nullptr);
 
     virtual void on_text_changed(const QString& text);
 
@@ -108,7 +113,7 @@ public:
         std::vector<T> values,
         int selected_index,
         std::function<void(T*)> on_done,
-        MainWidget* parent,
+        QWidget* parent,
         std::function<void(T*)> on_delete_function = nullptr) : BaseSelectorWidget(new QTableView(), fuzzy, nullptr, parent),
         values(values),
         on_done(on_done),
@@ -279,7 +284,7 @@ public:
     FilteredSelectWindowClass(bool fuzzy, std::vector<std::wstring> std_string_list,
         std::vector<T> values,
         std::function<void(T*)> on_done,
-        MainWidget* parent,
+        QWidget* parent,
         std::function<void(T*)> on_delete_function = nullptr, int selected_index = -1) : BaseSelectorWidget(new QListView(), fuzzy, nullptr, parent),
         values(values),
         on_done(on_done),
@@ -323,7 +328,7 @@ public:
 
 template<typename T>
 void set_filtered_select_menu(
-    MainWidget* main_widget,
+    WidgetController* main_widget,
      bool fuzzy,
      bool multiline,
      std::vector<std::vector<std::wstring>> columns,
@@ -347,13 +352,13 @@ void set_filtered_select_menu(
                     if (val) {
                         on_select(val);
                     }
-                    main_widget->pop_current_widget();
+                    main_widget->pop_widget();
                 },
                 [&, on_delete = std::move(on_delete)](T* val) {
                     if (val) {
                         on_delete(val);
                     }
-                }, main_widget);
+                }, main_widget->parent());
 
             widget->set_filter_column_index(-1);
             main_widget->set_current_widget(widget);
@@ -370,7 +375,7 @@ void set_filtered_select_menu(
                         on_select(val);
                     }
                 },
-                main_widget,
+                main_widget->parent(),
                     [on_delete = std::move(on_delete)](T* val) {
                     if (val && on_delete) {
                         on_delete(val);
@@ -393,13 +398,13 @@ void set_filtered_select_menu(
                     if (val) {
                         on_select(val);
                     }
-                    main_widget->pop_current_widget();
+                    main_widget->pop_widget();
                 },
                 [&, on_delete = std::move(on_delete)](T* val) {
                     if (val) {
                         on_delete(val);
                     }
-                }, main_widget);
+                }, main_widget->parent());
             main_widget->set_current_widget(widget);
         }
         else {
@@ -414,7 +419,7 @@ void set_filtered_select_menu(
                         on_select(val);
                     }
                 },
-                main_widget,
+                main_widget->parent(),
                     [on_delete = std::move(on_delete)](T* val) {
                     if (val) {
                         on_delete(val);
@@ -440,7 +445,7 @@ public:
 
     FilteredTreeSelect(bool fuzzy, QAbstractItemModel* item_model,
         std::function<void(const std::vector<int>&)> on_done,
-        MainWidget* parent,
+        QWidget* parent,
         std::vector<int> selected_index) : BaseSelectorWidget(new QTreeView(), fuzzy, item_model, parent),
         on_done(on_done)
     {
@@ -533,7 +538,7 @@ class MyLineEdit: public QLineEdit {
 
 public:
     MainWidget* main_widget;
-    MyLineEdit(MainWidget* parent);
+    MyLineEdit(QWidget* parent);
 
     void keyPressEvent(QKeyEvent* event) override;
     int get_next_word_position();

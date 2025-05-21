@@ -148,7 +148,7 @@ public:
                 current_voice_index = i;
             }
         }
-        set_filtered_select_menu<std::wstring>(w, true, false, {voices}, {voices}, current_voice_index, [w](std::wstring* sel){
+        set_filtered_select_menu<std::wstring>(w->widget_controller.get(), true, false, {voices}, {voices}, current_voice_index, [w](std::wstring* sel){
             TTS_VOICE = *sel;
             w->get_tts()->set_voice(TTS_VOICE);
         }, [](std::wstring* sel){

@@ -6,6 +6,8 @@
 #include "ui/ui_models.h"
 #include "config.h"
 #include "main_widget.h"
+#include "utils/window_utils.h"
+#include "utils/color_utils.h"
 
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern int FONT_SIZE;

@@ -1,5 +1,7 @@
 #include "config.h"
 #include "utils.h"
+#include "utils/color_utils.h"
+#include "utils/window_utils.h"
 #include "status_string.h"
 #include <cassert>
 #include <map>

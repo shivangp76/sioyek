@@ -19,6 +19,7 @@
 #include "pdf_renderer.h"
 #include "config.h"
 #include "utils.h"
+#include "utils/color_utils.h"
 #include "background_tasks.h"
 
 #ifndef GL_MULTISAMPLE

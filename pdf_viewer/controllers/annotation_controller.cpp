@@ -12,6 +12,7 @@
 #include "ui/ui_models.h"
 #include "ui/annotation_widgets.h"
 #include "controllers/network_controller.h"
+#include "utils/color_utils.h"
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
@@ -547,7 +548,7 @@ void AnnotationController::handle_goto_portal_list() {
 
     int closest_portal_index = mdv()->get_document()->find_closest_portal_index(portals, mdv()->get_offset_y());
 
-    set_filtered_select_menu<Portal>(mw, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_strings }, portals, closest_portal_index,
+    set_filtered_select_menu<Portal>(mw->widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_strings }, portals, closest_portal_index,
         [&](Portal* portal) {
             mw->pending_command_instance->set_generic_requirement(portal->src_offset_y);
             mw->advance_command(std::move(mw->pending_command_instance));
@@ -690,7 +691,7 @@ void AnnotationController::handle_goto_bookmark(bool manual_only, bool chat) {
                 option_location_wstrings.push_back(get_page_formatted_string(page + 1));
             }
 
-            set_filtered_select_menu<BookMark>(mw, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, bookmarks, closest_bookmark_index,
+            set_filtered_select_menu<BookMark>(mw->widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, bookmarks, closest_bookmark_index,
                                                [&, handle_select_fn](BookMark* bm) {
                 handle_select_fn(*bm);
             },
@@ -821,7 +822,7 @@ void AnnotationController::handle_goto_bookmark_global(bool manual_only) {
                 book_states.push_back(std::make_pair(book_state, bookmarks[i].uuid));
             }
 
-            set_filtered_select_menu<std::pair<BookState, std::string>>(mw, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
+            set_filtered_select_menu<std::pair<BookState, std::string>>(mw->widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
                                                                         [&, handle_select_fn](std::pair<BookState, std::string>* book_state) {
                 QString path = QString::fromStdWString(book_state->first.document_path);
 
@@ -962,7 +963,7 @@ void AnnotationController::handle_goto_highlight() {
                 option_location_wstrings.push_back(get_page_formatted_string(page + 1));
             }
 
-            set_filtered_select_menu<Highlight>(mw, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, highlights, closest_highlight_index,
+            set_filtered_select_menu<Highlight>(mw->widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_wstrings }, highlights, closest_highlight_index,
                 [&, handle_select_fn](Highlight* hl) {
                     handle_select_fn(*hl);
                 },
@@ -1084,7 +1085,7 @@ void AnnotationController::handle_goto_highlight_global() {
                 book_states.push_back(std::make_pair(book_state, highlights[i].uuid));
             }
 
-            set_filtered_select_menu<std::pair<BookState, std::string>>(mw, FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
+            set_filtered_select_menu<std::pair<BookState, std::string>>(mw->widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { descs, file_names_wstring }, book_states, -1,
                 [&, handle_select_fn](std::pair<BookState, std::string>* book_state) {
                     handle_select_fn(book_state->first.offset_y, book_state->second);
 

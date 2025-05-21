@@ -1,6 +1,7 @@
 #include "ui/common_ui.h"
 #include "ui/base_delegate.h"
 #include "commands/base_commands.h"
+#include "main_widget.h"
 
 QRect TouchDelegateListView::get_prefered_rect(QRect parent_rect){
     int parent_width = parent_rect.width();
@@ -250,8 +251,10 @@ void MyLineEdit::set_autocomplete_strings(QStringList strings) {
     autocomplete_strings = strings;
 }
 
-MyLineEdit::MyLineEdit(MainWidget* parent) : QLineEdit(parent) {
-    main_widget = parent;
+MyLineEdit::MyLineEdit(QWidget* parent) : QLineEdit(parent) {
+    if (dynamic_cast<MainWidget*>(parent)){
+        main_widget = dynamic_cast<MainWidget*>(parent);
+    }
 
     // Initialize autocomplete popup
     autocomplete_popup = new QListWidget(this);
@@ -339,7 +342,7 @@ void MyLineEdit::keyPressEvent(QKeyEvent* event) {
     bool is_shift_pressed = event->modifiers() & Qt::ShiftModifier;
     bool is_meta_pressed = is_platform_meta_pressed(event->modifiers());
     bool is_invisible = event->text().size() == 0;
-    if (is_invisible || is_alt_pressed || is_control_pressed) {
+    if ((main_widget != nullptr) && (is_invisible || is_alt_pressed || is_control_pressed)) {
         std::unique_ptr<Command> command = main_widget->input_handler->get_menu_command(main_widget, event, is_shift_pressed, is_control_pressed, is_meta_pressed, is_alt_pressed);
 
         if (command && command->is_menu_command()) {

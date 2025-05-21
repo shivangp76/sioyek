@@ -9,6 +9,7 @@
 #include "ui/documentation_ui.h"
 #include "ui/ui_models.h"
 #include "main_widget.h"
+#include "utils/window_utils.h"
 
 extern bool SHOW_DOCUMENTATION_IN_WIDGET;
 extern bool ALIGN_LINK_DEST_TO_TOP;

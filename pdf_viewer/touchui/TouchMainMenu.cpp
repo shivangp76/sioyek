@@ -1,6 +1,6 @@
 #include "touchui/TouchMainMenu.h"
 #include "qqmlengine.h"
-#include "utils.h"
+#include "utils/color_utils.h"
 
 
 extern wchar_t FREEHAND_TYPE;

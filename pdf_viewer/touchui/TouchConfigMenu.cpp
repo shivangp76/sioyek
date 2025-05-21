@@ -3,6 +3,7 @@
 #include "ui.h"
 #include "main_widget.h"
 #include "config.h"
+#include "utils/color_utils.h"
 
 void TouchConfigMenu::initialize_widget() {
     proxy_model = new MySortFilterProxyModel(fuzzy, false);

@@ -140,6 +140,7 @@ class ExternalController;
 class JavascriptController;
 class NetworkController;
 class RulerController;
+class WidgetController;
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
@@ -164,6 +165,7 @@ public:
     std::unique_ptr<JavascriptController> js_controller;
     std::unique_ptr<NetworkController> network_controller;
     std::unique_ptr<RulerController> ruler_controller;
+    std::unique_ptr<WidgetController> widget_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;

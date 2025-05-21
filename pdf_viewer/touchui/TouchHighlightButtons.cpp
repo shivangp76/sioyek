@@ -1,6 +1,6 @@
 #include "touchui/TouchHighlightButtons.h"
-#include "utils.h"
 #include <QVBoxLayout>
+#include "utils/color_utils.h"
 
 extern float HIGHLIGHT_COLORS[26 * 3];
 

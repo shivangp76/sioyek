@@ -6,6 +6,8 @@
 #include "ui/bookmark_ui.h"
 #include "main_widget.h"
 #include "ui.h"
+#include "utils/window_utils.h"
+#include "utils/color_utils.h"
 
 extern bool TOUCH_MODE;
 extern float CHAT_WINDOW_BACKGROUND_COLOR[3];

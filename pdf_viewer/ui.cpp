@@ -24,6 +24,8 @@
 #include "touchui/TouchSettings.h"
 
 #include "utils/text_utils.h"
+#include "utils/color_utils.h"
+#include "utils/window_utils.h"
 #include "commands/base_commands.h"
 
 extern std::wstring MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE;
@@ -1311,7 +1313,7 @@ QString translate_command_search_string(QString actual_text) {
 }
 
 
-BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, MainWidget* parent, MySortFilterProxyModel* custom_proxy_model) : QWidget(parent) {
+BaseSelectorWidget::BaseSelectorWidget(QAbstractItemView* item_view, bool fuzzy, QAbstractItemModel* item_model, QWidget* parent, MySortFilterProxyModel* custom_proxy_model) : QWidget(parent) {
 
     bool is_tree = dynamic_cast<QTreeView*>(item_view) != nullptr;
     is_fuzzy = fuzzy;

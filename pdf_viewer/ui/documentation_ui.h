@@ -6,6 +6,7 @@
 
 class MainWidget;
 class FulltextResultModel;
+class DatabaseManager;
 
 class SioyekDocumentationTextBrowser : public QTextBrowser {
 private:

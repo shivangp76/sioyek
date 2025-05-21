@@ -3,6 +3,9 @@
 
 #include "ui/annotation_widgets.h"
 #include "ui/ui_models.h"
+#include "utils.h"
+#include "utils/color_utils.h"
+#include "utils/window_utils.h"
 
 extern int FONT_SIZE;
 extern std::wstring MENU_MATCHED_SEARCH_HIGHLIGHT_STYLE;

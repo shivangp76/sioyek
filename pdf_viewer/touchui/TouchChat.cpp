@@ -2,7 +2,8 @@
 #include <QQuickItem>
 #include <QQmlContext>
 #include <QStringListModel>
-#include "utils.h"
+#include "utils/color_utils.h"
+#include "utils/window_utils.h"
 
 extern float CHAT_WINDOW_BACKGROUND_COLOR[3];
 extern float CHAT_WINDOW_USER_MESSAGE_BACKGROUND_COLOR[3];
