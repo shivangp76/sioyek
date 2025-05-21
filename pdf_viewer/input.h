@@ -5,18 +5,16 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
-#include <mutex>
-#include <qdatetime.h>
+#include <QString>
 
 #include "path.h"
-#include "coordinates.h"
-#include "utils.h"
 
 class QLocalSocket;
 class MainWidget;
 class ConfigManager;
 class Command;
 class CommandManager;
+class QKeyEvent;
 
 struct InputParseTreeNode {
 
