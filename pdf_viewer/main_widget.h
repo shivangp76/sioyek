@@ -139,6 +139,7 @@ class DocumentationController;
 class ExternalController;
 class JavascriptController;
 class NetworkController;
+class RulerController;
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
@@ -162,6 +163,7 @@ public:
     std::unique_ptr<ExternalController> external_controller;
     std::unique_ptr<JavascriptController> js_controller;
     std::unique_ptr<NetworkController> network_controller;
+    std::unique_ptr<RulerController> ruler_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
@@ -515,13 +517,10 @@ public:
     // int get_page_intersecting_rect_index(DocumentRect rect);
     // std::optional<AbsoluteRect> get_page_intersecting_rect(DocumentRect rect);
     // void focus_rect(DocumentRect rect);
-    void move_ruler_next();
-    void move_ruler_prev();
 
     void start_dragging();
     void stop_dragging();
 
-    AbsoluteRect move_visual_mark(int offset);
     void on_config_file_changed(ConfigManager* new_config);
     void toggle_mouse_drag_mode();
     void toggle_freehand_drawing_mode();
@@ -592,6 +591,7 @@ public:
     void overview_to_definition();
     void portal_to_definition();
     void move_visual_mark_command(int amount);
+    void move_visual_mark(int offset);
     void handle_goto_loaded_document();
     void handle_goto_tab(const std::wstring& path);
     int get_current_tab_index();
@@ -629,7 +629,6 @@ public:
     void handle_play();
     void handle_undo_drawing();
     void handle_pause();
-    bool move_ruler_to_next_page();
     // void handle_semantic_search(const std::wstring& query, bool has_tried_already=false);
     // void handle_semantic_search_extractive(const std::wstring& query, bool has_tried_already=false);
     std::wstring handle_freetext_bookmark_perform(const std::wstring& text, const std::string& pending_uuid);
@@ -717,14 +716,6 @@ public:
     // list of mouse positions used to calculate the velocity when flicking in touch mode
     std::deque<std::pair<QTime, QPoint>> position_buffer;
 
-    // indicates if mouse was in next/prev ruler rect in touch mode
-    // if this is the case, we use mouse movement to perform next/prev ruler command
-    // after a certain threshold, so the user doesn't have to click on the ruler rect 
-    bool was_last_mouse_down_in_ruler_next_rect = false;
-    bool was_last_mouse_down_in_ruler_prev_rect = false;
-    // this is used so we can keep track of mouse movement after press and holding on ruler rect
-    WindowPos ruler_moving_last_window_pos;
-    int ruler_moving_distance_traveled = 0;
     std::optional<Portal> last_dispplayed_portal = {};
 
     void set_recently_updated_portal(const std::string& uuid);
@@ -752,7 +743,6 @@ public:
     bool is_in_visual_mark_prev_rect(WindowPos pos);
     void handle_pen_drawing_event(QTabletEvent* te);
     void select_freehand_drawings(AbsoluteRect rect);
-    void delete_freehand_drawings(AbsoluteRect rect);
     void handle_toggle_text_mark();
 
     void handle_highlight_text_in_document(std::string document_checksum, QString text_to_highlight);
@@ -903,7 +893,6 @@ public:
     bool is_index_ready();
     void advance_waiting_command(std::string waiting_command_name);
     void handle_select_current_search_match();
-    void handle_select_ruler_text();
     void handle_stop_search();
     int get_window_id();
     void add_command_being_performed(Command* new_command);
@@ -1029,7 +1018,7 @@ public:
     void delete_menu_nodes(MenuNode* items);
     // void set_pending_portal(std::optional<std::wstring> doc_path, Portal portal);
     // void set_pending_portal(std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_portal);
-    bool is_ruler_mode();
+    // bool is_ruler_mode();
     void handle_text_edit_return_pressed();
     void on_new_bookmark_added(const std::string& uuid);
     void on_bookmark_deleted(const BookMark& bookmark, const std::string& document_checksum);
@@ -1130,7 +1119,6 @@ public:
     void set_textbar_autocomlete_strings(QStringList strings);
     void update_query_tokens_status_message_for_bookmark(QString message_uuid);
     std::optional<StatusMessage> get_status_message_with_id(QString id);
-    void handle_ruler_touch_move(float distance);
     void toggle_mouse_ruler_mode();
     void show_tts_voice_selector();
     void handle_pinch(WindowPos center_window_pos, float scale);

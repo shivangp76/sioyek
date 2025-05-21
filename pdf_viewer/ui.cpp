@@ -345,7 +345,7 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
         });
 
     QObject::connect(main_menu, &TouchMainMenu::rulerModeClicked, [&, ruler]() {
-        if (main_widget->is_ruler_mode()){
+        if (main_widget->mdv()->is_ruler_mode()){
             main_widget->android_handle_visual_mode();
             //main_widget->current_widget = {};
             //deleteLater();

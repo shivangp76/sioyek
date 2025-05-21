@@ -1854,7 +1854,27 @@ public:
     }
 
     void perform() {
-        widget->delete_freehand_drawings(rect_.value());
+        auto rect = rect_.value();
+        if (widget->main_document_view->scratchpad) {
+            widget->scratchpad->delete_intersecting_objects(rect);
+            widget->set_rect_select_mode(false);
+            widget->clear_selected_rect();
+            widget->invalidate_render();
+        }
+        else {
+            for (int i = 0; i < widget->doc()->num_pages(); i++){
+                AbsoluteRect page_rect = widget->doc()->get_page_absolute_rect(i);
+                if (page_rect.intersects(rect)){
+                    AbsoluteRect intersection = rect.intersect_rect(page_rect);
+                    // DocumentRect intersection_doc_rect = intersection.to_document(doc());
+                    // DocumentRect page_rect = rect.to_document(doc());
+                    widget->doc()->delete_page_intersecting_drawings(i, intersection, widget->main_document_view->visible_drawing_mask);
+                }
+            }
+            widget->set_rect_select_mode(false);
+            widget->clear_selected_rect();
+            widget->invalidate_render();
+        }
         widget->freehand_drawing_mode = original_drawing_mode;
     }
 };

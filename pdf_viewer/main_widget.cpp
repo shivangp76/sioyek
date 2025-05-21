@@ -111,6 +111,7 @@
 #include "controllers/external_controller.h"
 #include "controllers/javascript_controller.h"
 #include "controllers/network_controller.h"
+#include "controllers/selection_controller.h"
 #include "ui/documentation_ui.h"
 
 #include "commands/base_commands.h"
@@ -312,7 +313,6 @@ extern bool AUTOCENTER_VISUAL_SCROLL;
 // extern bool ALPHABETIC_LINK_TAGS;
 extern bool NUMERIC_TAGS;
 extern bool VIMTEX_WSL_FIX;
-extern float RULER_AUTO_MOVE_SENSITIVITY;
 extern float TTS_RATE;
 extern std::wstring HOLD_MIDDLE_CLICK_COMMAND;
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
@@ -363,7 +363,6 @@ extern bool DOUBLE_CLICK_ON_BOOKMARKS_USES_EMBEDDED_TEXT_EDITOR;
 extern bool AUTOMATICALLY_UPDATE_CHECKSUM_WHEN_DOCUMENT_IS_CHANGED;
 extern bool SAVE_EXTERNALLY_EDITED_TEXT_ON_FOCUS;
 extern std::wstring EMBEDDED_EXTERNAL_TEXT_EDITOR_COMMAND;
-extern bool FORCE_CUSTOM_LINE_ALGORITHM;
 
 extern std::wstring RIGHT_CLICK_COMMAND;
 extern std::wstring MIDDLE_CLICK_COMMAND;
@@ -607,19 +606,6 @@ bool MainWidget::handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpo
     return false;
 }
 
-void MainWidget::handle_ruler_touch_move(float distance){
-    ruler_moving_distance_traveled += distance;
-    float auto_move_thresh = 1.0f / (1 - RULER_AUTO_MOVE_SENSITIVITY) * 100;
-    int num_next = num_next = ruler_moving_distance_traveled /
-            static_cast<int>(std::max(auto_move_thresh, 1.0f));
-
-    if (num_next != 0) {
-        ruler_moving_distance_traveled = 0;
-    }
-
-    main_document_view->move_visual_mark(num_next);
-
-}
 
 void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
@@ -627,9 +613,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         if (main_document_view->is_ruler_mode()){
             QPoint mouse_point = mapFromGlobal(QCursor::pos());
             WindowPos mouse_window_pos = WindowPos{mouse_point.x(), mouse_point.y()};
-            float distance = mouse_window_pos.manhattan(ruler_moving_last_window_pos);
-            handle_ruler_touch_move(distance * RULER_MOUSE_SENSITIVITY);
-            ruler_moving_last_window_pos = mouse_window_pos;
+            ruler_controller->handle_ruler_auto_move_with_new_position(mouse_window_pos, RULER_MOUSE_SENSITIVITY);
             validate_render();
         }
         return;
@@ -714,11 +698,10 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         if (is_pressed) {
             update_position_buffer();
         }
-        if (was_last_mouse_down_in_ruler_next_rect || was_last_mouse_down_in_ruler_prev_rect) {
+        if (ruler_controller->was_last_mouse_down_in_ruler_movement_rect()) {
             WindowPos current_window_pos(mouse_event->pos());
-            int distance = current_window_pos.manhattan(ruler_moving_last_window_pos);
-            ruler_moving_last_window_pos = current_window_pos;
-            handle_ruler_touch_move(distance);
+            ruler_controller->handle_ruler_auto_move_with_new_position(current_window_pos);
+            validate_render();
             return;
 
         }
@@ -1094,6 +1077,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     external_controller.reset(new ExternalController(this));
     js_controller.reset(new JavascriptController(this));
     network_controller.reset(new NetworkController(this, sioyek_network_manager_));
+    ruler_controller.reset(new RulerController(this));
 
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
@@ -2353,8 +2337,7 @@ void MainWidget::download_and_portal_to_highlighted_overview_paper() {
 }
 
 bool MainWidget::handle_left_press_touch_mode(WindowPos click_pos) {
-    was_last_mouse_down_in_ruler_next_rect = false;
-    was_last_mouse_down_in_ruler_prev_rect = false;
+    ruler_controller->stop_ruler_auto_move();
 
     last_press_point = mapFromGlobal(QCursor::pos());
     last_press_msecs = QDateTime::currentMSecsSinceEpoch();
@@ -2375,26 +2358,22 @@ bool MainWidget::handle_left_press_touch_mode(WindowPos click_pos) {
         if (screen()->orientation() == Qt::PortraitOrientation) {
             if (PORTRAIT_VISUAL_MARK_NEXT.enabled && PORTRAIT_VISUAL_MARK_NEXT.contains(nwp)) {
                 main_document_view->move_visual_mark_next();
-                was_last_mouse_down_in_ruler_next_rect = true;
-                ruler_moving_last_window_pos = click_pos;
+                ruler_controller->start_ruler_auto_move(click_pos, true);
 
             }
             else if (PORTRAIT_VISUAL_MARK_PREV.enabled && PORTRAIT_VISUAL_MARK_PREV.contains(nwp)) {
                 main_document_view->move_visual_mark_prev();
-                was_last_mouse_down_in_ruler_prev_rect = true;
-                ruler_moving_last_window_pos = click_pos;
+                ruler_controller->start_ruler_auto_move(click_pos, false);
             }
         }
         else {
             if (LANDSCAPE_VISUAL_MARK_NEXT.enabled && LANDSCAPE_VISUAL_MARK_NEXT.contains(nwp)) {
                 main_document_view->move_visual_mark_next();
-                was_last_mouse_down_in_ruler_next_rect = true;
-                ruler_moving_last_window_pos = click_pos;
+                ruler_controller->start_ruler_auto_move(click_pos, true);
             }
             else if (LANDSCAPE_VISUAL_MARK_PREV.enabled && LANDSCAPE_VISUAL_MARK_PREV.contains(nwp)) {
                 main_document_view->move_visual_mark_prev();
-                was_last_mouse_down_in_ruler_prev_rect = true;
-                ruler_moving_last_window_pos = click_pos;
+                ruler_controller->start_ruler_auto_move(click_pos, false);
             }
 
         }
@@ -2983,8 +2962,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
     }
 
     if (TOUCH_MODE) {
-        was_last_mouse_down_in_ruler_next_rect = false;
-        was_last_mouse_down_in_ruler_prev_rect = false;
+        ruler_controller->stop_ruler_auto_move();
     }
 
     pdf_renderer->no_rerender = false;
@@ -3329,9 +3307,9 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
     bool is_in_overview = is_mouse_cursor_in_overview();
 
-    if (is_ruler_mode() && is_visual_mark_mode && is_touchpad){
+    if (mdv()->is_ruler_mode() && is_visual_mark_mode && is_touchpad){
         float distance = static_cast<float>(wevent->angleDelta().y()) * 5;
-        handle_ruler_touch_move(distance * TOUCHPAD_RULER_SENSITIVITY);
+        ruler_controller->handle_ruler_touch_move(distance * TOUCHPAD_RULER_SENSITIVITY);
         validate_render();
         return;
     }
@@ -3449,7 +3427,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     }
                     else {
                         /* move_visual_mark_command(-num_repeats); */
-                        move_ruler_prev();
+                        ruler_controller->move_ruler_prev();
                         if (AUTOCENTER_VISUAL_SCROLL) {
                             dv()->goto_vertical_line_pos();
                         }
@@ -3479,7 +3457,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
                     }
                     else {
                         /* move_visual_mark_command(num_repeats); */
-                        move_ruler_next();
+                        ruler_controller->move_ruler_next();
                         if (AUTOCENTER_VISUAL_SCROLL) {
                             dv()->goto_vertical_line_pos();
                         }
@@ -4643,60 +4621,9 @@ void MainWidget::changeEvent(QEvent* event) {
     QWidget::changeEvent(event);
 }
 
-void MainWidget::move_ruler_next(){
-    if (FORCE_CUSTOM_LINE_ALGORITHM) {
-        move_visual_mark(1);
-        return;
-    }
-    main_document_view->move_visual_mark_next();
-    if (is_ttsing()) {
-        read_current_line();
-    }
-}
 
-void MainWidget::move_ruler_prev(){
-    if (FORCE_CUSTOM_LINE_ALGORITHM) {
-        move_visual_mark(-1);
-        return;
-    }
-    main_document_view->move_visual_mark_prev();
-    if (is_ttsing()) {
-        read_current_line();
-    }
-}
 
-bool MainWidget::move_ruler_to_next_page(){
-    if (dv()->is_ruler_mode()){
-        int current_ruler_page = dv()->get_vertical_line_page();
-        int num_pages = doc()->num_pages();
-        if (current_ruler_page < num_pages - 1){
-            while (dv()->get_vertical_line_page() == current_ruler_page){
-                move_visual_mark(1);
-            }
-            return true;
-        }
-    }
-    return false;
-}
 
-AbsoluteRect MainWidget::move_visual_mark(int offset) {
-    if ((!main_document_view->is_ruler_mode()) || (main_document_view->get_overview_page().has_value())){
-        dv()->handle_vertical_move(offset);
-        return fz_empty_rect;
-    }
-    else{
-        AbsoluteRect ruler_rect = main_document_view->move_visual_mark(offset);
-
-        if (is_ttsing()) {
-            read_current_line();
-        }
-        if (AUTOCENTER_VISUAL_SCROLL) {
-            return_to_last_visual_mark();
-        }
-        main_document_view->clear_underline();
-        return ruler_rect;
-    }
-}
 
 
 std::wstring MainWidget::get_current_page_label() {
@@ -5133,6 +5060,10 @@ void MainWidget::portal_to_definition() {
 void MainWidget::move_visual_mark_command(int amount) {
     main_document_view->move_ruler(amount);
     validate_render();
+}
+
+void MainWidget::move_visual_mark(int offset){
+    ruler_controller->move_visual_mark(offset);
 }
 
 void MainWidget::show_current_widget() {
@@ -5807,7 +5738,7 @@ bool MainWidget::event(QEvent* event) {
                 main_document_view->velocity_x = 0;
                 main_document_view->velocity_y = 0;
 
-                if (was_last_mouse_down_in_ruler_next_rect) {
+                if (ruler_controller->was_last_mouse_down_in_ruler_movement_rect()) {
                     return true;
                 }
 
@@ -7290,29 +7221,6 @@ void MainWidget::handle_pen_drawing_event(QTabletEvent* te) {
     }
 }
 
-void MainWidget::delete_freehand_drawings(AbsoluteRect rect) {
-    if (main_document_view->scratchpad) {
-        scratchpad->delete_intersecting_objects(rect);
-        set_rect_select_mode(false);
-        clear_selected_rect();
-        invalidate_render();
-    }
-    else {
-        for (int i = 0; i < doc()->num_pages(); i++){
-            AbsoluteRect page_rect = doc()->get_page_absolute_rect(i);
-            if (page_rect.intersects(rect)){
-                AbsoluteRect intersection = rect.intersect_rect(page_rect);
-                // DocumentRect intersection_doc_rect = intersection.to_document(doc());
-                // DocumentRect page_rect = rect.to_document(doc());
-                doc()->delete_page_intersecting_drawings(i, intersection, main_document_view->visible_drawing_mask);
-            }
-        }
-        set_rect_select_mode(false);
-        clear_selected_rect();
-        invalidate_render();
-    }
-}
-
 void MainWidget::select_freehand_drawings(AbsoluteRect rect) {
     main_document_view->select_freehand_drawings(rect);
 
@@ -8378,10 +8286,6 @@ void MainWidget::handle_select_current_search_match() {
     if (main_document_view->select_current_search_match()) {
         handle_stop_search();
     }
-}
-
-void MainWidget::handle_select_ruler_text() {
-    dv()->select_ruler_text();
 }
 
 void MainWidget::handle_stop_search() {
@@ -9485,9 +9389,9 @@ void MainWidget::delete_menu_nodes(MenuNode* items) {
     delete items;
 }
 
-bool MainWidget::is_ruler_mode(){
-    return main_document_view->is_ruler_mode();
-}
+// bool MainWidget::is_ruler_mode(){
+//     return main_document_view->is_ruler_mode();
+// }
 
 void MainWidget::call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid){
     return js_controller->call_js_function_with_bookmark_arg_with_uuid(function_name, uuid);
@@ -9824,7 +9728,7 @@ void MainWidget::on_overview_move_end() {
 void MainWidget::handle_high_quality_media_end_reached() {
     tts_controller->high_quality_play_state = {};
     handle_stop_reading();
-    if (move_ruler_to_next_page()){
+    if (ruler_controller->move_ruler_to_next_page()){
         handle_start_reading_high_quality(true);
     }
 
@@ -10518,8 +10422,7 @@ void MainWidget::toggle_mouse_ruler_mode(){
         QPoint cursor_position = mapFromGlobal(QCursor::pos());
         WindowPos cursor_window_pos = WindowPos{ cursor_position.x(), cursor_position.y() };
 
-        ruler_moving_last_window_pos = cursor_window_pos;
-        was_last_mouse_down_in_ruler_next_rect = true;
+        ruler_controller->start_ruler_auto_move(cursor_window_pos, true);
 
     }
 }
