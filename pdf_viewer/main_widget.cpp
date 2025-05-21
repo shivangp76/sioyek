@@ -6405,7 +6405,7 @@ void MainWidget::show_context_menu(QString menu_string) {
     // (e.g. the right clicked highlight being selected) are displayed
     validate_render();
 
-    auto menu = parse_menu_string(this, "menu", menu_string);
+    auto menu = parse_menu_string(this, command_manager, "menu", menu_string);
     show_recursive_context_menu(std::move(menu));
 }
 

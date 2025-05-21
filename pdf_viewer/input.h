@@ -94,4 +94,4 @@ struct MenuItems {
     std::vector<RecursiveItem> items;
 };
 
-std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, QString name, QString menu_string);
+std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, CommandManager* command_manager, QString name, QString menu_string);

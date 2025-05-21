@@ -16,11 +16,8 @@
 
 #include "utils.h"
 #include "input.h"
-#include "main_widget.h"
-// #include "ui.h"
-#include "document.h"
+// #include "main_widget.h"
 #include "document_view.h"
-#include "network_manager.h"
 
 #include "commands/base_commands.h"
 #include "commands/annotation_commands.h"
@@ -31,6 +28,7 @@
 #include "config.h"
 #include "types/common_types.h"
 
+class MainWidget;
 
 
 
@@ -58,7 +56,7 @@ std::vector<std::string> parse_command_name(const QString& command_names) {
     return res;
 }
 
-std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, QString name, QString menu_string) {
+std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, CommandManager* command_manager, QString name, QString menu_string) {
     ParseState parser;
     parser.index = 0;
     parser.str = menu_string;
@@ -70,11 +68,11 @@ std::unique_ptr<MenuItems> parse_menu_string(MainWidget* widget, QString name, Q
         if (invocations.size() == 1 && invocations[0].command_name == "show_custom_context_menu") {
 
             if (invocations[0].command_args.size() == 2) {
-                res->items.push_back(parse_menu_string(widget, invocations[0].command_args[0], invocations[0].command_args[1]));
+                res->items.push_back(parse_menu_string(widget, command_manager, invocations[0].command_args[0], invocations[0].command_args[1]));
             }
         }
         else {
-            res->items.push_back(std::make_unique<MacroCommand>(widget, widget->command_manager, "", invocations));
+            res->items.push_back(std::make_unique<MacroCommand>(widget, command_manager, "", invocations));
         }
         if (parser.eof()) break;
 

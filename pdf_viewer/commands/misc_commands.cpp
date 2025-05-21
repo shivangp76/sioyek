@@ -1226,7 +1226,7 @@ public:
 
     void perform() {
 
-        std::unique_ptr<MenuItems> menu = parse_menu_string(widget, QString::fromStdWString(menu_name.value()), QString::fromStdWString(commands.value()));
+        std::unique_ptr<MenuItems> menu = parse_menu_string(widget, widget->command_manager, QString::fromStdWString(menu_name.value()), QString::fromStdWString(commands.value()));
         widget->show_recursive_context_menu(std::move(menu));
     }
 
