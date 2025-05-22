@@ -91,6 +91,7 @@
 #include "book.h"
 #include "utils.h"
 #include "utils/window_utils.h"
+#include "utils/image_utils.h"
 #include "ui.h"
 #include "pdf_renderer.h"
 #include "document.h"
@@ -333,8 +334,6 @@ extern bool DEFAULT_PEN_DRAWING_MODE;
 
 extern int RENDERER_BACKEND;
 
-extern float AUTO_BOOKMARK_VERTICAL_MARGIN;
-extern float AUTO_BOOKMARK_HORIZONTAL_MARGIN;
 
 extern int COLOR_MODE;
 
@@ -4627,25 +4626,7 @@ void MainWidget::handle_find_references_to_selected_text() {
 
 
 void MainWidget::handle_open_link(const PdfLink& link, bool copy) {
-
-    if (copy) {
-        copy_to_clipboard(utf8_decode(link.uri));
-    }
-    else {
-        if (QString::fromStdString(link.uri).startsWith("http")) {
-            open_web_url(utf8_decode(link.uri));
-        }
-        else {
-            auto [page, offset_x, offset_y] = parse_uri(mupdf_context, doc()->doc, link.uri);
-            if (main_document_view->is_presentation_mode()) {
-                goto_page_with_page_number(page - 1);
-            }
-            else {
-                long_jump_to_destination(page - 1, offset_y);
-            }
-        }
-    }
-    reset_highlight_links();
+    return navigation_controller->handle_open_link(link, copy);
 }
 
 void MainWidget::handle_keys_user_all() {
@@ -5670,7 +5651,6 @@ void MainWidget::handle_debug_command() {
 }
 
 std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
-    const int REDUCE_FACTOR = 8;
     QImage image;
     if (opengl_widget->is_opengl()) {
 
@@ -5683,61 +5663,7 @@ std::vector<WindowRect> MainWidget::get_largest_empty_rects() {
         image = pixmap.toImage();
     }
 
-    image = image.scaled(image.width() / REDUCE_FACTOR, image.height() / REDUCE_FACTOR);
-
-    std::unordered_map<int, int> counts;
-
-    QRgb mode_color = image.pixel(QPoint(0, 0));
-    int mode_count = 1;
-
-    for (int j = 0; j < image.height(); j++) {
-        for (int i = 0; i < image.width(); i++) {
-            QRgb pixel = image.pixel(QPoint(i, j));
-
-            if (counts.find(pixel) == counts.end()) {
-                counts[pixel] = 1;
-            }
-            else {
-                counts[pixel] += 1;
-            }
-            if (counts[pixel] > mode_count) {
-                mode_count = counts[pixel];
-                mode_color = pixel;
-            }
-        }
-    }
-
-    std::vector<std::vector<bool>> binary_matrix;
-    for (int j = 0; j < image.height(); j++) {
-        std::vector<bool> row;
-        for (int i = 0; i < image.width(); i++) {
-            QRgb pixel = image.pixel(QPoint(i, j));
-            if (pixel == mode_color) {
-                row.push_back(true);
-            }
-            else {
-                row.push_back(false);
-            }
-        }
-        binary_matrix.push_back(row);
-    }
-
-    std::vector<MaximumRectangleResult> largest_rects = maximum_rectangle(binary_matrix);
-
-
-    std::vector<WindowRect> window_rects;
-    for (auto largest_rect : largest_rects) {
-        WindowRect window_rect;
-        window_rect.x0 = largest_rect.begin_col * REDUCE_FACTOR + AUTO_BOOKMARK_HORIZONTAL_MARGIN;
-        window_rect.x1 = largest_rect.end_col * REDUCE_FACTOR - AUTO_BOOKMARK_HORIZONTAL_MARGIN;
-        window_rect.y0 = largest_rect.begin_row * REDUCE_FACTOR + AUTO_BOOKMARK_VERTICAL_MARGIN;
-        window_rect.y1 = largest_rect.end_row * REDUCE_FACTOR - AUTO_BOOKMARK_VERTICAL_MARGIN;
-        if (window_rect.y0 < get_status_bar_height()) {
-            window_rect.y0 = get_status_bar_height();
-        }
-        window_rects.push_back(window_rect);
-    }
-    return window_rects;
+    return get_largest_empty_rects_from_rendered_image(image, get_status_bar_height());
 }
 
 void MainWidget::show_command_menu() {

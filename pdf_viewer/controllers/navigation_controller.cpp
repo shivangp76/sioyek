@@ -890,3 +890,25 @@ void NavigationController::handle_open_all_docs() {
 
     mw->show_current_widget();
 }
+
+void NavigationController::handle_open_link(const PdfLink& link, bool copy) {
+
+    if (copy) {
+        copy_to_clipboard(utf8_decode(link.uri));
+    }
+    else {
+        if (QString::fromStdString(link.uri).startsWith("http")) {
+            open_web_url(utf8_decode(link.uri));
+        }
+        else {
+            auto [page, offset_x, offset_y] = parse_uri(mw->mupdf_context, doc()->doc, link.uri);
+            if (mdv()->is_presentation_mode()) {
+                mw->goto_page_with_page_number(page - 1);
+            }
+            else {
+                mw->long_jump_to_destination(page - 1, offset_y);
+            }
+        }
+    }
+    mw->reset_highlight_links();
+}
