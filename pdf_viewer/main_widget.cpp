@@ -267,9 +267,6 @@ extern Path last_opened_file_address_path;
 extern Path sioyek_json_data_path;
 extern Path auto_config_path;
 extern std::wstring ITEM_LIST_PREFIX;
-extern std::wstring SEARCH_URLS[26];
-extern std::wstring MIDDLE_CLICK_SEARCH_ENGINE;
-extern std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE;
 extern float DISPLAY_RESOLUTION_SCALE;
 extern float STATUS_BAR_COLOR[3];
 extern float STATUS_BAR_TEXT_COLOR[3];
@@ -3493,44 +3490,7 @@ std::optional<PaperNameWithRects> MainWidget::get_paper_name_under_cursor(bool u
 }
 
 void MainWidget::smart_jump_under_pos(WindowPos pos) {
-    if ((!main_document_view_has_document()) || main_document_view->scratchpad) {
-        return;
-    }
-
-
-    Qt::KeyboardModifiers modifiers = QGuiApplication::queryKeyboardModifiers();
-    bool is_shift_pressed = modifiers.testFlag(Qt::ShiftModifier);
-
-    auto [normal_x, normal_y] = main_document_view->window_to_normalized_window_pos(pos);
-
-    // if overview page is open and we middle click on a paper name, search it in a search engine
-    if (main_document_view->is_window_point_in_overview({ normal_x, normal_y })) {
-        DocumentPos docpos = main_document_view->window_pos_to_overview_pos({ normal_x, normal_y });
-        std::optional<PaperNameWithRects> paper_name = main_document_view->get_document()->get_paper_name_at_position(docpos);
-        if (paper_name) {
-            handle_search_paper_name(paper_name->paper_name, is_shift_pressed);
-        }
-        return;
-    }
-
-    auto docpos = main_document_view->window_to_document_pos(pos);
-
-    fz_stext_page* stext_page = main_document_view->get_document()->get_stext_with_page_number(docpos.page);
-    std::vector<fz_stext_char*> flat_chars;
-    get_flat_chars_from_stext_page(stext_page, flat_chars);
-
-    TextUnderPointerInfo text_under_pos_info = dv()->find_location_of_text_under_pointer(docpos);
-    if ((text_under_pos_info.candidates.size() > 0) && (text_under_pos_info.candidates[0].reference_type != ReferenceType::NoReference)){
-        DocumentPos candid_docpos = text_under_pos_info.candidates[0].get_docpos(main_document_view);
-        long_jump_to_destination(candid_docpos.page, candid_docpos.y);
-    }
-    else {
-        std::optional<PaperNameWithRects> paper_name_on_pointer = main_document_view->get_document()->get_paper_name_at_position(flat_chars, docpos);
-        if (paper_name_on_pointer) {
-            handle_search_paper_name(paper_name_on_pointer->paper_name, is_shift_pressed);
-        }
-    }
-
+    return navigation_controller->smart_jump_under_pos(pos);
 }
 
 void MainWidget::visual_mark_under_pos(WindowPos pos) {
@@ -3717,32 +3677,7 @@ void MainWidget::long_jump_to_destination(float abs_offset_y) {
 }
 
 void MainWidget::long_jump_to_destination(DocumentPos pos) {
-    AbsoluteDocumentPos abs_pos = pos.to_absolute(doc());
-
-    if (ALIGN_LINK_DEST_TO_TOP) {
-        abs_pos.y += get_align_to_top_offset();
-
-    }
-
-    if (!main_document_view->is_pending_link_source_filled()) {
-        push_state();
-        main_document_view->set_offsets(pos.x, abs_pos.y, true);
-        //main_document_view->goto_offset_within_page({ pos.page, pos.x, pos.y });
-    }
-    else {
-        // if we press the link button and then click on a pdf link, we automatically link to the
-        // link's destination
-
-
-        PortalViewState dest_state;
-        dest_state.document_checksum = main_document_view->get_document()->get_checksum();
-        dest_state.book_state.offset_x = abs_pos.x;
-        dest_state.book_state.offset_y = abs_pos.y;
-        dest_state.book_state.zoom_level = main_document_view->get_zoom_level();
-
-        complete_pending_link(dest_state);
-    }
-    invalidate_render();
+    return navigation_controller->long_jump_to_destination(pos);
 }
 
 void MainWidget::set_current_widget(QWidget* new_widget) {
@@ -3869,21 +3804,6 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
     return external_controller->execute_command(command, text, wait);
 }
 
-void MainWidget::handle_search_paper_name(QString paper_name, bool is_shift_pressed) {
-    if (paper_name.size() > 5) {
-        char type;
-        if (is_shift_pressed) {
-            type = SHIFT_MIDDLE_CLICK_SEARCH_ENGINE[0];
-        }
-        else {
-            type = MIDDLE_CLICK_SEARCH_ENGINE[0];
-        }
-        if ((type >= 'a') && (type <= 'z')) {
-            search_custom_engine(paper_name.toStdWString(), SEARCH_URLS[type - 'a']);
-        }
-    }
-
-}
 void MainWidget::move_vertical(float amount) {
     if (main_document_view->on_vertical_scroll()){
         // hide the link/text labels when we move
@@ -4132,28 +4052,7 @@ void MainWidget::open_document(const std::wstring& doc_path,
     bool load_prev_state,
     std::optional<OpenedBookState> prev_state,
     bool force_load_dimensions) {
-    opengl_widget->clear_all_selections();
-
-    if (main_document_view) {
-        main_document_view->persist();
-    }
-    on_open_document(doc_path);
-
-    main_document_view->open_document(doc_path, load_prev_state, prev_state, force_load_dimensions);
-
-    if (doc()) {
-        document_manager->add_tab(doc()->get_path());
-        //doc()->set_only_for_portal(false);
-    }
-
-    std::optional<std::wstring> filename = Path(doc_path).filename();
-    if (filename) {
-        setWindowTitle(QString::fromStdWString(filename.value()));
-    }
-
-    if (SCROLLBAR) {
-        update_scrollbar();
-    }
+    return navigation_controller->open_document(doc_path, load_prev_state, prev_state, force_load_dimensions);
 }
 
 // #ifndef Q_OS_MACOS
@@ -4227,67 +4126,9 @@ void MainWidget::on_new_paper_added(const std::wstring& file_path) {
         invalidate_render();
     }
 }
+
 void MainWidget::handle_link_click(const PdfLink& link) {
-    if (link.uri.substr(0, 4).compare("http") == 0) {
-        open_web_url(utf8_decode(link.uri));
-        return;
-    }
-
-    if (link.uri.substr(0, 4).compare("file") == 0) {
-        QString path_uri;
-        if (link.uri.substr(0, 7) == "file://") {
-            path_uri = QString::fromStdString(link.uri.substr(7, link.uri.size() - 7)); // skip file://
-        }
-        else {
-            path_uri = QString::fromStdString(link.uri.substr(5, link.uri.size() - 5)); // skip file:
-        }
-        auto parts = path_uri.split('#');
-        std::wstring path_part = parts.at(0).toStdWString();
-        auto docpath = doc()->get_path();
-        Path linked_file_path = Path(doc()->get_path()).file_parent().slash(path_part);
-        int page = 0;
-        if (parts.size() > 1) {
-            if (parts.at(1).startsWith("nameddest")) {
-                QString standard_uri = QString::fromStdString(link.uri);
-                if (standard_uri.startsWith("file:") && !(standard_uri.startsWith("file://"))) {
-                    standard_uri = "file://" + standard_uri.mid(5);
-                }
-
-                Document* linked_doc = document_manager->get_document(linked_file_path.get_path());
-                if (!linked_doc->doc) {
-                    linked_doc->open();
-                }
-
-                if (linked_doc && linked_doc->doc) {
-                    ParsedUri parsed_uri = parse_uri(mupdf_context, linked_doc->doc, standard_uri.toStdString());
-                    page = parsed_uri.page - 1;
-                    push_state();
-                    open_document_at_location(linked_file_path, page, parsed_uri.x, parsed_uri.y, {});
-                    return;
-                }
-            }
-            else {
-                std::string page_string = parts.at(1).toStdString();
-                page_string = page_string.substr(5, page_string.size() - 5);
-                page = QString::fromStdString(page_string).toInt() - 1;
-            }
-        }
-        push_state();
-        open_document_at_location(linked_file_path, page, {}, {}, {});
-        return;
-    }
-
-    auto [page, offset_x, offset_y] = parse_uri(mupdf_context, doc()->doc, link.uri);
-
-    // convert one indexed page to zero indexed page
-    page--;
-
-    if (main_document_view->is_presentation_mode()) {
-        goto_page_with_page_number(page);
-    }
-    else {
-        handle_goto_link_with_page_and_offset(page, offset_y);
-    }
+    return navigation_controller->handle_link_click(link);
 }
 
 void MainWidget::save_auto_config() {
@@ -5018,158 +4859,11 @@ void MainWidget::handle_open_all_docs() {
 }
 
 std::vector<OpenedBookInfo> MainWidget::get_all_opened_books(bool include_server_books, bool force_full_path) {
-    std::vector<OpenedBookInfo> res;
-    db_manager->select_opened_books(res);
-    for (int i = 0; i < res.size(); i++) {
-        std::wstring path = document_manager->get_path_from_hash(res[i].checksum).value_or(L"");
-        if (path.size() > 0) {
-            if (SHOW_DOC_PATH || force_full_path) {
-                res[i].file_name = QString::fromStdWString(path);
-            }
-            else {
-                res[i].file_name = QString::fromStdWString(Path(path).filename().value_or(L""));
-            }
-        }
-    }
-
-    auto new_end = std::remove_if(res.begin(), res.end(), [](OpenedBookInfo& info) {
-        return info.file_name.size() == 0;
-        });
-    res.erase(new_end, res.end());
-
-    if ((network_controller->is_logged_in()) && include_server_books) {
-        std::vector<std::string> local_file_hashes;
-        for (auto info : res) {
-            local_file_hashes.push_back(info.checksum);
-        }
-        std::vector<OpenedBookInfo> server_opened_books = network_controller->get_excluded_opened_files(local_file_hashes);
-
-        auto middle_index = res.size();
-
-        for (auto& server_book : server_opened_books) {
-            server_book.checksum = "SERVER://" + server_book.checksum;
-            res.push_back(server_book);
-        }
-
-        auto last = res.end();
-        // at the time of this commit, inplace_merge on android seems to be wrong, so we
-        // sort the entire array instead, we should just be using the inplace_merge when
-        // it is fixed
-#ifndef SIOYEK_MOBILE
-        std::inplace_merge(res.begin(), res.begin() + middle_index, last, [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
-            return lhs.last_access_time > rhs.last_access_time;
-            });
-#else
-        std::sort(res.begin(), res.end(), [](const OpenedBookInfo& lhs, const OpenedBookInfo& rhs) {
-            return lhs.last_access_time > rhs.last_access_time;
-            });
-#endif
-    }
-    return res;
+    return navigation_controller->get_all_opened_books(include_server_books, force_full_path);
 }
 
 void MainWidget::handle_open_prev_doc() {
-    auto handle_select_fn = [&](std::string checksum, float offset_y) {
-        if ((checksum.size() > 0) && (pending_command_instance)) {
-            QString doc_hash_qstring = QString::fromStdString(checksum);
-            if (doc_hash_qstring.startsWith("SERVER://")) {
-                doc_hash_qstring = doc_hash_qstring.mid(9);
-                network_controller->download_and_open(doc_hash_qstring.toStdString(), offset_y);
-            }
-            else {
-                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(checksum));
-                advance_command(std::move(pending_command_instance));
-            }
-        }
-        pop_current_widget();
-        };
-
-    auto handle_delete_fn = [&](std::string checksum) {
-        QString doc_hash_qstring = QString::fromStdString(checksum);
-        if (doc_hash_qstring.startsWith("SERVER://")) {
-            network_controller->delete_file_from_server(this, doc_hash_qstring.mid(9).toStdString(), []() {});
-        }
-        else {
-            db_manager->delete_opened_book(checksum);
-        }
-        };
-
-    if (TOUCH_MODE || (!FANCY_UI_MENUS)) {
-        std::vector<std::wstring> opened_docs_names;
-        std::vector<std::wstring> opened_docs_actual_names;
-        std::vector<OpenedBookInfo> opened_docs = get_all_opened_books();
-        std::vector<OpenedBookInfo> opened_docs_instances;
-
-        std::wstring current_path = L"";
-
-        if (doc()) {
-            current_path = doc()->get_path();
-        }
-
-        for (const auto& opened_doc : opened_docs) {
-            if (QString::fromStdString(opened_doc.checksum).startsWith("SERVER://")) {
-                opened_docs_names.push_back(L"[" + SERVER_SYMBOL + L"] " + opened_doc.file_name.toStdWString());
-                //opened_docs_hashes.push_back(opened_doc.checksum);
-                opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
-                opened_docs_instances.push_back(opened_doc);
-            }
-            else {
-
-                std::optional<std::wstring> path = checksummer->get_path(opened_doc.checksum);
-                if (path) {
-                    if (path == current_path) continue;
-
-                    if (SHOW_DOC_PATH) {
-                        opened_docs_names.push_back(path.value_or(L"<ERROR>"));
-                    }
-                    else {
-#ifdef SIOYEK_ANDROID
-                        std::wstring path_value = path.value();
-                        if (path_value.substr(0, 10) == L"content://") {
-                            path_value = android_file_name_from_uri(QString::fromStdWString(path_value)).toStdWString();
-                        }
-                        opened_docs_names.push_back(Path(path.value()).filename_no_ext().value_or(L"<ERROR>"));
-#else
-                        opened_docs_names.push_back(Path(path.value()).filename().value_or(L"<ERROR>"));
-#endif
-                    }
-                    //opened_docs_hashes.push_back(opened_doc.checksum);
-                    opened_docs_actual_names.push_back(opened_doc.document_title.toStdWString());
-                    opened_docs_instances.push_back(opened_doc);
-                }
-            }
-        }
-
-        set_filtered_select_menu<OpenedBookInfo>(widget_controller.get(), true, MULTILINE_MENUS, { opened_docs_names, opened_docs_actual_names }, opened_docs_instances, -1,
-            [&, handle_select_fn](OpenedBookInfo* info) {
-                handle_select_fn(info->checksum, info->offset_y);
-            },
-            [&, handle_delete_fn](OpenedBookInfo* info) {
-                handle_delete_fn(info->checksum);
-            }
-        );
-
-        make_current_menu_columns_equal();
-        show_current_widget();
-    }
-    else {
-        std::vector<OpenedBookInfo> opened_documents = get_all_opened_books();
-        DocumentSelectorWidget* selector_widget = DocumentSelectorWidget::from_documents(std::move(opened_documents), this);
-
-        selector_widget->set_select_fn([&, selector_widget, handle_select_fn](int index) {
-            OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
-            handle_select_fn(info.checksum, info.offset_y);
-            });
-
-        selector_widget->set_delete_fn([&, selector_widget, handle_delete_fn](int index) {
-            OpenedBookInfo info = selector_widget->document_model->opened_documents[index];
-            handle_delete_fn(info.checksum);
-            });
-
-        set_current_widget(selector_widget);
-        show_current_widget();
-    }
-
+    return navigation_controller->handle_open_prev_doc();
 }
 
 MainWidget* MainWidget::handle_new_window() {
@@ -5195,52 +4889,7 @@ MainWidget* MainWidget::handle_new_window() {
     return new_widget;
 }
 
-std::optional<PdfLink> MainWidget::get_selected_link(const std::wstring& text) {
-    std::vector<PdfLink> visible_page_links;
-    if ((!NUMERIC_TAGS) || is_string_numeric(text)) {
 
-        int link_index = 0;
-
-        if (!NUMERIC_TAGS) {
-            link_index = get_index_from_tag(utf8_encode(text), true);
-        }
-        else {
-            link_index = std::stoi(text);
-        }
-
-        main_document_view->get_visible_links(visible_page_links);
-        if ((link_index >= 0) && (link_index < static_cast<int>(visible_page_links.size()))) {
-            return visible_page_links[link_index];
-        }
-        return {};
-    }
-    return {};
-}
-
-void MainWidget::handle_find_references_to_link(const std::wstring& text) {
-    auto selected_link = get_selected_link(text);
-    std::vector<SearchResult> results;
-
-    if (selected_link.has_value()) {
-        std::vector<PdfLink> references = doc()->find_references(selected_link->uri);
-        for (auto ref : references) {
-            if (ref.rects.size() == 0) continue;
-
-            DocumentRect link_rect;
-            link_rect.page = ref.source_page;
-            link_rect.rect = ref.rects[0];
-
-            AbsoluteRect link_absrect = link_rect.to_absolute(doc());
-
-            SearchResult result;
-            result.page = link_rect.page;
-            result.rects = { ref.rects[0] };
-
-            results.push_back(result);
-        }
-    }
-    dv()->set_search_results(std::move(results));
-}
 
 void MainWidget::handle_find_references_to_selected_text() {
 
@@ -5285,7 +4934,7 @@ void MainWidget::handle_open_link(const PdfLink& link, bool copy) {
                 goto_page_with_page_number(page - 1);
             }
             else {
-                handle_goto_link_with_page_and_offset(page - 1, offset_y);
+                long_jump_to_destination(page - 1, offset_y);
             }
         }
     }
@@ -8870,13 +8519,6 @@ void MainWidget::clear_current_document_drawings() {
     doc()->delete_all_drawings();
 }
 
-void MainWidget::handle_goto_link_with_page_and_offset(int page, float y_offset) {
-    long_jump_to_destination(page, y_offset);
-    //if (ALIGN_LINK_DEST_TO_TOP) {
-    //    float top_offset = (main_document_view->get_view_height() / main_document_view->get_zoom_level()) / 2.0f;
-    //    main_document_view->move_absolute(0, top_offset);
-    //}
-}
 
 QString MainWidget::execute_macro_sync(QString macro, QStringList args) {
     std::unique_ptr<Command> command = command_manager->create_macro_command_with_args(this, "", macro, args);

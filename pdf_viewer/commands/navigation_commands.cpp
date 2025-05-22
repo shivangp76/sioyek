@@ -1333,19 +1333,19 @@ public:
         return OpenLinkCommand::next_requirement(widget);
     }
 
-    virtual void perform() {
+    virtual void perform() override {
         widget->push_state();
         if (dv()->selected_character_rects.size() > 0) {
             widget->handle_find_references_to_selected_text();
         }
         else {
             if (text.has_value()) {
-                widget->handle_find_references_to_link(text.value());
+                dv()->find_references_to_link(text.value());
             }
         }
+        widget->dv()->set_highlight_words({});
         widget->reset_highlight_links();
     }
-
 };
 
 

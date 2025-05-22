@@ -361,8 +361,6 @@ public:
 
     bool validation_interval_was_set_because_of_animation = false;
 
-    // search the `paper_name` in one of the configurable when middle-click or shift+middle-clicking on paper's name
-    void handle_search_paper_name(QString paper_name, bool is_shift_pressed);
     Q_INVOKABLE void handle_app_tts_resume(bool is_playing, bool is_on_rest, int offset);
 
     void persist(bool persist_drawings = false);
@@ -583,7 +581,6 @@ public:
     void handle_open_all_docs();
     MainWidget* handle_new_window();
     void handle_open_link(const PdfLink& link, bool copy = false);
-    void handle_find_references_to_link(const std::wstring& text);
     void handle_find_references_to_selected_text();
     void handle_keys_user_all();
     void handle_prefs_user_all();
@@ -729,7 +726,6 @@ public:
 
     void synchronize_pending_link();
     void refresh_all_windows();
-    std::optional<PdfLink> get_selected_link(const std::wstring& text);
 
     void set_brightness(float brightness);
     int num_visible_links();
@@ -970,7 +966,6 @@ public:
     // void handle_generic_tags_pre_perform(const std::vector<VisibleObjectIndex>& visible_objects);
     // void handle_highlight_tags_pre_perform(const std::vector<std::string>& visible_highlight_uuids);
     // void clear_keyboard_select_highlights();
-    void handle_goto_link_with_page_and_offset(int page, float y_offset);
     std::optional<std::wstring> get_search_suggestion_with_index(int index);
     bool is_menu_focused();
     void ensure_player_state_(QString state);

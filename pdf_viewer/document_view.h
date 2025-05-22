@@ -333,6 +333,8 @@ public:
     void set_underline(AbsoluteDocumentPos abspos);
     void clear_underline();
     void update_text_selection(AbsoluteDocumentPos abs_mpos, AbsoluteDocumentPos last_mouse_down);
+    void find_references_to_link(const std::wstring& text);
+    std::optional<PdfLink> get_selected_link(const std::wstring& text);
 
     std::string get_selected_highlight_uuid();
     std::string get_selected_pinned_portal_uuid();

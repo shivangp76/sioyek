@@ -54,6 +54,7 @@ extern int FREEHAND_DRAWING_SMOOTH_AMOUNT;
 extern int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT;
 extern bool RECTO_VERSO_ADJUSTMENT;
 extern bool SINGLE_CLICK_SELECTS_WORDS;
+extern bool NUMERIC_TAGS;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -6341,4 +6342,51 @@ void DocumentView::update_text_selection(AbsoluteDocumentPos abs_mpos, AbsoluteD
                            selected_text);
     }
     selected_text_is_dirty = false;
+}
+
+void DocumentView::find_references_to_link(const std::wstring& text) {
+    auto selected_link = get_selected_link(text);
+    std::vector<SearchResult> results;
+
+    if (selected_link.has_value()) {
+        std::vector<PdfLink> references = doc()->find_references(selected_link->uri);
+        for (auto ref : references) {
+            if (ref.rects.size() == 0) continue;
+
+            DocumentRect link_rect;
+            link_rect.page = ref.source_page;
+            link_rect.rect = ref.rects[0];
+
+            AbsoluteRect link_absrect = link_rect.to_absolute(doc());
+
+            SearchResult result;
+            result.page = link_rect.page;
+            result.rects = { ref.rects[0] };
+
+            results.push_back(result);
+        }
+    }
+    set_search_results(std::move(results));
+}
+
+std::optional<PdfLink> DocumentView::get_selected_link(const std::wstring& text) {
+    std::vector<PdfLink> visible_page_links;
+    if ((!NUMERIC_TAGS) || is_string_numeric(text)) {
+
+        int link_index = 0;
+
+        if (!NUMERIC_TAGS) {
+            link_index = get_index_from_tag(utf8_encode(text), true);
+        }
+        else {
+            link_index = std::stoi(text);
+        }
+
+        get_visible_links(visible_page_links);
+        if ((link_index >= 0) && (link_index < static_cast<int>(visible_page_links.size()))) {
+            return visible_page_links[link_index];
+        }
+        return {};
+    }
+    return {};
 }
