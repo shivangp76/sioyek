@@ -161,7 +161,7 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/new_file_checker.cpp pdf_viewer/new_file_checker.h
     pdf_viewer/path.cpp pdf_viewer/path.h
     pdf_viewer/pdf_renderer.cpp pdf_viewer/pdf_renderer.h
-    pdf_viewer/pdf_view_opengl_widget.cpp pdf_viewer/pdf_view_opengl_widget.h
+    pdf_viewer/renderer_widget.cpp pdf_viewer/renderer_widget.h
     pdf_viewer/rapidfuzz_amalgamated.hpp
     pdf_viewer/sqlite3.c pdf_viewer/sqlite3.h
     pdf_viewer/sqlite3ext.h

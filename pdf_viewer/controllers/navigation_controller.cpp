@@ -3,7 +3,7 @@
 #include "controllers/navigation_controller.h"
 #include "main_widget.h"
 #include "controllers/network_controller.h"
-#include "pdf_view_opengl_widget.h"
+#include "renderer_widget.h"
 #include "commands/base_commands.h"
 #include "ui.h"
 #include "checksum.h"
@@ -56,7 +56,7 @@ void NavigationController::open_document(const Path& path, std::optional<float> 
         mw->network_controller->sync_current_file_location_to_servers();
     }
 
-    mw->opengl_widget->clear_all_selections();
+    mw->renderer_widget->clear_all_selections();
 
     //save the previous document state
     if (mdv() && doc()) {
@@ -359,7 +359,7 @@ void NavigationController::open_document(const std::wstring& doc_path,
     bool load_prev_state,
     std::optional<OpenedBookState> prev_state,
     bool force_load_dimensions) {
-    mw->opengl_widget->clear_all_selections();
+    mw->renderer_widget->clear_all_selections();
 
     auto main_document_view = mdv();
     if (main_document_view) {

@@ -66,7 +66,7 @@
 #include "ui.h"
 #include "document.h"
 #include "document_view.h"
-#include "pdf_view_opengl_widget.h"
+#include "renderer_widget.h"
 #include "config.h"
 #include "main_widget.h"
 #include "path.h"

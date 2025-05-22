@@ -11,7 +11,7 @@
 #include <qtextcursor.h>
 
 
-#include "pdf_view_opengl_widget.h"
+#include "renderer_widget.h"
 #include "path.h"
 #include "book.h"
 #include "document.h"
