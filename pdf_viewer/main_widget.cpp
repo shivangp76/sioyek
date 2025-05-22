@@ -222,7 +222,6 @@ extern int last_keypad_size;
 extern bool MULTILINE_MENUS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
 extern bool SORT_HIGHLIGHTS_BY_LOCATION;
-extern bool FLAT_TABLE_OF_CONTENTS;
 extern bool HOVER_OVERVIEW;
 extern bool WHEEL_ZOOM_ON_CURSOR;
 extern float MOVE_SCREEN_PERCENTAGE;
@@ -4496,30 +4495,7 @@ void MainWidget::perform_search(std::wstring text, bool is_regex, bool is_increm
 }
 
 void MainWidget::overview_to_definition() {
-    if (!main_document_view->get_overview_page()) {
-        std::vector<SmartViewCandidate> candidates = main_document_view->find_line_definitions();
-
-        if (candidates.size() > 0) {
-            DocumentPos first_docpos = candidates[0].get_docpos(main_document_view);
-            AbsoluteDocumentPos first_abspos = first_docpos.to_absolute(doc());
-            dv()->smart_view_candidates = candidates;
-            dv()->index_into_candidates = 0;
-            //dv()->set_overview_position(first_docpos.page, first_docpos.y, reference_type_string(candidates[0].reference_type));
-            OverviewState overview_state;
-            overview_state.absolute_offset_x = 0;
-            overview_state.absolute_offset_y = first_abspos.y;
-            overview_state.doc = candidates[0].doc;
-            overview_state.highlight_rects = candidates[0].get_highlight_rects();
-            overview_state.overview_type = reference_type_string(candidates[0].reference_type);
-
-            set_overview_page(overview_state, true);
-            //dv()->set_overview_highlights(candidates[0].highlight_rects);
-            on_overview_source_updated();
-        }
-    }
-    else {
-        set_overview_page({}, false);
-    }
+    return navigation_controller->overview_to_definition();
 }
 
 void MainWidget::portal_to_definition() {
@@ -4582,119 +4558,11 @@ void MainWidget::handle_goto_highlight_global() {
 }
 
 void MainWidget::handle_goto_toc() {
-
-    if (!main_document_view || !main_document_view->get_document()){
-        return;
-    }
-    if (main_document_view->get_document()->has_toc()) {
-        if (TOUCH_MODE) {
-            std::vector<std::wstring> flat_toc;
-            std::vector<DocumentPos> current_document_toc_pages;
-            get_flat_toc(main_document_view->get_document()->get_toc(), flat_toc, current_document_toc_pages);
-            std::vector<std::wstring> page_strings;
-            for (int i = 0; i < current_document_toc_pages.size(); i++) {
-                page_strings.push_back(("[ " + QString::number(current_document_toc_pages[i].page + 1) + " ]").toStdWString());
-            }
-            int closest_toc_index = current_document_toc_pages.size() - 1;
-            int current_page = get_current_page_number();
-            for (int i = 0; i < current_document_toc_pages.size(); i++) {
-                if (current_document_toc_pages[i].page > current_page) {
-                    closest_toc_index = i - 1;
-                    break;
-                }
-            }
-            if (closest_toc_index == -1) {
-                closest_toc_index = 0;
-            }
-            QAbstractItemModel* model = create_table_model(flat_toc, page_strings);
-
-            set_current_widget(new TouchFilteredSelectWidget<DocumentPos>(FUZZY_SEARCHING, model, current_document_toc_pages, closest_toc_index, [&](DocumentPos* page_value) {
-                if (page_value && pending_command_instance) {
-                    pending_command_instance->set_generic_requirement(page_value->page);
-                    advance_command(std::move(pending_command_instance));
-                    invalidate_render();
-                }
-                pop_current_widget();
-                }, [&](DocumentPos* page) {}, this));
-            show_current_widget();
-        }
-        else {
-
-            if (FLAT_TABLE_OF_CONTENTS) {
-                std::vector<std::wstring> flat_toc;
-                std::vector<DocumentPos> current_document_toc_pages;
-                get_flat_toc(main_document_view->get_document()->get_toc(), flat_toc, current_document_toc_pages);
-                set_current_widget(new FilteredSelectWindowClass<DocumentPos>(FUZZY_SEARCHING, flat_toc, current_document_toc_pages, [&](DocumentPos* page_value) {
-                    if (page_value && pending_command_instance) {
-                        pending_command_instance->set_generic_requirement(page_value->page);
-                        advance_command(std::move(pending_command_instance));
-
-                    }
-                pop_current_widget();
-                    }, this));
-                show_current_widget();
-            }
-            else {
-
-                std::vector<int> selected_index = main_document_view->get_current_chapter_recursive_index();
-                //if (!TOUCH_MODE) {
-                set_current_widget(new FilteredTreeSelect<int>(FUZZY_SEARCHING, main_document_view->get_document()->get_toc_model(),
-                    [&](const std::vector<int>& indices) {
-                        TocNode* toc_node = get_toc_node_from_indices(main_document_view->get_document()->get_toc(),
-                        indices);
-                if (toc_node && pending_command_instance) {
-                    if (std::isnan(toc_node->y)) {
-                        pending_command_instance->set_generic_requirement(toc_node->page);
-                        advance_command(std::move(pending_command_instance));
-                    }
-                    else {
-                        pending_command_instance->set_generic_requirement(QList<QVariant>() << toc_node->page << toc_node->x << toc_node->y);
-                        advance_command(std::move(pending_command_instance));
-                    }
-                }
-                pop_current_widget();
-                    }, this, selected_index));
-                show_current_widget();
-            }
-        }
-
-    }
-    else {
-        show_error_message(L"This document doesn't have a table of contents");
-    }
+    return navigation_controller->handle_goto_toc();
 }
 
 void MainWidget::handle_open_all_docs() {
-
-
-    std::vector<std::pair<std::wstring, std::wstring>> pairs;
-    db_manager->get_prev_path_hash_pairs(pairs);
-
-    // show the most recent files first 
-    std::reverse(pairs.begin(), pairs.end());
-
-    std::vector<std::string> hashes;
-    std::vector<std::wstring> paths;
-
-    for (auto [path, hash] : pairs) {
-        hashes.push_back(utf8_encode(hash));
-        paths.push_back(path);
-    }
-
-
-    set_filtered_select_menu<std::string>(widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { paths }, hashes, -1,
-        [&](std::string* doc_hash) {
-            if ((doc_hash->size() > 0) && (pending_command_instance)) {
-                pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(*doc_hash));
-                advance_command(std::move(pending_command_instance));
-            }
-        },
-        [&](std::string* doc_hash) {
-            db_manager->delete_opened_book(*doc_hash);
-        }
-        );
-
-    show_current_widget();
+    return navigation_controller->handle_open_all_docs();
 }
 
 std::vector<OpenedBookInfo> MainWidget::get_all_opened_books(bool include_server_books, bool force_full_path) {
@@ -5749,7 +5617,7 @@ void MainWidget::handle_fulltext_search(std::wstring maybe_file_checksum, std::w
 
             snippet = snippet.replace("SIOYEK_MATCH_BEGIN", "");
             snippet = snippet.replace("SIOYEK_MATCH_END", "");
-            
+
             if (snippet.startsWith("...")) {
                 snippet = snippet.mid(3);
             }
@@ -7503,7 +7371,7 @@ QJsonObject MainWidget::get_json_state() {
             result["smart_view_candidates"] = smart_view_candidates_json;
         }
 
-        
+
     }
 
     return result;
@@ -8876,7 +8744,7 @@ void MainWidget::update_current_document_checksum(std::string checksum) {
     qDebug() << "update_current_document_checksum not implemented";
     assert(false);
 }
- 
+
 
 void MainWidget::on_server_hashes_loaded() {
 
@@ -8890,9 +8758,9 @@ void MainWidget::handle_ios_files(const QUrl& url){
     // but we want to be able to access it in the future
     // so we copy it to the standard_data_path directory
 
-    
+
     QString file_name = url.fileName();
-    
+
     Path base_path = standard_data_path;
     Path new_path = base_path.slash(L"pdf_docs").slash(file_name.toStdWString());
     QFile::copy(url.toLocalFile(), QString::fromStdWString(new_path.get_path()));

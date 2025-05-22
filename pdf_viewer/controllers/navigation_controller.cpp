@@ -7,6 +7,8 @@
 #include "commands/base_commands.h"
 #include "ui.h"
 #include "checksum.h"
+#include "book.h"
+#include "ui/selector_ui.h"
 
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern std::wstring MIDDLE_CLICK_SEARCH_ENGINE;
@@ -22,6 +24,8 @@ extern float SMOOTH_SCROLL_SPEED;
 extern float SMOOTH_SCROLL_DRAG;
 extern bool SMOOTH_SCROLL_MODE;
 extern bool WHEEL_ZOOM_ON_CURSOR;
+extern bool FLAT_TABLE_OF_CONTENTS;
+extern bool FUZZY_SEARCHING;
 
 void search_paper_name_using_external_browser(QString paper_name, bool is_shift_pressed) {
     if (paper_name.size() > 5) {
@@ -742,4 +746,147 @@ void NavigationController::goto_overview() {
         mw->set_overview_page({}, false);
 
     }
+}
+
+void NavigationController::overview_to_definition() {
+    if (!mdv()->get_overview_page()) {
+        std::vector<SmartViewCandidate> candidates = mdv()->find_line_definitions();
+
+        if (candidates.size() > 0) {
+            DocumentPos first_docpos = candidates[0].get_docpos(mdv());
+            AbsoluteDocumentPos first_abspos = first_docpos.to_absolute(doc());
+            dv()->smart_view_candidates = candidates;
+            dv()->index_into_candidates = 0;
+            //dv()->set_overview_position(first_docpos.page, first_docpos.y, reference_type_string(candidates[0].reference_type));
+            OverviewState overview_state;
+            overview_state.absolute_offset_x = 0;
+            overview_state.absolute_offset_y = first_abspos.y;
+            overview_state.doc = candidates[0].doc;
+            overview_state.highlight_rects = candidates[0].get_highlight_rects();
+            overview_state.overview_type = reference_type_string(candidates[0].reference_type);
+
+            mw->set_overview_page(overview_state, true);
+            //dv()->set_overview_highlights(candidates[0].highlight_rects);
+            mw->on_overview_source_updated();
+        }
+    }
+    else {
+        mw->set_overview_page({}, false);
+    }
+}
+
+void NavigationController::handle_goto_toc() {
+
+    if (!mdv() || !mdv()->get_document()){
+        return;
+    }
+    if (mdv()->get_document()->has_toc()) {
+        if (TOUCH_MODE) {
+            std::vector<std::wstring> flat_toc;
+            std::vector<DocumentPos> current_document_toc_pages;
+            get_flat_toc(mdv()->get_document()->get_toc(), flat_toc, current_document_toc_pages);
+            std::vector<std::wstring> page_strings;
+            for (int i = 0; i < current_document_toc_pages.size(); i++) {
+                page_strings.push_back(("[ " + QString::number(current_document_toc_pages[i].page + 1) + " ]").toStdWString());
+            }
+            int closest_toc_index = current_document_toc_pages.size() - 1;
+            int current_page = mw->get_current_page_number();
+            for (int i = 0; i < current_document_toc_pages.size(); i++) {
+                if (current_document_toc_pages[i].page > current_page) {
+                    closest_toc_index = i - 1;
+                    break;
+                }
+            }
+            if (closest_toc_index == -1) {
+                closest_toc_index = 0;
+            }
+            QAbstractItemModel* model = create_table_model(flat_toc, page_strings);
+
+            mw->set_current_widget(new TouchFilteredSelectWidget<DocumentPos>(FUZZY_SEARCHING, model, current_document_toc_pages, closest_toc_index, [&](DocumentPos* page_value) {
+                if (page_value && mw->pending_command_instance) {
+                    mw->pending_command_instance->set_generic_requirement(page_value->page);
+                    mw->advance_command(std::move(mw->pending_command_instance));
+                    mw->invalidate_render();
+                }
+                mw->pop_current_widget();
+                }, [&](DocumentPos* page) {}, mw));
+            mw->show_current_widget();
+        }
+        else {
+
+            if (FLAT_TABLE_OF_CONTENTS) {
+                std::vector<std::wstring> flat_toc;
+                std::vector<DocumentPos> current_document_toc_pages;
+                get_flat_toc(mdv()->get_document()->get_toc(), flat_toc, current_document_toc_pages);
+                mw->set_current_widget(new FilteredSelectWindowClass<DocumentPos>(FUZZY_SEARCHING, flat_toc, current_document_toc_pages, [&](DocumentPos* page_value) {
+                    if (page_value && mw->pending_command_instance) {
+                        mw->pending_command_instance->set_generic_requirement(page_value->page);
+                        mw->advance_command(std::move(mw->pending_command_instance));
+
+                    }
+                mw->pop_current_widget();
+                    }, mw));
+                mw->show_current_widget();
+            }
+            else {
+
+                std::vector<int> selected_index = mdv()->get_current_chapter_recursive_index();
+                //if (!TOUCH_MODE) {
+                mw->set_current_widget(new FilteredTreeSelect<int>(FUZZY_SEARCHING, mdv()->get_document()->get_toc_model(),
+                    [&](const std::vector<int>& indices) {
+                        TocNode* toc_node = get_toc_node_from_indices(mdv()->get_document()->get_toc(),
+                        indices);
+                if (toc_node && mw->pending_command_instance) {
+                    if (std::isnan(toc_node->y)) {
+                        mw->pending_command_instance->set_generic_requirement(toc_node->page);
+                        mw->advance_command(std::move(mw->pending_command_instance));
+                    }
+                    else {
+                        mw->pending_command_instance->set_generic_requirement(QList<QVariant>() << toc_node->page << toc_node->x << toc_node->y);
+                        mw->advance_command(std::move(mw->pending_command_instance));
+                    }
+                }
+                mw->pop_current_widget();
+                    }, mw, selected_index));
+                mw->show_current_widget();
+            }
+        }
+
+    }
+    else {
+        show_error_message(L"This document doesn't have a table of contents");
+    }
+}
+
+void NavigationController::handle_open_all_docs() {
+
+
+    std::vector<std::pair<std::wstring, std::wstring>> pairs;
+    mw->db_manager->get_prev_path_hash_pairs(pairs);
+
+    // show the most recent files first
+    std::reverse(pairs.begin(), pairs.end());
+
+    std::vector<std::string> hashes;
+    std::vector<std::wstring> paths;
+
+    for (auto [path, hash] : pairs) {
+        hashes.push_back(utf8_encode(hash));
+        paths.push_back(path);
+    }
+
+
+    set_filtered_select_menu<std::string>(mw->widget_controller.get(), FUZZY_SEARCHING, MULTILINE_MENUS, { paths }, hashes, -1,
+        [&](std::string* doc_hash) {
+            if ((doc_hash->size() > 0) && (mw->pending_command_instance)) {
+                mw->pending_command_instance->set_generic_requirement(QList<QVariant>() << QString::fromStdString(*doc_hash));
+                mw->advance_command(std::move(mw->pending_command_instance));
+            }
+        },
+        [&](std::string* doc_hash) {
+            mw->db_manager->delete_opened_book(*doc_hash);
+        }
+        );
+
+    mw->show_current_widget();
 }

@@ -37,4 +37,7 @@ public:
     void zoom(WindowPos pos, float zoom_factor, bool zoom_in);
     void return_to_last_visual_mark();
     void goto_overview();
+    void overview_to_definition();
+    void handle_goto_toc();
+    void handle_open_all_docs();
 };
