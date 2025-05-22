@@ -415,7 +415,7 @@ public:
     void smart_jump_under_pos(WindowPos pos);
     void open_overview_to_portal(Document* document, Portal portal);
     bool overview_under_pos(WindowPos pos);
-    void visual_mark_under_pos(WindowPos pos);
+    void ruler_under_pos(WindowPos pos);
     void show_download_paper_menu(
         const std::vector<std::wstring>& paper_names,
         const std::vector<std::wstring>& download_urls,

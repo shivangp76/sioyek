@@ -24,4 +24,5 @@ public:
     void move_ruler_prev();
     AbsoluteRect move_visual_mark(int offset);
     bool move_ruler_to_next_page();
+    void ruler_under_pos(WindowPos pos);
 };

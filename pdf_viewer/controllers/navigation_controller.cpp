@@ -18,6 +18,10 @@ extern bool TOUCH_MODE;
 extern bool FANCY_UI_MENUS;
 extern bool MULTILINE_MENUS;
 extern std::wstring SERVER_SYMBOL;
+extern float SMOOTH_SCROLL_SPEED;
+extern float SMOOTH_SCROLL_DRAG;
+extern bool SMOOTH_SCROLL_MODE;
+extern bool WHEEL_ZOOM_ON_CURSOR;
 
 void search_paper_name_using_external_browser(QString paper_name, bool is_shift_pressed) {
     if (paper_name.size() > 5) {
@@ -590,4 +594,152 @@ void NavigationController::handle_open_prev_doc() {
         mw->show_current_widget();
     }
 
+}
+
+bool NavigationController::overview_under_pos(WindowPos pos) {
+
+    std::optional<PdfLink> link;
+    dv()->smart_view_candidates.clear();
+    dv()->index_into_candidates = 0;
+
+    //std::string portal_uuid = -1;
+    Portal* portal = mw->main_document_view->get_portal_under_window_pos(pos);
+    if (portal) {
+        Document* dst_doc = mw->document_manager->get_document_with_checksum(portal->dst.document_checksum);
+        if (dst_doc) {
+            mw->main_document_view->set_selected_portal_uuid(portal->uuid);
+
+            mw->open_overview_to_portal(dst_doc, *portal);
+
+            mw->invalidate_render();
+            return true;
+        }
+        else{
+            QString hash = QString::fromStdString(portal->dst.document_checksum);
+            bool was_available = mw->network_controller->try_download_file_with_hash(hash, [this, portal_v=*portal](QString path){
+                Document* downloaded_dst_doc = mw->document_manager->get_document(path.toStdWString());
+                if (downloaded_dst_doc) {
+                    mw->main_document_view->set_selected_portal_uuid(portal_v.uuid);
+                    mw->open_overview_to_portal(downloaded_dst_doc, portal_v);
+                    mw->invalidate_render();
+                }
+            });
+            return was_available;
+        }
+    }
+
+    if (mw->main_document_view && (link = mw->main_document_view->get_link_in_pos(pos))) {
+        if (QString::fromStdString(link.value().uri).startsWith("http")) {
+            // can't open overview to web links
+            return false;
+        }
+        else {
+            dv()->set_overview_link(link.value());
+            mw->on_overview_source_updated();
+            //main_document_view->fit_overview_width();
+            return true;
+        }
+    }
+
+    DocumentPos docpos = mdv()->window_to_document_pos(pos);
+
+    TextUnderPointerInfo reference_info = dv()->find_location_of_text_under_pointer(docpos);
+    if ((reference_info.candidates.size() > 0) && (reference_info.candidates[0].reference_type != ReferenceType::NoReference)) {
+        int pos_page = mdv()->window_to_document_pos(pos).page;
+
+        mdv()->smart_view_candidates = reference_info.candidates;
+        DocumentPos first_candid_pos = reference_info.candidates[0].get_docpos(mdv());
+
+        dv()->set_overview_position(
+            first_candid_pos.page,
+            first_candid_pos.y,
+            reference_type_string(reference_info.candidates[0].reference_type),
+            reference_info.candidates[0].get_highlight_rects()
+        );
+        mw->on_overview_source_updated();
+        return true;
+    }
+
+    return false;
+}
+
+void NavigationController::move_vertical(float amount) {
+    if (mdv()->on_vertical_scroll()){
+        // hide the link/text labels when we move
+        mw->hide_command_line_edit();
+    }
+
+    if (dv()->is_scratchpad()) {
+        dv()->move_document(0, amount);
+        mw->validate_render();
+        return;
+    }
+
+    if (!SMOOTH_SCROLL_MODE) {
+        dv()->move_document(0, amount);
+        mw->validate_render();
+    }
+    else {
+        dv()->velocity_y += amount * SMOOTH_SCROLL_SPEED;
+        mw->validation_interval_timer->setInterval(1000 / mw->screen()->refreshRate());
+        mw->validate_render();
+    }
+}
+
+bool NavigationController::move_horizontal(float amount, bool force) {
+    if (!mw->horizontal_scroll_locked) {
+        bool ret = mdv()->move_document(amount, 0, force);
+        mw->validate_render();
+        return ret;
+    }
+    return true;
+}
+
+void NavigationController::zoom(WindowPos pos, float zoom_factor, bool zoom_in) {
+    dv()->last_smart_fit_page = {};
+    if (zoom_in) {
+        if (WHEEL_ZOOM_ON_CURSOR) {
+            dv()->zoom_in_cursor(pos, zoom_factor);
+        }
+        else {
+            dv()->zoom_in(zoom_factor);
+        }
+    }
+    else {
+        if (WHEEL_ZOOM_ON_CURSOR) {
+            dv()->zoom_out_cursor(pos, zoom_factor);
+        }
+        else {
+            dv()->zoom_out(zoom_factor);
+        }
+    }
+    mw->validate_render();
+}
+
+void NavigationController::return_to_last_visual_mark() {
+    mdv()->goto_vertical_line_pos();
+    //opengl_widget->set_should_draw_vertical_line(true);
+    mw->pending_command_instance = nullptr;
+    mw->validate_render();
+}
+
+void NavigationController::goto_overview() {
+    if (mdv()->get_overview_page()) {
+        OverviewState overview = mdv()->get_overview_page().value();
+        if (overview.doc != nullptr && (overview.doc != doc())) {
+            std::optional<Portal> closest_link_ = mdv()->get_target_portal(false);
+            if (closest_link_) {
+                push_state();
+                mw->open_document(closest_link_.value().dst);
+            }
+        }
+        else {
+            std::optional<DocumentPos> maybe_overview_position = mdv()->get_overview_position();
+            if (maybe_overview_position.has_value()) {
+                mw->long_jump_to_destination(maybe_overview_position->page, maybe_overview_position->y);
+            }
+        }
+        mw->set_overview_page({}, false);
+
+    }
 }

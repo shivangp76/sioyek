@@ -240,7 +240,6 @@ extern bool NAVIGATE_BOOKMARK_LINKS_AFTER_SELECTION;
 extern float TEXT_SELECTION_MINIMUM_DISTANCE;
 extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
 extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
-extern float SMALL_PIXMAP_SCALE;
 // extern std::wstring EXECUTE_COMMANDS[26];
 extern float HIGHLIGHT_COLORS[26 * 3];
 extern int STATUS_BAR_FONT_SIZE;
@@ -2183,7 +2182,7 @@ void MainWidget::handle_right_click(WindowPos click_pos, bool down, bool is_shif
                 }
             }
 
-            visual_mark_under_pos(click_pos);
+            ruler_under_pos(click_pos);
 
         }
         else {
@@ -3493,39 +3492,8 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
     return navigation_controller->smart_jump_under_pos(pos);
 }
 
-void MainWidget::visual_mark_under_pos(WindowPos pos) {
-    //float doc_x, doc_y;
-    //int page;
-    DocumentPos document_pos = main_document_view->window_to_document_pos(pos);
-    if (document_pos.page != -1) {
-        //opengl_widget->set_should_draw_vertical_line(true);
-        int container_line_index = main_document_view->get_line_index_of_pos(document_pos);
-
-        if (container_line_index == -1) {
-            main_document_view->set_line_index(main_document_view->get_line_index_of_vertical_pos(), -1);
-        }
-        else {
-            fz_pixmap* pixmap = main_document_view->get_document()->get_small_pixmap(document_pos.page);
-            std::vector<unsigned int> hist = get_max_width_histogram_from_pixmap(pixmap);
-            std::vector<unsigned int> line_locations;
-            std::vector<unsigned int> _;
-            get_line_begins_and_ends_from_histogram(hist, _, line_locations);
-            int small_doc_x = static_cast<int>(document_pos.x * SMALL_PIXMAP_SCALE);
-            int small_doc_y = static_cast<int>(document_pos.y * SMALL_PIXMAP_SCALE);
-            int best_vertical_loc = find_best_vertical_line_location(pixmap, small_doc_x, small_doc_y);
-            //int best_vertical_loc = line_locations[find_nth_larger_element_in_sorted_list(line_locations, static_cast<unsigned int>(small_doc_y), 2)];
-            float best_vertical_loc_doc_pos = best_vertical_loc / SMALL_PIXMAP_SCALE;
-            WindowPos window_pos = main_document_view->document_to_window_pos_in_pixels_uncentered(DocumentPos{ document_pos.page, 0, best_vertical_loc_doc_pos });
-            auto [abs_doc_x, abs_doc_y] = main_document_view->window_to_absolute_document_pos(window_pos);
-            main_document_view->set_vertical_line_pos(abs_doc_y);
-            main_document_view->set_line_index(container_line_index, document_pos.page);
-        }
-        validate_render();
-
-        if (is_lq_ttsing()) {
-            read_current_line();
-        }
-    }
+void MainWidget::ruler_under_pos(WindowPos pos) {
+    return ruler_controller->ruler_under_pos(pos);
 }
 
 void MainWidget::open_overview_to_portal(Document* dst_doc, Portal portal){
@@ -3547,70 +3515,7 @@ void MainWidget::open_overview_to_portal(Document* dst_doc, Portal portal){
 }
 
 bool MainWidget::overview_under_pos(WindowPos pos) {
-
-    std::optional<PdfLink> link;
-    dv()->smart_view_candidates.clear();
-    dv()->index_into_candidates = 0;
-
-    //std::string portal_uuid = -1;
-    Portal* portal = main_document_view->get_portal_under_window_pos(pos);
-    if (portal) {
-        Document* dst_doc = document_manager->get_document_with_checksum(portal->dst.document_checksum);
-        if (dst_doc) {
-            main_document_view->set_selected_portal_uuid(portal->uuid);
-
-            open_overview_to_portal(dst_doc, *portal);
-
-            invalidate_render();
-            return true;
-        }
-        else{
-            QString hash = QString::fromStdString(portal->dst.document_checksum);
-            bool was_available = network_controller->try_download_file_with_hash(hash, [this, portal_v=*portal](QString path){
-                Document* downloaded_dst_doc = document_manager->get_document(path.toStdWString());
-                if (downloaded_dst_doc) {
-                    main_document_view->set_selected_portal_uuid(portal_v.uuid);
-                    open_overview_to_portal(downloaded_dst_doc, portal_v);
-                    invalidate_render();
-                }
-            });
-            return was_available;
-        }
-    }
-
-    if (main_document_view && (link = main_document_view->get_link_in_pos(pos))) {
-        if (QString::fromStdString(link.value().uri).startsWith("http")) {
-            // can't open overview to web links
-            return false;
-        }
-        else {
-            dv()->set_overview_link(link.value());
-            on_overview_source_updated();
-            //main_document_view->fit_overview_width();
-            return true;
-        }
-    }
-
-    DocumentPos docpos = main_document_view->window_to_document_pos(pos);
-
-    TextUnderPointerInfo reference_info = dv()->find_location_of_text_under_pointer(docpos);
-    if ((reference_info.candidates.size() > 0) && (reference_info.candidates[0].reference_type != ReferenceType::NoReference)) {
-        int pos_page = main_document_view->window_to_document_pos(pos).page;
-
-        main_document_view->smart_view_candidates = reference_info.candidates;
-        DocumentPos first_candid_pos = reference_info.candidates[0].get_docpos(main_document_view);
-
-        dv()->set_overview_position(
-            first_candid_pos.page,
-            first_candid_pos.y,
-            reference_type_string(reference_info.candidates[0].reference_type),
-            reference_info.candidates[0].get_highlight_rects()
-        );
-        on_overview_source_updated();
-        return true;
-    }
-
-    return false;
+    return navigation_controller->overview_under_pos(pos);
 }
 
 void MainWidget::set_synctex_mode(bool mode) {
@@ -3805,56 +3710,15 @@ void MainWidget::execute_command(std::wstring command, std::wstring text, bool w
 }
 
 void MainWidget::move_vertical(float amount) {
-    if (main_document_view->on_vertical_scroll()){
-        // hide the link/text labels when we move
-        hide_command_line_edit();
-    }
-
-    if (dv()->is_scratchpad()) {
-        dv()->move_document(0, amount);
-        validate_render();
-        return;
-    }
-
-    if (!SMOOTH_SCROLL_MODE) {
-        dv()->move_document(0, amount);
-        validate_render();
-    }
-    else {
-        dv()->velocity_y += amount * SMOOTH_SCROLL_SPEED;
-        validation_interval_timer->setInterval(1000 / screen()->refreshRate());
-        validate_render();
-    }
+    return navigation_controller->move_vertical(amount);
 }
 
 void MainWidget::zoom(WindowPos pos, float zoom_factor, bool zoom_in) {
-    dv()->last_smart_fit_page = {};
-    if (zoom_in) {
-        if (WHEEL_ZOOM_ON_CURSOR) {
-            dv()->zoom_in_cursor(pos, zoom_factor);
-        }
-        else {
-            dv()->zoom_in(zoom_factor);
-        }
-    }
-    else {
-        if (WHEEL_ZOOM_ON_CURSOR) {
-            dv()->zoom_out_cursor(pos, zoom_factor);
-        }
-        else {
-            dv()->zoom_out(zoom_factor);
-        }
-    }
-    validate_render();
+    return navigation_controller->zoom(pos, zoom_factor, zoom_in);
 }
 
 bool MainWidget::move_horizontal(float amount, bool force) {
-    if (!horizontal_scroll_locked) {
-        bool ret = main_document_view->move_document(amount, 0, force);
-        validate_render();
-        return ret;
-    }
-    return true;
+    return navigation_controller->move_horizontal(amount, force);
 }
 
 std::optional<std::string> MainWidget::get_last_opened_file_checksum() {
@@ -4226,10 +4090,7 @@ Document* MainWidget::doc() {
 }
 
 void MainWidget::return_to_last_visual_mark() {
-    main_document_view->goto_vertical_line_pos();
-    //opengl_widget->set_should_draw_vertical_line(true);
-    pending_command_instance = nullptr;
-    validate_render();
+    return navigation_controller->return_to_last_visual_mark();
 }
 
 void MainWidget::changeEvent(QEvent* event) {
@@ -4250,11 +4111,6 @@ void MainWidget::changeEvent(QEvent* event) {
 
     QWidget::changeEvent(event);
 }
-
-
-
-
-
 
 std::wstring MainWidget::get_current_page_label() {
     return doc()->get_page_label(main_document_view->get_center_page_number());
@@ -4432,24 +4288,7 @@ void MainWidget::update_scrollbar() {
 
 
 void MainWidget::goto_overview() {
-    if (main_document_view->get_overview_page()) {
-        OverviewState overview = main_document_view->get_overview_page().value();
-        if (overview.doc != nullptr && (overview.doc != doc())) {
-            std::optional<Portal> closest_link_ = main_document_view->get_target_portal(false);
-            if (closest_link_) {
-                push_state();
-                open_document(closest_link_.value().dst);
-            }
-        }
-        else {
-            std::optional<DocumentPos> maybe_overview_position = main_document_view->get_overview_position();
-            if (maybe_overview_position.has_value()) {
-                long_jump_to_destination(maybe_overview_position->page, maybe_overview_position->y);
-            }
-        }
-        set_overview_page({}, false);
-
-    }
+    return navigation_controller->goto_overview();
 }
 
 
@@ -5534,7 +5373,7 @@ void MainWidget::android_handle_visual_mode() {
         pos.x = last_hold_point.x();
         pos.y = last_hold_point.y();
 
-        visual_mark_under_pos(pos);
+        ruler_under_pos(pos);
     }
 }
 

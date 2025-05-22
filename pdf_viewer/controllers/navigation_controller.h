@@ -31,4 +31,10 @@ public:
     void handle_link_click(const PdfLink& link);
     std::vector<OpenedBookInfo> get_all_opened_books(bool include_server_books=true, bool force_full_path=false);
     void handle_open_prev_doc();
+    bool overview_under_pos(WindowPos pos);
+    void move_vertical(float amount);
+    bool move_horizontal(float amount, bool force = false);
+    void zoom(WindowPos pos, float zoom_factor, bool zoom_in);
+    void return_to_last_visual_mark();
+    void goto_overview();
 };

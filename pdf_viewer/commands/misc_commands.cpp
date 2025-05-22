@@ -1446,7 +1446,7 @@ public:
     void perform() {
         // QPoint mouse_pos = widget->mapFromGlobal(widget->cursor_pos());
         WindowPos pos = point_->to_window(widget->main_document_view);
-        widget->visual_mark_under_pos({ pos.x, pos.y });
+        widget->ruler_under_pos({ pos.x, pos.y });
     }
 
 
@@ -1724,7 +1724,7 @@ public:
 
     void perform() {
         QPoint mouse_pos = widget->mapFromGlobal(widget->cursor_pos());
-        widget->visual_mark_under_pos({ mouse_pos.x(), mouse_pos.y() });
+        widget->ruler_under_pos({ mouse_pos.x(), mouse_pos.y() });
     }
 
 };

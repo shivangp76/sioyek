@@ -1872,7 +1872,7 @@ public:
     EnterVisualMarkModeCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->visual_mark_under_pos({ widget->width() / 2, widget->height() / 2 });
+        widget->ruler_under_pos({ widget->width() / 2, widget->height() / 2 });
     }
 
 };
