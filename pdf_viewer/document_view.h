@@ -29,11 +29,6 @@ class PdfRenderer;
 class ScratchPad;
 
 
-struct MarkedDataRect {
-    DocumentRect rect;
-    int type;
-};
-
 enum class SelectionMode {
     Character,
     Word,
@@ -262,7 +257,6 @@ public:
 
     std::vector<DocumentRect> synctex_highlights;
     QTime synctex_highlight_time;
-    std::vector<MarkedDataRect> marked_data_rects;
 
     // list of selected characters (e.g. using mouse select) to be highlighted
     std::deque<AbsoluteRect> selected_character_rects;

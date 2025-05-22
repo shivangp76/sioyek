@@ -6160,49 +6160,6 @@ void MainWidget::on_config_changed(std::string config_name, bool should_save) {
     }
 }
 
-void MainWidget::handle_undo_marked_data() {
-    if (main_document_view->marked_data_rects.size() > 0) {
-        main_document_view->marked_data_rects.pop_back();
-    }
-}
-
-void MainWidget::handle_add_marked_data() {
-    std::deque<AbsoluteRect> local_selected_rects;
-    std::wstring local_selected_text;
-
-    main_document_view->get_text_selection(dv()->selection_begin,
-        dv()->selection_end,
-        main_document_view->selection_mode == SelectionMode::Word,
-        local_selected_rects,
-        local_selected_text);
-
-    if (local_selected_rects.size() > 0) {
-
-        DocumentRect begin_docrect = local_selected_rects[0].to_document(doc());
-        DocumentRect end_docrect = local_selected_rects[local_selected_rects.size() - 1].to_document(doc());
-
-        MarkedDataRect begin_rect;
-        begin_rect.rect = begin_docrect;
-        begin_rect.type = 0;
-        main_document_view->marked_data_rects.push_back(begin_rect);
-
-        MarkedDataRect end_rect;
-        end_rect.rect = end_docrect;
-        end_rect.type = 1;
-        main_document_view->marked_data_rects.push_back(end_rect);
-
-        invalidate_render();
-    }
-}
-
-void MainWidget::handle_remove_marked_data() {
-    main_document_view->marked_data_rects.clear();
-}
-
-
-void MainWidget::handle_export_marked_data() {
-}
-
 void MainWidget::handle_goto_random_page() {
     int num_pages = doc()->num_pages();
     int random_page = rand() % num_pages;

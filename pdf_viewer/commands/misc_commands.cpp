@@ -2546,58 +2546,6 @@ public:
     bool requires_document() { return false; }
 };
 
-class AddMarkedDataCommand : public Command {
-public:
-    static inline const std::string cname = "add_marked_data";
-    static inline const std::string hname = "";
-    AddMarkedDataCommand(MainWidget* w) : Command(cname, w) {};
-
-    void perform() {
-        widget->handle_add_marked_data();
-    }
-
-    bool requires_document() { return true; }
-};
-
-class UndoMarkedDataCommand : public Command {
-public:
-    static inline const std::string cname = "undo_marked_data";
-    static inline const std::string hname = "[internal]";
-    UndoMarkedDataCommand(MainWidget* w) : Command(cname, w) {};
-
-    void perform() {
-        widget->handle_undo_marked_data();
-    }
-
-    bool requires_document() { return true; }
-};
-
-class RemoveMarkedDataCommand : public Command {
-public:
-    static inline const std::string cname = "remove_marked_data";
-    static inline const std::string hname = "[internal]";
-    RemoveMarkedDataCommand(MainWidget* w) : Command(cname, w) {};
-
-    void perform() {
-        widget->handle_remove_marked_data();
-    }
-
-    bool requires_document() { return true; }
-};
-
-class ExportMarkedDataCommand : public Command {
-public:
-    static inline const std::string cname = "export_marked_data";
-    static inline const std::string hname = "[internal]";
-    ExportMarkedDataCommand(MainWidget* w) : Command(cname, w) {};
-
-    void perform() {
-        widget->handle_export_marked_data();
-    }
-
-    bool requires_document() { return true; }
-};
-
 class ShowTouchConfigCommand : public Command {
     std::wstring config_name;
     std::optional<std::wstring> text = {};
@@ -2863,10 +2811,6 @@ void register_misc_commands(CommandManager* manager) {
     register_command<SetPageOffsetCommand>(manager);
     register_command<ExecuteCommand>(manager, "execute_shell_command");
     register_command<CopyWindowSizeConfigCommand>(manager);
-    register_command<AddMarkedDataCommand>(manager);
-    register_command<UndoMarkedDataCommand>(manager);
-    register_command<RemoveMarkedDataCommand>(manager);
-    register_command<ExportMarkedDataCommand>(manager);
     register_command<ShowTouchConfigCommand>(manager);
     register_command<RepeatLastCommandCommand>(manager);
     register_command<GetCurrentDocumentTextCommand>(manager);
