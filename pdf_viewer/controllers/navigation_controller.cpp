@@ -9,6 +9,9 @@
 #include "checksum.h"
 #include "book.h"
 #include "ui/selector_ui.h"
+#ifdef SIOYEK_ANDROID
+#include "utils/android_specific_utils.h"
+#endif
 
 extern bool ALIGN_LINK_DEST_TO_TOP;
 extern std::wstring MIDDLE_CLICK_SEARCH_ENGINE;

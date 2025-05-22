@@ -186,6 +186,7 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/utils/model_utils.h \
            pdf_viewer/utils/color_utils.h \
            pdf_viewer/utils/image_utils.h \
+           pdf_viewer/utils/android_specific_utils.h \
            fzf/fzf.h
 
 
@@ -241,6 +242,7 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/utils/model_utils.cpp \
            pdf_viewer/utils/color_utils.cpp \
            pdf_viewer/utils/image_utils.cpp \
+           pdf_viewer/utils/android_specific_utils.cpp \
            fzf/fzf.c
 
 !android{

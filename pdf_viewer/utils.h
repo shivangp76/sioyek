@@ -213,20 +213,6 @@ std::string get_aplph_tag(int n, int max_n);
 fz_document* open_document_with_file_name(fz_context* context, std::wstring file_name);
 
 
-#ifdef SIOYEK_ANDROID
-QString android_file_name_from_uri(QString uri);
-void android_tts_say(QString text);
-void check_pending_intents(const QString workingDirPath);
-void android_tts_pause();
-void android_tts_stop();
-void android_tts_set_rate(float rate);
-// void android_tts_set_rest_of_document(QString rest);
-void on_android_pause_global();
-void on_android_resume_global();
-void android_brightness_set(float brightness);
-float android_brightness_get();
-
-#endif
 
 float dampen_velocity(float v, float dt);
 
@@ -243,9 +229,6 @@ T compute_average(std::vector<T> items) {
 fz_irect get_index_irect(fz_rect original, int index, fz_matrix transform, int num_h_slices, int num_v_slices);
 fz_rect get_index_rect(fz_rect original, int index, int num_h_slices, int num_v_slices);
 
-#ifdef SIOYEK_ANDROID
-QString android_file_uri_from_content_uri(QString uri);
-#endif
 
 QString clean_bib_item(QString bib_item);
 std::wstring clean_link_source_text(std::wstring link_source_text);
@@ -501,35 +484,6 @@ public:
 };
 
 
-#ifdef SIOYEK_ANDROID
-class AndroidTextToSpeechHandler : public TextToSpeechHandler {
-public:
-    // std::optional<std::function<void(int, int)>> word_callback = {};
-    // std::optional<std::function<void(QString)>> state_change_callback = {};
-
-    AndroidTextToSpeechHandler();
-
-    void say(QString text, int start_offset=-1) override;
-
-    void stop() override;
-
-    void pause() override;
-
-    void set_rate(float rate);
-
-    bool is_pausable();
-
-    bool is_word_by_word();
-
-    void set_word_callback(std::function<void(int, int)> callback);
-
-    void set_state_change_callback(std::function<void(QString)> callback);
-    void set_external_state_change_callback(std::function<void(QString)> callback);
-    virtual void set_on_app_pause_callback(std::function<QString()>);
-    virtual void set_on_app_resume_callback(std::function<void(bool, bool, int)>);
-    int get_maximum_tts_text_size();
-};
-#endif
 
 std::wstring get_path_extras_file_name(const std::wstring& path);
 QString translate_key_mapping_to_macos(QString mapping);

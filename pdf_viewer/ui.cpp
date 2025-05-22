@@ -219,13 +219,8 @@ AndroidSelector::AndroidSelector(QWidget* parent) : QWidget(parent) {
     QJsonObject current_user = main_widget->get_current_user();
     bool is_current_document_synced = main_widget->is_current_document_available_on_server();
     DrawingMode drawing_mode = main_widget->freehand_drawing_mode;
-    #ifdef SIOYEK_ANDROID
-    float current_brightness = android_brightness_get();
-    #elif defined(SIOYEK_IOS) 
-    float current_brightness = ios_brightness_get();
-    #else
-    float current_brightness = 0.5f;
-    #endif
+
+    float current_brightness = main_widget->get_brightness();
 
     main_menu = new TouchMainMenu(fit_mode,
         portaling,

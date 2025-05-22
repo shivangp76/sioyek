@@ -1,5 +1,7 @@
 #include <QTimer>
 
+#include <QMediaPlayer>
+#include <QAudioOutput>
 #include "main_widget.h"
 #include "document_view.h"
 #include "controllers/tts_controller.h"
@@ -7,6 +9,9 @@
 #include "touchui/TouchAudioButtons.h"
 #include "network_manager.h"
 #include "controllers/network_controller.h"
+#ifdef SIOYEK_ANDROID
+#include "utils/android_specific_utils.h"
+#endif
 
 extern float TTS_RATE;
 extern bool TOUCH_MODE;
@@ -466,14 +471,14 @@ SioyekMediaPlayer* TTSController::get_media_player(){
         media_player = new MacosMediaPlayer();
 #else
 #ifndef SIOYEK_ADVANCED_AUDIO
-        QAudioOutput* audio_output = new QAudioOutput(this);
+        QAudioOutput* audio_output = new QAudioOutput(mw);
         audio_output->setVolume(10);
-        media_player = new QMediaPlayer(this);
+        media_player = new QMediaPlayer(mw);
         media_player->setAudioOutput(audio_output);
         QObject::connect(media_player, &QMediaPlayer::mediaStatusChanged, [this](QMediaPlayer::MediaStatus status) {
             if (status == QMediaPlayer::MediaStatus::EndOfMedia) {
                 //qDebug() << "end of media reached";
-                handle_high_quality_media_end_reached();
+                mw->handle_high_quality_media_end_reached();
             }
             });
 #else

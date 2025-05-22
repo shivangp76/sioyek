@@ -1094,6 +1094,7 @@ public:
     Q_INVOKABLE QList<MainWidget*> all_windows();
     void on_playback_finished_callback();
     void show_touch_auido_ui_if_in_touch_mode();
+    float get_brightness();
 
 
 public slots:

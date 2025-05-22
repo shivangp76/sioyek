@@ -16,7 +16,6 @@
 
 #include "utils.h"
 #include "input.h"
-// #include "main_widget.h"
 #include "document_view.h"
 
 #include "commands/base_commands.h"

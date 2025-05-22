@@ -92,6 +92,11 @@
 #include "utils.h"
 #include "utils/window_utils.h"
 #include "utils/image_utils.h"
+
+#ifdef SIOYEK_ANDROID
+#include "utils/android_specific_utils.h"
+#endif
+
 #include "ui.h"
 #include "pdf_renderer.h"
 #include "document.h"
@@ -1006,10 +1011,12 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     setAttribute(Qt::WA_AcceptTouchEvents);
 
 #ifdef SIOYEK_MOBILE
-    setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
+    // setWindowFlag(Qt::MaximizeUsingFullscreenGeometryHint, true);
+    setWindowFlag(Qt::ExpandedClientAreaHint, true);
+    setWindowFlag(Qt::NoTitleBarBackgroundHint, true);
 #endif
 
-#if defined(Q_OS_MACOS) and QT_VERSION > QT_VERSION_CHECK(6, 8, 0)
+#if defined(Q_OS_MACOS) and (QT_VERSION >= QT_VERSION_CHECK(6, 9, 0))
     if (MACOS_HIDE_TITLEBAR){
         setWindowFlag(Qt::ExpandedClientAreaHint, true);
         setWindowFlag(Qt::NoTitleBarBackgroundHint, true);
@@ -1310,7 +1317,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     layout->addLayout(hlayout);
 
 #if defined(SIOYEK_ANDROID) || defined(SIOYEK_QUICKWINDOW)
-    setLayout(layout);
+    // setLayout(layout);
 #elif defined(SIOYEK_QWIDGET_WINDOW)
 #elif !defined(SIOYEK_IOS)
     central_widget->setLayout(layout);
@@ -9117,4 +9124,14 @@ void MainWidget::set_current_text_editor_text(QString text){
     else {
         text_command_line_edit->setText(text);
     }
+}
+
+float MainWidget::get_brightness(){
+#ifdef Q_OS_ANDROID
+    return android_brightness_get();
+#elif defined(Q_OS_IOS)
+    return ios_brightness_get();
+#else
+    return 1.0f;
+#endif
 }

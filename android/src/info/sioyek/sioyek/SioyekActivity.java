@@ -578,7 +578,8 @@ public class SioyekActivity extends QtActivity{
     }
 
     public boolean ttsIsPlaying(){
-        return mediaController != null && mediaController.getPlayerState() == 2;
+        // return false;
+        return mediaController != null && mediaController.getPlaybackState() == 2;
     }
 
     public void ttsStop(){
