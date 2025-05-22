@@ -30,4 +30,7 @@ public:
     void call_js_function_with_bookmark_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void call_js_function_with_highlight_arg_with_uuid(const QString& function_name, const std::string& uuid);
     void call_js_function_with_portal_arg_with_uuid(const QString& function_name, const std::string& uuid);
+    void set_state(QJsonObject state);
+    QJsonObject get_json_state();
+    QJsonObject get_json_annotations();
 };

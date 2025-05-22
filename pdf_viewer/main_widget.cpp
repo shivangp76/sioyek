@@ -6798,8 +6798,6 @@ void MainWidget::set_overview_page(std::optional<OverviewState> overview, bool s
 
 }
 
-
-
 bool MainWidget::execute_macro_from_origin(std::wstring macro_command_string, QLocalSocket* origin) {
     return execute_macro_if_enabled(macro_command_string, origin);
 }
@@ -6829,63 +6827,7 @@ void MainWidget::on_socket_deleted(QLocalSocket* deleted_socket) {
 }
 
 void MainWidget::set_state(QJsonObject state) {
-
-    if (state.contains("zoom_level")) {
-        float new_zoom_level = state["zoom_level"].toDouble();
-        main_document_view->set_zoom_level(new_zoom_level, true);
-    }
-
-    int new_page_number = -1;
-    if (state.contains("page_number")) {
-        new_page_number = state["page_number"].toInt();
-        main_document_view->goto_page(new_page_number);
-    }
-
-    if (state.contains("document_path")) {
-        main_document_view->open_document(state["document_path"].toString().toStdWString(), &this->is_render_invalidated);
-    }
-
-    if (state.contains("document_checksum")) {
-        std::optional<std::wstring> path = document_manager->get_path_from_hash(state["document_checksum"].toString().toStdString());
-        if (path.has_value()) {
-            main_document_view->open_document(path.value(), &this->is_render_invalidated);
-        }
-    }
-
-    if (state.contains("x_offset")) {
-        float x_offset = state["x_offset"].toDouble();
-        main_document_view->set_offset_x(x_offset);
-    }
-
-    if (state.contains("y_offset")) {
-        float y_offset = state["y_offset"].toDouble();
-        main_document_view->set_offset_y(y_offset);
-    }
-
-    if (state.contains("x_offset_in_page")) {
-        float x_offset = state["x_offset_in_page"].toDouble();
-        main_document_view->set_offset_x(x_offset);
-    }
-
-    if (state.contains("y_offset_in_page")) {
-        float y_offset = state["y_offset_in_page"].toDouble();
-        int page_number = new_page_number >= 0 ? new_page_number : main_document_view->get_center_page_number();
-        main_document_view->goto_offset_within_page(page_number, y_offset);
-    }
-
-    if (state.contains("window_width")) {
-        int new_width = state["window_width"].toInt();
-        resize(new_width, height());
-    }
-
-    if (state.contains("window_height")) {
-        int new_height = state["window_height"].toInt();
-        resize(width(), new_height);
-    }
-
-
-    invalidate_render();
-
+    return js_controller->set_state(state);
 }
 
 QString MainWidget::get_current_document_text() {
@@ -6896,119 +6838,7 @@ QString MainWidget::get_current_document_text() {
 }
 
 QJsonObject MainWidget::get_json_state() {
-    QJsonObject result;
-    if (doc()) {
-        result["document_path"] = QString::fromStdWString(doc()->get_path());
-        result["document_checksum"] = QString::fromStdString(doc()->get_checksum());
-        result["document_filename"] = QString::fromStdWString(Path(doc()->get_path()).filename().value_or(L""));
-
-        int current_page = get_current_page_number();
-        result["page_number"] = get_current_page_number();
-        bool is_searching = main_document_view->get_is_searching(nullptr);
-        result["searching"] = is_searching;
-        if (is_searching) {
-            int num_results = main_document_view->get_num_search_results();
-            result["num_search_results"] = num_results;
-        }
-        float offset_x = main_document_view->get_offset_x();
-        float offset_y =  main_document_view->get_offset_y();
-        result["x_offset"] = offset_x;
-        result["y_offset"] = offset_y;
-
-        std::optional<AbsoluteRect> selected_rect_abs = main_document_view->get_selected_rect_absolute();
-        if (selected_rect_abs) {
-            int selected_rect_page;
-            PagelessDocumentRect  selected_rect_doc = main_document_view->get_selected_rect_document()->rect;
-
-            QJsonObject absrect_json;
-            QJsonObject docrect_json;
-
-            absrect_json["x0"] = selected_rect_abs->x0;
-            absrect_json["x1"] = selected_rect_abs->x1;
-            absrect_json["y0"] = selected_rect_abs->y0;
-            absrect_json["y1"] = selected_rect_abs->y1;
-
-            docrect_json["x0"] = selected_rect_doc.x0;
-            docrect_json["x1"] = selected_rect_doc.x1;
-            docrect_json["y0"] = selected_rect_doc.y0;
-            docrect_json["y1"] = selected_rect_doc.y1;
-            docrect_json["page"] = selected_rect_page;
-
-            result["selected_rect_absolute"] = absrect_json;
-            result["selected_rect_document"] = docrect_json;
-        }
-
-
-        AbsoluteDocumentPos abspos = { offset_x, offset_y };
-        DocumentPos docpso = doc()->absolute_to_page_pos_uncentered(abspos);
-
-        result["x_offset_in_page"] = docpso.x;
-        result["y_offset_in_page"] = docpso.y;
-
-        result["zoom_level"] = main_document_view->get_zoom_level();
-
-        result["selected_text"] = QString::fromStdWString(main_document_view->get_selected_text());
-        result["window_id"] = window_id;
-        result["window_width"] = width();
-        result["window_height"] = height();
-
-        std::vector<std::wstring> loaded_document_paths = document_manager->get_loaded_document_paths();
-        QJsonArray loaded_documents;
-        for (auto docpath : loaded_document_paths) {
-            loaded_documents.push_back(QString::fromStdWString(docpath));
-        }
-
-        result["loaded_documents"] = loaded_documents;
-
-        if (main_document_view->get_overview_page()) {
-            QJsonObject overview_state_json;
-            OverviewState overview_state = main_document_view->get_overview_page().value();
-            overview_state_json["y_offset"] = overview_state.absolute_offset_y;
-            AbsoluteDocumentPos overview_abspos = { 0, overview_state.absolute_offset_y };
-            Document* overview_doc = overview_state.doc ? overview_state.doc : doc();
-            DocumentPos overview_docpos = overview_doc->absolute_to_page_pos_uncentered(overview_abspos);
-            overview_state_json["target_page"] = overview_docpos.page;
-            overview_state_json["y_offset_in_page"] = overview_docpos.y;
-            overview_state_json["document_path"] = QString::fromStdWString(overview_doc->get_path());
-            result["overview"] = overview_state_json;
-        }
-        if (dv()->smart_view_candidates.size() > 0) {
-            QJsonArray smart_view_candidates_json;
-
-            for (auto candid : dv()->smart_view_candidates) {
-                QJsonObject candid_json_object;
-                Document* candid_document = candid.doc ? candid.doc : doc();
-                candid_json_object["document_path"] = QString::fromStdWString(candid_document->get_path());
-
-                AbsoluteRect source_absolute_rect = candid.source_rect;
-                int source_page = -1;
-                DocumentRect source_page_rect = source_absolute_rect.to_document(doc());
-
-                candid_json_object["source_absolute_rect"] = rect_to_json(source_absolute_rect);
-                candid_json_object["source_document_rect"] = rect_to_json(source_page_rect.rect);
-                candid_json_object["source_page"] = source_page;
-                candid_json_object["source_text"] = QString::fromStdWString(candid.source_text);
-
-                DocumentPos target_docpos = candid.get_docpos(main_document_view);
-                AbsoluteDocumentPos target_abspos = candid.get_abspos(main_document_view);
-
-                candid_json_object["target_document_x"] = target_docpos.x;
-                candid_json_object["target_document_y"] = target_docpos.y;
-                candid_json_object["target_document_page"] = target_docpos.page;
-
-                candid_json_object["target_absolute_x"] = target_abspos.x;
-                candid_json_object["target_absolute_y"] = target_abspos.y;
-
-                smart_view_candidates_json.push_back(candid_json_object);
-            }
-
-            result["smart_view_candidates"] = smart_view_candidates_json;
-        }
-
-
-    }
-
-    return result;
+    return js_controller->get_json_state();
 }
 
 QJsonArray MainWidget::get_all_json_states() {
@@ -7090,13 +6920,7 @@ void MainWidget::remove_command_being_performed(Command* new_command) {
 }
 
 QJsonObject MainWidget::get_json_annotations() {
-
-    QJsonObject annots;
-    annots["bookmarks"] = doc()->get_bookmarks_json();
-    annots["highlights"] = doc()->get_highlights_json();
-    annots["portals"] = doc()->get_portals_json();
-    annots["marks"] = doc()->get_marks_json();
-    return annots;
+    return js_controller->get_json_annotations();
 }
 
 
