@@ -332,6 +332,7 @@ public:
     void set_typing_rect(DocumentRect highlight_rect, std::optional<DocumentRect> wrong_rect);
     void set_underline(AbsoluteDocumentPos abspos);
     void clear_underline();
+    void update_text_selection(AbsoluteDocumentPos abs_mpos, AbsoluteDocumentPos last_mouse_down);
 
     std::string get_selected_highlight_uuid();
     std::string get_selected_pinned_portal_uuid();

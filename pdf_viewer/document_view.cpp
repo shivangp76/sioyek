@@ -53,6 +53,7 @@ extern bool SIMPLIFY_FREEHAND_DRAWINGS;
 extern int FREEHAND_DRAWING_SMOOTH_AMOUNT;
 extern int FREEHAND_DRAWING_STYLUS_SMOOTH_AMOUNT;
 extern bool RECTO_VERSO_ADJUSTMENT;
+extern bool SINGLE_CLICK_SELECTS_WORDS;
 
 DocumentView::DocumentView(DatabaseManager* db_manager,
     DocumentManager* document_manager,
@@ -6306,4 +6307,38 @@ std::wstring_view DocumentView::get_current_page_text(){
     int current_page_number = get_current_page_number();
     int total_page_count = doc()->num_pages();
     return doc()->get_page_range_text(current_page_number, current_page_number);
+}
+
+void DocumentView::update_text_selection(AbsoluteDocumentPos abs_mpos, AbsoluteDocumentPos last_mouse_down){
+    selection_begin = last_mouse_down;
+    selection_end = abs_mpos;
+
+    if (
+            selection_mode == SelectionMode::Character ||
+            (SINGLE_CLICK_SELECTS_WORDS && selection_mode == SelectionMode::Word)
+            ){
+        // if the user just clicks an a location we don't want to initiate selection
+        auto begin_window = selection_begin.to_window(this);
+        auto end_window = selection_end.to_window(this);
+
+        if (begin_window.manhattan(end_window) < 3)
+        {
+            return;
+        }
+    }
+
+    if (selection_mode == SelectionMode::Line) {
+        get_line_selection(selection_begin,
+                           selection_end,
+                           selected_character_rects,
+                           selected_text);
+    }
+    else {
+        get_text_selection(selection_begin,
+                           selection_end,
+                           selection_mode == SelectionMode::Word,
+                           selected_character_rects,
+                           selected_text);
+    }
+    selected_text_is_dirty = false;
 }

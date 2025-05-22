@@ -888,38 +888,7 @@ void MainWidget::update_text_selection(AbsoluteDocumentPos abs_mpos) {
     // todo: maybe have a timer event that handles this periodically
     int msecs_since_last_text_select = last_text_select_time.msecsTo(QTime::currentTime());
     if (msecs_since_last_text_select > 16 || msecs_since_last_text_select < 0) {
-
-        dv()->selection_begin = last_mouse_down;
-        dv()->selection_end = abs_mpos;
-
-        if (
-            dv()->selection_mode == SelectionMode::Character ||
-            (SINGLE_CLICK_SELECTS_WORDS && dv()->selection_mode == SelectionMode::Word)
-        ){
-            // if the user just clicks an a location we don't want to initiate selection
-            auto begin_window = dv()->selection_begin.to_window(dv());
-            auto end_window = dv()->selection_end.to_window(dv());
-
-            if (begin_window.manhattan(end_window) < 3)
-            {
-                return;
-            }
-        }
-
-        if (dv()->selection_mode == SelectionMode::Line) {
-            main_document_view->get_line_selection(dv()->selection_begin,
-                dv()->selection_end,
-                main_document_view->selected_character_rects,
-                dv()->selected_text);
-        }
-        else {
-            main_document_view->get_text_selection(main_document_view->selection_begin,
-                main_document_view->selection_end,
-                main_document_view->selection_mode == SelectionMode::Word,
-                main_document_view->selected_character_rects,
-                main_document_view->selected_text);
-        }
-        main_document_view->selected_text_is_dirty = false;
+        dv()->update_text_selection(abs_mpos, last_mouse_down);
 
         validate_render();
         last_text_select_time = QTime::currentTime();
