@@ -445,3 +445,5 @@ public:
 };
 
 void register_base_commands(CommandManager* manager);
+
+void export_python_api(MainWidget* mw);

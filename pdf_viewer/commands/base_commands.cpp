@@ -15,6 +15,9 @@ extern bool SHOW_MOST_RECENT_COMMANDS_FIRST;
 extern bool FILL_TEXTBAR_WITH_SELECTED_TEXT;
 extern bool NUMERIC_TAGS;
 extern bool HIDE_OVERLAPPING_LINK_LABELS;
+extern std::wstring PYTHON_INTERPRETER_PATH;
+
+extern Path python_api_base_path;
 
 void CommandManager::update_command_last_use(std::string command_name) {
     command_last_uses[command_name] = QDateTime::currentDateTime();
@@ -1552,4 +1555,129 @@ void CommandManager::export_command_names(std::wstring file_path){
 
         output_file.close();
     }
+}
+
+void list_dir_helper(QString path, QStringList& paths) {
+    for (const auto& entry : QDir(path).entryInfoList(QDir::Files)) {
+        paths.push_back(entry.filePath());
+    }
+
+    for (const auto& entry : QDir(path).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        list_dir_helper(entry.filePath(), paths);
+    }
+}
+
+QStringList list_dir(QString path) {
+    QStringList child_paths;
+
+    list_dir_helper(path, child_paths);
+
+    return child_paths;
+}
+
+bool remove_file(QString path) {
+    QFile file(path);
+    file.setPermissions(QFile::WriteOwner | QFile::ReadOwner | QFile::ExeOwner | QFile::WriteUser | QFile::ReadUser | QFile::ExeUser | QFile::WriteGroup | QFile::ReadGroup | QFile::ExeGroup | QFile::WriteOther | QFile::ReadOther | QFile::ExeOther);
+    return file.remove();
+}
+
+void export_python_api(MainWidget* mw){
+#ifndef SIOYEK_MOBILE
+    QString res;
+    QString INDENT = "    ";
+
+    CommandManager* command_manager = mw->command_manager;
+    res += "class SioyekBase:\n\n";
+
+    QStringList command_names = command_manager->get_all_command_names();
+    for (auto command_name : command_names) {
+        QString command_name_ = command_name;
+        if (command_name_ == "import") {
+            command_name_ = "import_";
+        }
+
+        if (command_name.size() > 0 && command_name[0] != '_') {
+
+            auto command = command_manager->get_command_with_name(mw, command_name.toStdString());
+            res += INDENT + "def " + command_name_ + "(self";
+            auto requirement = command->next_requirement(mw);
+            if (requirement) {
+                res += ", *args, focus=False, wait=True, window_id=None):\n";
+                res += INDENT + INDENT;
+                res += "return self.run_command(\"" + command_name + "\", text=args, focus=focus, wait=wait, window_id=window_id)\n\n";
+            }
+            else {
+                res += ", focus=False, wait=True, window_id=None):\n";
+                res += INDENT + INDENT;
+                res += "return self.run_command(\"" + command_name + "\", text=None, focus=focus, wait=wait, window_id=window_id)\n\n";
+            }
+        }
+
+    }
+    // ensure python_api_base_path/src/sioyek folder structure exists using Qt
+    QString sioyek_python_lib_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").get_path());
+    QDir dir(sioyek_python_lib_path);
+    bool dir_exists = false;
+
+    if (!dir.exists()) {
+        dir_exists = dir.mkpath(".");
+    }
+    else {
+        dir_exists = true;
+    }
+
+    if (dir_exists) {
+        // copy qrc:/python_api/LICENSE.txt and qrc:/python_api/pyproject.toml to python_api_base_path
+        QString license_path = QString::fromStdWString(python_api_base_path.slash(L"LICENSE.txt").get_path());
+        remove_file(license_path);
+        QFile::copy(":/python_api/LICENSE.txt", license_path);
+
+        QString readme_path = QString::fromStdWString(python_api_base_path.slash(L"README.md").get_path());
+        remove_file(readme_path);
+        QFile::copy(":/python_api/README.md", readme_path);
+
+        QString pyproject_path = QString::fromStdWString(python_api_base_path.slash(L"pyproject.toml").get_path());
+        remove_file(pyproject_path);
+        QFile::copy(":/python_api/pyproject.toml", pyproject_path);
+
+        QString sioyekpy = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"sioyek.py").get_path());
+        remove_file(sioyekpy);
+        QFile::copy(":/python_api/src/sioyek/sioyek.py", sioyekpy);
+
+        //QString sioyekpy2 = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"sioyek2.py").get_path());
+        //QFile::remove(sioyekpy2);
+        //QFile::copy(":/python_api/src/sioyek/sioyek.py", sioyekpy2);
+
+        QString init_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"__init__.py").get_path());
+        remove_file(init_path);
+        QFile::copy(":/python_api/src/sioyek/__init__.py", init_path);
+
+
+        std::string python_interpreter_path_utf8 = utf8_encode(PYTHON_INTERPRETER_PATH);
+        const char* python_interpreter_path = python_interpreter_path_utf8.c_str();
+        if (PYTHON_INTERPRETER_PATH.size() == 0){
+            python_interpreter_path = std::getenv("SIOYEK_PYTHON_INTERPRETER_PATH");
+        }
+
+        if (python_interpreter_path == nullptr) {
+            show_error_message(L"You should set SIOYEK_PYTHON_INTERPRETER_PATH environment variables or python_interpreter_path config for export to work");
+            return;
+        }
+        QString base_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"base.py").get_path());
+
+        QFile output(base_path);
+
+        if (output.open(QIODevice::WriteOnly)) {
+            output.write(res.toUtf8());
+        }
+        output.close();
+
+
+        //QDesktopServices::openUrl(QString::fromStdWString(python_api_base_path.get_path()));
+        std::string command = std::string(python_interpreter_path) + " -m pip install \"" + python_api_base_path.get_path_utf8() + "\"";
+        std::system(command.c_str());
+    }
+
+
+#endif
 }

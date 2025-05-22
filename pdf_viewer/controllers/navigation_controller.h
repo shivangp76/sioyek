@@ -41,4 +41,6 @@ public:
     void handle_goto_toc();
     void handle_open_all_docs();
     void handle_open_link(const PdfLink& link, bool copy = false);
+    void handle_goto_loaded_document();
+    bool goto_ith_next_overview(int i);
 };

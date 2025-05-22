@@ -826,7 +826,7 @@ public:
     void show_touch_buttons_for_overview_type(std::string type);
     void update_touch_overview_buttons(const std::optional<OverviewState>& overview);
     void set_overview_page(std::optional<OverviewState> overview, bool should_update_buttons);
-    void export_python_api();
+    // void export_python_api();
 
     void show_custom_option_list(std::vector<std::wstring> option_list);
     void on_socket_deleted(QLocalSocket* deleted_socket);
@@ -925,7 +925,7 @@ public:
     Q_INVOKABLE void register_function_keybind_async(QString keybind, QString code, QString command_name, QString file_name, int line_number);
     Q_INVOKABLE void report_js_error(QString error_message, QString error_file_path, int error_line);
     Q_INVOKABLE void register_string_keybind(QString keybind, QString name, QString file_name, int line_number);
-    Q_INVOKABLE QStringList list_dir(QString path);
+    // Q_INVOKABLE QStringList list_dir(QString path);
 
     Q_INVOKABLE QString get_environment_variable(QString name);
     void set_text_prompt_text(QString text);

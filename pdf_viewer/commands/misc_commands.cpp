@@ -2355,7 +2355,7 @@ public:
     ExportPythonApiCommand(MainWidget* w) : Command(cname, w) {};
 
     void perform() {
-        widget->export_python_api();
+        export_python_api(widget);
     }
 
 };

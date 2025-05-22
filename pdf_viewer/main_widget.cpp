@@ -337,7 +337,6 @@ extern int RENDERER_BACKEND;
 
 extern int COLOR_MODE;
 
-extern std::wstring PYTHON_INTERPRETER_PATH;
 extern std::wstring TTS_VOICE;
 extern std::wstring PAPERS_FOLDER_PATH;
 extern bool SHOW_RIGHT_CLICK_CONTEXT_MENU;
@@ -350,7 +349,6 @@ extern std::wstring CONTEXT_MENU_ITEMS_FOR_OVERVIEW;
 extern bool RIGHT_CLICK_CONTEXT_MENU;
 extern float SMOOTH_MOVE_MAX_VELOCITY;
 extern int NUM_PAGE_COLUMNS;
-extern Path python_api_base_path;
 extern float PERSISTANCE_PERIOD;
 extern std::wstring COMMANDS_WHICH_USE_EMBEDDED_TEXT_EDITOR;
 extern float FREEHAND_SIZE;
@@ -6364,122 +6362,7 @@ void MainWidget::goto_ith_next_tab(int i){
 }
 
 void MainWidget::handle_goto_loaded_document() {
-    // opens a list of currently loaded documents. This is basically sioyek's "tab" feature
-    // the user can "unload" a document by pressing the delete key while it is highlighted in the list
-
-    std::vector<std::wstring> loaded_document_paths_ = document_manager->get_tabs();
-    //std::vector<std::wstring> loaded_document_paths = get_path_unique_prefix(loaded_document_paths_);
-    //std::vector<std::wstring> loaded_document_paths = get_path_unique_prefix(loaded_document_paths_);
-    std::vector<std::wstring> detected_paper_names;
-
-    std::vector<OpenedBookInfo> opened_books = get_all_opened_books(false, true);
-    std::map<QString, QString> path_to_title_map;
-    for (auto opened_book : opened_books) {
-        path_to_title_map[opened_book.file_name] = opened_book.document_title;
-    }
-
-    for (auto path : loaded_document_paths_) {
-        Document* loaded_document = document_manager->get_document(path);
-        if (loaded_document && loaded_document->doc) {
-            detected_paper_names.push_back(loaded_document->detect_paper_name());
-        }
-        else {
-            auto it = path_to_title_map.find(QString::fromStdWString(path));
-            if (it != path_to_title_map.end()) {
-                detected_paper_names.push_back(it->second.toStdWString());
-            }
-            else {
-                detected_paper_names.push_back(L"[" + path + L"]");
-            }
-        }
-    }
-
-    int index = get_current_tab_index();
-
-    std::vector<QString> loaded_document_paths_qstrings;
-    std::vector<QString> detected_paper_names_qstrings;
-    std::vector<QString> document_path_qstring;
-    for (int i = 0; i < loaded_document_paths_.size(); i++) {
-        loaded_document_paths_qstrings.push_back(QString::fromStdWString(loaded_document_paths_[i]));
-        detected_paper_names_qstrings.push_back(QString::fromStdWString(detected_paper_names[i]));
-        document_path_qstring.push_back(QString::fromStdWString(loaded_document_paths_[i]));
-    }
-
-    auto widget = ItemWithDescriptionSelectorWidget::from_items(
-        std::move(detected_paper_names_qstrings),
-        std::move(loaded_document_paths_qstrings),
-        std::move(document_path_qstring),
-        this);
-
-    widget->set_select_fn([this, widget](int index) {
-        QString path = widget->item_model->metadatas[index];
-        if (pending_command_instance) {
-            pending_command_instance->set_generic_requirement(path);
-            advance_command(std::move(pending_command_instance));
-            pop_current_widget();
-        }
-        });
-    widget->set_delete_fn([this, widget](int index) {
-        std::wstring path = widget->item_model->metadatas[index].toStdWString();
-        std::optional<Document*> doc_to_delete = document_manager->get_cached_document(path);
-        if (!doc_to_delete) {
-            document_manager->remove_tab(path);
-        }
-        for (auto window : windows) {
-            if (window->doc() && window->doc()->get_path() == path) {
-                if (window != this) {
-                    window->close();
-                }
-            }
-        }
-        if (doc_to_delete && (doc_to_delete.value() != doc())) {
-            document_manager->remove_tab(path);
-            free_document(doc_to_delete.value());
-        }
-        else if (doc_to_delete) {
-            // removing the current document, close the document
-            main_document_view->set_null_document();
-            document_manager->remove_tab(path);
-            free_document(doc_to_delete.value());
-        }
-        });
-
-    set_current_widget(widget);
-    show_current_widget();
-
-    //set_filtered_select_menu<std::wstring>(this, true,
-    //    MULTILINE_MENUS,
-    //    { loaded_document_paths, detected_paper_names },
-    //    loaded_document_paths_,
-    //    index,
-    //    [&](std::wstring* path) {
-    //        if (pending_command_instance) {
-    //            pending_command_instance->set_generic_requirement(QString::fromStdWString(*path));
-    //            advance_command(std::move(pending_command_instance));
-    //        }
-    //        //open_document(*path);
-    //    },
-    //    [&](std::wstring* path) {
-    //        std::optional<Document*> doc_to_delete = document_manager->get_cached_document(*path);
-    //        if (!doc_to_delete) {
-    //            document_manager->remove_tab(*path);
-    //        }
-    //        for (auto window : windows) {
-    //            if (window->doc() && window->doc()->get_path() == *path) {
-    //                if (window != this) {
-    //                    window->close();
-    //                }
-    //            }
-    //        }
-    //        if (doc_to_delete && (doc_to_delete.value() != doc())) {
-    //            document_manager->remove_tab(*path);
-    //            free_document(doc_to_delete.value());
-    //        }
-    //    }
-    //    );
-    //make_current_menu_columns_equal();
-
-    show_current_widget();
+    return navigation_controller->handle_goto_loaded_document();
 }
 
 bool MainWidget::execute_macro_if_enabled(std::wstring macro_command_string, QLocalSocket* result_socket) {
@@ -6710,14 +6593,7 @@ HighlightButtons* MainWidget::get_highlight_buttons() {
 }
 
 bool MainWidget::goto_ith_next_overview(int i) {
-    std::optional<OverviewState> state = main_document_view->get_ith_next_overview(i);
-    if (state.has_value()){
-        set_overview_page(state.value(), true);
-        invalidate_render();
-        on_overview_source_updated();
-        return true;
-    }
-    return false;
+    return navigation_controller->goto_ith_next_overview(i);
 }
 
 void MainWidget::on_overview_source_updated() {
@@ -6923,131 +6799,6 @@ void MainWidget::set_overview_page(std::optional<OverviewState> overview, bool s
 }
 
 
-
-
-void list_dir_helper(QString path, QStringList& paths) {
-    for (const auto& entry : QDir(path).entryInfoList(QDir::Files)) {
-        paths.push_back(entry.filePath());
-    }
-
-    for (const auto& entry : QDir(path).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-        list_dir_helper(entry.filePath(), paths);
-    }
-}
-
-QStringList MainWidget::list_dir(QString path) {
-    QStringList child_paths;
-
-    list_dir_helper(path, child_paths);
-
-    return child_paths;
-}
-
-bool remove_file(QString path) {
-    QFile file(path);
-    file.setPermissions(QFile::WriteOwner | QFile::ReadOwner | QFile::ExeOwner | QFile::WriteUser | QFile::ReadUser | QFile::ExeUser | QFile::WriteGroup | QFile::ReadGroup | QFile::ExeGroup | QFile::WriteOther | QFile::ReadOther | QFile::ExeOther);
-    return file.remove();
-}
-
-void MainWidget::export_python_api() {
-#ifndef SIOYEK_MOBILE
-    QString res;
-    QString INDENT = "    ";
-
-    res += "class SioyekBase:\n\n";
-
-    QStringList command_names = command_manager->get_all_command_names();
-    for (auto command_name : command_names) {
-        QString command_name_ = command_name;
-        if (command_name_ == "import") {
-            command_name_ = "import_";
-        }
-
-        if (command_name.size() > 0 && command_name[0] != '_') {
-
-            auto command = command_manager->get_command_with_name(this, command_name.toStdString());
-            res += INDENT + "def " + command_name_ + "(self";
-            auto requirement = command->next_requirement(this);
-            if (requirement) {
-                res += ", *args, focus=False, wait=True, window_id=None):\n";
-                res += INDENT + INDENT;
-                res += "return self.run_command(\"" + command_name + "\", text=args, focus=focus, wait=wait, window_id=window_id)\n\n";
-            }
-            else {
-                res += ", focus=False, wait=True, window_id=None):\n";
-                res += INDENT + INDENT;
-                res += "return self.run_command(\"" + command_name + "\", text=None, focus=focus, wait=wait, window_id=window_id)\n\n";
-            }
-        }
-
-    }
-    // ensure python_api_base_path/src/sioyek folder structure exists using Qt
-    QString sioyek_python_lib_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").get_path());
-    QDir dir(sioyek_python_lib_path);
-    bool dir_exists = false;
-
-    if (!dir.exists()) {
-        dir_exists = dir.mkpath(".");
-    }
-    else {
-        dir_exists = true;
-    }
-
-    if (dir_exists) {
-        // copy qrc:/python_api/LICENSE.txt and qrc:/python_api/pyproject.toml to python_api_base_path
-        QString license_path = QString::fromStdWString(python_api_base_path.slash(L"LICENSE.txt").get_path());
-        remove_file(license_path);
-        QFile::copy(":/python_api/LICENSE.txt", license_path);
-
-        QString readme_path = QString::fromStdWString(python_api_base_path.slash(L"README.md").get_path());
-        remove_file(readme_path);
-        QFile::copy(":/python_api/README.md", readme_path);
-
-        QString pyproject_path = QString::fromStdWString(python_api_base_path.slash(L"pyproject.toml").get_path());
-        remove_file(pyproject_path);
-        QFile::copy(":/python_api/pyproject.toml", pyproject_path);
-
-        QString sioyekpy = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"sioyek.py").get_path());
-        remove_file(sioyekpy);
-        QFile::copy(":/python_api/src/sioyek/sioyek.py", sioyekpy);
-
-        //QString sioyekpy2 = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"sioyek2.py").get_path());
-        //QFile::remove(sioyekpy2);
-        //QFile::copy(":/python_api/src/sioyek/sioyek.py", sioyekpy2);
-
-        QString init_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"__init__.py").get_path());
-        remove_file(init_path);
-        QFile::copy(":/python_api/src/sioyek/__init__.py", init_path);
-
-
-        std::string python_interpreter_path_utf8 = utf8_encode(PYTHON_INTERPRETER_PATH);
-        const char* python_interpreter_path = python_interpreter_path_utf8.c_str();
-        if (PYTHON_INTERPRETER_PATH.size() == 0){
-            python_interpreter_path = std::getenv("SIOYEK_PYTHON_INTERPRETER_PATH");
-        }
-
-        if (python_interpreter_path == nullptr) {
-            show_error_message(L"You should set SIOYEK_PYTHON_INTERPRETER_PATH environment variables or python_interpreter_path config for export to work");
-            return;
-        }
-        QString base_path = QString::fromStdWString(python_api_base_path.slash(L"src").slash(L"sioyek").slash(L"base.py").get_path());
-
-        QFile output(base_path);
-
-        if (output.open(QIODevice::WriteOnly)) {
-            output.write(res.toUtf8());
-        }
-        output.close();
-
-
-        //QDesktopServices::openUrl(QString::fromStdWString(python_api_base_path.get_path()));
-        std::string command = std::string(python_interpreter_path) + " -m pip install \"" + python_api_base_path.get_path_utf8() + "\"";
-        std::system(command.c_str());
-    }
-
-
-#endif
-}
 
 bool MainWidget::execute_macro_from_origin(std::wstring macro_command_string, QLocalSocket* origin) {
     return execute_macro_if_enabled(macro_command_string, origin);
