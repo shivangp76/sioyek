@@ -118,6 +118,7 @@
 #include "controllers/network_controller.h"
 #include "controllers/selection_controller.h"
 #include "controllers/widget_controller.h"
+#include "controllers/navigation_controller.h"
 #include "ui/documentation_ui.h"
 
 #include "commands/base_commands.h"
@@ -1053,6 +1054,7 @@ MainWidget::MainWidget(fz_context* mupdf_context,
     network_controller.reset(new NetworkController(this, sioyek_network_manager_));
     ruler_controller.reset(new RulerController(this));
     widget_controller.reset(new WidgetController(this));
+    navigation_controller.reset(new NavigationController(this));
 
     QFont label_font = QFont(get_status_font_face_name());
     label_font.setStyleHint(QFont::TypeWriter);
@@ -1969,84 +1971,14 @@ void MainWidget::open_document_with_hash(const std::string& path, std::optional<
     std::optional<std::wstring> maybe_path = checksummer->get_path(path);
     if (maybe_path) {
         Path path(maybe_path.value());
-        open_document(path, offset_x, offset_y, zoom_level);
+        navigation_controller->open_document(path, offset_x, offset_y, zoom_level);
     }
 }
 
 void MainWidget::open_document(const Path& path, std::optional<float> offset_x, std::optional<float> offset_y, std::optional<float> zoom_level, std::string downloaded_checksum) {
-    if (doc()) {
-        if (resume_to_server_position_button->isVisible()) {
-            resume_to_server_position_button->hide();
-        }
-        network_controller->sync_current_file_location_to_servers();
-    }
-
-    opengl_widget->clear_all_selections();
-
-    //save the previous document state
-    if (main_document_view && doc()) {
-        bool should_sync_drawings = doc()->get_drawings_are_dirty();
-        main_document_view->persist(true);
-        network_controller->perform_sync_operations_when_document_is_closed(false, should_sync_drawings);
-    }
-
-    if (main_document_view->get_view_width() > main_window_width) {
-        main_window_width = main_document_view->get_view_width();
-    }
-
-    main_document_view->on_view_size_change(main_window_width, main_window_height);
-    main_document_view->open_document(path.get_path(), true, {}, false, downloaded_checksum);
-
-    if (downloaded_checksum.size() > 0) {
-        // if this documents is downloaded from the server, it must be synced
-        doc()->set_is_synced(true);
-    }
-
-    on_open_document(path.get_path());
-
-    if (doc()) {
-        document_manager->add_tab(doc()->get_path());
-        //doc()->set_only_for_portal(false);
-    }
-
-    bool has_document = main_document_view_has_document();
-
-    if (has_document) {
-        //setWindowTitle(QString::fromStdWString(path.get_path()));
-        if (path.filename().has_value()) {
-            setWindowTitle(QString::fromStdWString(path.filename().value()));
-        }
-        else {
-            setWindowTitle(QString::fromStdWString(path.get_path()));
-        }
-
-    }
-
-    if ((path.get_path().size() > 0) && (!has_document)) {
-        show_error_message(L"Could not open file1: " + path.get_path());
-    }
-
-    if (offset_x) {
-        main_document_view->set_offset_x(offset_x.value());
-    }
-    if (offset_y) {
-        main_document_view->set_offset_y(offset_y.value());
-    }
-
-    if (zoom_level) {
-        main_document_view->set_zoom_level(zoom_level.value(), true);
-    }
-
-    show_password_prompt_if_required();
-
-    if (main_document_view_has_document()) {
-        update_scrollbar();
-    }
-
-    deselect_document_indices();
-    invalidate_render();
-
+    return navigation_controller->open_document(path, offset_x, offset_y, zoom_level, downloaded_checksum);
 }
+
 
 void MainWidget::open_document_at_location(const Path& path_,
     int page,
@@ -2055,40 +1987,7 @@ void MainWidget::open_document_at_location(const Path& path_,
     std::optional<float> zoom_level,
     bool should_push_state)
 {
-    //save the previous document state
-    if (main_document_view) {
-        main_document_view->persist();
-    }
-    std::wstring path = path_.get_path();
-
-    open_document(path, true, {}, true);
-    bool has_document = main_document_view_has_document();
-
-    if (has_document && should_push_state) {
-        //setWindowTitle(QString::fromStdWString(path));
-        push_state();
-    }
-
-    if ((path.size() > 0) && (!has_document)) {
-        show_error_message(L"Could not open file2: " + path);
-    }
-    else {
-        main_document_view->on_view_size_change(main_window_width, main_window_height);
-
-        AbsoluteDocumentPos absolute_pos = DocumentPos{ page, x_loc.value_or(0), y_loc.value_or(0) }.to_absolute(doc());
-
-        if (x_loc) {
-            main_document_view->set_offset_x(absolute_pos.x);
-        }
-        main_document_view->set_offset_y(absolute_pos.y);
-
-        if (zoom_level) {
-            main_document_view->set_zoom_level(zoom_level.value(), true);
-        }
-    }
-
-
-    show_password_prompt_if_required();
+    return navigation_controller->open_document_at_location(path_, page, x_loc, y_loc, zoom_level, should_push_state);
 }
 
 void MainWidget::open_document(const DocumentViewState& state)
@@ -2668,29 +2567,7 @@ void MainWidget::handle_left_click(WindowPos click_pos, bool down, bool is_shift
 
 
 void MainWidget::push_state(bool update) {
-
-    if (!main_document_view_has_document()) return; // we don't add empty document to history
-
-    DocumentViewState dvs = main_document_view->get_state();
-
-    //if (history.size() > 0) { // this check should always be true
-    //	history[history.size() - 1] = dvs;
-    //}
-    //// don't add the same place in history multiple times
-    //// todo: we probably don't need this check anymore
-    //if (history.size() > 0) {
-    //	DocumentViewState last_history = history.back();
-    //	if (last_history == dvs) return;
-    //}
-
-    // delete all history elements after the current history point
-    history.erase(history.begin() + (1 + current_history_index), history.end());
-    if (!((history.size() > 0) && (history.back() == dvs))) {
-        history.push_back(dvs);
-    }
-    if (update) {
-        current_history_index = static_cast<int>(history.size() - 1);
-    }
+    return navigation_controller->push_state(update);
 }
 
 void MainWidget::next_state() {
@@ -2699,14 +2576,8 @@ void MainWidget::next_state() {
         SioyekDocumentationTextBrowser* doc_browser = dynamic_cast<SioyekDocumentationTextBrowser*>(current_widget_stack.back());
         doc_browser->forward();
     }
-
-    if (current_history_index < (static_cast<int>(history.size()) - 1)) {
-        update_current_history_index();
-        current_history_index++;
-        if (current_history_index + 1 < history.size()) {
-            set_main_document_view_state(history[current_history_index + 1]);
-        }
-
+    else{
+        return navigation_controller->next_state();
     }
 }
 
@@ -2716,74 +2587,17 @@ void MainWidget::prev_state() {
         SioyekDocumentationTextBrowser* doc_browser = dynamic_cast<SioyekDocumentationTextBrowser*>(current_widget_stack.back());
         doc_browser->backward();
     }
-    if (current_history_index >= 0) {
-        update_current_history_index();
-
-        /*
-        Goto previous history
-        In order to edit a link, we set the link to edit and jump to the link location, when going back, we
-        update the link with the current location of document, therefore, we must check to see if a link
-        is being edited and if so, we should update its destination position
-        */
-        if (portal_to_edit) {
-
-            //std::wstring link_document_path = checksummer->get_path(link_to_edit.value().dst.document_checksum).value();
-            std::wstring link_document_path = history[current_history_index].document_path;
-            Document* link_owner = document_manager->get_document(link_document_path);
-
-            OpenedBookState state = main_document_view->get_state().book_state;
-            portal_to_edit.value().dst.book_state = state;
-
-            if (link_owner) {
-                link_owner->update_portal(portal_to_edit.value());
-            }
-
-            db_manager->update_portal(portal_to_edit->uuid, state.offset_x, state.offset_y, state.zoom_level);
-            set_recently_updated_portal(portal_to_edit->uuid);
-
-            portal_to_edit = {};
-        }
-
-        if (current_history_index == (history.size() - 1)) {
-            if (!(history[history.size() - 1] == main_document_view->get_state())) {
-                push_state(false);
-            }
-        }
-        if (history[current_history_index] == main_document_view->get_state()) {
-            current_history_index--;
-        }
-        if (current_history_index >= 0) {
-            DocumentViewState new_state = history[current_history_index];
-            // save the current document in the list of opened documents
-            if (doc() && doc()->get_path() != new_state.document_path) {
-                persist();
-            }
-            set_main_document_view_state(new_state);
-            current_history_index--;
-        }
+    else{
+        return navigation_controller->prev_state();
     }
 }
 
 void MainWidget::update_current_history_index() {
-    if (main_document_view_has_document()) {
-        int index_to_update = current_history_index + 1;
-        if (index_to_update < history.size()) {
-            DocumentViewState current_state = main_document_view->get_state();
-            history[index_to_update] = current_state;
-        }
-    }
+    return navigation_controller->update_current_history_index();
 }
 
 void MainWidget::set_main_document_view_state(DocumentViewState new_view_state) {
-
-    if ((!main_document_view_has_document()) || (main_document_view->get_document()->get_path() != new_view_state.document_path)) {
-        open_document(new_view_state.document_path, &this->is_ui_invalidated);
-
-        //setwindowtitle(qstring::fromstdwstring(new_view_state.document_path));
-    }
-
-    main_document_view->on_view_size_change(main_window_width, main_window_height);
-    main_document_view->set_book_state(new_view_state.book_state);
+    return navigation_controller->set_main_document_view_state(new_view_state);
 }
 
 void MainWidget::handle_click(WindowPos click_pos) {
@@ -8592,12 +8406,7 @@ void MainWidget::document_views_open_path(const std::vector<DocumentView*>& docu
 }
 
 void MainWidget::update_renamed_document_in_history(std::wstring old_path, std::wstring new_path){
-
-    for (int i = 0; i < history.size(); i++) {
-        if (history[i].document_path == old_path) {
-            history[i].document_path = new_path;
-        }
-    }
+    return navigation_controller->update_renamed_document_in_history(old_path, new_path);
 }
 
 void MainWidget::maximize_window() {

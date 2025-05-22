@@ -120,6 +120,7 @@ class JavascriptController;
 class NetworkController;
 class RulerController;
 class WidgetController;
+class NavigationController;
 
 // if we inherit from QWidget there are problems on high refresh rate smartphone displays
 class MainWidget : public SioyekBaseWidget {
@@ -143,6 +144,7 @@ public:
     std::unique_ptr<NetworkController> network_controller;
     std::unique_ptr<RulerController> ruler_controller;
     std::unique_ptr<WidgetController> widget_controller;
+    std::unique_ptr<NavigationController> navigation_controller;
     QWidget* central_widget = nullptr;
     QMenuBar* menu_bar = nullptr;
     int window_id;
@@ -189,12 +191,6 @@ public:
     // menu, we will call on_command_done("goto_beginning"). The reason that this is a closure instead of just a
     // method is historical. I am too lazy to change it.
     std::function<void(std::string, std::string, bool)> on_command_done = nullptr;
-
-    // List of previous locations in the current session. Note that we keep the history even across files
-    // hence why `DocumentViewState` has a `document_path` member
-    std::vector<DocumentViewState> history;
-    // the index in the `history` array that we will jump to when `prev_state` is called.
-    int current_history_index = -1;
 
     // custom message to be displayed in sioyek's statusbar
     //std::wstring custom_status_message = L"";
@@ -484,9 +480,9 @@ public:
 
     void invalidate_render();
     void invalidate_ui();
-    void open_document(const Path& path, std::optional<float> offset_x = {}, std::optional<float> offset_y = {}, std::optional<float> zoom_level = {}, std::string downloaded_checksum="");
     void open_document_with_hash(const std::string& hash, std::optional<float> offset_x = {}, std::optional<float> offset_y = {}, std::optional<float> zoom_level = {});
     void open_document_at_location(const Path& path, int page, std::optional<float> x_loc, std::optional<float> y_loc, std::optional<float> zoom_level, bool should_push_state=true);
+    void open_document(const Path& path, std::optional<float> offset_x = {}, std::optional<float> offset_y = {}, std::optional<float> zoom_level = {}, std::string downloaded_checksum="");
     void open_document(const DocumentViewState& state);
     void open_document(const PortalViewState& checksum);
     void validate_render();
