@@ -2,7 +2,6 @@
 
 #include <qpoint.h>
 #include <mupdf/fitz.h>
-#include <qopengl.h>
 #include <algorithm>
 #include <QObject>
 #include <qrect.h>
@@ -21,18 +20,6 @@ bool rects_intersect(fz_rect rect1, fz_rect rect2);
 bool rects_intersect(fz_irect rect1, fz_irect rect2);
 bool range_intersects(float range1_start, float range1_end, float range2_start, float range2_end);
 
-struct CompiledDrawingData {
-    GLuint vao = 0;
-    GLuint vertex_buffer = 0;
-    GLuint index_buffer = 0;
-    GLuint dots_vertex_buffer = 0;
-    GLuint dots_uv_buffer = 0;
-    GLuint dots_index_buffer = 0;
-    GLuint lines_type_index_buffer = 0;
-    GLuint dots_type_index_buffer = 0;
-    int n_elements = 0;
-    int n_dot_elements = 0;
-};
 
 struct PagelessDocumentPos {
     Q_GADGET
@@ -126,11 +113,6 @@ public:
 struct DocumentRect;
 struct AbsoluteRect;
 struct NormalizedWindowRect;
-
-//struct PagelessDocumentRect : public fz_rect {
-//    PagelessDocumentRect();
-//    PagelessDocumentRect(fz_rect r);
-//};
 
 
 template<typename R, typename T>
@@ -247,19 +229,6 @@ struct EnhancedRect : public R {
 
 };
 
-
-// struct PagelessDocumentRect : public EnhancedRect<fz_rect, PagelessDocumentPos>{
-//     Q_GADGET
-// };
-
-// struct VirtualRect : public EnhancedRect<fz_rect, VirtualPos>{
-//     Q_GADGET
-//     Q_PROPERTY(float x0 MEMBER x0);
-//     Q_PROPERTY(float x1 MEMBER x1);
-//     Q_PROPERTY(float y0 MEMBER y0);
-//     Q_PROPERTY(float y1 MEMBER y1);
-// };
-
 using PagelessDocumentRect = EnhancedRect<fz_rect, PagelessDocumentPos>;
 using VirtualRect = EnhancedRect<fz_rect, VirtualPos>;
 //using WindowRect = EnhancedRect<fz_irect, WindowPos>;
@@ -341,14 +310,6 @@ public:
     VirtualRect to_virtual(const DocumentView* document_view) const;
 };
 
-//template<typename T, int dim>
-//operator+ (Vec<T, dim> a, Vec<T, dim> b) {
-//	Vec<T, dim> c;
-//	for (int i = 0; i < dim; i++) {
-//		c.values[i] = a.values[i] + b.values[i];
-//	}
-//	return c;
-//}
 bool are_same(const AbsoluteDocumentPos& lhs, const AbsoluteDocumentPos& rhs);
 
 template<typename T, int dim>

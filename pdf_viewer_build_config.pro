@@ -164,6 +164,7 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/network_manager.h \
            pdf_viewer/status_string.h \
            pdf_viewer/types/common_types.h \
+           pdf_viewer/types/drawing_types.h \
            pdf_viewer/ui/bookmark_ui.h \
            pdf_viewer/ui/selector_ui.h \
            pdf_viewer/ui/ui_models.h \
@@ -186,6 +187,7 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/utils/model_utils.h \
            pdf_viewer/utils/color_utils.h \
            pdf_viewer/utils/image_utils.h \
+           pdf_viewer/utils/drawing_utils.h \
            pdf_viewer/utils/android_specific_utils.h \
            fzf/fzf.h
 
@@ -220,6 +222,7 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/network_manager.cpp \
            pdf_viewer/status_string.cpp \
            pdf_viewer/types/common_types.cpp \
+           pdf_viewer/types/drawing_types.cpp \
            pdf_viewer/ui/bookmark_ui.cpp \
            pdf_viewer/ui/selector_ui.cpp \
            pdf_viewer/ui/ui_models.cpp \
@@ -242,6 +245,7 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/utils/model_utils.cpp \
            pdf_viewer/utils/color_utils.cpp \
            pdf_viewer/utils/image_utils.cpp \
+           pdf_viewer/utils/drawing_utils.cpp \
            pdf_viewer/utils/android_specific_utils.cpp \
            fzf/fzf.c
 

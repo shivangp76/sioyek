@@ -10,7 +10,6 @@
 #include <variant>
 #include <qjsonobject.h>
 #include <qdatetime.h>
-#include <qpixmap.h>
 
 #include "coordinates.h"
 
@@ -281,7 +280,6 @@ public:
 
 };
 
-
 struct PdfLink {
     //fz_rect rect;
     std::vector<PagelessDocumentRect> rects;
@@ -296,19 +294,6 @@ struct ParsedUri {
     float y;
 };
 
-struct FreehandDrawingPoint {
-    Q_GADGET
-    Q_PROPERTY(AbsoluteDocumentPos pos READ get_pos)
-    Q_PROPERTY(float thickness MEMBER thickness)
-public:
-    AbsoluteDocumentPos pos;
-    float thickness;
-
-    AbsoluteDocumentPos get_pos();
-};
-
-
-Q_DECLARE_METATYPE(FreehandDrawingPoint)
 
 enum class SearchCaseSensitivity {
     CaseSensitive,
@@ -323,31 +308,6 @@ struct DocumentCharacter {
     fz_stext_block* stext_block;
     fz_stext_line* stext_line;
     fz_stext_char* stext_char;
-};
-
-struct FreehandDrawing {
-    Q_GADGET
-    Q_PROPERTY(QList<FreehandDrawingPoint> points READ get_points)
-    Q_PROPERTY(char type MEMBER type)
-    Q_PROPERTY(float alpha MEMBER alpha)
-    Q_PROPERTY(QDateTime creation_time MEMBER creattion_time)
-public:
-    QList<FreehandDrawingPoint> points;
-    char type;
-    float alpha = 1;
-    QDateTime creattion_time;
-    QUuid::Id128Bytes uuid = {};
-    bool is_synced = false;
-    int network_pending_request_id = -1;
-
-    Q_INVOKABLE AbsoluteRect bbox() const;
-    QList<FreehandDrawingPoint> get_points();
-
-};
-
-struct PixmapDrawing {
-    QPixmap pixmap;
-    AbsoluteRect rect;
 };
 
 struct DocumentViewState {

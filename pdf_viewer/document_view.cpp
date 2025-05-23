@@ -15,6 +15,7 @@
 #include "pdf_renderer.h"
 #include "utils/text_utils.h"
 #include "utils/window_utils.h"
+#include "utils/drawing_utils.h"
 
 
 extern float MOVE_SCREEN_PERCENTAGE;

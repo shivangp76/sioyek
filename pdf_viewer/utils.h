@@ -230,8 +230,6 @@ fz_rect get_index_rect(fz_rect original, int index, int num_h_slices, int num_v_
 QString clean_bib_item(QString bib_item);
 std::wstring clean_link_source_text(std::wstring link_source_text);
 
-QList<FreehandDrawingPoint> smooth_filter_drawing_points(const QList<FreehandDrawingPoint>& points, int amount);
-QList<FreehandDrawingPoint> prune_freehand_drawing_points(const QList<FreehandDrawingPoint>& points);
 std::optional<DocumentRect> find_expanding_rect(bool before, fz_stext_page* page, DocumentRect page_rect);
 std::vector<DocumentRect> find_expanding_rect_word(bool before, fz_stext_page* page, DocumentRect page_rect);
 std::optional<DocumentRect> find_shrinking_rect_word(bool before, fz_stext_page* page, DocumentRect page_rect);
@@ -245,7 +243,6 @@ std::wstring new_uuid();
 std::string new_uuid_utf8();
 bool is_text_rtl(const std::wstring& text);
 bool are_same(float f1, float f2);
-bool are_same(const FreehandDrawing& lhs, const FreehandDrawing& rhs);
 
 template<typename T>
 QJsonArray export_array(std::vector<T> objects, std::string checksum) {
@@ -721,15 +718,6 @@ public:
 std::wstring ios_add_appdir(std::wstring path);
 std::wstring ios_remove_appdir(std::wstring path);
 #endif
-
-struct DetectedRectResult{
-    AbsoluteRect rect;
-    float x0_strength;
-    float x1_strength;
-    float y0_strength;
-    float y1_strength;
-};
-std::optional<DetectedRectResult> detect_rect_drawing(const std::vector<FreehandDrawing>& drawings);
 
 
 template<typename T>

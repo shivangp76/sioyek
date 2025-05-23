@@ -17,6 +17,7 @@
 
 class QTextDocument;
 class QFont;
+class QPainter;
 
 class MyThread : public QThread {
     Q_OBJECT

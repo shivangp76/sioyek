@@ -21,6 +21,7 @@
 #include "utils.h"
 #include "utils/color_utils.h"
 #include "background_tasks.h"
+#include "utils/drawing_utils.h"
 
 #ifndef GL_MULTISAMPLE
 #define GL_MULTISAMPLE  0x809D

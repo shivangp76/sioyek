@@ -2,17 +2,14 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <iostream>
 #include <thread>
 #include <mutex>
 #include <map>
 #include <unordered_map>
 #include <deque>
-#include <regex>
 #include <shared_mutex>
 #include <qtypes.h>
 
-//#include <Windows.h>
 #include <qstandarditemmodel.h>
 #include <qdatetime.h>
 
@@ -26,8 +23,7 @@
 
 #include "book.h"
 #include "coordinates.h"
-// #include "database.h"
-// #include "utils.h"
+#include "types/drawing_types.h"
 
 class CachedChecksummer;
 class DatabaseManager;
