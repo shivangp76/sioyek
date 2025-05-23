@@ -165,6 +165,9 @@ HEADERS += pdf_viewer/book.h \
            pdf_viewer/status_string.h \
            pdf_viewer/types/common_types.h \
            pdf_viewer/types/drawing_types.h \
+           pdf_viewer/types/annotation_types.h \
+           pdf_viewer/types/overview_types.h \
+           pdf_viewer/types/visible_object_types.h \
            pdf_viewer/ui/bookmark_ui.h \
            pdf_viewer/ui/selector_ui.h \
            pdf_viewer/ui/ui_models.h \
@@ -223,6 +226,9 @@ SOURCES += pdf_viewer/book.cpp \
            pdf_viewer/status_string.cpp \
            pdf_viewer/types/common_types.cpp \
            pdf_viewer/types/drawing_types.cpp \
+           pdf_viewer/types/annotation_types.cpp \
+           pdf_viewer/types/overview_types.cpp \
+           pdf_viewer/types/visible_object_types.cpp \
            pdf_viewer/ui/bookmark_ui.cpp \
            pdf_viewer/ui/selector_ui.cpp \
            pdf_viewer/ui/ui_models.cpp \

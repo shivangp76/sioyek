@@ -1,6 +1,7 @@
 #pragma once
 #include <QAbstractTableModel>
 #include "book.h"
+#include "types/annotation_types.h"
 
 class CommandModel : public QAbstractTableModel {
     Q_OBJECT

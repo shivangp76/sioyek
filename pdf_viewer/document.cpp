@@ -72,6 +72,48 @@ extern std::wstring ANNOTATIONS_DIR_PATH;
 extern std::wstring BOOK_SCAN_PATH;
 extern bool LIGHTEN_COLORS_WHEN_EMBEDDING_ANNOTATIONS;
 
+template<typename T>
+std::map<std::string, int> annotation_prism(std::vector<T>& file_annotations,
+    std::vector<T>& existing_annotations,
+    std::vector<Annotation*>& new_annotations,
+    std::vector<Annotation*>& updated_annotations,
+    std::vector<Annotation*>& deleted_annotations)
+{
+
+    std::map<std::string, int> existing_annotation_ids;
+    std::map<std::string, int> file_annotation_ids;
+
+    for (int i = 0; i < existing_annotations.size(); i++) {
+        existing_annotation_ids[existing_annotations[i].uuid] = i;
+    }
+
+    for (int i = 0; i < file_annotations.size(); i++) {
+        file_annotation_ids[file_annotations[i].uuid] = i;
+    }
+
+    //for (auto annot : file_annotations) {
+    for (int i = 0; i < file_annotations.size(); i++) {
+        if (existing_annotation_ids.find(file_annotations[i].uuid) == existing_annotation_ids.end()) {
+            new_annotations.push_back(&file_annotations[i]);
+        }
+
+        else {
+            int index = existing_annotation_ids[file_annotations[i].uuid];
+            if (existing_annotations[index].get_modification_datetime().msecsTo(file_annotations[i].get_modification_datetime()) > 1000) {
+                updated_annotations.push_back(&file_annotations[i]);
+            }
+        }
+    }
+    //for (auto annot : existing_annotations) {
+    for (int i = 0; i < existing_annotations.size(); i++) {
+        if (file_annotation_ids.find(existing_annotations[i].uuid) == file_annotation_ids.end()) {
+            deleted_annotations.push_back(&existing_annotations[i]);
+        }
+    }
+
+    return existing_annotation_ids;
+}
+
 int Document::get_mark_index(char symbol) {
     for (size_t i = 0; i < marks.size(); i++) {
         if (marks[i].symbol == symbol) {

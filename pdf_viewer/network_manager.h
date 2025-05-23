@@ -7,6 +7,7 @@
 
 #include "book.h"
 #include "types/common_types.h"
+#include "types/annotation_types.h"
 
 class DatabaseManager;
 class BackgroundTaskManager;

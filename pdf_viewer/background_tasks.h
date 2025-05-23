@@ -14,6 +14,7 @@
 #include <qstring.h>
 
 #include "book.h"
+#include "types/annotation_types.h"
 
 class QTextDocument;
 class QFont;

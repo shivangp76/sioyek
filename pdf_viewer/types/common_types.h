@@ -59,3 +59,15 @@ struct MenuNode {
     QString doc;
     std::vector<MenuNode*> children;
 };
+
+enum OverviewSide {
+    bottom = 0,
+    top = 1,
+    left = 2,
+    right = 3
+};
+
+bool are_same(float f1, float f2);
+
+std::wstring new_uuid();
+std::string new_uuid_utf8();

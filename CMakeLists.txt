@@ -125,6 +125,9 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/document_view.cpp pdf_viewer/document_view.h
     pdf_viewer/types/common_types.cpp pdf_viewer/types/common_types.h
     pdf_viewer/types/drawing_types.cpp pdf_viewer/types/drawing_types.h
+    pdf_viewer/types/annotation_types.cpp pdf_viewer/types/annotation_types.h
+    pdf_viewer/types/overview_types.cpp pdf_viewer/types/overview_types.h
+    pdf_viewer/types/visible_object_types.cpp pdf_viewer/types/visible_object_types.h
     pdf_viewer/ui/bookmark_ui.cpp pdf_viewer/ui/bookmark_ui.h
     pdf_viewer/ui/selector_ui.cpp pdf_viewer/ui/selector_ui.h
     pdf_viewer/ui/ui_models.cpp pdf_viewer/ui/ui_models.h

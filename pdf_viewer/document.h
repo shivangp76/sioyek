@@ -24,6 +24,7 @@
 #include "book.h"
 #include "coordinates.h"
 #include "types/drawing_types.h"
+#include "types/annotation_types.h"
 
 class CachedChecksummer;
 class DatabaseManager;

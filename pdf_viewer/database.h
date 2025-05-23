@@ -6,6 +6,7 @@
 #include <string>
 #include "sqlite3.h"
 #include "book.h"
+#include "types/annotation_types.h"
 
 class CachedChecksummer;
 

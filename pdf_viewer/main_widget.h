@@ -19,6 +19,8 @@
 
 #include "book.h"
 #include "types/common_types.h"
+#include "types/annotation_types.h"
+#include "types/overview_types.h"
 
 class Document;
 class BackgroundBookmarkRenderer;

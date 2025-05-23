@@ -239,10 +239,7 @@ QStringList extract_paper_data_from_json_response(QJsonValue json_object, const 
 QStringList extract_paper_string_from_json_response(QJsonObject json_object, std::wstring path);
 QString file_size_to_human_readable_string(int file_size);
 
-std::wstring new_uuid();
-std::string new_uuid_utf8();
 bool is_text_rtl(const std::wstring& text);
-bool are_same(float f1, float f2);
 
 template<typename T>
 QJsonArray export_array(std::vector<T> objects, std::string checksum) {
@@ -267,47 +264,6 @@ std::vector<T> load_from_json_array(const QJsonArray& item_list) {
     return res;
 }
 
-template<typename T>
-std::map<std::string, int> annotation_prism(std::vector<T>& file_annotations,
-    std::vector<T>& existing_annotations,
-    std::vector<Annotation*>& new_annotations,
-    std::vector<Annotation*>& updated_annotations,
-    std::vector<Annotation*>& deleted_annotations)
-{
-
-    std::map<std::string, int> existing_annotation_ids;
-    std::map<std::string, int> file_annotation_ids;
-
-    for (int i = 0; i < existing_annotations.size(); i++) {
-        existing_annotation_ids[existing_annotations[i].uuid] = i;
-    }
-
-    for (int i = 0; i < file_annotations.size(); i++) {
-        file_annotation_ids[file_annotations[i].uuid] = i;
-    }
-
-    //for (auto annot : file_annotations) {
-    for (int i = 0; i < file_annotations.size(); i++) {
-        if (existing_annotation_ids.find(file_annotations[i].uuid) == existing_annotation_ids.end()) {
-            new_annotations.push_back(&file_annotations[i]);
-        }
-
-        else {
-            int index = existing_annotation_ids[file_annotations[i].uuid];
-            if (existing_annotations[index].get_modification_datetime().msecsTo(file_annotations[i].get_modification_datetime()) > 1000) {
-                updated_annotations.push_back(&file_annotations[i]);
-            }
-        }
-    }
-    //for (auto annot : existing_annotations) {
-    for (int i = 0; i < existing_annotations.size(); i++) {
-        if (file_annotation_ids.find(existing_annotations[i].uuid) == file_annotation_ids.end()) {
-            deleted_annotations.push_back(&existing_annotations[i]);
-        }
-    }
-
-    return existing_annotation_ids;
-}
 
 PagelessDocumentRect get_range_rect_union(const std::vector<PagelessDocumentRect>& rects, int first_index, int last_index);
 QString get_paper_name_from_reference_text(QString reference_text);

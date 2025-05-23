@@ -34,7 +34,6 @@
 #include <qnetworkreply.h>
 #include <qscreen.h>
 #include <qjsonarray.h>
-#include <quuid.h>
 #include <qjsondocument.h>
 #include <qrandom.h>
 #include <qmenu.h>
@@ -3012,17 +3011,6 @@ QString file_size_to_human_readable_string(int file_size) {
     }
 }
 
-std::wstring new_uuid() {
-    return QUuid::createUuid().toString().toStdWString();
-}
-
-std::string new_uuid_utf8() {
-    return QUuid::createUuid().toString().toStdString();
-}
-
-bool are_same(float f1, float f2) {
-    return std::abs(f1 - f2) < 0.01;
-}
 
 
 PagelessDocumentRect get_range_rect_union(const std::vector<PagelessDocumentRect>& rects, int first_index, int last_index) {

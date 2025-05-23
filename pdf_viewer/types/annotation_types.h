@@ -1,0 +1,262 @@
+#pragma once
+#include <QObject>
+#include <QString>
+#include <QDateTime>
+#include <QFont>
+#include <vector>
+#include "book.h"
+#include "types/common_types.h"
+
+struct PortalViewState {
+    std::string document_checksum;
+    OpenedBookState book_state;
+};
+
+struct Annotation {
+    Q_GADGET
+public:
+
+    static inline const QString CREATION_TIME_COLUMN_NAME = "creation_time";
+    std::string creation_time;
+
+    static inline const QString MODIFICATION_TIME_COLUMN_NAME = "modification_time";
+    std::string modification_time;
+
+    static inline const QString UUID_COLUMN_NAME = "uuid";
+    std::string uuid;
+
+    static inline const QString IS_SYNCED_COLUMN_NAME = "is_synced";
+    bool is_synced = false;
+
+    virtual QJsonObject to_json(std::string doc_checksum) const = 0;
+    virtual void  add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) = 0;
+    virtual std::vector<std::pair<QString, QVariant>> to_tuples();
+
+    void add_metadata_to_json(QJsonObject& obj, QString type) const;
+    void load_metadata_from_json(const QJsonObject& obj);
+
+    Q_INVOKABLE QDateTime get_creation_datetime() const;
+    Q_INVOKABLE QDateTime get_modification_datetime() const;
+
+    void update_creation_time();
+    void update_modification_time();
+
+    virtual std::optional<AbsoluteRect> get_rectangle() const;
+    std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
+
+};
+
+/*
+    A mark is a location in the document labeled with a symbol (which is a single character [a-z]). For example
+    we can mark a location with symbol 'a' and later return to that location by going to the mark named 'a'.
+    Lower case marks are local to the document and upper case marks are global.
+*/
+struct Mark : Annotation {
+    Q_GADGET
+    Q_PROPERTY(float y_offset MEMBER y_offset)
+    Q_PROPERTY(char symbol MEMBER symbol)
+public:
+    static Mark from_json(const QJsonObject& json_object);
+
+    static inline const std::string TABLE_NAME = "marks";
+
+    static inline const QString Y_OFFSET_COLUMN_NAME = "offset_y";
+    float y_offset;
+
+    static inline const QString SYMBOL_COLUMN_NAME = "symbol";
+    char symbol;
+
+    static inline const QString X_OFFSET_COLUMN_NAME = "offset_x";
+    std::optional<float> x_offset = {};
+
+    static inline const QString ZOOM_LEVEL_COLUMN_NAME = "zoom_level";
+    std::optional<float> zoom_level = {};
+
+    QJsonObject to_json(std::string doc_checksum) const;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
+};
+
+/*
+    A bookmark is similar to mark but instead of being indexed by a symbol, it has a description.
+*/
+struct BookMark : Annotation {
+    Q_GADGET
+    Q_PROPERTY(float y_offset_ MEMBER y_offset_)
+    Q_PROPERTY(float begin_x MEMBER begin_x)
+    Q_PROPERTY(float begin_y MEMBER begin_y)
+    Q_PROPERTY(float end_x MEMBER end_x)
+    Q_PROPERTY(float end_y MEMBER end_y)
+    Q_PROPERTY(float font_size MEMBER font_size)
+    // Q_PROPERTY(std::wstring description MEMBER description)
+    Q_PROPERTY(QString desc READ get_desc_qstring WRITE set_desc_qstring)
+public:
+    static BookMark from_json(const QJsonObject& json_object);
+
+    static inline const std::string TABLE_NAME = "bookmarks";
+
+    static inline const QString Y_OFFSET_COLUMN_NAME = "offset_y";
+    float y_offset_ = -1;
+
+    static inline const QString DESCRIPTION_COLUMN_NAME = "desc";
+    std::wstring description;
+
+    static inline const QString BEGIN_X_COLUMN_NAME = "begin_x";
+    float begin_x = -1;
+
+    static inline const QString BEGIN_Y_COLUMN_NAME = "begin_y";
+    float begin_y = -1;
+
+    static inline const QString END_X_COLUMN_NAME = "end_x";
+    float end_x = -1;
+
+    static inline const QString END_Y_COLUMN_NAME = "end_y";
+    float end_y = -1;
+
+
+    static inline const QString COLOR_R_COLUMN_NAME = "color_red";
+    static inline const QString COLOR_G_COLUMN_NAME = "color_green";
+    static inline const QString COLOR_B_COLUMN_NAME = "color_blue";
+    float color[3] = { 0 };
+
+    static inline const QString FONT_SIZE_COLUMN_NAME = "font_size";
+    float font_size = -1;
+
+    static inline const QString FONT_FACE_COLUMN_NAME = "font_face";
+    std::wstring font_face;
+
+    bool is_pending=false;
+
+    QString get_question_or_summary_markdown() const;
+    static QString get_display_markdown_or_text(QString bookmark_desc);
+    Q_INVOKABLE AbsoluteDocumentPos begin_pos() const ;
+    Q_INVOKABLE AbsoluteDocumentPos end_pos() const ;
+    Q_INVOKABLE AbsoluteRect rect() const;
+    QJsonObject to_json(std::string doc_checksum) const;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
+    float get_y_offset() const;
+
+    QString get_desc_qstring() const;
+    void set_desc_qstring(const QString& qstr);
+
+    QFont get_font(float zoom_level) const;
+    bool is_freetext() const;
+    bool is_box() const;
+    bool is_marked() const;
+    bool is_question() const;
+    bool is_summary() const;
+    bool is_latex() const;
+    bool is_markdown() const;
+    bool can_have_links() const;
+    static bool should_be_displayed_as_markdown(QString bookmark_text);
+    std::pair<QStringList, QStringList> get_links() const;
+
+    std::optional<char> get_type() const;
+    std::optional<char> get_background_type() const;
+    std::optional<char> get_text_type() const;
+    std::wstring  get_style_text() const;
+    Q_INVOKABLE QString get_render_text() const;
+
+    Q_INVOKABLE QVariant get_background_color() const;
+    Q_INVOKABLE QVariant get_border_color() const;
+    Q_INVOKABLE QVariant get_text_color() const;
+
+    std::optional<AbsoluteRect> get_rectangle() const override;
+    std::optional<AbsoluteRect> get_selection_rectangle() const;
+    //std::optional<OverviewSide> get_resize_side_containing_point(AbsoluteDocumentPos point) const;
+    void set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos);
+};
+
+struct Highlight : Annotation {
+    Q_GADGET
+public:
+    static Highlight from_json(const QJsonObject& json_object);
+
+    static inline const std::string TABLE_NAME = "highlights";
+
+    static inline const QString SELECTION_BEGIN_X_COLUMN_NAME = "begin_x";
+    static inline const QString SELECTION_BEGIN_Y_COLUMN_NAME = "begin_y";
+    AbsoluteDocumentPos selection_begin;
+
+    static inline const QString SELECTION_END_X_COLUMN_NAME = "end_x";
+    static inline const QString SELECTION_END_Y_COLUMN_NAME = "end_y";
+    AbsoluteDocumentPos selection_end;
+
+    static inline const QString DESCRIPTION_COLUMN_NAME = "desc";
+    std::wstring description;
+
+    static inline const QString TEXT_ANNOT_COLUMN_NAME = "text_annot";
+    std::wstring text_annot;
+
+    static inline const QString TYPE_COLUMN_NAME = "type";
+    char type;
+
+    std::vector<AbsoluteRect> highlight_rects;
+
+    QJsonObject to_json(std::string doc_checksum) const;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
+    std::optional<AbsoluteRect> get_rectangle() const override;
+
+};
+
+/*
+    A link is a connection between two document locations. For example when reading a paragraph that is referencing a figure,
+    we may want to link that paragraphs's location to the figure. We can then easily switch between the paragraph and the figure.
+    Also if helper window is opened, it automatically displays the closest link to the current location.
+    Note that this is different from PdfLink which is the built-in link functionality in PDF file format.
+*/
+struct Portal : Annotation {
+    Q_GADGET
+public:
+    static Portal from_json(const QJsonObject& json_object);
+
+    static inline const std::string TABLE_NAME = "links";
+
+    static Portal with_src_offset(float src_offset);
+
+    static inline const QString DST_DOCUMENT_COLUMN_NAME = "dst_document";
+    static inline const QString DST_OFFSET_X_COLUMN_NAME = "dst_offset_x";
+    static inline const QString DST_OFFSET_Y_COLUMN_NAME = "dst_offset_y";
+    static inline const QString DST_ZOOM_LEVEL_COLUMN_NAME = "dst_zoom_level";
+    PortalViewState dst;
+
+    static inline const QString SRC_OFFSET_Y_COLUMN_NAME = "src_offset_y";
+    float src_offset_y;
+
+    static inline const QString SRC_OFFSET_X_COLUMN_NAME = "src_offset_x";
+    std::optional<float> src_offset_x = {};
+
+    static inline const QString SRC_OFFSET_END_X_COLUMN_NAME = "src_offset_end_x";
+    std::optional<float> src_offset_end_x = {};
+
+    static inline const QString SRC_OFFSET_END_Y_COLUMN_NAME = "src_offset_end_y";
+    std::optional<float> src_offset_end_y = {};
+
+    mutable bool is_merged_rect_valid = false;
+    mutable std::optional<AbsoluteRect> merged_rect = {};
+
+    bool is_visible() const;
+    bool is_icon() const;
+    bool is_pinned() const;
+
+    QJsonObject to_json(std::string doc_checksum) const;
+    void add_to_tuples(std::vector<std::pair<QString, QVariant>>& tuples) override;
+
+    std::optional<AbsoluteRect> get_rectangle() const override;
+    AbsoluteRect get_actual_rectangle() const;
+    void update_merged_rect(Document* doc) const;
+    void set_side_to_pos(OverviewSide side, AbsoluteDocumentPos pos);
+    std::optional<AbsoluteRect> get_selection_rectangle() const;
+};
+
+bool operator==(const Mark& lhs, const Mark& rhs);
+bool operator==(const BookMark& lhs, const BookMark& rhs);
+bool operator==(const Highlight& lhs, const Highlight& rhs);
+bool operator==(const Portal& lhs, const Portal& rhs);
+
+bool are_same(const BookMark& lhs, const BookMark& rhs);
+
+bool are_same(const Highlight& lhs, const Highlight& rhs);
+
+bool has_changed(const BookMark& lhs, const BookMark& rhs);
+bool has_changed(const Highlight& lhs, const Highlight& rhs);
+bool has_changed(const Portal& lhs, const Portal& rhs);

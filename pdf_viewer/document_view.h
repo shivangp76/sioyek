@@ -16,6 +16,8 @@
 #include "coordinates.h"
 #include "book.h"
 #include "document.h"
+#include "types/overview_types.h"
+#include "types/visible_object_types.h"
 
 extern float ZOOM_INC_FACTOR;
 extern float SCROLL_ZOOM_INC_FACTOR;
