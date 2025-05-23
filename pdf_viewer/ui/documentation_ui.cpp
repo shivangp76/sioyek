@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "utils/window_utils.h"
 #include "utils/color_utils.h"
+#include "database.h"
 
 extern std::wstring EXTERNAL_TEXT_EDITOR_COMMAND;
 extern int FONT_SIZE;

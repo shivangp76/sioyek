@@ -11,6 +11,7 @@
 #include "main_widget.h"
 #include "document_view.h"
 #include "utils/window_utils.h"
+#include "database.h"
 
 extern bool SHOW_DOCUMENTATION_IN_WIDGET;
 extern bool ALIGN_LINK_DEST_TO_TOP;

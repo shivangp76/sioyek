@@ -11,6 +11,7 @@
 #include "ui.h"
 #include "path.h"
 #include "utils.h"
+#include "database.h"
 
 extern int DOCUMENT_LOCATION_MISMATCH_STRATEGY;
 extern float SERVER_AND_LOCAL_DOCUMENT_MISMATCH_THRESHOLD;

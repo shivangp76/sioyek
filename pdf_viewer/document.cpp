@@ -6412,3 +6412,7 @@ QJsonObject Document::get_annotation_js(QString uuid) {
 
     return {};
 }
+
+void Document::set_annots_to_synced(const std::string& table_name,  const std::vector<std::string>& uuids){
+    db_manager->set_annot_uuids_to_synced_(table_name, uuids);
+}

@@ -9135,3 +9135,7 @@ float MainWidget::get_brightness(){
     return 1.0f;
 #endif
 }
+
+std::vector<std::wstring> MainWidget::get_all_fulltext_tags(){
+    return db_manager->get_all_tags();
+}

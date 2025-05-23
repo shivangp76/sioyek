@@ -1737,7 +1737,7 @@ public:
     }
 
     void handle_generic_requirement() override{
-        std::vector<std::wstring> all_tags = widget->db_manager->get_all_tags();
+        std::vector<std::wstring> all_tags = widget->get_all_fulltext_tags();
         widget->show_custom_option_list(all_tags);
     }
 

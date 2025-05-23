@@ -26,7 +26,7 @@
 
 #include "book.h"
 #include "coordinates.h"
-#include "database.h"
+// #include "database.h"
 // #include "utils.h"
 
 class CachedChecksummer;
@@ -655,6 +655,8 @@ public:
         return res;
     }
 
+    void set_annots_to_synced(const std::string& table_name,  const std::vector<std::string>& uuids);
+
     template<typename T>
     void set_annots_to_synced(std::vector<std::string> uuids) {
         std::sort(uuids.begin(), uuids.end());
@@ -672,7 +674,8 @@ public:
                 annots[index].is_synced = true;
             }
         }
-        this->db_manager->set_annot_uuids_to_synced_(T::TABLE_NAME, uuids);
+        set_annots_to_synced(T::TABLE_NAME, uuids);
+        // this->db_manager->set_annot_uuids_to_synced_(T::TABLE_NAME, uuids);
 
     }
 

@@ -16,6 +16,7 @@
 #include "utils/color_utils.h"
 #include "path.h"
 #include "background_tasks.h"
+#include "database.h"
 
 extern bool AUTOMATICALLY_UPLOAD_PORTAL_DESTINATION_FOR_SYNCED_DOCUMENTS;
 extern bool SORT_BOOKMARKS_BY_LOCATION;
