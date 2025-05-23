@@ -29,6 +29,7 @@
 #include "utils.h"
 #include "utils/text_utils.h"
 #include "utils/color_utils.h"
+#include "utils/image_utils.h"
 
 const quint64 DRAWING_FILE_VERSION = 2;
 extern bool USE_BINARY_DRAWING_FILES;

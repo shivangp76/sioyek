@@ -27,7 +27,7 @@
 #include "book.h"
 #include "coordinates.h"
 #include "database.h"
-#include "utils.h"
+// #include "utils.h"
 
 class CachedChecksummer;
 class DatabaseManager;

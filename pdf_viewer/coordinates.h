@@ -504,3 +504,18 @@ VirtualPos operator-(const VirtualPos& lhs, const fvec2& rhs);
 
 
 DocumentRect to_document(const WindowRect& window_rect, DocumentView* dv);
+
+
+struct PageMergedLinesInfo {
+    std::vector<PagelessDocumentRect> merged_line_rects;
+    std::vector<std::wstring> merged_line_texts;
+    std::vector<std::vector<PagelessDocumentRect>> merged_line_chars;
+    std::vector<std::vector<int>> merged_line_indices;
+};
+
+struct PageMergedLinesInfoAbsolute {
+    std::vector<AbsoluteRect> merged_line_rects;
+    std::vector<std::wstring> merged_line_texts;
+    std::vector<std::vector<PagelessDocumentRect>> merged_line_chars;
+    std::vector<std::vector<int>> merged_line_indices;
+};

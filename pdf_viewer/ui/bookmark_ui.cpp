@@ -10,6 +10,7 @@
 #include "ui.h"
 #include "utils/window_utils.h"
 #include "utils/color_utils.h"
+#include "utils.h"
 
 extern bool TOUCH_MODE;
 extern float CHAT_WINDOW_BACKGROUND_COLOR[3];

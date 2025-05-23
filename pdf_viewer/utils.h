@@ -117,7 +117,6 @@ void search_custom_engine(const std::wstring& search_string, const std::wstring&
 void index_references(fz_stext_page* page, int page_number, std::map<std::wstring, IndexedData>& indices);
 void get_flat_chars_from_stext_page(fz_stext_page* stext_page, std::vector<fz_stext_char*>& flat_chars, bool dehyphenate=false);
 //void get_flat_chars_from_stext_page_for_bib_detection(fz_stext_page* stext_page, std::vector<fz_stext_char*>& flat_chars);
-int find_best_vertical_line_location(fz_pixmap* pixmap, int relative_click_x, int relative_click_y);
 //void get_flat_chars_from_stext_page_with_space(fz_stext_page* stext_page, std::vector<fz_stext_char*>& flat_chars, fz_stext_char* space);
 void index_equations(const std::vector<fz_stext_char*>& flat_chars, int page_number, std::map<std::wstring, std::vector<IndexedData>>& indices);
 void find_regex_matches_in_stext_page(const std::vector<fz_stext_char*>& flat_chars,
@@ -150,9 +149,7 @@ void check_for_updates(QWidget* parent, std::string current_version);
 char* get_argv_value(int argc, char** argv, std::string key);
 void split_root_file(QString path, QString& out_root, QString& out_partial);
 QString expand_home_dir(QString path);
-std::vector<unsigned int> get_max_width_histogram_from_pixmap(fz_pixmap* pixmap);
 //std::vector<unsigned int> get_line_ends_from_histogram(std::vector<unsigned int> histogram);
-void get_line_begins_and_ends_from_histogram(std::vector<unsigned int> histogram, std::vector<unsigned int>& begins, std::vector<unsigned int>& ends);
 
 template<typename T>
 int find_nth_larger_element_in_sorted_list(std::vector<T> sorted_list, T value, int n) {
@@ -575,19 +572,6 @@ std::vector<std::string> get_uuids(const std::vector<T>& annots) {
     return res;
 }
 
-struct PageMergedLinesInfo {
-    std::vector<PagelessDocumentRect> merged_line_rects;
-    std::vector<std::wstring> merged_line_texts;
-    std::vector<std::vector<PagelessDocumentRect>> merged_line_chars;
-    std::vector<std::vector<int>> merged_line_indices;
-};
-
-struct PageMergedLinesInfoAbsolute {
-    std::vector<AbsoluteRect> merged_line_rects;
-    std::vector<std::wstring> merged_line_texts;
-    std::vector<std::vector<PagelessDocumentRect>> merged_line_chars;
-    std::vector<std::vector<int>> merged_line_indices;
-};
 
 PageMergedLinesInfo merge_lines2(const std::vector<fz_stext_line*>& lines);
 
