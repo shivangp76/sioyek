@@ -10,6 +10,7 @@
 #include "ui/ui_models.h"
 #include "main_widget.h"
 #include "document_view.h"
+#include "document.h"
 #include "utils/window_utils.h"
 #include "database.h"
 

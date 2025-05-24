@@ -7,6 +7,7 @@
 #include "controllers/network_controller.h"
 #include "main_widget.h"
 #include "document_view.h"
+#include "document.h"
 #include "checksum.h"
 #include "ui.h"
 #include "path.h"

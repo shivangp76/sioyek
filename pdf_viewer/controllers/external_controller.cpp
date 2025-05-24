@@ -10,6 +10,7 @@
 #include "commands/base_commands.h"
 #include "controllers/external_controller.h"
 #include "document_view.h"
+#include "document.h"
 #include "utils/window_utils.h"
 #include "path.h"
 

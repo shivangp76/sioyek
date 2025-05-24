@@ -8,6 +8,7 @@
 #include "ui.h"
 #include "checksum.h"
 #include "database.h"
+#include "document.h"
 #include "book.h"
 #include "ui/selector_ui.h"
 #ifdef SIOYEK_ANDROID

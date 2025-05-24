@@ -3,6 +3,7 @@
 #include "controllers/selection_controller.h"
 #include "main_widget.h"
 #include "document_view.h"
+#include "document.h"
 #include "utils/image_utils.h"
 
 extern float RULER_AUTO_MOVE_SENSITIVITY;

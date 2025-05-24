@@ -7,6 +7,7 @@
 #include <QPixmap>
 
 #include "coordinates.h"
+#include "types/common_types.h"
 
 struct CompiledDrawingData {
     GLuint vao = 0;
@@ -57,4 +58,21 @@ public:
 struct PixmapDrawing {
     QPixmap pixmap;
     AbsoluteRect rect;
+};
+
+struct SelectedDrawings {
+    int page;
+    AbsoluteRect selection_absrect_;
+    std::vector<SelectedObjectIndex> selected_indices;
+};
+
+struct PageFreehandDrawing{
+    Q_GADGET
+    Q_PROPERTY(QList<FreehandDrawing> drawings READ get_drawings)
+public:
+    QList<FreehandDrawing> drawings;
+    QDateTime last_addition_time;
+    QDateTime last_deletion_time;
+
+    QList<FreehandDrawing> get_drawings();
 };

@@ -32,16 +32,6 @@ enum class ColorPalette {
     NoPalette
 };
 
-enum class SelectedObjectType {
-    Drawing,
-    Pixmap
-};
-
-
-struct SelectedObjectIndex {
-    int index;
-    SelectedObjectType type;
-};
 
 struct OpenedBookInfo {
     std::string checksum;

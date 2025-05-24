@@ -25,6 +25,7 @@
 #include "path.h"
 #include "document_view.h"
 #include "pdf_renderer.h"
+#include "types/drawing_types.h"
 
 class DocumentView;
 class PdfRenderer;

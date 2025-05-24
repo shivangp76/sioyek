@@ -6391,3 +6391,49 @@ std::optional<PdfLink> DocumentView::get_selected_link(const std::wstring& text)
     }
     return {};
 }
+
+template<typename T>
+std::vector<std::string> DocumentView::get_visible_annot_uuids(std::vector<int> visible_pages) {
+
+    const std::vector<T>& annots = doc()->get_annots<T>();
+    if (visible_pages.size() == 0) {
+        get_visible_pages(get_view_height(), visible_pages);
+    }
+
+    std::vector<int> indices = get_visible_annot_indices<T>(visible_pages);
+
+    std::vector<std::string> res;
+    res.reserve(indices.size());
+
+    for (auto index : indices) {
+        std::optional<AbsoluteRect> annot_rect  = annots[index].get_rectangle();
+        if (annot_rect.has_value()) {
+            bool is_visible = annot_rect->to_window_normalized(this).is_visible();
+            if (is_visible) {
+                res.push_back(annots[index].uuid);
+            }
+        }
+    }
+    return res;
+}
+
+template<typename T>
+std::vector<int> DocumentView::get_visible_annot_indices(const std::vector<int>& visible_pages) {
+    std::vector<int> page_range_annots;
+    for (auto page : visible_pages) {
+        std::vector<int> page_highlights = doc()->get_page_visible_annot_indices<T>(page);
+        for (auto ind : page_highlights) {
+            page_range_annots.push_back(ind);
+        }
+    }
+
+    std::sort(page_range_annots.begin(), page_range_annots.end());
+    auto last = std::unique(page_range_annots.begin(), page_range_annots.end());
+    int last_index = std::distance(page_range_annots.begin(), last);
+    page_range_annots.erase(last, page_range_annots.end());
+    return page_range_annots;
+}
+
+template std::vector<int> DocumentView::get_visible_annot_indices<Highlight>(const std::vector<int>& visible_pages);
+template std::vector<int> DocumentView::get_visible_annot_indices<BookMark>(const std::vector<int>& visible_pages);
+template std::vector<int> DocumentView::get_visible_annot_indices<Portal>(const std::vector<int>& visible_pages);

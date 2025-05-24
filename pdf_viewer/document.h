@@ -41,12 +41,6 @@ struct PdfSpecificsInfo {
     pdf_document* pdf_doc;
 };
 
-struct SelectedDrawings {
-    int page;
-    AbsoluteRect selection_absrect_;
-    std::vector<SelectedObjectIndex> selected_indices;
-};
-
 class CharacterIterator {
     fz_stext_block* block = nullptr;
     fz_stext_line* line = nullptr;
@@ -84,16 +78,6 @@ struct CachedPageIndex {
 };
 
 
-struct PageFreehandDrawing{
-    Q_GADGET
-    Q_PROPERTY(QList<FreehandDrawing> drawings READ get_drawings)
-public:
-    QList<FreehandDrawing> drawings;
-    QDateTime last_addition_time;
-    QDateTime last_deletion_time;
-
-    QList<FreehandDrawing> get_drawings();
-};
 
 class Document : public QObject{
     Q_OBJECT

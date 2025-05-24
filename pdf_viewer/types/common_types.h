@@ -78,3 +78,13 @@ enum class SmoothMoveDirection{
     Left,
     Right
 };
+
+enum class SelectedObjectType {
+    Drawing,
+    Pixmap
+};
+
+struct SelectedObjectIndex {
+    int index;
+    SelectedObjectType type;
+};

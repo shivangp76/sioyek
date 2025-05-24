@@ -4,6 +4,7 @@
 
 #include "main_widget.h"
 #include "document_view.h"
+#include "document.h"
 #include "network_manager.h"
 #include "controllers/annotation_controller.h"
 #include "ui/bookmark_ui.h"

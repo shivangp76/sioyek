@@ -7,6 +7,7 @@
 #include "config.h"
 #include "main_widget.h"
 #include "document_view.h"
+#include "document.h"
 #include "utils.h"
 #include "utils/window_utils.h"
 #include "utils/color_utils.h"

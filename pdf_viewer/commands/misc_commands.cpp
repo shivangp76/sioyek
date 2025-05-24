@@ -10,6 +10,7 @@
 #include "main_widget.h"
 #include "input.h"
 #include "document_view.h"
+#include "document.h"
 #include "config.h"
 #include "ui.h"
 #include "ui/common_ui.h"

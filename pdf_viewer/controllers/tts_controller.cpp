@@ -4,6 +4,7 @@
 #include <QAudioOutput>
 #include "main_widget.h"
 #include "document_view.h"
+#include "document.h"
 #include "controllers/tts_controller.h"
 #include "touchui/AudioUI.h"
 #include "touchui/TouchAudioButtons.h"

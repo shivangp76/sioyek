@@ -1,6 +1,7 @@
 #include "commands/annotation_commands.h"
 #include "main_widget.h"
 #include "document_view.h"
+#include "document.h"
 #include "ui.h"
 #include <QFileInfo>
 
