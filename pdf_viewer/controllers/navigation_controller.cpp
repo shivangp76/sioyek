@@ -30,6 +30,7 @@ extern bool SMOOTH_SCROLL_MODE;
 extern bool WHEEL_ZOOM_ON_CURSOR;
 extern bool FLAT_TABLE_OF_CONTENTS;
 extern bool FUZZY_SEARCHING;
+extern float SMOOTH_MOVE_MAX_VELOCITY;
 
 extern std::vector<MainWidget*> windows;
 
@@ -1047,4 +1048,32 @@ bool NavigationController::goto_ith_next_overview(int i) {
         return true;
     }
     return false;
+}
+
+void NavigationController::handle_selection_mouse_edge_scrolling(QMouseEvent* mouse_event){
+    bool are_we_above_the_window = mw->mapFromGlobal(mouse_event->globalPos()).y() < 30;
+    bool are_we_below_the_window = mw->mapFromGlobal(mouse_event->globalPos()).y() > mw->main_window_height - 30;
+    if (are_we_above_the_window){
+        mw->validation_interval_timer->setInterval(0);
+        mw->set_fixed_velocity(SMOOTH_MOVE_MAX_VELOCITY, 0);
+        if (!is_mouse_edge_scrolling){
+            mw->last_speed_update_time = QTime::currentTime();
+        }
+        is_mouse_edge_scrolling = true;
+        mw->validate_render();
+
+    }
+    else if (are_we_below_the_window){
+        mw->validation_interval_timer->setInterval(0);
+        mw->set_fixed_velocity(-SMOOTH_MOVE_MAX_VELOCITY, 0);
+        if (!is_mouse_edge_scrolling){
+            mw->last_speed_update_time = QTime::currentTime();
+        }
+        is_mouse_edge_scrolling = true;
+        mw->validate_render();
+    }
+    else if (is_mouse_edge_scrolling){
+        mw->set_fixed_velocity(0, 0);
+        is_mouse_edge_scrolling = false;
+    }
 }

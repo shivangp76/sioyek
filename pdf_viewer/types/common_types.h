@@ -71,3 +71,10 @@ bool are_same(float f1, float f2);
 
 std::wstring new_uuid();
 std::string new_uuid_utf8();
+
+enum class SmoothMoveDirection{
+    Up,
+    Down,
+    Left,
+    Right
+};

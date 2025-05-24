@@ -395,20 +395,42 @@ public:
         velocity_multiplier = velocity_mult;
     };
 
-    virtual bool is_down() = 0;
+    virtual SmoothMoveDirection direction() = 0;
+
+    bool is_vertical(){
+        return direction() == SmoothMoveDirection::Up || direction() == SmoothMoveDirection::Down;
+    }
 
     void perform() {
         if (widget->main_document_view->is_ruler_mode() || dv()->is_pinned_portal_selected()) {
-            widget->move_visual_mark(is_down() ? 1 : -1);
+            if (is_vertical()){
+                bool is_down = direction() == SmoothMoveDirection::Down;
+                widget->move_visual_mark(is_down ? 1 : -1);
+            }
         }
         else {
-            widget->handle_move_smooth_hold(is_down());
-            widget->set_fixed_velocity(is_down() ? -SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier : SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier);
+            widget->handle_move_smooth_hold(direction());
+            float fixed_velocity_y = 0;
+            float fixed_velocity_x = 0;
+            if (direction() == SmoothMoveDirection::Up) {
+                fixed_velocity_y = SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier;
+            }
+            else if (direction() == SmoothMoveDirection::Down) {
+                fixed_velocity_y = -SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier;
+            }
+            else if (direction() == SmoothMoveDirection::Left) {
+                fixed_velocity_x = -SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier;
+            }
+            else if (direction() == SmoothMoveDirection::Right) {
+                fixed_velocity_x = SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier;
+            }
+
+            widget->set_fixed_velocity(fixed_velocity_y, fixed_velocity_x);
         }
     }
 
     void perform_up() {
-        widget->set_fixed_velocity(0);
+        widget->set_fixed_velocity(0, 0);
     }
 
     bool is_holdable() {
@@ -427,7 +449,7 @@ public:
 
     void on_key_hold() {
         was_held = true;
-        widget->handle_move_smooth_hold(is_down());
+        widget->handle_move_smooth_hold(direction());
         widget->validate_render();
     }
 };
@@ -438,8 +460,8 @@ public:
     static inline const std::string hname = "";
     MoveUpSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w) {};
 
-    bool is_down() {
-        return false;
+    SmoothMoveDirection direction() {
+        return SmoothMoveDirection::Up;
     }
 };
 
@@ -449,8 +471,30 @@ public:
     static inline const std::string hname = "";
     MoveDownSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w) {};
 
-    bool is_down() {
-        return true;
+    SmoothMoveDirection direction() {
+        return SmoothMoveDirection::Down;
+    }
+};
+
+class MoveLeftSmoothCommand : public MoveSmoothCommand {
+public:
+    static inline const std::string cname = "move_left_smooth";
+    static inline const std::string hname = "";
+    MoveLeftSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w) {};
+
+    SmoothMoveDirection direction() {
+        return SmoothMoveDirection::Left;
+    }
+};
+
+class MoveRightSmoothCommand : public MoveSmoothCommand {
+public:
+    static inline const std::string cname = "move_right_smooth";
+    static inline const std::string hname = "";
+    MoveRightSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w) {};
+
+    SmoothMoveDirection direction() {
+        return SmoothMoveDirection::Right;
     }
 };
 
@@ -460,8 +504,8 @@ public:
     static inline const std::string hname = "Move screen up smoothly";
     ScreenUpSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w, 3.0f) {};
 
-    bool is_down() {
-        return false;
+    SmoothMoveDirection direction() {
+        return SmoothMoveDirection::Up;
     }
 };
 
@@ -471,8 +515,8 @@ public:
     static inline const std::string hname = "Move screen down smoothly";
     ScreenDownSmoothCommand(MainWidget* w) : MoveSmoothCommand(cname, w, 3.0f) {};
 
-    bool is_down() {
-        return true;
+    SmoothMoveDirection direction() {
+        return SmoothMoveDirection::Down;
     }
 };
 
@@ -1965,6 +2009,8 @@ void register_navigation_commands(CommandManager* manager) {
     register_command<OpenDocumentCommand>(manager);
     register_command<MoveUpSmoothCommand>(manager);
     register_command<MoveDownSmoothCommand>(manager);
+    register_command<MoveLeftSmoothCommand>(manager);
+    register_command<MoveRightSmoothCommand>(manager);
     register_command<ScreenUpSmoothCommand>(manager);
     register_command<ScreenDownSmoothCommand>(manager);
     register_command<ToggleTwoPageModeCommand>(manager);

@@ -972,7 +972,7 @@ public:
     void focus_on_character_offset_into_document(int character_offset_into_document);
     // void stop_tts_service();
     //void handle_move_smooth_press(bool down);
-    void handle_move_smooth_hold(bool down);
+    void handle_move_smooth_hold(SmoothMoveDirection direction);
     void handle_toggle_two_page_mode();
     void ensure_zero_interval_timer();
     void set_last_performed_command(std::unique_ptr<Command> command);
@@ -980,7 +980,7 @@ public:
     void set_highlighted_tags(std::vector<std::string> tags);
     AbsoluteDocumentPos get_mouse_abspos();
     bool handle_annotation_move_finish();
-    void set_fixed_velocity(float vel);
+    void set_fixed_velocity(float vel_y, float vel_x);
     QMenuBar* create_main_menu_bar();
     void create_menu_from_menu_node(QMenu* parent, MenuNode* items, std::unordered_map<std::string, std::vector<std::string>>& command_key_mappings);
     void delete_menu_nodes(MenuNode* items);

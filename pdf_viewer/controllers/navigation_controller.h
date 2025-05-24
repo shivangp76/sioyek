@@ -6,6 +6,7 @@
 #include "book.h"
 
 class Path;
+class QMouseEvent;
 
 class NavigationController : public BaseController{
 
@@ -15,6 +16,9 @@ private:
     std::vector<DocumentViewState> history;
     // the index in the `history` array that we will jump to when `prev_state` is called.
     int current_history_index = -1;
+
+    // are we scrolling due to the mouse moving to the screen edge while selecting text?
+    bool is_mouse_edge_scrolling = false;
 public:
     NavigationController(MainWidget* parent);
     void open_document(const Path& path, std::optional<float> offset_x = {}, std::optional<float> offset_y = {}, std::optional<float> zoom_level = {}, std::string downloaded_checksum="");
@@ -43,4 +47,6 @@ public:
     void handle_open_link(const PdfLink& link, bool copy = false);
     void handle_goto_loaded_document();
     bool goto_ith_next_overview(int i);
+    void handle_selection_mouse_edge_scrolling(QMouseEvent* me);
+
 };

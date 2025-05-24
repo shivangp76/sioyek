@@ -2689,7 +2689,8 @@ QStringList FileSelector::get_dir_contents(QString root, QString prefix) {
 
     root = expand_home_dir(root);
     QDir directory(root);
-    QStringList res = directory.entryList({ prefix + "*" });
+    // QStringList res = directory.entryList({ prefix + "*" });
+    QStringList res;
     if (res.size() == 0) {
 
         bool should_consider_case = false;
@@ -2698,17 +2699,23 @@ QStringList FileSelector::get_dir_contents(QString root, QString prefix) {
         }
 
         std::wstring encoded_prefix = prefix.toStdWString();
-        QStringList all_directory_files = directory.entryList();
+        QFileInfoList all_directory_files = directory.entryInfoList(
+            { prefix + "*" },
+            QDir::NoDot|QDir::Dirs|QDir::Files|QDir::Readable
+            );
         std::vector<std::pair<std::wstring, float>> file_scores;
 
         for (auto file : all_directory_files) {
-            std::wstring encoded_file = file.toStdWString();
+            std::wstring encoded_file = file.fileName().toStdWString();
             std::wstring encoded_file_case_corrected;
             if (should_consider_case) {
                 encoded_file_case_corrected = encoded_file;
             }
             else {
-                encoded_file_case_corrected = file.toLower().toStdWString();
+                encoded_file_case_corrected = file.fileName().toLower().toStdWString();
+            }
+            if (file.isDir()){
+                encoded_file += QDir::separator().toLatin1();
             }
 
             float score = similarity_score(encoded_file_case_corrected, encoded_prefix);
@@ -2737,6 +2744,7 @@ void FileSelector::on_select(QModelIndex index) {
         parentWidget()->setFocus();
     }
     else {
-        line_edit->setText(full_path + sep);
+        QString canonical_path { QDir(full_path).canonicalPath() };
+        line_edit->setText(canonical_path + sep);
     }
 }

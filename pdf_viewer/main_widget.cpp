@@ -609,7 +609,6 @@ bool MainWidget::handle_visible_object_cursor_update(AbsoluteDocumentPos abs_mpo
     return false;
 }
 
-
 void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
 
     if (is_mouse_ruler_mode){
@@ -631,6 +630,10 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         // we don't handle mouse events while document is rotated because proper
         // handling would increase the code complexity too much to be worth it
         return;
+    }
+
+    if (!TOUCH_MODE && mdv()->is_selecting){
+        navigation_controller->handle_selection_mouse_edge_scrolling(mouse_event);
     }
 
     if (should_draw(false) && main_document_view->is_drawing) {
@@ -1860,7 +1863,7 @@ void MainWidget::validate_render() {
     if (main_document_view->is_moving()) {
         is_render_invalidated = true;
         if (!hasFocus()) { // stop scrolling if the windows doesn't have focus
-            set_fixed_velocity(0);
+            set_fixed_velocity(0, 0);
         }
     }
 }
@@ -7800,15 +7803,29 @@ void MainWidget::focus_on_character_offset_into_document(int character_offset_in
     }
 }
 
-void MainWidget::handle_move_smooth_hold(bool down) {
+void MainWidget::handle_move_smooth_hold(SmoothMoveDirection direction) {
 
-    float max_velocity = down ? -SMOOTH_MOVE_MAX_VELOCITY : SMOOTH_MOVE_MAX_VELOCITY;
+    bool is_down = (direction == SmoothMoveDirection::Down);
+    bool is_left = (direction == SmoothMoveDirection::Left);
+    bool is_vertical = direction == SmoothMoveDirection::Up || direction == SmoothMoveDirection::Down;
+    float max_velocity_y = is_down ? -SMOOTH_MOVE_MAX_VELOCITY : SMOOTH_MOVE_MAX_VELOCITY;
+    float max_velocity_x = is_left ? -SMOOTH_MOVE_MAX_VELOCITY : SMOOTH_MOVE_MAX_VELOCITY;
 
-    if (down) {
-        main_document_view->velocity_y -= (main_document_view->velocity_y - max_velocity) / 5.0f;
+    if (is_vertical){
+        if (is_down) {
+            main_document_view->velocity_y -= (main_document_view->velocity_y - max_velocity_y) / 5.0f;
+        }
+        else {
+            main_document_view->velocity_y += (max_velocity_y - main_document_view->velocity_y) / 5.0f;
+        }
     }
-    else {
-        main_document_view->velocity_y += (max_velocity - main_document_view->velocity_y) / 5.0f;
+    else{
+        if (is_left) {
+            main_document_view->velocity_x -= (main_document_view->velocity_x - max_velocity_x) / 5.0f;
+        }
+        else {
+            main_document_view->velocity_x += (max_velocity_x - main_document_view->velocity_x) / 5.0f;
+        }
     }
 
     validation_interval_timer->setInterval(0);
@@ -7873,10 +7890,11 @@ bool MainWidget::handle_annotation_move_finish(){
     return annotation_controller->handle_annotation_move_finish();
 }
 
-void MainWidget::set_fixed_velocity(float vel) {
-    main_document_view->velocity_y = vel;
+void MainWidget::set_fixed_velocity(float vel_y, float vel_x) {
+    main_document_view->velocity_y = vel_y;
+    main_document_view->velocity_x = vel_x;
     main_document_view->is_velocity_fixed = true;
-    if (vel == 0) {
+    if (vel_y == 0 && vel_x == 0) {
         main_document_view->is_velocity_fixed = false;
         if (validation_interval_timer->interval() == 0){
             validation_interval_timer->setInterval(INTERVAL_TIME);
