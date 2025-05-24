@@ -3502,16 +3502,22 @@ void SioyekRendererBackend::render_tags() {
             QColor rect_highlight_color;
             QColor rect_highlight_color_opaque;
             QColor rect_inverted_color;
+
             if (dv()->should_highlight_rect_mode) {
 
                 int index = i % 26;
-                rect_highlight_color = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2], 0.3f);
+                rect_highlight_color = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2], 0.6f);
                 rect_highlight_color_opaque = QColor::fromRgbF(HIGHLIGHT_COLORS[3 * (index % 26)], HIGHLIGHT_COLORS[3 * (index % 26) + 1], HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
                 rect_inverted_color = QColor::fromRgbF(1.0f - HIGHLIGHT_COLORS[3 * (index % 26)], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 1], 1.0f - HIGHLIGHT_COLORS[3 * (index % 26) + 2]);
                 WindowRect wr = window_rect.to_window(dv());
+
+                if (i == 0){
+                    // HACK! for some reason the first drawRect call does not work
+                    get_painter()->fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
+                }
+
                 get_painter()->fillRect(wr.to_qrect(), QBrush(rect_highlight_color));
             }
-
             if (remaining_tag.size() > 0) {
                 QPainter& painter = *get_painter();
                 if (highlighted) {
