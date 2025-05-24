@@ -4,18 +4,14 @@
 #include <string>
 #include <assert.h>
 #include <utility>
-#include <algorithm>
-#include <thread>
 #include <optional>
 #include <deque>
 #include <mutex>
 
 #include <mupdf/fitz.h>
-#include "sqlite3.h"
 
 #include "coordinates.h"
 #include "book.h"
-// #include "document.h"
 #include "types/overview_types.h"
 #include "types/visible_object_types.h"
 #include "types/drawing_types.h"
