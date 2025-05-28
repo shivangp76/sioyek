@@ -208,6 +208,7 @@ public:
     bool set_document_to_synced(const std::string& checksum);
     bool set_document_to_unsynced(const std::string& checksum);
     bool is_document_synced(const std::string& checksum);
+    bool unsync_document(const std::string& checksum);
     bool update_checksum(const std::string& old_checksum, const std::string& new_checksum);
     std::string get_table_name_for_annot_type(const std::string& annot_type);
     void debug();

@@ -1120,7 +1120,7 @@ void SioyekNetworkManager::delete_annot(QObject* parent, const QString& file_che
         });
 }
 
-void SioyekNetworkManager::get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime>)> fn){
+void SioyekNetworkManager::get_document_annotations(QObject* parent, const QString& document_checksum, std::function<void(std::vector<Highlight>&&, std::vector<BookMark>&&, std::vector<Portal>&&, std::optional<QDateTime>, bool)> fn){
     QUrl url(QString::fromStdWString(SIOYEK_HOST + SIOYEK_GET_DOCUMENT_ANNOTATIONS_URL_));
     QUrlQuery params;
     params.addQueryItem("file_checksum", document_checksum);
@@ -1140,6 +1140,7 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
 
             if (result_object["status"].toString() != "OK") return;
 
+            bool is_document_available = result_object["document_available"].toBool();
             std::optional<QDateTime> last_access_time = {};
             if (!result_object["last_access_time"].isNull()) {
                 last_access_time = QDateTime::fromString(result_object["last_access_time"].toString(), Qt::DateFormat::ISODate);
@@ -1174,7 +1175,7 @@ void SioyekNetworkManager::get_document_annotations(QObject* parent, const QStri
                 res_portals.push_back(portal);
             }
 
-            fn(std::move(res_highlights), std::move(res_bookmarks), std::move(res_portals), last_access_time);
+            fn(std::move(res_highlights), std::move(res_bookmarks), std::move(res_portals), last_access_time, is_document_available);
 
         }
 
@@ -1920,7 +1921,13 @@ void SioyekNetworkManager::sync_document_annotations_to_server(QObject* parent, 
 
     perform_unsynced_inserts_and_deletes(parent, doc, document_checksum, [this, document_checksum, parent, document=doc, on_done=std::move(on_done)]() {
         get_document_annotations(parent, document_checksum,
-        [&, document_checksum, document, on_done=std::move(on_done)](std::vector<Highlight>&& server_highlights, std::vector<BookMark>&& server_bookmarks, std::vector<Portal>&& server_portals, std::optional<QDateTime> server_access_time) {
+        [&, document_checksum, document, on_done=std::move(on_done)](std::vector<Highlight>&& server_highlights, std::vector<BookMark>&& server_bookmarks, std::vector<Portal>&& server_portals, std::optional<QDateTime> server_access_time, bool is_available_on_server) {
+
+                if (!is_available_on_server){
+                    // if the document is no longer available on the server, the annotations should be unsynced
+                    db_manager->unsync_document(document_checksum.toStdString());
+                    return;
+                }
 
                 const std::vector<Highlight>& local_highlights = document->get_highlights();
                 const std::vector<BookMark>& local_bookmarks = document->get_bookmarks();

@@ -2901,6 +2901,25 @@ bool DatabaseManager::set_document_to_unsynced(const std::string& checksum) {
         error_message);
 }
 
+bool DatabaseManager::unsync_document(const std::string& checksum){
+    // set the is_synced in opened_books to false
+    // also set all of the annotations for the document to unsynced
+    std::wstringstream ss;
+    ss << "UPDATE opened_books SET is_synced=0 WHERE path='" << esc(checksum) << "';";
+    ss << "UPDATE highlights SET is_synced=0 WHERE document_path='" << esc(checksum) << "';";
+    ss << "UPDATE bookmarks SET is_synced=0 WHERE document_path='" << esc(checksum) << "';";
+    ss << "UPDATE marks SET is_synced=0 WHERE document_path='" << esc(checksum) << "';";
+    ss << "UPDATE links SET is_synced=0 WHERE src_document='" << esc(checksum) << "';";
+
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message);
+    bool ok = handle_error(
+        "unsync_document",
+        error_code,
+        error_message);
+    return ok;
+}
+
 bool DatabaseManager::is_document_synced(const std::string& checksum) {
     std::wstringstream ss;
     ss << "SELECT is_synced FROM opened_books WHERE path='" << esc(checksum) << "'";
