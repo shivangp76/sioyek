@@ -1396,7 +1396,7 @@ std::wstring MainWidget::get_status_string(bool is_right) {
         status_string.replace("%{chapter_name}", " [ " + QString::fromStdWString(chapter_name) + " ] ");
     }
 
-    if (SHOW_DOCUMENT_NAME_IN_STATUSBAR) {
+    if (status_string.indexOf("%{document_name}") != -1) {
         std::optional<std::wstring> file_name = Path(main_document_view->get_document()->get_path()).filename();
         if (file_name) {
             status_string.replace("%{document_name}", " [ " + QString::fromStdWString(file_name.value()) + " ] ");
