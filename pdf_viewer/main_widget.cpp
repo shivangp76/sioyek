@@ -1998,7 +1998,10 @@ void MainWidget::adjust_two_page_mode_document_zoom_and_offset(std::wstring doc_
 }
 
 void MainWidget::open_document(const Path& path, std::optional<float> offset_x, std::optional<float> offset_y, std::optional<float> zoom_level) {
+    return open_document(path.get_path(), offset_x, offset_y, zoom_level);
+}
 
+void MainWidget::open_document(const std::wstring& path, std::optional<float> offset_x, std::optional<float> offset_y, std::optional<float> zoom_level) {
     opengl_widget->clear_all_selections();
 
     //save the previous document state
@@ -2011,7 +2014,7 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
     }
 
     main_document_view->on_view_size_change(main_window_width, main_window_height);
-    main_document_view->open_document(path.get_path(), &this->is_render_invalidated);
+    main_document_view->open_document(path, &this->is_render_invalidated);
     adjust_two_page_mode_document_zoom_and_offset(doc()->get_path());
 
     if (doc()) {
@@ -2021,19 +2024,25 @@ void MainWidget::open_document(const Path& path, std::optional<float> offset_x, 
 
     bool has_document = main_document_view_has_document();
 
+
+    // derive file_name from full path
+    QString file_name = QString::fromStdWString(path);
+    QFileInfo file_info(file_name);
+    file_name = file_info.fileName();
+
     if (has_document) {
         //setWindowTitle(QString::fromStdWString(path.get_path()));
-        if (path.filename().has_value()) {
-            setWindowTitle(QString::fromStdWString(path.filename().value()));
+        if (file_name.size() > 0) {
+            setWindowTitle(file_name);
         }
         else {
-            setWindowTitle(QString::fromStdWString(path.get_path()));
+            setWindowTitle(QString::fromStdWString(path));
         }
 
     }
 
-    if ((path.get_path().size() > 0) && (!has_document)) {
-        show_error_message(L"Could not open file1: " + path.get_path());
+    if ((path.size() > 0) && (!has_document)) {
+        show_error_message(L"Could not open file1: " + path);
     }
 
     if (offset_x) {
