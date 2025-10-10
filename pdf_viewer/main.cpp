@@ -536,7 +536,10 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
     if (parser->isSet("inverse-search")) {
         if (target_window) {
             target_window->set_inverse_search_command(parser->value("inverse-search").toStdWString());
-            target_window->raise();
+            bool nofocus = parser->isSet("nofocus");
+            if (!nofocus){
+                target_window->raise();
+            }
             //target_window->activateWindow();
         }
     }
