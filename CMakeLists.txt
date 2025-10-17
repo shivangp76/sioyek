@@ -74,10 +74,17 @@ qt_add_executable(sioyek WIN32 MACOSX_BUNDLE
     pdf_viewer/utils.cpp pdf_viewer/utils.h
 )
 
+if(APPLE)
+  target_sources(sioyek PRIVATE
+        pdf_viewer/macos_specific.mm
+  )
+endif()
+
 target_compile_options(sioyek PRIVATE -Wno-inconsistent-missing-override)
 
 target_include_directories(sioyek PRIVATE 
     pdf_viewer 
+    mupdf/include
     ${SQLite3_INCLUDE_DIRS}
 )
 
@@ -156,10 +163,19 @@ target_link_libraries(sioyek PRIVATE
 )
 
 if(APPLE)
+  # target_link_libraries(sioyek PRIVATE
+  #       "-framework AppKit"
+  #       mupdf-third
+  #       mupdf-threads
+  # )
   target_link_libraries(sioyek PRIVATE
-        "-framework AppKit"
-        mupdf-third
-        mupdf-threads
+      "-framework AppKit"
+      -ldl
+      -L${CMAKE_CURRENT_SOURCE_DIR}/mupdf/build/release
+      -lmupdf
+      -lmupdf-third
+      -lmupdf-threads
+      -lz
   )
 else()
   string(REPLACE "-mno-direct-extern-access" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
