@@ -137,6 +137,7 @@ extern std::wstring PAPERS_FOLDER_PATH;
 extern bool NO_AUTO_CONFIG;
 extern bool DEFAULT_DARK_MODE;
 
+
 std::wstring strip_uri(std::wstring pdf_file_name) {
 
     if (pdf_file_name.size() > 1) {
@@ -596,7 +597,7 @@ MainWidget* handle_args(const QStringList& arguments, QLocalSocket* origin=nullp
         if ((target_window->doc() == nullptr) || (target_window->doc()->get_path() != pdf_file_name)) {
             should_open_document = true;
         }
-        if (should_open_document) {
+        if (should_open_document && !pdf_file_name.empty()) {
             target_window->push_state();
             target_window->open_document(pdf_file_name);
         }

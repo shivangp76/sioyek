@@ -73,6 +73,7 @@ extern std::wstring PAPER_SEARCH_TILE_PATH;
 extern std::wstring PAPER_SEARCH_CONTRIB_PATH;
 extern std::wstring UI_FONT_FACE_NAME;
 extern std::wstring STATUS_FONT_FACE_NAME;
+extern bool OPEN_LAST_FILE_ON_STARTUP;
 
 extern bool VERBOSE;
 
@@ -4439,6 +4440,8 @@ bool is_platform_control_pressed(QKeyEvent* kevent){
 }
 
 std::vector<std::wstring> get_last_opened_file_name() {
+    if (!OPEN_LAST_FILE_ON_STARTUP) return {};
+
     static bool is_cached = false;
     static std::vector<std::wstring> cached_result = {};
 
