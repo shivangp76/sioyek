@@ -702,6 +702,10 @@ public:
     std::deque<std::pair<QTime, QPoint>> position_buffer;
     float velocity_x = 0;
     float velocity_y = 0;
+
+    // we stop the smooth move after moving this amount
+    std::optional<float> smooth_y_move_amount;
+
     bool is_velocity_fixed = false;
 
     // are we scrolling due to the mouse moving to the screen edge while selecting text?
@@ -1006,7 +1010,7 @@ public:
     AbsoluteDocumentPos get_mouse_abspos();
     void move_selected_bookmark_to_mouse_cursor();
     bool handle_annotation_move_finish();
-    void set_fixed_velocity(float vel_y, float vel_x);
+    void set_fixed_velocity(float vel_y, float vel_x, std::optional<float> y_move_amount={});
     QMenuBar* create_main_menu_bar();
     void create_menu_from_menu_node(QMenu* parent, MenuNode* items, std::unordered_map<std::string, std::vector<std::string>>& command_key_mappings);
     void delete_menu_nodes(MenuNode* items);

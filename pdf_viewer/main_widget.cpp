@@ -249,6 +249,8 @@ extern std::wstring MIDDLE_LEFT_RECT_HOLD_COMMAND;
 extern std::wstring MIDDLE_RIGHT_RECT_TAP_COMMAND;
 extern std::wstring MIDDLE_RIGHT_RECT_HOLD_COMMAND;
 
+extern std::wstring PERIODIC_COMMANDS;
+
 extern UIRect PORTRAIT_EDIT_PORTAL_UI_RECT;
 extern UIRect LANDSCAPE_EDIT_PORTAL_UI_RECT;
 
@@ -1181,6 +1183,12 @@ MainWidget::MainWidget(fz_context* mupdf_context,
                 persist();
             }
         }
+        if (!PERIODIC_COMMANDS.empty()){
+            QStringList periodic_commands = QString::fromStdWString(PERIODIC_COMMANDS).split(";");
+            for (const auto& cmd : periodic_commands) {
+                execute_macro_if_enabled(cmd.toStdWString());
+            }
+        }
 
         cleanup_expired_pending_portals();
         if (TOUCH_MODE && selection_begin_indicator) {
@@ -1604,6 +1612,7 @@ void MainWidget::handle_escape() {
         }
     }
 
+    smooth_y_move_amount = {};
     clear_selection_indicators();
     typing_location = {};
     if (pending_command_instance) {
@@ -1715,6 +1724,20 @@ void MainWidget::validate_render() {
         float secs = current_time.msecsTo(last_speed_update_time) / 1000.0f;
         float move_x = secs * velocity_x;
         float move_y = secs * velocity_y;
+
+        if (smooth_y_move_amount.has_value()){
+            float before_y_move_amount = smooth_y_move_amount.value();
+            if (std::abs(move_y) >= std::abs(smooth_y_move_amount.value())) {
+                move_y = -before_y_move_amount;
+            }
+            smooth_y_move_amount = before_y_move_amount + move_y;
+
+            if (std::abs(smooth_y_move_amount.value()) < 0.01f) {
+                smooth_y_move_amount = {};
+                velocity_y = 0;
+            }
+        }
+
         if (horizontal_scroll_locked) {
             move_x = 0;
         }
@@ -11067,12 +11090,17 @@ bool MainWidget::handle_annotation_move_finish(){
     return false;
 }
 
-void MainWidget::set_fixed_velocity(float vel_y, float vel_x) {
+void MainWidget::set_fixed_velocity(float vel_y, float vel_x, std::optional<float> y_move_amount) {
     velocity_y = vel_y;
     velocity_x = vel_x;
     is_velocity_fixed = true;
+
+    smooth_y_move_amount = y_move_amount;
+    last_speed_update_time = QTime::currentTime();
+
     if (vel_y == 0 && vel_x == 0) {
         is_velocity_fixed = false;
+        smooth_y_move_amount = {};
         if (validation_interval_timer->interval() == 0){
             validation_interval_timer->setInterval(INTERVAL_TIME);
         }

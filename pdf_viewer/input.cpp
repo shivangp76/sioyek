@@ -1,3 +1,4 @@
+#include <QtCore/qcontainerfwd.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -3022,6 +3023,35 @@ public:
         return true;
     }
 };
+
+class  SetFixedVelocityCommand : public TextCommand {
+public:
+    static inline const std::string cname = "set_fixed_velocity";
+    static inline const std::string hname = "Set fixed velocity for smooth scrolling";
+    SetFixedVelocityCommand(MainWidget* w) : TextCommand(cname, w) {}
+
+    void perform() {
+        QString text_value = QString::fromStdWString(text.value());
+        QStringList parts = text_value.split(" ");
+
+        if (parts.size() == 1){
+            // just set the velocity
+            widget->set_fixed_velocity(parts[0].toFloat(), 0);
+            widget->validation_interval_timer->setInterval(0);
+        }
+        else if (parts.size() == 2){
+            // set the velocity and maximum move amount
+
+            float vel = parts[0].toFloat();
+            float move_amount = parts[1].toFloat();
+
+            widget->set_fixed_velocity(parts[0].toFloat(), 0, parts[1].toFloat());
+            widget->validation_interval_timer->setInterval(0);
+        }
+
+    }
+};
+
 
 class ScreenUpSmoothCommand : public MoveSmoothCommand {
 public:
@@ -7015,6 +7045,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<DownloadOverviewPaperCommand>();
     register_command<GotoWindowCommand>();
     register_command<ToggleSmoothScrollModeCommand>();
+    register_command<SetFixedVelocityCommand>();
     register_command<GotoBeginningCommand>();
     register_command<ToggleScrollbarCommand>();
     register_command<OverviewToPortalCommand>();

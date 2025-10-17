@@ -69,6 +69,8 @@ std::wstring PAPER_SEARCH_URL_PATH = L"hits.hits[]._source.best_pdf_url";
 std::wstring PAPER_SEARCH_TILE_PATH = L"hits.hits[]._source.title";
 std::wstring PAPER_SEARCH_CONTRIB_PATH = L"hits.hits[]._source.contrib_names";
 
+std::wstring PERIODIC_COMMANDS = L"";
+
 std::wstring MIDDLE_CLICK_SEARCH_ENGINE = L"s";
 std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
 std::wstring PAPERS_FOLDER_PATH = L"";
@@ -1056,6 +1058,7 @@ ConfigManager::ConfigManager(const Path& default_path, const Path& auto_path, co
     add_string(L"paper_download_url_path", &PAPER_SEARCH_URL_PATH);
     add_string(L"paper_download_title_path", &PAPER_SEARCH_TILE_PATH);
     add_string(L"paper_download_contrib_path", &PAPER_SEARCH_CONTRIB_PATH);
+    add_string(L"periodic_commands", &PERIODIC_COMMANDS);
     add_string(L"default_open_file_path", &DEFAULT_OPEN_FILE_PATH);
     add_string(L"annotations_directory", &ANNOTATIONS_DIR_PATH);
     add_string(L"status_bar_format", &STATUS_BAR_FORMAT);
