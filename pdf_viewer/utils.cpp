@@ -1229,10 +1229,18 @@ void open_web_url(const std::wstring& url_string) {
 
 
 void search_custom_engine(const std::wstring& search_string, const std::wstring& custom_engine_url) {
+    QString search_string_url_encoded = QUrl::toPercentEncoding(QString::fromStdWString(search_string));
+    QString search_url;
+    if (custom_engine_url.find(L"%{search_pattern}") != std::wstring::npos) {
+        search_url = QString::fromStdWString(custom_engine_url);
+        search_url.replace("%{search_pattern}", search_string_url_encoded);
+    }
+    else {
+        search_url = QString::fromStdWString(custom_engine_url) + search_string_url_encoded;
+    }
 
     if (search_string.size() > 0) {
-        QString qurl_string = QString::fromStdWString(custom_engine_url + search_string);
-        open_web_url(qurl_string);
+        open_web_url(search_url);
     }
 }
 
