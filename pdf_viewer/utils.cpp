@@ -330,9 +330,7 @@ void show_error_message(const std::wstring& error_message) {
 }
 
 std::wstring utf8_decode(const std::string& encoded_str) {
-    std::wstring res;
-    utf8::utf8to32(encoded_str.begin(), encoded_str.end(), std::back_inserter(res));
-    return res;
+    return QString::fromUtf8(encoded_str).toStdWString();
 }
 
 std::string utf8_encode(const std::wstring& decoded_str) {
