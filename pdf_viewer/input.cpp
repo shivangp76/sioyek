@@ -836,6 +836,30 @@ public:
         }
     }
 
+    std::string get_pending_name() {
+        
+        if (name.size() > 0 || commands.size() == 0) {
+            return name;
+        }
+        else {
+            if (is_modal){
+                int mode_index = get_current_mode_index();
+                if (mode_index != -1) {
+                    return commands[mode_index]->get_name();
+                }
+                return "";
+            }
+            else {
+                for (int i = 0; i < commands.size(); i++) {
+                    if (commands[i]->next_requirement(widget)) {
+                        return commands[i]->get_pending_name();
+                    }
+                }
+                return "";
+            }
+        }
+    }
+
     std::string get_human_readable_name() override{
         if (name.size() > 0 || commands.size() == 0) {
             return name;
@@ -7955,6 +7979,10 @@ std::vector<char> Command::special_symbols() {
 
 
 std::string Command::get_name() {
+    return command_cname;
+}
+
+std::string Command::get_pending_name() {
     return command_cname;
 }
 

@@ -79,6 +79,7 @@ public:
 
     virtual void run();
     virtual std::string get_name();
+    virtual std::string get_pending_name();
     virtual std::string get_human_readable_name();
     virtual std::wstring get_text_default_value();
     virtual ~Command();
