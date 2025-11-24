@@ -9559,6 +9559,7 @@ QJsonObject MainWidget::get_json_state() {
         result["window_width"] = width();
         result["window_height"] = height();
         result["ruler_index"] = dv()->get_line_index();
+        result["ruler_active"] = dv()->is_ruler_mode();
 
         std::vector<std::wstring> loaded_document_paths = document_manager->get_loaded_document_paths();
         QJsonArray loaded_documents;
