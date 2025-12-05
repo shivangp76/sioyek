@@ -627,6 +627,25 @@ public:
         }
     }
 
+    std::optional<QString> get_file_path_requirement_root_dir() override{
+        if (is_modal){
+            int mode_index = get_current_mode_index();
+            if (mode_index != -1) {
+                return commands[mode_index]->get_file_path_requirement_root_dir();
+            }
+            return "";
+        }
+        else {
+            for (int i = 0; i < commands.size(); i++) {
+                if (commands[i]->next_requirement(widget)) {
+                    return commands[i]->get_file_path_requirement_root_dir();
+                }
+            }
+            return "";
+        }
+    }
+
+
     std::optional<Requirement> next_requirement(MainWidget* widget) {
         if (is_modal && (modes.size() != commands.size())) {
             std::wcerr << L"Invalid modal command : " << raw_commands;
@@ -2919,6 +2938,51 @@ public:
 
     void set_file_requirement(std::wstring value) {
         file_name = value;
+    }
+
+    void perform() {
+        widget->open_document(file_name);
+    }
+
+    bool requires_document() { return false; }
+};
+
+class OpenDocumentInDirectoryCommand : public Command {
+public:
+    static inline const std::string cname = "open_document_in_directory";
+    static inline const std::string hname = "Open a document using the native file explorer, rooted in the given directory.";
+    OpenDocumentInDirectoryCommand(MainWidget* w) : Command(cname, w) {};
+
+    std::wstring root_dir;
+    std::wstring file_name;
+
+    bool pushes_state() {
+        return true;
+    }
+
+    std::optional<Requirement> next_requirement(MainWidget* widget) {
+        if (root_dir.size() == 0) {
+            return Requirement{ RequirementType::Text, "Root Directory" };
+        }
+        else if (file_name.size() == 0) {
+            return Requirement{ RequirementType::File, "File" };
+        }
+        else {
+            return {};
+        }
+    }
+
+    std::optional<QString> get_file_path_requirement_root_dir() {
+        return QString::fromStdWString(root_dir);
+    }
+
+
+    void set_file_requirement(std::wstring value) {
+        file_name = value;
+    }
+
+    void set_text_requirement(std::wstring value) {
+        root_dir = value;
     }
 
     void perform() {
@@ -6924,6 +6988,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<NextPageCommand>();
     register_command<PreviousPageCommand>();
     register_command<OpenDocumentCommand>();
+    register_command<OpenDocumentInDirectoryCommand>();
     register_command<ScreenshotCommand>();
     register_command<FramebufferScreenshotCommand>();
     register_command<WaitCommand>();
