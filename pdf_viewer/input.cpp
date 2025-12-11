@@ -5819,6 +5819,32 @@ public:
 
 };
 
+class SelectNextCharCommand : public Command {
+public:
+    inline static const std::string cname = "select_next_char";
+    inline static const std::string hname = "Select the next character after the current selection.";
+
+    SelectNextCharCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->select_next_char();
+    }
+
+};
+
+class UnselectLastCharCommand : public Command {
+public:
+    inline static const std::string cname = "unselect_last_char";
+    inline static const std::string hname = "Unselect the last character in the current selection.";
+
+    UnselectLastCharCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        widget->unselect_last_char();
+    }
+
+};
+
 class CollapseMenuCommand : public Command {
 public:
     inline static const std::string cname = "toggle_menu_collapse";
@@ -7182,6 +7208,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<ShowTouchSettingsMenu>();
     register_command<ShowTouchDrawingMenu>();
     register_command<DebugCommand>();
+    register_command<SelectNextCharCommand>();
+    register_command<UnselectLastCharCommand>();
     register_command<CollapseMenuCommand>();
     register_command<ExportPythonApiCommand>();
     register_command<ExportDefaultConfigFile>();

@@ -7279,6 +7279,33 @@ void MainWidget::show_recursive_context_menu(std::unique_ptr<MenuItems> items) {
     delete context_menu;
 }
 
+void MainWidget::select_next_char(){
+
+    if (main_document_view->selected_character_rects.size() > 0 && selected_text.size() > 0){
+
+        float mid_x = (main_document_view->selected_character_rects.back().x0 + main_document_view->selected_character_rects.back().x1) / 2;
+        float mid_y = (main_document_view->selected_character_rects.back().y0 + main_document_view->selected_character_rects.back().y1) / 2;
+        mid_x += doc()->get_page_width(get_current_page_number()) / 2;
+
+        fz_point point = {mid_x, mid_y};
+        fz_stext_char* next_char = doc()->get_next_char_after_selection(get_current_page_number(), point);
+        if (next_char){
+            main_document_view->selected_character_rects.push_back(
+                DocumentRect(rect_from_quad(next_char->quad), get_current_page_number()).to_absolute(doc())
+            );
+            selected_text.push_back(next_char->c);
+            invalidate_render();
+        }
+    }
+}
+
+void MainWidget::unselect_last_char(){
+    if (main_document_view->selected_character_rects.size() > 0 && selected_text.size() > 0){
+        main_document_view->selected_character_rects.pop_back();
+        selected_text.pop_back();
+    }
+}
+
 void MainWidget::handle_debug_command() {
 }
 
