@@ -1,4 +1,5 @@
 #include <QtCore/qcontainerfwd.h>
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -12,6 +13,7 @@
 #include <qlocalsocket.h>
 #include <qfileinfo.h>
 #include <qclipboard.h>
+#include <qguiapplication.h>
 
 #include "utils.h"
 #include "input.h"
@@ -4634,7 +4636,12 @@ public:
 
     void perform() {
         widget->handle_close_event();
-        QApplication::quit();
+        if (QGuiApplication::instance() && QGuiApplication::applicationState() == Qt::ApplicationState::ApplicationActive) {
+            QGuiApplication::quit();
+        }
+        else{
+            exit(0);
+        }
     }
 
 
