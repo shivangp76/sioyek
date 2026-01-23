@@ -2039,6 +2039,10 @@ void MainWidget::open_document(const std::wstring& path, std::optional<float> of
 
     main_document_view->on_view_size_change(main_window_width, main_window_height);
     main_document_view->open_document(path, &this->is_render_invalidated);
+    if (!doc()){
+        // failed to open document
+        return;
+    }
     adjust_two_page_mode_document_zoom_and_offset(doc()->get_path());
 
     if (doc()) {
