@@ -5889,6 +5889,7 @@ std::wstring MainWidget::handle_add_highlight(char symbol) {
     if (main_document_view->selected_character_rects.size() > 0) {
         std::string uuid = main_document_view->add_highlight(selection_begin, selection_end, symbol);
         clear_selected_text();
+        selected_highlight_index = doc()->get_highlight_index_with_uuid(uuid);
         return utf8_decode(uuid);
     }
     else {
