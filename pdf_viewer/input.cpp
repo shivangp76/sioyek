@@ -1,5 +1,6 @@
 #include <QtCore/qcontainerfwd.h>
 #include <cstdlib>
+#include <deque>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -15,12 +16,17 @@
 #include <qclipboard.h>
 #include <qguiapplication.h>
 
+#include "coordinates.h"
 #include "utils.h"
 #include "input.h"
 #include "main_widget.h"
 #include "ui.h"
 #include "document.h"
 #include "document_view.h"
+
+#ifdef Q_OS_MACOS
+extern "C" void showLookupForString(WId winId, const char* text, double x, double y);
+#endif
 
 extern bool SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE;
 extern bool USE_LEGACY_KEYBINDS;
@@ -4014,6 +4020,39 @@ public:
 
 };
 
+#ifdef Q_OS_MACOS
+class MacosLookupCommand : public Command {
+public:
+    static inline const std::string cname = "macos_lookup";
+    static inline const std::string hname = "Look up selected text (macOS)";
+
+    MacosLookupCommand(MainWidget* w) : Command(cname, w) {};
+
+    void perform() {
+        std::wstring selected_text = widget->get_selected_text();
+        if (!selected_text.empty()) {
+            std::string utf8_text = utf8_encode(selected_text);
+
+            double x = widget->width() / 2.0;
+            double y = widget->height() / 2.0;
+
+            std::vector<AbsoluteRect> char_rects;
+            std::deque<AbsoluteRect> individual_char_rects = *widget->main_document_view->get_selected_character_rects();
+            merge_selected_character_rects(individual_char_rects, char_rects);
+
+            if (!char_rects.empty()) {
+                AbsoluteDocumentPos center_pos = char_rects.front().center();
+                WindowPos window_pos = center_pos.to_window(widget->main_document_view);
+                x = window_pos.x;
+                y = window_pos.y;
+            }
+
+            showLookupForString(widget->winId(), utf8_text.c_str(), x, y);
+        }
+    }
+};
+#endif
+
 class CopyAllTextCommand : public Command {
 public:
     static inline const std::string cname = "copy_all_text";
@@ -7065,6 +7104,9 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<OpenDocumentEmbeddedCommand>();
     register_command<OpenDocumentEmbeddedFromCurrentPathCommand>();
     register_command<CopyCommand>();
+#ifdef Q_OS_MACOS
+    register_command<MacosLookupCommand>();
+#endif
     register_command<CopyAllTextCommand>();
     register_command<CopyCurrentChapterTextCommand>();
     register_command<ToggleFullscreenCommand>();
