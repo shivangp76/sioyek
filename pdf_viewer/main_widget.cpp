@@ -6535,7 +6535,7 @@ bool MainWidget::event(QEvent* event) {
     }
 
     //if (event->type() == QEvent::TabletEVe)
-    if (TOUCH_MODE) {
+    if (TOUCH_MODE || event->type() == QEvent::Gesture) {
 
         if (event->type() == QEvent::TouchUpdate) {
             // when performing pinch to zoom, Qt only fires PinchGesture event when
@@ -6551,7 +6551,7 @@ bool MainWidget::event(QEvent* event) {
         if (event->type() == QEvent::Gesture) {
             auto gesture = (static_cast<QGestureEvent*>(event));
 
-            if (gesture->gesture(Qt::TapAndHoldGesture)) {
+            if (TOUCH_MODE && gesture->gesture(Qt::TapAndHoldGesture)) {
                 velocity_x = 0;
                 velocity_y = 0;
 
@@ -6663,14 +6663,16 @@ bool MainWidget::event(QEvent* event) {
                 }
             }
             if (gesture->gesture(Qt::PinchGesture)) {
-                pdf_renderer->no_rerender = true;
                 QPinchGesture* pinch = static_cast<QPinchGesture*>(gesture->gesture(Qt::PinchGesture));
                 if (pinch->state() == Qt::GestureStarted) {
                     is_pinching = true;
+                    pdf_renderer->no_rerender = true;
                 }
                 if ((pinch->state() == Qt::GestureFinished) || (pinch->state() == Qt::GestureCanceled)) {
                     is_pinching = false;
                     is_dragging = false;
+                    pdf_renderer->no_rerender = false;
+                    invalidate_render();
                 }
                 float scale = pinch->scaleFactor();
 
@@ -6682,8 +6684,11 @@ bool MainWidget::event(QEvent* event) {
                         opengl_widget->zoom_overview(scale);
                     }
                     else{
-                        dv()->set_zoom_level(dv()->get_zoom_level() * scale, true);
+                        QPoint cursor = mapFromGlobal(QCursor::pos());
+                        WindowPos cursor_pos = {cursor.x(), cursor.y()};
+                        dv()->zoom_in_cursor(cursor_pos, scale);
                     }
+                    validate_render();
                 }
                 return true;
             }
