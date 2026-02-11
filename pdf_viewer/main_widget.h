@@ -628,6 +628,7 @@ public:
     void handle_horizontal_move(int amount);
     void handle_goto_portal_list();
     void handle_goto_bookmark();
+    void handle_show_marks();
     void handle_goto_bookmark_global();
     std::wstring handle_add_highlight(char symbol);
     void handle_goto_highlight();

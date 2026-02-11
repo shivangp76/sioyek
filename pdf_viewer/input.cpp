@@ -2399,6 +2399,18 @@ public:
     }
 };
 
+class ShowMarks : public GenericGotoLocationCommand {
+public:
+    static inline const std::string cname = "show_marks";
+    static inline const std::string hname = "Show the list of the current marks in all documents.";
+    ShowMarks(MainWidget* w) : GenericGotoLocationCommand(cname, w) {};
+
+    void handle_generic_requirement() {
+        widget->handle_show_marks();
+    }
+};
+
+
 class GotoBookmarkCommand : public GenericGotoLocationCommand {
 public:
     static inline const std::string cname = "goto_bookmark";
@@ -7079,6 +7091,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     register_command<IncreaseFreetextBookmarkFontSizeCommand>();
     register_command<DecreaseFreetextBookmarkFontSizeCommand>();
     register_command<GotoPortalListCommand>();
+    register_command<ShowMarks>();
     register_command<GotoBookmarkCommand>();
     register_command<GotoBookmarkGlobalCommand>();
     register_command<GotoHighlightGlobalCommand>();

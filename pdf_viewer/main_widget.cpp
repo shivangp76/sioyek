@@ -5807,6 +5807,43 @@ void MainWidget::handle_goto_portal_list() {
     show_current_widget();
 }
 
+void MainWidget::handle_show_marks() {
+    std::vector<MarkInDatabase> marks;
+    db_manager->select_all_marks(marks);
+    std::vector<std::wstring> option_names;
+    std::vector<std::wstring> option_location_strings;
+
+    for (const auto& mark : marks) {
+        std::wstring mark_type_string = L"";
+        if (isupper(mark.symbol)) {
+            mark_type_string = L"[G]";
+        }
+        else {
+            mark_type_string = L"[L]";
+        }
+        option_names.push_back(ITEM_LIST_PREFIX + L" " + mark_type_string + L" " + static_cast<wchar_t>(mark.symbol));
+        // option_location_strings.push_back(checksummer->get_path(mark.document_checksum).value_or(L"[ERROR]"));
+        std::wstring doc_path = checksummer->get_path(mark.checksum).value_or(L"[ERROR]");
+        option_location_strings.push_back(doc_path);
+    }
+
+    set_filtered_select_menu<MarkInDatabase>(this, FUZZY_SEARCHING, MULTILINE_MENUS, { option_names, option_location_strings }, marks, -1,
+        [&](MarkInDatabase* mark) {
+            if (mark->checksum == doc()->get_checksum()) {
+                main_document_view->goto_mark(mark->symbol);
+            }
+            else {
+                std::wstring doc_path = checksummer->get_path(mark->checksum).value_or(L"[ERROR]");
+                open_document(doc_path, 0.0f, mark->offset_y);
+            }
+        },
+        [&](MarkInDatabase* mark) {
+            db_manager->delete_mark_with_uuid(utf8_encode(mark->uuid));
+        }
+    );
+    show_current_widget();
+}
+
 void MainWidget::handle_goto_bookmark() {
     std::vector<std::wstring> option_names;
     std::vector<std::wstring> option_location_strings;
@@ -7312,6 +7349,7 @@ void MainWidget::unselect_last_char(){
 }
 
 void MainWidget::handle_debug_command() {
+    handle_show_marks();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
