@@ -4042,6 +4042,12 @@ public:
 
     void perform() {
         std::wstring selected_text = widget->get_selected_text();
+
+        if (selected_text.empty()){
+            widget->select_word_under_cursor();
+            selected_text = widget->get_selected_text();
+        }
+
         if (!selected_text.empty()) {
             std::string utf8_text = utf8_encode(selected_text);
 
@@ -5867,7 +5873,7 @@ class DebugCommand : public Command {
 public:
     inline static const std::string cname = "debug";
     inline static const std::string hname = "[internal]";
-    static inline const bool developer_only = true;
+    static inline const bool developer_only = false;
 
     DebugCommand(MainWidget* w) : Command(cname, w) {};
 

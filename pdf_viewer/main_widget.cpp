@@ -7354,7 +7354,7 @@ void MainWidget::unselect_last_char(){
 }
 
 void MainWidget::handle_debug_command() {
-    handle_show_marks();
+    select_word_under_cursor();
 }
 
 void MainWidget::export_command_names(std::wstring file_path){
@@ -11811,4 +11811,14 @@ QString MainWidget::get_environment_variable(QString name) {
 void MainWidget::repeat_last_command() {
     std::unique_ptr<Command> last_cmd = command_manager->get_command_with_name(this, last_performed_command_name);
     handle_command_types(std::move(last_cmd), last_performed_command_num_repeats);
+}
+
+void MainWidget::select_word_under_cursor() {
+    AbsoluteDocumentPos mouse_abspos = get_mouse_abspos();
+
+    main_document_view->get_text_selection(mouse_abspos,
+        mouse_abspos,
+        true,
+        main_document_view->selected_character_rects,
+        selected_text);
 }

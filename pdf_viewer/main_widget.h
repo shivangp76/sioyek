@@ -1026,6 +1026,7 @@ public:
 
     void select_next_char();
     void unselect_last_char();
+    void select_word_under_cursor();
 };
 
 MainWidget* get_window_with_window_id(int window_id);
