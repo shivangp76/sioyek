@@ -1631,7 +1631,15 @@ void MainWidget::handle_escape() {
     selected_portal_index = -1;
     //current_pending_command = {};
 
+    bool had_widget = current_widget_stack.size() > 0;
     pop_current_widget();
+    if (had_widget) {
+        // return early if we just closed a widget, for example we don't want to lose the ruler position
+        validate_render();
+        setFocus();
+        return;
+    }
+
 
     if (main_document_view) {
         main_document_view->handle_escape();
