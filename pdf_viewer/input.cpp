@@ -3016,6 +3016,7 @@ public:
 class MoveSmoothCommand : public Command {
     bool was_held = false;
     float velocity_multiplier = 1.0f;
+    std::optional<FixedVelocityState> fixed_velocity_state_to_restore = {};
 public:
     MoveSmoothCommand(std::string name, MainWidget* w, float velocity_mult=1.0f) : Command(name, w) {
         velocity_multiplier = velocity_mult;
@@ -3047,6 +3048,10 @@ public:
             }
         }
         else {
+            if (!fixed_velocity_state_to_restore.has_value()) {
+                fixed_velocity_state_to_restore = widget->get_continuous_fixed_velocity_state();
+            }
+
             if (is_down() || is_up()){
                 widget->handle_move_smooth_hold(is_down());
                 widget->set_fixed_velocity(is_down() ? -SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier : SMOOTH_MOVE_MAX_VELOCITY * velocity_multiplier, 0);
@@ -3059,7 +3064,13 @@ public:
     }
 
     void perform_up() {
-        widget->set_fixed_velocity(0, 0);
+        if (fixed_velocity_state_to_restore.has_value()) {
+            widget->restore_fixed_velocity_state(fixed_velocity_state_to_restore.value());
+            fixed_velocity_state_to_restore = {};
+        }
+        else {
+            widget->set_fixed_velocity(0, 0);
+        }
     }
 
     bool is_holdable() {

@@ -11189,6 +11189,21 @@ bool MainWidget::handle_annotation_move_finish(){
     return false;
 }
 
+std::optional<FixedVelocityState> MainWidget::get_continuous_fixed_velocity_state() const {
+    if (!is_velocity_fixed || smooth_y_move_amount.has_value()) {
+        return {};
+    }
+
+    return FixedVelocityState{
+        velocity_y,
+        velocity_x,
+    };
+}
+
+void MainWidget::restore_fixed_velocity_state(const FixedVelocityState& fixed_velocity_state) {
+    set_fixed_velocity(fixed_velocity_state.velocity_y, fixed_velocity_state.velocity_x);
+}
+
 void MainWidget::set_fixed_velocity(float vel_y, float vel_x, std::optional<float> y_move_amount) {
     velocity_y = vel_y;
     velocity_x = vel_x;

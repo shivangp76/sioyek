@@ -88,6 +88,11 @@ struct BookmarkMoveData {
     AbsoluteDocumentPos initial_mouse_position;
 };
 
+struct FixedVelocityState {
+    float velocity_y;
+    float velocity_x;
+};
+
 
 struct PortalMoveData {
     int index;
@@ -1011,6 +1016,8 @@ public:
     AbsoluteDocumentPos get_mouse_abspos();
     void move_selected_bookmark_to_mouse_cursor();
     bool handle_annotation_move_finish();
+    std::optional<FixedVelocityState> get_continuous_fixed_velocity_state() const;
+    void restore_fixed_velocity_state(const FixedVelocityState& fixed_velocity_state);
     void set_fixed_velocity(float vel_y, float vel_x, std::optional<float> y_move_amount={});
     QMenuBar* create_main_menu_bar();
     void create_menu_from_menu_node(QMenu* parent, MenuNode* items, std::unordered_map<std::string, std::vector<std::string>>& command_key_mappings);
