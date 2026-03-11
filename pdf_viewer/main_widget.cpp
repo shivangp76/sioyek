@@ -195,6 +195,10 @@ extern bool VIMTEX_WSL_FIX;
 extern float RULER_AUTO_MOVE_SENSITIVITY;
 extern float TTS_RATE;
 extern std::wstring HOLD_MIDDLE_CLICK_COMMAND;
+extern std::wstring RIGHT_CLICK_SCROLL_UP_COMMAND;
+extern std::wstring RIGHT_CLICK_SCROLL_DOWN_COMMAND;
+extern std::wstring LEFT_CLICK_SCROLL_UP_COMMAND;
+extern std::wstring LEFT_CLICK_SCROLL_DOWN_COMMAND;
 extern float FREETEXT_BOOKMARK_FONT_SIZE;
 extern std::wstring BOOK_SCAN_PATH;
 extern bool USE_RULER_TO_HIGHLIGHT_SYNCTEX_LINE;
@@ -3228,6 +3232,8 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     bool is_control_pressed = QApplication::queryKeyboardModifiers().testFlag(Qt::ControlModifier) ||
         QApplication::queryKeyboardModifiers().testFlag(Qt::MetaModifier);
+    bool is_right_click_held_down = (QApplication::mouseButtons().testFlag(Qt::RightButton));
+    bool is_left_click_held_down = (QApplication::mouseButtons().testFlag(Qt::LeftButton));
     bool zoom_p = is_control_pressed;
 
     bool is_shift_pressed = QApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier);
@@ -3267,6 +3273,26 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     bool is_touchpad = wevent->pointingDevice()->pointerType() == QPointingDevice::PointerType::Finger;
 
+    if (is_right_click_held_down){
+        if (wevent->angleDelta().y() > 0 && RIGHT_CLICK_SCROLL_UP_COMMAND.size() > 0) {
+            execute_macro_if_enabled(RIGHT_CLICK_SCROLL_UP_COMMAND);
+            return;
+        }
+        else if (wevent->angleDelta().y() < 0 && RIGHT_CLICK_SCROLL_DOWN_COMMAND.size() > 0) {
+            execute_macro_if_enabled(RIGHT_CLICK_SCROLL_DOWN_COMMAND);
+            return;
+        }
+    }
+    if (is_left_click_held_down){
+        if (wevent->angleDelta().y() > 0 && LEFT_CLICK_SCROLL_UP_COMMAND.size() > 0) {
+            execute_macro_if_enabled(LEFT_CLICK_SCROLL_UP_COMMAND);
+            return;
+        }
+        else if (wevent->angleDelta().y() < 0 && LEFT_CLICK_SCROLL_DOWN_COMMAND.size() > 0) {
+            execute_macro_if_enabled(LEFT_CLICK_SCROLL_DOWN_COMMAND);
+            return;
+        }
+    }
 
     if ((!zoom_p) && (!scroll_horizontally_p)) {
         if (opengl_widget->get_overview_page()) {
